@@ -573,6 +573,228 @@ func ExpandRepo(q Q, listFn func(include, exclude []string) (map[string]bool, er
 	return Simplify(q), retErr
 }
 
+// universe represents the set of all repositories. It is used by
+// MinimalRepoSet
+type universe struct{}
+
+func (u *universe) String() string {
+	return "U"
+}
+
+// MinimalRepoSet returns the smallest set of repositories that could match
+// q. This is done without actualling running a search, and is done purely via
+// symbolic manipulation of the query. It expects q does not contain any Repo
+// atoms (it has been run through ExpandRepo). If it can't be calculated, ok
+// is false (and as such, all repositories in the universe need to be
+// considered).
+func MinimalRepoSet(q Q) (repos map[string]bool, ok bool) {
+	// Given an expression we can reduce it to a single reposet with the
+	// following observations:
+	//
+	//   MinRepoSet((and A B)) == MinRepoSet(A) INTERSECT MinRepoSet(B)
+	//   MinRepoSet((or A B))  == MinRepoSet(A) UNION     MinRepoSet(B)
+	//   MinRepoSet((type A))  == MinRepoSet(A)
+	//   MinRepoSet((reposet)) == reposet
+	//
+	// We still haven't dealt with atoms or not. Interestingly we can treats
+	// atoms as either the empty set or all repos ({} or universe
+	// respectively). For example lets look at a query with one atom:
+	// "hello". "hello" could match in no to all repos, we don't know. So we
+	// have to look in every repo. So MinRepoSet("hello") == U. This works
+	// with ANDs and ORs and plays nicely with reposets.
+	//
+	// The tricky part comes when you allow not queries (complements of
+	// sets). You want MinRepoSet(-"hello") = U since "hello" could match all
+	// or no repos, but MinRepoSet doesn't preserve the difference operator:
+	//
+	//   MinRepoSet(-"hello") = MinRepoSet(U - "hello")
+	//                        = MinRepoSet(U) - MinRepoSet("hello")
+	//                        = U - U
+	//                        = {}       :'(
+	//
+	// We picked MinRepoSet("hello") to be U since we want don't want to miss
+	// any matches. But in the case of having not as a parent we actually want
+	// to make MinRepoSet("hello") to = {}...
+	//
+	//   MinRepoSet(-"hello") = MinRepoSet(U - "hello")
+	//                        = MinRepoSet(U) - MinRepoSet("hello")
+	//                        = U - {}
+	//                        = U       \o/
+	//
+	// This idea can be generalised to the parity of the number of not
+	// ancestors in an expression. So if an atom has an even number of not
+	// ancestors it should be U, otherwise it should be {}.
+
+	q = Map(q, func(q Q) Q {
+		switch c := q.(type) {
+		case *And:
+			// Preserve non-atoms
+			return q
+
+		case *Or:
+			// Preserve non-atoms
+			return q
+
+		case *Type:
+			// Replace Type nodes with the child, since they have the same
+			// repo set. IE "(type:repo A)" has the same repo universe as
+			// "(A)".
+			return c.Child
+
+		case *Not:
+			// Not nodes are special since they affect how we treat its
+			// descedent atoms. See the above description, but we flip atoms
+			// between the empty set and universe depending on how many times
+			// it has an ancestor which is a Not.
+			return Map(q, func(q Q) Q {
+				// Swap universe and empty set.
+				switch child := q.(type) {
+				case *universe:
+					return &RepoSet{Set: map[string]bool{}}
+				case *RepoSet:
+					if len(child.Set) == 0 {
+						return &universe{}
+					}
+				}
+				return q
+			})
+
+		case *RepoSet:
+			// Preserve RepoSets, but create a copy for later mutation.
+			set := make(map[string]bool, len(c.Set))
+			for k := range c.Set {
+				set[k] = true
+			}
+			return &RepoSet{
+				Set: set,
+			}
+
+		case *Const:
+			if c.Value {
+				// TRUE matches all sets
+				return &universe{}
+			}
+			// FALSE is the empty set
+			return &RepoSet{Set: map[string]bool{}}
+
+		case *Repo:
+			panic("type Repo not allowed in MinRepoSet. Use ExpandRepo first.")
+		}
+		return &universe{}
+	})
+
+	// Now Q is only And, Or, Not, RepoSet and universe. We run a map over it
+	// evaluating it. The map should only return a Not(RepoSet), RepoSet or
+	// universe.
+	q = Map(q, func(q Q) Q {
+		switch c := q.(type) {
+		case *And:
+			// And is set intersection. Cases:
+			//
+			//   Set & Universe     == Set
+			//   Set & -Set         == Set - Set
+			//   Universe & -Set    == -Set
+			//
+			// So if we have a RepoSet, we return its intersection with the
+			// other sets. We also need to specially handle
+			// not(reposet). Collect all of them first, then subtract them
+			// from set.
+			var set *RepoSet
+			var not *RepoSet
+			for _, c2 := range c.Children {
+				switch child := c2.(type) {
+				case *RepoSet:
+					if set == nil {
+						set = child
+					} else {
+						for k := range set.Set {
+							if _, ok := child.Set[k]; !ok {
+								delete(set.Set, k)
+							}
+						}
+					}
+				case *Not:
+					// Not child has to be a RepoSet (see Not case below)
+					if not == nil {
+						not = child.Child.(*RepoSet)
+					} else {
+						for k := range child.Child.(*RepoSet).Set {
+							not.Set[k] = true
+						}
+					}
+				}
+			}
+			// If we have a set, return that since it will be minimal (AND
+			// only removes elements)
+			if set != nil {
+				if not != nil {
+					for k := range not.Set {
+						delete(set.Set, k)
+					}
+				}
+				return set
+			}
+			// We only have a not, do the same handling we have for the Not
+			// case.
+			if not != nil {
+				if len(not.Set) == 0 {
+					return &universe{}
+				}
+				return not
+			}
+			// Otherwise our AND children are just U
+			return &universe{}
+
+		case *Or:
+			// Or is set union. Cases:
+			//
+			//   Set | Universe  == Universe
+			//   Set | -Set      == Set       ????? TODO test cases
+			//   Universe | -Set == Universe
+			//
+			// So if we run into Universe return it. Otherwise do normal set
+			// union.
+			set := map[string]bool{}
+			for _, c2 := range c.Children {
+				switch child := c2.(type) {
+				case *RepoSet:
+					for k := range child.Set {
+						set[k] = true
+					}
+				case *universe:
+					return &universe{}
+
+				}
+			}
+			return &RepoSet{Set: set}
+
+		case *Not:
+			switch child := c.Child.(type) {
+			case *RepoSet:
+				if len(child.Set) == 0 {
+					// not({}) == Universe
+					return &universe{}
+				}
+				// Leave the Not as is, we handle a child Not(RepoSet) in the
+				// And and Or case
+				return c
+			case *universe:
+				// Empty Set!
+				return &RepoSet{Set: map[string]bool{}}
+			case *Not:
+				// --x == x
+				return child.Child
+			}
+		}
+		return q
+	})
+
+	if r, ok := q.(*RepoSet); ok {
+		return r.Set, true
+	}
+	return nil, false
+}
+
 // VisitAtoms runs `v` on all atom queries within `q`.
 func VisitAtoms(q Q, v func(q Q)) {
 	Map(q, func(iQ Q) Q {

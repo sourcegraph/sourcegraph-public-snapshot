@@ -16,9 +16,12 @@ package query
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"reflect"
 	"regexp"
+	"sort"
+	"strings"
 	"testing"
 )
 
@@ -140,6 +143,9 @@ func TestExpandRepo(t *testing.T) {
 		"r:foo test":                 "(and substr:\"test\" (reposet foo))",
 		"r:foo test -hello":          "(and substr:\"test\" (not substr:\"hello\") (reposet foo))",
 		"(r:ba test (r:b r:a -r:z))": "(and substr:\"test\" (reposet bar))",
+
+		// Our only case where a reposet is a child of a not.
+		"bar -(r:foo test)": "(and substr:\"bar\" (not (and substr:\"test\" (reposet foo))))",
 	}
 	for qStr, want := range cases {
 		q, err := Parse(qStr)
@@ -167,6 +173,71 @@ func TestExpandRepo_error(t *testing.T) {
 	q, err = ExpandRepo(q, list)
 	if err == nil {
 		t.Fatalf("expected error, got %s", q.String())
+	}
+}
+
+func TestMinimalRepoSet(t *testing.T) {
+	list := createListFunc([]string{"foo", "bar", "baz"})
+
+	cases := map[string]string{
+		"r:":                                  "{bar baz foo}",
+		"r:b":                                 "{bar baz}",
+		"r:b r:a":                             "{bar baz}",
+		"r:b -r:baz":                          "{bar}",
+		"-r:f":                                "{bar baz}",
+		"r:foo":                               "{foo}",
+		"r:foo r:baz":                         "{}",
+		"foo -(r:foo r:baz)":                  "",
+		"foo r:ba -(r:foo or r:baz)":          "{bar}",
+		"foo r:ba -(r:foo or r:baz or hello)": "{bar}",
+		"foo r:ba -(r:foo or hello)":          "{bar baz}",
+		"foo -(r:baz hello)":                  "",
+
+		"foo r:ba -((r:foo or hello) world)": "{bar baz}",
+		"foo r:ba -((r:foo or hello) r:foo)": "{bar baz}",
+
+		"foo -(-(r:bar hello))": "{bar}",
+		"foo -(-(hello))":       "",
+		"foo -(r:bar hello)":    "",
+		"foo -(hello)":          "",
+
+		"foo r:b -(-(r:bar hello))": "{bar}",
+		"foo r:b -(-(hello))":       "{bar baz}",
+		"foo r:b -(r:bar hello)":    "{bar baz}",
+		"foo r:b -(hello)":          "{bar baz}",
+
+		// baz is still allowed since it can have matches in documents without
+		// hello.
+		"foo r:ba -(r:baz hello)":    "{bar baz}",
+		"r:foo test":                 "{foo}",
+		"r:foo test -hello":          "{foo}",
+		"(r:ba test (r:b r:a -r:z))": "{bar}",
+
+		// Our only case where a reposet is a child of a not.
+		"bar -(r:foo test)": "",
+	}
+	for qStr, want := range cases {
+		q, err := Parse(qStr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		q, err = ExpandRepo(q, list)
+		if err != nil {
+			t.Fatal(err)
+		}
+		set, ok := MinimalRepoSet(q)
+		got := ""
+		if ok {
+			keys := []string{}
+			for k := range set {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			got = fmt.Sprintf("{%s}", strings.Join(keys, " "))
+		}
+		if got != want {
+			t.Errorf("MinimalRepoSet(%q) got %v want %v", qStr, got, want)
+		}
 	}
 }
 
