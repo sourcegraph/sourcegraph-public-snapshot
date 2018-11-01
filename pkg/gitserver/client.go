@@ -124,6 +124,9 @@ func (c *Client) addrForRepo(ctx context.Context, repo api.RepoURI) string {
 // which is hashed for sharding purposes.
 func (c *Client) addrForKey(ctx context.Context, key string) string {
 	addrs := c.Addrs(ctx)
+	if len(addrs) == 0 {
+		panic("unexpected state: no gitserver addresses")
+	}
 	sum := md5.Sum([]byte(key))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
 	return addrs[serverIndex]
