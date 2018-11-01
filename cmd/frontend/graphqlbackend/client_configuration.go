@@ -28,28 +28,27 @@ func (r *parentSourcegraphResolver) URL() string {
 }
 
 func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfigurationResolver, error) {
-	config := conf.Get().Basic
-
+	cfg := conf.Get()
 	var contentScriptUrls []string
-	for _, gh := range config.Github {
+	for _, gh := range cfg.Github {
 		contentScriptUrls = append(contentScriptUrls, gh.Url)
 	}
-	for _, bb := range config.BitbucketServer {
+	for _, bb := range cfg.BitbucketServer {
 		contentScriptUrls = append(contentScriptUrls, bb.Url)
 	}
-	for _, gl := range config.Gitlab {
+	for _, gl := range cfg.Gitlab {
 		contentScriptUrls = append(contentScriptUrls, gl.Url)
 	}
-	for _, ph := range config.Phabricator {
+	for _, ph := range cfg.Phabricator {
 		contentScriptUrls = append(contentScriptUrls, ph.Url)
 	}
-	for _, rb := range config.ReviewBoard {
+	for _, rb := range cfg.ReviewBoard {
 		contentScriptUrls = append(contentScriptUrls, rb.Url)
 	}
 
 	var parentSourcegraph parentSourcegraphResolver
-	if config.ParentSourcegraph != nil {
-		parentSourcegraph.url = config.ParentSourcegraph.Url
+	if cfg.ParentSourcegraph != nil {
+		parentSourcegraph.url = cfg.ParentSourcegraph.Url
 	}
 
 	return &clientConfigurationResolver{

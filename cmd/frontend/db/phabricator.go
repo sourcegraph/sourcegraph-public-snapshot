@@ -24,7 +24,7 @@ func init() {
 	conf.Watch(func() {
 		phabricatorRepos.Set(func() interface{} {
 			repos := map[api.RepoURI]*types.PhabricatorRepo{}
-			for _, config := range conf.Get().Basic.Phabricator {
+			for _, config := range conf.Get().Phabricator {
 				for _, repo := range config.Repos {
 					repos[api.RepoURI(repo.Path)] = &types.PhabricatorRepo{
 						URI:      api.RepoURI(repo.Path),

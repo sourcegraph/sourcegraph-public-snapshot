@@ -143,18 +143,17 @@ func NewMailReader() (*MailReader, error) {
 	if !conf.CanReadEmail() {
 		return nil, nil
 	}
-
-	config := conf.Get().Basic.EmailImap
+	conf := conf.Get()
 
 	// Connect to the IMAP server.
-	c, err := client.DialTLS(net.JoinHostPort(config.Host, strconv.Itoa(config.Port)), nil)
+	c, err := client.DialTLS(net.JoinHostPort(conf.EmailImap.Host, strconv.Itoa(conf.EmailImap.Port)), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "DialTLS")
 	}
 
 	// Login, if needed.
-	if config.Username != "" {
-		if err := c.Login(config.Username, config.Password); err != nil {
+	if conf.EmailImap.Username != "" {
+		if err := c.Login(conf.EmailImap.Username, conf.EmailImap.Password); err != nil {
 			return nil, errors.Wrap(err, "Login")
 		}
 	}

@@ -15,7 +15,7 @@ var DefaultRemoteRegistry string
 func Extensions() *PlatformConfiguration {
 	cfg := Get()
 
-	x := cfg.Basic.Extensions
+	x := cfg.Extensions
 	if x == nil {
 		x = &schema.Extensions{}
 	}

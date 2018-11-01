@@ -62,15 +62,14 @@ type phabAPIResponse struct {
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	for {
-		phabricatorConfig := conf.Get().Basic.Phabricator
-		for i, c := range phabricatorConfig {
+		for i, c := range conf.Get().Phabricator {
 			if c.Token == "" {
 				continue
 			}
 
 			after := ""
 			for {
-				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(phabricatorConfig))
+				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(conf.Get().Phabricator))
 				res, err := fetchPhabRepos(ctx, c, after)
 				if err != nil {
 					log15.Error("Error fetching Phabricator repos", "err", err)

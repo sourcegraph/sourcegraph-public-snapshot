@@ -29,7 +29,7 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 	phabricatorMetadataCounter := 0
 	for {
 		log15.Debug("RunGitoliteRepositorySyncWorker:GitoliteUpdateRepos")
-		for _, gconf := range conf.Get().Basic.Gitolite {
+		for _, gconf := range conf.Get().Gitolite {
 			if err := gitoliteUpdateRepos(ctx, gconf, (phabricatorMetadataCounter%10) == 0); err != nil {
 				log15.Error("error updating Gitolite repositories", "err", err, "prefix", gconf.Prefix)
 			} else {
@@ -49,7 +49,7 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 // existence). We return a dummy response, because if we don't, callers will interpret the response as "repository not
 // found".
 func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-	for _, c := range conf.Get().Basic.Gitolite {
+	for _, c := range conf.Get().Gitolite {
 		if strings.HasPrefix(string(args.Repo), c.Prefix) {
 			return &protocol.RepoInfo{
 				URI:          args.Repo,

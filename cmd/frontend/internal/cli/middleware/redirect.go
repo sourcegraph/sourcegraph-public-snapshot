@@ -19,9 +19,9 @@ import (
 // bypassing authentication or load-balancing.
 func CanonicalURL(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		config := conf.Get()
+		conf := conf.Get()
 
-		appURLStr := config.Core.AppURL
+		appURLStr := conf.AppURL
 		if appURLStr == "" {
 			appURLStr = globals.AppURL.String() // default
 		}
@@ -36,7 +36,7 @@ func CanonicalURL(next http.Handler) http.Handler {
 			return
 		}
 
-		httpToHTTPSRedirect := parseStringOrBool(config.Core.HttpToHttpsRedirect, "off")
+		httpToHTTPSRedirect := parseStringOrBool(conf.HttpToHttpsRedirect, "off")
 		var requireSchemeMatch bool
 		switch httpToHTTPSRedirect {
 		case "off":
@@ -59,21 +59,21 @@ func CanonicalURL(next http.Handler) http.Handler {
 		}
 
 		var canonicalURLRedirect bool
-		if config.Basic.ExperimentalFeatures != nil {
-			switch config.Basic.ExperimentalFeatures.CanonicalURLRedirect {
+		if conf.ExperimentalFeatures != nil {
+			switch conf.ExperimentalFeatures.CanonicalURLRedirect {
 			case "enabled", "": // default enabled
 				canonicalURLRedirect = true
 			case "disabled":
 				// noop
 			default:
 				text := "Misconfigured experimentalFeatures.canonicalURLRedirect values in site configuration."
-				log15.Error(text, "invalidValue", config.Basic.ExperimentalFeatures.CanonicalURLRedirect)
+				log15.Error(text, "invalidValue", conf.ExperimentalFeatures.CanonicalURLRedirect)
 				http.Error(w, text, http.StatusInternalServerError)
 				return
 			}
 		}
 
-		requireHostMatch := config.Basic.ExperimentalFeatures != nil && canonicalURLRedirect
+		requireHostMatch := conf.ExperimentalFeatures != nil && canonicalURLRedirect
 		useXForwardedProto := httpToHTTPSRedirect == "load-balanced"
 		if reqURL := getRequestURL(r, useXForwardedProto); (requireHostMatch && reqURL.Host != appURL.Host) || (requireSchemeMatch && !doesSchemeMatch(r, appURL, useXForwardedProto)) {
 			// Redirect.

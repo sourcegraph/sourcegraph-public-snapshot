@@ -20,7 +20,7 @@ var (
 
 func init() {
 	conf.Watch(func() {
-		newReposListInstance := newReposList(conf.Get().Basic.ReposList)
+		newReposListInstance := newReposList(conf.Get().ReposList)
 
 		reposListMu.Lock()
 		reposListInstance = newReposListInstance

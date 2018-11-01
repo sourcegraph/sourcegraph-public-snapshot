@@ -72,8 +72,7 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 		}
 		return db.Repos.GetByURI(ctx, uri)
 	} else if err != nil {
-		config := conf.GetTODO().Basic
-		if !config.DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
+		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
 			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 				Scheme:   "https",
 				Host:     "sourcegraph.com",

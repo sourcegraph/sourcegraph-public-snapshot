@@ -7,7 +7,7 @@ import (
 )
 
 func getUpdateInterval() time.Duration {
-	if v := conf.Get().Basic.RepoListUpdateInterval; v == 0 { //  default to 1 minute
+	if v := conf.Get().RepoListUpdateInterval; v == 0 { //  default to 1 minute
 		return 1 * time.Minute
 	} else if v == -1 { // sentinel for zero
 		return 0

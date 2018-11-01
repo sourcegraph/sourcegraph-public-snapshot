@@ -401,17 +401,17 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 }
 
 func makePhabClientForOrigin(origin string) (*phabricator.Client, error) {
-	phabricatorConfig := conf.Get().Basic.Phabricator
-	for _, c := range phabricatorConfig {
-		if c.Url != origin {
+	phabs := conf.Get().Phabricator
+	for _, phab := range phabs {
+		if phab.Url != origin {
 			continue
 		}
 
-		if c.Token == "" {
+		if phab.Token == "" {
 			return nil, errors.Errorf("no phabricator token was given for: %s", origin)
 		}
 
-		return phabricator.NewClient(c.Url, c.Token), nil
+		return phabricator.NewClient(phab.Url, phab.Token), nil
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)

@@ -33,7 +33,7 @@ func init() {
 	conf.Watch(func() {
 		bitbucketServerConnections.Set(func() interface{} {
 			var conns []*bitbucketServerConnection
-			for _, c := range conf.Get().Basic.BitbucketServer {
+			for _, c := range conf.Get().BitbucketServer {
 				conn, err := newBitbucketServerConnection(c)
 				if err != nil {
 					log15.Error("Error processing configured Bitbucket Server connection. Skipping it.", "url", c.Url, "error", err)

@@ -23,8 +23,7 @@ import (
 // It does NOT verify that the user has permission to create this comment. That
 // is the responsibility of the caller.
 func InsecureAddCommentToThread(ctx context.Context, newComment *types.DiscussionComment) (*types.DiscussionThread, error) {
-	dc := conf.Get().Basic.Discussions
-	if dc != nil && dc.AbuseProtection {
+	if dc := conf.Get().Discussions; dc != nil && dc.AbuseProtection {
 		if mustWait := ratelimit.TimeUntilUserCanAddCommentToThread(ctx, newComment.AuthorUserID, newComment.Contents); mustWait != 0 {
 			return nil, fmt.Errorf("You are creating comments too quickly. You may create a new one after %v", mustWait.Round(time.Second))
 		}

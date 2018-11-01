@@ -47,7 +47,7 @@ func init() {
 	conf.Watch(func() {
 		awsCodeCommitConnections.Set(func() interface{} {
 			var conns []*awsCodeCommitConnection
-			for _, c := range conf.Get().Basic.AwsCodeCommit {
+			for _, c := range conf.Get().AwsCodeCommit {
 				conn, err := newAWSCodeCommitConnection(c)
 				if err != nil {
 					log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)

@@ -29,33 +29,33 @@ type repoSource interface {
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
 func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
-	config := conf.Get().Basic
+	cfg := conf.Get()
 
 	if repoURI := customCloneURLToRepoURI(cloneURL); repoURI != "" {
 		return repoURI, nil
 	}
 
-	repoSources := make([]repoSource, 0, len(config.Github)+
-		len(config.Gitlab)+
-		len(config.BitbucketServer)+
-		len(config.AwsCodeCommit)+
+	repoSources := make([]repoSource, 0, len(cfg.Github)+
+		len(cfg.Gitlab)+
+		len(cfg.BitbucketServer)+
+		len(cfg.AwsCodeCommit)+
 		1+ /* for repos.list */
-		len(config.Gitolite))
+		len(cfg.Gitolite))
 
-	for _, c := range config.Github {
+	for _, c := range cfg.Github {
 		repoSources = append(repoSources, GitHub{c})
 	}
-	for _, c := range config.Gitlab {
+	for _, c := range cfg.Gitlab {
 		repoSources = append(repoSources, GitLab{c})
 	}
-	for _, c := range config.BitbucketServer {
+	for _, c := range cfg.BitbucketServer {
 		repoSources = append(repoSources, BitbucketServer{c})
 	}
-	for _, c := range config.AwsCodeCommit {
+	for _, c := range cfg.AwsCodeCommit {
 		repoSources = append(repoSources, AWS{c})
 	}
 	repoSources = append(repoSources, getReposListInstance())
-	for _, c := range config.Gitolite {
+	for _, c := range cfg.Gitolite {
 		repoSources = append(repoSources, Gitolite{c})
 	}
 	for _, ch := range repoSources {

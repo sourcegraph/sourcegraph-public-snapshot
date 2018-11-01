@@ -8,8 +8,8 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(config conf.SiteConfiguration) (problems []string) {
-	if len(config.Core.AuthProviders) == 0 {
+func validateConfig(c conf.SiteConfiguration) (problems []string) {
+	if len(c.AuthProviders) == 0 {
 		problems = append(problems, "no auth providers set (all access will be forbidden)")
 	}
 	return problems

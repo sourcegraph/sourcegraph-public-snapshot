@@ -50,19 +50,17 @@ func init() {
 	prometheus.MustRegister(requestHeartbeat)
 
 	conf.Watch(func() {
-		config := conf.Get().Core
-
-		if config.Log == nil {
+		if conf.Get().Log == nil {
 			return
 		}
-		if config.Log.Sentry == nil {
+		if conf.Get().Log.Sentry == nil {
 			return
 		}
-		if config.Log.Sentry.Dsn == "" {
+		if conf.Get().Log.Sentry.Dsn == "" {
 			return
 		}
 
-		sentryDSN = config.Log.Sentry.Dsn
+		sentryDSN = conf.Get().Log.Sentry.Dsn
 		raven.SetDSN(sentryDSN)
 	})
 }

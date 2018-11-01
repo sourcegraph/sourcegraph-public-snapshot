@@ -37,7 +37,7 @@ func (n *noGoGetDomainsT) reconfigure() {
 
 	// Parse noGoGetDomains to avoid needing to validate them when
 	// resolving static import paths
-	n.domains = parseCommaSeparatedList(conf.Get().Basic.NoGoGetDomains)
+	n.domains = parseCommaSeparatedList(conf.Get().NoGoGetDomains)
 }
 
 func parseCommaSeparatedList(list string) []string {
@@ -102,7 +102,7 @@ func resolveStaticImportPath(importPath string) (*Directory, error) {
 	// broken until they do correctly configure their monorepo (so we can
 	// identify its GOPATH), but it gives them a quick escape hatch that is
 	// better than "turn off the Sourcegraph server".
-	for _, domain := range conf.Get().Basic.BlacklistGoGet {
+	for _, domain := range conf.Get().BlacklistGoGet {
 		if strings.HasPrefix(importPath, domain) {
 			return nil, errors.New("import path in blacklistGoGet configuration")
 		}

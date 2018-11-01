@@ -205,14 +205,14 @@ func (s *Server) Handler() http.Handler {
 	// GitMaxConcurrentClones controls the maximum number of clones that
 	// can happen at once. Used to prevent throttle limits from a code
 	// host. Defaults to 5.
-	maxConcurrentClones := conf.Get().Basic.GitMaxConcurrentClones
+	maxConcurrentClones := conf.Get().GitMaxConcurrentClones
 	if maxConcurrentClones == 0 {
 		maxConcurrentClones = 5
 	}
 	s.cloneLimiter = mutablelimiter.New(maxConcurrentClones)
 	s.cloneableLimiter = mutablelimiter.New(maxConcurrentClones)
 	conf.Watch(func() {
-		limit := conf.Get().Basic.GitMaxConcurrentClones
+		limit := conf.Get().GitMaxConcurrentClones
 		if limit == 0 {
 			limit = 5
 		}

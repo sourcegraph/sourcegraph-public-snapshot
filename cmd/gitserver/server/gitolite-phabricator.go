@@ -29,7 +29,7 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 		gitoliteHost := q.Get("gitolite")
 		repoName := q.Get("repo")
 		// Iterate through Gitolite hosts, searching for one that will return the Phabricator mapping
-		for _, gconf := range conf.Get().Basic.Gitolite {
+		for _, gconf := range conf.Get().Gitolite {
 			if gconf.Host != gitoliteHost {
 				continue
 			}

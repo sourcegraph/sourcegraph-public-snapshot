@@ -168,7 +168,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 // publicSiteConfiguration is the subset of the site.schema.json site configuration
 // that is necessary for the web app and is not sensitive/secret.
 func publicSiteConfiguration() schema.CoreSiteConfiguration {
-	c := conf.Get().Core
+	c := conf.Get()
 	return schema.CoreSiteConfiguration{
 		AuthPublic: c.AuthPublic,
 	}
