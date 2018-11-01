@@ -29,17 +29,28 @@ func TestValidate(t *testing.T) {
 	})
 }
 
-func TestValidateCustom(t *testing.T) {
+func TestValidateCustomCore(t *testing.T) {
+	raw := `{"auth.providers":[{"type":"asdf"}]}`
+	wantErr := "tagged union type must have a"
+
+	problems, err := validateCustomCoreRaw([]byte(raw))
+
+	if err != nil {
+		if !strings.Contains(err.Error(), wantErr) {
+			t.Fatal(err)
+		}
+	}
+
+	if len(problems) > 0 {
+		t.Fatalf("unexpected problems: %v", problems)
+	}
+}
+
+func TestValidateCustomBasic(t *testing.T) {
 	tests := map[string]struct {
 		raw         string
 		wantProblem string
-		wantErr     string
 	}{
-		"unrecognized auth.providers": {
-			raw:     `{"auth.providers":[{"type":"asdf"}]}`,
-			wantErr: "tagged union type must have a",
-		},
-
 		// username is optional; password and token are disjointly required
 		"bitbucketserver no auth": {
 			raw:         `{"bitbucketServer":[{}]}`,
@@ -64,15 +75,9 @@ func TestValidateCustom(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			problems, err := validateCustomRaw([]byte(test.raw))
+			problems, err := validateCustomBasicRaw([]byte(test.raw))
 			if err != nil {
-				if test.wantErr == "" {
-					t.Fatalf("got unexpected error: %v", err)
-				}
-				if !strings.Contains(err.Error(), test.wantErr) {
-					t.Fatal(err)
-				}
-				return
+				t.Fatalf("got unexpected error: %v", err)
 			}
 
 			if test.wantProblem == "" {
