@@ -52,7 +52,7 @@ https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs/-/src/op
 https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs/-/src/Observable.ts
 ```
 
-### Authentication
+## Authentication
 
 To make sure the language server is authenticated when fetching URIs, the extension can authenticate the URL by embedding the users session token into the userinfo section of the URI:
 
@@ -63,3 +63,8 @@ To make sure the language server is authenticated when fetching URIs, the extens
   └─┬─┘ └───────┬────────────────────┘└─┬───────────────────────────────────┘└──┬─────────────┘
   scheme     authority                 path                                    fragment
 ```
+
+## Deployment
+
+Language servers can be deployed anywhere as long as the extension has a URL to connect to.
+The README of the extension typically provides examples to deploy the corresponding language server.
