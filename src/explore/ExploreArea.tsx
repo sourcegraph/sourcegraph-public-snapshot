@@ -76,7 +76,7 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
         }
 
         return (
-            <div className="explore-area container mt-3">
+            <div className="explore-area container my-3">
                 <h1>Explore</h1>
                 {this.props.exploreSections.map(
                     ({ condition = () => true, render }, i) =>
