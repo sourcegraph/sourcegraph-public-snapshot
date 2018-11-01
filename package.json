@@ -57,7 +57,7 @@
     "@types/extract-text-webpack-plugin": "3.0.3",
     "@types/filesystem": "0.0.29",
     "@types/graphql": "14.0.3",
-    "@types/lodash": "4.14.116",
+    "@types/lodash": "4.14.117",
     "@types/marked": "0.4.0",
     "@types/mermaid": "8.0.0",
     "@types/mocha": "5.2.5",
