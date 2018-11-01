@@ -67,13 +67,6 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
      * Forces the currently displayed tooltip, if any, to update its contents.
      */
     forceUpdateTooltip(): void
-
-    /**
-     * Experimental capabilities implemented by the client (that are not defined by the Sourcegraph extension API
-     * specification). These capabilities are passed verbatim to extensions in the initialize request's
-     * capabilities.experimental property.
-     */
-    experimentalClientCapabilities?: any
 }
 
 /**
