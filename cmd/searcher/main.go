@@ -61,11 +61,7 @@ func main() {
 			MaxCacheSizeBytes: cacheSizeBytes,
 		},
 	}
-
-	// Allow roughly 10 fetches per gitserver
-	<-gitserver.AddrsReady
-	service.Store.SetMaxConcurrentFetchTar(10 * len(gitserver.DefaultClient.Addrs(context.TODO())))
-
+	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
 
