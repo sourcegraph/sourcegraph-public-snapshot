@@ -6,6 +6,6 @@ set -ex
 # Build a Sourcegraph server docker image with private code built in to run for
 # development purposes
 time cmd/server/pre-build.sh
-IMAGE=sourcegraph/server:$USER-dev VERSION=$USER-dev time cmd/server/build.sh
+IMAGE=sourcegraph/server:$USER-dev-enterprise VERSION=$USER-dev-enterprise time cmd/server/build.sh
 
-IMAGE=sourcegraph/server:$USER-dev ../dev/run-server-image.sh
+IMAGE=sourcegraph/server:$USER-dev-enterprise ../dev/run-server-image.sh
