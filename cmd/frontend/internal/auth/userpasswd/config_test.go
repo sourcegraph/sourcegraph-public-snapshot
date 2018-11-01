@@ -9,11 +9,11 @@ import (
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		input        schema.SiteConfiguration
+		input        schema.CoreSiteConfiguration
 		wantProblems []string
 	}{
 		"single": {
-			input: schema.SiteConfiguration{
+			input: schema.CoreSiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
@@ -21,7 +21,7 @@ func TestValidateCustom(t *testing.T) {
 			wantProblems: nil,
 		},
 		"multiple": {
-			input: schema.SiteConfiguration{
+			input: schema.CoreSiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
@@ -31,8 +31,11 @@ func TestValidateCustom(t *testing.T) {
 		},
 	}
 	for name, test := range tests {
+		config := conf.SiteConfiguration{
+			CoreSiteConfiguration: test.input,
+		}
 		t.Run(name, func(t *testing.T) {
-			conf.TestValidator(t, test.input, validateConfig, test.wantProblems)
+			conf.TestValidator(t, config, validateConfig, test.wantProblems)
 		})
 	}
 }

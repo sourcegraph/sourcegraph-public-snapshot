@@ -9,11 +9,11 @@ import (
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		input        schema.SiteConfiguration
+		input        schema.CoreSiteConfiguration
 		wantProblems []string
 	}{
 		"duplicates": {
-			input: schema.SiteConfiguration{
+			input: schema.CoreSiteConfiguration{
 				AppURL: "x",
 				AuthProviders: []schema.AuthProviders{
 					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
@@ -25,7 +25,8 @@ func TestValidateCustom(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			conf.TestValidator(t, test.input, validateConfig, test.wantProblems)
+			config := conf.SiteConfiguration{CoreSiteConfiguration: &test.input}
+			conf.TestValidator(t, config, validateConfig, test.wantProblems)
 		})
 	}
 }

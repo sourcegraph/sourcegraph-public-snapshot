@@ -39,6 +39,7 @@ func readOrGenerateConfig(path string) (configJSON string, writable bool, err er
 	return configJSON, writable, nil
 }
 
+// TODO@ggilmore: !!!🚨 This will now need to write to multiple locations, not just one.
 func generateConfigFile(path string) (configJSON string, err error) {
 	// The default site configuration.
 	defaultSiteConfig := schema.SiteConfiguration{

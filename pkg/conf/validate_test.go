@@ -9,7 +9,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
-		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"maxReposToSearch":123}`))
+		res, err := validate([]byte(schema.BasicSchemaJSON), []byte(`{"maxReposToSearch":123}`))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -19,7 +19,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
-		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"a":1}`))
+		res, err := validate([]byte(schema.BasicSchemaJSON), []byte(`{"a":1}`))
 		if err != nil {
 			t.Fatal(err)
 		}

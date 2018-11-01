@@ -29,8 +29,8 @@ type client struct {
 var defaultClient *client
 
 type SiteConfiguration struct {
-	*schema.BasicSiteConfiguration
-	*schema.CoreSiteConfiguration
+	schema.BasicSiteConfiguration
+	schema.CoreSiteConfiguration
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -68,9 +68,21 @@ func Get() *SiteConfiguration {
 // be done in such a way that it responds to config changes while the process
 // is running.
 func (c *client) Get() *SiteConfiguration {
+
+	// TODO@ggilmore: Figure out whether or not dealing with nulls in this way is okay 
+	// - this only to deal with accessing sub fields w/ struct embedding and pointers 
+	basic := c.basicStore.LastValid()
+	if basic == nil {
+		basic = &schema.BasicSiteConfiguration{}
+	}
+
+	core := c.coreStore.LastValid()
+	if core == nil {
+		core = &schema.CoreSiteConfiguration{}
+	}
 	return &SiteConfiguration{
-		BasicSiteConfiguration: c.basicStore.LastValid(),
-		CoreSiteConfiguration:  c.coreStore.LastValid(),
+		BasicSiteConfiguration: *basic,
+		CoreSiteConfiguration:  *core,
 	}
 }
 
@@ -95,25 +107,19 @@ func (c *client) GetTODO() *SiteConfiguration {
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
-func MockBasic(mockery *schema.BasicSiteConfiguration) {
-	defaultClient.MockBasic(mockery)
+func Mock(mockery *SiteConfiguration) {
+	defaultClient.Mock(mockery)
 }
 
 // Mock sets up mock data for the site configuration.
-//
-// Mock is a wrapper around client.Mock.
-func MockCore(mockery *schema.CoreSiteConfiguration) {
-	defaultClient.MockCore(mockery)
-}
+func (c *client) Mock(mockery *SiteConfiguration) {
+	// TODO@ggilmore: Is a nil guard here necessary?
+	if mockery == nil {
+		mockery = &SiteConfiguration{}
+	}
 
-// Mock sets up mock data for the site configuration.
-func (c *client) MockBasic(mockery *schema.BasicSiteConfiguration) {
-	c.basicStore.Mock(mockery)
-}
-
-// Mock sets up mock data for the site configuration.
-func (c *client) MockCore(mockery *schema.CoreSiteConfiguration) {
-	c.coreStore.Mock(mockery)
+	c.basicStore.Mock(&mockery.BasicSiteConfiguration)
+	c.coreStore.Mock(&mockery.CoreSiteConfiguration)
 }
 
 // Watch calls the given function in a separate goroutine whenever the

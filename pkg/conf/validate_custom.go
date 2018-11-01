@@ -24,7 +24,7 @@ func validateCustomBasicRaw(normalizedInput []byte) (problems []string, err erro
 	if err := json.Unmarshal(normalizedInput, &basic); err != nil {
 		return nil, err
 	}
-	return validateCustom(SiteConfiguration{&basic, &schema.CoreSiteConfiguration{}}), nil
+	return validateCustom(SiteConfiguration{basic, schema.CoreSiteConfiguration{}}), nil
 }
 
 func validateCustomCoreRaw(normalizedInput []byte) (problems []string, err error) {
@@ -32,7 +32,7 @@ func validateCustomCoreRaw(normalizedInput []byte) (problems []string, err error
 	if err := json.Unmarshal(normalizedInput, &core); err != nil {
 		return nil, err
 	}
-	return validateCustom(SiteConfiguration{&schema.BasicSiteConfiguration{}, &core}), nil
+	return validateCustom(SiteConfiguration{schema.BasicSiteConfiguration{}, core}), nil
 }
 
 // validateCustom validates the site config using custom validation steps that are not
