@@ -69,7 +69,7 @@
     "@types/reactstrap": "5.0.18",
     "@types/shelljs": "0.8.0",
     "@types/signale": "1.2.0",
-    "@types/socket.io": "1.4.38",
+    "@types/socket.io": "2.1.0",
     "@types/socket.io-client": "1.4.32",
     "@types/storybook__addon-actions": "3.4.1",
     "@types/storybook__react": "3.0.9",
