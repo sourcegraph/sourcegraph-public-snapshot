@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/invoice"
 	"github.com/stripe/stripe-go/plan"

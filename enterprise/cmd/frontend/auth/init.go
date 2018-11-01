@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/enterprise/cmd/frontend/auth/httpheader"
-	"github.com/sourcegraph/enterprise/cmd/frontend/auth/openidconnect"
-	"github.com/sourcegraph/enterprise/cmd/frontend/auth/saml"
-	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/httpheader"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/openidconnect"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/saml"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"

@@ -14,8 +14,8 @@ import (
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"

@@ -26,7 +26,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/sourcegraph/enterprise/pkg/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"golang.org/x/crypto/ssh"
 )
 

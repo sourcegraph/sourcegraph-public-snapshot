@@ -21,12 +21,12 @@ import (
 	"os"
 	"strconv"
 
-	_ "github.com/sourcegraph/enterprise/cmd/frontend/auth"
-	_ "github.com/sourcegraph/enterprise/cmd/frontend/db"
-	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
-	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/httpapi"
-	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/registry"
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/httpapi"
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 )

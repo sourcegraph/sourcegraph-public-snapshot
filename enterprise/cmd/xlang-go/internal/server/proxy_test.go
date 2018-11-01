@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/ctxvfs"
-	gobuildserver "github.com/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	gobuildserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
