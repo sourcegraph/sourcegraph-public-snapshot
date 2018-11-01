@@ -143,5 +143,4 @@ replace (
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538
-	github.com/shurcooL/vfsgen => github.com/beyang/vfsgen v0.0.0-20180926055532-04927b934b6e
 )
