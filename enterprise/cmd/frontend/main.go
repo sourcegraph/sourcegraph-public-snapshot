@@ -1,4 +1,5 @@
 //docker:user sourcegraph
+//docker:cmd serve
 //docker:env CONFIGURATION_MODE=server
 //docker:env PUBLIC_REPO_REDIRECTS=true
 
