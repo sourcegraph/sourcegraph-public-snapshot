@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -43,13 +44,18 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Help:      "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
-var sentryDSN string
+var (
+	sentryDSN string
+
+	ravenReadyOnce sync.Once
+	ravenReady     = make(chan struct{})
+)
 
 func init() {
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
 
-	conf.Watch(func() {
+	go conf.Watch(func() {
 		if conf.Get().Log == nil {
 			return
 		}
@@ -62,6 +68,9 @@ func init() {
 
 		sentryDSN = conf.Get().Log.Sentry.Dsn
 		raven.SetDSN(sentryDSN)
+		ravenReadyOnce.Do(func() {
+			close(ravenReady)
+		})
 	})
 }
 
@@ -126,6 +135,7 @@ func Middleware(next http.Handler) http.Handler {
 
 		// If status code is not 2xx, notify Sentry
 		if m.Code/100 != 2 && m.Code/100 != 3 {
+			<-ravenReady
 			raven.CaptureError(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path}, map[string]string{
 				"method":        r.Method,
 				"url":           r.URL.String(),
