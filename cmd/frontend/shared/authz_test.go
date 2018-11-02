@@ -38,7 +38,7 @@ func (m newGitLabAuthzProviderParams) ServiceType() string {
 }
 
 func Test_providersFromConfig(t *testing.T) {
-	NewGitLabAuthzProvider = func(op gitlab.GitLabAuthzProviderOp) authz.Provider {
+	NewProvider = func(op gitlab.GitLabAuthzProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return newGitLabAuthzProviderParams{op}
 	}
