@@ -14,7 +14,6 @@ import {
 } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 
-import { injectBitbucketServer } from '../../libs/bitbucket/inject'
 import { injectCodeIntelligence } from '../../libs/code_intelligence'
 import { injectGitHubApplication } from '../../libs/github/inject'
 import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
@@ -92,11 +91,10 @@ function injectApplication(): void {
             document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
         ) {
             setSourcegraphUrl(sourcegraphServerUrl)
-            injectBitbucketServer()
         }
 
-        if (isGitHub || isPhabricator || isGitlab) {
-            if (isGitlab || (await featureFlags.isEnabled('newInject'))) {
+        if (isGitHub || isPhabricator || isGitlab || isBitbucket) {
+            if (isGitlab || isBitbucket || (await featureFlags.isEnabled('newInject'))) {
                 const subscriptions = await injectCodeIntelligence()
                 window.addEventListener('unload', () => subscriptions.unsubscribe())
             }

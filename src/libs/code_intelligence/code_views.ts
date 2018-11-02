@@ -1,3 +1,4 @@
+import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { last, range } from 'lodash'
 import { from, merge, Observable, of, Subject } from 'rxjs'
 import { filter, map, mergeMap } from 'rxjs/operators'
@@ -84,8 +85,13 @@ export const findCodeViews = (codeHost: CodeHost, watchChildrenModifications = t
         mergeMap(({ resolveCodeView, matches }) =>
             of(...matches).pipe(
                 map(codeView => ({
-                    ...resolveCodeView(codeView),
+                    resolved: resolveCodeView(codeView),
                     codeView,
+                })),
+                filter(propertyIsDefined('resolved')),
+                map(({ resolved, ...rest }) => ({
+                    ...resolved,
+                    ...rest,
                 }))
             )
         )
@@ -138,7 +144,7 @@ export const getContentOfCodeView = (
         let min = 1
         let max = 1
 
-        for (const { start, end } of info.getLineRanges(codeView, part)) {
+        for (const { start, end } of info.getLineRanges!(codeView, part)) {
             for (const line of range(start, end + 1)) {
                 min = Math.min(min, line)
                 max = Math.max(max, line)

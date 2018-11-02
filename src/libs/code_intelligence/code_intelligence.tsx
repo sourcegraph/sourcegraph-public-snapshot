@@ -26,6 +26,7 @@ import { lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/l
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { AbsoluteRepoFile } from '../../shared/repo'
 import { eventLogger, getModeFromPath, sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
@@ -65,7 +66,7 @@ export interface CodeView {
     isDiff?: boolean
 
     /** Gets the 1-indexed range of the code view */
-    getLineRanges: (
+    getLineRanges?: (
         codeView: HTMLElement,
         part?: DiffPart
     ) => {
@@ -80,7 +81,7 @@ export type CodeViewWithOutSelector = Pick<CodeView, Exclude<keyof CodeView, 'se
 
 export interface CodeViewResolver {
     selector: string
-    resolveCodeView: (elem: HTMLElement) => CodeViewWithOutSelector
+    resolveCodeView: (elem: HTMLElement) => CodeViewWithOutSelector | null
 }
 
 interface OverlayPosition {
@@ -180,6 +181,9 @@ export interface FileInfo {
 
     headHasFileContents?: boolean
     baseHasFileContents?: boolean
+
+    content?: string
+    baseContent?: string
 }
 
 /**
@@ -370,7 +374,19 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                 : originalDOM.getCodeElementFromTarget(target),
                     }
                     if (extensionsController) {
-                        const { content, baseContent } = getContentOfCodeView(codeView, { isDiff, getLineRanges, dom })
+                        let content = info.content
+                        let baseContent = info.baseContent
+
+                        if (!content) {
+                            if (!getLineRanges) {
+                                throw new Error('Must either provide a line range getter or provide file contents')
+                            }
+
+                            const contents = getContentOfCodeView(codeView, { isDiff, getLineRanges, dom })
+
+                            content = contents.content
+                            baseContent = contents.baseContent
+                        }
 
                         documents = [
                             // All the currently open documents
@@ -379,10 +395,10 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                             {
                                 uri: toURIWithPath(info),
                                 languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                text: content,
+                                text: content!,
                             },
                             // When codeView is a diff, add BASE too
-                            ...(baseContent && info.baseRepoPath && info.baseCommitID && info.baseFilePath
+                            ...(baseContent! && info.baseRepoPath && info.baseCommitID && info.baseFilePath
                                 ? [
                                       {
                                           uri: toURIWithPath({
@@ -391,7 +407,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                               filePath: info.baseFilePath,
                                           }),
                                           languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                          text: baseContent,
+                                          text: baseContent!,
                                       },
                                   ]
                                 : []),
@@ -481,6 +497,7 @@ async function injectCodeIntelligenceToCodeHosts(codeHosts: CodeHost[]): Promise
         const isCodeHost = await Promise.resolve(codeHost.check())
         if (isCodeHost) {
             subscriptions.add(handleCodeHost(codeHost))
+            break
         }
     }
 
@@ -495,7 +512,7 @@ async function injectCodeIntelligenceToCodeHosts(codeHosts: CodeHost[]): Promise
  * incomplete setup requests.
  */
 export async function injectCodeIntelligence(): Promise<Subscription> {
-    const codeHosts: CodeHost[] = [githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
+    const codeHosts: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 
     return await injectCodeIntelligenceToCodeHosts(codeHosts)
 }
