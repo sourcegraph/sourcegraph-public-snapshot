@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -147,15 +146,6 @@ func Main() error {
 	if err != nil {
 		return err
 	}
-
-	// We are the frontend, so there is no need to go over the network for
-	// internal API requests.
-	u, err := url.Parse(api.InternalClient.URL)
-	if err != nil {
-		return err
-	}
-	u.Host = "127.0.0.1"
-	api.InternalClient.URL = u.String()
 
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
