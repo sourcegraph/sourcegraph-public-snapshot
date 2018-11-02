@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -89,8 +90,26 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 // other internal services).
 func newInternalHTTPHandler() http.Handler {
 	internalMux := http.NewServeMux()
-	internalMux.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
+	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
+		withInternalActor(
+			httpapi.NewInternalHandler(
+				router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
+			),
+		),
+	))
 	return gcontext.ClearHandler(internalMux)
+}
+
+// withInternalActor wraps an existing HTTP handler by setting an internal actor in the HTTP request
+// context.
+//
+// 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e., only use
+// for the internal endpoint), because internal requests will bypass repository permissions checks.
+func withInternalActor(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rWithActor := r.WithContext(actor.WithActor(r.Context(), &actor.Actor{Internal: true}))
+		h.ServeHTTP(w, rWithActor)
+	})
 }
 
 // corsAllowHeader is the HTTP header that, if present (and assuming secureHeadersMiddleware is

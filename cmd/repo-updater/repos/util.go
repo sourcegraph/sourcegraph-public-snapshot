@@ -20,6 +20,8 @@ import (
 // differences (such as in presence of a trailing slash, or hostname case) eliminated. Its return value should be
 // used for the (ExternalRepoSpec).ServiceID field (and passed to XyzExternalRepoSpec) instead of a non-normalized
 // base URL.
+//
+// DEPRECATED in favor of externalservice.NormalizeBaseURL
 func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	baseURL.Host = strings.ToLower(baseURL.Host)
 	if !strings.HasSuffix(baseURL.Path, "/") {

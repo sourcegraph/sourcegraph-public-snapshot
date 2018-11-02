@@ -77,7 +77,7 @@ func TestContext(t *testing.T) context.Context {
 	}
 
 	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	for _, f := range BeforeTest {
 		f()

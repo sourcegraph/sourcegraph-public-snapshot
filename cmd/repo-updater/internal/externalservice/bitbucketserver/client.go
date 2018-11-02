@@ -12,7 +12,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/pkg/metrics"
+	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/time/rate"
 )

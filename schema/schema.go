@@ -84,6 +84,19 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header"})
 }
 
+// AuthnProvider description: Identifies the authentication provider to use to identify users to GitLab.
+type AuthnProvider struct {
+	ConfigID       string `json:"configID"`
+	GitlabProvider string `json:"gitlabProvider"`
+	Type           string `json:"type"`
+}
+
+// Authorization description: If non-null, enables GitLab permission checks. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
+type Authorization struct {
+	AuthnProvider AuthnProvider `json:"authnProvider"`
+	Matcher       string        `json:"matcher,omitempty"`
+	Ttl           string        `json:"ttl,omitempty"`
+}
 type BitbucketServerConnection struct {
 	Certificate                 string `json:"certificate,omitempty"`
 	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
@@ -151,13 +164,14 @@ type GitHubConnection struct {
 	Url                         string   `json:"url"`
 }
 type GitLabConnection struct {
-	Certificate                 string   `json:"certificate,omitempty"`
-	GitURLType                  string   `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool     `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string `json:"projectQuery,omitempty"`
-	RepositoryPathPattern       string   `json:"repositoryPathPattern,omitempty"`
-	Token                       string   `json:"token"`
-	Url                         string   `json:"url"`
+	Authorization               *Authorization `json:"authorization,omitempty"`
+	Certificate                 string         `json:"certificate,omitempty"`
+	GitURLType                  string         `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool           `json:"initialRepositoryEnablement,omitempty"`
+	ProjectQuery                []string       `json:"projectQuery,omitempty"`
+	RepositoryPathPattern       string         `json:"repositoryPathPattern,omitempty"`
+	Token                       string         `json:"token"`
+	Url                         string         `json:"url"`
 }
 type GitoliteConnection struct {
 	Blacklist                  string `json:"blacklist,omitempty"`
@@ -222,6 +236,7 @@ type Metadata struct {
 type OpenIDConnectAuthProvider struct {
 	ClientID           string `json:"clientID"`
 	ClientSecret       string `json:"clientSecret"`
+	ConfigID           string `json:"configID,omitempty"`
 	DisplayName        string `json:"displayName,omitempty"`
 	Issuer             string `json:"issuer"`
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
@@ -255,6 +270,7 @@ type ReviewBoard struct {
 //
 // Note: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.
 type SAMLAuthProvider struct {
+	ConfigID                                 string `json:"configID,omitempty"`
 	DisplayName                              string `json:"displayName,omitempty"`
 	IdentityProviderMetadata                 string `json:"identityProviderMetadata,omitempty"`
 	IdentityProviderMetadataURL              string `json:"identityProviderMetadataURL,omitempty"`

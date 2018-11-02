@@ -9,28 +9,15 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-// GitLabServiceType is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID value is
-// the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
-const GitLabServiceType = "gitlab"
-
-// GitLabExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitLab project.
-func GitLabExternalRepoSpec(proj *gitlab.Project, baseURL url.URL) *api.ExternalRepoSpec {
-	return &api.ExternalRepoSpec{
-		ID:          strconv.Itoa(proj.ID),
-		ServiceType: GitLabServiceType,
-		ServiceID:   NormalizeBaseURL(&baseURL).String(),
-	}
-}
 
 var gitlabConnections = atomicvalue.New()
 
@@ -76,7 +63,7 @@ func init() {
 // the repository specified by the args.
 func getGitLabConnection(args protocol.RepoLookupArgs) (*gitlabConnection, error) {
 	gitlabConnections := gitlabConnections.Get().([]*gitlabConnection)
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitLabServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == gitlab.GitLabServiceType {
 		// Look up by external repository spec.
 		for _, conn := range gitlabConnections {
 			if args.ExternalRepo.ServiceID == conn.baseURL.String() {
@@ -115,7 +102,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	ghrepoToRepoInfo := func(proj *gitlab.Project, conn *gitlabConnection) *protocol.RepoInfo {
 		return &protocol.RepoInfo{
 			URI:          gitlabProjectToRepoPath(conn, proj),
-			ExternalRepo: GitLabExternalRepoSpec(proj, *conn.baseURL),
+			ExternalRepo: gitlab.GitLabExternalRepoSpec(proj, *conn.baseURL),
 			Description:  proj.Description,
 			Fork:         proj.ForkedFromProject != nil,
 			Archived:     proj.Archived,
@@ -139,7 +126,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		return nil, false, nil // refers to a non-GitLab repo
 	}
 
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitLabServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == gitlab.GitLabServiceType {
 		// Look up by external repository spec.
 		id, err := strconv.Atoi(args.ExternalRepo.ID)
 		if err != nil {
@@ -213,7 +200,7 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoURI:      gitlabProjectToRepoPath(conn, proj),
-				ExternalRepo: GitLabExternalRepoSpec(proj, *conn.baseURL),
+				ExternalRepo: gitlab.GitLabExternalRepoSpec(proj, *conn.baseURL),
 				Description:  proj.Description,
 				Fork:         proj.ForkedFromProject != nil,
 				Archived:     proj.Archived,

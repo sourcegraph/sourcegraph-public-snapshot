@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -76,14 +77,14 @@ func middleware(next http.Handler) http.Handler {
 			http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 			return
 		}
-		userID, safeErrMsg, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{Username: username}, db.ExternalAccountSpec{
+		userID, safeErrMsg, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{Username: username}, extsvc.ExternalAccountSpec{
 			ServiceType: providerType,
 
 			// Store headerValue, not normalized username, to prevent two users with distinct
 			// pre-normalization usernames from being merged into the same normalized username
 			// (and therefore letting them each impersonate the other).
 			AccountID: headerValue,
-		}, db.ExternalAccountData{})
+		}, extsvc.ExternalAccountData{})
 		if err != nil {
 			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)

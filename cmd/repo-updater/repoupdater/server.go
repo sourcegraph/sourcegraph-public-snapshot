@@ -9,10 +9,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

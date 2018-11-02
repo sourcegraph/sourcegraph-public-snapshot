@@ -11,10 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
 type authnResponseInfo struct {
-	spec                 db.ExternalAccountSpec
+	spec                 extsvc.ExternalAccountSpec
 	email, displayName   string
 	unnormalizedUsername string
 	accountData          interface{}
@@ -57,7 +58,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		email = pn
 	}
 	info := authnResponseInfo{
-		spec: db.ExternalAccountSpec{
+		spec: extsvc.ExternalAccountSpec{
 			ServiceType: providerType,
 			ServiceID:   pi.ServiceID,
 			ClientID:    pi.ClientID,
@@ -84,7 +85,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
-	var data db.ExternalAccountData
+	var data extsvc.ExternalAccountData
 	auth.SetExternalAccountData(&data.AccountData, info.accountData)
 
 	username, err := auth.NormalizeUsername(info.unnormalizedUsername)

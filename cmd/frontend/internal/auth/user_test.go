@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
 func TestCreateOrUpdateUser(t *testing.T) {
@@ -28,12 +29,12 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		db.Mocks.Users.Update = func(int32, db.UserUpdate) error { return nil }
 	}
 	mockNewUser := func(t *testing.T) {
-		db.Mocks.ExternalAccounts.LookupUserAndSave = func(a db.ExternalAccountSpec, d db.ExternalAccountData) (userID int32, err error) {
+		db.Mocks.ExternalAccounts.LookupUserAndSave = func(a extsvc.ExternalAccountSpec, d extsvc.ExternalAccountData) (userID int32, err error) {
 			return 0, &errcode.Mock{IsNotFound: true}
 		}
 	}
 	mockExistingUser := func(t *testing.T) {
-		db.Mocks.ExternalAccounts.LookupUserAndSave = func(a db.ExternalAccountSpec, d db.ExternalAccountData) (userID int32, err error) {
+		db.Mocks.ExternalAccounts.LookupUserAndSave = func(a extsvc.ExternalAccountSpec, d extsvc.ExternalAccountData) (userID int32, err error) {
 			return wantUserID, nil
 		}
 	}
@@ -42,12 +43,12 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		var calledCreateUserAndSave bool
 		mockUsersUpdate()
 		mockNewUser(t)
-		db.Mocks.ExternalAccounts.CreateUserAndSave = func(u db.NewUser, a db.ExternalAccountSpec, d db.ExternalAccountData) (createdUserID int32, err error) {
+		db.Mocks.ExternalAccounts.CreateUserAndSave = func(u db.NewUser, a extsvc.ExternalAccountSpec, d extsvc.ExternalAccountData) (createdUserID int32, err error) {
 			calledCreateUserAndSave = true
 			return wantUserID, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
-		userID, _, err := CreateOrUpdateUser(context.Background(), db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}, db.ExternalAccountData{})
+		userID, _, err := CreateOrUpdateUser(context.Background(), db.NewUser{Username: wantUsername}, extsvc.ExternalAccountSpec{}, extsvc.ExternalAccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -64,12 +65,12 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		mockUsersUpdate()
 		mockNewUser(t)
 		wantErr := errors.New("x")
-		db.Mocks.ExternalAccounts.CreateUserAndSave = func(u db.NewUser, a db.ExternalAccountSpec, d db.ExternalAccountData) (createdUserID int32, err error) {
+		db.Mocks.ExternalAccounts.CreateUserAndSave = func(u db.NewUser, a extsvc.ExternalAccountSpec, d extsvc.ExternalAccountData) (createdUserID int32, err error) {
 			calledCreateUserAndSave = true
 			return 0, wantErr
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
-		if _, _, err := CreateOrUpdateUser(context.Background(), db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}, db.ExternalAccountData{}); err != wantErr {
+		if _, _, err := CreateOrUpdateUser(context.Background(), db.NewUser{Username: wantUsername}, extsvc.ExternalAccountSpec{}, extsvc.ExternalAccountData{}); err != wantErr {
 			t.Fatalf("got err %q, want %q", err, wantErr)
 		}
 		if !calledCreateUserAndSave {
@@ -82,7 +83,7 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		mockUsersGetByID()
 		mockUsersUpdate()
 		mockExistingUser(t)
-		db.Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, a db.ExternalAccountSpec, d db.ExternalAccountData) error {
+		db.Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, a extsvc.ExternalAccountSpec, d extsvc.ExternalAccountData) error {
 			if userID != wantAuthedUserID {
 				t.Errorf("got %d, want %d", userID, wantAuthedUserID)
 			}
@@ -91,7 +92,7 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: wantAuthedUserID})
-		userID, _, err := CreateOrUpdateUser(ctx, db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}, db.ExternalAccountData{})
+		userID, _, err := CreateOrUpdateUser(ctx, db.NewUser{Username: wantUsername}, extsvc.ExternalAccountSpec{}, extsvc.ExternalAccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -109,13 +110,13 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		mockUsersUpdate()
 		mockExistingUser(t)
 		wantErr := errors.New("x")
-		db.Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, a db.ExternalAccountSpec, d db.ExternalAccountData) error {
+		db.Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, a extsvc.ExternalAccountSpec, d extsvc.ExternalAccountData) error {
 			calledAssociateUserAndSave = true
 			return wantErr
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: wantAuthedUserID})
-		if _, _, err := CreateOrUpdateUser(ctx, db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}, db.ExternalAccountData{}); err != wantErr {
+		if _, _, err := CreateOrUpdateUser(ctx, db.NewUser{Username: wantUsername}, extsvc.ExternalAccountSpec{}, extsvc.ExternalAccountData{}); err != wantErr {
 			t.Fatalf("got err %q, want %q", err, wantErr)
 		}
 		if !calledAssociateUserAndSave {

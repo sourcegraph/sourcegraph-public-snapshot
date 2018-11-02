@@ -6,6 +6,7 @@ import (
 	"time"
 
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
 func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
@@ -14,18 +15,18 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	spec := ExternalAccountSpec{
+	spec := extsvc.ExternalAccountSpec{
 		ServiceType: "xa",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, ExternalAccountData{})
+	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.ExternalAccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	lookedUpUserID, err := ExternalAccounts.LookupUserAndSave(ctx, spec, ExternalAccountData{})
+	lookedUpUserID, err := ExternalAccounts.LookupUserAndSave(ctx, spec, extsvc.ExternalAccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,13 +46,13 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spec := ExternalAccountSpec{
+	spec := extsvc.ExternalAccountSpec{
 		ServiceType: "xa",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	if err := ExternalAccounts.AssociateUserAndSave(ctx, user.ID, spec, ExternalAccountData{}); err != nil {
+	if err := ExternalAccounts.AssociateUserAndSave(ctx, user.ID, spec, extsvc.ExternalAccountData{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,7 +66,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	account := *accounts[0]
 	simplifyExternalAccount(&account)
 	account.ID = 0
-	if want := (ExternalAccount{UserID: user.ID, ExternalAccountSpec: spec}); !reflect.DeepEqual(account, want) {
+	if want := (extsvc.ExternalAccount{UserID: user.ID, ExternalAccountSpec: spec}); !reflect.DeepEqual(account, want) {
 		t.Errorf("got %+v, want %+v", account, want)
 	}
 }
@@ -76,13 +77,13 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	spec := ExternalAccountSpec{
+	spec := extsvc.ExternalAccountSpec{
 		ServiceType: "xa",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, ExternalAccountData{})
+	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.ExternalAccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,12 +106,12 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	account := *accounts[0]
 	simplifyExternalAccount(&account)
 	account.ID = 0
-	if want := (ExternalAccount{UserID: userID, ExternalAccountSpec: spec}); !reflect.DeepEqual(account, want) {
+	if want := (extsvc.ExternalAccount{UserID: userID, ExternalAccountSpec: spec}); !reflect.DeepEqual(account, want) {
 		t.Errorf("got %+v, want %+v", account, want)
 	}
 }
 
-func simplifyExternalAccount(account *ExternalAccount) {
+func simplifyExternalAccount(account *extsvc.ExternalAccount) {
 	account.CreatedAt = time.Time{}
 	account.UpdatedAt = time.Time{}
 }

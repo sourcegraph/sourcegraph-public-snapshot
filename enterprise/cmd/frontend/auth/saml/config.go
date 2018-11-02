@@ -129,6 +129,9 @@ func getNameIDFormat(pc *schema.SAMLAuthProvider) string {
 // If there is only a single saml auth provider, it returns the empty string because that satisfies
 // the requirements above.
 func providerConfigID(pc *schema.SAMLAuthProvider, multiple bool) string {
+	if pc.ConfigID != "" {
+		return pc.ConfigID
+	}
 	if !multiple {
 		return ""
 	}
