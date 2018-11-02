@@ -25,22 +25,17 @@ func SetProviders(authzAllowByDefault bool, z []AuthzProvider) {
 	allowAccessByDefault = authzAllowByDefault
 }
 
-// DoWithAuthzProviders provides concurrency-safe access to the authz providers currently registered.
-func DoWithAuthzProviders(f func(p []AuthzProvider) error) error {
-	authzMu.RLock()
-	defer authzMu.RUnlock()
-	return f(authzProviders)
-}
+// GetProviders returns the current authz parameters. It is concurrency-safe.
+func GetProviders() (authzAllowByDefault bool, providers []AuthzProvider) {
+	authzMu.Lock()
+	defer authzMu.Unlock()
 
-// NumAuthzProviders returns the number of authz providers currently registered
-func NumAuthzProviders() int {
-	authzMu.RLock()
-	defer authzMu.RUnlock()
-	return len(authzProviders)
-}
-
-// AllowByDefault returns true if and only if the current authz behavior is to allow access by
-// default to a repository that isn't covered by a registered authz provider.
-func AllowByDefault() bool {
-	return allowAccessByDefault
+	if authzProviders == nil {
+		return allowAccessByDefault, nil
+	}
+	providers = make([]AuthzProvider, len(authzProviders))
+	for i, p := range authzProviders {
+		providers[i] = p
+	}
+	return allowAccessByDefault, providers
 }
