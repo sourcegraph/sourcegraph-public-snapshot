@@ -25,7 +25,7 @@ const (
 //
 // In most cases, an authz provider represents a code host, because it is the source of truth for
 // repository permissions.
-type AuthzProvider interface {
+type Provider interface {
 	// Repos partitions the set of repositories into two sets: the set of repositories for which
 	// this AuthzProvider is the source of permissions and the set of repositories for which it is
 	// not. Each repository in the input set must be represented in exactly one of the output sets.

@@ -16,7 +16,7 @@ type authzFilter_Test struct {
 	description string
 
 	authzAllowByDefault bool
-	authzProviders      []authz.AuthzProvider
+	authzProviders      []authz.Provider
 
 	calls []authzFilter_call
 }
@@ -76,7 +76,7 @@ func Test_authzFilter(t *testing.T) {
 		{
 			description:         "1 authz provider, ext account exists",
 			authzAllowByDefault: true,
-			authzProviders: []authz.AuthzProvider{
+			authzProviders: []authz.Provider{
 				&MockAuthzProvider{
 					serviceID:   "https://gitlab.mine/",
 					serviceType: "gitlab",
@@ -230,7 +230,7 @@ func Test_authzFilter(t *testing.T) {
 		{
 			description:         "2 authz providers, ext accounts exist",
 			authzAllowByDefault: true,
-			authzProviders: []authz.AuthzProvider{
+			authzProviders: []authz.Provider{
 				&MockAuthzProvider{
 					serviceID:   "https://gitlab0.mine/",
 					serviceType: "gitlab",
@@ -328,7 +328,7 @@ func Test_authzFilter(t *testing.T) {
 		{
 			description:         "2 authz providers, ext account exists, authzAllowByDefault=false",
 			authzAllowByDefault: false,
-			authzProviders: []authz.AuthzProvider{
+			authzProviders: []authz.Provider{
 				&MockAuthzProvider{
 					serviceID:   "https://gitlab0.mine/",
 					serviceType: "gitlab",
@@ -400,7 +400,7 @@ func Test_authzFilter(t *testing.T) {
 		{
 			description:         "1 authz provider, ext account doesn't exist",
 			authzAllowByDefault: true,
-			authzProviders: []authz.AuthzProvider{
+			authzProviders: []authz.Provider{
 				&MockAuthzProvider{
 					serviceID:    "https://gitlab.mine/",
 					serviceType:  "gitlab",
@@ -528,7 +528,7 @@ func Test_authzFilter_createsNewUsers(t *testing.T) {
 		}
 		return nil, nil
 	}
-	authz.SetProviders(true, []authz.AuthzProvider{
+	authz.SetProviders(true, []authz.Provider{
 		&MockAuthzProvider{
 			serviceID:    "https://gitlab.mine/",
 			serviceType:  "gitlab",

@@ -41,7 +41,7 @@ type GitLabAuthzProvider struct {
 	cache             pcache
 }
 
-var _ authz.AuthzProvider = ((*GitLabAuthzProvider)(nil))
+var _ authz.Provider = ((*GitLabAuthzProvider)(nil))
 
 type cacheVal struct {
 	// ProjIDs is the set of project IDs to which a GitLab user has access.
