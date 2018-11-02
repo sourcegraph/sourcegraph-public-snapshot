@@ -193,8 +193,8 @@ func Test_providersFromConfig(t *testing.T) {
 				Gitlab: []*schema.GitLabConnection{
 					{
 						Authorization: &schema.Authorization{},
-						Url:   "https://gitlab-0.mine",
-						Token: "asdf",
+						Url:           "https://gitlab-0.mine",
+						Token:         "asdf",
 					},
 				},
 			},
