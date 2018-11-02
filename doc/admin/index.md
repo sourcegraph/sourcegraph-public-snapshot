@@ -27,4 +27,5 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [All integrations](../integration.md)
 - Migration guides:
   - [From OpenGrok to Sourcegraph](migration/opengrok.md)
+- [Pricing and Subscriptions](subscriptions/index.md)
 - [FAQ](faq.md)
