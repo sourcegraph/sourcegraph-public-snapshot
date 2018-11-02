@@ -46,7 +46,7 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 
 	// Authorization (i.e., permissions) providers
 	for _, gl := range cfg.Gitlab {
-		if gl.Authz == nil {
+		if gl.Authorization == nil {
 			continue
 		}
 
@@ -55,17 +55,17 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 			seriousProblems = append(seriousProblems, fmt.Sprintf("Could not parse URL for GitLab instance %q: %s", gl.Url, err))
 			continue // omit authz provider if could not parse URL
 		}
-		if innerMatcher := strings.TrimSuffix(strings.TrimPrefix(gl.Authz.Matcher, "*/"), "/*"); strings.Contains(innerMatcher, "*") {
+		if innerMatcher := strings.TrimSuffix(strings.TrimPrefix(gl.Authorization.Matcher, "*/"), "/*"); strings.Contains(innerMatcher, "*") {
 			seriousProblems = append(seriousProblems, fmt.Sprintf("GitLab connection %q `permission.matcher` includes an interior wildcard \"*\", which will be interpreted as a string literal, rather than a pattern matcher. Only the prefix \"*/\" or the suffix \"/*\" is supported for pattern matching.", gl.Url))
 		}
 
 		var ttl time.Duration
-		if gl.Authz.Ttl == "" {
+		if gl.Authorization.Ttl == "" {
 			ttl = time.Hour * 3
 		} else {
-			ttl, err = time.ParseDuration(gl.Authz.Ttl)
+			ttl, err = time.ParseDuration(gl.Authorization.Ttl)
 			if err != nil {
-				warnings = append(warnings, fmt.Sprintf("Could not parse time duration %q, falling back to 3 hours.", gl.Authz.Ttl))
+				warnings = append(warnings, fmt.Sprintf("Could not parse time duration %q, falling back to 3 hours.", gl.Authorization.Ttl))
 				ttl = time.Hour * 3
 			}
 		}
@@ -74,15 +74,15 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 			BaseURL:   glURL,
 			SudoToken: gl.Token,
 			AuthnConfigID: auth.ProviderConfigID{
-				ID:   gl.Authz.AuthnProvider.ConfigID,
-				Type: gl.Authz.AuthnProvider.Type,
+				ID:   gl.Authorization.AuthnProvider.ConfigID,
+				Type: gl.Authorization.AuthnProvider.Type,
 			},
-			GitLabProvider: gl.Authz.AuthnProvider.GitlabProvider,
-			MatchPattern:   gl.Authz.Matcher,
+			GitLabProvider: gl.Authorization.AuthnProvider.GitlabProvider,
+			MatchPattern:   gl.Authorization.Matcher,
 			CacheTTL:       ttl,
 			MockCache:      nil,
 		}
-		if gl.Authz.AuthnProvider.ConfigID == "" {
+		if gl.Authorization.AuthnProvider.ConfigID == "" {
 			// Note: In the future when we support sign-in via GitLab, we can check if that is
 			// enabled and instead fall back to that.
 			if env.InsecureDev {
@@ -91,25 +91,25 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 			} else {
 				seriousProblems = append(seriousProblems, "`authz.authnProvider.configID` was empty. No users will be granted access to these repositories.")
 			}
-		} else if gl.Authz.AuthnProvider.Type == "" {
+		} else if gl.Authorization.AuthnProvider.Type == "" {
 			seriousProblems = append(seriousProblems, "`authz.authnProvider.type` was not specified, which means GitLab users cannot be resolved.")
-		} else if gl.Authz.AuthnProvider.GitlabProvider == "" {
+		} else if gl.Authorization.AuthnProvider.GitlabProvider == "" {
 			seriousProblems = append(seriousProblems, "`authz.authnProvider.gitlabProvider` was not specified, which means GitLab users cannot be resolved.")
 		} else {
 			// Best-effort determine if the authz.authnConfigID field refers to an item in auth.provider
 			found := false
 			for _, p := range cfg.AuthProviders {
-				if p.Openidconnect != nil && p.Openidconnect.ConfigID == gl.Authz.AuthnProvider.ConfigID && p.Openidconnect.Type == gl.Authz.AuthnProvider.Type {
+				if p.Openidconnect != nil && p.Openidconnect.ConfigID == gl.Authorization.AuthnProvider.ConfigID && p.Openidconnect.Type == gl.Authorization.AuthnProvider.Type {
 					found = true
 					break
 				}
-				if p.Saml != nil && p.Saml.ConfigID == gl.Authz.AuthnProvider.ConfigID && p.Saml.Type == gl.Authz.AuthnProvider.Type {
+				if p.Saml != nil && p.Saml.ConfigID == gl.Authorization.AuthnProvider.ConfigID && p.Saml.Type == gl.Authorization.AuthnProvider.Type {
 					found = true
 					break
 				}
 			}
 			if !found {
-				seriousProblems = append(seriousProblems, fmt.Sprintf("Could not find item in `auth.providers` with config ID %q and type %q", gl.Authz.AuthnProvider.ConfigID, gl.Authz.AuthnProvider.Type))
+				seriousProblems = append(seriousProblems, fmt.Sprintf("Could not find item in `auth.providers` with config ID %q and type %q", gl.Authorization.AuthnProvider.ConfigID, gl.Authorization.AuthnProvider.Type))
 			}
 		}
 

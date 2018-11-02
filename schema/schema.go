@@ -91,8 +91,8 @@ type AuthnProvider struct {
 	Type           string `json:"type"`
 }
 
-// Authz description: If non-null, enables GitLab authz checks. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
-type Authz struct {
+// Authorization description: If non-null, enables GitLab permission checks. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
+type Authorization struct {
 	AuthnProvider AuthnProvider `json:"authnProvider"`
 	Matcher       string        `json:"matcher,omitempty"`
 	Ttl           string        `json:"ttl,omitempty"`
@@ -164,14 +164,14 @@ type GitHubConnection struct {
 	Url                         string   `json:"url"`
 }
 type GitLabConnection struct {
-	Authz                       *Authz   `json:"authz,omitempty"`
-	Certificate                 string   `json:"certificate,omitempty"`
-	GitURLType                  string   `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool     `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string `json:"projectQuery,omitempty"`
-	RepositoryPathPattern       string   `json:"repositoryPathPattern,omitempty"`
-	Token                       string   `json:"token"`
-	Url                         string   `json:"url"`
+	Authorization               *Authorization `json:"authorization,omitempty"`
+	Certificate                 string         `json:"certificate,omitempty"`
+	GitURLType                  string         `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool           `json:"initialRepositoryEnablement,omitempty"`
+	ProjectQuery                []string       `json:"projectQuery,omitempty"`
+	RepositoryPathPattern       string         `json:"repositoryPathPattern,omitempty"`
+	Token                       string         `json:"token"`
+	Url                         string         `json:"url"`
 }
 type GitoliteConnection struct {
 	Blacklist                  string `json:"blacklist,omitempty"`
