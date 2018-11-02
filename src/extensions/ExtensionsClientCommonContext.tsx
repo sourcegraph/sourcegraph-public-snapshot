@@ -106,8 +106,8 @@ function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsA
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
                         '\n\n' +
-                        `[**Sign into Sourcegraph ${
-                            u.hostname === 'sourcegraph.com' ? '' : `on ${u.host}`
+                        `[**Sign into Sourcegraph${
+                            u.hostname === 'sourcegraph.com' ? '' : ` on ${u.host}`
                         }**](${`${u.href.replace(/\/$/, '')}/sign-in`})`
                 )
             }
