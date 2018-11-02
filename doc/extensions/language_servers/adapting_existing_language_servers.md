@@ -1,6 +1,8 @@
 # Adapting a language server for use with Sourcegraph'
 
-Sourcegraph provides [code intelligence](index.md) through extensions. One way for extensions to provide code intelligence is to connect to a language server that speaks the Language Server Protocol (LSP) standard. However, there are a few assumptions that a language server targeting editor clients may make that are not true in a distributed service environment like Sourcegraph. This documentation page is intended for language server developers who are adapting an existing language server (or building a new language server) to provide code intelligence on Sourcegraph.
+Servers that speak the Language Server Protocol (LSP) can provide [code intelligence](index.md) everywhere that you view code (on Sourcegraph, on GitHub and other code hosts) by creating a [Sourcegraph extension](https://github.com/sourcegraph/sourcegraph-extension-api).
+
+This documentation page is intended for language server developers who are adapting an existing language server (or building a new language server) to provide code intelligence on Sourcegraph, because there are a few extra considerations when running language servers in a distributed service environment like Sourcegraph. 
 
 ## Connection protocol
 
