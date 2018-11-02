@@ -126,6 +126,14 @@ func Watch(f func()) {
 	defaultClient.Watch(f)
 }
 
+// TODO(slimsag): Remove this!
+func AsyncWatch(f func()) {
+	go func() {
+		time.Sleep(5 * time.Second)
+		defaultClient.Watch(f)
+	}()
+}
+
 // Watch calls the given function in a separate goroutine whenever the
 // configuration has changed. The new configuration can be received by calling
 // conf.Get.
