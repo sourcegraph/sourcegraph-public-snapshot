@@ -56,7 +56,8 @@ func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p a
 		currentUser *types.User
 		accts       []*extsvc.ExternalAccount
 	)
-	if authz.NumAuthzProviders() > 0 && actor.FromContext(ctx).IsAuthenticated() {
+	authzAllowByDefault, authzProviders := authz.GetProviders()
+	if len(authzProviders) > 0 && actor.FromContext(ctx).IsAuthenticated() {
 		var err error
 		currentUser, err = Users.GetByCurrentAuthUser(ctx)
 		if err != nil {
@@ -78,57 +79,51 @@ func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p a
 
 	// Walk through all authz providers, checking repo permissions against each. If any own a given
 	// repo, we use its permissions for that repo.
-	err = authz.DoWithAuthzProviders(func(authzProviders []authz.AuthzProvider) error {
-		for _, authzProvider := range authzProviders {
-			if len(unverified) == 0 {
+	for _, authzProvider := range authzProviders {
+		if len(unverified) == 0 {
+			break
+		}
+
+		// determine external account to use
+		var providerAcct *extsvc.ExternalAccount
+		for _, acct := range accts {
+			if acct.ServiceID == authzProvider.ServiceID() && acct.ServiceType == authzProvider.ServiceType() {
+				providerAcct = acct
 				break
 			}
-
-			// determine external account to use
-			var providerAcct *extsvc.ExternalAccount
-			for _, acct := range accts {
-				if acct.ServiceID == authzProvider.ServiceID() && acct.ServiceType == authzProvider.ServiceType() {
-					providerAcct = acct
-					break
-				}
-			}
-			if providerAcct == nil && currentUser != nil { // no existing external account for authz provider
-				if pr, err := authzProvider.FetchAccount(ctx, currentUser, accts); err == nil {
-					providerAcct = pr
-					if providerAcct != nil {
-						err := ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, providerAcct.ExternalAccountSpec, providerAcct.ExternalAccountData)
-						if err != nil {
-							return err
-						}
-					}
-				} else {
-					log15.Warn("Could not fetch authz provider account for user", "username", currentUser.Username, "authzProvider", authzProvider.ServiceID(), "error", err)
-				}
-			}
-
-			// determine which repos "belong" to this authz provider
-			myUnverified, nextUnverified := authzProvider.Repos(ctx, unverified)
-
-			// check the perms on those repos
-			perms, err := authzProvider.RepoPerms(ctx, providerAcct, myUnverified)
-			if err != nil {
-				return err
-			}
-			for unverifiedRepo := range myUnverified {
-				if repoPerms, ok := perms[unverifiedRepo.URI]; ok && repoPerms[p] {
-					accepted[unverifiedRepo.URI] = struct{}{}
-				}
-			}
-			// continue checking repos that didn't belong to this authz provider
-			unverified = nextUnverified
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		if providerAcct == nil && currentUser != nil { // no existing external account for authz provider
+			if pr, err := authzProvider.FetchAccount(ctx, currentUser, accts); err == nil {
+				providerAcct = pr
+				if providerAcct != nil {
+					err := ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, providerAcct.ExternalAccountSpec, providerAcct.ExternalAccountData)
+					if err != nil {
+						return nil, err
+					}
+				}
+			} else {
+				log15.Warn("Could not fetch authz provider account for user", "username", currentUser.Username, "authzProvider", authzProvider.ServiceID(), "error", err)
+			}
+		}
+
+		// determine which repos "belong" to this authz provider
+		myUnverified, nextUnverified := authzProvider.Repos(ctx, unverified)
+
+		// check the perms on those repos
+		perms, err := authzProvider.RepoPerms(ctx, providerAcct, myUnverified)
+		if err != nil {
+			return nil, err
+		}
+		for unverifiedRepo := range myUnverified {
+			if repoPerms, ok := perms[unverifiedRepo.URI]; ok && repoPerms[p] {
+				accepted[unverifiedRepo.URI] = struct{}{}
+			}
+		}
+		// continue checking repos that didn't belong to this authz provider
+		unverified = nextUnverified
 	}
 
-	if authz.AllowByDefault() {
+	if authzAllowByDefault {
 		for r := range unverified {
 			accepted[r.URI] = struct{}{}
 		}
