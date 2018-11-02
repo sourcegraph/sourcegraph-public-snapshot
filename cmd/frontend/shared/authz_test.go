@@ -38,7 +38,7 @@ func (m newGitLabAuthzProviderParams) ServiceType() string {
 }
 
 func Test_providersFromConfig(t *testing.T) {
-	NewGitLabAuthzProvider = func(op gitlab.GitLabAuthzProviderOp) authz.AuthzProvider {
+	NewGitLabAuthzProvider = func(op gitlab.GitLabAuthzProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return newGitLabAuthzProviderParams{op}
 	}
@@ -47,7 +47,7 @@ func Test_providersFromConfig(t *testing.T) {
 		description                  string
 		cfg                          schema.SiteConfiguration
 		expAuthzAllowAccessByDefault bool
-		expAuthzProviders            []authz.AuthzProvider
+		expAuthzProviders            []authz.Provider
 		expSeriousProblems           []string
 		expWarnings                  []string
 	}{
@@ -79,7 +79,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: []authz.AuthzProvider{
+			expAuthzProviders: []authz.Provider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
 						BaseURL:        mustURLParse(t, "https://gitlab.mine"),
@@ -135,7 +135,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: []authz.AuthzProvider{
+			expAuthzProviders: []authz.Provider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
 						BaseURL:        mustURLParse(t, "https://gitlab-0.mine"),
@@ -174,7 +174,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expAuthzProviders: []authz.AuthzProvider{
+			expAuthzProviders: []authz.Provider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
 						BaseURL:        mustURLParse(t, "https://gitlab-0.mine"),
@@ -199,7 +199,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expAuthzProviders: []authz.AuthzProvider{
+			expAuthzProviders: []authz.Provider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab-0.mine"),
@@ -252,7 +252,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expAuthzProviders: []authz.AuthzProvider{
+			expAuthzProviders: []authz.Provider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
 						BaseURL:        mustURLParse(t, "https://gitlab-0.mine"),

@@ -32,7 +32,7 @@ func init() {
 // authz.allowAccessByDefault to false. "Warnings" are all other validation problems.
 func providersFromConfig(cfg *schema.SiteConfiguration) (
 	allowAccessByDefault bool,
-	authzProviders []authz.AuthzProvider,
+	authzProviders []authz.Provider,
 	seriousProblems []string,
 	warnings []string,
 ) {
@@ -120,6 +120,6 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 }
 
 // NewGitLabAuthzProvider is a mockable constructor for new GitLabAuthzProvider instances.
-var NewGitLabAuthzProvider = func(op permgl.GitLabAuthzProviderOp) authz.AuthzProvider {
+var NewGitLabAuthzProvider = func(op permgl.GitLabAuthzProviderOp) authz.Provider {
 	return permgl.NewGitLabAuthzProvider(op)
 }

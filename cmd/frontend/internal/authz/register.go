@@ -10,14 +10,14 @@ var (
 	allowAccessByDefault bool = true
 
 	// authzProviders is the currently registered list of authorization providers.
-	authzProviders []AuthzProvider
+	authzProviders []Provider
 
 	// authzMu protects access to both allowAccessByDefault and authzProviders
 	authzMu sync.RWMutex
 )
 
 // SetProviders sets the current authz parameters. It is concurrency-safe.
-func SetProviders(authzAllowByDefault bool, z []AuthzProvider) {
+func SetProviders(authzAllowByDefault bool, z []Provider) {
 	authzMu.Lock()
 	defer authzMu.Unlock()
 
@@ -26,14 +26,14 @@ func SetProviders(authzAllowByDefault bool, z []AuthzProvider) {
 }
 
 // GetProviders returns the current authz parameters. It is concurrency-safe.
-func GetProviders() (authzAllowByDefault bool, providers []AuthzProvider) {
+func GetProviders() (authzAllowByDefault bool, providers []Provider) {
 	authzMu.Lock()
 	defer authzMu.Unlock()
 
 	if authzProviders == nil {
 		return allowAccessByDefault, nil
 	}
-	providers = make([]AuthzProvider, len(authzProviders))
+	providers = make([]Provider, len(authzProviders))
 	for i, p := range authzProviders {
 		providers[i] = p
 	}
