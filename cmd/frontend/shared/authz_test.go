@@ -46,7 +46,7 @@ func Test_providersFromConfig(t *testing.T) {
 	tests := []struct {
 		description                  string
 		cfg                          schema.SiteConfiguration
-		expPermissionsAllowByDefault bool
+		expAuthzAllowAccessByDefault bool
 		expAuthzProviders            []authz.AuthzProvider
 		expSeriousProblems           []string
 		expWarnings                  []string
@@ -78,7 +78,7 @@ func Test_providersFromConfig(t *testing.T) {
 					},
 				},
 			},
-			expPermissionsAllowByDefault: true,
+			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: []authz.AuthzProvider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
@@ -134,7 +134,7 @@ func Test_providersFromConfig(t *testing.T) {
 					},
 				},
 			},
-			expPermissionsAllowByDefault: true,
+			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: []authz.AuthzProvider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
@@ -173,7 +173,7 @@ func Test_providersFromConfig(t *testing.T) {
 					},
 				},
 			},
-			expPermissionsAllowByDefault: false,
+			expAuthzAllowAccessByDefault: false,
 			expAuthzProviders: []authz.AuthzProvider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
@@ -198,7 +198,7 @@ func Test_providersFromConfig(t *testing.T) {
 					},
 				},
 			},
-			expPermissionsAllowByDefault: false,
+			expAuthzAllowAccessByDefault: false,
 			expAuthzProviders: []authz.AuthzProvider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
@@ -206,11 +206,11 @@ func Test_providersFromConfig(t *testing.T) {
 						AuthnConfigID:     auth.ProviderConfigID{},
 						SudoToken:         "asdf",
 						CacheTTL:          3 * time.Hour,
-						UseNativeUsername: true,
+						UseNativeUsername: false,
 					},
 				},
 			},
-			expSeriousProblems: []string{"Security issue: `authz.authnProvider.configID` was empty. Falling back to using username equality for permissions, which is insecure."},
+			expSeriousProblems: []string{"`authz.authnProvider.configID` was empty. No users will be granted access to these repositories."},
 		},
 		{
 			description: "1 GitLab with permissions disabled",
@@ -222,7 +222,7 @@ func Test_providersFromConfig(t *testing.T) {
 					},
 				},
 			},
-			expPermissionsAllowByDefault: true,
+			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders:            nil,
 			expSeriousProblems:           nil,
 		},
@@ -251,7 +251,7 @@ func Test_providersFromConfig(t *testing.T) {
 					},
 				},
 			},
-			expPermissionsAllowByDefault: false,
+			expAuthzAllowAccessByDefault: false,
 			expAuthzProviders: []authz.AuthzProvider{
 				newGitLabAuthzProviderParams{
 					Op: gitlab.GitLabAuthzProviderOp{
@@ -270,9 +270,9 @@ func Test_providersFromConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Logf("Test %q", test.description)
-		permissionsAllowByDefault, authzProviders, seriousProblems, warnings := providersFromConfig(&test.cfg)
-		if permissionsAllowByDefault != test.expPermissionsAllowByDefault {
-			t.Errorf("permissionsAllowByDefault: (actual) %v != (expected) %v", asJSON(t, permissionsAllowByDefault), asJSON(t, test.expPermissionsAllowByDefault))
+		allowAccessByDefault, authzProviders, seriousProblems, warnings := providersFromConfig(&test.cfg)
+		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
+			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
 		if !reflect.DeepEqual(authzProviders, test.expAuthzProviders) {
 			t.Errorf("authzProviders: (actual) %+v != (expected) %+v", asJSON(t, authzProviders), asJSON(t, test.expAuthzProviders))

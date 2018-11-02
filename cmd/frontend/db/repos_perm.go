@@ -28,12 +28,9 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*typ
 		return repos, nil
 	}
 
-	filteredURIs, acceptAll, err := getFilteredRepoURIs(ctx, authz.ToRepos(repos), p)
+	filteredURIs, err := getFilteredRepoURIs(ctx, authz.ToRepos(repos), p)
 	if err != nil {
 		return nil, err
-	}
-	if acceptAll {
-		return repos, nil
 	}
 
 	filteredRepos := make([]*types.Repo, 0, len(filteredURIs))
@@ -54,9 +51,7 @@ func isInternalActor(ctx context.Context) bool {
 	return actor.FromContext(ctx).Internal
 }
 
-func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p authz.Perm) (
-	accepted map[api.RepoURI]struct{}, acceptAll bool, err error,
-) {
+func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p authz.Perm) (accepted map[api.RepoURI]struct{}, err error) {
 	var (
 		currentUser *types.User
 		accts       []*extsvc.ExternalAccount
@@ -65,13 +60,13 @@ func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p a
 		var err error
 		currentUser, err = Users.GetByCurrentAuthUser(ctx)
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 		accts, err = ExternalAccounts.List(ctx, ExternalAccountsListOptions{
 			UserID: currentUser.ID,
 		})
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 	}
 
@@ -89,7 +84,7 @@ func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p a
 				break
 			}
 
-			// Determine external account to use
+			// determine external account to use
 			var providerAcct *extsvc.ExternalAccount
 			for _, acct := range accts {
 				if acct.ServiceID == authzProvider.ServiceID() && acct.ServiceType == authzProvider.ServiceType() {
@@ -111,28 +106,26 @@ func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p a
 				}
 			}
 
-			perms, err := authzProvider.RepoPerms(ctx, providerAcct, unverified)
+			// determine which repos "belong" to this authz provider
+			myUnverified, nextUnverified := authzProvider.Repos(ctx, unverified)
+
+			// check the perms on those repos
+			perms, err := authzProvider.RepoPerms(ctx, providerAcct, myUnverified)
 			if err != nil {
 				return err
 			}
-
-			newUnverified := make(map[authz.Repo]struct{})
-			for unverifiedRepo := range unverified {
-				repoPerms, ok := perms[unverifiedRepo.URI]
-				if !ok {
-					newUnverified[unverifiedRepo] = struct{}{}
-					continue
-				}
-				if repoPerms[p] {
+			for unverifiedRepo := range myUnverified {
+				if repoPerms, ok := perms[unverifiedRepo.URI]; ok && repoPerms[p] {
 					accepted[unverifiedRepo.URI] = struct{}{}
 				}
 			}
-			unverified = newUnverified
+			// continue checking repos that didn't belong to this authz provider
+			unverified = nextUnverified
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	if authz.AllowByDefault() {
@@ -141,5 +134,5 @@ func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p a
 		}
 	}
 
-	return accepted, false, nil
+	return accepted, nil
 }

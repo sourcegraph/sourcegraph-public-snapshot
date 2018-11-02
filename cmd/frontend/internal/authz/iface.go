@@ -42,9 +42,8 @@ type AuthzProvider interface {
 
 	// RepoPerms accepts an external user account and a set of repos. The external user account
 	// identifies the user to the authz source (e.g., the code host). The return value is a map of
-	// repository permissions for a subset of the input repos that would be returned by the `Repos`
-	// method. If a repo does not exist as a key in the returned map, the repo's permissions are not
-	// determined by this authz provider.
+	// repository permissions. If a repo in the input set is missing from the returned permissions
+	// map, that means "no permissions" on that repo.
 	//
 	// Implementations should handle any external account whose ServiceID and ServiceType values
 	// match the `ServiceID()` and `ServiceType()` return values of this authz provider. The caller
@@ -71,7 +70,8 @@ type AuthzProvider interface {
 	// external account. Specifically, they should not try to get the currently authenticated user
 	// from the context parameter.
 	//
-	// If the `user` parameter is nil, implementations should return (nil, nil).
+	// The `user` argument should always be non-nil. If no external account can be computed for the
+	// provided user, implementations should return nil, nil.
 	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error)
 
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
