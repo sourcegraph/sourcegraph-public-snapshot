@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -12,8 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
-// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived from the site config
-var cloneURLResolvers []*cloneURLResolver
+var (
+	// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived from the site config
+	cloneURLResolvers          atomic.Value
+	cloneURLResolversReadyOnce sync.Once
+	cloneURLResolversReady     = make(chan struct{})
+)
 
 func init() {
 	conf.ContributeValidator(func(c conftypes.SiteConfiguration) (problems []string) {
@@ -25,7 +31,6 @@ func init() {
 		return
 	})
 
-	// TODO(slimsag): FIXME!
 	conf.AsyncWatch(func() {
 		cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
 		newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
@@ -41,7 +46,10 @@ func init() {
 				to:   c.To,
 			}
 		}
-		cloneURLResolvers = newCloneURLResolvers
+		cloneURLResolvers.Store(newCloneURLResolvers)
+		cloneURLResolversReadyOnce.Do(func() {
+			close(cloneURLResolversReady)
+		})
 	})
 }
 
@@ -53,7 +61,8 @@ type cloneURLResolver struct {
 // customCloneURLToRepoURI maps from clone URL to repo URI using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
 func customCloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI) {
-	for _, r := range cloneURLResolvers {
+	<-cloneURLResolversReady
+	for _, r := range cloneURLResolvers.Load().([]*cloneURLResolver) {
 		if uri := mapString(r.from, cloneURL, r.to); uri != "" {
 			return api.RepoURI(uri)
 		}
