@@ -14,7 +14,7 @@ type SiteConfiguration struct {
 	schema.CoreSiteConfiguration
 }
 
-func ParseBasic(data string) (*schema.BasicSiteConfiguration, error) {
+func ParseBasic(data string) (interface{}, error) {
 	var basic schema.BasicSiteConfiguration
 
 	err := tolerantUnmarshal(data, &basic)
@@ -30,7 +30,7 @@ func ParseBasic(data string) (*schema.BasicSiteConfiguration, error) {
 	return &basic, nil
 }
 
-func ParseCore(data string) (*schema.CoreSiteConfiguration, error) {
+func ParseCore(data string) (interface{}, error) {
 	var core schema.CoreSiteConfiguration
 
 	err := tolerantUnmarshal(data, &core)
@@ -204,4 +204,3 @@ func NeedRestartToApply(before, after *SiteConfiguration) bool {
 	}
 	return false
 }
-

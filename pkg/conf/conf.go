@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals/confserver"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 )
 
@@ -47,8 +48,8 @@ func getMode() configurationMode {
 }
 
 func init() {
-	clientBasicStore := store.NewBasicStore()
-	clientCoreStore := store.NewCoreStore()
+	clientBasicStore := store.New()
+	clientCoreStore := store.New()
 
 	defaultClient = &client{
 		basicStore:   clientBasicStore,
@@ -68,13 +69,13 @@ func init() {
 			// This is an empty configuration to run test cases.
 		}`
 
-		_, err := clientBasicStore.MaybeUpdate(dummyConfig)
+		_, err := clientBasicStore.MaybeUpdate(dummyConfig, conftypes.ParseBasic)
 
 		if err != nil {
 			log.Fatalf("received error when setting up the basic store for the default client during test, err :%s", err)
 		}
 
-		_, err = clientCoreStore.MaybeUpdate(dummyConfig)
+		_, err = clientCoreStore.MaybeUpdate(dummyConfig, conftypes.ParseCore)
 
 		if err != nil {
 			log.Fatalf("received error when setting up the basic store for the default client during test, err :%s", err)

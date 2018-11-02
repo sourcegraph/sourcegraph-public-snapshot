@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Server provides access and manages modifications to the site configuration.
@@ -18,8 +19,8 @@ type Server struct {
 	basicFilePath string
 	coreFilePath  string
 
-	basicStore *store.BasicStore
-	coreStore  *store.CoreStore
+	basicStore *store.Store
+	coreStore  *store.Store
 
 	// fileWriteBasic signals when our app writes to the configuration file. The
 	// secondary channel is closed when server.RawBasic() would return the new
@@ -44,8 +45,8 @@ func NewServer(basicFilePath, coreFilePath string) *Server {
 	return &Server{
 		basicFilePath:  basicFilePath,
 		coreFilePath:   coreFilePath,
-		basicStore:     store.NewBasicStore(),
-		coreStore:      store.NewCoreStore(),
+		basicStore:     store.New(),
+		coreStore:      store.New(),
 		fileWriteBasic: make(chan chan struct{}, 1),
 		fileWriteCore:  make(chan chan struct{}, 1),
 	}
@@ -156,7 +157,7 @@ func (s *Server) updateCoreFromDisk() error {
 		return err
 	}
 
-	configChange, err := s.coreStore.MaybeUpdate(rawConfig)
+	configChange, err := s.coreStore.MaybeUpdate(rawConfig, conftypes.ParseCore)
 	if err != nil {
 		return err
 	}
@@ -173,15 +174,14 @@ func (s *Server) updateCoreFromDisk() error {
 
 	// TODO@ggilmore: This nil massaging is ugly. Revisit this.
 	oldSC := &conftypes.SiteConfiguration{
-		CoreSiteConfiguration: *configChange.Old,
+		CoreSiteConfiguration: *configChange.Old.(*schema.CoreSiteConfiguration),
 	}
 
 	newSC := &conftypes.SiteConfiguration{}
 
 	if configChange.New != nil {
-		newSC.CoreSiteConfiguration = *configChange.New
+		newSC.CoreSiteConfiguration = *configChange.New.(*schema.CoreSiteConfiguration)
 	}
-
 
 	// Update global "needs restart" state.
 	if conftypes.NeedRestartToApply(oldSC, newSC) {
@@ -197,7 +197,7 @@ func (s *Server) updateBasicFromDisk() error {
 		return err
 	}
 
-	configChange, err := s.basicStore.MaybeUpdate(rawConfig)
+	configChange, err := s.basicStore.MaybeUpdate(rawConfig, conftypes.ParseBasic)
 	if err != nil {
 		return err
 	}
@@ -214,13 +214,13 @@ func (s *Server) updateBasicFromDisk() error {
 
 	// TODO@ggilmore: This nil massaging is ugly. Revisit this.
 	oldSC := &conftypes.SiteConfiguration{
-		BasicSiteConfiguration: *configChange.Old,
+		BasicSiteConfiguration: *configChange.Old.(*schema.BasicSiteConfiguration),
 	}
 
 	newSC := &conftypes.SiteConfiguration{}
 
 	if configChange.New != nil {
-		newSC.BasicSiteConfiguration = *configChange.New
+		newSC.BasicSiteConfiguration = *configChange.New.(*schema.BasicSiteConfiguration)
 	}
 
 	// Update global "needs restart" state.

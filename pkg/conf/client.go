@@ -11,16 +11,16 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type client struct {
-	basicStore   *store.BasicStore
+	basicStore   *store.Store
 	basicFetcher basicFetcher
 
-	coreStore   *store.CoreStore
+	coreStore   *store.Store
 	coreFetcher coreFetcher
 
 	watchersMu sync.Mutex
@@ -28,8 +28,6 @@ type client struct {
 }
 
 var defaultClient *client
-
-
 
 // Get returns a copy of the configuration. The returned value should NEVER be
 // modified.
@@ -67,8 +65,8 @@ func Get() *conftypes.SiteConfiguration {
 // is running.
 func (c *client) Get() *conftypes.SiteConfiguration {
 
-	// TODO@ggilmore: Figure out whether or not dealing with nulls in this way is okay 
-	// - this only to deal with accessing sub fields w/ struct embedding and pointers 
+	// TODO@ggilmore: Figure out whether or not dealing with nulls in this way is okay
+	// - this only to deal with accessing sub fields w/ struct embedding and pointers
 	basic := c.basicStore.LastValid()
 	if basic == nil {
 		basic = &schema.BasicSiteConfiguration{}
@@ -79,8 +77,8 @@ func (c *client) Get() *conftypes.SiteConfiguration {
 		core = &schema.CoreSiteConfiguration{}
 	}
 	return &conftypes.SiteConfiguration{
-		BasicSiteConfiguration: *basic,
-		CoreSiteConfiguration:  *core,
+		BasicSiteConfiguration: *basic.(*schema.BasicSiteConfiguration),
+		CoreSiteConfiguration:  *core.(*schema.CoreSiteConfiguration),
 	}
 }
 
@@ -199,7 +197,7 @@ func (c *client) fetchAndUpdateBasic() error {
 		return errors.Wrap(err, "unable to fetch new basic configuration")
 	}
 
-	configChange, err := c.basicStore.MaybeUpdate(newRawConfig)
+	configChange, err := c.basicStore.MaybeUpdate(newRawConfig, conftypes.ParseBasic)
 	if err != nil {
 		return errors.Wrap(err, "unable to update new basic configuration")
 	}
@@ -216,7 +214,7 @@ func (c *client) fetchAndUpdateCore() error {
 		return errors.Wrap(err, "unable to fetch new core configuration")
 	}
 
-	configChange, err := c.coreStore.MaybeUpdate(newRawConfig)
+	configChange, err := c.coreStore.MaybeUpdate(newRawConfig, conftypes.ParseCore)
 	if err != nil {
 		return errors.Wrap(err, "unable to update new core configuration")
 	}
@@ -276,4 +274,3 @@ type passthroughCoreFetcherFrontendOnly struct{}
 func (p passthroughCoreFetcherFrontendOnly) FetchCoreConfig() (string, error) {
 	return globals.ConfigurationServerFrontendOnly.RawCore(), nil
 }
-
