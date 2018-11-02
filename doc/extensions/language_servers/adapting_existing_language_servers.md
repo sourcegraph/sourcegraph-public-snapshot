@@ -1,4 +1,4 @@
-# Adapting a language server for use with Sourcegraph'
+# Adapting a language server for use with Sourcegraph
 
 Servers that speak the Language Server Protocol (LSP) can provide [code intelligence](index.md) everywhere that you view code (on Sourcegraph, on GitHub and other code hosts) by creating a [Sourcegraph extension](https://github.com/sourcegraph/sourcegraph-extension-api).
 
