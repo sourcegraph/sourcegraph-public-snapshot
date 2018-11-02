@@ -681,8 +681,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
-			// resultTypes = []string{"file", "path", "repo", "ref", "issues"}
-			resultTypes = []string{"issues"}
+			resultTypes = []string{"file", "path", "repo", "ref", "issues"}
+			// resultTypes = []string{"issues"}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
