@@ -95,6 +95,7 @@ var configurationServerFrontendOnly *Server
 // server. This should only be invoked by the frontend, or else a panic will
 // occur. This function should only ever be called once.
 func InitConfigurationServerFrontendOnly() *Server {
+	mode := getMode()
 	if mode != modeServer {
 		panic("cannot call this function except in server mode")
 	}
