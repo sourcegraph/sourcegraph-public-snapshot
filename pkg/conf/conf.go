@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sync/atomic"
 
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
@@ -93,7 +92,7 @@ func init() {
 var (
 	configurationServerFrontendOnly *Server
 
-	configurationServerFrontendOnlyInitialized int32
+	configurationServerFrontendOnlyInitialized = make(chan struct{})
 )
 
 // InitConfigurationServerFrontendOnly creates and returns a configuration
@@ -114,7 +113,7 @@ func InitConfigurationServerFrontendOnly() *Server {
 	defaultClient.coreFetcher = passthroughCoreFetcherFrontendOnly{}
 	go defaultClient.continuouslyUpdate()
 
-	atomic.AddInt32(&configurationServerFrontendOnlyInitialized, 1)
+	close(configurationServerFrontendOnlyInitialized)
 	configurationServerFrontendOnly = server
 	return server
 }
@@ -124,8 +123,11 @@ func detectDeadlock() {
 	if mode != modeServer {
 		return
 	}
-	if atomic.LoadInt32(&configurationServerFrontendOnlyInitialized) == 0 {
-		panic("deadlock detected")
+	select {
+	case <-configurationServerFrontendOnlyInitialized:
+		// Configuration server is initialized.
+	default:
+		panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use conf.AsyncWatch instead)")
 	}
 }
 

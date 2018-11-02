@@ -126,10 +126,10 @@ func Watch(f func()) {
 	defaultClient.Watch(f)
 }
 
-// TODO(slimsag): Remove this!
+// AsyncWatch is like Watch, except it returns immediately.
 func AsyncWatch(f func()) {
 	go func() {
-		time.Sleep(5 * time.Second)
+		<-configurationServerFrontendOnlyInitialized
 		defaultClient.Watch(f)
 	}()
 }
