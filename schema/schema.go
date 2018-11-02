@@ -94,7 +94,6 @@ type AuthnProvider struct {
 // Authorization description: If non-null, enables GitLab permission checks. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
 type Authorization struct {
 	AuthnProvider AuthnProvider `json:"authnProvider"`
-	Matcher       string        `json:"matcher,omitempty"`
 	Ttl           string        `json:"ttl,omitempty"`
 }
 type BitbucketServerConnection struct {

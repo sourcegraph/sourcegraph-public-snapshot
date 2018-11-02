@@ -3,12 +3,10 @@ package gitlab
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
@@ -34,7 +32,6 @@ type GitLabAuthzProvider struct {
 	client            *gitlab.Client
 	clientURL         *url.URL
 	codeHost          *gitlab.CodeHost
-	matchPattern      string
 	gitlabProvider    string
 	authnConfigID     auth.ProviderConfigID
 	useNativeUsername bool
@@ -65,12 +62,6 @@ type GitLabAuthzProviderOp struct {
 	// 🚨 SECURITY: This value contains secret information that must not be shown to non-site-admins.
 	SudoToken string
 
-	// MatchPattern is a prefix and/or suffix matching string (suffixed with "/*" or prefixed with
-	// "*/", respectively) that matchces repositories that belong to the GitLab instance. This is
-	// optional. If empty, the `service_type` and `service_id` values of repo rows in the DB will be
-	// used.
-	MatchPattern string
-
 	// CacheTTL is the TTL of cached permissions lists from the GitLab API.
 	CacheTTL time.Duration
 
@@ -89,7 +80,6 @@ func NewProvider(op GitLabAuthzProviderOp) *GitLabAuthzProvider {
 		client:            gitlab.NewClient(op.BaseURL, op.SudoToken, nil),
 		clientURL:         op.BaseURL,
 		codeHost:          gitlab.NewCodeHost(op.BaseURL),
-		matchPattern:      op.MatchPattern,
 		cache:             op.MockCache,
 		authnConfigID:     op.AuthnConfigID,
 		gitlabProvider:    op.GitLabProvider,
@@ -153,18 +143,6 @@ func (p *GitLabAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Ext
 }
 
 func (p *GitLabAuthzProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
-	if p.matchPattern != "" {
-		if mt, matchString, err := ParseMatchPattern(p.matchPattern); err == nil {
-			if mine, others, err = reposByMatchPattern(mt, matchString, repos); err == nil {
-				return mine, others
-			} else {
-				log15.Error("Unexpected error executing matchPattern", "matchPattern", p.matchPattern, "err", err)
-			}
-		} else {
-			log15.Error("Error parsing matchPattern", "err", err)
-		}
-	}
-
 	mine, others = make(map[authz.Repo]struct{}), make(map[authz.Repo]struct{})
 	for repo := range repos {
 		if p.codeHost.IsHostOf(&repo.ExternalRepoSpec) {
@@ -263,35 +241,6 @@ func (p *GitLabAuthzProvider) fetchAccountByUsername(ctx context.Context, userna
 	return glUsers[0], nil
 }
 
-func reposByMatchPattern(mt matchType, matchString string, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}, err error) {
-	mine, others = make(map[authz.Repo]struct{}), make(map[authz.Repo]struct{})
-	for repo := range repos {
-		switch mt {
-		case matchSubstring:
-			if strings.Contains(string(repo.URI), matchString) {
-				mine[repo] = struct{}{}
-			} else {
-				others[repo] = struct{}{}
-			}
-		case matchPrefix:
-			if strings.HasPrefix(string(repo.URI), matchString) {
-				mine[repo] = struct{}{}
-			} else {
-				others[repo] = struct{}{}
-			}
-		case matchSuffix:
-			if strings.HasSuffix(string(repo.URI), matchString) {
-				mine[repo] = struct{}{}
-			} else {
-				others[repo] = struct{}{}
-			}
-		default:
-			return nil, nil, fmt.Errorf("Unrecognized matchType: %v", mt)
-		}
-	}
-	return mine, others, nil
-}
-
 // getCachedAccessList returns the list of repositories accessible to a user from the cache and
 // whether the cache entry exists.
 func (p *GitLabAuthzProvider) getCachedAccessList(accountID string) (map[int]struct{}, bool) {
@@ -343,32 +292,6 @@ func (p *GitLabAuthzProvider) fetchUserAccessList(ctx context.Context, glUserID 
 		iters++
 	}
 	return projIDs, nil
-}
-
-type matchType string
-
-const (
-	matchPrefix    matchType = "prefix"
-	matchSuffix    matchType = "suffix"
-	matchSubstring matchType = "substring"
-)
-
-func ParseMatchPattern(matchPattern string) (mt matchType, matchString string, err error) {
-	startGlob := strings.HasPrefix(matchPattern, "*/")
-	endGlob := strings.HasSuffix(matchPattern, "/*")
-	matchString = strings.TrimPrefix(strings.TrimSuffix(matchPattern, "/*"), "*/")
-
-	switch {
-	case startGlob && endGlob:
-		return matchSubstring, "/" + matchString + "/", nil
-	case startGlob:
-		return matchSuffix, "/" + matchString, nil
-	case endGlob:
-		return matchPrefix, matchString + "/", nil
-	default:
-		// If no wildcard, then match no repositories
-		return "", "", errors.New("matchPattern should start with \"*/\" or end with \"/*\"")
-	}
 }
 
 var getProviderByConfigID = auth.GetProviderByConfigID

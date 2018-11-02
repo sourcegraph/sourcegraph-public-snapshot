@@ -241,7 +241,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 
 	tests := []GitLab_RepoPerms_Test{
 		{
-			description: "without match pattern",
+			description: "standard config",
 			op: GitLabAuthzProviderOp{
 				BaseURL: mustURL(t, "https://gitlab.mine"),
 			},
@@ -344,53 +344,6 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 						"org/repo-1":                map[authz.Perm]bool{},
 						"gitlab.mine/org/repo-3":    map[authz.Perm]bool{},
 						"gitlab.mine/public/repo-1": map[authz.Perm]bool{authz.Read: true},
-					},
-				},
-			},
-		},
-		{
-			description: "with match pattern",
-			op: GitLabAuthzProviderOp{
-				BaseURL:      mustURL(t, "https://gitlab.mine"),
-				MatchPattern: "gitlab.mine/*",
-			},
-			calls: []GitLab_RepoPerms_call{
-				{
-					description: "bl user has expected perms, short input repos list",
-					account:     acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"),
-					repos: map[authz.Repo]struct{}{
-						repo("gitlab.mine/bl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "11"):                          struct{}{},
-						repo("gitlab.mine/kl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "21"):                          struct{}{},
-						repo("gitlab.mine/org/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "31"):                         struct{}{},
-						repo("part-of-gitlab.mine-but-doesn't-match-pattern", gitlab.GitLabServiceType, "https://gitlab.mine/", "999"): struct{}{},
-					},
-					expPerms: map[api.RepoURI]map[authz.Perm]bool{
-						"gitlab.mine/bl/repo-1":  map[authz.Perm]bool{authz.Read: true},
-						"gitlab.mine/kl/repo-1":  map[authz.Perm]bool{},
-						"gitlab.mine/org/repo-1": map[authz.Perm]bool{authz.Read: true},
-					},
-				},
-				{
-					description: "bl user has expected perms, long input repos list",
-					account:     acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"),
-					repos: map[authz.Repo]struct{}{
-						repo("gitlab.mine/bl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "11"):  struct{}{},
-						repo("gitlab.mine/bl/repo-2", gitlab.GitLabServiceType, "https://gitlab.mine/", "12"):  struct{}{},
-						repo("bl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "13"):              struct{}{},
-						repo("gitlab.mine/kl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "21"):  struct{}{},
-						repo("gitlab.mine/kl/repo-2", gitlab.GitLabServiceType, "https://gitlab.mine/", "22"):  struct{}{},
-						repo("kl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "23"):              struct{}{},
-						repo("gitlab.mine/org/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "31"): struct{}{},
-						repo("gitlab.mine/org/repo-2", gitlab.GitLabServiceType, "https://gitlab.mine/", "32"): struct{}{},
-						repo("org/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "33"):             struct{}{},
-					},
-					expPerms: map[api.RepoURI]map[authz.Perm]bool{
-						"gitlab.mine/bl/repo-1":  map[authz.Perm]bool{authz.Read: true},
-						"gitlab.mine/bl/repo-2":  map[authz.Perm]bool{authz.Read: true},
-						"gitlab.mine/kl/repo-1":  map[authz.Perm]bool{},
-						"gitlab.mine/kl/repo-2":  map[authz.Perm]bool{},
-						"gitlab.mine/org/repo-1": map[authz.Perm]bool{authz.Read: true},
-						"gitlab.mine/org/repo-2": map[authz.Perm]bool{authz.Read: true},
 					},
 				},
 			},
@@ -499,32 +452,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 func Test_GitLab_Repos(t *testing.T) {
 	tests := []GitLab_Repos_Test{
 		{
-			description: "with match pattern",
-			op: GitLabAuthzProviderOp{
-				BaseURL:      mustURL(t, "https://gitlab.mine"),
-				MatchPattern: "gitlab.mine/*",
-			},
-			calls: []GitLab_Repos_call{
-				{
-					repos: map[authz.Repo]struct{}{
-						repo("gitlab.mine/bl/repo-1", "", "", ""):         struct{}{},
-						repo("gitlab.mine/kl/repo-1", "", "", ""):         struct{}{},
-						repo("another.host/bl/repo-1", "", "", ""):        struct{}{},
-						repo("a", "gitlab", "https://gitlab.mine/", "23"): struct{}{},
-					},
-					expMine: map[authz.Repo]struct{}{
-						repo("gitlab.mine/bl/repo-1", "", "", ""): struct{}{},
-						repo("gitlab.mine/kl/repo-1", "", "", ""): struct{}{},
-					},
-					expOthers: map[authz.Repo]struct{}{
-						repo("another.host/bl/repo-1", "", "", ""):        struct{}{},
-						repo("a", "gitlab", "https://gitlab.mine/", "23"): struct{}{},
-					},
-				},
-			},
-		},
-		{
-			description: "without match pattern",
+			description: "standard config",
 			op: GitLabAuthzProviderOp{
 				BaseURL: mustURL(t, "https://gitlab.mine"),
 			},
