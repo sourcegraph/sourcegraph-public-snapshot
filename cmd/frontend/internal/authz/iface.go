@@ -16,21 +16,15 @@ const (
 )
 
 // AuthzProvider defines a source of truth of which repositories a user is authorized to view. The
-// user is identified by a AuthzID. In most cases, the AuthzID is equivalent to the UserID supplied
-// by the AuthnProvider, but in some cases, the authz provider has its own internal definition of
-// identity which must be mapped from the authn provider identity. The IdentityToAuthzID interface
-// handles this mapping. Examples of authz providers include the following:
+// user is identified by an ExternalAccount instance. Examples of authz providers include the
+// following:
 //
 // * Code host
 // * LDAP groups
 // * SAML identity provider (via SAML group permissions)
 //
-// In most cases, the code host is the authz provider, because it is the source of truth for
+// In most cases, an authz provider represents a code host, because it is the source of truth for
 // repository permissions.
-//
-// In most cases, an AuthzID will be a username in the authz provider, but this is not strictly
-// necessary.  For instance, an AuthzID could be the name of a role that is sufficient for the authz
-// provider to determine permissions.
 type AuthzProvider interface {
 	// Repos partitions the set of repositories into two sets: the set of repositories for which
 	// this AuthzProvider is the source of permissions and the set of repositories for which it is
