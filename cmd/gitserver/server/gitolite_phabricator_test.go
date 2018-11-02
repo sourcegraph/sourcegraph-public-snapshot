@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestServer_handleGet(t *testing.T) {
-	conf.Mock(&conf.SiteConfiguration{
+	conf.Mock(&conftypes.SiteConfiguration{
 		BasicSiteConfiguration: schema.BasicSiteConfiguration{
 			Gitolite: []*schema.GitoliteConnection{{
 				Blacklist:                  "isblaclist.*",
@@ -48,7 +49,7 @@ func TestServer_handleGet(t *testing.T) {
 }
 
 func TestServer_handleGet_invalid(t *testing.T) {
-	conf.Mock(&conf.SiteConfiguration{
+	conf.Mock(&conftypes.SiteConfiguration{
 		BasicSiteConfiguration: schema.BasicSiteConfiguration{
 			Gitolite: []*schema.GitoliteConnection{{
 				Blacklist:                  "isblaclist.*",

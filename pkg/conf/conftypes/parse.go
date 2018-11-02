@@ -1,4 +1,4 @@
-package parse
+package conftypes
 
 import (
 	"encoding/json"
@@ -10,8 +10,8 @@ import (
 )
 
 type SiteConfiguration struct {
-	Basic *schema.BasicSiteConfiguration `json:"basic"`
-	Core  *schema.CoreSiteConfiguration  `json:"core"`
+	schema.BasicSiteConfiguration
+	schema.CoreSiteConfiguration
 }
 
 func ParseBasic(data string) (*schema.BasicSiteConfiguration, error) {
@@ -190,7 +190,7 @@ func AppendConfig(dest, src *SiteConfiguration) *SiteConfiguration {
 
 // NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
-func NeedRestartToApplyBasic(before, after *schema.BasicSiteConfiguration) bool {
+func NeedRestartToApply(before, after *SiteConfiguration) bool {
 	diff := diff(before, after)
 
 	// Check every option that changed to determine whether or not a server
@@ -205,19 +205,3 @@ func NeedRestartToApplyBasic(before, after *schema.BasicSiteConfiguration) bool 
 	return false
 }
 
-// NeedRestartToApply determines if a restart is needed to apply the changes
-// between the two configurations.
-func NeedRestartToApplyCore(before, after *schema.CoreSiteConfiguration) bool {
-	diff := diff(before, after)
-
-	// Check every option that changed to determine whether or not a server
-	// restart is required.
-	for option := range diff {
-		for _, requireRestartOption := range requireRestart {
-			if option == requireRestartOption {
-				return true
-			}
-		}
-	}
-	return false
-}

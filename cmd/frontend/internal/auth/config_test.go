@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -42,7 +43,7 @@ func TestValidateCustom(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			config := conf.SiteConfiguration{
+			config := conftypes.SiteConfiguration{
 				CoreSiteConfiguration: test.input,
 			}
 			conf.TestValidator(t, config, validateConfig, test.wantProblems)

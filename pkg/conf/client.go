@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -28,10 +29,7 @@ type client struct {
 
 var defaultClient *client
 
-type SiteConfiguration struct {
-	schema.BasicSiteConfiguration
-	schema.CoreSiteConfiguration
-}
+
 
 // Get returns a copy of the configuration. The returned value should NEVER be
 // modified.
@@ -49,7 +47,7 @@ type SiteConfiguration struct {
 // is running.
 //
 // Get is a wrapper around client.Get.
-func Get() *SiteConfiguration {
+func Get() *conftypes.SiteConfiguration {
 	return defaultClient.Get()
 }
 
@@ -67,7 +65,7 @@ func Get() *SiteConfiguration {
 // exception rather than the rule. In general, ANY use of configuration should
 // be done in such a way that it responds to config changes while the process
 // is running.
-func (c *client) Get() *SiteConfiguration {
+func (c *client) Get() *conftypes.SiteConfiguration {
 
 	// TODO@ggilmore: Figure out whether or not dealing with nulls in this way is okay 
 	// - this only to deal with accessing sub fields w/ struct embedding and pointers 
@@ -80,7 +78,7 @@ func (c *client) Get() *SiteConfiguration {
 	if core == nil {
 		core = &schema.CoreSiteConfiguration{}
 	}
-	return &SiteConfiguration{
+	return &conftypes.SiteConfiguration{
 		BasicSiteConfiguration: *basic,
 		CoreSiteConfiguration:  *core,
 	}
@@ -92,7 +90,7 @@ func (c *client) Get() *SiteConfiguration {
 // use conf.Watch). See Get documentation for more details.
 //
 // GetTODO is a wrapper around client.GetTODO.
-func GetTODO() *SiteConfiguration {
+func GetTODO() *conftypes.SiteConfiguration {
 	return defaultClient.GetTODO()
 }
 
@@ -100,22 +98,22 @@ func GetTODO() *SiteConfiguration {
 // The code may need to be updated to use conf.Watch, or it may already be e.g.
 // invoked only in response to a user action (in which case it does not need to
 // use conf.Watch). See Get documentation for more details.
-func (c *client) GetTODO() *SiteConfiguration {
+func (c *client) GetTODO() *conftypes.SiteConfiguration {
 	return c.Get()
 }
 
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
-func Mock(mockery *SiteConfiguration) {
+func Mock(mockery *conftypes.SiteConfiguration) {
 	defaultClient.Mock(mockery)
 }
 
 // Mock sets up mock data for the site configuration.
-func (c *client) Mock(mockery *SiteConfiguration) {
+func (c *client) Mock(mockery *conftypes.SiteConfiguration) {
 	// TODO@ggilmore: Is a nil guard here necessary?
 	if mockery == nil {
-		mockery = &SiteConfiguration{}
+		mockery = &conftypes.SiteConfiguration{}
 	}
 
 	c.basicStore.Mock(&mockery.BasicSiteConfiguration)
@@ -278,3 +276,4 @@ type passthroughCoreFetcherFrontendOnly struct{}
 func (p passthroughCoreFetcherFrontendOnly) FetchCoreConfig() (string, error) {
 	return globals.ConfigurationServerFrontendOnly.RawCore(), nil
 }
+

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
@@ -33,7 +34,7 @@ const defaultExpiryPeriod = 90 * 24 * time.Hour
 const cookieName = "sgs"
 
 func init() {
-	conf.ContributeValidator(func(c conf.SiteConfiguration) (problems []string) {
+	conf.ContributeValidator(func(c conftypes.SiteConfiguration) (problems []string) {
 		if c.AuthSessionExpiry == "" {
 			return nil
 		}

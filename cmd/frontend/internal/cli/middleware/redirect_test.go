@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -187,7 +188,7 @@ func TestCanonicalURL(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			mock := conf.SiteConfiguration{
+			mock := conftypes.SiteConfiguration{
 				CoreSiteConfiguration: schema.CoreSiteConfiguration{
 					HttpToHttpsRedirect: test.httpToHttpsRedirect,
 					AppURL:              test.appURL,
@@ -207,7 +208,7 @@ func TestCanonicalURL(t *testing.T) {
 	}
 
 	t.Run("httpToHttpsRedirect invalid value", func(t *testing.T) {
-		conf.Mock(&conf.SiteConfiguration{CoreSiteConfiguration: schema.CoreSiteConfiguration{HttpToHttpsRedirect: "invalid"}})
+		conf.Mock(&conftypes.SiteConfiguration{CoreSiteConfiguration: schema.CoreSiteConfiguration{HttpToHttpsRedirect: "invalid"}})
 		defer conf.Mock(nil)
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		req := httptest.NewRequest("GET", "/", nil)
@@ -222,7 +223,7 @@ func TestCanonicalURL(t *testing.T) {
 	})
 
 	t.Run("appURL invalid value", func(t *testing.T) {
-		conf.Mock(&conf.SiteConfiguration{CoreSiteConfiguration: schema.CoreSiteConfiguration{AppURL: "invalid"}})
+		conf.Mock(&conftypes.SiteConfiguration{CoreSiteConfiguration: schema.CoreSiteConfiguration{AppURL: "invalid"}})
 		defer conf.Mock(nil)
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		req := httptest.NewRequest("GET", "/", nil)
@@ -237,7 +238,7 @@ func TestCanonicalURL(t *testing.T) {
 	})
 
 	t.Run("experimentalFeatures.canonicalURLRedirect invalid value", func(t *testing.T) {
-		conf.Mock(&conf.SiteConfiguration{
+		conf.Mock(&conftypes.SiteConfiguration{
 			CoreSiteConfiguration: schema.CoreSiteConfiguration{
 				AppURL: "http://example.com",
 			},

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -79,7 +80,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("from JSON site config", func(t *testing.T) {
 		defer reset()
-		conf.Mock(&conf.SiteConfiguration{
+		conf.Mock(&conftypes.SiteConfiguration{
 			BasicSiteConfiguration: schema.BasicSiteConfiguration{SiteID: "a"},
 		})
 
@@ -96,7 +97,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("JSON site config takes precedence over DB", func(t *testing.T) {
 		defer reset()
-		conf.Mock(&conf.SiteConfiguration{
+		conf.Mock(&conftypes.SiteConfiguration{
 			BasicSiteConfiguration: schema.BasicSiteConfiguration{SiteID: "a"},
 		})
 

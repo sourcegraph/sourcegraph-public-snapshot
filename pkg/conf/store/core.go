@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
 // CoreStore manages the in-memory storage, access,
@@ -96,7 +96,7 @@ func (c *CoreStore) MaybeUpdate(rawConfig string) (CoreUpdateResult, error) {
 
 	c.raw = rawConfig
 
-	newConfig, err := parse.ParseCore(rawConfig)
+	newConfig, err := conftypes.ParseCore(rawConfig)
 	if err != nil {
 		return result, errors.Wrap(err, "when parsing rawConfig during update")
 	}

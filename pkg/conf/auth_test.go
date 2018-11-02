@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -35,7 +36,7 @@ func TestAuthPublic(t *testing.T) {
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			got := authPublic(&SiteConfiguration{CoreSiteConfiguration: test.input})
+			got := authPublic(&conftypes.SiteConfiguration{CoreSiteConfiguration: test.input})
 			if !reflect.DeepEqual(got, test.want) {
 				t.Errorf("got %v, want %v", got, test.want)
 			}

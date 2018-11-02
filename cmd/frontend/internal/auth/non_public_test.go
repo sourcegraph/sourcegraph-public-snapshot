@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	// Import for side effects so that the UI router gets created and is accessible in the
@@ -20,7 +21,7 @@ import (
 func TestAllowAnonymousRequest(t *testing.T) {
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
-	conf.Mock(&conf.SiteConfiguration{
+	conf.Mock(&conftypes.SiteConfiguration{
 		CoreSiteConfiguration: schema.CoreSiteConfiguration{
 			AuthPublic:    false,
 			AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})
@@ -61,7 +62,7 @@ func TestAllowAnonymousRequest(t *testing.T) {
 func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
-	conf.Mock(&conf.SiteConfiguration{
+	conf.Mock(&conftypes.SiteConfiguration{
 		CoreSiteConfiguration: schema.CoreSiteConfiguration{
 			AuthPublic:    false,
 			AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})

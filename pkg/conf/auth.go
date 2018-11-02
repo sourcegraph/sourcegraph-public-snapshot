@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -27,7 +28,7 @@ func AuthPublic() bool {
 	return authPublic(Get())
 }
 
-func authPublic(c *SiteConfiguration) bool {
+func authPublic(c *conftypes.SiteConfiguration) bool {
 	for _, p := range c.AuthProviders {
 		if p.Builtin != nil && c.AuthPublic {
 			return true
@@ -42,7 +43,7 @@ func authPublic(c *SiteConfiguration) bool {
 func AuthAllowSignup() bool {
 	return authAllowSignup(Get())
 }
-func authAllowSignup(c *SiteConfiguration) bool {
+func authAllowSignup(c *conftypes.SiteConfiguration) bool {
 	for _, p := range c.AuthProviders {
 		if p.Builtin != nil && p.Builtin.AllowSignup {
 			return true

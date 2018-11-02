@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -47,7 +48,7 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.SiteConfiguration) (problems []string) {
+func validateConfig(c conftypes.SiteConfiguration) (problems []string) {
 	var builtinAuthProviders int
 	for _, p := range c.AuthProviders {
 		if p.Builtin != nil {

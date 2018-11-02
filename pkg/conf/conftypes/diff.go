@@ -1,4 +1,4 @@
-package parse
+package conftypes
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 // diff returns names of the Go fields that have different values between the
 // two configurations.
-func diff(before, after interface{}) (fields map[string]struct{}) {
+func diff(before, after *SiteConfiguration) (fields map[string]struct{}) {
 	fields = make(map[string]struct{})
 	beforeFields := getJSONFields(before)
 	afterFields := getJSONFields(after)
@@ -23,7 +23,30 @@ func diff(before, after interface{}) (fields map[string]struct{}) {
 	return fields
 }
 
-func getJSONFields(vv interface{}) (fields map[string]interface{}) {
+func getJSONFields(c *SiteConfiguration) (fields map[string]interface{}) {
+	mergedFields := make(map[string]interface{})
+
+	if c == nil {
+		return mergedFields
+	}
+
+	// TODO@ggilmore: getJSONFieldsSchema panics if the struct that's passed to it
+	// doesn't json struct tags for each field. We need to unpack the SiteConfiguration
+	// to bypass this. Revisit a better way to handle this.
+
+	for _, config := range []interface{}{&c.BasicSiteConfiguration, &c.CoreSiteConfiguration} {
+		for fieldName, fieldValue := range getJSONFieldsSchema(config) {
+			// TODO@ggilmore There is an inherent assumption here that the
+			// BasicSiteConfiguration and CoreSiteConfiguration have mutually disinct fields.
+			// Revisit whether or not this is acceptable.
+			mergedFields[fieldName] = fieldValue
+		}
+	}
+
+	return mergedFields
+}
+
+func getJSONFieldsSchema(vv interface{}) (fields map[string]interface{}) {
 	fields = make(map[string]interface{})
 	v := reflect.ValueOf(vv).Elem()
 	for i := 0; i < v.NumField(); i++ {
@@ -34,7 +57,7 @@ func getJSONFields(vv interface{}) (fields map[string]interface{}) {
 			panic(fmt.Sprintf("missing json struct field tag on %T field %q", v.Interface(), v.Type().Field(i).Name))
 		}
 		if ef, ok := f.Interface().(*schema.ExperimentalFeatures); ok && ef != nil {
-			for fieldName, fieldValue := range getJSONFields(ef) {
+			for fieldName, fieldValue := range getJSONFieldsSchema(ef) {
 				fields["experimentalFeatures::"+fieldName] = fieldValue
 			}
 			continue

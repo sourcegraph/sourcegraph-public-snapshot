@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
 // BasicStore manages the in-memory storage, access,
@@ -96,7 +96,7 @@ func (b *BasicStore) MaybeUpdate(rawConfig string) (BasicUpdateResult, error) {
 
 	b.raw = rawConfig
 
-	newConfig, err := parse.ParseBasic(rawConfig)
+	newConfig, err := conftypes.ParseBasic(rawConfig)
 	if err != nil {
 		return result, errors.Wrap(err, "when parsing rawConfig during update")
 	}

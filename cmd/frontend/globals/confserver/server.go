@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 )
 
@@ -66,7 +66,7 @@ func (s *Server) RawCore() string {
 func (s *Server) WriteBasic(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parse.ParseBasic(input)
+	_, err := conftypes.ParseBasic(input)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (s *Server) WriteBasic(input string) error {
 func (s *Server) WriteCore(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parse.ParseCore(input)
+	_, err := conftypes.ParseCore(input)
 	if err != nil {
 		return err
 	}
@@ -171,8 +171,20 @@ func (s *Server) updateCoreFromDisk() error {
 		return nil
 	}
 
+	// TODO@ggilmore: This nil massaging is ugly. Revisit this.
+	oldSC := &conftypes.SiteConfiguration{
+		CoreSiteConfiguration: *configChange.Old,
+	}
+
+	newSC := &conftypes.SiteConfiguration{}
+
+	if configChange.New != nil {
+		newSC.CoreSiteConfiguration = *configChange.New
+	}
+
+
 	// Update global "needs restart" state.
-	if parse.NeedRestartToApplyCore(configChange.Old, configChange.New) {
+	if conftypes.NeedRestartToApply(oldSC, newSC) {
 		s.markNeedServerRestart()
 	}
 
@@ -200,8 +212,19 @@ func (s *Server) updateBasicFromDisk() error {
 		return nil
 	}
 
+	// TODO@ggilmore: This nil massaging is ugly. Revisit this.
+	oldSC := &conftypes.SiteConfiguration{
+		BasicSiteConfiguration: *configChange.Old,
+	}
+
+	newSC := &conftypes.SiteConfiguration{}
+
+	if configChange.New != nil {
+		newSC.BasicSiteConfiguration = *configChange.New
+	}
+
 	// Update global "needs restart" state.
-	if parse.NeedRestartToApplyBasic(configChange.Old, configChange.New) {
+	if conftypes.NeedRestartToApply(oldSC, newSC) {
 		s.markNeedServerRestart()
 	}
 
