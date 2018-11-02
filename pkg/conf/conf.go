@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
@@ -46,8 +45,8 @@ func getMode() configurationMode {
 }
 
 func init() {
-	clientBasicStore := conf.NewStore()
-	clientCoreStore := conf.NewStore()
+	clientBasicStore := NewStore()
+	clientCoreStore := NewStore()
 
 	defaultClient = &client{
 		basicStore:   clientBasicStore,

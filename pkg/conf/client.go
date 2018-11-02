@@ -15,10 +15,10 @@ import (
 )
 
 type client struct {
-	basicStore   *conf.Store
+	basicStore   *Store
 	basicFetcher basicFetcher
 
-	coreStore   *conf.Store
+	coreStore   *Store
 	coreFetcher coreFetcher
 
 	watchersMu sync.Mutex
