@@ -199,7 +199,7 @@ func (g GitLab_FetchAccount_Test) run(t *testing.T) {
 	auth.UpdateProviders(provs)
 
 	ctx := context.Background()
-	authzProvider := NewGitLabAuthzProvider(g.op)
+	authzProvider := NewProvider(g.op)
 	for _, c := range g.calls {
 		t.Logf("Call %q", c.description)
 		acct, err := authzProvider.FetchAccount(ctx, c.user, c.current)
@@ -426,7 +426,7 @@ func (g GitLab_RepoPerms_Test) run(t *testing.T) {
 		ctx := context.Background()
 		op := g.op
 		op.MockCache = make(mockCache)
-		authzProvider := NewGitLabAuthzProvider(op)
+		authzProvider := NewProvider(op)
 
 		for i := 0; i < 2; i++ {
 			t.Logf("iter %d", i)
@@ -462,7 +462,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	gitlab.MockListProjects = gitlabMock.ListProjects
 
 	ctx := context.Background()
-	authzProvider := NewGitLabAuthzProvider(GitLabAuthzProviderOp{
+	authzProvider := NewProvider(GitLabAuthzProviderOp{
 		BaseURL:       mustURL(t, "https://gitlab.mine"),
 		AuthnConfigID: auth.ProviderConfigID{ID: "https://gitlab.mine/", Type: gitlab.GitLabServiceType},
 		MockCache:     make(mockCache),
@@ -575,7 +575,7 @@ func (g GitLab_Repos_Test) run(t *testing.T) {
 		ctx := context.Background()
 		op := g.op
 		op.MockCache = make(mockCache)
-		authzProvider := NewGitLabAuthzProvider(op)
+		authzProvider := NewProvider(op)
 
 		mine, others := authzProvider.Repos(ctx, c.repos)
 		if !reflect.DeepEqual(mine, c.expMine) {
