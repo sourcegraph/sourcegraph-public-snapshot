@@ -3,7 +3,6 @@ package shared
 import (
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
@@ -55,9 +54,6 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 			seriousProblems = append(seriousProblems, fmt.Sprintf("Could not parse URL for GitLab instance %q: %s", gl.Url, err))
 			continue // omit authz provider if could not parse URL
 		}
-		if innerMatcher := strings.TrimSuffix(strings.TrimPrefix(gl.Authorization.Matcher, "*/"), "/*"); strings.Contains(innerMatcher, "*") {
-			seriousProblems = append(seriousProblems, fmt.Sprintf("GitLab connection %q `permission.matcher` includes an interior wildcard \"*\", which will be interpreted as a string literal, rather than a pattern matcher. Only the prefix \"*/\" or the suffix \"/*\" is supported for pattern matching.", gl.Url))
-		}
 
 		var ttl time.Duration
 		if gl.Authorization.Ttl == "" {
@@ -78,7 +74,6 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 				Type: gl.Authorization.AuthnProvider.Type,
 			},
 			GitLabProvider: gl.Authorization.AuthnProvider.GitlabProvider,
-			MatchPattern:   gl.Authorization.Matcher,
 			CacheTTL:       ttl,
 			MockCache:      nil,
 		}

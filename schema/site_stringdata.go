@@ -714,11 +714,6 @@ const SiteSchemaJSON = `{
                 }
               }
             },
-            "matcher": {
-              "description":
-                "Specifies a pattern used to match repository paths that belong to this GitLab instance. The pattern must begin with \"*\\/\" (suffix match) or end with \"\\/*\" (prefix match). It is important that this pattern matches *all* repositories that come from this code host, because repositories that are not matched to a code host are by default accessible to all users. If left empty, the ` + "`" + `external_service_id` + "`" + ` column of the ` + "`" + `repo` + "`" + ` DB table will be used to match repositories with this code host.",
-              "type": "string"
-            },
             "ttl": {
               "description":
                 "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
