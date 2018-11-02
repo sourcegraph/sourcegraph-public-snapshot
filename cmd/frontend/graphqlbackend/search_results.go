@@ -681,7 +681,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo", "ref"}
+			// resultTypes = []string{"file", "path", "repo", "ref", "issues"}
+			resultTypes = []string{"issues"}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
@@ -728,6 +729,18 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		}
 		seenResultTypes[resultType] = struct{}{}
 		switch resultType {
+		case "issues":
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				issuesResults := searchIssues(ctx, &args)
+				if issuesResults != nil {
+					// fmt.Println(issuesResults[0].issue.title)
+					results = append(results, issuesResults...)
+				}
+			})
 		case "repo":
 			// Search for repos
 			wg := waitGroup(true)
@@ -930,6 +943,7 @@ type searchResultResolver struct {
 	repo      *repositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
+	issue     *issueSearchResultResolver
 }
 
 // getSearchResultURIs returns the repo name and file uri respectiveley
@@ -971,6 +985,10 @@ func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
 }
 func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return g.diff, g.diff != nil
+}
+
+func (g *searchResultResolver) ToGitHubIssueResult() (*issueSearchResultResolver, bool) {
+	return g.issue, g.issue != nil
 }
 
 func (g *searchResultResolver) resultCount() int32 {

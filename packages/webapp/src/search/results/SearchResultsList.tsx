@@ -428,6 +428,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         allExpanded={this.props.allExpanded}
                     />
                 )
+            case 'GitHubIssueResult':
+                return (
+                    <div key={result.url}>
+                        <a href={result.url}>{result.title}</a>
+                        <p>{result.body}</p>
+                    </div>
+                )
         }
         return undefined
     }

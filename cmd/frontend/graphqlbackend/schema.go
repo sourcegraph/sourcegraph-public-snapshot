@@ -750,7 +750,7 @@ type Search {
 }
 
 # A search result.
-union SearchResult = FileMatch | CommitSearchResult | Repository
+union SearchResult = FileMatch | CommitSearchResult | Repository | GitHubIssueResult
 
 # Search results.
 type SearchResults {
@@ -894,6 +894,12 @@ type CommitSearchResult {
     messagePreview: HighlightedString
     # The matching portion of the diff, if any.
     diffPreview: HighlightedString
+}
+
+type GitHubIssueResult {
+    title: String!
+    body: String!
+    url: String!
 }
 
 # A search result that is a diff between two diffable Git objects.

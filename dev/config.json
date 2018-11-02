@@ -7,11 +7,17 @@
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "update.channel": "release",
-  "corsOrigin": "https://github.com",
+  "corsOrigin": "https://github.com http://127.0.0.1:1234",
   "auth.providers": [
     {
       "type": "builtin",
       "allowSignup": true
     }
-  ]
+  ],
+  "extensions": {
+    "remoteRegistry": "https://sourcegraph.com/.api/registry",
+    "allowRemoteExtensions": [
+      "farhan/go-imports-search"
+    ]
+  },
 }

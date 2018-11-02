@@ -45,6 +45,12 @@ export function search(
                                     kind
                                 }
                                 results {
+                                    ... on GitHubIssueResult {
+                                        __typename
+                                        title
+                                        url
+                                        body
+                                    }
                                     ... on Repository {
                                         __typename
                                         id
