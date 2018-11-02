@@ -430,8 +430,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 )
             case 'GitHubIssueResult':
                 return (
-                    <div key={result.url}>
-                        <a href={result.url}>{result.title}</a>
+                    <div key={result.url} className="result-container">
+                        <a href={result.url}>
+                            <div className="result-container__header">{result.title}</div>
+                        </a>
                         <p>{result.body}</p>
                     </div>
                 )
