@@ -45,12 +45,12 @@ export class NavLinks extends React.PureComponent<Props> {
                 {showDotComMarketing && (
                     <li className="nav-item">
                         <a
-                            href="https://about.sourcegraph.com"
+                            href="https://docs.sourcegraph.com"
                             className="nav-link text-truncate"
                             onClick={this.onClickInstall}
-                            title="Install self-hosted Sourcegraph to search your own code"
+                            title="Install self-hosted Sourcegraph to search your own (private) code"
                         >
-                            Install <span className="nav-links__widescreen-only">Sourcegraph</span>
+                            Self-hosted
                         </a>
                     </li>
                 )}
