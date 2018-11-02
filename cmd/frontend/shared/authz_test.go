@@ -64,7 +64,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authz: &schema.Authz{
+						Authorization: &schema.Authorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "okta-config-id",
 								Type:           "saml",
@@ -111,7 +111,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authz: &schema.Authz{
+						Authorization: &schema.Authorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "onelogin-config-id",
 								GitlabProvider: "onelogin",
@@ -122,7 +122,7 @@ func Test_providersFromConfig(t *testing.T) {
 						Token: "asdf",
 					},
 					{
-						Authz: &schema.Authz{
+						Authorization: &schema.Authorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "okta-config-id",
 								GitlabProvider: "okta",
@@ -161,7 +161,7 @@ func Test_providersFromConfig(t *testing.T) {
 			cfg: schema.SiteConfiguration{
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authz: &schema.Authz{
+						Authorization: &schema.Authorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "onelogin-config-id",
 								GitlabProvider: "onelogin",
@@ -192,7 +192,7 @@ func Test_providersFromConfig(t *testing.T) {
 			cfg: schema.SiteConfiguration{
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authz: &schema.Authz{},
+						Authorization: &schema.Authorization{},
 						Url:   "https://gitlab-0.mine",
 						Token: "asdf",
 					},
@@ -239,7 +239,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authz: &schema.Authz{
+						Authorization: &schema.Authorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "okta-config-id",
 								GitlabProvider: "okta",

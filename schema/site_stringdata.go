@@ -686,9 +686,9 @@ const SiteSchemaJSON = `{
             "Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.",
           "type": "boolean"
         },
-        "authz": {
+        "authorization": {
           "description":
-            "If non-null, enables GitLab authz checks. This requires that the value of ` + "`" + `token` + "`" + ` be an access token with \"sudo\" and \"api\" scopes.",
+            "If non-null, enables GitLab permission checks. This requires that the value of ` + "`" + `token` + "`" + ` be an access token with \"sudo\" and \"api\" scopes.",
           "type": "object",
           "additionalProperties": false,
           "required": ["authnProvider"],
