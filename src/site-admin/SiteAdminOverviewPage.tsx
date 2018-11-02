@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AddIcon from 'mdi-react/AddIcon'
 import CityIcon from 'mdi-react/CityIcon'
+import EyeIcon from 'mdi-react/EyeIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
@@ -50,6 +51,19 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                 )}
                 {!this.state.info && <LoadingSpinner className="icon-inline" />}
                 <OverviewList>
+                    {this.state.info && (
+                        <OverviewItem
+                            link="/explore"
+                            icon={EyeIcon}
+                            actions={
+                                <Link to="/exlore" className="btn btn-primary btn-sm">
+                                    Explore
+                                </Link>
+                            }
+                        >
+                            Explore
+                        </OverviewItem>
+                    )}
                     {this.state.info && (
                         <OverviewItem
                             link="/site-admin/repositories"
