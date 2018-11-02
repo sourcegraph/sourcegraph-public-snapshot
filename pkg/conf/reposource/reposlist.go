@@ -19,7 +19,8 @@ var (
 )
 
 func init() {
-	conf.Watch(func() {
+	// TODO(ggilmore): FIXME!
+	conf.AsyncWatch(func() {
 		newReposListInstance := newReposList(conf.Get().ReposList)
 
 		reposListMu.Lock()

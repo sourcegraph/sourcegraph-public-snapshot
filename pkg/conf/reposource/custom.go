@@ -25,7 +25,8 @@ func init() {
 		return
 	})
 
-	conf.Watch(func() {
+	// TODO(slimsag): FIXME!
+	conf.AsyncWatch(func() {
 		cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
 		newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
 		for i, c := range cloneURLConfig {
