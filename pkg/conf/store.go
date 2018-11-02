@@ -109,6 +109,7 @@ func (s *Store) MaybeUpdate(rawConfig string, parse func(data string) (interface
 // WaitUntilInitialized blocks and only returns to the caller once the store
 // has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
 func (s *Store) WaitUntilInitialized() {
+	detectDeadlock()
 	<-s.ready
 }
 

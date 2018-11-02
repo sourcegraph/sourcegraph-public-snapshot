@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
@@ -89,7 +90,11 @@ func init() {
 }
 
 // TODO(slimsag): remove this by passing an argument through?
-var configurationServerFrontendOnly *Server
+var (
+	configurationServerFrontendOnly *Server
+
+	configurationServerFrontendOnlyInitialized int32
+)
 
 // InitConfigurationServerFrontendOnly creates and returns a configuration
 // server. This should only be invoked by the frontend, or else a panic will
@@ -109,8 +114,19 @@ func InitConfigurationServerFrontendOnly() *Server {
 	defaultClient.coreFetcher = passthroughCoreFetcherFrontendOnly{}
 	go defaultClient.continuouslyUpdate()
 
+	atomic.AddInt32(&configurationServerFrontendOnlyInitialized, 1)
 	configurationServerFrontendOnly = server
 	return server
+}
+
+func detectDeadlock() {
+	mode := getMode()
+	if mode != modeServer {
+		return
+	}
+	if atomic.LoadInt32(&configurationServerFrontendOnlyInitialized) == 0 {
+		panic("deadlock detected")
+	}
 }
 
 // FormatOptions is the default format options that should be used for jsonx

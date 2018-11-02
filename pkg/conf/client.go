@@ -62,7 +62,6 @@ func Get() *conftypes.SiteConfiguration {
 // be done in such a way that it responds to config changes while the process
 // is running.
 func (c *client) Get() *conftypes.SiteConfiguration {
-
 	// TODO@ggilmore: Figure out whether or not dealing with nulls in this way is okay
 	// - this only to deal with accessing sub fields w/ struct embedding and pointers
 	basic := c.basicStore.LastValid()
