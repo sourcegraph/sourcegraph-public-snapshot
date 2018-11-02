@@ -34,8 +34,6 @@ func GetProviders() (authzAllowByDefault bool, providers []Provider) {
 		return allowAccessByDefault, nil
 	}
 	providers = make([]Provider, len(authzProviders))
-	for i, p := range authzProviders {
-		providers[i] = p
-	}
+	copy(providers, authzProviders)
 	return allowAccessByDefault, providers
 }
