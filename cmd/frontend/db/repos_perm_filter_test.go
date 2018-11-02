@@ -15,7 +15,7 @@ import (
 type authzFilter_Test struct {
 	description string
 
-	permsAllowByDefault bool
+	authzAllowByDefault bool
 	authzProviders      []authz.AuthzProvider
 
 	calls []authzFilter_call
@@ -40,7 +40,7 @@ func (r authzFilter_Test) run(t *testing.T) {
 	Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{}, nil
 	}
-	authz.SetProviders(r.permsAllowByDefault, r.authzProviders)
+	authz.SetProviders(r.authzAllowByDefault, r.authzProviders)
 
 	for _, c := range r.calls {
 		t.Logf("Call %q", c.description)
@@ -75,7 +75,7 @@ func Test_authzFilter(t *testing.T) {
 	tests := []authzFilter_Test{
 		{
 			description:         "1 authz provider, ext account exists",
-			permsAllowByDefault: true,
+			authzAllowByDefault: true,
 			authzProviders: []authz.AuthzProvider{
 				&MockAuthzProvider{
 					serviceID:   "https://gitlab.mine/",
@@ -89,21 +89,16 @@ func Test_authzFilter(t *testing.T) {
 					perms: map[extsvc.ExternalAccount]map[api.RepoURI]map[authz.Perm]bool{
 						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): map[api.RepoURI]map[authz.Perm]bool{
 							"gitlab.mine/u1/r0":            map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/u2/r0":            map[authz.Perm]bool{},
 							"gitlab.mine/sharedPrivate/r0": map[authz.Perm]bool{authz.Read: true},
 							"gitlab.mine/org/r0":           map[authz.Perm]bool{authz.Read: true},
 						},
 						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): map[api.RepoURI]map[authz.Perm]bool{
-							"gitlab.mine/u1/r0":            map[authz.Perm]bool{},
 							"gitlab.mine/u2/r0":            map[authz.Perm]bool{authz.Read: true},
 							"gitlab.mine/sharedPrivate/r0": map[authz.Perm]bool{authz.Read: true},
 							"gitlab.mine/org/r0":           map[authz.Perm]bool{authz.Read: true},
 						},
 						extsvc.ExternalAccount{}: map[api.RepoURI]map[authz.Perm]bool{
-							"gitlab.mine/u1/r0":            map[authz.Perm]bool{},
-							"gitlab.mine/u2/r0":            map[authz.Perm]bool{},
-							"gitlab.mine/sharedPrivate/r0": map[authz.Perm]bool{},
-							"gitlab.mine/org/r0":           map[authz.Perm]bool{authz.Read: true},
+							"gitlab.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
 					},
 				},
@@ -234,7 +229,7 @@ func Test_authzFilter(t *testing.T) {
 		},
 		{
 			description:         "2 authz providers, ext accounts exist",
-			permsAllowByDefault: true,
+			authzAllowByDefault: true,
 			authzProviders: []authz.AuthzProvider{
 				&MockAuthzProvider{
 					serviceID:   "https://gitlab0.mine/",
@@ -247,7 +242,6 @@ func Test_authzFilter(t *testing.T) {
 					perms: map[extsvc.ExternalAccount]map[api.RepoURI]map[authz.Perm]bool{
 						*acct(1, "gitlab", "https://gitlab0.mine/", "u1"): map[api.RepoURI]map[authz.Perm]bool{
 							"gitlab0.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab0.mine/u2/r0":  map[authz.Perm]bool{},
 							"gitlab0.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
 						*acct(2, "gitlab", "https://gitlab0.mine/", "u2"): map[api.RepoURI]map[authz.Perm]bool{
@@ -268,11 +262,9 @@ func Test_authzFilter(t *testing.T) {
 					perms: map[extsvc.ExternalAccount]map[api.RepoURI]map[authz.Perm]bool{
 						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): map[api.RepoURI]map[authz.Perm]bool{
 							"gitlab1.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab1.mine/u2/r0":  map[authz.Perm]bool{},
 							"gitlab1.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
 						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): map[api.RepoURI]map[authz.Perm]bool{
-							"gitlab1.mine/u1/r0":  map[authz.Perm]bool{},
 							"gitlab1.mine/u2/r0":  map[authz.Perm]bool{authz.Read: true},
 							"gitlab1.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
@@ -334,8 +326,8 @@ func Test_authzFilter(t *testing.T) {
 			},
 		},
 		{
-			description:         "2 authz providers, ext account exists, permsAllowByDefault=false",
-			permsAllowByDefault: false,
+			description:         "2 authz providers, ext account exists, authzAllowByDefault=false",
+			authzAllowByDefault: false,
 			authzProviders: []authz.AuthzProvider{
 				&MockAuthzProvider{
 					serviceID:   "https://gitlab0.mine/",
@@ -348,7 +340,6 @@ func Test_authzFilter(t *testing.T) {
 					perms: map[extsvc.ExternalAccount]map[api.RepoURI]map[authz.Perm]bool{
 						*acct(1, "gitlab", "https://gitlab0.mine/", "u1"): map[api.RepoURI]map[authz.Perm]bool{
 							"gitlab0.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab0.mine/u2/r0":  map[authz.Perm]bool{},
 							"gitlab0.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
 						*acct(2, "gitlab", "https://gitlab0.mine/", "u2"): map[api.RepoURI]map[authz.Perm]bool{
@@ -369,11 +360,9 @@ func Test_authzFilter(t *testing.T) {
 					perms: map[extsvc.ExternalAccount]map[api.RepoURI]map[authz.Perm]bool{
 						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): map[api.RepoURI]map[authz.Perm]bool{
 							"gitlab1.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab1.mine/u2/r0":  map[authz.Perm]bool{},
 							"gitlab1.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
 						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): map[api.RepoURI]map[authz.Perm]bool{
-							"gitlab1.mine/u1/r0":  map[authz.Perm]bool{},
 							"gitlab1.mine/u2/r0":  map[authz.Perm]bool{authz.Read: true},
 							"gitlab1.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
@@ -410,7 +399,7 @@ func Test_authzFilter(t *testing.T) {
 		},
 		{
 			description:         "1 authz provider, ext account doesn't exist",
-			permsAllowByDefault: true,
+			authzAllowByDefault: true,
 			authzProviders: []authz.AuthzProvider{
 				&MockAuthzProvider{
 					serviceID:    "https://gitlab.mine/",
@@ -424,18 +413,14 @@ func Test_authzFilter(t *testing.T) {
 					perms: map[extsvc.ExternalAccount]map[api.RepoURI]map[authz.Perm]bool{
 						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): map[api.RepoURI]map[authz.Perm]bool{
 							"gitlab.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/u2/r0":  map[authz.Perm]bool{},
 							"gitlab.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
 						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): map[api.RepoURI]map[authz.Perm]bool{
-							"gitlab.mine/u1/r0":  map[authz.Perm]bool{},
 							"gitlab.mine/u2/r0":  map[authz.Perm]bool{authz.Read: true},
 							"gitlab.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
 						// entry for nil account / anonymous users
 						extsvc.ExternalAccount{}: map[api.RepoURI]map[authz.Perm]bool{
-							"gitlab.mine/u1/r0":  map[authz.Perm]bool{},
-							"gitlab.mine/u2/r0":  map[authz.Perm]bool{},
 							"gitlab.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
 						},
 					},
@@ -691,9 +676,11 @@ func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.External
 
 	var userPerms map[api.RepoURI]map[authz.Perm]bool = m.perms[*acct]
 	for repo := range repos {
-		retPerms[repo.URI] = make(map[authz.Perm]bool)
-		for k, v := range userPerms[repo.URI] {
-			retPerms[repo.URI][k] = v
+		if userRepoPerms, ok := userPerms[repo.URI]; ok {
+			retPerms[repo.URI] = make(map[authz.Perm]bool)
+			for k, v := range userRepoPerms {
+				retPerms[repo.URI][k] = v
+			}
 		}
 	}
 	return retPerms, nil

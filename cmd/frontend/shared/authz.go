@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	permgl "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -20,26 +21,26 @@ func init() {
 		return append(seriousProblems, warnings...)
 	})
 	conf.Watch(func() {
-		permissionsAllowByDefault, authzProviders, _, _ := providersFromConfig(conf.Get())
-		authz.SetProviders(permissionsAllowByDefault, authzProviders)
+		allowAccessByDefault, authzProviders, _, _ := providersFromConfig(conf.Get())
+		authz.SetProviders(allowAccessByDefault, authzProviders)
 	})
 }
 
 // providersFromConfig returns the set of permission-related providers derived from the site config.
 // It also returns any validation problems with the config, separating these into "serious problems"
 // and "warnings".  "Serious problems" are those that should make Sourcegraph set
-// authz.permissionsAllowByDefault to false. "Warnings" are all other validation problems.
+// authz.allowAccessByDefault to false. "Warnings" are all other validation problems.
 func providersFromConfig(cfg *schema.SiteConfiguration) (
-	permissionsAllowByDefault bool,
+	allowAccessByDefault bool,
 	authzProviders []authz.AuthzProvider,
 	seriousProblems []string,
 	warnings []string,
 ) {
-	permissionsAllowByDefault = true
+	allowAccessByDefault = true
 	defer func() {
 		if len(seriousProblems) > 0 {
 			log15.Error("Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.")
-			permissionsAllowByDefault = false
+			allowAccessByDefault = false
 		}
 	}()
 
@@ -82,11 +83,14 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 			MockCache:      nil,
 		}
 		if gl.Authz.AuthnProvider.ConfigID == "" {
-			// If no authn provider is specified, we fall back to insecure username matching, which
-			// should only be used for testing purposes. In the future when we support sign-in via
-			// GitLab, we can check if that is enabled and instead fall back to that.
-			seriousProblems = append(seriousProblems, "Security issue: `authz.authnProvider.configID` was empty. Falling back to using username equality for permissions, which is insecure.")
-			op.UseNativeUsername = true
+			// Note: In the future when we support sign-in via GitLab, we can check if that is
+			// enabled and instead fall back to that.
+			if env.InsecureDev {
+				log15.Warn("Using username matching for debugging purposes, because `authz.authnProvider.configID` in the config was empty. This should ONLY occur in a development build.")
+				op.UseNativeUsername = true
+			} else {
+				seriousProblems = append(seriousProblems, "`authz.authnProvider.configID` was empty. No users will be granted access to these repositories.")
+			}
 		} else if gl.Authz.AuthnProvider.Type == "" {
 			seriousProblems = append(seriousProblems, "`authz.authnProvider.type` was not specified, which means GitLab users cannot be resolved.")
 		} else if gl.Authz.AuthnProvider.GitlabProvider == "" {
@@ -112,7 +116,7 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 		authzProviders = append(authzProviders, NewGitLabAuthzProvider(op))
 	}
 
-	return permissionsAllowByDefault, authzProviders, seriousProblems, warnings
+	return allowAccessByDefault, authzProviders, seriousProblems, warnings
 }
 
 // NewGitLabAuthzProvider is a mockable constructor for new GitLabAuthzProvider instances.
