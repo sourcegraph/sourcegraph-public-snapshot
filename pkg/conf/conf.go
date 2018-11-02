@@ -6,10 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals/confserver"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 )
 
 type configurationMode int
@@ -48,8 +46,8 @@ func getMode() configurationMode {
 }
 
 func init() {
-	clientBasicStore := store.New()
-	clientCoreStore := store.New()
+	clientBasicStore := conf.NewStore()
+	clientCoreStore := conf.NewStore()
 
 	defaultClient = &client{
 		basicStore:   clientBasicStore,
@@ -84,17 +82,35 @@ func init() {
 		return
 	}
 
-	// If the caller of pkg/conf is the frontend service, instantiate the DefaultServerFrontendOnly
-	// and install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
-	if mode == modeServer {
-		globals.ConfigurationServerFrontendOnly = confserver.NewServer(os.Getenv("SOURCEGRAPH_CONFIG_FILE"), os.Getenv("SOURCEGRAPH_CONFIG_CORE_FILE"))
+	// The default client is started in NewConfigurationServerFrontendOnly in
+	// the case of server mode.
+	if mode == modeClient {
+		go defaultClient.continuouslyUpdate()
+	}
+}
 
-		globals.ConfigurationServerFrontendOnly.Start()
-		defaultClient.basicFetcher = passthroughBasicFetcherFrontendOnly{}
-		defaultClient.coreFetcher = passthroughCoreFetcherFrontendOnly{}
+// TODO(slimsag): remove this by passing an argument through?
+var configurationServerFrontendOnly *Server
+
+// InitConfigurationServerFrontendOnly creates and returns a configuration
+// server. This should only be invoked by the frontend, or else a panic will
+// occur. This function should only ever be called once.
+func InitConfigurationServerFrontendOnly() *Server {
+	if mode != modeServer {
+		panic("cannot call this function except in server mode")
 	}
 
+	var server *Server
+	server = NewServer(os.Getenv("SOURCEGRAPH_CONFIG_FILE"), os.Getenv("SOURCEGRAPH_CONFIG_CORE_FILE"))
+	server.Start()
+
+	// Install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
+	defaultClient.basicFetcher = passthroughBasicFetcherFrontendOnly{}
+	defaultClient.coreFetcher = passthroughCoreFetcherFrontendOnly{}
 	go defaultClient.continuouslyUpdate()
+
+	configurationServerFrontendOnly = server
+	return server
 }
 
 // FormatOptions is the default format options that should be used for jsonx

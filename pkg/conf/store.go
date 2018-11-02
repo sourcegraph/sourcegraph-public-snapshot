@@ -1,4 +1,4 @@
-package store
+package conf
 
 import (
 	"sync"
@@ -19,8 +19,8 @@ type Store struct {
 	once  sync.Once
 }
 
-// New returns a new configuration store.
-func New() *Store {
+// NewStore returns a new configuration store.
+func NewStore() *Store {
 	return &Store{
 		ready: make(chan struct{}),
 	}

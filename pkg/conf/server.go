@@ -1,4 +1,4 @@
-package confserver
+package conf
 
 import (
 	"io/ioutil"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -19,8 +18,8 @@ type Server struct {
 	basicFilePath string
 	coreFilePath  string
 
-	basicStore *store.Store
-	coreStore  *store.Store
+	basicStore *Store
+	coreStore  *Store
 
 	// fileWriteBasic signals when our app writes to the configuration file. The
 	// secondary channel is closed when server.RawBasic() would return the new
@@ -45,8 +44,8 @@ func NewServer(basicFilePath, coreFilePath string) *Server {
 	return &Server{
 		basicFilePath:  basicFilePath,
 		coreFilePath:   coreFilePath,
-		basicStore:     store.New(),
-		coreStore:      store.New(),
+		basicStore:     NewStore(),
+		coreStore:      NewStore(),
 		fileWriteBasic: make(chan chan struct{}, 1),
 		fileWriteCore:  make(chan chan struct{}, 1),
 	}

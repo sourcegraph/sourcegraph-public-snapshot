@@ -9,18 +9,16 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type client struct {
-	basicStore   *store.Store
+	basicStore   *conf.Store
 	basicFetcher basicFetcher
 
-	coreStore   *store.Store
+	coreStore   *conf.Store
 	coreFetcher coreFetcher
 
 	watchersMu sync.Mutex
@@ -247,7 +245,7 @@ func (h httpBasicFetcher) FetchBasicConfig() (string, error) {
 type passthroughBasicFetcherFrontendOnly struct{}
 
 func (p passthroughBasicFetcherFrontendOnly) FetchBasicConfig() (string, error) {
-	return globals.ConfigurationServerFrontendOnly.RawBasic(), nil
+	return configurationServerFrontendOnly.RawBasic(), nil
 }
 
 type coreFetcher interface {
@@ -272,5 +270,5 @@ func (h httpCoreFetcher) FetchCoreConfig() (string, error) {
 type passthroughCoreFetcherFrontendOnly struct{}
 
 func (p passthroughCoreFetcherFrontendOnly) FetchCoreConfig() (string, error) {
-	return globals.ConfigurationServerFrontendOnly.RawCore(), nil
+	return configurationServerFrontendOnly.RawCore(), nil
 }
