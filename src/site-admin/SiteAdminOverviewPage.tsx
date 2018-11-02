@@ -45,10 +45,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
-                {!this.state.info && <LoadingSpinner className="icon-inline" />}
                 {this.props.overviewComponents.length > 0 && (
                     <div className="mb-4">{this.props.overviewComponents.map((C, i) => <C key={i} />)}</div>
                 )}
+                {!this.state.info && <LoadingSpinner className="icon-inline" />}
                 <OverviewList>
                     {this.state.info && (
                         <OverviewItem
