@@ -109,7 +109,21 @@ func (s *Store) MaybeUpdate(rawConfig string, parse func(data string) (interface
 // WaitUntilInitialized blocks and only returns to the caller once the store
 // has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
 func (s *Store) WaitUntilInitialized() {
-	detectDeadlock()
+	// If we are here, then it means that a user is waiting to get the
+	// configuration via conf.Get or conf.Watch, effectively. If we are the
+	// configuration server (the frontend) and the server is not initialized
+	// yet, that would indicate we are at a deadlock. n which case, we can warn
+	// the caller and advise them how to fix it.
+	mode := getMode()
+	if mode == modeServer {
+		select {
+		case <-configurationServerFrontendOnlyInitialized:
+			// Configuration server is initialized.
+		default:
+			panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use conf.AsyncWatch instead)")
+		}
+	}
+
 	<-s.ready
 }
 

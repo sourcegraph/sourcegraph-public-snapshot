@@ -118,19 +118,6 @@ func InitConfigurationServerFrontendOnly() *Server {
 	return server
 }
 
-func detectDeadlock() {
-	mode := getMode()
-	if mode != modeServer {
-		return
-	}
-	select {
-	case <-configurationServerFrontendOnlyInitialized:
-		// Configuration server is initialized.
-	default:
-		panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use conf.AsyncWatch instead)")
-	}
-}
-
 // FormatOptions is the default format options that should be used for jsonx
 // edit computation.
 var FormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}
