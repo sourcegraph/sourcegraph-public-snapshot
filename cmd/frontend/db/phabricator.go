@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -18,10 +19,14 @@ type errPhabricatorRepoNotFound struct {
 	args []interface{}
 }
 
-var phabricatorRepos = atomicvalue.New()
+var (
+	phabricatorRepos          = atomicvalue.New()
+	phabricatorReposReadyOnce sync.Once
+	phabricatorReposReady     = make(chan struct{})
+)
 
 func init() {
-	conf.Watch(func() {
+	conf.AsyncWatch(func() {
 		phabricatorRepos.Set(func() interface{} {
 			repos := map[api.RepoURI]*types.PhabricatorRepo{}
 			for _, config := range conf.Get().Phabricator {
@@ -33,6 +38,9 @@ func init() {
 					}
 				}
 			}
+			phabricatorReposReadyOnce.Do(func() {
+				close(phabricatorReposReady)
+			})
 			return repos
 		})
 	})
@@ -127,6 +135,7 @@ func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoURI) (*types.Pha
 	if Mocks.Phabricator.GetByURI != nil {
 		return Mocks.Phabricator.GetByURI(uri)
 	}
+	<-phabricatorReposReady
 	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoURI]*types.PhabricatorRepo)
 	if r := phabricatorRepos[uri]; r != nil {
 		return r, nil
