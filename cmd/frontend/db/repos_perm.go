@@ -71,7 +71,7 @@ func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p a
 		}
 	}
 
-	accepted = make(map[api.RepoURI]struct{})   // repositories tha thave been claimed and have read permissions
+	accepted = make(map[api.RepoURI]struct{})   // repositories that have been claimed and have read permissions
 	unverified := make(map[authz.Repo]struct{}) // repositories that have not been claimed by any authz provider
 	for repo := range repos {
 		unverified[repo] = struct{}{}
