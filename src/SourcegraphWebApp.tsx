@@ -17,6 +17,7 @@ import { combineLatest, from, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from 'sourcegraph/module/client/environment'
 import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
+import { WorkspaceRoot } from 'sourcegraph/module/protocol/plainTypes'
 import { authenticatedUser } from './auth'
 import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
@@ -263,6 +264,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 // Extensions
                                 extensions={this.state.extensions}
                                 extensionsEnvironment={this.state.extensionsEnvironment}
+                                extensionsOnRootsChange={this.extensionsOnRootsChange}
                                 extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
                                 extensionsController={this.state.extensionsController}
                             />
@@ -324,6 +326,13 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 }
                 return update
             },
+            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
+        )
+    }
+
+    private extensionsOnRootsChange = (roots: WorkspaceRoot[] | null): void => {
+        this.setState(
+            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, roots } }),
             () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }

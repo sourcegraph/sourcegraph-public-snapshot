@@ -55,7 +55,7 @@ export function createExtensionsContextController(): ExtensionsContextController
                     ${request}
                 `,
                 variables
-            ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry'>>>,
+            ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry' | 'repository'>>>,
         queryLSP: () => {
             throw new Error('TODO(!sqs): not implemented')
         },

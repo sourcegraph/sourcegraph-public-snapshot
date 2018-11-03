@@ -84,13 +84,16 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        const repoRevChanges = this.propsUpdates.pipe(
+            // Pick repoPath and rev out of the props
+            map(props => ({ repoPath: props.repo.name, rev: props.rev })),
+            distinctUntilChanged((a, b) => isEqual(a, b))
+        )
+
         // Fetch repository revision.
         this.subscriptions.add(
-            this.propsUpdates
+            repoRevChanges
                 .pipe(
-                    // Pick repoPath and rev out of the props
-                    map(props => ({ repoPath: props.repo.name, rev: props.rev })),
-                    distinctUntilChanged((a, b) => isEqual(a, b)),
                     // Reset resolved rev / error state
                     tap(() => this.props.onResolvedRevOrError(undefined)),
                     switchMap(({ repoPath, rev }) =>
@@ -130,6 +133,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     }
                 )
         )
+
         this.propsUpdates.next(this.props)
     }
 
@@ -191,6 +195,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         const context: RepoRevContainerContext = {
             extensions: this.props.extensions,
             extensionsController: this.props.extensionsController,
+            extensionsOnRootsChange: this.props.extensionsOnRootsChange,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             isLightTheme: this.props.isLightTheme,
             repo: this.props.repo,

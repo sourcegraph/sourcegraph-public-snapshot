@@ -4,8 +4,9 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { merge, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { WorkspaceRoot } from 'sourcegraph/module/protocol/plainTypes'
 import { parseBrowserRepoURL } from '.'
-import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
+import { makeRepoURI, ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
@@ -78,6 +79,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     private routeMatchChanges = new Subject<{ repoRevAndRest: string }>()
     private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
     private repositoryAdds = new Subject<void>()
+    private revResolves = new Subject<ResolvedRev | ErrorLike | undefined>()
     private subscriptions = new Subscription()
 
     constructor(props: RepoContainerProps) {
@@ -139,6 +141,9 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 )
         )
 
+        // Update resolved revision in state
+        this.revResolves.subscribe(resolvedRevOrError => this.setState({ resolvedRevOrError }))
+
         // Update header and other global state.
         this.subscriptions.add(
             parsedRouteChanges.subscribe(({ repoPath, rev, rawRev, rest }) => {
@@ -156,6 +161,37 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 this.setState(({ repoOrError }) => ({ repoOrError: { ...repoOrError, ...update } as GQL.IRepository }))
             )
         )
+
+        // Update the Sourcegraph extensions environment to reflect the current workspace root.
+        this.subscriptions.add(
+            this.revResolves
+                .pipe(
+                    map(resolvedRevOrError => {
+                        let roots: WorkspaceRoot[] | null = null
+                        if (resolvedRevOrError && !isErrorLike(resolvedRevOrError)) {
+                            roots = [
+                                {
+                                    uri: makeRepoURI({
+                                        repoPath: this.state.repoPath,
+                                        rev: resolvedRevOrError.commitID,
+                                    }),
+                                    repository:
+                                        this.state.repoOrError && !isErrorLike(this.state.repoOrError)
+                                            ? {
+                                                  id: this.state.repoOrError.id,
+                                                  name: this.state.repoOrError.name,
+                                              }
+                                            : undefined,
+                                },
+                            ]
+                        }
+                        this.props.extensionsOnRootsChange(roots)
+                    })
+                )
+                .subscribe()
+        )
+        // Clear the Sourcegraph extensions environment's roots when navigating away.
+        this.subscriptions.add(() => this.props.extensionsOnRootsChange(null))
     }
 
     public componentWillReceiveProps(props: RepoContainerProps): void {
@@ -206,6 +242,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repoMatchURL,
             configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
+            extensionsOnRootsChange: this.props.extensionsOnRootsChange,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,
             ...this.state.repoHeaderContributionsLifecycleProps,
@@ -370,8 +407,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
         this.setState({ externalLinks })
 
-    private onResolvedRevOrError = (v: ResolvedRev | ErrorLike | undefined): void =>
-        this.setState({ resolvedRevOrError: v })
+    private onResolvedRevOrError = (v: ResolvedRev | ErrorLike | undefined): void => this.revResolves.next(v)
 
     private onRepoHeaderContributionsLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycleProps) =>
         this.setState({ repoHeaderContributionsLifecycleProps: lifecycleProps })

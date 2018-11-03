@@ -6,6 +6,7 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { Environment } from 'sourcegraph/module/client/environment'
 import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
+import { WorkspaceRoot } from 'sourcegraph/module/protocol/plainTypes'
 
 /** React props or state representing the Sourcegraph extensions environment. */
 export interface ExtensionsEnvironmentProps {
@@ -15,6 +16,11 @@ export interface ExtensionsEnvironmentProps {
 
 /** React props for components that participate in the Sourcegraph extensions environment. */
 export interface ExtensionsDocumentsProps {
+    /**
+     * Called when the Sourcegraph extensions environment's workspace roots change.
+     */
+    extensionsOnRootsChange: (roots: WorkspaceRoot[] | null) => void
+
     /**
      * Called when the Sourcegraph extensions environment's set of visible text documents changes.
      */
