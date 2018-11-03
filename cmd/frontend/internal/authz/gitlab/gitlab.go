@@ -36,6 +36,7 @@ type GitLabAuthzProvider struct {
 	authnConfigID     auth.ProviderConfigID
 	useNativeUsername bool
 	cache             pcache
+	cacheTTL          time.Duration
 }
 
 var _ authz.Provider = ((*GitLabAuthzProvider)(nil))
@@ -43,6 +44,10 @@ var _ authz.Provider = ((*GitLabAuthzProvider)(nil))
 type cacheVal struct {
 	// ProjIDs is the set of project IDs to which a GitLab user has access.
 	ProjIDs map[int]struct{} `json:"repos"`
+
+	// TTL is the ttl of the cache entry. This must be checked for equality in case the TTL has
+	// changed (and the cache entry should therefore be invalidated).
+	TTL time.Duration `json:"ttl"`
 }
 
 type GitLabAuthzProviderOp struct {
@@ -83,6 +88,7 @@ func NewProvider(op GitLabAuthzProviderOp) *GitLabAuthzProvider {
 		cache:             op.MockCache,
 		authnConfigID:     op.AuthnConfigID,
 		gitlabProvider:    op.GitLabProvider,
+		cacheTTL:          op.CacheTTL,
 		useNativeUsername: op.UseNativeUsername,
 	}
 	if p.cache == nil {
@@ -116,7 +122,10 @@ func (p *GitLabAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Ext
 			return nil, err
 		}
 
-		accessibleReposB, err := json.Marshal(cacheVal{ProjIDs: accessibleRepos})
+		accessibleReposB, err := json.Marshal(cacheVal{
+			ProjIDs: accessibleRepos,
+			TTL:     p.cacheTTL,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -251,8 +260,10 @@ func (p *GitLabAuthzProvider) getCachedAccessList(accountID string) (map[int]str
 		return nil, false
 	}
 	var r cacheVal
-	if err := json.Unmarshal(cachedReposB, &r); err != nil {
-		log15.Warn("Failed to unmarshal repo perm cache entry", "err", err.Error())
+	if err := json.Unmarshal(cachedReposB, &r); err != nil || r.TTL == 0 || r.TTL > p.cacheTTL {
+		if err != nil {
+			log15.Warn("Failed to unmarshal repo perm cache entry", "err", err.Error())
+		}
 		p.cache.Delete(accountID)
 		return nil, false
 	}
