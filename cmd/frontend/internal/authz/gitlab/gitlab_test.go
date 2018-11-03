@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
@@ -419,6 +420,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 		BaseURL:       mustURL(t, "https://gitlab.mine"),
 		AuthnConfigID: auth.ProviderConfigID{ID: "https://gitlab.mine/", Type: gitlab.GitLabServiceType},
 		MockCache:     make(mockCache),
+		CacheTTL:      3 * time.Hour,
 	})
 	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "bl"), nil); err != nil {
 		t.Fatal(err)
@@ -446,6 +448,72 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	}
 	if exp := map[string]int{"projects?per_page=100&sudo=bl": 1, "projects?per_page=100&sudo=kl": 1}; !reflect.DeepEqual(gitlabMock.madeProjectReqs, exp) {
 		t.Errorf("Unexpected cache behavior. Expected underying requests to be %v, but got %v", exp, gitlabMock.madeProjectReqs)
+	}
+}
+
+// Test_GitLab_RepoPerms_cache_ttl tests the behavior of overwriting cache entries when the TTL changes
+func Test_GitLab_RepoPerms_cache_ttl(t *testing.T) {
+	gitlabMock := newMockGitLab(t,
+		[]int{
+			11, // gitlab.mine/bl/repo-1
+		},
+		map[string][]int{
+			"101": []int{11},
+		}, 1)
+	gitlab.MockListProjects = gitlabMock.ListProjects
+
+	cache := make(mockCache)
+	ctx := context.Background()
+	authzProvider := NewProvider(GitLabAuthzProviderOp{
+		BaseURL:       mustURL(t, "https://gitlab.mine"),
+		AuthnConfigID: auth.ProviderConfigID{ID: "https://gitlab.mine/", Type: gitlab.GitLabServiceType},
+		MockCache:     cache,
+	})
+	if expCache := mockCache(map[string]string{}); !reflect.DeepEqual(cache, expCache) {
+		t.Errorf("expected cache to be %+v, but was %+v", expCache, cache)
+	}
+
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+		t.Fatal(err)
+	}
+	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":0}`}); !reflect.DeepEqual(cache, expCache) {
+		t.Errorf("expected cache to be %+v, but was %+v", expCache, cache)
+	}
+
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+		t.Fatal(err)
+	}
+	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":0}`}); !reflect.DeepEqual(cache, expCache) {
+		t.Errorf("expected cache to be %+v, but was %+v", expCache, cache)
+	}
+
+	authzProvider.cacheTTL = time.Hour * 5
+
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+		t.Fatal(err)
+	}
+	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":18000000000000}`}); !reflect.DeepEqual(cache, expCache) {
+		t.Errorf("expected cache to be %+v, but was %+v", expCache, cache)
+	}
+
+	authzProvider.cacheTTL = time.Second * 5
+
+	// Use lower TTL
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+		t.Fatal(err)
+	}
+	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":5000000000}`}); !reflect.DeepEqual(cache, expCache) {
+		t.Errorf("expected cache to be %+v, but was %+v", expCache, cache)
+	}
+
+	authzProvider.cacheTTL = time.Second * 60
+
+	// Increase in TTL doesn't overwrite cache entry
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+		t.Fatal(err)
+	}
+	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":5000000000}`}); !reflect.DeepEqual(cache, expCache) {
+		t.Errorf("expected cache to be %+v, but was %+v", expCache, cache)
 	}
 }
 
