@@ -108,13 +108,13 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 			}
 		}
 
-		authzProviders = append(authzProviders, NewProvider(op))
+		authzProviders = append(authzProviders, NewGitLabProvider(op))
 	}
 
 	return allowAccessByDefault, authzProviders, seriousProblems, warnings
 }
 
-// NewProvider is a mockable constructor for new GitLabAuthzProvider instances.
-var NewProvider = func(op permgl.GitLabAuthzProviderOp) authz.Provider {
+// NewGitLabProvider is a mockable constructor for new GitLabAuthzProvider instances.
+var NewGitLabProvider = func(op permgl.GitLabAuthzProviderOp) authz.Provider {
 	return permgl.NewProvider(op)
 }
