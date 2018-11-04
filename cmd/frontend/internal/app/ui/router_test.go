@@ -219,12 +219,12 @@ func TestRouter_RootPath(t *testing.T) {
 			}
 
 			// Mock GetByName to return the proper repo not found error type.
-			backend.Mocks.Repos.GetByName = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
-				if uri != tst.repo {
+			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+				if name != tst.repo {
 					panic("unexpected")
 				}
 				if tst.exists {
-					return &types.Repo{Name: uri}, nil
+					return &types.Repo{Name: name}, nil
 				}
 				return nil, &errcode.Mock{Message: "repo not found", IsNotFound: true}
 			}

@@ -57,13 +57,13 @@ var lastCheckMutex sync.Mutex
 // repository. If the last fetch of the repository was within the given
 // duration, returns false, otherwise returns true and updates the last
 // fetch stamp.
-func debounce(uri api.RepoName, since time.Duration) bool {
+func debounce(name api.RepoName, since time.Duration) bool {
 	lastCheckMutex.Lock()
 	defer lastCheckMutex.Unlock()
-	if t, ok := lastCheckAt[uri]; ok && time.Now().Before(t.Add(since)) {
+	if t, ok := lastCheckAt[name]; ok && time.Now().Before(t.Add(since)) {
 		return false
 	}
-	lastCheckAt[uri] = time.Now()
+	lastCheckAt[name] = time.Now()
 	return true
 }
 

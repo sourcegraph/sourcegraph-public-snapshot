@@ -16,8 +16,8 @@ import (
 
 type MockRepos struct {
 	Get                  func(v0 context.Context, id api.RepoID) (*types.Repo, error)
-	GetByName            func(v0 context.Context, uri api.RepoName) (*types.Repo, error)
-	Add                  func(uri api.RepoName) error
+	GetByName            func(v0 context.Context, name api.RepoName) (*types.Repo, error)
+	Add                  func(name api.RepoName) error
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 	GetCommit            func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
 	ResolveRev           func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
@@ -45,15 +45,15 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 	return
 }
 
-func (s *MockRepos) MockGetByName(t *testing.T, wantURI api.RepoName, repo api.RepoID) (called *bool) {
+func (s *MockRepos) MockGetByName(t *testing.T, wantName api.RepoName, repo api.RepoID) (called *bool) {
 	called = new(bool)
-	s.GetByName = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
+	s.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		*called = true
-		if uri != wantURI {
-			t.Errorf("got repo URI %q, want %q", uri, wantURI)
+		if name != wantName {
+			t.Errorf("got repo name %q, want %q", name, wantName)
 			return nil, errRepoNotFound
 		}
-		return &types.Repo{ID: repo, Name: uri}, nil
+		return &types.Repo{ID: repo, Name: name}, nil
 	}
 	return
 }

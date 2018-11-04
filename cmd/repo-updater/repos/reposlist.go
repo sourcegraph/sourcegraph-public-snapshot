@@ -188,7 +188,7 @@ type repoList struct {
 
 // A configuredRepo represents the configuration data for a given repo from
 // a configuration source, such as information retrieved from GitHub for a
-// given GitHubConnection. The URI isn't present because it's the key used
+// given GitHubConnection. The repo name isn't present because it's the key used
 // to look the repo up in a sourceRepoList.
 type configuredRepo struct {
 	url     string

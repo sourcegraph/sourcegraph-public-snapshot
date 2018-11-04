@@ -53,30 +53,30 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
-// GetByName retrieves the repository with the given URI. If the URI refers to a repository on a known external
+// GetByName retrieves the repository with the given name. If the name refers to a repository on a known external
 // service (such as a code host) that is not yet present in the database, it will automatically look up the
 // repository externally and add it to the database before returning it.
-func (s *repos) GetByName(ctx context.Context, uri api.RepoName) (_ *types.Repo, err error) {
+func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, uri)
+		return Mocks.Repos.GetByName(ctx, name)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetByName", uri, &err)
+	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	repo, err := db.Repos.GetByName(ctx, uri)
+	repo, err := db.Repos.GetByName(ctx, name)
 	if err != nil && envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
-		if err := s.Add(ctx, uri); err != nil {
+		if err := s.Add(ctx, name); err != nil {
 			return nil, err
 		}
-		return db.Repos.GetByName(ctx, uri)
+		return db.Repos.GetByName(ctx, name)
 	} else if err != nil {
-		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
+		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
 			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 				Scheme:   "https",
 				Host:     "sourcegraph.com",
-				Path:     string(uri),
+				Path:     string(name),
 				RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
 			}).String()}
 		}
@@ -86,28 +86,28 @@ func (s *repos) GetByName(ctx context.Context, uri api.RepoName) (_ *types.Repo,
 	return repo, nil
 }
 
-// Add adds the repository with the given URI. The URI is mapped to a repository by consulting the
-// repo-updater, which contains information about all configured code hosts and the URIs that they
+// Add adds the repository with the given name. The name is mapped to a repository by consulting the
+// repo-updater, which contains information about all configured code hosts and the names that they
 // handle.
-func (s *repos) Add(ctx context.Context, uri api.RepoName) (err error) {
+func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	if Mocks.Repos.Add != nil {
-		return Mocks.Repos.Add(uri)
+		return Mocks.Repos.Add(name)
 	}
 
-	ctx, done := trace(ctx, "Repos", "Add", uri, &err)
+	ctx, done := trace(ctx, "Repos", "Add", name, &err)
 	defer done()
 
 	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	if gitserverRepo := quickGitserverRepo(uri); gitserverRepo != nil {
+	if gitserverRepo := quickGitserverRepo(name); gitserverRepo != nil {
 		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
 			return err
 		}
 	}
 
 	// Try to look up and add the repo.
-	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: uri})
+	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
 	if err != nil {
 		return err
 	}

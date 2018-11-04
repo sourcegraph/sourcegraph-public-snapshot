@@ -44,10 +44,10 @@ func (err errPhabricatorRepoNotFound) Error() string {
 
 func (err errPhabricatorRepoNotFound) NotFound() bool { return true }
 
-func (*phabricator) Create(ctx context.Context, callsign string, uri api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (*phabricator) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
-		URI:      uri,
+		URI:      name,
 		URL:      phabURL,
 	}
 	err := dbconn.Global.QueryRowContext(

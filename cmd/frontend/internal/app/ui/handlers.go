@@ -66,12 +66,12 @@ type Common struct {
 	api.CommitID        // resolved SHA1 revision
 }
 
-// repoShortName trims the first path element of the given repo uri if it has
+// repoShortName trims the first path element of the given repo name if it has
 // at least two path components.
-func repoShortName(uri api.RepoName) string {
-	split := strings.Split(string(uri), "/")
+func repoShortName(name api.RepoName) string {
+	split := strings.Split(string(name), "/")
 	if len(split) < 2 {
-		return string(uri)
+		return string(name)
 	}
 	return strings.Join(split[1:], "/")
 }

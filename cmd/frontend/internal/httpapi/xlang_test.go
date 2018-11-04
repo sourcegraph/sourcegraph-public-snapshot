@@ -21,15 +21,15 @@ func TestXLang(t *testing.T) {
 	c := newTest()
 
 	calledValid := false
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
-		switch uri {
+	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+		switch name {
 		case "my/repo":
 			calledValid = true
-			return &types.Repo{ID: 1, Name: uri}, nil
+			return &types.Repo{ID: 1, Name: name}, nil
 		default:
-			t.Errorf("got unexpected repo %q", uri)
+			t.Errorf("got unexpected repo %q", name)
 			return nil, &errcode.Mock{
-				Message:    fmt.Sprintf("got unexpected repo %q", uri),
+				Message:    fmt.Sprintf("got unexpected repo %q", name),
 				IsNotFound: true,
 			}
 		}
