@@ -925,7 +925,7 @@ type searchResultResolver struct {
 	diff      *commitSearchResultResolver // diff or commit match
 }
 
-// getSearchResultURIs returns the repo uri and file uri respectiveley
+// getSearchResultURIs returns the repo name and file uri respectiveley
 func getSearchResultURIs(c *searchResultResolver) (string, string) {
 	if c.fileMatch != nil {
 		return string(c.fileMatch.repo.Name), c.fileMatch.JPath

@@ -1,4 +1,4 @@
-// Package originmap maps Sourcegraph repository URIs to repository
+// Package originmap maps Sourcegraph repository names to repository
 // origins (i.e., clone URLs). It accepts external customization via
 // the ORIGIN_MAP environment variable.
 //
@@ -53,7 +53,7 @@ type originMapsT struct {
 	originMap       []prefixAndOrgin
 	gitoliteHostMap []prefixAndOrgin
 
-	// reposListOriginMap is a mapping from repo URI (path) to repo origin (clone URL).
+	// reposListOriginMap is a mapping from repo name to repo origin (clone URL).
 	reposListOriginMap map[string]string
 
 	// mockForTesting can be set by tests to prevent the config watcher from
@@ -141,7 +141,7 @@ func (o *originMapsT) addGitHubDefaults() {
 	o.originMap = append(o.originMap, prefixAndOrgin{Prefix: "bitbucket.org/", Origin: "git@bitbucket.org:%.git"})
 }
 
-// OriginMap maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
+// OriginMap maps the repo name to the repository origin (clone URL). Returns empty string if no mapping was found.
 func OriginMap(repoName api.RepoName) string {
 	if origin, ok := originMaps.getReposListOriginMap()[string(repoName)]; ok {
 		return origin

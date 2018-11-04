@@ -58,7 +58,7 @@ func getBitbucketServerConnection(args protocol.RepoLookupArgs) (*bitbucketServe
 	}
 
 	if args.Repo != "" {
-		// Look up by repository URI.
+		// Look up by repository name.
 		repo := strings.ToLower(string(args.Repo))
 		for _, conn := range conns {
 			// TODO should this be based on RepositoryPathPattern?
@@ -172,7 +172,7 @@ func GetBitbucketServerRepository(ctx context.Context, args protocol.RepoLookupA
 	}
 
 	if args.Repo != "" {
-		// Look up by repository URI. Expect suffix {projectKey}/{repoSlug}
+		// Look up by repository name. Expect suffix {projectKey}/{repoSlug}
 		// TODO shouldn't we use RepositoryPathPattern?
 		match := bitbucketServerRepoInfoSuffix.FindStringSubmatch(string(args.Repo))
 		if len(match) == 0 {

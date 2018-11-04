@@ -74,7 +74,7 @@ func getGitLabConnection(args protocol.RepoLookupArgs) (*gitlabConnection, error
 	}
 
 	if args.Repo != "" {
-		// Look up by repository URI.
+		// Look up by repository name.
 		repo := strings.ToLower(string(args.Repo))
 		for _, conn := range gitlabConnections {
 			if strings.HasPrefix(repo, conn.baseURL.Hostname()+"/") {
@@ -140,7 +140,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	}
 
 	if args.Repo != "" {
-		// Look up by repository URI.
+		// Look up by repository name.
 		pathWithNamespace := strings.TrimPrefix(strings.ToLower(string(args.Repo)), conn.baseURL.Hostname()+"/")
 		proj, err := conn.client.GetProject(ctx, 0, pathWithNamespace)
 		if proj != nil {

@@ -94,7 +94,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 		return nil, true, errors.Wrap(err, "getServiceID")
 	}
 
-	// Unlike other code hosts (e.g., GitHub and GitLab), looking up by repository URI is not
+	// Unlike other code hosts (e.g., GitHub and GitLab), looking up by repository name is not
 	// supported because it's far less likely to be useful for AWS CodeCommit, which usually has a
 	// more limited universe of repositories.
 	return nil, false, nil

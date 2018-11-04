@@ -31,7 +31,7 @@ func TestGetGitHubConnection(t *testing.T) {
 		}
 	})
 
-	t.Run("by repo URI", func(t *testing.T) {
+	t.Run("by repo name", func(t *testing.T) {
 		t.Run("github.com", func(t *testing.T) {
 			c, err := getGitHubConnection(protocol.RepoLookupArgs{Repo: "github.com/foo/bar"})
 			if err != nil {
