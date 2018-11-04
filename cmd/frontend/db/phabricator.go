@@ -27,7 +27,7 @@ func init() {
 			for _, config := range conf.Get().Phabricator {
 				for _, repo := range config.Repos {
 					repos[api.RepoName(repo.Path)] = &types.PhabricatorRepo{
-						URI:      api.RepoName(repo.Path),
+						Name:     api.RepoName(repo.Path),
 						Callsign: repo.Callsign,
 						URL:      config.Url,
 					}
@@ -47,13 +47,13 @@ func (err errPhabricatorRepoNotFound) NotFound() bool { return true }
 func (*phabricator) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
-		URI:      name,
+		Name:     name,
 		URL:      phabURL,
 	}
 	err := dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO phabricator_repos(callsign, uri, url) VALUES($1, $2, $3) RETURNING id",
-		r.Callsign, r.URI, r.URL).Scan(&r.ID)
+		r.Callsign, r.Name, r.URL).Scan(&r.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +63,13 @@ func (*phabricator) Create(ctx context.Context, callsign string, name api.RepoNa
 func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, uri api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
-		URI:      uri,
+		Name:     uri,
 		URL:      phabURL,
 	}
 	err := dbconn.Global.QueryRowContext(
 		ctx,
 		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE uri=$3 RETURNING id",
-		r.Callsign, r.URL, r.URI).Scan(&r.ID)
+		r.Callsign, r.URL, r.Name).Scan(&r.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return p.Create(ctx, callsign, uri, phabURL)
@@ -100,7 +100,7 @@ func (*phabricator) getBySQL(ctx context.Context, query string, args ...interfac
 	defer rows.Close()
 	for rows.Next() {
 		r := types.PhabricatorRepo{}
-		err := rows.Scan(&r.ID, &r.Callsign, &r.URI, &r.URL)
+		err := rows.Scan(&r.ID, &r.Callsign, &r.Name, &r.URL)
 		if err != nil {
 			return nil, err
 		}

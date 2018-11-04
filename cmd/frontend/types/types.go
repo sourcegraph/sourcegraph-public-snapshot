@@ -89,7 +89,7 @@ type OrgMembership struct {
 
 type PhabricatorRepo struct {
 	ID       int32
-	URI      api.RepoName
+	Name     api.RepoName
 	URL      string
 	Callsign string
 }
