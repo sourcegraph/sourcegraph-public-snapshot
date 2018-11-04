@@ -41,12 +41,13 @@ export interface IQuery {
     viewerConfiguration: IConfigurationCascade
     clientConfiguration: IClientConfigurationDetails
     search: ISearch | null
-    searchScopes: ISearchScope[]
     savedQueries: ISavedQuery[]
     repoGroups: IRepoGroup[]
     site: ISite
     surveyResponses: ISurveyResponseConnection
     extensionRegistry: IExtensionRegistry
+    docSitePage: IDocSitePage | null
+    dotcom: IDotcomQuery
 }
 
 export interface INodeOnQueryArguments {
@@ -61,6 +62,7 @@ export interface IRepositoryOnQueryArguments {
 export interface IRepositoriesOnQueryArguments {
     first?: number | null
     query?: string | null
+    names?: string[] | null
 
     /**
      * @default true
@@ -130,6 +132,7 @@ export interface IUserOnQueryArguments {
 export interface IUsersOnQueryArguments {
     first?: number | null
     query?: string | null
+    tag?: string | null
     activePeriod?: UserActivePeriod | null
 }
 
@@ -144,9 +147,12 @@ export interface IOrganizationsOnQueryArguments {
 
 export interface IDiscussionThreadsOnQueryArguments {
     first?: number | null
+    query?: string | null
     threadID?: ID | null
     authorUserID?: ID | null
     targetRepositoryID?: ID | null
+    targetRepositoryName?: string | null
+    targetRepositoryGitCloneURL?: string | null
     targetRepositoryPath?: string | null
 }
 
@@ -175,18 +181,22 @@ export interface ISurveyResponsesOnQueryArguments {
     first?: number | null
 }
 
+export interface IDocSitePageOnQueryArguments {
+    path: string
+}
+
 export type Node =
     | IRepository
     | IGitCommit
     | IUser
     | IOrg
     | IOrganizationInvitation
-    | IRegistryExtension
     | IAccessToken
     | IExternalAccount
-    | IPackage
-    | IDependency
     | IGitRef
+    | IRegistryExtension
+    | IProductSubscription
+    | IProductLicense
 
 export interface INode {
     __typename: 'Node'
@@ -225,10 +235,6 @@ export interface IRepository {
     tags: IGitRefConnection
     comparison: IRepositoryComparison
     contributors: IRepositoryContributorConnection
-    symbols: ISymbolConnection
-    packages: IPackageConnection
-    dependencies: IDependencyConnection
-    listTotalRefs: ITotalRefList
     redirectURL: string | null
     viewerCanAdminister: boolean
 }
@@ -268,21 +274,6 @@ export interface IContributorsOnRepositoryArguments {
     first?: number | null
 }
 
-export interface ISymbolsOnRepositoryArguments {
-    first?: number | null
-    query?: string | null
-}
-
-export interface IPackagesOnRepositoryArguments {
-    first?: number | null
-    query?: string | null
-}
-
-export interface IDependenciesOnRepositoryArguments {
-    first?: number | null
-    query?: string | null
-}
-
 export interface IGitCommit {
     __typename: 'GitCommit'
     id: ID
@@ -305,8 +296,6 @@ export interface IGitCommit {
     ancestors: IGitCommitConnection
     behindAhead: IBehindAheadCounts
     symbols: ISymbolConnection
-    packages: IPackageConnection
-    dependencies: IDependencyConnection
 }
 
 export interface ITreeOnGitCommitArguments {
@@ -340,16 +329,6 @@ export interface IBehindAheadOnGitCommitArguments {
 }
 
 export interface ISymbolsOnGitCommitArguments {
-    first?: number | null
-    query?: string | null
-}
-
-export interface IPackagesOnGitCommitArguments {
-    first?: number | null
-    query?: string | null
-}
-
-export interface IDependenciesOnGitCommitArguments {
     first?: number | null
     query?: string | null
 }
@@ -402,7 +381,7 @@ export interface IUser {
     session: ISession
     viewerCanAdminister: boolean
     surveyResponses: ISurveyResponse[]
-    registryExtensions: IRegistryExtensionConnection
+    urlForSiteAdminBilling: string | null
 }
 
 export interface IAccessTokensOnUserArguments {
@@ -411,11 +390,6 @@ export interface IAccessTokensOnUserArguments {
 
 export interface IExternalAccountsOnUserArguments {
     first?: number | null
-}
-
-export interface IRegistryExtensionsOnUserArguments {
-    first?: number | null
-    query?: string | null
 }
 
 export type ConfigurationSubject = IUser | IOrg | ISite
@@ -434,7 +408,7 @@ export interface ISettings {
     id: number
     configuration: IConfiguration
     subject: ConfigurationSubject
-    author: IUser
+    author: IUser | null
     createdAt: string
 
     /**
@@ -451,7 +425,6 @@ export interface IConfiguration {
 
 export interface IConfigurationCascade {
     __typename: 'ConfigurationCascade'
-    defaults: IConfiguration | null
     subjects: ConfigurationSubject[]
     merged: IConfiguration
 }
@@ -476,18 +449,18 @@ export interface IOrg {
     viewerIsMember: boolean
     url: string
     settingsURL: string
-    registryExtensions: IRegistryExtensionConnection
-}
-
-export interface IRegistryExtensionsOnOrgArguments {
-    first?: number | null
-    query?: string | null
 }
 
 export interface IUserConnection {
     __typename: 'UserConnection'
     nodes: IUser[]
     totalCount: number
+    pageInfo: IPageInfo
+}
+
+export interface IPageInfo {
+    __typename: 'PageInfo'
+    hasNextPage: boolean
 }
 
 export interface IOrganizationInvitation {
@@ -507,47 +480,6 @@ export interface IOrganizationInvitation {
 export const enum OrganizationInvitationResponseType {
     ACCEPT = 'ACCEPT',
     REJECT = 'REJECT',
-}
-
-export interface IRegistryExtensionConnection {
-    __typename: 'RegistryExtensionConnection'
-    nodes: IRegistryExtension[]
-    totalCount: number
-    pageInfo: IPageInfo
-    url: string | null
-    error: string | null
-}
-
-export interface IRegistryExtension {
-    __typename: 'RegistryExtension'
-    id: ID
-    uuid: string
-    publisher: RegistryPublisher | null
-    extensionID: string
-    extensionIDWithoutRegistry: string
-    name: string
-    manifest: IExtensionManifest | null
-    createdAt: string | null
-    updatedAt: string | null
-    url: string
-    remoteURL: string | null
-    registryName: string
-    isLocal: boolean
-    viewerCanAdminister: boolean
-}
-
-export type RegistryPublisher = IUser | IOrg
-
-export interface IExtensionManifest {
-    __typename: 'ExtensionManifest'
-    raw: string
-    title: string | null
-    description: string | null
-}
-
-export interface IPageInfo {
-    __typename: 'PageInfo'
-    hasNextPage: boolean
 }
 
 export interface IOrganizationMembershipConnection {
@@ -654,10 +586,12 @@ export interface IGitTree {
     url: string
     canonicalURL: string
     externalURLs: IExternalLink[]
+    submodule: ISubmodule | null
     directories: IGitTree[]
     files: IFile[]
     entries: TreeEntry[]
     symbols: ISymbolConnection
+    isSingleChild: boolean
 }
 
 export interface IDirectoriesOnGitTreeArguments {
@@ -685,11 +619,25 @@ export interface IEntriesOnGitTreeArguments {
      * @default false
      */
     recursive?: boolean | null
+
+    /**
+     * @default false
+     */
+    recursiveSingleChild?: boolean | null
 }
 
 export interface ISymbolsOnGitTreeArguments {
     first?: number | null
     query?: string | null
+}
+
+export interface IIsSingleChildOnGitTreeArguments {
+    first?: number | null
+
+    /**
+     * @default false
+     */
+    recursive?: boolean | null
 }
 
 export type TreeEntry = IGitTree | IGitBlob
@@ -703,11 +651,22 @@ export interface ITreeEntry {
     canonicalURL: string
     externalURLs: IExternalLink[]
     symbols: ISymbolConnection
+    submodule: ISubmodule | null
+    isSingleChild: boolean
 }
 
 export interface ISymbolsOnTreeEntryArguments {
     first?: number | null
     query?: string | null
+}
+
+export interface IIsSingleChildOnTreeEntryArguments {
+    first?: number | null
+
+    /**
+     * @default false
+     */
+    recursive?: boolean | null
 }
 
 export interface ISymbolConnection {
@@ -781,7 +740,9 @@ export interface IGitBlob {
     blame: IHunk[]
     highlight: IHighlightedFile
     dependencyReferences: IDependencyReferences
+    submodule: ISubmodule | null
     symbols: ISymbolConnection
+    isSingleChild: boolean
 }
 
 export interface IBlameOnGitBlobArguments {
@@ -803,6 +764,20 @@ export interface IDependencyReferencesOnGitBlobArguments {
 export interface ISymbolsOnGitBlobArguments {
     first?: number | null
     query?: string | null
+}
+
+export interface IIsSingleChildOnGitBlobArguments {
+    first?: number | null
+
+    /**
+     * @default false
+     */
+    recursive?: boolean | null
+
+    /**
+     * @default false
+     */
+    recursiveSingleChild?: boolean | null
 }
 
 export type File2 = IGitBlob
@@ -888,6 +863,13 @@ export interface IHunk {
     commit: IGitCommit
 }
 
+export interface ISubmodule {
+    __typename: 'Submodule'
+    url: string
+    commit: string
+    path: string
+}
+
 export interface IRange {
     __typename: 'Range'
     start: IPosition
@@ -919,62 +901,6 @@ export interface IBehindAheadCounts {
     __typename: 'BehindAheadCounts'
     behind: number
     ahead: number
-}
-
-export interface IPackageConnection {
-    __typename: 'PackageConnection'
-    nodes: IPackage[]
-    totalCount: number
-    pageInfo: IPageInfo
-}
-
-export interface IPackage {
-    __typename: 'Package'
-    id: ID
-    definingCommit: IGitCommit
-    language: string
-    data: IKeyValue[]
-    dependencies: IDependency[]
-    internalReferences: IReferenceConnection | null
-    externalReferences: IReferenceConnection | null
-}
-
-export interface IKeyValue {
-    __typename: 'KeyValue'
-    key: string
-    value: any
-}
-
-export interface IDependency {
-    __typename: 'Dependency'
-    id: ID
-    dependingCommit: IGitCommit
-    language: string
-    data: IKeyValue[]
-    hints: IKeyValue[]
-    references: IReferenceConnection | null
-}
-
-export interface IReferenceConnection {
-    __typename: 'ReferenceConnection'
-    totalCount: number | null
-    approximateCount: IApproximateCount | null
-    queryString: string
-    symbolDescriptor: IKeyValue[]
-}
-
-export interface IApproximateCount {
-    __typename: 'ApproximateCount'
-    count: number
-    exact: boolean
-    label: string
-}
-
-export interface IDependencyConnection {
-    __typename: 'DependencyConnection'
-    nodes: IDependency[]
-    totalCount: number
-    pageInfo: IPageInfo
 }
 
 export interface IMirrorRepositoryInfo {
@@ -1158,12 +1084,6 @@ export interface ICommitsOnRepositoryContributorArguments {
     first?: number | null
 }
 
-export interface ITotalRefList {
-    __typename: 'TotalRefList'
-    repositories: IRepository[]
-    total: number
-}
-
 export const enum RepoOrderBy {
     REPO_URI = 'REPO_URI',
     REPO_CREATED_AT = 'REPO_CREATED_AT',
@@ -1215,6 +1135,7 @@ export interface IDiscussionThread {
     author: IUser
     title: string
     target: DiscussionThreadTarget
+    inlineURL: string | null
     createdAt: string
     updatedAt: string
     archivedAt: string | null
@@ -1234,6 +1155,16 @@ export interface IDiscussionThreadTargetRepo {
     branch: IGitRef | null
     revision: IGitRef | null
     selection: IDiscussionThreadTargetRepoSelection | null
+    relativePath: string | null
+    relativeSelection: IDiscussionSelectionRange | null
+}
+
+export interface IRelativePathOnDiscussionThreadTargetRepoArguments {
+    rev: string
+}
+
+export interface IRelativeSelectionOnDiscussionThreadTargetRepoArguments {
+    rev: string
 }
 
 export interface IDiscussionThreadTargetRepoSelection {
@@ -1242,9 +1173,17 @@ export interface IDiscussionThreadTargetRepoSelection {
     startCharacter: number
     endLine: number
     endCharacter: number
-    linesBefore: string
-    lines: string
-    linesAfter: string
+    linesBefore: string[]
+    lines: string[]
+    linesAfter: string[]
+}
+
+export interface IDiscussionSelectionRange {
+    __typename: 'DiscussionSelectionRange'
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
 }
 
 export interface IDiscussionCommentConnection {
@@ -1261,8 +1200,13 @@ export interface IDiscussionComment {
     author: IUser
     contents: string
     html: string
+    inlineURL: string | null
     createdAt: string
     updatedAt: string
+    reports: string[]
+    canReport: boolean
+    canDelete: boolean
+    canClearReports: boolean
 }
 
 export interface IHtmlOnDiscussionCommentArguments {
@@ -1364,7 +1308,7 @@ export interface ISearchAlert {
     __typename: 'SearchAlert'
     title: string
     description: string | null
-    proposedQueries: ISearchQueryDescription[]
+    proposedQueries: ISearchQueryDescription[] | null
 }
 
 export interface ISearchQueryDescription {
@@ -1388,14 +1332,6 @@ export interface ISearchResultsStats {
     __typename: 'SearchResultsStats'
     approximateResultCount: string
     sparkline: number[]
-}
-
-export interface ISearchScope {
-    __typename: 'SearchScope'
-    id: string | null
-    name: string
-    value: string
-    description: string | null
 }
 
 export interface ISavedQuery {
@@ -1423,34 +1359,24 @@ export interface ISite {
     siteID: string
     configuration: ISiteConfiguration
     latestSettings: ISettings | null
-    deprecatedSiteConfigurationSettings: string | null
     configurationCascade: IConfigurationCascade
     settingsURL: string
     canReloadSite: boolean
     viewerCanAdminister: boolean
-    langServers: ILangServer[]
-    langServer: ILangServer | null
-    languageServerManagementStatus: ILanguageServerManagementStatus | null
     accessTokens: IAccessTokenConnection
     authProviders: IAuthProviderConnection
     externalAccounts: IExternalAccountConnection
-    productName: string
     buildVersion: string
     productVersion: string
     updateCheck: IUpdateCheck
     needsRepositoryConfiguration: boolean
     noRepositoriesEnabled: boolean
-    configurationNotice: boolean
+    alerts: IAlert[]
     hasCodeIntelligence: boolean
-    externalAuthEnabled: boolean
     disableBuiltInSearches: boolean
     sendsEmailVerificationEmails: boolean
-    sourcegraphLicense: ISourcegraphLicense
+    productSubscription: IProductSubscriptionStatus
     activity: ISiteActivity
-}
-
-export interface ILangServerOnSiteArguments {
-    language: string
 }
 
 export interface IAccessTokensOnSiteArguments {
@@ -1474,42 +1400,9 @@ export interface IActivityOnSiteArguments {
 export interface ISiteConfiguration {
     __typename: 'SiteConfiguration'
     effectiveContents: string
-    pendingContents: string | null
     validationMessages: string[]
     canUpdate: boolean
     source: string
-}
-
-export interface ILangServer {
-    __typename: 'LangServer'
-    language: string
-    displayName: string
-    experimental: boolean
-    homepageURL: string | null
-    issuesURL: string | null
-    docsURL: string | null
-    dataCenter: boolean
-    custom: boolean
-    state: LangServerState
-    pending: boolean
-    downloading: boolean
-    canEnable: boolean
-    canDisable: boolean
-    canRestart: boolean
-    canUpdate: boolean
-    healthy: boolean
-}
-
-export const enum LangServerState {
-    LANG_SERVER_STATE_NONE = 'LANG_SERVER_STATE_NONE',
-    LANG_SERVER_STATE_ENABLED = 'LANG_SERVER_STATE_ENABLED',
-    LANG_SERVER_STATE_DISABLED = 'LANG_SERVER_STATE_DISABLED',
-}
-
-export interface ILanguageServerManagementStatus {
-    __typename: 'LanguageServerManagementStatus'
-    siteCanManage: boolean
-    reason: string | null
 }
 
 export interface IAuthProviderConnection {
@@ -1537,21 +1430,32 @@ export interface IUpdateCheck {
     updateVersionAvailable: string | null
 }
 
-export interface ISourcegraphLicense {
-    __typename: 'SourcegraphLicense'
-    siteID: string
-    primarySiteAdminEmail: string
-    userCount: number
-    productName: string
-    premiumFeatures: ISourcegraphFeature[]
+export interface IAlert {
+    __typename: 'Alert'
+    type: AlertType
+    message: string
+    isDismissibleWithKey: string | null
 }
 
-export interface ISourcegraphFeature {
-    __typename: 'SourcegraphFeature'
-    title: string
-    description: string
-    enabled: boolean
-    informationURL: string
+export const enum AlertType {
+    INFO = 'INFO',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR',
+}
+
+export interface IProductSubscriptionStatus {
+    __typename: 'ProductSubscriptionStatus'
+    productNameWithBrand: string
+    actualUserCount: number
+    license: IProductLicenseInfo | null
+}
+
+export interface IProductLicenseInfo {
+    __typename: 'ProductLicenseInfo'
+    productNameWithBrand: string
+    tags: string[]
+    userCount: number
+    expiresAt: string
 }
 
 export interface ISiteActivity {
@@ -1567,6 +1471,7 @@ export interface ISiteActivityPeriod {
     userCount: number
     registeredUserCount: number
     anonymousUserCount: number
+    integrationUserCount: number
 }
 
 export interface ISurveyResponseConnection {
@@ -1605,11 +1510,48 @@ export interface IExtensionsOnExtensionRegistryArguments {
      * @default true
      */
     remote?: boolean | null
-    prioritizeExtensionIDs: string[]
+    prioritizeExtensionIDs?: string[] | null
 }
 
 export interface IPublishersOnExtensionRegistryArguments {
     first?: number | null
+}
+
+export interface IRegistryExtension {
+    __typename: 'RegistryExtension'
+    id: ID
+    uuid: string
+    publisher: RegistryPublisher | null
+    extensionID: string
+    extensionIDWithoutRegistry: string
+    name: string
+    manifest: IExtensionManifest | null
+    createdAt: string | null
+    updatedAt: string | null
+    url: string
+    remoteURL: string | null
+    registryName: string
+    isLocal: boolean
+    viewerCanAdminister: boolean
+}
+
+export type RegistryPublisher = IUser | IOrg
+
+export interface IExtensionManifest {
+    __typename: 'ExtensionManifest'
+    raw: string
+    title: string | null
+    description: string | null
+    bundleURL: string | null
+}
+
+export interface IRegistryExtensionConnection {
+    __typename: 'RegistryExtensionConnection'
+    nodes: IRegistryExtension[]
+    totalCount: number
+    pageInfo: IPageInfo
+    url: string | null
+    error: string | null
 }
 
 export interface IRegistryPublisherConnection {
@@ -1617,6 +1559,136 @@ export interface IRegistryPublisherConnection {
     nodes: RegistryPublisher[]
     totalCount: number
     pageInfo: IPageInfo
+}
+
+export interface IDocSitePage {
+    __typename: 'DocSitePage'
+    title: string
+    contentHTML: string
+    indexHTML: string
+    filePath: string
+}
+
+export interface IDotcomQuery {
+    __typename: 'DotcomQuery'
+    productSubscription: IProductSubscription
+    productSubscriptions: IProductSubscriptionConnection
+    previewProductSubscriptionInvoice: IProductSubscriptionPreviewInvoice
+    productLicenses: IProductLicenseConnection
+    productPlans: IProductPlan[]
+}
+
+export interface IProductSubscriptionOnDotcomQueryArguments {
+    uuid: string
+}
+
+export interface IProductSubscriptionsOnDotcomQueryArguments {
+    first?: number | null
+    account?: ID | null
+}
+
+export interface IPreviewProductSubscriptionInvoiceOnDotcomQueryArguments {
+    account?: ID | null
+    subscriptionToUpdate?: ID | null
+    productSubscription: IProductSubscriptionInput
+}
+
+export interface IProductLicensesOnDotcomQueryArguments {
+    first?: number | null
+    licenseKeySubstring?: string | null
+    productSubscriptionID?: ID | null
+}
+
+export interface IProductSubscription {
+    __typename: 'ProductSubscription'
+    id: ID
+    uuid: string
+    name: string
+    account: IUser | null
+    invoiceItem: IProductSubscriptionInvoiceItem | null
+    events: IProductSubscriptionEvent[]
+    activeLicense: IProductLicense | null
+    productLicenses: IProductLicenseConnection
+    createdAt: string
+    isArchived: boolean
+    url: string
+    urlForSiteAdmin: string | null
+    urlForSiteAdminBilling: string | null
+}
+
+export interface IProductLicensesOnProductSubscriptionArguments {
+    first?: number | null
+}
+
+export interface IProductSubscriptionInvoiceItem {
+    __typename: 'ProductSubscriptionInvoiceItem'
+    plan: IProductPlan
+    userCount: number
+    expiresAt: string
+}
+
+export interface IProductPlan {
+    __typename: 'ProductPlan'
+    billingPlanID: string
+    productPlanID: string
+    name: string
+    nameWithBrand: string
+    pricePerUserPerYear: number
+    minQuantity: number | null
+    tiersMode: string
+    planTiers: IPlanTier[]
+}
+
+export interface IPlanTier {
+    __typename: 'PlanTier'
+    unitAmount: number
+    upTo: number
+}
+
+export interface IProductSubscriptionEvent {
+    __typename: 'ProductSubscriptionEvent'
+    id: string
+    date: string
+    title: string
+    description: string | null
+    url: string | null
+}
+
+export interface IProductLicense {
+    __typename: 'ProductLicense'
+    id: ID
+    subscription: IProductSubscription
+    info: IProductLicenseInfo | null
+    licenseKey: string
+    createdAt: string
+}
+
+export interface IProductLicenseConnection {
+    __typename: 'ProductLicenseConnection'
+    nodes: IProductLicense[]
+    totalCount: number
+    pageInfo: IPageInfo
+}
+
+export interface IProductSubscriptionConnection {
+    __typename: 'ProductSubscriptionConnection'
+    nodes: IProductSubscription[]
+    totalCount: number
+    pageInfo: IPageInfo
+}
+
+export interface IProductSubscriptionInput {
+    billingPlanID: string
+    userCount: number
+}
+
+export interface IProductSubscriptionPreviewInvoice {
+    __typename: 'ProductSubscriptionPreviewInvoice'
+    price: number
+    prorationDate: string | null
+    isDowngradeRequiringManualIntervention: boolean
+    beforeInvoiceItem: IProductSubscriptionInvoiceItem | null
+    afterInvoiceItem: IProductSubscriptionInvoiceItem
 }
 
 export interface IMutation {
@@ -1648,18 +1720,19 @@ export interface IMutation {
     revokeOrganizationInvitation: IEmptyResponse
     addUserToOrganization: IEmptyResponse
     removeUserFromOrganization: IEmptyResponse | null
+    setTag: IEmptyResponse
     addPhabricatorRepo: IEmptyResponse | null
     resolvePhabricatorDiff: IGitCommit | null
     logUserEvent: IEmptyResponse | null
     sendSavedSearchTestNotification: IEmptyResponse | null
     configurationMutation: IConfigurationMutation | null
     updateSiteConfiguration: boolean
-    langServers: ILangServersMutation | null
     discussions: IDiscussionsMutation | null
     setUserIsSiteAdmin: IEmptyResponse | null
     reloadSite: IEmptyResponse | null
     submitSurvey: IEmptyResponse | null
     extensionRegistry: IExtensionRegistryMutation
+    dotcom: IDotcomMutation
 }
 
 export interface IUpdateUserOnMutationArguments {
@@ -1736,6 +1809,7 @@ export interface ISetUserEmailVerifiedOnMutationArguments {
 
 export interface IDeleteUserOnMutationArguments {
     user: ID
+    hard?: boolean | null
 }
 
 export interface IUpdatePasswordOnMutationArguments {
@@ -1784,6 +1858,12 @@ export interface IAddUserToOrganizationOnMutationArguments {
 export interface IRemoveUserFromOrganizationOnMutationArguments {
     user: ID
     organization: ID
+}
+
+export interface ISetTagOnMutationArguments {
+    node: ID
+    tag: string
+    present: boolean
 }
 
 export interface IAddPhabricatorRepoOnMutationArguments {
@@ -1967,35 +2047,12 @@ export interface IUpdateConfigurationPayload {
     empty: IEmptyResponse | null
 }
 
-export interface ILangServersMutation {
-    __typename: 'LangServersMutation'
-    enable: IEmptyResponse | null
-    disable: IEmptyResponse | null
-    restart: IEmptyResponse | null
-    update: IEmptyResponse | null
-}
-
-export interface IEnableOnLangServersMutationArguments {
-    language: string
-}
-
-export interface IDisableOnLangServersMutationArguments {
-    language: string
-}
-
-export interface IRestartOnLangServersMutationArguments {
-    language: string
-}
-
-export interface IUpdateOnLangServersMutationArguments {
-    language: string
-}
-
 export interface IDiscussionsMutation {
     __typename: 'DiscussionsMutation'
     createThread: IDiscussionThread
-    updateThread: IDiscussionThread
+    updateThread: IDiscussionThread | null
     addCommentToThread: IDiscussionThread
+    updateComment: IDiscussionThread
 }
 
 export interface ICreateThreadOnDiscussionsMutationArguments {
@@ -2011,17 +2068,23 @@ export interface IAddCommentToThreadOnDiscussionsMutationArguments {
     contents: string
 }
 
+export interface IUpdateCommentOnDiscussionsMutationArguments {
+    input: IDiscussionCommentUpdateInput
+}
+
 export interface IDiscussionThreadCreateInput {
-    title: string
+    title?: string | null
     contents: string
     targetRepo?: IDiscussionThreadTargetRepoInput | null
 }
 
 export interface IDiscussionThreadTargetRepoInput {
-    repository: ID
+    repositoryID?: ID | null
+    repositoryName?: string | null
+    repositoryGitCloneURL?: string | null
     path?: string | null
     branch?: string | null
-    revision?: string | null
+    revision?: any | null
     selection?: IDiscussionThreadTargetRepoSelectionInput | null
 }
 
@@ -2030,15 +2093,22 @@ export interface IDiscussionThreadTargetRepoSelectionInput {
     startCharacter: number
     endLine: number
     endCharacter: number
-    linesBefore: string
-    lines: string
-    linesAfter: string
+    linesBefore?: string[] | null
+    lines?: string[] | null
+    linesAfter?: string[] | null
 }
 
 export interface IDiscussionThreadUpdateInput {
     ThreadID: ID
     Archive?: boolean | null
     Delete?: boolean | null
+}
+
+export interface IDiscussionCommentUpdateInput {
+    commentID: ID
+    delete?: boolean | null
+    report?: string | null
+    clearReports?: boolean | null
 }
 
 export interface ISurveySubmissionInput {
@@ -2053,6 +2123,7 @@ export interface IExtensionRegistryMutation {
     createExtension: IExtensionRegistryCreateExtensionResult
     updateExtension: IExtensionRegistryUpdateExtensionResult
     deleteExtension: IEmptyResponse
+    publishExtension: IExtensionRegistryCreateExtensionResult
 }
 
 export interface ICreateExtensionOnExtensionRegistryMutationArguments {
@@ -2063,11 +2134,22 @@ export interface ICreateExtensionOnExtensionRegistryMutationArguments {
 export interface IUpdateExtensionOnExtensionRegistryMutationArguments {
     extension: ID
     name?: string | null
-    manifest?: string | null
 }
 
 export interface IDeleteExtensionOnExtensionRegistryMutationArguments {
     extension: ID
+}
+
+export interface IPublishExtensionOnExtensionRegistryMutationArguments {
+    extensionID: string
+    manifest: string
+    bundle?: string | null
+    sourceMap?: string | null
+
+    /**
+     * @default false
+     */
+    force?: boolean | null
 }
 
 export interface IExtensionRegistryCreateExtensionResult {
@@ -2078,6 +2160,68 @@ export interface IExtensionRegistryCreateExtensionResult {
 export interface IExtensionRegistryUpdateExtensionResult {
     __typename: 'ExtensionRegistryUpdateExtensionResult'
     extension: IRegistryExtension
+}
+
+export interface IDotcomMutation {
+    __typename: 'DotcomMutation'
+    setUserBilling: IEmptyResponse
+    createProductSubscription: IProductSubscription
+    setProductSubscriptionBilling: IEmptyResponse
+    generateProductLicenseForSubscription: IProductLicense
+    createPaidProductSubscription: ICreatePaidProductSubscriptionResult
+    updatePaidProductSubscription: IUpdatePaidProductSubscriptionResult
+    archiveProductSubscription: IEmptyResponse
+}
+
+export interface ISetUserBillingOnDotcomMutationArguments {
+    user: ID
+    billingCustomerID?: string | null
+}
+
+export interface ICreateProductSubscriptionOnDotcomMutationArguments {
+    accountID: ID
+}
+
+export interface ISetProductSubscriptionBillingOnDotcomMutationArguments {
+    id: ID
+    billingSubscriptionID?: string | null
+}
+
+export interface IGenerateProductLicenseForSubscriptionOnDotcomMutationArguments {
+    productSubscriptionID: ID
+    license: IProductLicenseInput
+}
+
+export interface ICreatePaidProductSubscriptionOnDotcomMutationArguments {
+    accountID: ID
+    productSubscription: IProductSubscriptionInput
+    paymentToken: string
+}
+
+export interface IUpdatePaidProductSubscriptionOnDotcomMutationArguments {
+    subscriptionID: ID
+    update: IProductSubscriptionInput
+    paymentToken: string
+}
+
+export interface IArchiveProductSubscriptionOnDotcomMutationArguments {
+    id: ID
+}
+
+export interface IProductLicenseInput {
+    tags: string[]
+    userCount: number
+    expiresAt: number
+}
+
+export interface ICreatePaidProductSubscriptionResult {
+    __typename: 'CreatePaidProductSubscriptionResult'
+    productSubscription: IProductSubscription
+}
+
+export interface IUpdatePaidProductSubscriptionResult {
+    __typename: 'UpdatePaidProductSubscriptionResult'
+    productSubscription: IProductSubscription
 }
 
 export interface IDiff {
@@ -2119,4 +2263,9 @@ export interface IDeploymentConfiguration {
     __typename: 'DeploymentConfiguration'
     email: string | null
     siteID: string | null
+}
+
+export interface IExtensionRegistryPublishExtensionResult {
+    __typename: 'ExtensionRegistryPublishExtensionResult'
+    extension: IRegistryExtension
 }
