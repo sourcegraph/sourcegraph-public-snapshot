@@ -24,7 +24,7 @@ func TestPkgs_update_delete(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 	rp, err := db.Repos.GetByName(ctx, "myrepo")
@@ -92,7 +92,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 	rp, err := db.Repos.GetByName(ctx, "myrepo")

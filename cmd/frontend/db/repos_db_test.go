@@ -32,7 +32,7 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: repo.Name, Description: repo.Description, Fork: repo.Fork, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: repo.Name, Description: repo.Description, Fork: repo.Fork, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 }
