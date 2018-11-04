@@ -27,13 +27,13 @@ type repositoryTextSearchIndexResolver struct {
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
-		repoList, err := zoektCl.List(ctx, zoektquery.NewRepoSet(string(r.repo.repo.URI)))
+		repoList, err := zoektCl.List(ctx, zoektquery.NewRepoSet(string(r.repo.repo.Name)))
 		if err != nil {
 			r.err = err
 			return
 		}
 		if len(repoList.Repos) > 1 {
-			r.err = fmt.Errorf("more than 1 indexed repo found for %q", r.repo.repo.URI)
+			r.err = fmt.Errorf("more than 1 indexed repo found for %q", r.repo.repo.Name)
 			return
 		}
 		if len(repoList.Repos) == 1 {

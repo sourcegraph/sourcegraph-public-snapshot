@@ -43,7 +43,7 @@ func (g *globalDeps) TotalRefs(ctx context.Context, repo *types.Repo, langs []*i
 	for _, lang := range langs {
 		switch lang.Name {
 		case inventory.LangGo:
-			for _, expandedSources := range repoNameToGoPathPrefixes(repo.URI) {
+			for _, expandedSources := range repoNameToGoPathPrefixes(repo.Name) {
 				refs, err := g.doTotalRefsGo(ctx, expandedSources)
 				if err != nil {
 					return 0, errors.Wrap(err, "doTotalRefsGo")
@@ -69,7 +69,7 @@ func (g *globalDeps) ListTotalRefs(ctx context.Context, repo *types.Repo, langs 
 	for _, lang := range langs {
 		switch lang.Name {
 		case inventory.LangGo:
-			for _, expandedSources := range repoNameToGoPathPrefixes(repo.URI) {
+			for _, expandedSources := range repoNameToGoPathPrefixes(repo.Name) {
 				refs, err := g.doListTotalRefsGo(ctx, expandedSources)
 				if err != nil {
 					return nil, errors.Wrap(err, "doListTotalRefsGo")

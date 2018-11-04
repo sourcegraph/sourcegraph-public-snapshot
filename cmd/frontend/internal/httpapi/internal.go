@@ -480,11 +480,11 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if !repo.Enabled {
-		return errors.Errorf("repo is not enabled: %s", repo.URI)
+		return errors.Errorf("repo is not enabled: %s", repo.Name)
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Repo = gitserver.Repo{Name: repo.URI}
+	cmd.Repo = gitserver.Repo{Name: repo.Name}
 	refs, err := cmd.Output(r.Context())
 	if err != nil {
 		return err
@@ -504,7 +504,7 @@ func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	gitserver.DefaultClient.UploadPack(repo.URI, w, r)
+	gitserver.DefaultClient.UploadPack(repo.Name, w, r)
 	return nil
 }
 

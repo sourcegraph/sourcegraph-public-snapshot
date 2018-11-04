@@ -35,7 +35,7 @@ func (dependencies) RefreshIndex(ctx context.Context, repo *types.Repo, commitID
 			err = db.GlobalDeps.UpdateIndexForLanguage(ctx, lang, repo.ID, deps)
 		}
 		if err != nil && !proxy.IsModeNotFound(err) {
-			log15.Error("Refreshing repository dependencies index failed.", "repo", repo.URI, "language", lang, "error", err)
+			log15.Error("Refreshing repository dependencies index failed.", "repo", repo.Name, "language", lang, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", lang, err))
 		}
 	}
@@ -48,7 +48,7 @@ func (dependencies) RefreshIndex(ctx context.Context, repo *types.Repo, commitID
 }
 
 func (dependencies) listForLanguageInRepo(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID, background bool) (deps []xlang_lspext.DependencyReference, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "listForLanguageInRepo "+language+" "+string(repo.URI))
+	span, ctx := opentracing.StartSpanFromContext(ctx, "listForLanguageInRepo "+language+" "+string(repo.Name))
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -68,7 +68,7 @@ func (dependencies) listForLanguageInRepo(ctx context.Context, language string, 
 	if background {
 		bgSuffix = "_bg"
 	}
-	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
+	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.Name) + "?" + string(commitID))
 	err = cachedUnsafeXLangCall(ctx, language+bgSuffix, rootURI, "workspace/xdependencies", map[string]string{}, &deps)
 	if err != nil {
 		return nil, errors.Wrap(err, "LSP Call workspace/xdependencies")

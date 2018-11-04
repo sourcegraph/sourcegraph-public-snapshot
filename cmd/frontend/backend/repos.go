@@ -157,7 +157,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
@@ -169,13 +169,13 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	}
 
 	// Try cache first
-	cacheKey := fmt.Sprintf("%s:%s", repo.URI, commitID)
+	cacheKey := fmt.Sprintf("%s:%s", repo.Name, commitID)
 	if b, ok := inventoryCache.Get(cacheKey); ok {
 		var inv inventory.Inventory
 		if err := json.Unmarshal(b, &inv); err == nil {
 			return &inv, nil
 		}
-		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.URI, "commitID", commitID, "err", err)
+		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.Name, "commitID", commitID, "err", err)
 	}
 
 	// Not found in the cache, so compute it.
@@ -199,7 +199,7 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, comm
 		return Mocks.Repos.GetInventoryUncached(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	files, err := git.ReadDir(ctx, CachedGitRepo(repo), commitID, "", true)
@@ -220,7 +220,7 @@ func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) 
 		return nil
 	}
 
-	ctx, done := trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.URI}, &err)
+	ctx, done := trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.Name}, &err)
 	defer done()
 
 	// make staticcheck happy about "this value of ctx is never used (SA4006)". Not
@@ -229,7 +229,7 @@ func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) 
 	_ = ctx
 
 	go func() {
-		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo.URI))
+		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo.Name))
 		if err != nil {
 			log15.Error("RefreshIndex failed", "error", err)
 			return

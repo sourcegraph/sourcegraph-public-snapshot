@@ -23,28 +23,28 @@ import (
 // value), those operations will fail. This occurs when the repository isn't cloned on gitserver or
 // when an update is needed (eg in ResolveRevision).
 func CachedGitRepo(repo *types.Repo) gitserver.Repo {
-	if r := quickGitserverRepo(repo.URI); r != nil {
+	if r := quickGitserverRepo(repo.Name); r != nil {
 		return *r
 	}
-	return gitserver.Repo{Name: repo.URI}
+	return gitserver.Repo{Name: repo.Name}
 }
 
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
 func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	if gitserverRepo := quickGitserverRepo(repo.URI); gitserverRepo != nil {
+	if gitserverRepo := quickGitserverRepo(repo.Name); gitserverRepo != nil {
 		return *gitserverRepo, nil
 	}
 
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo:         repo.URI,
+		Repo:         repo.Name,
 		ExternalRepo: repo.ExternalRepo,
 	})
 	if err != nil {
-		return gitserver.Repo{Name: repo.URI}, err
+		return gitserver.Repo{Name: repo.Name}, err
 	}
 	if result.Repo == nil {
-		return gitserver.Repo{Name: repo.URI}, repoupdater.ErrNotFound
+		return gitserver.Repo{Name: repo.Name}, repoupdater.ErrNotFound
 	}
 	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
@@ -85,7 +85,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.URI, "rev": rev}, &err)
+	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
 	// Try to get latest remote URL, but continue even if that fails.
@@ -102,10 +102,10 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return Mocks.Repos.GetCommit(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
-	log15.Debug("svc.local.repos.GetCommit", "repo", repo.URI, "commitID", commitID)
+	log15.Debug("svc.local.repos.GetCommit", "repo", repo.Name, "commitID", commitID)
 
 	if !git.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
@@ -136,6 +136,6 @@ func maybeLogRepoUpdaterError(repo *types.Repo, err error) {
 		msg = "Repository host was temporarily unavailable while retrieving repository information."
 	}
 	if msg != "" {
-		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.URI)
+		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.Name)
 	}
 }

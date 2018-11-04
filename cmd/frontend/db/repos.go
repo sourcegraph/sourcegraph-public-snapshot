@@ -114,7 +114,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 
 		if err := rows.Scan(
 			&repo.ID,
-			&repo.URI,
+			&repo.Name,
 			&repo.Description,
 			&repo.Language,
 			&repo.Enabled,

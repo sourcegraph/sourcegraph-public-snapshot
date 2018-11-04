@@ -62,7 +62,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	symbols, err := backend.Symbols.List(r.Context(), repo.URI, commitID, mode, lspext.WorkspaceSymbolParams{
+	symbols, err := backend.Symbols.List(r.Context(), repo.Name, commitID, mode, lspext.WorkspaceSymbolParams{
 		Symbol: lspext.SymbolDescriptor{"id": symbolID},
 	})
 	if err != nil {
@@ -77,7 +77,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		}
 		filePath := uri.Fragment
 		dest := &url.URL{
-			Path:     "/" + path.Join(string(repo.URI), "-/blob", filePath),
+			Path:     "/" + path.Join(string(repo.Name), "-/blob", filePath),
 			Fragment: fmt.Sprintf("L%d:%d$references", symbol.Location.Range.Start.Line+1, symbol.Location.Range.Start.Character+1),
 		}
 		http.Redirect(w, r, dest.String(), http.StatusFound)

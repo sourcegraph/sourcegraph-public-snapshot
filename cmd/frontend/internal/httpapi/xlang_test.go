@@ -25,7 +25,7 @@ func TestXLang(t *testing.T) {
 		switch uri {
 		case "my/repo":
 			calledValid = true
-			return &types.Repo{ID: 1, URI: uri}, nil
+			return &types.Repo{ID: 1, Name: uri}, nil
 		default:
 			t.Errorf("got unexpected repo %q", uri)
 			return nil, &errcode.Mock{

@@ -48,7 +48,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := search.RepositoryRevisions{
-		Repo:          &types.Repo{ID: 1, URI: "repo"},
+		Repo:          &types.Repo{ID: 1, Name: "repo"},
 		GitserverRepo: gitserver.Repo{Name: "repo", URL: "u"},
 		Revs:          []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
@@ -65,7 +65,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if want := []*commitSearchResultResolver{
 		{
 			commit: &gitCommitResolver{
-				repo:   &repositoryResolver{repo: &types.Repo{ID: 1, URI: "repo"}},
+				repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
 				oid:    "c1",
 				author: *toSignatureResolver(&git.Signature{}),
 			},

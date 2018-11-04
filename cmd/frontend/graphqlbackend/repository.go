@@ -68,12 +68,12 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 }
 
 func (r *repositoryResolver) Name() string {
-	return string(r.repo.URI)
+	return string(r.repo.Name)
 }
 
 // TODO(chris): Remove URI in favor of Name.
 func (r *repositoryResolver) URI() string {
-	return string(r.repo.URI)
+	return string(r.repo.Name)
 }
 
 func (r *repositoryResolver) Description() string {
@@ -191,7 +191,7 @@ func (r *repositoryResolver) UpdatedAt() *string {
 	return nil
 }
 
-func (r *repositoryResolver) URL() string { return "/" + string(r.repo.URI) }
+func (r *repositoryResolver) URL() string { return "/" + string(r.repo.Name) }
 
 func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Repository(ctx, r.repo)

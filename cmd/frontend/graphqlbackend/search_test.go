@@ -4,7 +4,7 @@ func testStringResult(result *searchSuggestionResolver) string {
 	var name string
 	switch r := result.result.(type) {
 	case *repositoryResolver:
-		name = "repo:" + string(r.repo.URI)
+		name = "repo:" + string(r.repo.Name)
 	case *gitTreeEntryResolver:
 		name = "file:" + r.path
 	default:

@@ -23,8 +23,8 @@ func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 		return nil, err
 	}
 
-	if origRepo != repo.URI {
-		return nil, &URLMovedError{repo.URI}
+	if origRepo != repo.Name {
+		return nil, &URLMovedError{repo.Name}
 	}
 
 	return repo, nil

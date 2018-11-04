@@ -222,7 +222,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		if err != nil {
 			return errors.Wrap(err, "repoShortName: db.Repos.Get")
 		}
-		split := strings.Split(string(repo.URI), "/")
+		split := strings.Split(string(repo.Name), "/")
 		if len(split) > 2 {
 			split = split[len(split)-2:]
 		}

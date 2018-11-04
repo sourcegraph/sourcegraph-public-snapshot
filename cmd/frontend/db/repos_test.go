@@ -191,8 +191,8 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if rp.URI != "myrepo" {
-		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
+	if rp.Name != "myrepo" {
+		t.Fatalf("rp.URI: %s != %s", rp.Name, "myrepo")
 	}
 
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true}); err != nil {
@@ -204,8 +204,8 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if rp.URI != "myrepo" {
-		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
+	if rp.Name != "myrepo" {
+		t.Fatalf("rp.URI: %s != %s", rp.Name, "myrepo")
 	}
 	if rp.Description != "asdfasdf" {
 		t.Fatalf("rp.URI: %q != %q", rp.Description, "asdfasdf")
