@@ -24,8 +24,8 @@ type authzFilter_Test struct {
 type authzFilter_call struct {
 	description string
 
-	isAuthenticated bool
-	userAccounts    []*extsvc.ExternalAccount
+	user         *types.User
+	userAccounts []*extsvc.ExternalAccount
 
 	repos []*types.Repo
 	perm  authz.Perm
@@ -35,19 +35,25 @@ type authzFilter_call struct {
 
 func (r authzFilter_Test) run(t *testing.T) {
 	t.Logf("Test case %q", r.description)
-
-	// No dependence on user data
-	Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{}, nil
-	}
 	authz.SetProviders(r.authzAllowByDefault, r.authzProviders)
 
 	for _, c := range r.calls {
 		t.Logf("Call %q", c.description)
 
+		Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			if c.user == nil {
+				t.Fatal("unexpected call to GetByCurrentAuthUser when request is not authenticated")
+			}
+			actr := actor.FromContext(ctx)
+			if !actr.IsAuthenticated() || actr.UID != c.user.ID {
+				t.Fatalf("unexpected actor in request context: %+v", actr)
+			}
+			return c.user, nil
+		}
+
 		ctx := context.Background()
-		if c.isAuthenticated {
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		if c.user != nil {
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: c.user.ID})
 		}
 
 		Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) error { return nil }
@@ -105,9 +111,9 @@ func Test_authzFilter(t *testing.T) {
 			},
 			calls: []authzFilter_call{
 				{
-					description:     "u1 can read its own repo",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
+					description:  "u1 can read its own repo",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 					},
@@ -117,9 +123,9 @@ func Test_authzFilter(t *testing.T) {
 					},
 				},
 				{
-					description:     "u1 not allowed to read u2's repo",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
+					description:  "u1 not allowed to read u2's repo",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -134,9 +140,9 @@ func Test_authzFilter(t *testing.T) {
 					},
 				},
 				{
-					description:     "u2 not allowed to read u0's repo",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(2, "gitlab", "https://gitlab.mine/", "u2")},
+					description:  "u2 not allowed to read u0's repo",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(2, "gitlab", "https://gitlab.mine/", "u2")},
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -150,9 +156,9 @@ func Test_authzFilter(t *testing.T) {
 						{URI: "gitlab.mine/org/r0"},
 					},
 				}, {
-					description:     "u99 not allowed to read anyone's repo",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(99, "gitlab", "https://gitlab.mine/", "u99")},
+					description:  "u99 not allowed to read anyone's repo",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(99, "gitlab", "https://gitlab.mine/", "u99")},
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -164,9 +170,9 @@ func Test_authzFilter(t *testing.T) {
 					},
 					perm: authz.Read,
 				}, {
-					description:     "u99 can read unmanaged repo",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(99, "gitlab", "https://gitlab.mine/", "u99")},
+					description:  "u99 can read unmanaged repo",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(99, "gitlab", "https://gitlab.mine/", "u99")},
 					repos: []*types.Repo{
 						{URI: "other.mine/r"},
 					},
@@ -175,9 +181,9 @@ func Test_authzFilter(t *testing.T) {
 					},
 					perm: authz.Read,
 				}, {
-					description:     "u1 can read its own, public, and unmanaged repos",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
+					description:  "u1 can read its own, public, and unmanaged repos",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -193,9 +199,9 @@ func Test_authzFilter(t *testing.T) {
 					},
 					perm: authz.Read,
 				}, {
-					description:     "authenticated but 0 accounts can read public anad unmanaged repos",
-					isAuthenticated: true,
-					userAccounts:    nil,
+					description:  "authenticated but 0 accounts can read public anad unmanaged repos",
+					user:         &types.User{ID: 1},
+					userAccounts: nil,
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -209,9 +215,9 @@ func Test_authzFilter(t *testing.T) {
 					},
 					perm: authz.Read,
 				}, {
-					description:     "unauthenticated can read public and unmanaged repos",
-					isAuthenticated: false,
-					userAccounts:    nil,
+					description:  "unauthenticated can read public and unmanaged repos",
+					user:         nil,
+					userAccounts: nil,
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -220,6 +226,25 @@ func Test_authzFilter(t *testing.T) {
 						{URI: "otherHost/r0"},
 					},
 					expFilteredRepos: []*types.Repo{
+						{URI: "gitlab.mine/org/r0"},
+						{URI: "otherHost/r0"},
+					},
+					perm: authz.Read,
+				}, {
+					description:  "admin user can read all repos",
+					user:         &types.User{ID: 777, SiteAdmin: true},
+					userAccounts: nil,
+					repos: []*types.Repo{
+						{URI: "gitlab.mine/u1/r0"},
+						{URI: "gitlab.mine/u2/r0"},
+						{URI: "gitlab.mine/sharedPrivate/r0"},
+						{URI: "gitlab.mine/org/r0"},
+						{URI: "otherHost/r0"},
+					},
+					expFilteredRepos: []*types.Repo{
+						{URI: "gitlab.mine/u1/r0"},
+						{URI: "gitlab.mine/u2/r0"},
+						{URI: "gitlab.mine/sharedPrivate/r0"},
 						{URI: "gitlab.mine/org/r0"},
 						{URI: "otherHost/r0"},
 					},
@@ -273,8 +298,8 @@ func Test_authzFilter(t *testing.T) {
 			},
 			calls: []authzFilter_call{
 				{
-					description:     "u1 can read its own repos, but not others'",
-					isAuthenticated: true,
+					description: "u1 can read its own repos, but not others'",
+					user:        &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{
 						acct(1, "gitlab", "https://gitlab0.mine/", "u1"),
 						acct(1, "gitlab", "https://gitlab1.mine/", "u1"),
@@ -300,8 +325,8 @@ func Test_authzFilter(t *testing.T) {
 					perm: authz.Read,
 				},
 				{
-					description:     "u1 with external account on one instance, can't read repos from the other'",
-					isAuthenticated: true,
+					description: "u1 with external account on one instance, can't read repos from the other'",
+					user:        &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{
 						acct(1, "gitlab", "https://gitlab1.mine/", "u1"),
 					},
@@ -371,8 +396,8 @@ func Test_authzFilter(t *testing.T) {
 			},
 			calls: []authzFilter_call{
 				{
-					description:     "u1 can read its own repos, but not others'",
-					isAuthenticated: true,
+					description: "u1 can read its own repos, but not others'",
+					user:        &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{
 						acct(1, "gitlab", "https://gitlab0.mine/", "u1"),
 						acct(1, "gitlab", "https://gitlab1.mine/", "u1"),
@@ -428,9 +453,9 @@ func Test_authzFilter(t *testing.T) {
 			},
 			calls: []authzFilter_call{
 				{
-					description:     "new ext account should be created",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(1, "saml", "https://okta.mine/", "u1")},
+					description:  "new ext account should be created",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(1, "saml", "https://okta.mine/", "u1")},
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -443,9 +468,9 @@ func Test_authzFilter(t *testing.T) {
 					},
 				},
 				{
-					description:     "new ext account should not be created for user that doesn't exist",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(1, "saml", "https://okta.mine/", "u99")},
+					description:  "new ext account should not be created for user that doesn't exist",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(1, "saml", "https://okta.mine/", "u99")},
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -457,9 +482,9 @@ func Test_authzFilter(t *testing.T) {
 					perm: authz.Read,
 				},
 				{
-					description:     "new ext account should not be created when service ID not ok",
-					isAuthenticated: true,
-					userAccounts:    []*extsvc.ExternalAccount{acct(1, "saml", "https://rando.mine/", "u1")},
+					description:  "new ext account should not be created when service ID not ok",
+					user:         &types.User{ID: 1},
+					userAccounts: []*extsvc.ExternalAccount{acct(1, "saml", "https://rando.mine/", "u1")},
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
@@ -471,9 +496,9 @@ func Test_authzFilter(t *testing.T) {
 					perm: authz.Read,
 				},
 				{
-					description:     "unauthenticated user",
-					isAuthenticated: false,
-					userAccounts:    nil,
+					description:  "unauthenticated user",
+					user:         nil,
+					userAccounts: nil,
 					repos: []*types.Repo{
 						{URI: "gitlab.mine/u1/r0"},
 						{URI: "gitlab.mine/u2/r0"},
