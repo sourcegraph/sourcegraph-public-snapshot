@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json.schemastore.org/renovate",
+  "extends": ["github>sourcegraph/renovate-config"],
+  "semanticCommits": true,
+  "semanticCommitType": "chore",
+  "rangeStrategy": "replace",
+  "packageRules": [
+    {
+      "packagePatterns": [".*"],
+      "semanticCommitType": "chore"
+    },
+    {
+      "packagePatterns": ["^@sourcegraph/"],
+      "packageNames": ["sourcegraph"],
+      "rangeStrategy": "bump",
+      "schedule": [],
+      "minor": {
+        "semanticCommitType": "feat"
+      },
+      "patch": {
+        "semanticCommitType": "fix"
+      }
+    }
+  ]
+}

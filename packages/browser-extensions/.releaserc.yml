@@ -1,0 +1,53 @@
+branch: release
+verifyConditions:
+  - semantic-release-firefox
+  - semantic-release-chrome
+  - '@semantic-release/github'
+  - '@semantic-release/npm'
+prepare:
+  # Build bundles and output them to the dist folders
+  - path: '@semantic-release/exec'
+    cmd: yarn run build
+  # Update Firefox manifest version, create xpi and zip sources
+  - path: semantic-release-firefox
+    distFolder: &firefoxDistFolder build/firefox
+    xpiPath: &firefoxXpiPath sourcegraph-extension-firefox.xpi
+    sourcesGlobOptions:
+      dot: true # Files like .babelrc are needed to build
+      ignore:
+        - .git
+        - .git/**
+        - .github
+        - .github/**
+        - .npmrc # This is added by semantic-release and would cause npm install to fail for the reviewer because it references NPM_TOKEN
+        - *firefoxXpiPath
+        - build
+        - build/**
+        - ci
+        - ci/**
+        - cypress
+        - cypress/**
+        - node_modules
+        - node_modules/**
+        - sources.zip
+  # Update Chrome manifest version and zip extension
+  - path: semantic-release-chrome
+    asset: &chromeAssetPath sourcegraph-extension-chrome.zip
+    distFolder: &chromeDistFolder build/chrome
+  # Update package.json version for Phabricator bundle on npm
+  - path: '@semantic-release/npm'
+    pkgRoot: &phabricatorPkgRoot build/phabricator
+publish:
+  # Publish to Chrome extension store
+  - path: semantic-release-chrome
+    asset: *chromeAssetPath
+    distFolder: *chromeDistFolder
+    extensionId: dgjhfomjieaadpoljlnidmbgkdffpack
+  # Publish Phabricator bundle to npm so it can be bundled with Sourcegraph
+  - path: '@semantic-release/npm'
+    pkgRoot: *phabricatorPkgRoot
+  # Create release on GitHub
+  - path: '@semantic-release/github'
+    assets:
+      - path: *chromeAssetPath
+      - path: *firefoxXpiPath

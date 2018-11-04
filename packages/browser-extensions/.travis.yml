@@ -1,0 +1,64 @@
+language: node_js
+
+node_js:
+  - '10'
+
+addons:
+  chrome: stable
+sudo: required # see https://github.com/travis-ci/travis-ci/issues/8836
+
+env:
+  global:
+    - FORCE_COLOR=1
+
+cache:
+  yarn: true
+  directories:
+    - node_modules
+    - ~/.cache
+
+before_install:
+  - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.10.1
+  - export PATH="$HOME/.yarn/bin:$PATH"
+
+install:
+  - yarn --frozen-lockfile
+
+jobs:
+  include:
+    - stage: test
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      script:
+        - yarn test:ci
+    - stage: test
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      script:
+        - yarn run prettier
+        - yarn run tslint
+        - yarn run browserslist
+        - yarn run build
+    - stage: test
+      env:
+        - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      script:
+        - yarn cypress install
+        - yarn run test:e2e
+    - stage: release
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+      script: semantic-release
+
+stages:
+  - test
+  - name: release
+    if: branch = release AND type = push AND fork = false
+
+branches:
+  only:
+    - master
+    - release
+    - /renovate\/.+/
