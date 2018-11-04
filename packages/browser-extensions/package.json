@@ -6,7 +6,7 @@
     "yarn": ">1.10.0"
   },
   "scripts": {
-    "dev": "NODE_ENV=development node --max_old_space_size=8192 -r ts-node/register scripts/dev",
+    "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 node -r ts-node/register scripts/dev",
     "dev:no-reload": "AUTO_RELOAD=false yarn run dev",
     "dev:firefox": "web-ext run --source-dir ./build/firefox",
     "build": "NODE_ENV=production ts-node scripts/build",

@@ -232,7 +232,7 @@ export function watchExtensionsClientCommon(): ChildProcess {
     })
 }
 
-const PHABRICATOR_EXTENSION_FILES = './packages/webapp/node_modules/@sourcegraph/phabricator-extension/dist/**'
+const PHABRICATOR_EXTENSION_FILES = './packages/browser-extensions/build/phabricator/**'
 
 /**
  * Copies the bundles from the `@sourcegraph/phabricator-extension` package over to the ui/assets

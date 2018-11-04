@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/extensions-client-common",
-  "version": "11.0.0",
+  "version": "12.0.0",
   "description": "Common TypeScript/React client application code for Sourcegraph extension configuration and management, used in Sourcegraph and \"Sourcegraph for X\" products",
   "main": "lib/index.js",
   "module": "lib/index.js",

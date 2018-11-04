@@ -4,7 +4,14 @@ import * as webpack from 'webpack'
 
 export const buildStylesLoaders = (baseLoader: webpack.Loader): webpack.Loader[] => [
     baseLoader,
-    { loader: 'postcss-loader' },
+    {
+        loader: 'postcss-loader',
+        options: {
+            config: {
+                path: path.join(__dirname, '../..'),
+            },
+        },
+    },
     {
         loader: 'sass-loader',
         options: {

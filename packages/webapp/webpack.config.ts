@@ -18,6 +18,7 @@ const babelLoader: webpack.RuleSetUseItem = {
     loader: 'babel-loader',
     options: {
         cacheDirectory: true,
+        configFile: path.join(__dirname, 'babel.config.js'),
     },
 }
 
@@ -134,7 +135,14 @@ const config: webpack.Configuration = {
                             minimize: process.env.NODE_ENV === 'production',
                         },
                     },
-                    'postcss-loader',
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            config: {
+                                path: __dirname,
+                            },
+                        },
+                    },
                     {
                         loader: 'sass-loader',
                         options: {
