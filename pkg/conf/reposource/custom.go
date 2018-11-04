@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived from the site config
+// cloneURLResolvers is the list of clone-URL-to-repo-name mappings, derived from the site config
 var cloneURLResolvers []*cloneURLResolver
 
 func init() {
@@ -49,12 +49,12 @@ type cloneURLResolver struct {
 	to   string
 }
 
-// customCloneURLToRepoName maps from clone URL to repo URI using custom mappings specified by the
+// customCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
-func customCloneURLToRepoName(cloneURL string) (repoURI api.RepoName) {
+func customCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
 	for _, r := range cloneURLResolvers {
-		if uri := mapString(r.from, cloneURL, r.to); uri != "" {
-			return api.RepoName(uri)
+		if name := mapString(r.from, cloneURL, r.to); name != "" {
+			return api.RepoName(name)
 		}
 	}
 	return api.RepoName("")

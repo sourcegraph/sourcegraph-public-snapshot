@@ -18,17 +18,17 @@ import (
  */
 
 func sortedRepoNames(repos []*types.Repo) []api.RepoName {
-	uris := repoNames(repos)
-	sort.Slice(uris, func(i, j int) bool { return uris[i] < uris[j] })
-	return uris
+	names := repoNames(repos)
+	sort.Slice(names, func(i, j int) bool { return names[i] < names[j] })
+	return names
 }
 
 func repoNames(repos []*types.Repo) []api.RepoName {
-	var uris []api.RepoName
+	var names []api.RepoName
 	for _, repo := range repos {
-		uris = append(uris, repo.URI)
+		names = append(names, repo.URI)
 	}
-	return uris
+	return names
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {

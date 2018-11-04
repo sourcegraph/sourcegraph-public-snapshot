@@ -8,11 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func resolveRevision(ctx context.Context, repoURI api.RepoName, spec string) (*api.Repo, api.CommitID, error) {
+func resolveRevision(ctx context.Context, repoName api.RepoName, spec string) (*api.Repo, api.CommitID, error) {
 	if spec == "" {
 		spec = "HEAD"
 	}
-	repo, err := api.InternalClient.ReposGetByName(ctx, repoURI)
+	repo, err := api.InternalClient.ReposGetByName(ctx, repoName)
 	if err != nil {
 		return nil, "", err
 	}

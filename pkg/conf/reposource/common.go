@@ -10,29 +10,29 @@ import (
 )
 
 // repoSource is a wrapper around a repository source (typically a code host config) that provides a
-// method to map clone URLs to repo URIs using only the configuration (i.e., no network requests).
+// method to map clone URLs to repo names using only the configuration (i.e., no network requests).
 type repoSource interface {
 	// cloneURLToRepoName maps a Git clone URL (format documented here:
-	// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the expected repo URI for the
+	// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the expected repo name for the
 	// repository on the code host.  It does not actually check if the repository exists in the code
 	// host. It merely does the mapping based on the rules set in the code host config.
 	//
 	// If the clone URL does not correspond to a repository that could exist on the code host, the
 	// empty string is returned and err is nil. If there is an unrelated error, an error is
 	// returned.
-	cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error)
+	cloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error)
 }
 
 // CloneURLToRepoName maps a Git clone URL (format documented here:
-// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo URI if there
+// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
 // exists a code host configuration that matches the clone URL. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
-func CloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error) {
+func CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
 	cfg := conf.Get()
 
-	if repoURI := customCloneURLToRepoName(cloneURL); repoURI != "" {
-		return repoURI, nil
+	if repoName := customCloneURLToRepoName(cloneURL); repoName != "" {
+		return repoName, nil
 	}
 
 	repoSources := make([]repoSource, 0, len(cfg.Github)+
@@ -59,12 +59,12 @@ func CloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error) {
 		repoSources = append(repoSources, Gitolite{c})
 	}
 	for _, ch := range repoSources {
-		repoURI, err := ch.cloneURLToRepoName(cloneURL)
+		repoName, err := ch.cloneURLToRepoName(cloneURL)
 		if err != nil {
 			return "", err
 		}
-		if repoURI != "" {
-			return repoURI, nil
+		if repoName != "" {
+			return repoName, nil
 		}
 	}
 

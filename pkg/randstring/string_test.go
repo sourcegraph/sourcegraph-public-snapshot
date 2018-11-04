@@ -18,12 +18,12 @@ func validateChars(t *testing.T, u string, chars []byte) {
 
 func TestNew_unique(t *testing.T) {
 	// Generate 1000 strings and check that they are unique
-	uris := make([]string, 1000)
-	for i := range uris {
-		uris[i] = NewLen(16)
+	ss := make([]string, 1000)
+	for i := range ss {
+		ss[i] = NewLen(16)
 	}
-	for i, u := range uris {
-		for j, u2 := range uris {
+	for i, u := range ss {
+		for j, u2 := range ss {
 			if i != j && u == u2 {
 				t.Fatalf("not unique: %d:%q and %d:%q", i, u, j, u2)
 			}

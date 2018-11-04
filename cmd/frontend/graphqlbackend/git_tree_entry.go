@@ -42,12 +42,12 @@ func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *gitTreeEntryResolver) URL() string {
 	if submodule := r.Submodule(); submodule != nil {
-		repoURI, err := cloneURLToURI(submodule.URL())
+		repoName, err := cloneURLToRepoName(submodule.URL())
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository URI from clone URL", "cloneURL", submodule.URL())
 			return ""
 		}
-		return "/" + repoURI + "@" + submodule.Commit()
+		return "/" + repoName + "@" + submodule.Commit()
 	}
 	return r.urlPath(r.commit.repoRevURL())
 }
@@ -83,15 +83,15 @@ func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 	return nil
 }
 
-func cloneURLToURI(cloneURL string) (string, error) {
-	repoURI, err := reposource.CloneURLToRepoName(cloneURL)
+func cloneURLToRepoName(cloneURL string) (string, error) {
+	repoName, err := reposource.CloneURLToRepoName(cloneURL)
 	if err != nil {
 		return "", err
 	}
-	if repoURI == "" {
+	if repoName == "" {
 		return "", fmt.Errorf("No matching code host found for %s", cloneURL)
 	}
-	return string(repoURI), nil
+	return string(repoName), nil
 }
 
 func createFileInfo(path string, isDir bool) os.FileInfo {

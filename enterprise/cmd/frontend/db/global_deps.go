@@ -43,7 +43,7 @@ func (g *globalDeps) TotalRefs(ctx context.Context, repo *types.Repo, langs []*i
 	for _, lang := range langs {
 		switch lang.Name {
 		case inventory.LangGo:
-			for _, expandedSources := range repoURIToGoPathPrefixes(repo.URI) {
+			for _, expandedSources := range repoNameToGoPathPrefixes(repo.URI) {
 				refs, err := g.doTotalRefsGo(ctx, expandedSources)
 				if err != nil {
 					return 0, errors.Wrap(err, "doTotalRefsGo")
@@ -69,7 +69,7 @@ func (g *globalDeps) ListTotalRefs(ctx context.Context, repo *types.Repo, langs 
 	for _, lang := range langs {
 		switch lang.Name {
 		case inventory.LangGo:
-			for _, expandedSources := range repoURIToGoPathPrefixes(repo.URI) {
+			for _, expandedSources := range repoNameToGoPathPrefixes(repo.URI) {
 				refs, err := g.doListTotalRefsGo(ctx, expandedSources)
 				if err != nil {
 					return nil, errors.Wrap(err, "doListTotalRefsGo")
@@ -87,15 +87,15 @@ func (g *globalDeps) ListTotalRefs(ctx context.Context, repo *types.Repo, langs 
 	return repos, nil
 }
 
-// repoURIToGoPathPrefixes translates a repository URI like
+// repoNameToGoPathPrefixes translates a repository name like
 // github.com/kubernetes/kubernetes into its _prefix_ matching Go import paths
 // (e.g. k8s.io/kubernetes). In the case of the standard library,
 // github.com/golang/go returns all of the Go stdlib package paths. If the
-// repository URI is not special cased, []string{repoURI} is simply returned.
+// repository name is not special cased, []string{repoName} is simply returned.
 //
 // TODO(slimsag): In the future, when the pkgs index includes Go repositories,
 // use that instead of this manual mapping hack.
-func repoURIToGoPathPrefixes(repoURI api.RepoName) []string {
+func repoNameToGoPathPrefixes(repoName api.RepoName) []string {
 	manualMapping := map[api.RepoName][]string{
 		// stdlib hack: by returning an empty string (NOT no strings) we end up
 		// with an SQL query like `AND dep_data->>'package' LIKE '%';` which
@@ -115,57 +115,57 @@ func repoURIToGoPathPrefixes(repoURI api.RepoName) []string {
 		// paths generically here yet. See https://github.com/sourcegraph/sourcegraph/issues/12488
 		"github.com/goadesign/goa": {"github.com/goadesign/goa", "goa.design/goa"},
 	}
-	if v, ok := manualMapping[repoURI]; ok {
+	if v, ok := manualMapping[repoName]; ok {
 		return v
 	}
 
 	switch {
-	case strings.HasPrefix(string(repoURI), "github.com/azul3d"): // azul3d.org
-		split := strings.Split(string(repoURI), "/")
+	case strings.HasPrefix(string(repoName), "github.com/azul3d"): // azul3d.org
+		split := strings.Split(string(repoName), "/")
 		if len(split) >= 3 {
 			return []string{"azul3d.org/" + split[2]}
 		}
 
-	case strings.HasPrefix(string(repoURI), "github.com/dskinner"): // dasa.cc
-		split := strings.Split(string(repoURI), "/")
+	case strings.HasPrefix(string(repoName), "github.com/dskinner"): // dasa.cc
+		split := strings.Split(string(repoName), "/")
 		if len(split) >= 3 {
 			return []string{"dasa.cc/" + split[2]}
 		}
 
-	case strings.HasPrefix(string(repoURI), "github.com/kubernetes"): // k8s.io
-		split := strings.Split(string(repoURI), "/")
+	case strings.HasPrefix(string(repoName), "github.com/kubernetes"): // k8s.io
+		split := strings.Split(string(repoName), "/")
 		if len(split) >= 3 {
 			return []string{"k8s.io/" + split[2]}
 		}
 
-	case strings.HasPrefix(string(repoURI), "github.com/uber-go"): // go.uber.org
-		split := strings.Split(string(repoURI), "/")
+	case strings.HasPrefix(string(repoName), "github.com/uber-go"): // go.uber.org
+		split := strings.Split(string(repoName), "/")
 		if len(split) >= 3 {
 			// Some repos use non-canonical import paths.
 			return []string{
-				string(repoURI),
+				string(repoName),
 				"go.uber.org/" + split[2],
 			}
 		}
 
-	case strings.HasPrefix(string(repoURI), "github.com/dominikh"): // honnef.co
-		split := strings.Split(string(repoURI), "/")
+	case strings.HasPrefix(string(repoName), "github.com/dominikh"): // honnef.co
+		split := strings.Split(string(repoName), "/")
 		if len(split) >= 3 {
 			return []string{"honnef.co/" + strings.Replace(split[2], "-", "/", -1)}
 		}
 
-	case strings.HasPrefix(string(repoURI), "github.com/golang") && repoURI != "github.com/golang/go": // golang.org/x
-		split := strings.Split(string(repoURI), "/")
+	case strings.HasPrefix(string(repoName), "github.com/golang") && repoName != "github.com/golang/go": // golang.org/x
+		split := strings.Split(string(repoName), "/")
 		if len(split) >= 3 {
 			return []string{"golang.org/x/" + split[2]}
 		}
 
-	case strings.HasPrefix(string(repoURI), "github.com"): // gopkg.in
-		split := strings.Split(string(repoURI), "/")
+	case strings.HasPrefix(string(repoName), "github.com"): // gopkg.in
+		split := strings.Split(string(repoName), "/")
 		if len(split) >= 3 && strings.HasPrefix(split[1], "go-") {
 			// Four possibilities
 			return []string{
-				string(repoURI), // github.com/go-foo/foo
+				string(repoName), // github.com/go-foo/foo
 				"gopkg.in/" + strings.TrimPrefix(split[1], "go-"),     // gopkg.in/foo
 				"labix.org/v1/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v1/foo
 				"labix.org/v2/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v2/foo
@@ -173,12 +173,12 @@ func repoURIToGoPathPrefixes(repoURI api.RepoName) []string {
 		} else if len(split) >= 3 {
 			// Two possibilities
 			return []string{
-				string(repoURI),                         // github.com/foo/bar
+				string(repoName),                        // github.com/foo/bar
 				"gopkg.in/" + split[1] + "/" + split[2], // gopkg.in/foo/bar
 			}
 		}
 	}
-	return []string{string(repoURI)}
+	return []string{string(repoName)}
 }
 
 // doTotalRefs is the generic implementation of total references, using the `pkgs` table.
@@ -281,7 +281,7 @@ func (g *globalDeps) doListTotalRefs(ctx context.Context, repo api.RepoID, lang 
 // doTotalRefsGo is the Go-specific implementation of total references, since we can extract package metadata directly
 // from Go repository URLs, without going through the `pkgs` table.
 func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, error) {
-	// Because global_dep only stores Go package paths, not repository URIs, we
+	// Because global_dep only stores Go package paths, not repository names, we
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
@@ -312,7 +312,7 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 // references, since we can extract package metadata directly from Go
 // repository URLs, without going through the `pkgs` table.
 func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]api.RepoID, error) {
-	// Because global_dep only stores Go package paths, not repository URIs, we
+	// Because global_dep only stores Go package paths, not repository names, we
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.

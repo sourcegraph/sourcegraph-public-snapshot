@@ -13,7 +13,7 @@ type repoGroup struct {
 
 func (g repoGroup) Name() string { return g.name }
 
-func (g repoGroup) Repositories() []string { return repoURIsToStrings(g.repositories) }
+func (g repoGroup) Repositories() []string { return repoNamesToStrings(g.repositories) }
 
 func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 	groupsByName, err := resolveRepoGroups(ctx)

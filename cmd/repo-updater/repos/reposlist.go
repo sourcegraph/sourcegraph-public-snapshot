@@ -432,14 +432,13 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 	// We need to hold the lock to read values from repo and r. So we read
 	// everything we need at the very start.
 	r.mu.Lock()
-	name := repo.Name
+	repoName := api.RepoName(repo.Name)
 	url := repo.URL
 	interval := repo.UpdateInterval
 	manual := repo.UpdateSoon
 	autoUpdatesDisabled := r.autoUpdatesDisabled
 	r.mu.Unlock()
 
-	uri := api.RepoName(name)
 	var resp *gitserverprotocol.RepoUpdateResponse
 	var err error
 
@@ -447,12 +446,12 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 	// someone could request that this become queued *while it is in process*?
 	defer r.requeue(repo, &resp, &err)
 
-	log15.Debug("doUpdate", "repo", name, "interval", interval)
+	log15.Debug("doUpdate", "repo", repoName, "interval", interval)
 
 	// Check whether it's cloned.
-	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, api.RepoName(uri))
+	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, repoName)
 	if err != nil {
-		log15.Warn("error checking if repo cloned", "repo", uri, "err", err)
+		log15.Warn("error checking if repo cloned", "repo", repoName, "err", err)
 		return
 	}
 	// We request an update if auto updates are enabled, or if the repo isn't
@@ -462,9 +461,9 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 		if manual {
 			interval = 5 * time.Second
 		}
-		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: api.RepoName(name), URL: url}, interval)
+		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: repoName, URL: url}, interval)
 		if err != nil {
-			log15.Warn("error requesting repo update", "repo", name, "err", err)
+			log15.Warn("error requesting repo update", "repo", repoName, "err", err)
 			return
 		}
 	}

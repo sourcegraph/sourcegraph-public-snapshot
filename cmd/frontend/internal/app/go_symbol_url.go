@@ -48,8 +48,8 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("non-github clone URL resolved for import path %s", importPath)
 	}
 
-	repoURI := api.RepoName(strings.TrimSuffix(strings.TrimPrefix(cloneURL, "https://"), ".git"))
-	repo, err := backend.Repos.GetByName(ctx, repoURI)
+	repoName := api.RepoName(strings.TrimSuffix(strings.TrimPrefix(cloneURL, "https://"), ".git"))
+	repo, err := backend.Repos.GetByName(ctx, repoName)
 	if err != nil {
 		return err
 	}

@@ -23,7 +23,7 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -125,7 +125,7 @@ type Client struct {
 	UserAgent string
 }
 
-// addrForRepo returns the gitserver address to use for the given repo URI.
+// addrForRepo returns the gitserver address to use for the given repo name.
 func (c *Client) addrForRepo(ctx context.Context, repo api.RepoName) string {
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	return c.addrForKey(ctx, string(repo))
@@ -144,7 +144,7 @@ func (c *Client) addrForKey(ctx context.Context, key string) string {
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
-	repoURI := protocol.NormalizeRepo(c.Repo.Name)
+	repoName := protocol.NormalizeRepo(c.Repo.Name)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -166,12 +166,12 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	}
 
 	req := &protocol.ExecRequest{
-		Repo:           repoURI,
+		Repo:           repoName,
 		URL:            c.Repo.URL,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 	}
-	resp, err := c.client.httpPost(ctx, repoURI, "exec", req)
+	resp, err := c.client.httpPost(ctx, repoName, "exec", req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -187,7 +187,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 			return nil, nil, err
 		}
 		resp.Body.Close()
-		return nil, nil, &vcs.RepoNotExistError{Repo: repoURI, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+		return nil, nil, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
 
 	default:
 		resp.Body.Close()
@@ -219,7 +219,7 @@ type Cmd struct {
 // Repo represents a repository on gitserver. It contains the information necessary to identify and
 // create/clone it.
 type Repo struct {
-	Name api.RepoName // the repository's URI
+	Name api.RepoName // the repository's name
 
 	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
 	// this field is optional (it will use the last-used Git remote URL). If the repository is not
@@ -576,11 +576,11 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string,
 	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }
 
-func (c *Client) UploadPack(repoURI api.RepoName, w http.ResponseWriter, r *http.Request) {
-	repoURI = protocol.NormalizeRepo(repoURI)
-	addr := c.addrForRepo(r.Context(), repoURI)
+func (c *Client) UploadPack(repoName api.RepoName, w http.ResponseWriter, r *http.Request) {
+	repoName = protocol.NormalizeRepo(repoName)
+	addr := c.addrForRepo(r.Context(), repoName)
 
-	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(string(repoURI)))
+	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(string(repoName)))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

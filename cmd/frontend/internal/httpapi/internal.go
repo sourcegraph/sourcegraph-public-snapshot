@@ -22,8 +22,8 @@ import (
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
-	uri := api.RepoName(mux.Vars(r)["RepoURI"])
-	repo, err := backend.Repos.GetByName(r.Context(), uri)
+	repoName := api.RepoName(mux.Vars(r)["RepoName"])
+	repo, err := backend.Repos.GetByName(r.Context(), repoName)
 	if err != nil {
 		return err
 	}
@@ -428,7 +428,7 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	// used by zoekt-sourcegraph-mirror
 	vars := mux.Vars(r)
-	name := api.RepoName(vars["RepoURI"])
+	name := api.RepoName(vars["RepoName"])
 	spec := vars["Spec"]
 
 	// Do not to trigger a repo-updater lookup since this is a batch job.
@@ -445,7 +445,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	// used by zoekt-sourcegraph-mirror
 	vars := mux.Vars(r)
-	name := api.RepoName(vars["RepoURI"])
+	name := api.RepoName(vars["RepoName"])
 	spec := vars["Commit"]
 
 	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
@@ -473,8 +473,8 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("only support service git-upload-pack")
 	}
 
-	uri := api.RepoName(mux.Vars(r)["RepoURI"])
-	repo, err := backend.Repos.GetByName(r.Context(), uri)
+	repoName := api.RepoName(mux.Vars(r)["RepoName"])
+	repo, err := backend.Repos.GetByName(r.Context(), repoName)
 	if err != nil {
 		return err
 	}
@@ -498,8 +498,8 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
-	uri := api.RepoName(mux.Vars(r)["RepoURI"])
-	repo, err := backend.Repos.GetByName(r.Context(), uri)
+	repoName := api.RepoName(mux.Vars(r)["RepoName"])
+	repo, err := backend.Repos.GetByName(r.Context(), repoName)
 	if err != nil {
 		return err
 	}

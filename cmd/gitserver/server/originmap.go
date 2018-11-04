@@ -142,13 +142,13 @@ func (o *originMapsT) addGitHubDefaults() {
 }
 
 // OriginMap maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
-func OriginMap(repoURI api.RepoName) string {
-	if origin, ok := originMaps.getReposListOriginMap()[string(repoURI)]; ok {
+func OriginMap(repoName api.RepoName) string {
+	if origin, ok := originMaps.getReposListOriginMap()[string(repoName)]; ok {
 		return origin
 	}
 	for _, entry := range originMaps.getOriginMap() {
-		if strings.HasPrefix(string(repoURI), entry.Prefix) {
-			return strings.Replace(entry.Origin, "%", strings.TrimPrefix(string(repoURI), entry.Prefix), 1)
+		if strings.HasPrefix(string(repoName), entry.Prefix) {
+			return strings.Replace(entry.Origin, "%", strings.TrimPrefix(string(repoName), entry.Prefix), 1)
 		}
 	}
 	return ""

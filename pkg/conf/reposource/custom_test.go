@@ -9,14 +9,14 @@ import (
 
 func Test_customCloneURLToRepoName(t *testing.T) {
 	tests := []struct {
-		cloneURLResolvers []*cloneURLResolver
-		cloneURLToURI     map[string]string
+		cloneURLResolvers  []*cloneURLResolver
+		cloneURLToRepoName map[string]string
 	}{{
 		cloneURLResolvers: []*cloneURLResolver{{
 			from: regexp.MustCompile(`^\.\./(?P<name>[A-Za-z0-9]+)$`),
 			to:   `github.com/user/{name}`,
 		}},
-		cloneURLToURI: map[string]string{
+		cloneURLToRepoName: map[string]string{
 			"../foo":     "github.com/user/foo",
 			"../foo/bar": "",
 		},
@@ -28,7 +28,7 @@ func Test_customCloneURLToRepoName(t *testing.T) {
 			from: regexp.MustCompile(`^\.\./(?P<path>[A-Za-z0-9/]+)$`),
 			to:   `someotherhost/{path}`,
 		}},
-		cloneURLToURI: map[string]string{
+		cloneURLToRepoName: map[string]string{
 			"../foo":     "github.com/user/foo",
 			"../foo/bar": "someotherhost/foo/bar",
 		},
@@ -37,7 +37,7 @@ func Test_customCloneURLToRepoName(t *testing.T) {
 			from: regexp.MustCompile(`^\.\./\.\./main/(?P<path>[A-Za-z0-9/\-]+)$`),
 			to:   `my.gitlab.com/{path}`,
 		}},
-		cloneURLToURI: map[string]string{
+		cloneURLToRepoName: map[string]string{
 			"../foo":                 "",
 			"../../foo/bar":          "",
 			"../../main/foo/bar":     "my.gitlab.com/foo/bar",
@@ -47,9 +47,9 @@ func Test_customCloneURLToRepoName(t *testing.T) {
 
 	for i, test := range tests {
 		cloneURLResolvers = test.cloneURLResolvers
-		for cloneURL, expURI := range test.cloneURLToURI {
-			if uri := customCloneURLToRepoName(cloneURL); uri != api.RepoName(expURI) {
-				t.Errorf("In test case %d, expected %s -> %s, but got %s", i+1, cloneURL, expURI, uri)
+		for cloneURL, expName := range test.cloneURLToRepoName {
+			if name := customCloneURLToRepoName(cloneURL); name != api.RepoName(expName) {
+				t.Errorf("In test case %d, expected %s -> %s, but got %s", i+1, cloneURL, expName, name)
 			}
 		}
 	}

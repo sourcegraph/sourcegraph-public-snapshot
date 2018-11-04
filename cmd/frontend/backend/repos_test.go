@@ -63,16 +63,16 @@ func TestRepos_Add(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	const repoURI = "my/repo"
+	const repoName = "my/repo"
 
 	calledRepoLookup := false
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 		calledRepoLookup = true
-		if args.Repo != repoURI {
-			t.Errorf("got %q, want %q", args.Repo, repoURI)
+		if args.Repo != repoName {
+			t.Errorf("got %q, want %q", args.Repo, repoName)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{URI: repoURI, Description: "d"},
+			Repo: &protocol.RepoInfo{URI: repoName, Description: "d"},
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
@@ -80,13 +80,13 @@ func TestRepos_Add(t *testing.T) {
 	calledUpsert := false
 	db.Mocks.Repos.Upsert = func(op api.InsertRepoOp) error {
 		calledUpsert = true
-		if want := (api.InsertRepoOp{URI: repoURI, Description: "d"}); !reflect.DeepEqual(op, want) {
+		if want := (api.InsertRepoOp{URI: repoName, Description: "d"}); !reflect.DeepEqual(op, want) {
 			t.Errorf("got %+v, want %+v", op, want)
 		}
 		return nil
 	}
 
-	if err := s.Add(ctx, repoURI); err != nil {
+	if err := s.Add(ctx, repoName); err != nil {
 		t.Fatal(err)
 	}
 	if !calledRepoLookup {

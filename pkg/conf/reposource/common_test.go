@@ -7,10 +7,10 @@ import (
 	"testing"
 )
 
-// urlURI represents a cloneURL and expected corresponding repoURI
-type urlURI struct {
+// urlToRepoName represents a cloneURL and expected corresponding repo name
+type urlToRepoName struct {
 	cloneURL string
-	repoURI  string
+	repoName string
 }
 
 func TestParseCloneURL(t *testing.T) {

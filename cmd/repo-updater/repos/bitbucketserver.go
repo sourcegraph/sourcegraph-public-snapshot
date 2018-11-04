@@ -85,7 +85,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	if repo.Project != nil {
 		project = repo.Project.Key
 	}
-	repoURI := reposource.BitbucketServerRepoName(config.RepositoryPathPattern, host.Hostname(), project, repo.Slug)
+	repoName := reposource.BitbucketServerRepoName(config.RepositoryPathPattern, host.Hostname(), project, repo.Slug)
 
 	// Clone URL
 	var cloneURL string
@@ -121,7 +121,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	}
 
 	return &protocol.RepoInfo{
-		URI: repoURI,
+		URI: repoName,
 		ExternalRepo: &api.ExternalRepoSpec{
 			ID:          project + "/" + repo.Slug,
 			ServiceType: bitbucketserver.ServiceType,
