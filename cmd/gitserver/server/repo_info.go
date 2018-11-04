@@ -24,9 +24,8 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 
 	resp := protocol.RepoInfoResponse{
 		Cloned: repoCloned(dir),
-		URL:    OriginMap(repo),
 	}
-	if resp.Cloned && resp.URL == "" {
+	if resp.Cloned {
 		remoteURL, err := repoRemoteURL(r.Context(), dir)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

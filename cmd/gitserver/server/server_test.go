@@ -64,10 +64,10 @@ func TestRequest(t *testing.T) {
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
-			Name:         "UnclonedRepo",
+			Name:         "UnclonedRepoWithoutURL",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":true}`,
+			ExpectedBody: `{"cloneInProgress":false}`, // no way for it to know the clone URL to start cloning
 		},
 		{
 			Name:         "UnclonedRepoWithURL",
