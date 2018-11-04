@@ -378,7 +378,7 @@ func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
 	return resolvers
 }
 
-func toRepoURIs(repos []*types.Repo) []api.RepoName {
+func toRepoNames(repos []*types.Repo) []api.RepoName {
 	uris := make([]api.RepoName, len(repos))
 	for i, repo := range repos {
 		uris[i] = repo.URI

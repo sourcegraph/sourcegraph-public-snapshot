@@ -84,7 +84,7 @@ func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToURI(cloneURL string) (string, error) {
-	repoURI, err := reposource.CloneURLToRepoURI(cloneURL)
+	repoURI, err := reposource.CloneURLToRepoName(cloneURL)
 	if err != nil {
 		return "", err
 	}

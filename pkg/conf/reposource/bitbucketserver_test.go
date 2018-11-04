@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestBitbucketServer_cloneURLToRepoURI(t *testing.T) {
+func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
 	var tests = []struct {
 		conn schema.BitbucketServerConnection
 		urls []urlURI
@@ -45,7 +45,7 @@ func TestBitbucketServer_cloneURLToRepoURI(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoURI, err := BitbucketServer{&test.conn}.cloneURLToRepoURI(u.cloneURL)
+			repoURI, err := BitbucketServer{&test.conn}.cloneURLToRepoName(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

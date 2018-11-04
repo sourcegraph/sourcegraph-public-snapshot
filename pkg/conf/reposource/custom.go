@@ -49,9 +49,9 @@ type cloneURLResolver struct {
 	to   string
 }
 
-// customCloneURLToRepoURI maps from clone URL to repo URI using custom mappings specified by the
+// customCloneURLToRepoName maps from clone URL to repo URI using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
-func customCloneURLToRepoURI(cloneURL string) (repoURI api.RepoName) {
+func customCloneURLToRepoName(cloneURL string) (repoURI api.RepoName) {
 	for _, r := range cloneURLResolvers {
 		if uri := mapString(r.from, cloneURL, r.to); uri != "" {
 			return api.RepoName(uri)

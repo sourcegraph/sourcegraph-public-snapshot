@@ -13,7 +13,7 @@ type GitHub struct {
 
 var _ repoSource = GitHub{}
 
-func (c GitHub) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
+func (c GitHub) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err
