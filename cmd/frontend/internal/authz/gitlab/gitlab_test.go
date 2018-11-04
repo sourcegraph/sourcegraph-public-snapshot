@@ -39,7 +39,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 					description: "1 account, matches",
 					user:        &types.User{ID: 123},
 					current:     []*extsvc.ExternalAccount{acct(1, "saml", "https://okta.mine/", "bl")},
-					expMine:     acct(123, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"),
+					expMine:     acct(123, gitlab.ServiceType, "https://gitlab.mine/", "101"),
 				},
 				{
 					description: "many accounts, none match",
@@ -59,7 +59,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 						acct(1, "nomatch", "https://okta.mine/", "bl"),
 						acct(1, "saml", "https://okta.mine/", "bl"),
 					},
-					expMine: acct(123, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"),
+					expMine: acct(123, gitlab.ServiceType, "https://gitlab.mine/", "101"),
 				},
 				{
 					description: "no user",
@@ -80,7 +80,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				{
 					description: "username match",
 					user:        &types.User{ID: 123, Username: "b.l"},
-					expMine:     acct(123, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"),
+					expMine:     acct(123, gitlab.ServiceType, "https://gitlab.mine/", "101"),
 				},
 				{
 					description: "no username match",
@@ -129,7 +129,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 					description: "1 authn provider matches",
 					user:        &types.User{ID: 123},
 					current:     []*extsvc.ExternalAccount{acct(1, "openidconnect", "https://onelogin.mine/", "bl")},
-					expMine:     acct(123, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"),
+					expMine:     acct(123, gitlab.ServiceType, "https://gitlab.mine/", "101"),
 				},
 				{
 					description: "0 authn providers match",
@@ -251,16 +251,16 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 					description: "bl user has expected perms",
 					account:     acct(1, "gitlab", "https://gitlab.mine/", "101"),
 					repos: map[authz.Repo]struct{}{
-						repo("bl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "11"):                 struct{}{},
-						repo("bl/repo-2", gitlab.GitLabServiceType, "other", "12"):                                struct{}{},
-						repo("gitlab.mine/bl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "999"):    struct{}{},
-						repo("kl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "21"):                 struct{}{},
-						repo("kl/repo-2", gitlab.GitLabServiceType, "other", "22"):                                struct{}{},
-						repo("gitlab.mine/kl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "998"):    struct{}{},
-						repo("org/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "31"):                struct{}{},
-						repo("org/repo-2", gitlab.GitLabServiceType, "other", "32"):                               struct{}{},
-						repo("gitlab.mine/org/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "997"):   struct{}{},
-						repo("gitlab.mine/public/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "41"): struct{}{},
+						repo("bl/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "11"):                 struct{}{},
+						repo("bl/repo-2", gitlab.ServiceType, "other", "12"):                                struct{}{},
+						repo("gitlab.mine/bl/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "999"):    struct{}{},
+						repo("kl/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "21"):                 struct{}{},
+						repo("kl/repo-2", gitlab.ServiceType, "other", "22"):                                struct{}{},
+						repo("gitlab.mine/kl/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "998"):    struct{}{},
+						repo("org/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "31"):                struct{}{},
+						repo("org/repo-2", gitlab.ServiceType, "other", "32"):                               struct{}{},
+						repo("gitlab.mine/org/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "997"):   struct{}{},
+						repo("gitlab.mine/public/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "41"): struct{}{},
 					},
 					expPerms: map[api.RepoURI]map[authz.Perm]bool{
 						"bl/repo-1":                 map[authz.Perm]bool{authz.Read: true},
@@ -276,16 +276,16 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 					description: "kl user has expected perms",
 					account:     acct(2, "gitlab", "https://gitlab.mine/", "201"),
 					repos: map[authz.Repo]struct{}{
-						repo("bl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "11"):                 struct{}{},
-						repo("bl/repo-2", gitlab.GitLabServiceType, "other", "12"):                                struct{}{},
-						repo("gitlab.mine/bl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "999"):    struct{}{},
-						repo("kl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "21"):                 struct{}{},
-						repo("kl/repo-2", gitlab.GitLabServiceType, "other", "22"):                                struct{}{},
-						repo("gitlab.mine/kl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "998"):    struct{}{},
-						repo("org/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "31"):                struct{}{},
-						repo("org/repo-2", gitlab.GitLabServiceType, "other", "32"):                               struct{}{},
-						repo("gitlab.mine/org/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "997"):   struct{}{},
-						repo("gitlab.mine/public/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "41"): struct{}{},
+						repo("bl/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "11"):                 struct{}{},
+						repo("bl/repo-2", gitlab.ServiceType, "other", "12"):                                struct{}{},
+						repo("gitlab.mine/bl/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "999"):    struct{}{},
+						repo("kl/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "21"):                 struct{}{},
+						repo("kl/repo-2", gitlab.ServiceType, "other", "22"):                                struct{}{},
+						repo("gitlab.mine/kl/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "998"):    struct{}{},
+						repo("org/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "31"):                struct{}{},
+						repo("org/repo-2", gitlab.ServiceType, "other", "32"):                               struct{}{},
+						repo("gitlab.mine/org/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "997"):   struct{}{},
+						repo("gitlab.mine/public/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "41"): struct{}{},
 					},
 					expPerms: map[api.RepoURI]map[authz.Perm]bool{
 						"bl/repo-1":                 map[authz.Perm]bool{},
@@ -301,16 +301,16 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 					description: "unknown user has no perms",
 					account:     acct(3, "gitlab", "https://gitlab.mine/", "999"),
 					repos: map[authz.Repo]struct{}{
-						repo("bl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "11"):                 struct{}{},
-						repo("bl/repo-2", gitlab.GitLabServiceType, "other", "12"):                                struct{}{},
-						repo("gitlab.mine/bl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "999"):    struct{}{},
-						repo("kl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "21"):                 struct{}{},
-						repo("kl/repo-2", gitlab.GitLabServiceType, "other", "22"):                                struct{}{},
-						repo("gitlab.mine/kl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "998"):    struct{}{},
-						repo("org/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "31"):                struct{}{},
-						repo("org/repo-2", gitlab.GitLabServiceType, "other", "32"):                               struct{}{},
-						repo("gitlab.mine/org/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "997"):   struct{}{},
-						repo("gitlab.mine/public/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "41"): struct{}{},
+						repo("bl/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "11"):                 struct{}{},
+						repo("bl/repo-2", gitlab.ServiceType, "other", "12"):                                struct{}{},
+						repo("gitlab.mine/bl/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "999"):    struct{}{},
+						repo("kl/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "21"):                 struct{}{},
+						repo("kl/repo-2", gitlab.ServiceType, "other", "22"):                                struct{}{},
+						repo("gitlab.mine/kl/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "998"):    struct{}{},
+						repo("org/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "31"):                struct{}{},
+						repo("org/repo-2", gitlab.ServiceType, "other", "32"):                               struct{}{},
+						repo("gitlab.mine/org/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "997"):   struct{}{},
+						repo("gitlab.mine/public/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "41"): struct{}{},
 					},
 					expPerms: map[api.RepoURI]map[authz.Perm]bool{
 						"bl/repo-1":                 map[authz.Perm]bool{},
@@ -326,16 +326,16 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 					description: "unauthenticated user has access to public only",
 					account:     nil,
 					repos: map[authz.Repo]struct{}{
-						repo("bl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "11"):                 struct{}{},
-						repo("bl/repo-2", gitlab.GitLabServiceType, "other", "12"):                                struct{}{},
-						repo("gitlab.mine/bl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "999"):    struct{}{},
-						repo("kl/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "21"):                 struct{}{},
-						repo("kl/repo-2", gitlab.GitLabServiceType, "other", "22"):                                struct{}{},
-						repo("gitlab.mine/kl/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "998"):    struct{}{},
-						repo("org/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "31"):                struct{}{},
-						repo("org/repo-2", gitlab.GitLabServiceType, "other", "32"):                               struct{}{},
-						repo("gitlab.mine/org/repo-3", gitlab.GitLabServiceType, "https://gitlab.mine/", "997"):   struct{}{},
-						repo("gitlab.mine/public/repo-1", gitlab.GitLabServiceType, "https://gitlab.mine/", "41"): struct{}{},
+						repo("bl/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "11"):                 struct{}{},
+						repo("bl/repo-2", gitlab.ServiceType, "other", "12"):                                struct{}{},
+						repo("gitlab.mine/bl/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "999"):    struct{}{},
+						repo("kl/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "21"):                 struct{}{},
+						repo("kl/repo-2", gitlab.ServiceType, "other", "22"):                                struct{}{},
+						repo("gitlab.mine/kl/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "998"):    struct{}{},
+						repo("org/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "31"):                struct{}{},
+						repo("org/repo-2", gitlab.ServiceType, "other", "32"):                               struct{}{},
+						repo("gitlab.mine/org/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "997"):   struct{}{},
+						repo("gitlab.mine/public/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "41"): struct{}{},
 					},
 					expPerms: map[api.RepoURI]map[authz.Perm]bool{
 						"bl/repo-1":                 map[authz.Perm]bool{},
@@ -418,32 +418,32 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	ctx := context.Background()
 	authzProvider := NewProvider(GitLabAuthzProviderOp{
 		BaseURL:       mustURL(t, "https://gitlab.mine"),
-		AuthnConfigID: auth.ProviderConfigID{ID: "https://gitlab.mine/", Type: gitlab.GitLabServiceType},
+		AuthnConfigID: auth.ProviderConfigID{ID: "https://gitlab.mine/", Type: gitlab.ServiceType},
 		MockCache:     make(mockCache),
 		CacheTTL:      3 * time.Hour,
 	})
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "bl"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "bl"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if exp := map[string]int{"projects?per_page=100&sudo=bl": 1}; !reflect.DeepEqual(gitlabMock.madeProjectReqs, exp) {
 		t.Errorf("Unexpected cache behavior. Expected underying requests to be %v, but got %v", exp, gitlabMock.madeProjectReqs)
 	}
 
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "bl"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "bl"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if exp := map[string]int{"projects?per_page=100&sudo=bl": 1}; !reflect.DeepEqual(gitlabMock.madeProjectReqs, exp) {
 		t.Errorf("Unexpected cache behavior. Expected underying requests to be %v, but got %v", exp, gitlabMock.madeProjectReqs)
 	}
 
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "kl"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "kl"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if exp := map[string]int{"projects?per_page=100&sudo=bl": 1, "projects?per_page=100&sudo=kl": 1}; !reflect.DeepEqual(gitlabMock.madeProjectReqs, exp) {
 		t.Errorf("Unexpected cache behavior. Expected underying requests to be %v, but got %v", exp, gitlabMock.madeProjectReqs)
 	}
 
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "kl"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "kl"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if exp := map[string]int{"projects?per_page=100&sudo=bl": 1, "projects?per_page=100&sudo=kl": 1}; !reflect.DeepEqual(gitlabMock.madeProjectReqs, exp) {
@@ -466,21 +466,21 @@ func Test_GitLab_RepoPerms_cache_ttl(t *testing.T) {
 	ctx := context.Background()
 	authzProvider := NewProvider(GitLabAuthzProviderOp{
 		BaseURL:       mustURL(t, "https://gitlab.mine"),
-		AuthnConfigID: auth.ProviderConfigID{ID: "https://gitlab.mine/", Type: gitlab.GitLabServiceType},
+		AuthnConfigID: auth.ProviderConfigID{ID: "https://gitlab.mine/", Type: gitlab.ServiceType},
 		MockCache:     cache,
 	})
 	if expCache := mockCache(map[string]string{}); !reflect.DeepEqual(cache, expCache) {
 		t.Errorf("expected cache to be %+v, but was %+v", expCache, cache)
 	}
 
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":0}`}); !reflect.DeepEqual(cache, expCache) {
 		t.Errorf("expected cache to be %+v, but was %+v", expCache, cache)
 	}
 
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":0}`}); !reflect.DeepEqual(cache, expCache) {
@@ -489,7 +489,7 @@ func Test_GitLab_RepoPerms_cache_ttl(t *testing.T) {
 
 	authzProvider.cacheTTL = time.Hour * 5
 
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":18000000000000}`}); !reflect.DeepEqual(cache, expCache) {
@@ -499,7 +499,7 @@ func Test_GitLab_RepoPerms_cache_ttl(t *testing.T) {
 	authzProvider.cacheTTL = time.Second * 5
 
 	// Use lower TTL
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":5000000000}`}); !reflect.DeepEqual(cache, expCache) {
@@ -509,7 +509,7 @@ func Test_GitLab_RepoPerms_cache_ttl(t *testing.T) {
 	authzProvider.cacheTTL = time.Second * 60
 
 	// Increase in TTL doesn't overwrite cache entry
-	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.GitLabServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
+	if _, err := authzProvider.RepoPerms(ctx, acct(1, gitlab.ServiceType, "https://gitlab.mine/", "101"), nil); err != nil {
 		t.Fatal(err)
 	}
 	if expCache := mockCache(map[string]string{"101": `{"repos":{"11":{}},"ttl":5000000000}`}); !reflect.DeepEqual(cache, expCache) {
@@ -527,22 +527,22 @@ func Test_GitLab_Repos(t *testing.T) {
 			calls: []GitLab_Repos_call{
 				{
 					repos: map[authz.Repo]struct{}{
-						repo("gitlab.mine/bl/repo-1", "", "", ""):                         struct{}{},
-						repo("gitlab.mine/kl/repo-1", "", "", ""):                         struct{}{},
-						repo("another.host/bl/repo-1", "", "", ""):                        struct{}{},
-						repo("a", gitlab.GitLabServiceType, "https://gitlab.mine/", "23"): struct{}{},
-						repo("b", gitlab.GitLabServiceType, "https://not-mine/", "34"):    struct{}{},
-						repo("c", "not-gitlab", "https://gitlab.mine/", "45"):             struct{}{},
+						repo("gitlab.mine/bl/repo-1", "", "", ""):                   struct{}{},
+						repo("gitlab.mine/kl/repo-1", "", "", ""):                   struct{}{},
+						repo("another.host/bl/repo-1", "", "", ""):                  struct{}{},
+						repo("a", gitlab.ServiceType, "https://gitlab.mine/", "23"): struct{}{},
+						repo("b", gitlab.ServiceType, "https://not-mine/", "34"):    struct{}{},
+						repo("c", "not-gitlab", "https://gitlab.mine/", "45"):       struct{}{},
 					},
 					expMine: map[authz.Repo]struct{}{
-						repo("a", gitlab.GitLabServiceType, "https://gitlab.mine/", "23"): struct{}{},
+						repo("a", gitlab.ServiceType, "https://gitlab.mine/", "23"): struct{}{},
 					},
 					expOthers: map[authz.Repo]struct{}{
-						repo("gitlab.mine/bl/repo-1", "", "", ""):                      struct{}{},
-						repo("gitlab.mine/kl/repo-1", "", "", ""):                      struct{}{},
-						repo("another.host/bl/repo-1", "", "", ""):                     struct{}{},
-						repo("b", gitlab.GitLabServiceType, "https://not-mine/", "34"): struct{}{},
-						repo("c", "not-gitlab", "https://gitlab.mine/", "45"):          struct{}{},
+						repo("gitlab.mine/bl/repo-1", "", "", ""):                struct{}{},
+						repo("gitlab.mine/kl/repo-1", "", "", ""):                struct{}{},
+						repo("another.host/bl/repo-1", "", "", ""):               struct{}{},
+						repo("b", gitlab.ServiceType, "https://not-mine/", "34"): struct{}{},
+						repo("c", "not-gitlab", "https://gitlab.mine/", "45"):    struct{}{},
 					},
 				},
 			},

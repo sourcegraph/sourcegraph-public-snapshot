@@ -63,7 +63,7 @@ func init() {
 // the repository specified by the args.
 func getGitLabConnection(args protocol.RepoLookupArgs) (*gitlabConnection, error) {
 	gitlabConnections := gitlabConnections.Get().([]*gitlabConnection)
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == gitlab.GitLabServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == gitlab.ServiceType {
 		// Look up by external repository spec.
 		for _, conn := range gitlabConnections {
 			if args.ExternalRepo.ServiceID == conn.baseURL.String() {
@@ -102,7 +102,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	ghrepoToRepoInfo := func(proj *gitlab.Project, conn *gitlabConnection) *protocol.RepoInfo {
 		return &protocol.RepoInfo{
 			URI:          gitlabProjectToRepoPath(conn, proj),
-			ExternalRepo: gitlab.GitLabExternalRepoSpec(proj, *conn.baseURL),
+			ExternalRepo: gitlab.ExternalRepoSpec(proj, *conn.baseURL),
 			Description:  proj.Description,
 			Fork:         proj.ForkedFromProject != nil,
 			Archived:     proj.Archived,
@@ -126,7 +126,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		return nil, false, nil // refers to a non-GitLab repo
 	}
 
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == gitlab.GitLabServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == gitlab.ServiceType {
 		// Look up by external repository spec.
 		id, err := strconv.Atoi(args.ExternalRepo.ID)
 		if err != nil {
@@ -200,7 +200,7 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoURI:      gitlabProjectToRepoPath(conn, proj),
-				ExternalRepo: gitlab.GitLabExternalRepoSpec(proj, *conn.baseURL),
+				ExternalRepo: gitlab.ExternalRepoSpec(proj, *conn.baseURL),
 				Description:  proj.Description,
 				Fork:         proj.ForkedFromProject != nil,
 				Archived:     proj.Archived,
