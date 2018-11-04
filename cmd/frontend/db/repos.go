@@ -23,7 +23,7 @@ type repoNotFoundErr struct {
 
 func (e *repoNotFoundErr) Error() string {
 	if e.Name != "" {
-		return fmt.Sprintf("repo not found: uri=%q", e.Name)
+		return fmt.Sprintf("repo not found: name=%q", e.Name)
 	}
 	if e.ID != 0 {
 		return fmt.Sprintf("repo not found: id=%d", e.ID)
@@ -68,7 +68,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, 
 		return Mocks.Repos.GetByName(ctx, name)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", name))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE name=%s LIMIT 1", name))
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, indexed_revision, created_at, updated_at, freeze_indexed_revision, external_id, external_service_type, external_service_id FROM repo %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, name, description, language, enabled, indexed_revision, created_at, updated_at, freeze_indexed_revision, external_id, external_service_type, external_service_id FROM repo %s", querySuffix)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -221,7 +221,7 @@ type RepoListColumn string
 
 const (
 	RepoListCreatedAt RepoListColumn = "created_at"
-	RepoListURI       RepoListColumn = "uri"
+	RepoListName      RepoListColumn = "name"
 )
 
 // List lists repositories in the Sourcegraph repository
@@ -260,7 +260,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // indexed-search). We special case just returning enabled names so that we
 // read much less data into memory.
 func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
-	q := sqlf.Sprintf("SELECT uri FROM repo WHERE enabled = true")
+	q := sqlf.Sprintf("SELECT name FROM repo WHERE enabled = true")
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -288,7 +288,7 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
 	}
 	if opt.Query != "" {
-		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
+		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
 	}
 	for _, includePattern := range opt.IncludePatterns {
 		exact, like, pattern, err := parseIncludePattern(includePattern)
@@ -303,22 +303,22 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 				for _, v := range exact {
 					items = append(items, sqlf.Sprintf("%s", v))
 				}
-				conds = append(conds, sqlf.Sprintf("uri IN (%s)", sqlf.Join(items, ",")))
+				conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
 			}
 		}
 		if len(like) > 0 {
 			var likeConds []*sqlf.Query
 			for _, v := range like {
-				likeConds = append(likeConds, sqlf.Sprintf(`lower(uri) LIKE %s`, strings.ToLower(v)))
+				likeConds = append(likeConds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
 			}
 			conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
 		}
 		if pattern != "" {
-			conds = append(conds, sqlf.Sprintf("lower(uri) ~* %s", pattern))
+			conds = append(conds, sqlf.Sprintf("lower(name) ~* %s", pattern))
 		}
 	}
 	if opt.ExcludePattern != "" {
-		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
+		conds = append(conds, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
 	}
 
 	if opt.Enabled && opt.Disabled {
@@ -370,8 +370,8 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 //
 // It allows Repos.List to optimize for the common case where a pattern like
 // `(^github.com/foo/bar$)|(^github.com/baz/qux$)` is provided. In that case,
-// it's faster to query for "WHERE uri IN (...)" the two possible exact values
-// (because it can use an index) instead of using a "WHERE uri ~*" regexp condition
+// it's faster to query for "WHERE name IN (...)" the two possible exact values
+// (because it can use an index) instead of using a "WHERE name ~*" regexp condition
 // (which generally can't use an index).
 //
 // This optimization is necessary for good performance when there are many repos
@@ -575,20 +575,20 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 }
 
 func (s *repos) UpdateRepositoryMetadata(ctx context.Context, name api.RepoName, description string, fork bool, archived bool) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE uri=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, name)
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE name=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, name)
 	return err
 }
 
 const upsertSQL = `WITH UPSERT AS (
-	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7, archived=$9 WHERE uri=$1 RETURNING uri
+	UPDATE repo SET name=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7, archived=$9 WHERE name=$1 RETURNING name
 )
-INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id, archived) (
-	SELECT $1 AS uri, $2 AS description, $3 AS fork, $8 as language, $4 AS enabled,
+INSERT INTO repo(name, description, fork, language, enabled, external_id, external_service_type, external_service_id, archived) (
+	SELECT $1 AS name, $2 AS description, $3 AS fork, $8 as language, $4 AS enabled,
 	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id, $9 AS archived
-	WHERE $1 NOT IN (SELECT uri FROM upsert)
+	WHERE $1 NOT IN (SELECT name FROM upsert)
 )`
 
-// Upsert updates the repository if it already exists (keyed on URI) and
+// Upsert updates the repository if it already exists (keyed on name) and
 // inserts it if it does not.
 //
 // If repo exists, op.Enabled is ignored.

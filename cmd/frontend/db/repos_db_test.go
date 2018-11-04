@@ -347,7 +347,7 @@ func TestRepos_List_sort(t *testing.T) {
 		{
 			query: "",
 			orderBy: RepoListOrderBy{{
-				Field: RepoListURI,
+				Field: RepoListName,
 			}},
 			want: []api.RepoName{"abc/def", "abc/m", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"},
 		},
