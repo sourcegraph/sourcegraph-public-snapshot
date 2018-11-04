@@ -198,7 +198,6 @@ func main() {
 			// Protect against deploys while tests are running
 			bk.ConcurrencyGroup("deploy"),
 			bk.Concurrency(1),
-			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile"),
 			bk.Cmd("yarn run test-e2e-sgdev --retries 5"),
