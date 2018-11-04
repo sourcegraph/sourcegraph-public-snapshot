@@ -1,0 +1,25 @@
+{
+  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "es6",
+    "moduleResolution": "node",
+    "declaration": true,
+    "noEmit": true,
+    "lib": ["es2018"],
+    "sourceRoot": "src",
+    "baseUrl": ".",
+    "paths": { "sourcegraph": ["./src/sourcegraph"] },
+    "inlineSources": true,
+    "inlineSourceMap": true,
+    "noErrorTruncation": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "plugins": [
+      {
+        "name": "tslint-language-service"
+      }
+    ]
+  },
+  "exclude": ["lib/**", "module/**"]
+}

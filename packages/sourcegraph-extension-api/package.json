@@ -1,0 +1,94 @@
+{
+  "name": "sourcegraph",
+  "version": "0.0.0-development",
+  "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
+  "author": "Sourcegraph",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=8.0.0 <11.0.0",
+    "yarn": "^1.10.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph-extension-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sourcegraph/sourcegraph-extension-api/issues"
+  },
+  "main": "lib/extension/index.js",
+  "module": "lib/extension/index.js",
+  "types": "lib/sourcegraph.d.ts",
+  "files": [
+    "lib",
+    "module"
+  ],
+  "scripts": {
+    "commitmsg": "commitlint -e $GIT_PARAMS",
+    "semantic-release": "semantic-release",
+    "prettier": "prettier '**/{*.{js?(on),ts,yml},.*.yml}' --write --list-different",
+    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
+    "typecheck": "tsc -p tsconfig.json",
+    "build:assets": "mkdir -p lib/protocol && typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json' --noExtraProps --required --include src/protocol/contribution.ts --out lib/protocol/contribution.schema.json tsconfig.dist.json Contributions && node -e \"/* Deletes the top-level additionalProperties property in the file. */ fs = require('fs');f = process.argv[1];o = JSON.parse(fs.readFileSync(f, 'utf8'));delete o.additionalProperties;fs.writeFileSync(f, JSON.stringify(o, null, 4))\" lib/protocol/contribution.schema.json",
+    "build:module": "tsc -p tsconfig.dist.json",
+    "build:api": "mkdir -p lib/extension && cpy src/sourcegraph.d.ts lib/ && cpy src/extension/index.js lib/extension",
+    "build": "yarn run build:module && yarn run build:assets && yarn run build:api",
+    "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --opts mocha.opts",
+    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",
+    "watch:typecheck": "tsc -p tsconfig.json -w",
+    "watch:build:assets": "yarn run build:assets && nodemon --watch src/protocol/contribution.ts --exec 'yarn run build:assets || exit 1'",
+    "watch:build:module": "tsc -p tsconfig.dist.json -w",
+    "watch:build:api": "nodemon --watch src/sourcegraph.d.ts --watch src/extension/index.js --ext ts,js --exec 'yarn run build:api'",
+    "watch:build": "concurrently --kill-others 'npm:watch:build:*'",
+    "watch:test": "yarn run test -- -w",
+    "watch:cover": "nodemon --watch src/ --ext ts,js,json --watch package.json --exec 'yarn run cover || exit 1'"
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "**/*.test.ts",
+      "**/*.js"
+    ],
+    "cache": true,
+    "reporter": [
+      "text",
+      "lcovonly"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "minimatch": "^3.0.4",
+    "rxjs": "^6.3.2"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^7.1.1",
+    "@commitlint/config-conventional": "^7.1.1",
+    "@sourcegraph/prettierrc": "^2.2.0",
+    "@sourcegraph/tsconfig": "^3.0.0",
+    "@sourcegraph/tslint-config": "^12.0.0",
+    "@types/minimatch": "^3.0.3",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^10.5.0",
+    "concurrently": "^4.0.1",
+    "cpy-cli": "^2.0.0",
+    "husky": "^0.14.3",
+    "mocha": "^5.2.0",
+    "nodemon": "^1.18.2",
+    "nyc": "^13.0.1",
+    "prettier": "^1.14.2",
+    "semantic-release": "^15.9.12",
+    "source-map-support": "^0.5.9",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.10.0",
+    "tslint-language-service": "^0.9.9",
+    "typescript": "^3.0.3",
+    "typescript-json-schema": "^0.32.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "watch:typecheck",
+      "problemMatcher": ["$tsc-watch"],
+      "isBackground": true
+    },
+    {
+      "type": "npm",
+      "script": "watch:cover",
+      "problemMatcher": ["$tsc-watch"],
+      "isBackground": true
+    }
+  ]
+}
