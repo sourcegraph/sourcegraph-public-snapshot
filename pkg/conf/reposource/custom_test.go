@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func Test_customCloneURLToRepoURI(t *testing.T) {
+func Test_customCloneURLToRepoName(t *testing.T) {
 	tests := []struct {
 		cloneURLResolvers []*cloneURLResolver
 		cloneURLToURI     map[string]string
@@ -48,7 +48,7 @@ func Test_customCloneURLToRepoURI(t *testing.T) {
 	for i, test := range tests {
 		cloneURLResolvers = test.cloneURLResolvers
 		for cloneURL, expURI := range test.cloneURLToURI {
-			if uri := customCloneURLToRepoURI(cloneURL); uri != api.RepoName(expURI) {
+			if uri := customCloneURLToRepoName(cloneURL); uri != api.RepoName(expURI) {
 				t.Errorf("In test case %d, expected %s -> %s, but got %s", i+1, cloneURL, expURI, uri)
 			}
 		}

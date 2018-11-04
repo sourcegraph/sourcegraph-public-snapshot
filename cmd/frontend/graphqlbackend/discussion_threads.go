@@ -62,7 +62,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		}
 		return repositoryByIDInt32(ctx, repo.ID)
 	case gitCloneURL != nil:
-		repositoryName, err := reposource.CloneURLToRepoURI(*gitCloneURL)
+		repositoryName, err := reposource.CloneURLToRepoName(*gitCloneURL)
 		if err != nil {
 			return nil, err
 		}

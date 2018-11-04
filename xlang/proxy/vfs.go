@@ -25,7 +25,7 @@ import (
 //
 // It is a var so that it can be mocked in tests.
 var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (FileSystem, error) {
-	repo, err := reposource.CloneURLToRepoURI(cloneURL.String())
+	repo, err := reposource.CloneURLToRepoName(cloneURL.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "can't determine repo name for URL")
 	}

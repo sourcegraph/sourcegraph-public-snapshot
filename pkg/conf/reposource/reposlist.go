@@ -52,7 +52,7 @@ func newReposList(repos []*schema.Repository) *reposList {
 	}
 }
 
-func (c *reposList) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
+func (c *reposList) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error) {
 	return api.RepoName(c.cloneURLToURI[normalizeCloneURL(cloneURL)]), nil
 }
 

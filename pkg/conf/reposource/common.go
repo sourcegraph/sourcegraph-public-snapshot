@@ -12,7 +12,7 @@ import (
 // repoSource is a wrapper around a repository source (typically a code host config) that provides a
 // method to map clone URLs to repo URIs using only the configuration (i.e., no network requests).
 type repoSource interface {
-	// cloneURLToRepoURI maps a Git clone URL (format documented here:
+	// cloneURLToRepoName maps a Git clone URL (format documented here:
 	// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the expected repo URI for the
 	// repository on the code host.  It does not actually check if the repository exists in the code
 	// host. It merely does the mapping based on the rules set in the code host config.
@@ -20,18 +20,18 @@ type repoSource interface {
 	// If the clone URL does not correspond to a repository that could exist on the code host, the
 	// empty string is returned and err is nil. If there is an unrelated error, an error is
 	// returned.
-	cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error)
+	cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error)
 }
 
-// CloneURLToRepoURI maps a Git clone URL (format documented here:
+// CloneURLToRepoName maps a Git clone URL (format documented here:
 // https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo URI if there
 // exists a code host configuration that matches the clone URL. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
-func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
+func CloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error) {
 	cfg := conf.Get()
 
-	if repoURI := customCloneURLToRepoURI(cloneURL); repoURI != "" {
+	if repoURI := customCloneURLToRepoName(cloneURL); repoURI != "" {
 		return repoURI, nil
 	}
 
@@ -59,7 +59,7 @@ func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
 		repoSources = append(repoSources, Gitolite{c})
 	}
 	for _, ch := range repoSources {
-		repoURI, err := ch.cloneURLToRepoURI(cloneURL)
+		repoURI, err := ch.cloneURLToRepoName(cloneURL)
 		if err != nil {
 			return "", err
 		}
