@@ -80,7 +80,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	}
 	host = NormalizeBaseURL(host)
 
-	// URI
+	// Name
 	project := "UNKNOWN"
 	if repo.Project != nil {
 		project = repo.Project.Key

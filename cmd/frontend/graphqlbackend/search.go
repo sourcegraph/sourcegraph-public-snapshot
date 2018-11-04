@@ -247,7 +247,7 @@ type patternRevspec struct {
 	revs           []search.RevisionSpecifier
 }
 
-// given a URI, determine whether it matched any patterns for which we have
+// given a repo name, determine whether it matched any patterns for which we have
 // revspecs (or ref globs), and if so, return the matching/allowed ones.
 func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []search.RevisionSpecifier, clashing []search.RevisionSpecifier) {
 	revLists := make([][]search.RevisionSpecifier, 0, len(pats))
