@@ -622,7 +622,7 @@ type Query {
         # Filter for repositories that have not been indexed for cross-repository code intelligence.
         notCIIndexed: Boolean = false
         # Sort field.
-        orderBy: RepoOrderBy = REPO_NAME
+        orderBy: RepositoryOrderBy = REPOSITORY_NAME
         # Sort direction.
         descending: Boolean = false
     ): RepositoryConnection!
@@ -2474,12 +2474,12 @@ type DiscussionCommentConnection {
     pageInfo: PageInfo!
 }
 
-# RepoOrderBy enumerates the ways a repositories-list result set can
-# be ordered.
-enum RepoOrderBy {
+# RepositoryOrderBy enumerates the ways a repositories list can be ordered.
+enum RepositoryOrderBy {
     REPO_URI # deprecated (use the equivalent REPOSITORY_NAME)
     REPOSITORY_NAME
-    REPO_CREATED_AT
+    REPO_CREATED_AT # deprecated (use the equivalent REPOSITORY_CREATED_AT)
+    REPOSITORY_CREATED_AT
 }
 
 # A site is an installation of Sourcegraph that consists of one or more
