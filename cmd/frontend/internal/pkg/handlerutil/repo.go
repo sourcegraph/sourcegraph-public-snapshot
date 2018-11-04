@@ -58,13 +58,13 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (*types.Repo, ap
 	return repo, commitID, err
 }
 
-// RedirectToNewRepoURI writes an HTTP redirect response with a
+// RedirectToNewRepoName writes an HTTP redirect response with a
 // Location that matches the request's location except with the
-// Repo route var updated to refer to newRepoURI (instead of the
-// originally requested repo URI).
-func RedirectToNewRepoName(w http.ResponseWriter, r *http.Request, newRepoURI api.RepoName) error {
+// Repo route var updated to refer to newRepoName (instead of the
+// originally requested repo name).
+func RedirectToNewRepoName(w http.ResponseWriter, r *http.Request, newRepoName api.RepoName) error {
 	origVars := mux.Vars(r)
-	origVars["Repo"] = string(newRepoURI)
+	origVars["Repo"] = string(newRepoName)
 
 	var pairs []string
 	for k, v := range origVars {

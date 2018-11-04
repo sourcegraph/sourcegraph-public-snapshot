@@ -229,10 +229,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	// Eliminate duplicates.
 	type key struct {
-		repoURI api.RepoName
-		repoRev string
-		file    string
-		symbol  string
+		repoName api.RepoName
+		repoRev  string
+		file     string
+		symbol   string
 	}
 	seen := make(map[key]struct{}, len(allSuggestions))
 	uniqueSuggestions := allSuggestions[:0]
@@ -240,9 +240,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		var k key
 		switch s := s.result.(type) {
 		case *repositoryResolver:
-			k.repoURI = s.repo.URI
+			k.repoName = s.repo.URI
 		case *gitTreeEntryResolver:
-			k.repoURI = s.commit.repo.repo.URI
+			k.repoName = s.commit.repo.repo.URI
 			k.repoRev = string(s.commit.oid)
 			// Zoekt only searches the default branch and sets commit ID to an empty string.
 			// Set repoRev to the latest indexed revision so we can properly ensure deduplication.
@@ -251,7 +251,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			k.file = s.path
 		case *symbolResolver:
-			k.repoURI = s.location.resource.commit.repo.repo.URI
+			k.repoName = s.location.resource.commit.repo.repo.URI
 			k.symbol = s.symbol.Name + s.symbol.ContainerName
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))

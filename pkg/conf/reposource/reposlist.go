@@ -35,25 +35,25 @@ func getReposListInstance() *reposList {
 }
 
 type reposList struct {
-	// cloneURLToURI records the map from clone URL to repo URI. It is read-only after construction,
+	// cloneURLToName records the map from clone URL to repo name. It is read-only after construction,
 	// so does not require synchronization.
-	cloneURLToURI map[string]string
+	cloneURLToName map[string]string
 }
 
 var _ repoSource = (*reposList)(nil)
 
 func newReposList(repos []*schema.Repository) *reposList {
-	cloneURLToURI := map[string]string{}
+	cloneURLToName := map[string]string{}
 	for _, rp := range repos {
-		cloneURLToURI[normalizeCloneURL(rp.Url)] = rp.Path
+		cloneURLToName[normalizeCloneURL(rp.Url)] = rp.Path
 	}
 	return &reposList{
-		cloneURLToURI: cloneURLToURI,
+		cloneURLToName: cloneURLToName,
 	}
 }
 
-func (c *reposList) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error) {
-	return api.RepoName(c.cloneURLToURI[normalizeCloneURL(cloneURL)]), nil
+func (c *reposList) cloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+	return api.RepoName(c.cloneURLToName[normalizeCloneURL(cloneURL)]), nil
 }
 
 // normalizeCloneURL attempts to reduce the cloneURL to a normalized form using some simple

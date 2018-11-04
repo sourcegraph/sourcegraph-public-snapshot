@@ -13,7 +13,7 @@ type AWS struct {
 
 var _ repoSource = AWS{}
 
-func (c AWS) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error) {
+func (c AWS) cloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
 	parsedCloneURL, _, _, err := parseURLs(cloneURL, "")
 	if err != nil {
 		return "", err

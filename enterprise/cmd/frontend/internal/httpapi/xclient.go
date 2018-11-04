@@ -156,10 +156,10 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			repoURI := api.RepoName(string(repoInfo.RepoHost) + "/" + repoInfo.FullName)
+			repoName := api.RepoName(string(repoInfo.RepoHost) + "/" + repoInfo.FullName)
 
 			// We issue a workspace/symbols on the URL, so ensure we have the repo / it exists.
-			repo, err := backend.Repos.GetByName(ctx, repoURI)
+			repo, err := backend.Repos.GetByName(ctx, repoName)
 			if err != nil {
 				span.LogFields(otlog.Error(err))
 				if _, isSeeOther := err.(backend.ErrRepoSeeOther); isSeeOther || errcode.IsNotFound(err) {
@@ -177,7 +177,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 				}
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+string(repoURI)+"?"+string(rev)))
+			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+string(repoName)+"?"+string(rev)))
 		} else { // if we can't extract the repository URL directly, we have to consult the pkgs database
 			pkgDescriptor, ok := xlang.SymbolPackageDescriptor(sym.Symbol, c.mode)
 			if !ok {

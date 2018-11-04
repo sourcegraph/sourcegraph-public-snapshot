@@ -38,7 +38,7 @@ const (
 	GitUploadPack          = "internal.git.upload-pack"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposCreateIfNotExists = "internal.repos.create-if-not-exists"
-	ReposGetByName         = "internal.repos.get-by-uri"
+	ReposGetByName         = "internal.repos.get-by-name"
 	ReposInventoryUncached = "internal.repos.inventory-uncached"
 	ReposInventory         = "internal.repos.inventory"
 	ReposList              = "internal.repos.list"
@@ -98,10 +98,10 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/extension").Methods("POST").Name(Extension)
 	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
 	base.Path("/pkgs/refresh-index").Methods("POST").Name(PkgsRefreshIndex)
-	base.Path("/git/{RepoURI:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
-	base.Path("/git/{RepoURI:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
-	base.Path("/git/{RepoURI:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
-	base.Path("/git/{RepoURI:.*}/git-upload-pack").Methods("POST").Name(GitUploadPack)
+	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
+	base.Path("/git/{RepoName:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
+	base.Path("/git/{RepoName:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
+	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/repos/create-if-not-exists").Methods("POST").Name(ReposCreateIfNotExists)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
@@ -110,7 +110,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
-	base.Path("/repos/{RepoURI:.*}").Methods("POST").Name(ReposGetByName)
+	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration/raw-json").Methods("POST").Name(ConfigurationRawJSON)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)

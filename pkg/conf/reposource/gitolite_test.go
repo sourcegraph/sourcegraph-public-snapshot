@@ -9,13 +9,13 @@ import (
 func TestGitolite_cloneURLToRepoName(t *testing.T) {
 	var tests = []struct {
 		conn schema.GitoliteConnection
-		urls []urlURI
+		urls []urlToRepoName
 	}{{
 		conn: schema.GitoliteConnection{
 			Host:   "git@gitolite.sgdev.org",
 			Prefix: "gitolite.sgdev.org/",
 		},
-		urls: []urlURI{
+		urls: []urlToRepoName{
 			{"git@gitolite.sgdev.org:bl/go/app.git", "gitolite.sgdev.org/bl/go/app"},
 			{"git@gitolite.sgdev.org:bl/go/app", "gitolite.sgdev.org/bl/go/app"},
 
@@ -26,7 +26,7 @@ func TestGitolite_cloneURLToRepoName(t *testing.T) {
 		conn: schema.GitoliteConnection{
 			Host: "git@gitolite.sgdev.org",
 		},
-		urls: []urlURI{
+		urls: []urlToRepoName{
 			{"git@gitolite.sgdev.org:bl/go/app.git", "bl/go/app"},
 			{"git@gitolite.sgdev.org:bl/go/app", "bl/go/app"},
 
@@ -38,7 +38,7 @@ func TestGitolite_cloneURLToRepoName(t *testing.T) {
 			Host:   "git@gitolite.sgdev.org",
 			Prefix: "git/",
 		},
-		urls: []urlURI{
+		urls: []urlToRepoName{
 			{"git@gitolite.sgdev.org:bl/go/app.git", "git/bl/go/app"},
 			{"git@gitolite.sgdev.org:bl/go/app", "git/bl/go/app"},
 
@@ -49,12 +49,12 @@ func TestGitolite_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoURI, err := Gitolite{&test.conn}.cloneURLToRepoName(u.cloneURL)
+			repoName, err := Gitolite{&test.conn}.cloneURLToRepoName(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if u.repoURI != string(repoURI) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoURI, repoURI, u.cloneURL, test.conn)
+			if u.repoName != string(repoName) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
 			}
 		}
 	}

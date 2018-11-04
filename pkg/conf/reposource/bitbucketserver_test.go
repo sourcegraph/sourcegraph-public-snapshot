@@ -9,14 +9,14 @@ import (
 func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
 	var tests = []struct {
 		conn schema.BitbucketServerConnection
-		urls []urlURI
+		urls []urlToRepoName
 	}{{
 		conn: schema.BitbucketServerConnection{
 			Password: "pass",
 			Url:      "https://bitbucket.sgdev.org",
 			Username: "user",
 		},
-		urls: []urlURI{
+		urls: []urlToRepoName{
 			{"https://admin@bitbucket.sgdev.org/scm/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org:7999/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
@@ -32,7 +32,7 @@ func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
 			Username:              "user",
 			RepositoryPathPattern: "{projectKey}/{repositorySlug}",
 		},
-		urls: []urlURI{
+		urls: []urlToRepoName{
 			{"https://admin@bitbucket.sgdev.org/scm/myp/myrepo.git", "myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org:7999/myp/myrepo.git", "myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org/myp/myrepo.git", "myp/myrepo"},
@@ -45,12 +45,12 @@ func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoURI, err := BitbucketServer{&test.conn}.cloneURLToRepoName(u.cloneURL)
+			repoName, err := BitbucketServer{&test.conn}.cloneURLToRepoName(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if u.repoURI != string(repoURI) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoURI, repoURI, u.cloneURL, test.conn)
+			if u.repoName != string(repoName) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
 			}
 		}
 	}

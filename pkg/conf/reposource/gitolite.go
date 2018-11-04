@@ -13,7 +13,7 @@ type Gitolite struct {
 
 var _ repoSource = Gitolite{}
 
-func (c Gitolite) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err error) {
+func (c Gitolite) cloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
 	parsedCloneURL, err := parseCloneURL(cloneURL)
 	if err != nil {
 		return "", err

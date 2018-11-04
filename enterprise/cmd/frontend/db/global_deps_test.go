@@ -65,7 +65,7 @@ func TestGlobalDeps_TotalRefsExpansion(t *testing.T) {
 		"github.com/juju/environschema": {"github.com/juju/environschema", "gopkg.in/juju/environschema"},
 	}
 	for input, want := range tests {
-		got := repoURIToGoPathPrefixes(input)
+		got := repoNameToGoPathPrefixes(input)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %q want %q", got, want)
 		}
@@ -201,11 +201,11 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 
 	repos := make([]api.RepoID, 5)
 	for i := 0; i < 5; i++ {
-		uri := api.RepoName(fmt.Sprintf("myrepo-%d", i))
-		if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: uri, Description: "", Fork: false, Enabled: true}); err != nil {
+		repoName := api.RepoName(fmt.Sprintf("myrepo-%d", i))
+		if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: repoName, Description: "", Fork: false, Enabled: true}); err != nil {
 			t.Fatal(err)
 		}
-		rp, err := db.Repos.GetByName(ctx, uri)
+		rp, err := db.Repos.GetByName(ctx, repoName)
 		if err != nil {
 			t.Fatal(err)
 		}

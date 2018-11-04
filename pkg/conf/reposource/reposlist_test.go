@@ -10,12 +10,12 @@ import (
 func TestReposList_cloneURLToRepoName(t *testing.T) {
 	var tests = []struct {
 		repos []*schema.Repository
-		urls  []urlURI
+		urls  []urlToRepoName
 	}{{
 		repos: []*schema.Repository{
 			{Path: "github.com/gorilla/mux", Url: "https://github.com/gorilla/mux"},
 		},
-		urls: []urlURI{
+		urls: []urlToRepoName{
 			{"https://github.com/gorilla/mux", "github.com/gorilla/mux"},
 			{"https://github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 			{"git@github.com:gorilla/mux", "github.com/gorilla/mux"},
@@ -44,14 +44,14 @@ func TestReposList_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoURI, err := newReposList(test.repos).cloneURLToRepoName(u.cloneURL)
+			repoName, err := newReposList(test.repos).cloneURLToRepoName(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if u.repoURI != string(repoURI) {
+			if u.repoName != string(repoName) {
 				b, _ := json.Marshal(test.repos)
-				t.Errorf("expected %q but got %q for clone URL %q (repos: %s)", u.repoURI, repoURI, u.cloneURL, string(b))
+				t.Errorf("expected %q but got %q for clone URL %q (repos: %s)", u.repoName, repoName, u.cloneURL, string(b))
 			}
 		}
 	}

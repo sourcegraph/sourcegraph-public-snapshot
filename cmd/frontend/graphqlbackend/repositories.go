@@ -257,11 +257,11 @@ func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	uri := api.RepoName(args.Name)
-	if err := backend.Repos.Add(ctx, uri); err != nil {
+	repoName := api.RepoName(args.Name)
+	if err := backend.Repos.Add(ctx, repoName); err != nil {
 		return nil, err
 	}
-	repo, err := backend.Repos.GetByName(ctx, uri)
+	repo, err := backend.Repos.GetByName(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -362,10 +362,10 @@ func repoIDsToInt32s(repoIDs []api.RepoID) []int32 {
 	return int32s
 }
 
-func repoURIsToStrings(repoURIs []api.RepoName) []string {
-	strings := make([]string, len(repoURIs))
-	for i, repoURI := range repoURIs {
-		strings[i] = string(repoURI)
+func repoNamesToStrings(repoNames []api.RepoName) []string {
+	strings := make([]string, len(repoNames))
+	for i, repoName := range repoNames {
+		strings[i] = string(repoName)
 	}
 	return strings
 }
@@ -379,11 +379,11 @@ func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
 }
 
 func toRepoNames(repos []*types.Repo) []api.RepoName {
-	uris := make([]api.RepoName, len(repos))
+	names := make([]api.RepoName, len(repos))
 	for i, repo := range repos {
-		uris[i] = repo.URI
+		names[i] = repo.URI
 	}
-	return uris
+	return names
 }
 
 func toDBRepoListColumn(ob string) db.RepoListColumn {

@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func TestGuessRepoURIFromRemoteURL(t *testing.T) {
+func TestGuessRepoNameFromRemoteURL(t *testing.T) {
 	tests := map[string]api.RepoName{
 		"github.com:a/b":                  "github.com/a/b",
 		"github.com:a/b.git":              "github.com/a/b",
@@ -19,7 +19,7 @@ func TestGuessRepoURIFromRemoteURL(t *testing.T) {
 		"http://alice@foo.com:1234/a/b":   "foo.com/a/b",
 	}
 	for input, want := range tests {
-		got := guessRepoURIFromRemoteURL(input)
+		got := guessRepoNameFromRemoteURL(input)
 		if got != want {
 			t.Errorf("%s: got %q, want %q", input, got, want)
 		}

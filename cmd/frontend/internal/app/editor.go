@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func editorBranch(ctx context.Context, repoURI api.RepoName, branchName string) (string, error) {
+func editorBranch(ctx context.Context, repoName api.RepoName, branchName string) (string, error) {
 	if branchName == "HEAD" {
 		return "", nil // Detached head state
 	}
-	repo, err := backend.Repos.GetByName(ctx, repoURI)
+	repo, err := backend.Repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
 		// exist (unlikely) or that the user is not logged in (most likely). In
@@ -93,26 +93,26 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 
 	// Open-file request.
 
-	// Determine the repo URI and branch.
+	// Determine the repo name and branch.
 	//
 	// TODO(sqs): This used to hit gitserver, which would be more accurate in case of nonstandard clone URLs.
-	// It now generates the guessed repo URI statically, which means in some cases it won't work, but it
+	// It now generates the guessed repo name statically, which means in some cases it won't work, but it
 	// is worth the increase in simplicity (plus there is an error message for users). In the future we can
 	// let users specify a custom mapping to the Sourcegraph repo in their local Git repo.
-	repoURI := guessRepoURIFromRemoteURL(remoteURL)
-	if repoURI == "" {
+	repoName := guessRepoNameFromRemoteURL(remoteURL)
+	if repoName == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Git remote URL %q not supported", remoteURL)
 		return nil
 	}
-	branch, err := editorBranch(r.Context(), repoURI, branch)
+	branch, err := editorBranch(r.Context(), repoName, branch)
 	if err != nil {
 		return err
 	}
 
-	u := &url.URL{Path: path.Join("/", string(repoURI)+branch, "/-/blob/", file)}
+	u := &url.URL{Path: path.Join("/", string(repoName)+branch, "/-/blob/", file)}
 	q = u.Query()
 	q.Add("utm_source", editor+"-"+version)
 	if utmProductName != "" {
@@ -134,9 +134,9 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 // gitProtocolRegExp is a regular expression that matches any URL that looks like it has a git protocol
 var gitProtocolRegExp = regexp.MustCompile("^(git|(git+)?(https?|ssh))://")
 
-// guessRepoURIFromRemoteURL return a guess at the repo URI for the given remote URL. For example, given
+// guessRepoNameFromRemoteURL return a guess at the repo name for the given remote URL. For example, given
 // "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
-func guessRepoURIFromRemoteURL(urlStr string) api.RepoName {
+func guessRepoNameFromRemoteURL(urlStr string) api.RepoName {
 	if !gitProtocolRegExp.MatchString(urlStr) {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
