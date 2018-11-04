@@ -36,6 +36,7 @@ func (m newGitLabAuthzProviderParams) ServiceID() string {
 func (m newGitLabAuthzProviderParams) ServiceType() string {
 	panic("should never be called")
 }
+func (m newGitLabAuthzProviderParams) Validate() []string { return nil }
 
 func Test_providersFromConfig(t *testing.T) {
 	NewGitLabProvider = func(op gitlab.GitLabAuthzProviderOp) authz.Provider {

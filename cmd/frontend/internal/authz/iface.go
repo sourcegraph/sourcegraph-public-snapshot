@@ -74,6 +74,10 @@ type Provider interface {
 	// ServiceID returns the service ID (e.g., "https://gitlab.mycompany.com/") of this authz
 	// provider.
 	ServiceID() string
+
+	// Validate checks the configuration and credentials of the authz provider and returns any
+	// problems.
+	Validate() (problems []string)
 }
 
 type Repo struct {
