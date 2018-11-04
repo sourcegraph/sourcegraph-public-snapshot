@@ -378,7 +378,7 @@ The array object has the following properties:
 
 ## git.cloneURLToRepositoryName (array)
 
-JSON array of configuration that maps from Git clone URL to repository URI. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
+JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 
 The object is an array with all elements of the type [`CloneURLToRepositoryName`](#cloneurltorepositoryname-object).
 
@@ -908,7 +908,7 @@ Default:
 
 ### repositoryPathPattern (string)
 
-The pattern used to generate the corresponding Sourcegraph repository path for a GitHub or GitHub Enterprise repository. In the pattern, the variable "{host}" is replaced with the GitHub host (such as github.example.com), and "{nameWithOwner}" is replaced with the GitHub repository's "owner/path" (such as "myorg/myrepo").
+The pattern used to generate the corresponding Sourcegraph repository name for a GitHub or GitHub Enterprise repository. In the pattern, the variable "{host}" is replaced with the GitHub host (such as github.example.com), and "{nameWithOwner}" is replaced with the GitHub repository's "owner/path" (such as "myorg/myrepo").
 
 For example, if your GitHub Enterprise URL is https://github.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "{host}/{nameWithOwner}" would mean that a GitHub repository at https://github.example.com/myorg/myrepo is available on Sourcegraph at https://src.example.com/github.example.com/myorg/myrepo.
 
@@ -986,7 +986,7 @@ Default:
 
 ### repositoryPathPattern (string)
 
-The pattern used to generate a the corresponding Sourcegraph repository path for a GitLab project. In the pattern, the variable "{host}" is replaced with the GitLab URL's host (such as gitlab.example.com), and "{pathWithNamespace}" is replaced with the GitLab project's "namespace/path" (such as "myteam/myproject").
+The pattern used to generate a the corresponding Sourcegraph repository name for a GitLab project. In the pattern, the variable "{host}" is replaced with the GitLab URL's host (such as gitlab.example.com), and "{pathWithNamespace}" is replaced with the GitLab project's "namespace/path" (such as "myteam/myproject").
 
 For example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{pathWithNamespace}" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.
 
@@ -1061,7 +1061,7 @@ Additional restrictions:
 
 ### repositoryPathPattern (string)
 
-The pattern used to generate the corresponding Sourcegraph repository path for a Bitbucket Server repository.
+The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.
 
 - "{host}" is replaced with the Bitbucket Server URL's host (such as bitbucket.example.com)
 - "{projectKey}" is replaced with the Bitbucket repository's parent project key (such as "PRJ")
@@ -1122,7 +1122,7 @@ The AWS secret access key (that corresponds to the AWS access key ID set in `acc
 
 ### repositoryPathPattern (string)
 
-The pattern used to generate a the corresponding Sourcegraph repository path for an AWS CodeCommit repository. In the pattern, the variable "{name}" is replaced with the repository's name.
+The pattern used to generate a the corresponding Sourcegraph repository name for an AWS CodeCommit repository. In the pattern, the variable "{name}" is replaced with the repository's name.
 
 For example, if your Sourcegraph instance is at https://src.example.com, then a repositoryPathPattern of "awsrepos/{name}" would mean that a AWS CodeCommit repository named "myrepo" is available on Sourcegraph at https://src.example.com/awsrepos/myrepo.
 
@@ -1140,7 +1140,7 @@ Properties of the `GitoliteConnection` object:
 
 ### prefix (string, required)
 
-Repository URI prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., "gitolite.example.com/".
+Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., "gitolite.example.com/".
 
 ### host (string, required)
 
@@ -1152,7 +1152,7 @@ Regular expression to filter repositories from auto-discovery, so they will not 
 
 ### phabricatorMetadataCommand (string)
 
-Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the URI of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
+Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
 
 <hr />
 
