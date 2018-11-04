@@ -207,13 +207,13 @@ func TestSearchFilesInRepos(t *testing.T) {
 
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
-	for i, urispec := range repos {
-		uri, revs := search.ParseRepositoryRevisions(urispec)
+	for i, repospec := range repos {
+		repoName, revs := search.ParseRepositoryRevisions(repospec)
 		if len(revs) == 0 {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: uri}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
 	}
 	return r
 }

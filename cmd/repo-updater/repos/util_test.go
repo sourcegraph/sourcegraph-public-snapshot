@@ -11,7 +11,7 @@ func TestSetUserinfoBestEffort(t *testing.T) {
 	}{
 		// no-op
 		{"https://foo.com/foo/bar", "", "", "https://foo.com/foo/bar"},
-		// invalid URI is returned as is
+		// invalid name is returned as is
 		{":/foo.com/foo/bar", "u", "p", ":/foo.com/foo/bar"},
 
 		// no user details in rawurl

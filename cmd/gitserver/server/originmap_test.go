@@ -71,7 +71,7 @@ func TestMap(t *testing.T) {
 		originMaps.originMap = actual
 		for _, mapping := range test.mappings {
 			if got := OriginMap(api.RepoName(mapping[0])); got != mapping[1] {
-				t.Errorf("on input %q, input URI %q, got %q, but expected %q", test.in, mapping[0], got, mapping[1])
+				t.Errorf("on input %q, input repo name %q, got %q, but expected %q", test.in, mapping[0], got, mapping[1])
 			}
 		}
 	}

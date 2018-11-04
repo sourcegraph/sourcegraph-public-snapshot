@@ -21,7 +21,7 @@ func TestRepositories(t *testing.T) {
 			Query: `
 				{
 					repositories {
-						nodes { uri }
+						nodes { name }
 						totalCount
 					}
 				}
@@ -31,10 +31,10 @@ func TestRepositories(t *testing.T) {
 					"repositories": {
 						"nodes": [
 							{
-								"uri": "repo1"
+								"name": "repo1"
 							},
 							{
-								"uri": "repo2"
+								"name": "repo2"
 							}
 						],
 						"totalCount": 2
