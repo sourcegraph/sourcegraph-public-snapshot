@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -178,7 +179,22 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	data, err := json.Marshal(res)
+
+	// BACKCOMPAT: Add a "URI" field because zoekt-sourcegraph-indexserver expects one to exist
+	// (with the repository name). This is a legacy of the rename from "repo URI" to "repo name".
+	type repoWithBackcompatURIField struct {
+		URI string
+		*types.Repo
+	}
+	res2 := make([]*repoWithBackcompatURIField, len(res))
+	for i, repo := range res {
+		res2[i] = &repoWithBackcompatURIField{
+			URI:  string(repo.Name),
+			Repo: repo,
+		}
+	}
+
+	data, err := json.Marshal(res2)
 	if err != nil {
 		return err
 	}
