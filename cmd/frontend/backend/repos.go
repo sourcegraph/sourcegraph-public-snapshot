@@ -56,7 +56,7 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 // GetByURI retrieves the repository with the given URI. If the URI refers to a repository on a known external
 // service (such as a code host) that is not yet present in the database, it will automatically look up the
 // repository externally and add it to the database before returning it.
-func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, err error) {
+func (s *repos) GetByURI(ctx context.Context, uri api.RepoName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
 	}
@@ -89,7 +89,7 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 // Add adds the repository with the given URI. The URI is mapped to a repository by consulting the
 // repo-updater, which contains information about all configured code hosts and the URIs that they
 // handle.
-func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
+func (s *repos) Add(ctx context.Context, uri api.RepoName) (err error) {
 	if Mocks.Repos.Add != nil {
 		return Mocks.Repos.Add(uri)
 	}

@@ -115,7 +115,7 @@ func (s *Server) cleanupRepos() {
 		defer cancel()
 
 		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := protocol.NormalizeRepo(api.RepoURI(strings.TrimPrefix(filepath.Dir(gitDir), s.ReposDir+"/")))
+		repo := protocol.NormalizeRepo(api.RepoName(strings.TrimPrefix(filepath.Dir(gitDir), s.ReposDir+"/")))
 		log15.Info("recloning expired repo", "repo", repo)
 
 		remoteURL := OriginMap(repo)

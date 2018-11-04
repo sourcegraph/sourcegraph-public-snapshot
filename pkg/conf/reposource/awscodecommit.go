@@ -13,7 +13,7 @@ type AWS struct {
 
 var _ repoSource = AWS{}
 
-func (c AWS) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c AWS) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
 	parsedCloneURL, _, _, err := parseURLs(cloneURL, "")
 	if err != nil {
 		return "", err
@@ -26,11 +26,11 @@ func (c AWS) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error)
 	return AWSRepoURI(c.RepositoryPathPattern, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/v1/repos/")), nil
 }
 
-func AWSRepoURI(repositoryPathPattern, name string) api.RepoURI {
+func AWSRepoURI(repositoryPathPattern, name string) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{name}"
 	}
-	return api.RepoURI(strings.NewReplacer(
+	return api.RepoName(strings.NewReplacer(
 		"{name}", name,
 	).Replace(repositoryPathPattern))
 }

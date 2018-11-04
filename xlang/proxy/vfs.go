@@ -31,7 +31,7 @@ var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api
 	}
 	if repo == "" {
 		// best effort fallback
-		repo = api.RepoURI(cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git"))
+		repo = api.RepoName(cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git"))
 	}
 	// We can get to this point without checking if (repo, commit) actually
 	// exists. Its better to fail sooner, otherwise the error can cause a
@@ -81,7 +81,7 @@ func init() {
 }
 
 type sharedFSKey struct {
-	repo     api.RepoURI
+	repo     api.RepoName
 	commitID api.CommitID
 }
 

@@ -22,7 +22,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		t.Fatal("could not acquire lock")
 	}
 
-	getRepoInfo := func(t *testing.T, repo api.RepoURI) (resp protocol.RepoInfoResponse) {
+	getRepoInfo := func(t *testing.T, repo api.RepoName) (resp protocol.RepoInfoResponse) {
 		rr := httptest.NewRecorder()
 		body, err := json.Marshal(protocol.RepoInfoRequest{Repo: repo})
 		if err != nil {

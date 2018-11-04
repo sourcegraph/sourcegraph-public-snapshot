@@ -262,7 +262,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 						repo("gitlab.mine/org/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "997"):   struct{}{},
 						repo("gitlab.mine/public/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "41"): struct{}{},
 					},
-					expPerms: map[api.RepoURI]map[authz.Perm]bool{
+					expPerms: map[api.RepoName]map[authz.Perm]bool{
 						"bl/repo-1":                 map[authz.Perm]bool{authz.Read: true},
 						"gitlab.mine/bl/repo-3":     map[authz.Perm]bool{},
 						"kl/repo-1":                 map[authz.Perm]bool{},
@@ -287,7 +287,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 						repo("gitlab.mine/org/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "997"):   struct{}{},
 						repo("gitlab.mine/public/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "41"): struct{}{},
 					},
-					expPerms: map[api.RepoURI]map[authz.Perm]bool{
+					expPerms: map[api.RepoName]map[authz.Perm]bool{
 						"bl/repo-1":                 map[authz.Perm]bool{},
 						"gitlab.mine/bl/repo-3":     map[authz.Perm]bool{},
 						"kl/repo-1":                 map[authz.Perm]bool{authz.Read: true},
@@ -312,7 +312,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 						repo("gitlab.mine/org/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "997"):   struct{}{},
 						repo("gitlab.mine/public/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "41"): struct{}{},
 					},
-					expPerms: map[api.RepoURI]map[authz.Perm]bool{
+					expPerms: map[api.RepoName]map[authz.Perm]bool{
 						"bl/repo-1":                 map[authz.Perm]bool{},
 						"gitlab.mine/bl/repo-3":     map[authz.Perm]bool{},
 						"kl/repo-1":                 map[authz.Perm]bool{},
@@ -337,7 +337,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 						repo("gitlab.mine/org/repo-3", gitlab.ServiceType, "https://gitlab.mine/", "997"):   struct{}{},
 						repo("gitlab.mine/public/repo-1", gitlab.ServiceType, "https://gitlab.mine/", "41"): struct{}{},
 					},
-					expPerms: map[api.RepoURI]map[authz.Perm]bool{
+					expPerms: map[api.RepoName]map[authz.Perm]bool{
 						"bl/repo-1":                 map[authz.Perm]bool{},
 						"gitlab.mine/bl/repo-3":     map[authz.Perm]bool{},
 						"kl/repo-1":                 map[authz.Perm]bool{},
@@ -367,7 +367,7 @@ type GitLab_RepoPerms_call struct {
 	description string
 	account     *extsvc.ExternalAccount
 	repos       map[authz.Repo]struct{}
-	expPerms    map[api.RepoURI]map[authz.Perm]bool
+	expPerms    map[api.RepoName]map[authz.Perm]bool
 }
 
 func (g GitLab_RepoPerms_Test) run(t *testing.T) {
@@ -789,7 +789,7 @@ func acct(userID int32, serviceType, serviceID, accountID string) *extsvc.Extern
 
 func repo(uri, serviceType, serviceID, id string) authz.Repo {
 	return authz.Repo{
-		URI: api.RepoURI(uri),
+		URI: api.RepoName(uri),
 		ExternalRepoSpec: api.ExternalRepoSpec{
 			ID:          id,
 			ServiceType: serviceType,

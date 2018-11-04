@@ -62,7 +62,7 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (*types.Repo, ap
 // Location that matches the request's location except with the
 // Repo route var updated to refer to newRepoURI (instead of the
 // originally requested repo URI).
-func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI api.RepoURI) error {
+func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI api.RepoName) error {
 	origVars := mux.Vars(r)
 	origVars["Repo"] = string(newRepoURI)
 

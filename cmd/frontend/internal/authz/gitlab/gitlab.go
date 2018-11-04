@@ -118,7 +118,7 @@ func (p *GitLabAuthzProvider) ServiceType() string {
 	return p.codeHost.ServiceType()
 }
 
-func (p *GitLabAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoURI]map[authz.Perm]bool, error) {
+func (p *GitLabAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
 	accountID := "" // empty means public / unauthenticated to the code host
 	if account != nil && account.ServiceID == p.codeHost.ServiceID() && account.ServiceType == p.codeHost.ServiceType() {
 		accountID = account.AccountID
@@ -145,7 +145,7 @@ func (p *GitLabAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Ext
 		p.cache.Set(accountID, accessibleReposB)
 	}
 
-	perms := make(map[api.RepoURI]map[authz.Perm]bool)
+	perms := make(map[api.RepoName]map[authz.Perm]bool)
 	for repo := range myRepos {
 		perms[repo.URI] = map[authz.Perm]bool{}
 

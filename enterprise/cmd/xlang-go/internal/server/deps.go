@@ -483,7 +483,7 @@ var NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ct
 	// First check if we can clone from gitserver. gitserver automatically
 	// clones missing repositories, so to prevent cloning unmanaged
 	// repositories we first check to see if it is present.
-	name := api.RepoURI(cloneURL.Host + cloneURL.Path)
+	name := api.RepoName(cloneURL.Host + cloneURL.Path)
 	if cloned, _ := gitserver.DefaultClient.IsRepoCloned(ctx, name); cloned {
 		repo := gitserver.Repo{Name: name}
 		if commit, err := git.ResolveRevision(ctx, repo, nil, rev, nil); err == nil {

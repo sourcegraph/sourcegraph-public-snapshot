@@ -20,7 +20,7 @@ type symbols struct{}
 //
 // Use the (lspext.WorkspaceSymbolParams).Symbol field to resolve symbols given a global ID. This is how Go symbol
 // URLs (e.g., from godoc.org) are resolved.
-func (symbols) List(ctx context.Context, repo api.RepoURI, commitID api.CommitID, mode string, params lspext.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
+func (symbols) List(ctx context.Context, repo api.RepoName, commitID api.CommitID, mode string, params lspext.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
 	if Mocks.Symbols.List != nil {
 		return Mocks.Symbols.List(ctx, repo, commitID, mode, params)
 	}
@@ -42,5 +42,5 @@ func (symbols) ListTags(ctx context.Context, args protocol.SearchArgs) ([]protoc
 
 // MockSymbols is used by tests to mock Symbols backend methods.
 type MockSymbols struct {
-	List func(ctx context.Context, repo api.RepoURI, commitID api.CommitID, mode string, params lspext.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error)
+	List func(ctx context.Context, repo api.RepoName, commitID api.CommitID, mode string, params lspext.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error)
 }

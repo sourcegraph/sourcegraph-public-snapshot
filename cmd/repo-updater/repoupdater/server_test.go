@@ -21,7 +21,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	s := &Server{}
 	h := s.Handler()
 
-	repoLookup := func(t *testing.T, repo api.RepoURI) (resp *protocol.RepoLookupResult, statusCode int) {
+	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
 		t.Helper()
 		rr := httptest.NewRecorder()
 		body, err := json.Marshal(protocol.RepoLookupArgs{Repo: repo})
@@ -37,7 +37,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 		}
 		return resp, rr.Code
 	}
-	repoLookupResult := func(t *testing.T, repo api.RepoURI) protocol.RepoLookupResult {
+	repoLookupResult := func(t *testing.T, repo api.RepoName) protocol.RepoLookupResult {
 		t.Helper()
 		resp, statusCode := repoLookup(t, repo)
 		if statusCode != http.StatusOK {
@@ -50,7 +50,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 		called := false
 		mockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			called = true
-			if want := api.RepoURI("github.com/a/b"); args.Repo != want {
+			if want := api.RepoName("github.com/a/b"); args.Repo != want {
 				t.Errorf("got owner %q, want %q", args.Repo, want)
 			}
 			return &protocol.RepoLookupResult{Repo: nil}, nil
@@ -210,7 +210,7 @@ func TestRepoLookup(t *testing.T) {
 			select {
 			case got := <-metadataUpdate:
 				want2 := &api.ReposUpdateMetadataRequest{
-					RepoURI:     want.Repo.URI,
+					RepoName:    want.Repo.URI,
 					Description: want.Repo.Description,
 					Fork:        want.Repo.Fork,
 					Archived:    want.Repo.Archived,

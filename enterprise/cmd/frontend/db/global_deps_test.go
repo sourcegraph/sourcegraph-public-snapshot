@@ -15,7 +15,7 @@ import (
 )
 
 func TestGlobalDeps_TotalRefsExpansion(t *testing.T) {
-	tests := map[api.RepoURI][]string{
+	tests := map[api.RepoName][]string{
 		// azul3d.org
 		"github.com/azul3d/engine": {"azul3d.org/engine"},
 
@@ -201,7 +201,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 
 	repos := make([]api.RepoID, 5)
 	for i := 0; i < 5; i++ {
-		uri := api.RepoURI(fmt.Sprintf("myrepo-%d", i))
+		uri := api.RepoName(fmt.Sprintf("myrepo-%d", i))
 		if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: uri, Description: "", Fork: false, Enabled: true}); err != nil {
 			t.Fatal(err)
 		}

@@ -392,7 +392,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 	return c, c.initResult, nil
 }
 
-func (p *Proxy) shouldUseLargeServer(mode string, repo api.RepoURI) bool {
+func (p *Proxy) shouldUseLargeServer(mode string, repo api.RepoName) bool {
 	if _, hasLargeMode := ServersByMode[mode+"_large"]; hasLargeMode {
 		for _, p := range repoLargeSubstr {
 			if strings.Contains(string(repo), p) {

@@ -13,7 +13,7 @@ type GitHub struct {
 
 var _ repoSource = GitHub{}
 
-func (c GitHub) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c GitHub) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err
@@ -24,12 +24,12 @@ func (c GitHub) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err err
 	return GitHubRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
 }
 
-func GitHubRepoURI(repositoryPathPattern, host, nameWithOwner string) api.RepoURI {
+func GitHubRepoURI(repositoryPathPattern, host, nameWithOwner string) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{nameWithOwner}"
 	}
 
-	return api.RepoURI(strings.NewReplacer(
+	return api.RepoName(strings.NewReplacer(
 		"{host}", host,
 		"{nameWithOwner}", nameWithOwner,
 	).Replace(repositoryPathPattern))

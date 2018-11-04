@@ -35,11 +35,11 @@ import (
 
 // repoBlacklist contains repos which we have blacklisted. It is set via the
 // environment variable REPO_BLACKLIST.
-var repoBlacklist = make(map[api.RepoURI]bool)
+var repoBlacklist = make(map[api.RepoName]bool)
 
 // repoBlacklistXReferences contains repos which we have blacklisted only on
 // workspace/xreferences. It is set via the environment variable REPO_BLACKLIST_XREFERENCES.
-var repoBlacklistXReferences = make(map[api.RepoURI]bool)
+var repoBlacklistXReferences = make(map[api.RepoName]bool)
 
 var (
 	clientLimitReqSec      rate.Limit
@@ -49,12 +49,12 @@ var (
 func init() {
 	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Separated by whitespace"))
 	for _, r := range repos {
-		repoBlacklist[api.RepoURI(r)] = true
+		repoBlacklist[api.RepoName(r)] = true
 	}
 
 	repos = strings.Fields(env.Get("REPO_BLACKLIST_XREFERENCES", "", "repos which we should not serve workspace/xreferences requests for. Separated by whitespace"))
 	for _, r := range repos {
-		repoBlacklistXReferences[api.RepoURI(r)] = true
+		repoBlacklistXReferences[api.RepoName(r)] = true
 	}
 
 	clientLimitReqSecF, err := strconv.ParseFloat(env.Get("CLIENT_LIMIT_REQ_SEC", "2", "The allowed requests a second before rate limiting. float"), 64)

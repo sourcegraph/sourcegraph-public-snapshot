@@ -1,12 +1,12 @@
 package api
 
 type DefsRefreshIndexRequest struct {
-	RepoURI  `json:"uri"`
+	RepoName `json:"repo"`
 	CommitID `json:"revision"`
 }
 
 type PkgsRefreshIndexRequest struct {
-	RepoURI  `json:"uri"`
+	RepoName `json:"repo"`
 	CommitID `json:"revision"`
 }
 
@@ -14,7 +14,7 @@ type PkgsRefreshIndexRequest struct {
 //
 // The request handler determines if the request refers to an existing repository (and should therefore update
 // instead of create). If ExternalRepo is set, then it tries to find a stored repository with the same ExternalRepo
-// values. If ExternalRepo is not set, then it tries to find a stored repository with the same RepoURI value.
+// values. If ExternalRepo is not set, then it tries to find a stored repository with the same RepoName value.
 //
 // NOTE: Some fields are only used during creation (and are not used to update an existing repository).
 type RepoCreateOrUpdateRequest struct {
@@ -25,10 +25,10 @@ type RepoCreateOrUpdateRequest struct {
 	// optional during the transition period.
 	ExternalRepo *ExternalRepoSpec
 
-	// RepoURI is the repository's URI.
+	// RepoName is the repository's name.
 	//
-	// TODO(sqs): Add a way for callers to request that this repository's URI be renamed.
-	RepoURI `json:"uri"`
+	// TODO(sqs): Add a way for callers to request that this repository be renamed.
+	RepoName `json:"repo"`
 
 	// Enabled is whether the repository should be enabled when initially created.
 	//
@@ -63,7 +63,7 @@ type ReposGetInventoryUncachedRequest struct {
 }
 
 type ReposUpdateMetadataRequest struct {
-	RepoURI     `json:"uri"`
+	RepoName    `json:"repo"`
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
 	Archived    bool   `json:"Archived"`
@@ -75,7 +75,7 @@ type ReposGetInventoryRequest struct {
 }
 
 type PhabricatorRepoCreateRequest struct {
-	RepoURI  `json:"uri"`
+	RepoName `json:"repo"`
 	Callsign string `json:"callsign"`
 	URL      string `json:"url"`
 }

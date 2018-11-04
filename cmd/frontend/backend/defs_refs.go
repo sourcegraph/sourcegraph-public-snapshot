@@ -48,7 +48,7 @@ func init() {
 	prometheus.MustRegister(listTotalRefsCacheCounter)
 }
 
-func (s *defs) TotalRefs(ctx context.Context, source api.RepoURI) (res int, err error) {
+func (s *defs) TotalRefs(ctx context.Context, source api.RepoName) (res int, err error) {
 	if Mocks.Defs.TotalRefs != nil {
 		return Mocks.Defs.TotalRefs(ctx, source)
 	}
@@ -94,7 +94,7 @@ func (s *defs) TotalRefs(ctx context.Context, source api.RepoURI) (res int, err 
 	return res, nil
 }
 
-func (s *defs) ListTotalRefs(ctx context.Context, source api.RepoURI) (repos []api.RepoID, err error) {
+func (s *defs) ListTotalRefs(ctx context.Context, source api.RepoName) (repos []api.RepoID, err error) {
 	if Mocks.Defs.ListTotalRefs != nil {
 		return Mocks.Defs.ListTotalRefs(ctx, source)
 	}
@@ -215,7 +215,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 }
 
 type MockDefs struct {
-	TotalRefs            func(ctx context.Context, source api.RepoURI) (res int, err error)
-	ListTotalRefs        func(ctx context.Context, source api.RepoURI) (repos []api.RepoID, err error)
+	TotalRefs            func(ctx context.Context, source api.RepoName) (res int, err error)
+	ListTotalRefs        func(ctx context.Context, source api.RepoName) (repos []api.RepoID, err error)
 	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error)
 }

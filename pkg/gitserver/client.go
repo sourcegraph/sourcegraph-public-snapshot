@@ -126,7 +126,7 @@ type Client struct {
 }
 
 // addrForRepo returns the gitserver address to use for the given repo URI.
-func (c *Client) addrForRepo(ctx context.Context, repo api.RepoURI) string {
+func (c *Client) addrForRepo(ctx context.Context, repo api.RepoName) string {
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	return c.addrForKey(ctx, string(repo))
 }
@@ -219,7 +219,7 @@ type Cmd struct {
 // Repo represents a repository on gitserver. It contains the information necessary to identify and
 // create/clone it.
 type Repo struct {
-	Name api.RepoURI // the repository's URI
+	Name api.RepoName // the repository's URI
 
 	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
 	// this field is optional (it will use the last-used Git remote URL). If the repository is not
@@ -479,7 +479,7 @@ func (e *RepoNotCloneableErr) Error() string {
 	return fmt.Sprintf("repo not found (name=%s url=%s notfound=%v) because %s", e.repo.Name, e.repo.URL, e.notFound, e.reason)
 }
 
-func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoURI) (bool, error) {
+func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, error) {
 	req := &protocol.IsRepoClonedRequest{
 		Repo: repo,
 	}
@@ -500,7 +500,7 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoURI) (bool, erro
 //
 // The repository not existing is not an error; in that case, RepoInfoResponse.Cloned will be false
 // and the error will be nil.
-func (c *Client) RepoInfo(ctx context.Context, repo api.RepoURI) (*protocol.RepoInfoResponse, error) {
+func (c *Client) RepoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfoResponse, error) {
 	req := &protocol.RepoInfoRequest{
 		Repo: repo,
 	}
@@ -519,7 +519,7 @@ func (c *Client) RepoInfo(ctx context.Context, repo api.RepoURI) (*protocol.Repo
 }
 
 // Remove removes the repository clone from gitserver.
-func (c *Client) Remove(ctx context.Context, repo api.RepoURI) error {
+func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	req := &protocol.RepoDeleteRequest{
 		Repo: repo,
 	}
@@ -536,7 +536,7 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoURI) error {
 	return nil
 }
 
-func (c *Client) httpPost(ctx context.Context, repo api.RepoURI, method string, payload interface{}) (resp *http.Response, err error) {
+func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {
 		if err != nil {
@@ -576,7 +576,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoURI, method string, 
 	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }
 
-func (c *Client) UploadPack(repoURI api.RepoURI, w http.ResponseWriter, r *http.Request) {
+func (c *Client) UploadPack(repoURI api.RepoName, w http.ResponseWriter, r *http.Request) {
 	repoURI = protocol.NormalizeRepo(repoURI)
 	addr := c.addrForRepo(r.Context(), repoURI)
 

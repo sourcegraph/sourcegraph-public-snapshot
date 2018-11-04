@@ -16,7 +16,7 @@ import (
 	"golang.org/x/net/trace"
 )
 
-func (s *Service) indexedSymbols(ctx context.Context, repo api.RepoURI, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
+func (s *Service) indexedSymbols(ctx context.Context, repo api.RepoName, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "indexedSymbols")
 	defer func() {
 		if err != nil {

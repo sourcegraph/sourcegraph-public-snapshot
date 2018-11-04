@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func editorBranch(ctx context.Context, repoURI api.RepoURI, branchName string) (string, error) {
+func editorBranch(ctx context.Context, repoURI api.RepoName, branchName string) (string, error) {
 	if branchName == "HEAD" {
 		return "", nil // Detached head state
 	}
@@ -136,7 +136,7 @@ var gitProtocolRegExp = regexp.MustCompile("^(git|(git+)?(https?|ssh))://")
 
 // guessRepoURIFromRemoteURL return a guess at the repo URI for the given remote URL. For example, given
 // "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
-func guessRepoURIFromRemoteURL(urlStr string) api.RepoURI {
+func guessRepoURIFromRemoteURL(urlStr string) api.RepoName {
 	if !gitProtocolRegExp.MatchString(urlStr) {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
@@ -144,7 +144,7 @@ func guessRepoURIFromRemoteURL(urlStr string) api.RepoURI {
 
 	u, _ := url.Parse(urlStr)
 	if u != nil {
-		return api.RepoURI(u.Hostname() + u.Path)
+		return api.RepoName(u.Hostname() + u.Path)
 	}
 	return ""
 }

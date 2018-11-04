@@ -156,7 +156,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			repoURI := api.RepoURI(string(repoInfo.RepoHost) + "/" + repoInfo.FullName)
+			repoURI := api.RepoName(string(repoInfo.RepoHost) + "/" + repoInfo.FullName)
 
 			// We issue a workspace/symbols on the URL, so ensure we have the repo / it exists.
 			repo, err := backend.Repos.GetByURI(ctx, repoURI)

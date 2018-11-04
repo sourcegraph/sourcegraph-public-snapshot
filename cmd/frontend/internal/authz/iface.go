@@ -53,7 +53,7 @@ type Provider interface {
 	// permissions it needs to compute.  In practice, most will probably use a combination of (1)
 	// "list all private repos the user has access to", (2) a mechanism to determine which repos are
 	// public/private, and (3) a cache of some sort.
-	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[Repo]struct{}) (map[api.RepoURI]map[Perm]bool, error)
+	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[Repo]struct{}) (map[api.RepoName]map[Perm]bool, error)
 
 	// FetchAccount returns the external account that identifies the user to this authz provider,
 	// taking as input the current list of external accounts associated with the
@@ -82,7 +82,7 @@ type Provider interface {
 
 type Repo struct {
 	// URI is the unique name/path of the repo on Sourcegraph
-	URI api.RepoURI
+	URI api.RepoName
 
 	// ExternalRepoSpec uniquely identifies the external repo that is the source of the repo.
 	api.ExternalRepoSpec

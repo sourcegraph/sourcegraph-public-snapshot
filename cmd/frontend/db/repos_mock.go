@@ -11,7 +11,7 @@ import (
 
 type MockRepos struct {
 	Get      func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
-	GetByURI func(ctx context.Context, repo api.RepoURI) (*types.Repo, error)
+	GetByURI func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
 	List     func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
 	Delete   func(ctx context.Context, repo api.RepoID) error
 	Count    func(ctx context.Context, opt ReposListOptions) (int, error)
@@ -44,9 +44,9 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 	return
 }
 
-func (s *MockRepos) MockGetByURI(t *testing.T, want api.RepoURI, repo api.RepoID) (called *bool) {
+func (s *MockRepos) MockGetByURI(t *testing.T, want api.RepoName, repo api.RepoID) (called *bool) {
 	called = new(bool)
-	s.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+	s.GetByURI = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
 		*called = true
 		if uri != want {
 			t.Errorf("got repo URI %q, want %q", uri, want)
@@ -57,7 +57,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, want api.RepoURI, repo api.RepoID
 	return
 }
 
-func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoURI) (called *bool) {
+func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *bool) {
 	called = new(bool)
 	s.List = func(ctx context.Context, opt ReposListOptions) ([]*types.Repo, error) {
 		*called = true

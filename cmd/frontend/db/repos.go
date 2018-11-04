@@ -18,7 +18,7 @@ import (
 
 type repoNotFoundErr struct {
 	ID  api.RepoID
-	URI api.RepoURI
+	URI api.RepoName
 }
 
 func (e *repoNotFoundErr) Error() string {
@@ -63,7 +63,7 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 // error. If the repo doesn't exist in the DB, then errcode.IsNotFound will
 // return true on the error returned. It does not attempt to look up or update
 // the repository on any external service (such as its code host).
-func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+func (s *repos) GetByURI(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
 	}
@@ -574,7 +574,7 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 	return err
 }
 
-func (s *repos) UpdateRepositoryMetadata(ctx context.Context, uri api.RepoURI, description string, fork bool, archived bool) error {
+func (s *repos) UpdateRepositoryMetadata(ctx context.Context, uri api.RepoName, description string, fork bool, archived bool) error {
 	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE uri=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, uri)
 	return err
 }

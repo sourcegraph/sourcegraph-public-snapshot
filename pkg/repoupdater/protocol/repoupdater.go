@@ -13,7 +13,7 @@ import (
 type RepoLookupArgs struct {
 	// Repo is the repository URI to look up. If the ExternalRepo information is available to the
 	// caller, it is preferred to use that (because it is robust to renames).
-	Repo api.RepoURI `json:",omitempty"`
+	Repo api.RepoName `json:",omitempty"`
 
 	// ExternalRepo specifies the repository to look up by its external repository identity.
 	ExternalRepo *api.ExternalRepoSpec
@@ -54,7 +54,7 @@ func (r *RepoLookupResult) String() string {
 type RepoInfo struct {
 	// URI is the canonical URI of the repository. Its case (uppercase/lowercase) may differ from the URI arg used
 	// in the lookup. If the repository was renamed on the external service, this URI will be the new name.
-	URI api.RepoURI
+	URI api.RepoName
 
 	Description string // repository description (from the external service)
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
@@ -91,7 +91,7 @@ type RepoLinks struct {
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo api.RepoURI `json:"repo"`
+	Repo api.RepoName `json:"repo"`
 
 	// URL is the repository's Git remote URL (from which to clone or update).
 	URL string `json:"url"`

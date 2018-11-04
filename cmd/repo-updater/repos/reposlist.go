@@ -61,7 +61,7 @@ const (
 
 // repo represents a repository we're tracking.
 type repoData struct {
-	// Name used as the unique key, also sometimes api.RepoURI
+	// Name used as the unique key, also sometimes api.RepoName
 	Name string
 
 	// URL is the git origin URL.
@@ -439,7 +439,7 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 	autoUpdatesDisabled := r.autoUpdatesDisabled
 	r.mu.Unlock()
 
-	uri := api.RepoURI(name)
+	uri := api.RepoName(name)
 	var resp *gitserverprotocol.RepoUpdateResponse
 	var err error
 
@@ -450,7 +450,7 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 	log15.Debug("doUpdate", "repo", name, "interval", interval)
 
 	// Check whether it's cloned.
-	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, api.RepoURI(uri))
+	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, api.RepoName(uri))
 	if err != nil {
 		log15.Warn("error checking if repo cloned", "repo", uri, "err", err)
 		return
@@ -462,7 +462,7 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 		if manual {
 			interval = 5 * time.Second
 		}
-		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: api.RepoURI(name), URL: url}, interval)
+		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: api.RepoName(name), URL: url}, interval)
 		if err != nil {
 			log15.Warn("error requesting repo update", "repo", name, "err", err)
 			return
@@ -750,7 +750,7 @@ func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repositor
 			continue
 		}
 		// Check whether repo already exists, if not create an entry for it.
-		newRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoURI: api.RepoURI(cfg.Path), Enabled: true})
+		newRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoName: api.RepoName(cfg.Path), Enabled: true})
 		if err != nil {
 			log15.Warn("error creating or checking for repo", "repo", cfg.Path)
 			continue
@@ -829,7 +829,7 @@ func (r *repoList) snapshot() *Snapshot {
 }
 
 // UpdateOnce causes a single update of the given repository.
-func UpdateOnce(ctx context.Context, name api.RepoURI, url string) {
+func UpdateOnce(ctx context.Context, name api.RepoName, url string) {
 	repos.mu.Lock()
 	defer repos.mu.Unlock()
 	repos.update(string(name), url)
@@ -841,11 +841,11 @@ func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLo
 		return nil, false, nil
 	}
 
-	repoNameLower := api.RepoURI(strings.ToLower(string(args.Repo)))
+	repoNameLower := api.RepoName(strings.ToLower(string(args.Repo)))
 	for _, repo := range conf.Get().ReposList {
-		if api.RepoURI(strings.ToLower(string(repo.Path))) == repoNameLower {
+		if api.RepoName(strings.ToLower(string(repo.Path))) == repoNameLower {
 			repoInfo := &protocol.RepoInfo{
-				URI:          api.RepoURI(repo.Path),
+				URI:          api.RepoName(repo.Path),
 				ExternalRepo: nil,
 				VCS:          protocol.VCSInfo{URL: repo.Url},
 			}

@@ -80,7 +80,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 	})
 
 	t.Run("name arg", func(t *testing.T) {
-		backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+		backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
 			t.Fatal("want GetByURI to not be called")
 			return nil, nil
 		}

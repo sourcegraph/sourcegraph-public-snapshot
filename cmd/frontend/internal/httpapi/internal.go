@@ -22,7 +22,7 @@ import (
 )
 
 func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
-	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
+	uri := api.RepoName(mux.Vars(r)["RepoURI"])
 	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	err = backend.Repos.Upsert(r.Context(), api.InsertRepoOp{
-		URI:          repo.RepoURI,
+		URI:          repo.RepoName,
 		Description:  repo.Description,
 		Fork:         repo.Fork,
 		Archived:     repo.Archived,
@@ -53,7 +53,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	sgRepo, err := backend.Repos.GetByURI(r.Context(), repo.RepoURI)
+	sgRepo, err := backend.Repos.GetByURI(r.Context(), repo.RepoName)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func serveReposUpdateMetadata(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := db.Repos.UpdateRepositoryMetadata(r.Context(), repo.RepoURI, repo.Description, repo.Fork, repo.Archived); err != nil {
+	if err := db.Repos.UpdateRepositoryMetadata(r.Context(), repo.RepoName, repo.Description, repo.Fork, repo.Archived); err != nil {
 		return errors.Wrap(err, "Repos.UpdateRepositoryMetadata failed")
 	}
 	return nil
@@ -99,7 +99,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	phabRepo, err := db.Phabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoURI, repo.URL)
+	phabRepo, err := db.Phabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
 	if err != nil {
 		return err
 	}
@@ -393,7 +393,7 @@ func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoURI)
+	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoName)
 	if err != nil {
 		return err
 	}
@@ -412,7 +412,7 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoURI)
+	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoName)
 	if err != nil {
 		return err
 	}
@@ -428,7 +428,7 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	// used by zoekt-sourcegraph-mirror
 	vars := mux.Vars(r)
-	name := api.RepoURI(vars["RepoURI"])
+	name := api.RepoName(vars["RepoURI"])
 	spec := vars["Spec"]
 
 	// Do not to trigger a repo-updater lookup since this is a batch job.
@@ -445,7 +445,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	// used by zoekt-sourcegraph-mirror
 	vars := mux.Vars(r)
-	name := api.RepoURI(vars["RepoURI"])
+	name := api.RepoName(vars["RepoURI"])
 	spec := vars["Commit"]
 
 	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
@@ -473,7 +473,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("only support service git-upload-pack")
 	}
 
-	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
+	uri := api.RepoName(mux.Vars(r)["RepoURI"])
 	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err
@@ -498,7 +498,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
-	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
+	uri := api.RepoName(mux.Vars(r)["RepoURI"])
 	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err

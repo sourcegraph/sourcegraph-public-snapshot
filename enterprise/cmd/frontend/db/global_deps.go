@@ -95,8 +95,8 @@ func (g *globalDeps) ListTotalRefs(ctx context.Context, repo *types.Repo, langs 
 //
 // TODO(slimsag): In the future, when the pkgs index includes Go repositories,
 // use that instead of this manual mapping hack.
-func repoURIToGoPathPrefixes(repoURI api.RepoURI) []string {
-	manualMapping := map[api.RepoURI][]string{
+func repoURIToGoPathPrefixes(repoURI api.RepoName) []string {
+	manualMapping := map[api.RepoName][]string{
 		// stdlib hack: by returning an empty string (NOT no strings) we end up
 		// with an SQL query like `AND dep_data->>'package' LIKE '%';` which
 		// matches all Go repositories effectively. We do this for the stdlib

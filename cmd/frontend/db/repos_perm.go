@@ -63,7 +63,7 @@ func isInternalActor(ctx context.Context) bool {
 	return actor.FromContext(ctx).Internal
 }
 
-func getFilteredRepoURIs(ctx context.Context, currentUser *types.User, repos map[authz.Repo]struct{}, p authz.Perm) (accepted map[api.RepoURI]struct{}, err error) {
+func getFilteredRepoURIs(ctx context.Context, currentUser *types.User, repos map[authz.Repo]struct{}, p authz.Perm) (accepted map[api.RepoName]struct{}, err error) {
 	var accts []*extsvc.ExternalAccount
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	if len(authzProviders) > 0 && currentUser != nil {
@@ -73,7 +73,7 @@ func getFilteredRepoURIs(ctx context.Context, currentUser *types.User, repos map
 		}
 	}
 
-	accepted = make(map[api.RepoURI]struct{})   // repositories that have been claimed and have read permissions
+	accepted = make(map[api.RepoName]struct{})  // repositories that have been claimed and have read permissions
 	unverified := make(map[authz.Repo]struct{}) // repositories that have not been claimed by any authz provider
 	for repo := range repos {
 		unverified[repo] = struct{}{}

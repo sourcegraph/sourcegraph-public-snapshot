@@ -109,12 +109,12 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		var indexed map[api.RepoURI]bool
-		isIndexed := func(repo api.RepoURI) bool {
+		var indexed map[api.RepoName]bool
+		isIndexed := func(repo api.RepoName) bool {
 			if !searchIndexEnabled() {
 				return true // do not need index
 			}
-			return indexed[api.RepoURI(strings.ToLower(string(repo)))]
+			return indexed[api.RepoName(strings.ToLower(string(repo)))]
 		}
 		if searchIndexEnabled() && (!r.indexed || !r.notIndexed) {
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
@@ -124,9 +124,9 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				r.err = err
 				return
 			}
-			indexed = make(map[api.RepoURI]bool, len(indexedRepos.Repos))
+			indexed = make(map[api.RepoName]bool, len(indexedRepos.Repos))
 			for _, repo := range indexedRepos.Repos {
-				indexed[api.RepoURI(strings.ToLower(string(repo.Repository.Name)))] = true
+				indexed[api.RepoName(strings.ToLower(string(repo.Repository.Name)))] = true
 			}
 		}
 
@@ -257,7 +257,7 @@ func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	uri := api.RepoURI(args.Name)
+	uri := api.RepoName(args.Name)
 	if err := backend.Repos.Add(ctx, uri); err != nil {
 		return nil, err
 	}
@@ -362,7 +362,7 @@ func repoIDsToInt32s(repoIDs []api.RepoID) []int32 {
 	return int32s
 }
 
-func repoURIsToStrings(repoURIs []api.RepoURI) []string {
+func repoURIsToStrings(repoURIs []api.RepoName) []string {
 	strings := make([]string, len(repoURIs))
 	for i, repoURI := range repoURIs {
 		strings[i] = string(repoURI)
@@ -378,8 +378,8 @@ func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
 	return resolvers
 }
 
-func toRepoURIs(repos []*types.Repo) []api.RepoURI {
-	uris := make([]api.RepoURI, len(repos))
+func toRepoURIs(repos []*types.Repo) []api.RepoName {
+	uris := make([]api.RepoName, len(repos))
 	for i, repo := range repos {
 		uris[i] = repo.URI
 	}

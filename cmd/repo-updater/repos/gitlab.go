@@ -185,7 +185,7 @@ func RunGitLabRepositorySyncWorker(ctx context.Context) {
 	gitLabRepositorySyncWorker.start(ctx)
 }
 
-func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.RepoURI {
+func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.RepoName {
 	return reposource.GitLabRepoURI(conn.config.RepositoryPathPattern, conn.baseURL.Hostname(), proj.PathWithNamespace)
 }
 
@@ -199,7 +199,7 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 	for proj := range projs {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI:      gitlabProjectToRepoPath(conn, proj),
+				RepoName:     gitlabProjectToRepoPath(conn, proj),
 				ExternalRepo: gitlab.ExternalRepoSpec(proj, *conn.baseURL),
 				Description:  proj.Description,
 				Fork:         proj.ForkedFromProject != nil,

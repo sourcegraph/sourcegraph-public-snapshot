@@ -166,7 +166,7 @@ func GetBitbucketServerRepository(ctx context.Context, args protocol.RepoLookupA
 			return nil, true, err
 		}
 		if conn.config.ExcludePersonalRepositories && repo.IsPersonalRepository() {
-			return nil, true, &vcs.RepoNotExistError{Repo: api.RepoURI(repoSlug)}
+			return nil, true, &vcs.RepoNotExistError{Repo: api.RepoName(repoSlug)}
 		}
 		return bitbucketServerRepoInfo(conn.config, repo), true, nil
 	}
@@ -247,7 +247,7 @@ func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnec
 
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI:      ri.URI,
+				RepoName:     ri.URI,
 				ExternalRepo: ri.ExternalRepo,
 				Description:  ri.Description,
 				Fork:         ri.Fork,

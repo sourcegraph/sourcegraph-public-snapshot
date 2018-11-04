@@ -78,7 +78,7 @@ type RepositoryRevisions struct {
 // - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
 //   because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
 //   section on the --glob flag)
-func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []RevisionSpecifier) {
+func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoName, []RevisionSpecifier) {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
 		// return an empty slice to indicate that there's no revisions; callers
@@ -86,10 +86,10 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []Revisio
 		// cases where two repo specs both match the same repository, and only one
 		// specifies a revspec, which normally implies "master" but in that case
 		// really means "didn't specify"
-		return api.RepoURI(repoAndOptionalRev), []RevisionSpecifier{}
+		return api.RepoName(repoAndOptionalRev), []RevisionSpecifier{}
 	}
 
-	repo := api.RepoURI(repoAndOptionalRev[:i])
+	repo := api.RepoName(repoAndOptionalRev[:i])
 	var revs []RevisionSpecifier
 	for _, part := range strings.Split(repoAndOptionalRev[i+1:], ":") {
 		if part == "" {

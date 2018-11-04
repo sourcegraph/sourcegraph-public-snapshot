@@ -25,7 +25,7 @@ type ArchiveOptions struct {
 // error more carefully.
 type archiveReader struct {
 	base io.ReadCloser
-	repo api.RepoURI
+	repo api.RepoName
 	spec string
 }
 

@@ -17,14 +17,14 @@ import (
  * Helpers
  */
 
-func sortedRepoURIs(repos []*types.Repo) []api.RepoURI {
+func sortedRepoURIs(repos []*types.Repo) []api.RepoName {
 	uris := repoURIs(repos)
 	sort.Slice(uris, func(i, j int) bool { return uris[i] < uris[j] })
 	return uris
 }
 
-func repoURIs(repos []*types.Repo) []api.RepoURI {
-	var uris []api.RepoURI
+func repoURIs(repos []*types.Repo) []api.RepoName {
+	var uris []api.RepoName
 	for _, repo := range repos {
 		uris = append(uris, repo.URI)
 	}
@@ -162,17 +162,17 @@ func TestRepos_List_pagination(t *testing.T) {
 	type testcase struct {
 		limit  int
 		offset int
-		exp    []api.RepoURI
+		exp    []api.RepoName
 	}
 	tests := []testcase{
-		{limit: 1, offset: 0, exp: []api.RepoURI{"r1"}},
-		{limit: 1, offset: 1, exp: []api.RepoURI{"r2"}},
-		{limit: 1, offset: 2, exp: []api.RepoURI{"r3"}},
-		{limit: 2, offset: 0, exp: []api.RepoURI{"r1", "r2"}},
-		{limit: 2, offset: 2, exp: []api.RepoURI{"r3"}},
-		{limit: 3, offset: 0, exp: []api.RepoURI{"r1", "r2", "r3"}},
+		{limit: 1, offset: 0, exp: []api.RepoName{"r1"}},
+		{limit: 1, offset: 1, exp: []api.RepoName{"r2"}},
+		{limit: 1, offset: 2, exp: []api.RepoName{"r3"}},
+		{limit: 2, offset: 0, exp: []api.RepoName{"r1", "r2"}},
+		{limit: 2, offset: 2, exp: []api.RepoName{"r3"}},
+		{limit: 3, offset: 0, exp: []api.RepoName{"r1", "r2", "r3"}},
 		{limit: 3, offset: 3, exp: nil},
-		{limit: 4, offset: 0, exp: []api.RepoURI{"r1", "r2", "r3"}},
+		{limit: 4, offset: 0, exp: []api.RepoName{"r1", "r2", "r3"}},
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
@@ -209,12 +209,12 @@ func TestRepos_List_query1(t *testing.T) {
 	}
 	tests := []struct {
 		query string
-		want  []api.RepoURI
+		want  []api.RepoName
 	}{
-		{"def", []api.RepoURI{"abc/def", "def/ghi"}},
-		{"ABC/DEF", []api.RepoURI{"abc/def"}},
-		{"xyz", []api.RepoURI{"github.com/abc/xyz"}},
-		{"mno/p", []api.RepoURI{"jkl/mno/pqr"}},
+		{"def", []api.RepoName{"abc/def", "def/ghi"}},
+		{"ABC/DEF", []api.RepoName{"abc/def"}},
+		{"xyz", []api.RepoName{"github.com/abc/xyz"}},
+		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
 		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, Enabled: true})
@@ -251,12 +251,12 @@ func TestRepos_List_query2(t *testing.T) {
 	}
 	tests := []struct {
 		query string
-		want  []api.RepoURI
+		want  []api.RepoName
 	}{
-		{"def", []api.RepoURI{"a/def", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"}},
-		{"b/def", []api.RepoURI{"b/def"}},
-		{"def/", []api.RepoURI{"def/ghi", "def/jkl", "def/mno"}},
-		{"def/m", []api.RepoURI{"def/mno"}},
+		{"def", []api.RepoName{"a/def", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"}},
+		{"b/def", []api.RepoName{"b/def"}},
+		{"def/", []api.RepoName{"def/ghi", "def/jkl", "def/mno"}},
+		{"def/m", []api.RepoName{"def/mno"}},
 	}
 	for _, test := range tests {
 		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, Enabled: true})
@@ -295,11 +295,11 @@ func TestRepos_List_indexedRevision(t *testing.T) {
 	}
 	tests := []struct {
 		hasIndexedRevision *bool
-		want               []api.RepoURI
+		want               []api.RepoName
 	}{
-		{nil, []api.RepoURI{"a/def", "b/def"}},
-		{boolptr(true), []api.RepoURI{"a/def"}},
-		{boolptr(false), []api.RepoURI{"b/def"}},
+		{nil, []api.RepoName{"a/def", "b/def"}},
+		{boolptr(true), []api.RepoName{"a/def"}},
+		{boolptr(false), []api.RepoName{"b/def"}},
 	}
 
 	for _, test := range tests {
@@ -342,21 +342,21 @@ func TestRepos_List_sort(t *testing.T) {
 	tests := []struct {
 		query   string
 		orderBy RepoListOrderBy
-		want    []api.RepoURI
+		want    []api.RepoName
 	}{
 		{
 			query: "",
 			orderBy: RepoListOrderBy{{
 				Field: RepoListURI,
 			}},
-			want: []api.RepoURI{"abc/def", "abc/m", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"},
+			want: []api.RepoName{"abc/def", "abc/m", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"},
 		},
 		{
 			query: "",
 			orderBy: RepoListOrderBy{{
 				Field: RepoListCreatedAt,
 			}},
-			want: []api.RepoURI{"c/def", "def/mno", "b/def", "abc/m", "abc/def", "def/jkl", "def/ghi"},
+			want: []api.RepoName{"c/def", "def/mno", "b/def", "abc/m", "abc/def", "def/jkl", "def/ghi"},
 		},
 		{
 			query: "",
@@ -364,7 +364,7 @@ func TestRepos_List_sort(t *testing.T) {
 				Field:      RepoListCreatedAt,
 				Descending: true,
 			}},
-			want: []api.RepoURI{"def/ghi", "def/jkl", "abc/def", "abc/m", "b/def", "def/mno", "c/def"},
+			want: []api.RepoName{"def/ghi", "def/jkl", "abc/def", "abc/m", "b/def", "def/mno", "c/def"},
 		},
 		{
 			query: "def",
@@ -372,7 +372,7 @@ func TestRepos_List_sort(t *testing.T) {
 				Field:      RepoListCreatedAt,
 				Descending: true,
 			}},
-			want: []api.RepoURI{"def/ghi", "def/jkl", "abc/def", "b/def", "def/mno", "c/def"},
+			want: []api.RepoName{"def/ghi", "def/jkl", "abc/def", "b/def", "def/mno", "c/def"},
 		},
 	}
 	for _, test := range tests {
@@ -409,24 +409,24 @@ func TestRepos_List_patterns(t *testing.T) {
 	tests := []struct {
 		includePatterns []string
 		excludePattern  string
-		want            []api.RepoURI
+		want            []api.RepoName
 	}{
 		{
 			includePatterns: []string{"(a|c)"},
-			want:            []api.RepoURI{"a/b", "c/d"},
+			want:            []api.RepoName{"a/b", "c/d"},
 		},
 		{
 			includePatterns: []string{"(a|c)", "b"},
-			want:            []api.RepoURI{"a/b"},
+			want:            []api.RepoName{"a/b"},
 		},
 		{
 			includePatterns: []string{"(a|c)"},
 			excludePattern:  "d",
-			want:            []api.RepoURI{"a/b"},
+			want:            []api.RepoName{"a/b"},
 		},
 		{
 			excludePattern: "(d|e)",
-			want:           []api.RepoURI{"a/b", "g/h"},
+			want:           []api.RepoName{"a/b", "g/h"},
 		},
 	}
 	for _, test := range tests {

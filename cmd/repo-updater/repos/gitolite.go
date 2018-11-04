@@ -83,7 +83,7 @@ func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.Git
 		if metadata.Callsign == "" {
 			continue
 		}
-		if err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoURI(repoName), metadata.Callsign, gconf.Host); err != nil {
+		if err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(repoName), metadata.Callsign, gconf.Host); err != nil {
 			log15.Warn("could not ensure Gitolite Phabricator mapping", "repo", repoName, "error", err)
 		}
 	}
@@ -113,8 +113,8 @@ func gitoliteUpdateRepos(ctx context.Context, gconf *schema.GitoliteConnection, 
 		url := strings.Replace(entry, gconf.Prefix, gconf.Host+":", 1)
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI: api.RepoURI(entry),
-				Enabled: true,
+				RepoName: api.RepoName(entry),
+				Enabled:  true,
 			},
 			URL: url,
 		}

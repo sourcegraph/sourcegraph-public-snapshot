@@ -22,7 +22,7 @@ type Worker struct {
 	secondary <-chan qitem // secondary queue from which to draw repositories to index
 }
 
-func (w *Worker) Enqueue(repo api.RepoURI, rev string) {
+func (w *Worker) Enqueue(repo api.RepoName, rev string) {
 	w.primary.Enqueue(repo, rev)
 }
 

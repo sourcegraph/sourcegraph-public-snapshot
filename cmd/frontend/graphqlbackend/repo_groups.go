@@ -8,7 +8,7 @@ import (
 
 type repoGroup struct {
 	name         string
-	repositories []api.RepoURI
+	repositories []api.RepoName
 }
 
 func (g repoGroup) Name() string { return g.name }
@@ -23,7 +23,7 @@ func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 
 	groups := make([]*repoGroup, 0, len(groupsByName))
 	for name, repos := range groupsByName {
-		repoPaths := make([]api.RepoURI, len(repos))
+		repoPaths := make([]api.RepoName, len(repos))
 		for i, repo := range repos {
 			repoPaths[i] = repo.URI
 		}

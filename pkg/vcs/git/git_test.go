@@ -69,7 +69,7 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 // it.
 func makeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
 	dir := initGitRepository(t, cmds...)
-	return gitserver.Repo{Name: api.RepoURI(dir), URL: dir}
+	return gitserver.Repo{Name: api.RepoName(dir), URL: dir}
 }
 
 func commitsEqual(a, b *git.Commit) bool {

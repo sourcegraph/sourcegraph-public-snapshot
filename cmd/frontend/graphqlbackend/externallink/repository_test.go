@@ -26,7 +26,7 @@ func TestRepository(t *testing.T) {
 				},
 			}, nil
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Repository(context.Background(), &types.Repo{URI: "myrepo"})
@@ -62,7 +62,7 @@ func TestRepository(t *testing.T) {
 				},
 			}, nil
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Repository(context.Background(), &types.Repo{
@@ -87,8 +87,8 @@ func TestRepository(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
-			if want := api.RepoURI("myrepo"); repo != want {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
@@ -112,7 +112,7 @@ func TestRepository(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Repository(context.Background(), &types.Repo{URI: "myrepo"})
@@ -158,7 +158,7 @@ func TestFileOrDir(t *testing.T) {
 						},
 					}, nil
 				}
-				db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+				db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 					return nil, errors.New("x")
 				}
 				links, err := FileOrDir(context.Background(), &types.Repo{URI: "myrepo"}, rev, path, isDir)
@@ -192,7 +192,7 @@ func TestFileOrDir(t *testing.T) {
 						},
 					}, nil
 				}
-				db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+				db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 					return nil, errors.New("x")
 				}
 				links, err := FileOrDir(context.Background(), &types.Repo{
@@ -219,8 +219,8 @@ func TestFileOrDir(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
-			if want := api.RepoURI("myrepo"); repo != want {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
@@ -248,7 +248,7 @@ func TestFileOrDir(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := FileOrDir(context.Background(), &types.Repo{URI: "myrepo"}, rev, path, true)
@@ -275,7 +275,7 @@ func TestCommit(t *testing.T) {
 				},
 			}, nil
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Commit(context.Background(), &types.Repo{URI: "myrepo"}, commit)
@@ -311,7 +311,7 @@ func TestCommit(t *testing.T) {
 				},
 			}, nil
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Commit(context.Background(), &types.Repo{
@@ -336,8 +336,8 @@ func TestCommit(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
-			if want := api.RepoURI("myrepo"); repo != want {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
@@ -361,7 +361,7 @@ func TestCommit(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByURI = func(repo api.RepoURI) (*types.PhabricatorRepo, error) {
+		db.Mocks.Phabricator.GetByURI = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Commit(context.Background(), &types.Repo{URI: "myrepo"}, commit)

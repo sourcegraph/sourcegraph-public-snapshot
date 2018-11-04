@@ -57,7 +57,7 @@ type Client struct {
 }
 
 type key struct {
-	repo     api.RepoURI
+	repo     api.RepoName
 	commitID api.CommitID
 }
 

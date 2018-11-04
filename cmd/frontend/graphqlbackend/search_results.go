@@ -35,13 +35,13 @@ import (
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
-	limitHit bool                     // whether the limit on results was hit
-	repos    []*types.Repo            // repos that were matched by the repo-related filters
-	searched []*types.Repo            // repos that were searched
-	indexed  []*types.Repo            // repos that were searched using an index
-	cloning  []*types.Repo            // repos that could not be searched because they were still being cloned
-	missing  []*types.Repo            // repos that could not be searched because they do not exist
-	partial  map[api.RepoURI]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
+	limitHit bool                      // whether the limit on results was hit
+	repos    []*types.Repo             // repos that were matched by the repo-related filters
+	searched []*types.Repo             // repos that were searched
+	indexed  []*types.Repo             // repos that were searched using an index
+	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
+	missing  []*types.Repo             // repos that could not be searched because they do not exist
+	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
 
@@ -134,7 +134,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.resultCount += other.resultCount
 
 	if c.partial == nil {
-		c.partial = make(map[api.RepoURI]struct{})
+		c.partial = make(map[api.RepoName]struct{})
 	}
 
 	for repo := range other.partial {
@@ -226,7 +226,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		if rev != "" {
 			filter = filter + fmt.Sprintf(`@%s`, regexp.QuoteMeta(rev))
 		}
-		_, limitHit := sr.searchResultsCommon.partial[api.RepoURI(uri)]
+		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
 		// Increment number of matches per repo.
 		sr.repoToMatchCount[uri] += lineMatchCount
 		repoCount := sr.repoToMatchCount[uri]

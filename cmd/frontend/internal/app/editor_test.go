@@ -7,7 +7,7 @@ import (
 )
 
 func TestGuessRepoURIFromRemoteURL(t *testing.T) {
-	tests := map[string]api.RepoURI{
+	tests := map[string]api.RepoName{
 		"github.com:a/b":                  "github.com/a/b",
 		"github.com:a/b.git":              "github.com/a/b",
 		"git@github.com:a/b":              "github.com/a/b",

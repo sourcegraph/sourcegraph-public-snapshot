@@ -20,7 +20,7 @@ type repoSource interface {
 	// If the clone URL does not correspond to a repository that could exist on the code host, the
 	// empty string is returned and err is nil. If there is an unrelated error, an error is
 	// returned.
-	cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error)
+	cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error)
 }
 
 // CloneURLToRepoURI maps a Git clone URL (format documented here:
@@ -28,7 +28,7 @@ type repoSource interface {
 // exists a code host configuration that matches the clone URL. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
-func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
 	cfg := conf.Get()
 
 	if repoURI := customCloneURLToRepoURI(cloneURL); repoURI != "" {

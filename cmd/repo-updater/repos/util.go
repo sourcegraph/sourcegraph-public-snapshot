@@ -67,19 +67,19 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 	newList := make(sourceRepoList)
 
 	do := func(op repoCreateOrUpdateRequest) {
-		if op.RepoCreateOrUpdateRequest.RepoURI == "" {
+		if op.RepoCreateOrUpdateRequest.RepoName == "" {
 			log15.Warn("ignoring invalid request to create or enable repo with empty name", "source", source, "repo", op.RepoCreateOrUpdateRequest.ExternalRepo)
 			return
 		}
 		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op.RepoCreateOrUpdateRequest)
 		if err != nil {
-			log15.Warn("Error creating or updating repository", "repo", op.RepoURI, "error", err)
+			log15.Warn("Error creating or updating repository", "repo", op.RepoName, "error", err)
 			return
 		}
 
-		err = api.InternalClient.ReposUpdateMetadata(ctx, op.RepoURI, op.Description, op.Fork, op.Archived)
+		err = api.InternalClient.ReposUpdateMetadata(ctx, op.RepoName, op.Description, op.Fork, op.Archived)
 		if err != nil {
-			log15.Warn("Error updating repository metadata", "repo", op.RepoURI, "error", err)
+			log15.Warn("Error updating repository metadata", "repo", op.RepoName, "error", err)
 			return
 		}
 

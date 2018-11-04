@@ -12,9 +12,10 @@ import (
 // RepoID is the unique identifier for a repository.
 type RepoID int32
 
-// RepoURI is the name of a repository, consisting of one or more "/"-separated path components. It is a misnomer;
-// it's not a valid URI because it conventionally does not have a scheme.
-type RepoURI string
+// RepoName is the name of a repository, consisting of one or more "/"-separated path components.
+//
+// Previously, this was called RepoURI.
+type RepoName string
 
 // CommitID is the 40-character SHA-1 hash for a Git commit.
 type CommitID string
@@ -28,9 +29,8 @@ type Repo struct {
 	// service itself).
 	ExternalRepo *ExternalRepoSpec
 
-	// URI is a normalized identifier for this repository based on its primary clone
-	// URL. E.g., "github.com/user/repo".
-	URI RepoURI
+	// URI is the name of the repository (such as "github.com/user/repo").
+	URI RepoName
 	// Enabled is whether the repository is enabled. Disabled repositories are
 	// not accessible by users (except site admins).
 	Enabled bool
@@ -53,7 +53,7 @@ func (Repo) Fork() bool {
 
 // InsertRepoOp represents an operation to insert a repository.
 type InsertRepoOp struct {
-	URI          RepoURI
+	URI          RepoName
 	Description  string
 	Fork         bool
 	Archived     bool

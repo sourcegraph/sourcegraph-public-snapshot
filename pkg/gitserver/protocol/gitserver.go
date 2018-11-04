@@ -8,7 +8,7 @@ import (
 
 // ExecRequest is a request to execute a command inside a git repository.
 type ExecRequest struct {
-	Repo api.RepoURI `json:"repo"`
+	Repo api.RepoName `json:"repo"`
 
 	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
 	// this field is optional (it will use the last-used Git remote URL). If the repository is not
@@ -41,7 +41,7 @@ type HTTPSConfig struct {
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo  api.RepoURI   `json:"repo"`  // identifying URL for repo
+	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
 	URL   string        `json:"url"`   // repo's remote URL
 	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
 }
@@ -74,7 +74,7 @@ type NotFoundPayload struct {
 // IsRepoCloneableRequest is a request to determine if a repo is cloneable.
 type IsRepoCloneableRequest struct {
 	// Repo is the repository to check.
-	Repo api.RepoURI `json:"Repo"`
+	Repo api.RepoName `json:"Repo"`
 
 	// URL is the repository's Git remote URL.
 	URL string `json:"url"`
@@ -89,19 +89,19 @@ type IsRepoCloneableResponse struct {
 // IsRepoClonedRequest is a request to determine if a repo currently exists on gitserver.
 type IsRepoClonedRequest struct {
 	// Repo is the repository to check.
-	Repo api.RepoURI
+	Repo api.RepoName
 }
 
 // RepoInfoRequest is a request for information about a repository on gitserver.
 type RepoInfoRequest struct {
 	// Repo is the repository to get information about.
-	Repo api.RepoURI
+	Repo api.RepoName
 }
 
 // RepoDeleteRequest is a request to delete a repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
-	Repo api.RepoURI
+	Repo api.RepoName
 }
 
 // RepoInfoResponse is the response to a repository information request (RepoInfoRequest).
@@ -122,7 +122,7 @@ type RepoInfoResponse struct {
 // the simulated staging area git object for a repo.
 type CreateCommitFromPatchRequest struct {
 	// Repo is the repository to get information about.
-	Repo api.RepoURI
+	Repo api.RepoName
 	// BaseCommit is the revision that the staging area object is based on
 	BaseCommit api.CommitID
 	// Patch is the diff contents to be used to create the staging area revision
