@@ -111,6 +111,12 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 		authzProviders = append(authzProviders, NewGitLabProvider(op))
 	}
 
+	for _, provider := range authzProviders {
+		for _, problem := range provider.Validate() {
+			warnings = append(warnings, fmt.Sprintf("GitLab config for %s was invalid: %s", provider.ServiceID(), problem))
+		}
+	}
+
 	return allowAccessByDefault, authzProviders, seriousProblems, warnings
 }
 

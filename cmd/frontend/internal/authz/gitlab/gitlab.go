@@ -97,6 +97,19 @@ func NewProvider(op GitLabAuthzProviderOp) *GitLabAuthzProvider {
 	return p
 }
 
+func (p *GitLabAuthzProvider) Validate() (problems []string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, _, err := p.client.ListProjects(ctx, "projects?sudo=1"); err != nil {
+		if err == ctx.Err() {
+			problems = append(problems, fmt.Sprintf("GitLab API did not respond within 5s (%s)", err.Error()))
+		} else if !gitlab.IsNotFound(err) {
+			problems = append(problems, "access token did not have sufficient privileges, requires scopes \"sudo\" and \"api\"")
+		}
+	}
+	return problems
+}
+
 func (p *GitLabAuthzProvider) ServiceID() string {
 	return p.codeHost.ServiceID()
 }
