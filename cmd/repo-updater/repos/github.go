@@ -11,29 +11,16 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-// GitHubServiceType is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
-// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
-const GitHubServiceType = "github"
-
-// GitHubExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitHub repository.
-func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.ExternalRepoSpec {
-	return &api.ExternalRepoSpec{
-		ID:          repo.ID,
-		ServiceType: GitHubServiceType,
-		ServiceID:   NormalizeBaseURL(&baseURL).String(),
-	}
-}
 
 var githubConnections = atomicvalue.New()
 
@@ -79,7 +66,7 @@ func init() {
 // the repository specified by the args.
 func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error) {
 	githubConnections := githubConnections.Get().([]*githubConnection)
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == github.ServiceType {
 		// Look up by external repository spec.
 		skippedBecauseNoAuth := false
 		for _, conn := range githubConnections {
@@ -135,7 +122,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	ghrepoToRepoInfo := func(ghrepo *github.Repository, conn *githubConnection) *protocol.RepoInfo {
 		return &protocol.RepoInfo{
 			URI:          githubRepositoryToRepoPath(conn, ghrepo),
-			ExternalRepo: GitHubExternalRepoSpec(ghrepo, *conn.baseURL),
+			ExternalRepo: github.ExternalRepoSpec(ghrepo, *conn.baseURL),
 			Description:  ghrepo.Description,
 			Fork:         ghrepo.IsFork,
 			Archived:     ghrepo.IsArchived,
@@ -220,7 +207,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	log15.Debug("GetGitHubRepository", "repo", args.Repo, "externalRepo", args.ExternalRepo)
 
 	canUseGraphQLAPI := conn.config.Token != "" // GraphQL API requires authentication
-	if canUseGraphQLAPI && args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
+	if canUseGraphQLAPI && args.ExternalRepo != nil && args.ExternalRepo.ServiceType == github.ServiceType {
 		// Look up by external repository spec.
 		ghrepo, err := conn.client.GetRepositoryByNodeID(ctx, args.ExternalRepo.ID)
 		if ghrepo != nil {
@@ -296,7 +283,7 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoURI:      githubRepositoryToRepoPath(conn, repo),
-				ExternalRepo: GitHubExternalRepoSpec(repo, *conn.baseURL),
+				ExternalRepo: github.ExternalRepoSpec(repo, *conn.baseURL),
 				Description:  repo.Description,
 				Fork:         repo.IsFork,
 				Archived:     repo.IsArchived,

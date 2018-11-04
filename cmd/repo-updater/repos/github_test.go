@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -54,14 +55,14 @@ func TestGetGitHubConnection(t *testing.T) {
 
 	t.Run("by external repository spec", func(t *testing.T) {
 		t.Run("not found", func(t *testing.T) {
-			_, err := getGitHubConnection(protocol.RepoLookupArgs{ExternalRepo: &api.ExternalRepoSpec{ServiceType: GitHubServiceType, ServiceID: "https://github.is-not-configured.com/"}})
+			_, err := getGitHubConnection(protocol.RepoLookupArgs{ExternalRepo: &api.ExternalRepoSpec{ServiceType: github.ServiceType, ServiceID: "https://github.is-not-configured.com/"}})
 			if err == nil {
 				t.Fatal("err == nil")
 			}
 		})
 
 		t.Run("github.com", func(t *testing.T) {
-			c, err := getGitHubConnection(protocol.RepoLookupArgs{ExternalRepo: &api.ExternalRepoSpec{ServiceType: GitHubServiceType, ServiceID: "https://github.com/"}})
+			c, err := getGitHubConnection(protocol.RepoLookupArgs{ExternalRepo: &api.ExternalRepoSpec{ServiceType: github.ServiceType, ServiceID: "https://github.com/"}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -71,7 +72,7 @@ func TestGetGitHubConnection(t *testing.T) {
 		})
 
 		t.Run("github.example.com", func(t *testing.T) {
-			c, err := getGitHubConnection(protocol.RepoLookupArgs{ExternalRepo: &api.ExternalRepoSpec{ServiceType: GitHubServiceType, ServiceID: "https://github.example.com/"}})
+			c, err := getGitHubConnection(protocol.RepoLookupArgs{ExternalRepo: &api.ExternalRepoSpec{ServiceType: github.ServiceType, ServiceID: "https://github.example.com/"}})
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -12,9 +12,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
@@ -95,7 +94,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 			Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "a",
-					ServiceType: repos.GitHubServiceType,
+					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
 				},
 				URI:         "github.com/c/d",
@@ -176,7 +175,7 @@ func TestRepoLookup(t *testing.T) {
 				Repo: &protocol.RepoInfo{
 					ExternalRepo: &api.ExternalRepoSpec{
 						ID:          "a",
-						ServiceType: repos.GitHubServiceType,
+						ServiceType: github.ServiceType,
 						ServiceID:   "https://github.com/",
 					},
 					URI:         "github.com/c/d",
