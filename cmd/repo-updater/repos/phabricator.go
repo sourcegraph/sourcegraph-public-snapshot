@@ -132,7 +132,7 @@ func updatePhabRepos(ctx context.Context, cfg *schema.Phabricator, repos []*phab
 		if repo.Fields.Status == "inactive" {
 			continue
 		}
-		var uri string
+		var repoName string
 		for _, u := range repo.Attachments.URIs.URIs {
 			// Phabricator may list multiple URIs for a repo, some of which are internal Phabricator resources.
 			// We select the first URI which doesn't have `builtin` fields (as those only come from internal Phab
@@ -140,15 +140,15 @@ func updatePhabRepos(ctx context.Context, cfg *schema.Phabricator, repos []*phab
 			if u.Fields.Builtin != nil && u.Fields.Builtin.Identifier != nil {
 				continue
 			}
-			uri = u.Fields.URI.Normalized
+			repoName = u.Fields.URI.Normalized
 			break
 		}
-		if uri == "" {
+		if repoName == "" {
 			// some repos have no attachments
 			return nil
 		}
 
-		err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(uri), repo.Fields.Callsign, cfg.Url)
+		err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(repoName), repo.Fields.Callsign, cfg.Url)
 		if err != nil {
 			return err
 		}
