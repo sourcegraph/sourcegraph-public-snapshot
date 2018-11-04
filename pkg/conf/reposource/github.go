@@ -21,10 +21,10 @@ func (c GitHub) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err e
 	if !match {
 		return "", nil
 	}
-	return GitHubRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
+	return GitHubRepoName(c.RepositoryPathPattern, baseURL.Hostname(), strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
 }
 
-func GitHubRepoURI(repositoryPathPattern, host, nameWithOwner string) api.RepoName {
+func GitHubRepoName(repositoryPathPattern, host, nameWithOwner string) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{nameWithOwner}"
 	}

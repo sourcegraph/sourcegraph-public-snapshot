@@ -23,10 +23,10 @@ func (c AWS) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err erro
 		return "", nil
 	}
 
-	return AWSRepoURI(c.RepositoryPathPattern, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/v1/repos/")), nil
+	return AWSRepoName(c.RepositoryPathPattern, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/v1/repos/")), nil
 }
 
-func AWSRepoURI(repositoryPathPattern, name string) api.RepoName {
+func AWSRepoName(repositoryPathPattern, name string) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{name}"
 	}

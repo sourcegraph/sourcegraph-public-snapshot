@@ -23,10 +23,10 @@ func (c GitLab) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err e
 	}
 
 	pathWithNamespace := strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")
-	return GitLabRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), pathWithNamespace), nil
+	return GitLabRepoName(c.RepositoryPathPattern, baseURL.Hostname(), pathWithNamespace), nil
 }
 
-func GitLabRepoURI(repositoryPathPattern, host, pathWithNamespace string) api.RepoName {
+func GitLabRepoName(repositoryPathPattern, host, pathWithNamespace string) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{pathWithNamespace}"
 	}

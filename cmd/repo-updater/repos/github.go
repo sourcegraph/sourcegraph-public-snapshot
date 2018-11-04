@@ -268,7 +268,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) {
 }
 
 func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoName {
-	return reposource.GitHubRepoURI(conn.config.RepositoryPathPattern, conn.originalHostname, repo.NameWithOwner)
+	return reposource.GitHubRepoName(conn.config.RepositoryPathPattern, conn.originalHostname, repo.NameWithOwner)
 }
 
 // updateGitHubRepositories ensures that all provided repositories have been added and updated on Sourcegraph.

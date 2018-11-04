@@ -17,13 +17,13 @@ import (
  * Helpers
  */
 
-func sortedRepoURIs(repos []*types.Repo) []api.RepoName {
-	uris := repoURIs(repos)
+func sortedRepoNames(repos []*types.Repo) []api.RepoName {
+	uris := repoNames(repos)
 	sort.Slice(uris, func(i, j int) bool { return uris[i] < uris[j] })
 	return uris
 }
 
-func repoURIs(repos []*types.Repo) []api.RepoName {
+func repoNames(repos []*types.Repo) []api.RepoName {
 	var uris []api.RepoName
 	for _, repo := range repos {
 		uris = append(uris, repo.URI)
@@ -180,7 +180,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.exp) {
+		if got := sortedRepoNames(repos); !reflect.DeepEqual(got, test.exp) {
 			t.Errorf("for test case %v, got %v (want %v)", test, got, test.exp)
 		}
 	}
@@ -221,7 +221,7 @@ func TestRepos_List_query1(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
 		}
 	}
@@ -263,7 +263,7 @@ func TestRepos_List_query2(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("Unexpected repo result for query %q:\ngot:  %q\nwant: %q", test.query, got, test.want)
 		}
 	}
@@ -307,7 +307,7 @@ func TestRepos_List_indexedRevision(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
 			if test.hasIndexedRevision == nil {
 				t.Errorf("Unexpected repo result for hasIndexedRevision %v:\ngot:  %q\nwant: %q", test.hasIndexedRevision, got, test.want)
 			} else {
@@ -380,7 +380,7 @@ func TestRepos_List_sort(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("Unexpected repo result for query %q, orderBy %v:\ngot:  %q\nwant: %q", test.query, test.orderBy, got, test.want)
 		}
 	}
@@ -438,7 +438,7 @@ func TestRepos_List_patterns(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("include %q exclude %q: got repos %q, want %q", test.includePatterns, test.excludePattern, got, test.want)
 		}
 	}
