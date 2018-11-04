@@ -1331,10 +1331,10 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^11.0.1":
-  version "11.0.1"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-11.0.1.tgz#b748051982ef91bd94d5f7a093bffd21f023fab0"
-  integrity sha512-tE4fJJWsswrcQ9tqRgqFuCVNMVcEzkxfJCY6rEYcU8C+4fB0F9VWEYOCDlNDOPJIrBF30RiXAVXITw+J3Ks2vw==
+"@sourcegraph/extensions-client-common@^12.0.0":
+  version "12.0.0"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-12.0.0.tgz#7c48b9725b15b8638dd7eccada9e3680840ef6d8"
+  integrity sha512-RIm3y6uHzFagOlia4UGocZw5AHRTl10xMQ7/p64rLJDOdd8Qx3m7IIJlNKnPnzYHObEretSuQs78dU/1gK9F7w==
   dependencies:
     "@slimsag/react-shortcuts" "^1.2.0"
     bootstrap "^4.1.3"

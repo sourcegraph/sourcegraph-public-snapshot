@@ -10,17 +10,12 @@ import {
     mergeSettings,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { applyEdits } from '@sqs/jsonc-parser'
 import * as JSONC from '@sqs/jsonc-parser'
 import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
-import Alert from 'mdi-react/AlertIcon'
-import InfoIcon from 'mdi-react/InformationIcon'
 import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import { combineLatest, from, Observable, Subject, throwError } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take, tap } from 'rxjs/operators'
 import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
@@ -308,11 +303,6 @@ export function createExtensionsContextController(
                       'The queryLSP command is unavailable because the current repository does not exist on the Sourcegraph instance.'
                   ),
         icons: {
-            Loader: LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Info: InfoIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Add: AddIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Settings: SettingsIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Warning: Alert as React.ComponentType<{ className: string; onClick?: () => void }>,
             CaretDown: MenuDown as React.ComponentType<{ className: string; onClick?: () => void }>,
             Menu: Menu as React.ComponentType<{ className: string; onClick?: () => void }>,
         },
