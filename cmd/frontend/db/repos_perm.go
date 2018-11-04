@@ -28,7 +28,19 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*typ
 		return repos, nil
 	}
 
-	filteredURIs, err := getFilteredRepoURIs(ctx, authz.ToRepos(repos), p)
+	var currentUser *types.User
+	if actor.FromContext(ctx).IsAuthenticated() {
+		var err error
+		currentUser, err = Users.GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if currentUser.SiteAdmin {
+			return repos, nil
+		}
+	}
+
+	filteredURIs, err := getFilteredRepoURIs(ctx, currentUser, authz.ToRepos(repos), p)
 	if err != nil {
 		return nil, err
 	}
@@ -51,21 +63,11 @@ func isInternalActor(ctx context.Context) bool {
 	return actor.FromContext(ctx).Internal
 }
 
-func getFilteredRepoURIs(ctx context.Context, repos map[authz.Repo]struct{}, p authz.Perm) (accepted map[api.RepoURI]struct{}, err error) {
-	var (
-		currentUser *types.User
-		accts       []*extsvc.ExternalAccount
-	)
+func getFilteredRepoURIs(ctx context.Context, currentUser *types.User, repos map[authz.Repo]struct{}, p authz.Perm) (accepted map[api.RepoURI]struct{}, err error) {
+	var accts []*extsvc.ExternalAccount
 	authzAllowByDefault, authzProviders := authz.GetProviders()
-	if len(authzProviders) > 0 && actor.FromContext(ctx).IsAuthenticated() {
-		var err error
-		currentUser, err = Users.GetByCurrentAuthUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-		accts, err = ExternalAccounts.List(ctx, ExternalAccountsListOptions{
-			UserID: currentUser.ID,
-		})
+	if len(authzProviders) > 0 && currentUser != nil {
+		accts, err = ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: currentUser.ID})
 		if err != nil {
 			return nil, err
 		}
