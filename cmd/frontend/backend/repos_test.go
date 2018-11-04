@@ -72,7 +72,7 @@ func TestRepos_Add(t *testing.T) {
 			t.Errorf("got %q, want %q", args.Repo, repoName)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{URI: repoName, Description: "d"},
+			Repo: &protocol.RepoInfo{Name: repoName, Description: "d"},
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()

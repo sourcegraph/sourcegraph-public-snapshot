@@ -101,7 +101,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 
 	ghrepoToRepoInfo := func(proj *gitlab.Project, conn *gitlabConnection) *protocol.RepoInfo {
 		return &protocol.RepoInfo{
-			URI:          gitlabProjectToRepoPath(conn, proj),
+			Name:         gitlabProjectToRepoPath(conn, proj),
 			ExternalRepo: gitlab.ExternalRepoSpec(proj, *conn.baseURL),
 			Description:  proj.Description,
 			Fork:         proj.ForkedFromProject != nil,

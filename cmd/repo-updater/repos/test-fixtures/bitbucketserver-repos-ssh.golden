@@ -1,6 +1,6 @@
 [
   {
-    "URI": "/SG/go-langserver",
+    "Name": "/SG/go-langserver",
     "Description": "go-langserver",
     "Fork": false,
     "Archived": false,
@@ -20,7 +20,7 @@
     }
   },
   {
-    "URI": "/SG/python-langserver",
+    "Name": "/SG/python-langserver",
     "Description": "python-langserver",
     "Fork": false,
     "Archived": false,
@@ -40,7 +40,7 @@
     }
   },
   {
-    "URI": "/SG/python-langserver-fork",
+    "Name": "/SG/python-langserver-fork",
     "Description": "python-langserver-fork",
     "Fork": true,
     "Archived": false,
@@ -60,7 +60,7 @@
     }
   },
   {
-    "URI": "/~KEEGAN/rgp",
+    "Name": "/~KEEGAN/rgp",
     "Description": "rgp",
     "Fork": false,
     "Archived": false,

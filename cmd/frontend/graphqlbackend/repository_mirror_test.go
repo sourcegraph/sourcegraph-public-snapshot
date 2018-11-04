@@ -36,7 +36,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Repo, repoName)
 			}
 			return &protocol.RepoLookupResult{
-				Repo: &protocol.RepoInfo{URI: repoName, VCS: protocol.VCSInfo{URL: "http://example.com/my/repo"}},
+				Repo: &protocol.RepoInfo{Name: repoName, VCS: protocol.VCSInfo{URL: "http://example.com/my/repo"}},
 			}, nil
 		}
 		defer func() { repoupdater.MockRepoLookup = nil }()
@@ -92,7 +92,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Repo, repoName)
 			}
 			return &protocol.RepoLookupResult{
-				Repo: &protocol.RepoInfo{URI: repoName, VCS: protocol.VCSInfo{URL: "http://example.com/my/repo"}},
+				Repo: &protocol.RepoInfo{Name: repoName, VCS: protocol.VCSInfo{URL: "http://example.com/my/repo"}},
 			}, nil
 		}
 		defer func() { repoupdater.MockRepoLookup = nil }()

@@ -46,7 +46,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 	if result.Repo == nil {
 		return gitserver.Repo{Name: repo.URI}, repoupdater.ErrNotFound
 	}
-	return gitserver.Repo{Name: result.Repo.URI, URL: result.Repo.VCS.URL}, nil
+	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
 
 func quickGitserverRepo(repo api.RepoName) *gitserver.Repo {

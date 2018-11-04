@@ -121,7 +121,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	}
 
 	return &protocol.RepoInfo{
-		URI: repoName,
+		Name: repoName,
 		ExternalRepo: &api.ExternalRepoSpec{
 			ID:          project + "/" + repo.Slug,
 			ServiceType: bitbucketserver.ServiceType,
@@ -247,7 +247,7 @@ func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnec
 
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoName:     ri.URI,
+				RepoName:     ri.Name,
 				ExternalRepo: ri.ExternalRepo,
 				Description:  ri.Description,
 				Fork:         ri.Fork,
