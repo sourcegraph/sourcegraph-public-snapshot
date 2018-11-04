@@ -248,8 +248,8 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	paths := make([]string, len(repos))
 	pathPatterns := make([]string, len(repos))
 	for i, repo := range repos {
-		paths[i] = string(repo.Repo.URI)
-		pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.URI)) + "$"
+		paths[i] = string(repo.Repo.Name)
+		pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
 	}
 
 	// See if we can narrow it down by using filters like
@@ -323,14 +323,14 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 	var description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.URI, missingRepoRevs[0].RevSpecs()[0])
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
 		} else {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.URI, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
 		}
 	} else {
 		repoRevs := make([]string, 0, len(missingRepoRevs))
 		for _, r := range missingRepoRevs {
-			repoRevs = append(repoRevs, string(r.Repo.URI)+"@"+strings.Join(r.RevSpecs(), ","))
+			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
 		}
 		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository: %s.", len(missingRepoRevs), strings.Join(repoRevs, ", "))
 	}

@@ -250,7 +250,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			if result.fileMatch.inputRev != nil {
 				rev = *result.fileMatch.inputRev
 			}
-			addRepoFilter(string(result.fileMatch.repo.URI), rev, len(result.fileMatch.LineMatches()))
+			addRepoFilter(string(result.fileMatch.repo.Name), rev, len(result.fileMatch.LineMatches()))
 			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
 
 			if len(result.fileMatch.symbols) > 0 {
@@ -349,7 +349,7 @@ func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.repo.URI}, fm.JPath, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.repo.Name}, fm.JPath, &git.BlameOptions{
 		NewestCommit: fm.commitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
@@ -928,10 +928,10 @@ type searchResultResolver struct {
 // getSearchResultURIs returns the repo uri and file uri respectiveley
 func getSearchResultURIs(c *searchResultResolver) (string, string) {
 	if c.fileMatch != nil {
-		return string(c.fileMatch.repo.URI), c.fileMatch.JPath
+		return string(c.fileMatch.repo.Name), c.fileMatch.JPath
 	}
 	if c.repo != nil {
-		return string(c.repo.repo.URI), ""
+		return string(c.repo.repo.Name), ""
 	}
 	// Diffs aren't going to be returned with other types of results
 	// and are already ordered in the desired order, so we'll just leave them in place.

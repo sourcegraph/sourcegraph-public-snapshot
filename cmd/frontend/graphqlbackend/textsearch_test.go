@@ -127,7 +127,7 @@ func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 
 func TestSearchFilesInRepos(t *testing.T) {
 	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
-		repoName := repo.URI
+		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
 			return []*fileMatchResolver{
@@ -181,7 +181,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	if v := toRepoNames(common.cloning); !reflect.DeepEqual(v, []api.RepoName{"foo/cloning"}) {
 		t.Errorf("unexpected cloning: %v", v)
 	}
-	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i].URI < common.missing[j].URI }) // to make deterministic
+	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i].Name < common.missing[j].Name }) // to make deterministic
 	if v := toRepoNames(common.missing); !reflect.DeepEqual(v, []api.RepoName{"foo/missing", "foo/missing-db"}) {
 		t.Errorf("unexpected missing: %v", v)
 	}
@@ -213,7 +213,7 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{URI: uri}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: uri}, Revs: revs}
 	}
 	return r
 }

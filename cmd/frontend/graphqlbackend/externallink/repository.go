@@ -100,13 +100,13 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.PhabricatorRepo, link *protocol.RepoLinks, serviceType string) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
-	span.SetTag("Repo", repo.URI)
+	span.SetTag("Repo", repo.Name)
 	if repo.ExternalRepo != nil {
 		span.SetTag("ExternalRepo", repo.ExternalRepo)
 	}
 
 	var err error
-	phabRepo, err = db.Phabricator.GetByName(ctx, repo.URI)
+	phabRepo, err = db.Phabricator.GetByName(ctx, repo.Name)
 	if err != nil && !errcode.IsNotFound(err) {
 		ext.Error.Set(span, true)
 		span.SetTag("phabErr", err.Error())
@@ -115,7 +115,7 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 	// Look up repo links in the repo-updater. This supplies links from code host APIs as well as
 	// explicitly configured links for repos.list repos.
 	info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo:         repo.URI,
+		Repo:         repo.Name,
 		ExternalRepo: repo.ExternalRepo,
 	})
 	if err != nil {

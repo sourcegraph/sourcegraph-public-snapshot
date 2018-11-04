@@ -16,9 +16,10 @@ type Repo struct {
 	// service itself).
 	ExternalRepo *api.ExternalRepoSpec
 
-	// URI is a normalized identifier for this repository based on its primary clone
-	// URL. E.g., "github.com/user/repo".
-	URI api.RepoName
+	// Name is the name for this repository (e.g., "github.com/user/repo").
+	//
+	// Previously, this was called RepoURI.
+	Name api.RepoName
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.

@@ -53,7 +53,7 @@ func (s *MockRepos) MockGetByName(t *testing.T, wantURI api.RepoName, repo api.R
 			t.Errorf("got repo URI %q, want %q", uri, wantURI)
 			return nil, errRepoNotFound
 		}
-		return &types.Repo{ID: repo, URI: uri}, nil
+		return &types.Repo{ID: repo, Name: uri}, nil
 	}
 	return
 }
@@ -77,7 +77,7 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *b
 		*called = true
 		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
-			repos[i] = &types.Repo{URI: repo}
+			repos[i] = &types.Repo{Name: repo}
 		}
 		return repos, nil
 	}
@@ -106,7 +106,7 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", &git.RevisionNotFoundError{Repo: repo.URI, Spec: rev}
+		return "", &git.RevisionNotFoundError{Repo: repo.Name, Spec: rev}
 	}
 	return
 }

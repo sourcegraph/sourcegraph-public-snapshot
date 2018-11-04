@@ -256,7 +256,7 @@ func initRouter() {
 	// repo
 	serveRepoHandler := handler(serveRepoOrBlob(routeRepo, func(c *Common, r *http.Request) string {
 		// e.g. "gorilla/mux - Sourcegraph"
-		return fmt.Sprintf("%s - Sourcegraph", repoShortName(c.Repo.URI))
+		return fmt.Sprintf("%s - Sourcegraph", repoShortName(c.Repo.Name))
 	}))
 	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
@@ -276,14 +276,14 @@ func initRouter() {
 	router.Get(routeTree).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		// e.g. "src - gorilla/mux - Sourcegraph"
 		dirName := path.Base(mux.Vars(r)["Path"])
-		return fmt.Sprintf("%s - %s - Sourcegraph", dirName, repoShortName(c.Repo.URI))
+		return fmt.Sprintf("%s - %s - Sourcegraph", dirName, repoShortName(c.Repo.Name))
 	})))
 
 	// blob
 	router.Get(routeBlob).Handler(handler(serveRepoOrBlob(routeBlob, func(c *Common, r *http.Request) string {
 		// e.g. "mux.go - gorilla/mux - Sourcegraph"
 		fileName := path.Base(mux.Vars(r)["Path"])
-		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.URI))
+		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.Name))
 	})))
 
 	// All other routes that are not found.

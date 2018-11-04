@@ -205,7 +205,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 						return nil, errors.Wrap(err, "resolve revision for package repo")
 					}
 				}
-				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+string(repo.URI)+"?"+string(commit)))
+				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+string(repo.Name)+"?"+string(commit)))
 			}
 			span.LogFields(otlog.String("event", "resolved rootURIs"))
 		}

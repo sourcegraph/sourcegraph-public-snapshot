@@ -38,7 +38,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	defer git.ResetMocks()
 
 	// (no rev/branch specified)
-	commitID, err := Repos.ResolveRev(ctx, &types.Repo{URI: "a"}, "")
+	commitID, err := Repos.ResolveRev(ctx, &types.Repo{Name: "a"}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	commitID, err := Repos.ResolveRev(ctx, &types.Repo{URI: "a"}, "b")
+	commitID, err := Repos.ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	commitID, err := Repos.ResolveRev(ctx, &types.Repo{URI: "a"}, strings.Repeat("a", 40))
+	commitID, err := Repos.ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	_, err := Repos.ResolveRev(ctx, &types.Repo{URI: "a"}, strings.Repeat("a", 40))
+	_, err := Repos.ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if !reflect.DeepEqual(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
@@ -189,7 +189,7 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	commit, err := Repos.GetCommit(ctx, &types.Repo{URI: "a"}, want)
+	commit, err := Repos.GetCommit(ctx, &types.Repo{Name: "a"}, want)
 	if err != nil {
 		t.Fatal(err)
 	}

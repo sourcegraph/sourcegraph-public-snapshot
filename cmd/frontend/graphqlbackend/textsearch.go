@@ -343,9 +343,9 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 
 	var workspace string
 	if rev != "" {
-		workspace = "git://" + string(repo.URI) + "?" + url.QueryEscape(rev) + "#"
+		workspace = "git://" + string(repo.Name) + "?" + url.QueryEscape(rev) + "#"
 	} else {
-		workspace = "git://" + string(repo.URI) + "#"
+		workspace = "git://" + string(repo.Name) + "#"
 	}
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
@@ -366,8 +366,8 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
 	repoMap := make(map[api.RepoName]*types.Repo, len(repos))
 	for _, repoRev := range repos {
-		repoSet.Set[string(repoRev.Repo.URI)] = true
-		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.URI)))] = repoRev.Repo
+		repoSet.Set[string(repoRev.Repo.Name)] = true
+		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev.Repo
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(query)
@@ -655,7 +655,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 	head := indexed
 	indexed = indexed[:0]
 	for _, repoRev := range head {
-		if set[string(repoRev.Repo.URI)] {
+		if set[string(repoRev.Repo.Name)] {
 			indexed = append(indexed, repoRev)
 		} else {
 			unindexed = append(unindexed, repoRev)
@@ -792,7 +792,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
 			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo, rev, args.Pattern, fetchTimeout)
 			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.Repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -801,7 +801,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			}
 			if repoLimitHit {
 				// We did not return all results in this repository.
-				common.partial[repoRev.Repo.URI] = struct{}{}
+				common.partial[repoRev.Repo.Name] = struct{}{}
 			}
 			// non-diff search reports timeout through searchErr, so pass false for timedOut
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {

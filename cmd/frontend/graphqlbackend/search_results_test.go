@@ -35,7 +35,7 @@ func TestSearchResults(t *testing.T) {
 			// just remove that assumption in the following line of code.
 			switch {
 			case result.repo != nil:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", result.repo.repo.URI)
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", result.repo.repo.Name)
 			case result.fileMatch != nil:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", result.fileMatch.JPath, result.fileMatch.JLineMatches[0].JLineNumber)
 			}
@@ -56,7 +56,7 @@ func TestSearchResults(t *testing.T) {
 			if want := (db.ReposListOptions{Enabled: true, IncludePatterns: []string{"r", "p"}, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*types.Repo{{URI: "repo"}}, nil
+			return []*types.Repo{{Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 
@@ -79,7 +79,7 @@ func TestSearchResults(t *testing.T) {
 			if want := (db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*types.Repo{{URI: "repo"}}, nil
+			return []*types.Repo{{Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -247,7 +247,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.Repo{
-		URI: "testRepo",
+		Name: "testRepo",
 	}
 
 	repoMatch := &repositoryResolver{
@@ -451,14 +451,14 @@ func TestCompareSearchResults(t *testing.T) {
 			a: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						URI: api.RepoName("a"),
+						Name: api.RepoName("a"),
 					},
 				},
 			},
 			b: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						URI: api.RepoName("b"),
+						Name: api.RepoName("b"),
 					},
 				},
 			},
@@ -469,7 +469,7 @@ func TestCompareSearchResults(t *testing.T) {
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoName("a"),
+						Name: api.RepoName("a"),
 					},
 					JPath: "a",
 				},
@@ -477,7 +477,7 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						URI: api.RepoName("a"),
+						Name: api.RepoName("a"),
 					},
 				},
 			},
@@ -488,7 +488,7 @@ func TestCompareSearchResults(t *testing.T) {
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoName("a"),
+						Name: api.RepoName("a"),
 					},
 					JPath: "a",
 				},
@@ -496,7 +496,7 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoName("a"),
+						Name: api.RepoName("a"),
 					},
 					JPath: "b",
 				},
@@ -508,7 +508,7 @@ func TestCompareSearchResults(t *testing.T) {
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoName("a"),
+						Name: api.RepoName("a"),
 					},
 					JPath: "a",
 				},
@@ -516,7 +516,7 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoName("b"),
+						Name: api.RepoName("b"),
 					},
 					JPath: "a",
 				},

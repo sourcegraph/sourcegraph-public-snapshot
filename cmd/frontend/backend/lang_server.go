@@ -16,7 +16,7 @@ type langServer struct{}
 
 func (langServer) WorkspaceXReferences(ctx context.Context, repo *types.Repo, commitID api.CommitID, language string, params lspext.WorkspaceReferencesParams) (result []*lspext.ReferenceInformation, err error) {
 	vcs := "git" // TODO: store VCS type in *types.Repo object.
-	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
+	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.Name) + "?" + string(commitID))
 	err = cachedUnsafeXLangCall(ctx, language, rootURI, "workspace/xreferences", params, &result)
 	return result, err
 }

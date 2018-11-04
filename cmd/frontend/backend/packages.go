@@ -36,7 +36,7 @@ func (packages) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api
 			err = db.Pkgs.UpdateIndexForLanguage(ctx, lang, repo.ID, pkgs)
 		}
 		if err != nil && !proxy.IsModeNotFound(err) {
-			log15.Error("Refreshing repository packages index failed.", "repo", repo.URI, "language", lang, "error", err)
+			log15.Error("Refreshing repository packages index failed.", "repo", repo.Name, "language", lang, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", lang, err))
 		}
 	}
@@ -49,7 +49,7 @@ func (packages) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api
 }
 
 func (packages) listForLanguageInRepo(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID, background bool) (pkgs []lspext.PackageInformation, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "listForLanguageInRepo "+language+" "+string(repo.URI))
+	span, ctx := opentracing.StartSpanFromContext(ctx, "listForLanguageInRepo "+language+" "+string(repo.Name))
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -74,7 +74,7 @@ func (packages) listForLanguageInRepo(ctx context.Context, language string, repo
 	if background {
 		bgSuffix = "_bg"
 	}
-	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
+	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.Name) + "?" + string(commitID))
 	var allPks []lspext.PackageInformation
 	err = cachedUnsafeXLangCall(ctx, language+bgSuffix, rootURI, "workspace/xpackages", map[string]string{}, &allPks)
 	if err != nil {

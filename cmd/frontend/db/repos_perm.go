@@ -47,7 +47,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*typ
 
 	filteredRepos := make([]*types.Repo, 0, len(filteredRepoNames))
 	for _, repo := range repos {
-		if _, ok := filteredRepoNames[repo.URI]; ok {
+		if _, ok := filteredRepoNames[repo.Name]; ok {
 			filteredRepos = append(filteredRepos, repo)
 		}
 	}

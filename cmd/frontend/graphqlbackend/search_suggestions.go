@@ -240,9 +240,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		var k key
 		switch s := s.result.(type) {
 		case *repositoryResolver:
-			k.repoName = s.repo.URI
+			k.repoName = s.repo.Name
 		case *gitTreeEntryResolver:
-			k.repoName = s.commit.repo.repo.URI
+			k.repoName = s.commit.repo.repo.Name
 			k.repoRev = string(s.commit.oid)
 			// Zoekt only searches the default branch and sets commit ID to an empty string.
 			// Set repoRev to the latest indexed revision so we can properly ensure deduplication.
@@ -251,7 +251,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			k.file = s.path
 		case *symbolResolver:
-			k.repoName = s.location.resource.commit.repo.repo.URI
+			k.repoName = s.location.resource.commit.repo.repo.Name
 			k.symbol = s.symbol.Name + s.symbol.ContainerName
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))

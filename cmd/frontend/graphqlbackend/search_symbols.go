@@ -68,7 +68,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 			defer run.Release()
 			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.Pattern, args.Query, limit)
 			if repoErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.URI)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
+				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -108,7 +108,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		}
 		span.Finish()
 	}()
-	span.SetTag("repo", string(repoRevs.Repo.URI))
+	span.SetTag("repo", string(repoRevs.Repo.Name))
 
 	inputRev := repoRevs.RevSpecs()[0]
 	span.SetTag("rev", inputRev)
@@ -121,13 +121,13 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.URI) + "?" + url.QueryEscape(inputRev))
+	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.Name) + "?" + url.QueryEscape(inputRev))
 	if err != nil {
 		return nil, err
 	}
 
 	symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
-		Repo:            repoRevs.Repo.URI,
+		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
 		Query:           patternInfo.Pattern,
 		IsCaseSensitive: patternInfo.IsCaseSensitive,

@@ -23,7 +23,7 @@ func TestRepoRefresh(t *testing.T) {
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
 		switch uri {
 		case "github.com/gorilla/mux":
-			return &types.Repo{ID: 2, URI: uri}, nil
+			return &types.Repo{ID: 2, Name: uri}, nil
 		default:
 			panic("wrong path")
 		}

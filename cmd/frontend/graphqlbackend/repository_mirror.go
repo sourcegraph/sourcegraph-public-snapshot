@@ -33,7 +33,7 @@ type repositoryMirrorInfoResolver struct {
 
 func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfoResponse, error) {
 	r.repoInfoOnce.Do(func() {
-		r.repoInfoResponse, r.repoInfoErr = gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.URI)
+		r.repoInfoResponse, r.repoInfoErr = gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
 	})
 	return r.repoInfoResponse, r.repoInfoErr
 }
@@ -48,7 +48,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	{
 		// Look up the remote URL in repo-updater.
 		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
-			Repo:         r.repository.repo.URI,
+			Repo:         r.repository.repo.Name,
 			ExternalRepo: r.repository.repo.ExternalRepo,
 		})
 		if err != nil {
@@ -130,7 +130,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		}
 	case args.Name != nil:
 		// GitRepo will use just the URI to look up the repository from repo-updater.
-		repo = &types.Repo{URI: api.RepoName(*args.Name)}
+		repo = &types.Repo{Name: api.RepoName(*args.Name)}
 	}
 
 	gitserverRepo, err := backend.GitRepo(ctx, repo)

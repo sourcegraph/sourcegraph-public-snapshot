@@ -321,7 +321,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]*search
 			}
 			repoTimedOut = repoTimedOut || ctx.Err() == context.DeadlineExceeded
 			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.Repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -382,7 +382,7 @@ func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]*searchRe
 			}
 			repoTimedOut = repoTimedOut || ctx.Err() == context.DeadlineExceeded
 			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.Repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()

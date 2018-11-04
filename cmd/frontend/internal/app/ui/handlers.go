@@ -164,7 +164,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			}
 			return nil, err
 		}
-		if common.Repo.URI == "github.com/sourcegraphtest/Always500Test" {
+		if common.Repo.Name == "github.com/sourcegraphtest/Always500Test" {
 			return nil, errors.New("error caused by Always500Test repo URI")
 		}
 		common.Rev = mux.Vars(r)["Rev"]
@@ -265,7 +265,7 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 			// It does not apply the file: filter because that was not the behavior of the
 			// old blob URLs with a 'q' parameter either.
 			r.URL.Path = "/search"
-			q.Set("sq", "repo:^"+regexp.QuoteMeta(string(common.Repo.URI))+"$")
+			q.Set("sq", "repo:^"+regexp.QuoteMeta(string(common.Repo.Name))+"$")
 			r.URL.RawQuery = q.Encode()
 			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
 			return nil

@@ -113,14 +113,14 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoName, []Revisi
 
 func (r RepositoryRevisions) String() string {
 	if len(r.Revs) == 0 {
-		return string(r.Repo.URI)
+		return string(r.Repo.Name)
 	}
 
 	parts := make([]string, len(r.Revs))
 	for i, rev := range r.Revs {
 		parts[i] = rev.String()
 	}
-	return string(r.Repo.URI) + "@" + strings.Join(parts, ":")
+	return string(r.Repo.Name) + "@" + strings.Join(parts, ":")
 }
 
 func (r *RepositoryRevisions) RevSpecs() []string {

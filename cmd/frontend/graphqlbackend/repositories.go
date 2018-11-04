@@ -142,7 +142,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				// Query gitserver to filter by repository clone status.
 				keepRepos := repos[:0]
 				for _, repo := range repos {
-					info, err := gitserver.DefaultClient.RepoInfo(ctx, repo.URI)
+					info, err := gitserver.DefaultClient.RepoInfo(ctx, repo.Name)
 					if err != nil {
 						r.err = err
 						return
@@ -157,7 +157,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if !r.indexed || !r.notIndexed {
 				keepRepos := repos[:0]
 				for _, repo := range repos {
-					indexed := isIndexed(repo.URI)
+					indexed := isIndexed(repo.Name)
 					if (r.indexed && indexed) || (r.notIndexed && !indexed) {
 						keepRepos = append(keepRepos, repo)
 					}
@@ -381,7 +381,7 @@ func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
 func toRepoNames(repos []*types.Repo) []api.RepoName {
 	names := make([]api.RepoName, len(repos))
 	for i, repo := range repos {
-		names[i] = repo.URI
+		names[i] = repo.Name
 	}
 	return names
 }

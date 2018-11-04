@@ -162,10 +162,10 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 		return nil, err
 	}
 	vcs := "git" // TODO: store VCS type in *types.Repo object.
-	span.SetTag("repo", repo.URI)
+	span.SetTag("repo", repo.Name)
 
 	// Determine the rootURI.
-	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(op.CommitID))
+	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.Name) + "?" + string(op.CommitID))
 
 	// Find the metadata for the definition specified by op, such that we can
 	// perform the DB query using that metadata.

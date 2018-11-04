@@ -17,7 +17,7 @@ func TestReposService_Get(t *testing.T) {
 
 	wantRepo := &types.Repo{
 		ID:      1,
-		URI:     "github.com/u/r",
+		Name:    "github.com/u/r",
 		Enabled: true,
 	}
 
@@ -41,8 +41,8 @@ func TestReposService_List(t *testing.T) {
 	ctx := testContext()
 
 	wantRepos := []*types.Repo{
-		{URI: "r1"},
-		{URI: "r2"},
+		{Name: "r1"},
+		{Name: "r2"},
 	}
 
 	calledList := db.Mocks.Repos.MockList(t, "r1", "r2")

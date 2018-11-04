@@ -138,7 +138,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	for name, repoPaths := range settings.SearchRepositoryGroups {
 		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &types.Repo{URI: api.RepoName(repoPath)}
+			repos[i] = &types.Repo{Name: api.RepoName(repoPath)}
 		}
 		groups[name] = repos
 	}
@@ -369,7 +369,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		var patterns []string
 		for _, groupName := range groupNames {
 			for _, repo := range groups[groupName] {
-				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.URI))+"$")
+				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
 			}
 		}
 		includePatterns = append(includePatterns, unionRegExps(patterns))
@@ -411,10 +411,10 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	for _, repo := range repos {
 		repoRev := &search.RepositoryRevisions{
 			Repo:          repo,
-			GitserverRepo: gitserver.Repo{Name: repo.URI},
+			GitserverRepo: gitserver.Repo{Name: repo.Name},
 		}
 
-		revs, clashingRevs := getRevsForMatchedRepo(repo.URI, includePatternRevs)
+		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
 
 		repoResolver := &repositoryResolver{repo: repo}
 
@@ -729,7 +729,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs search.Rep
 func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *repositoryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.URI), label: string(r.repo.URI)}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
 
 	case *gitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
@@ -783,7 +783,7 @@ func (s *scorer) calcScore(result interface{}) int {
 	switch r := result.(type) {
 	case *repositoryResolver:
 		if !s.queryEmpty {
-			score = postfixFuzzyAlignScore(splitNoEmpty(string(r.repo.URI), "/"), s.queryParts)
+			score = postfixFuzzyAlignScore(splitNoEmpty(string(r.repo.Name), "/"), s.queryParts)
 		}
 		// Push forks down
 		if r.repo.Fork {

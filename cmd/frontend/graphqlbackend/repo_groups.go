@@ -25,7 +25,7 @@ func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 	for name, repos := range groupsByName {
 		repoPaths := make([]api.RepoName, len(repos))
 		for i, repo := range repos {
-			repoPaths[i] = repo.URI
+			repoPaths[i] = repo.Name
 		}
 		groups = append(groups, &repoGroup{
 			name:         name,

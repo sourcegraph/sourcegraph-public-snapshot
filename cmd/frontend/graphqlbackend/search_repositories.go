@@ -51,7 +51,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 			common.limitHit = true
 			break
 		}
-		if pattern.MatchString(string(repo.Repo.URI)) {
+		if pattern.MatchString(string(repo.Repo.Name)) {
 			results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo}})
 		}
 	}
