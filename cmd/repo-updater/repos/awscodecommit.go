@@ -16,30 +16,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-// AWSCodeCommitServiceType is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
-// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
-// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
-const AWSCodeCommitServiceType = "awscodecommit"
-
-// AWSCodeCommitExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified AWS
-// CodeCommit repository.
-func AWSCodeCommitExternalRepoSpec(repo *awscodecommit.Repository, serviceID string) *api.ExternalRepoSpec {
-	return &api.ExternalRepoSpec{
-		ID:          repo.ARN,
-		ServiceType: AWSCodeCommitServiceType,
-		ServiceID:   serviceID,
-	}
-}
 
 var awsCodeCommitConnections = atomicvalue.New()
 
@@ -61,15 +46,6 @@ func init() {
 	})
 }
 
-// createAWSCodeCommitServiceID creates the repository external service ID. See
-// AWSCodeCommitServiceType for documentation on the format of this value.
-//
-// This value uniquely identifies the most specific namespace in which AWS CodeCommit repositories
-// are defined.
-func createAWSCodeCommitServiceID(awsPartition endpoints.Partition, awsRegion endpoints.Region, awsAccountID string) string {
-	return "arn:" + awsPartition.ID() + ":codecommit:" + awsRegion.ID() + ":" + awsAccountID + ":"
-}
-
 // GetAWSCodeCommitRepositoryMock is set by tests that need to mock GetAWSCodeCommitRepository.
 var GetAWSCodeCommitRepositoryMock func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error)
 
@@ -85,7 +61,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 
 	log15.Debug("GetAWSCodeCommitRepository", "repo", args.Repo, "externalRepo", args.ExternalRepo)
 
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == AWSCodeCommitServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == awscodecommit.ServiceType {
 		// Look up by external repository spec.
 		var err error
 		for _, conn := range awsCodeCommitConnections.Get().([]*awsCodeCommitConnection) {
@@ -101,7 +77,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 					webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", conn.awsRegion.ID(), ccrepo.Name)
 					repo = &protocol.RepoInfo{
 						URI:          awsCodeCommitRepositoryToRepoPath(conn, ccrepo),
-						ExternalRepo: AWSCodeCommitExternalRepoSpec(ccrepo, serviceID),
+						ExternalRepo: awscodecommit.ExternalRepoSpec(ccrepo, serviceID),
 						Description:  ccrepo.Description,
 						VCS:          protocol.VCSInfo{URL: remoteURL},
 						Links: &protocol.RepoLinks{
@@ -190,7 +166,7 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoURI:      awsCodeCommitRepositoryToRepoPath(conn, repo),
-				ExternalRepo: AWSCodeCommitExternalRepoSpec(repo, createAWSCodeCommitServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)),
+				ExternalRepo: awscodecommit.ExternalRepoSpec(repo, awscodecommit.ServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)),
 				Description:  repo.Description,
 				Enabled:      conn.config.InitialRepositoryEnablement,
 			},
@@ -246,7 +222,7 @@ func (c *awsCodeCommitConnection) getServiceID() (string, error) {
 	if awsAccountID == "" {
 		return "", nil
 	}
-	return createAWSCodeCommitServiceID(c.awsPartition, c.awsRegion, c.awsAccountID), nil
+	return awscodecommit.ServiceID(c.awsPartition, c.awsRegion, c.awsAccountID), nil
 }
 
 func (c *awsCodeCommitConnection) tryPopulateAWSAccountID() (string, error) {
