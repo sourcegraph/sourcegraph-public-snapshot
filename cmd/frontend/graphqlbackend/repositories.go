@@ -388,7 +388,7 @@ func toRepoURIs(repos []*types.Repo) []api.RepoURI {
 
 func toDBRepoListColumn(ob string) db.RepoListColumn {
 	switch ob {
-	case "REPO_URI":
+	case "REPO_URI", "REPOSITORY_NAME":
 		return "uri"
 	case "REPO_CREATED_AT":
 		return "created_at"

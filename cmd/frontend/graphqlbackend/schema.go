@@ -615,7 +615,7 @@ type Query {
         # Filter for repositories that have not been indexed for cross-repository code intelligence.
         notCIIndexed: Boolean = false
         # Sort field.
-        orderBy: RepoOrderBy = REPO_URI
+        orderBy: RepoOrderBy = REPO_NAME
         # Sort direction.
         descending: Boolean = false
     ): RepositoryConnection!
@@ -2470,7 +2470,8 @@ type DiscussionCommentConnection {
 # RepoOrderBy enumerates the ways a repositories-list result set can
 # be ordered.
 enum RepoOrderBy {
-    REPO_URI
+    REPO_URI # deprecated (use the equivalent REPOSITORY_NAME)
+    REPOSITORY_NAME
     REPO_CREATED_AT
 }
 
