@@ -725,3 +725,4 @@ func (m *MockAuthzProvider) Repos(ctx context.Context, repos map[authz.Repo]stru
 
 func (m *MockAuthzProvider) ServiceID() string   { return m.serviceID }
 func (m *MockAuthzProvider) ServiceType() string { return m.serviceType }
+func (m *MockAuthzProvider) Validate() []string  { return nil }
