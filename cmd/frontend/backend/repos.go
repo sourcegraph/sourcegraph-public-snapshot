@@ -53,24 +53,24 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
-// GetByURI retrieves the repository with the given URI. If the URI refers to a repository on a known external
+// GetByName retrieves the repository with the given URI. If the URI refers to a repository on a known external
 // service (such as a code host) that is not yet present in the database, it will automatically look up the
 // repository externally and add it to the database before returning it.
-func (s *repos) GetByURI(ctx context.Context, uri api.RepoName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByURI != nil {
-		return Mocks.Repos.GetByURI(ctx, uri)
+func (s *repos) GetByName(ctx context.Context, uri api.RepoName) (_ *types.Repo, err error) {
+	if Mocks.Repos.GetByName != nil {
+		return Mocks.Repos.GetByName(ctx, uri)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
+	ctx, done := trace(ctx, "Repos", "GetByName", uri, &err)
 	defer done()
 
-	repo, err := db.Repos.GetByURI(ctx, uri)
+	repo, err := db.Repos.GetByName(ctx, uri)
 	if err != nil && envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
 		if err := s.Add(ctx, uri); err != nil {
 			return nil, err
 		}
-		return db.Repos.GetByURI(ctx, uri)
+		return db.Repos.GetByName(ctx, uri)
 	} else if err != nil {
 		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
 			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{

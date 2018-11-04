@@ -190,7 +190,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// SECURITY NOTE: Do not delete this block. If you delete this
 		// block, anyone can access any private code, even if they are
 		// not authorized to do so.
-		if _, err := backend.Repos.GetByURI(ctx, rootURI.Repo()); err != nil {
+		if _, err := backend.Repos.GetByName(ctx, rootURI.Repo()); err != nil {
 			return err
 		}
 		checkedUserHasReadAccessToRepo = true

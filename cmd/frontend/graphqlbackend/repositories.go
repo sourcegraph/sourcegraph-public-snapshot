@@ -261,7 +261,7 @@ func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
 	if err := backend.Repos.Add(ctx, uri); err != nil {
 		return nil, err
 	}
-	repo, err := backend.Repos.GetByURI(ctx, uri)
+	repo, err := backend.Repos.GetByName(ctx, uri)
 	if err != nil {
 		return nil, err
 	}

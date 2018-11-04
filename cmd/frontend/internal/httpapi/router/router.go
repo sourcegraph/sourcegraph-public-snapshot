@@ -38,7 +38,7 @@ const (
 	GitUploadPack          = "internal.git.upload-pack"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposCreateIfNotExists = "internal.repos.create-if-not-exists"
-	ReposGetByURI          = "internal.repos.get-by-uri"
+	ReposGetByName         = "internal.repos.get-by-uri"
 	ReposInventoryUncached = "internal.repos.inventory-uncached"
 	ReposInventory         = "internal.repos.inventory"
 	ReposList              = "internal.repos.list"
@@ -110,7 +110,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
-	base.Path("/repos/{RepoURI:.*}").Methods("POST").Name(ReposGetByURI)
+	base.Path("/repos/{RepoURI:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration/raw-json").Methods("POST").Name(ConfigurationRawJSON)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)

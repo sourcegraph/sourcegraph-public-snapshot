@@ -58,7 +58,7 @@ func TestSearchResults(t *testing.T) {
 			}
 			return []*types.Repo{{URI: "repo"}}, nil
 		}
-		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{}, nil
@@ -82,7 +82,7 @@ func TestSearchResults(t *testing.T) {
 			return []*types.Repo{{URI: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
-		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {

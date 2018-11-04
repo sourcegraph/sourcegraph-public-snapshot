@@ -21,7 +21,7 @@ func TestXLang(t *testing.T) {
 	c := newTest()
 
 	calledValid := false
-	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
+	backend.Mocks.Repos.GetByName = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
 		switch uri {
 		case "my/repo":
 			calledValid = true

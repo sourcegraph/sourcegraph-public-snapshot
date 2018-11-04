@@ -18,7 +18,7 @@ import (
 func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 
-	repo, err := backend.Repos.GetByURI(ctx, origRepo)
+	repo, err := backend.Repos.GetByName(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}

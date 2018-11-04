@@ -49,7 +49,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	repoURI := api.RepoName(strings.TrimSuffix(strings.TrimPrefix(cloneURL, "https://"), ".git"))
-	repo, err := backend.Repos.GetByURI(ctx, repoURI)
+	repo, err := backend.Repos.GetByName(ctx, repoURI)
 	if err != nil {
 		return err
 	}

@@ -70,7 +70,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return nil, nil
 		}
-		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 		defer func() { db.Mocks = db.MockStores{} }()
 
@@ -126,7 +126,7 @@ func TestSearchSuggestions(t *testing.T) {
 			return nil, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
-		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 
 		calledSearchFilesInRepos := false

@@ -12,7 +12,7 @@ func resolveRevision(ctx context.Context, repoURI api.RepoName, spec string) (*a
 	if spec == "" {
 		spec = "HEAD"
 	}
-	repo, err := api.InternalClient.ReposGetByURI(ctx, repoURI)
+	repo, err := api.InternalClient.ReposGetByName(ctx, repoURI)
 	if err != nil {
 		return nil, "", err
 	}

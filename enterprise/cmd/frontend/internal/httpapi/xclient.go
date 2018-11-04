@@ -159,7 +159,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			repoURI := api.RepoName(string(repoInfo.RepoHost) + "/" + repoInfo.FullName)
 
 			// We issue a workspace/symbols on the URL, so ensure we have the repo / it exists.
-			repo, err := backend.Repos.GetByURI(ctx, repoURI)
+			repo, err := backend.Repos.GetByName(ctx, repoURI)
 			if err != nil {
 				span.LogFields(otlog.Error(err))
 				if _, isSeeOther := err.(backend.ErrRepoSeeOther); isSeeOther || errcode.IsNotFound(err) {
