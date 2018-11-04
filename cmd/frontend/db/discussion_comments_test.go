@@ -32,7 +32,7 @@ func TestDiscussionComments_Create(t *testing.T) {
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	repo, err := Repos.GetByURI(ctx, "myrepo")
+	repo, err := Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}

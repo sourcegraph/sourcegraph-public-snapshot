@@ -80,7 +80,7 @@ func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, uri a
 }
 
 func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, uri api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
-	repo, err := p.GetByURI(ctx, uri)
+	repo, err := p.GetByName(ctx, uri)
 	if err != nil {
 		if _, ok := err.(errPhabricatorRepoNotFound); !ok {
 			return nil, err
@@ -123,9 +123,9 @@ func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...int
 	return rows[0], nil
 }
 
-func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoName) (*types.PhabricatorRepo, error) {
-	if Mocks.Phabricator.GetByURI != nil {
-		return Mocks.Phabricator.GetByURI(uri)
+func (p *phabricator) GetByName(ctx context.Context, uri api.RepoName) (*types.PhabricatorRepo, error) {
+	if Mocks.Phabricator.GetByName != nil {
+		return Mocks.Phabricator.GetByName(uri)
 	}
 	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoName]*types.PhabricatorRepo)
 	if r := phabricatorRepos[uri]; r != nil {
@@ -135,5 +135,5 @@ func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoName) (*types.Ph
 }
 
 type MockPhabricator struct {
-	GetByURI func(repo api.RepoName) (*types.PhabricatorRepo, error)
+	GetByName func(repo api.RepoName) (*types.PhabricatorRepo, error)
 }

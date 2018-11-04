@@ -82,7 +82,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	rp, err := db.Repos.GetByURI(ctx, "myrepo")
+	rp, err := db.Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +159,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	repo, err := db.Repos.GetByURI(ctx, "myrepo")
+	repo, err := db.Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +205,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: uri, Description: "", Fork: false, Enabled: true}); err != nil {
 			t.Fatal(err)
 		}
-		rp, err := db.Repos.GetByURI(ctx, uri)
+		rp, err := db.Repos.GetByName(ctx, uri)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -10,7 +10,7 @@ import (
 
 func TestRepository(t *testing.T) {
 	resetMocks()
-	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
+	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,

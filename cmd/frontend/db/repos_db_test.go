@@ -41,7 +41,7 @@ func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*type
 	var createdRepos []*types.Repo
 	for _, repo := range repos {
 		createRepo(ctx, t, repo)
-		repo, err := Repos.GetByURI(ctx, repo.URI)
+		repo, err := Repos.GetByName(ctx, repo.URI)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -285,7 +285,7 @@ func TestRepos_List_indexedRevision(t *testing.T) {
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
-		gotRepo, err := Repos.GetByURI(ctx, repo.URI)
+		gotRepo, err := Repos.GetByName(ctx, repo.URI)
 		if err != nil {
 			panic(err)
 		}
@@ -473,7 +473,7 @@ func TestRepos_Create(t *testing.T) {
 	// Add a repo.
 	createRepo(ctx, t, &types.Repo{URI: "a/b"})
 
-	repo, err := Repos.GetByURI(ctx, "a/b")
+	repo, err := Repos.GetByName(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -67,7 +67,7 @@ func (s *defs) TotalRefs(ctx context.Context, source api.RepoName) (res int, err
 	}
 
 	// Query value from the database.
-	rp, err := Repos.GetByURI(ctx, source)
+	rp, err := Repos.GetByName(ctx, source)
 	if err != nil {
 		return 0, err
 	}
@@ -113,7 +113,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source api.RepoName) (repos []
 	}
 
 	// Query value from the database.
-	rp, err := Repos.GetByURI(ctx, source)
+	rp, err := Repos.GetByName(ctx, source)
 	if err != nil {
 		return nil, err
 	}

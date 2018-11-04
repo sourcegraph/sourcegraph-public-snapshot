@@ -174,7 +174,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 		}
 		repos := make([]*types.Repo, len(sampleRepoPaths))
 		for i, path := range sampleRepoPaths {
-			repo, err := backend.Repos.GetByURI(ctx, path)
+			repo, err := backend.Repos.GetByName(ctx, path)
 			if err != nil {
 				return nil, fmt.Errorf("get %q: %s", path, err)
 			}

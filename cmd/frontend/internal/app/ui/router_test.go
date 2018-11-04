@@ -218,8 +218,8 @@ func TestRouter_RootPath(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			}
 
-			// Mock GetByURI to return the proper repo not found error type.
-			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
+			// Mock GetByName to return the proper repo not found error type.
+			backend.Mocks.Repos.GetByName = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
 				if uri != tst.repo {
 					panic("unexpected")
 				}

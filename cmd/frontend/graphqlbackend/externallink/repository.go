@@ -106,7 +106,7 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 	}
 
 	var err error
-	phabRepo, err = db.Phabricator.GetByURI(ctx, repo.URI)
+	phabRepo, err = db.Phabricator.GetByName(ctx, repo.URI)
 	if err != nil && !errcode.IsNotFound(err) {
 		ext.Error.Set(span, true)
 		span.SetTag("phabErr", err.Error())

@@ -225,7 +225,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	Description *string
 	Date        *string
 }) (*gitCommitResolver, error) {
-	repo, err := db.Repos.GetByURI(ctx, api.RepoName(args.RepoName))
+	repo, err := db.Repos.GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	}
 
 	origin := ""
-	if phabRepo, err := db.Phabricator.GetByURI(ctx, api.RepoName(args.RepoName)); err == nil {
+	if phabRepo, err := db.Phabricator.GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
 		origin = phabRepo.URL
 	}
 

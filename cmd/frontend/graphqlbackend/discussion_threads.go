@@ -56,7 +56,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 	case id != nil:
 		return repositoryByID(ctx, *id)
 	case name != nil:
-		repo, err := backend.Repos.GetByURI(ctx, api.RepoName(*name))
+		repo, err := backend.Repos.GetByName(ctx, api.RepoName(*name))
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +66,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		repo, err := backend.Repos.GetByURI(ctx, api.RepoName(repositoryName))
+		repo, err := backend.Repos.GetByName(ctx, api.RepoName(repositoryName))
 		if err != nil {
 			return nil, err
 		}

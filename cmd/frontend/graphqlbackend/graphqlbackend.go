@@ -200,7 +200,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		return nil, nil
 	}
 
-	repo, err := backend.Repos.GetByURI(ctx, api.RepoName(*args.URI))
+	repo, err := backend.Repos.GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
@@ -227,7 +227,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := db.Phabricator.GetByURI(ctx, api.RepoName(*args.URI))
+	repo, err := db.Phabricator.GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}

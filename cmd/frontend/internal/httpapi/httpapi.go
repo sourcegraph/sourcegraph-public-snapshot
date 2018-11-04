@@ -77,7 +77,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.ReposInventoryUncached).Handler(trace.TraceRoute(handler(serveReposInventoryUncached)))
 	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(serveReposList)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.TraceRoute(handler(serveReposListEnabled)))
-	m.Get(apirouter.ReposGetByURI).Handler(trace.TraceRoute(handler(serveReposGetByURI)))
+	m.Get(apirouter.ReposGetByName).Handler(trace.TraceRoute(handler(serveReposGetByName)))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.TraceRoute(handler(serveSettingsGetForSubject)))
 	m.Get(apirouter.SavedQueriesListAll).Handler(trace.TraceRoute(handler(serveSavedQueriesListAll)))
 	m.Get(apirouter.SavedQueriesGetInfo).Handler(trace.TraceRoute(handler(serveSavedQueriesGetInfo)))

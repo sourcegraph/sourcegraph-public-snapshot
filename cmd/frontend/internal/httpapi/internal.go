@@ -21,9 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
+func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
 	uri := api.RepoName(mux.Vars(r)["RepoURI"])
-	repo, err := backend.Repos.GetByURI(r.Context(), uri)
+	repo, err := backend.Repos.GetByName(r.Context(), uri)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	sgRepo, err := backend.Repos.GetByURI(r.Context(), repo.RepoName)
+	sgRepo, err := backend.Repos.GetByName(r.Context(), repo.RepoName)
 	if err != nil {
 		return err
 	}
@@ -393,7 +393,7 @@ func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoName)
+	repo, err := backend.Repos.GetByName(r.Context(), args.RepoName)
 	if err != nil {
 		return err
 	}
@@ -412,7 +412,7 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoName)
+	repo, err := backend.Repos.GetByName(r.Context(), args.RepoName)
 	if err != nil {
 		return err
 	}
@@ -474,7 +474,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	uri := api.RepoName(mux.Vars(r)["RepoURI"])
-	repo, err := backend.Repos.GetByURI(r.Context(), uri)
+	repo, err := backend.Repos.GetByName(r.Context(), uri)
 	if err != nil {
 		return err
 	}
@@ -499,7 +499,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 
 func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
 	uri := api.RepoName(mux.Vars(r)["RepoURI"])
-	repo, err := backend.Repos.GetByURI(r.Context(), uri)
+	repo, err := backend.Repos.GetByName(r.Context(), uri)
 	if err != nil {
 		return err
 	}

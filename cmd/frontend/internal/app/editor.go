@@ -18,7 +18,7 @@ func editorBranch(ctx context.Context, repoURI api.RepoName, branchName string) 
 	if branchName == "HEAD" {
 		return "", nil // Detached head state
 	}
-	repo, err := backend.Repos.GetByURI(ctx, repoURI)
+	repo, err := backend.Repos.GetByName(ctx, repoURI)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
 		// exist (unlikely) or that the user is not logged in (most likely). In

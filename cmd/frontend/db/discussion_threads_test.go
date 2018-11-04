@@ -32,7 +32,7 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	repo, err := Repos.GetByURI(ctx, "myrepo")
+	repo, err := Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestDiscussionThreads_Update(t *testing.T) {
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	repo, err := Repos.GetByURI(ctx, "myrepo")
+	repo, err := Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	repo, err := Repos.GetByURI(ctx, "myrepo")
+	repo, err := Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +208,7 @@ func TestDiscussionThreads_List(t *testing.T) {
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	repo, err := Repos.GetByURI(ctx, "myrepo")
+	repo, err := Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	repo, err := Repos.GetByURI(ctx, "myrepo")
+	repo, err := Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}

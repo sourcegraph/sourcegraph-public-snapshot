@@ -303,7 +303,7 @@ func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, comm
 	}, nil)
 }
 
-func (c *internalClient) ReposGetByURI(ctx context.Context, repoName RepoName) (*Repo, error) {
+func (c *internalClient) ReposGetByName(ctx context.Context, repoName RepoName) (*Repo, error) {
 	var repo Repo
 	err := c.postInternal(ctx, "repos/"+string(repoName), nil, &repo)
 	if err != nil {

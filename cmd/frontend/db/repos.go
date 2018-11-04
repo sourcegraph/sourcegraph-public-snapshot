@@ -59,13 +59,13 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	return repos[0], nil
 }
 
-// GetByURI returns the repository with the given URI from the database, or an
+// GetByName returns the repository with the given URI from the database, or an
 // error. If the repo doesn't exist in the DB, then errcode.IsNotFound will
 // return true on the error returned. It does not attempt to look up or update
 // the repository on any external service (such as its code host).
-func (s *repos) GetByURI(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
-	if Mocks.Repos.GetByURI != nil {
-		return Mocks.Repos.GetByURI(ctx, uri)
+func (s *repos) GetByName(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
+	if Mocks.Repos.GetByName != nil {
+		return Mocks.Repos.GetByName(ctx, uri)
 	}
 
 	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", uri))
@@ -606,7 +606,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	// upsert is logged as a modification to the DB, even if it is a no-op. So
 	// we do this check to avoid log spam if postgres is configured with
 	// log_statement='mod'.
-	r, err := s.GetByURI(ctx, op.URI)
+	r, err := s.GetByName(ctx, op.URI)
 	if err != nil {
 		if _, ok := err.(*repoNotFoundErr); !ok {
 			return err

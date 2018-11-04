@@ -83,7 +83,7 @@ func TestRepos_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rp, err := Repos.GetByURI(ctx, "myrepo")
+	rp, err := Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if _, err := Repos.GetByURI(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo already present")
 		} else {
@@ -186,7 +186,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rp, err := Repos.GetByURI(ctx, "myrepo")
+	rp, err := Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +199,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rp, err = Repos.GetByURI(ctx, "myrepo")
+	rp, err = Repos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
