@@ -165,7 +165,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			return nil, err
 		}
 		if common.Repo.Name == "github.com/sourcegraphtest/Always500Test" {
-			return nil, errors.New("error caused by Always500Test repo URI")
+			return nil, errors.New("error caused by Always500Test repo name")
 		}
 		common.Rev = mux.Vars(r)["Rev"]
 		// Update gitserver contents for a repo whenever it is visited.

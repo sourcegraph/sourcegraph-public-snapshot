@@ -85,7 +85,7 @@ func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error
 	}
 
 	if args.Repo != "" {
-		// Look up by repository URI.
+		// Look up by repository name.
 		repo := strings.ToLower(string(args.Repo))
 		for _, conn := range githubConnections {
 			if strings.HasPrefix(repo, conn.originalHostname+"/") {
@@ -217,7 +217,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	}
 
 	if args.Repo != "" {
-		// Look up by repository URI.
+		// Look up by repository name.
 		nameWithOwner := strings.TrimPrefix(strings.ToLower(string(args.Repo)), conn.originalHostname+"/")
 		owner, repoName, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 		if err != nil {
