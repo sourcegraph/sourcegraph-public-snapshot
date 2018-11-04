@@ -13,7 +13,7 @@ func (w *Worker) index(repoName api.RepoName, rev string, isPrimary bool) (err e
 	repo, commit, err := resolveRevision(w.Ctx, repoName, rev)
 	if err != nil {
 		// Avoid infinite loop for always cloning test.
-		if repo != nil && repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
+		if repo != nil && repo.Name == "github.com/sourcegraphtest/AlwaysCloningTest" {
 			return nil
 		}
 		return err
@@ -34,11 +34,11 @@ func (w *Worker) index(repoName api.RepoName, rev string, isPrimary bool) (err e
 	// Update global refs & packages index
 	if !repo.Fork() {
 		var errs []error
-		if err := api.InternalClient.DefsRefreshIndex(w.Ctx, repo.URI, commit); err != nil {
+		if err := api.InternalClient.DefsRefreshIndex(w.Ctx, repo.Name, commit); err != nil {
 			errs = append(errs, fmt.Errorf("Defs.RefreshIndex failed: %s", err))
 		}
 
-		if err := api.InternalClient.PkgsRefreshIndex(w.Ctx, repo.URI, commit); err != nil {
+		if err := api.InternalClient.PkgsRefreshIndex(w.Ctx, repo.Name, commit); err != nil {
 			errs = append(errs, fmt.Errorf("Pkgs.RefreshIndex failed: %s", err))
 		}
 
