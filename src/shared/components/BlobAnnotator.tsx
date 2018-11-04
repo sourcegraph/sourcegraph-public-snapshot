@@ -26,7 +26,6 @@ import {
 } from '../repo/tooltips'
 import { eventLogger, getPathExtension } from '../util/context'
 import { parseHash } from '../util/url'
-import { CodeIntelStatusIndicator, isCodeIntelligenceEnabled } from './CodeIntelStatusIndicator'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
@@ -138,17 +137,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
         createTooltips()
     }
 
-    private onCodeIntelligenceEnabledChange = (enabled: boolean) => {
-        if (!enabled) {
-            // Get all annotated elements.
-            const annotatedElements = this.props.fileElement.querySelectorAll('span[style]')
-            for (const element of Array.from(annotatedElements)) {
-                const styleElement = element as HTMLElement
-                styleElement.style.cursor = ''
-            }
-        }
-    }
-
     public render(): JSX.Element | null {
         let props: OpenInSourcegraphProps
         if (this.isDelta) {
@@ -174,21 +162,9 @@ export class BlobAnnotator extends React.Component<Props, State> {
         if (this.isDelta) {
             label += this.props.isBase ? ' (base)' : ' (head)'
         }
-        const showStatus = !this.isDelta || (this.isDelta && this.props.isBase)
 
         return (
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
-                {showStatus && (
-                    <CodeIntelStatusIndicator
-                        key="code-intel-status"
-                        userIsSiteAdmin={false}
-                        repoPath={this.props.repoPath}
-                        commitID={this.props.commitID}
-                        filePath={this.props.filePath}
-                        onChange={this.onCodeIntelligenceEnabledChange}
-                        simpleProviderFns={this.simpleProviderFns}
-                    />
-                )}
                 {this.state.showOpenFileCTA && (
                     <OpenOnSourcegraph
                         label={label}
@@ -648,4 +624,9 @@ export class BlobAnnotator extends React.Component<Props, State> {
             this.setState({ fixedTooltip: undefined })
         }
     }
+}
+
+function isCodeIntelligenceEnabled(filePath: string): boolean {
+    const disabledFiles = localStorage.getItem('disabledCodeIntelligenceFiles') || '{}'
+    return !JSON.parse(disabledFiles)[`${window.location.pathname}:${filePath}`]
 }

@@ -84,7 +84,6 @@ $theme-colors-light: (
 @import './options';
 @import './components/alerts';
 @import './components/symbols';
-@import './components/codeIntelStatusIndicator';
 @import './components/CodeViewToolbar.scss';
 @import '@sourcegraph/codeintellify/lib/HoverOverlay.scss';
 @import '../libs/code_intelligence/HoverOverlay.scss';

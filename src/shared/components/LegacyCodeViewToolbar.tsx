@@ -22,7 +22,6 @@ import { Subscription } from 'rxjs'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
-import { CodeIntelStatusIndicator } from './CodeIntelStatusIndicator'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
@@ -83,7 +82,6 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     }
 
     public render(): JSX.Element | null {
-        const { site, currentUser } = this.state
         return (
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
                 <ul className={`nav ${this.props.extensions ? 'pr-1' : ''}`}>
@@ -101,18 +99,6 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                             </div>
                         )}
                 </ul>
-                {!this.props.extensionsController && (
-                    <CodeIntelStatusIndicator
-                        key="code-intel-status"
-                        userIsSiteAdmin={currentUser ? currentUser.siteAdmin : false}
-                        repoPath={this.props.repoPath}
-                        commitID={this.props.baseCommitID}
-                        filePath={this.props.filePath}
-                        onChange={this.props.onEnabledChange}
-                        simpleProviderFns={this.props.simpleProviderFns}
-                        site={site}
-                    />
-                )}
                 <OpenOnSourcegraph
                     label={`View File${this.props.headCommitID ? ' (base)' : ''}`}
                     ariaLabel="View file on Sourcegraph"

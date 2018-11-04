@@ -1,50 +1,10 @@
 import { Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
 import { AbsoluteRepoFile, makeRepoURI, parseBrowserRepoURL } from '.'
-import { GQL } from '../../types/gqlschema'
 import { getContext } from '../backend/context'
-import {
-    CloneInProgressError,
-    createAggregateError,
-    ECLONEINPROGESS,
-    RepoNotFoundError,
-    RevNotFoundError,
-} from '../backend/errors'
+import { CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError } from '../backend/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { memoizeAsync, memoizeObservable } from '../util/memoize'
-
-/**
- * Fetches the language server for a given language
- *
- * @return Observable that emits the language server for the given language or null if not exists
- */
-export function fetchLangServer(
-    language: string
-): Observable<Pick<GQL.ILangServer, 'displayName' | 'homepageURL' | 'issuesURL' | 'experimental'> | null> {
-    return queryGraphQL({
-        ctx: getContext({}),
-        request: `
-            query LangServer($language: String!) {
-                site {
-                    langServer(language: $language) {
-                        displayName
-                        homepageURL
-                        issuesURL
-                        experimental
-                    }
-                }
-            }
-        `,
-        variables: { language },
-    }).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.site) {
-                throw createAggregateError(errors)
-            }
-            return data.site.langServer
-        })
-    )
-}
 
 /**
  * @return Observable that emits the parent commit ID for a given commit ID.
