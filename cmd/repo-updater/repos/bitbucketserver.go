@@ -22,11 +22,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// bitbucketServerServiceType is the (api.ExternalRepoSpec).ServiceType value
-// for Bitbucket Server projects. The ServiceID value is the base URL to the
-// Bitbucket Server instance.
-const bitbucketServerServiceType = "bitbucketServer"
-
 var bitbucketServerConnections = atomicvalue.New()
 
 func init() {
@@ -52,7 +47,7 @@ func init() {
 func getBitbucketServerConnection(args protocol.RepoLookupArgs) (*bitbucketServerConnection, error) {
 	conns := bitbucketServerConnections.Get().([]*bitbucketServerConnection)
 
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == bitbucketServerServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == bitbucketserver.ServiceType {
 		// Look up by external repository spec.
 		for _, conn := range conns {
 			if args.ExternalRepo.ServiceID == conn.client.URL.String() {
@@ -129,7 +124,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 		URI: repoURI,
 		ExternalRepo: &api.ExternalRepoSpec{
 			ID:          project + "/" + repo.Slug,
-			ServiceType: bitbucketServerServiceType,
+			ServiceType: bitbucketserver.ServiceType,
 			ServiceID:   host.String(),
 		},
 		Description: repo.Name,
@@ -159,7 +154,7 @@ func GetBitbucketServerRepository(ctx context.Context, args protocol.RepoLookupA
 		return nil, false, nil // refers to a non-BitbucketServer repo
 	}
 
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == bitbucketServerServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == bitbucketserver.ServiceType {
 		// Look up by external repository spec. Expect {projectKey}/{repoSlug}
 		i := strings.Index(args.ExternalRepo.ID, "/")
 		if i < 0 || i == len(args.ExternalRepo.ID)-1 {
