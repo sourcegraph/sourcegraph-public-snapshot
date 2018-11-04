@@ -112,7 +112,7 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 // Repo represents a repository on gitserver. It contains the information necessary to identify and
 // create/clone it.
 type Repo struct {
-	Name api.RepoURI // the repository's URI
+	Name api.RepoName // the repository's URI
 
 	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
 	// this field is optional (it will use the last-used Git remote URL). If the repository is not

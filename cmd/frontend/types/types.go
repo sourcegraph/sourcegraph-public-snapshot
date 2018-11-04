@@ -18,7 +18,7 @@ type Repo struct {
 
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
-	URI api.RepoURI
+	URI api.RepoName
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.
@@ -88,7 +88,7 @@ type OrgMembership struct {
 
 type PhabricatorRepo struct {
 	ID       int32
-	URI      api.RepoURI
+	URI      api.RepoName
 	URL      string
 	Callsign string
 }

@@ -76,7 +76,7 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 	log15.Info("deleted repository", "repo", req.Repo)
 }
 
-func (s *Server) deleteRepo(repo api.RepoURI) error {
+func (s *Server) deleteRepo(repo api.RepoName) error {
 	repo = protocol.NormalizeRepo(repo)
 	dir := filepath.Join(s.ReposDir, string(repo))
 

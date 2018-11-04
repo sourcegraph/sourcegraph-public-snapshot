@@ -13,7 +13,7 @@ type GitLab struct {
 
 var _ repoSource = GitLab{}
 
-func (c GitLab) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c GitLab) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err
@@ -26,12 +26,12 @@ func (c GitLab) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err err
 	return GitLabRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), pathWithNamespace), nil
 }
 
-func GitLabRepoURI(repositoryPathPattern, host, pathWithNamespace string) api.RepoURI {
+func GitLabRepoURI(repositoryPathPattern, host, pathWithNamespace string) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{pathWithNamespace}"
 	}
 
-	return api.RepoURI(strings.NewReplacer(
+	return api.RepoName(strings.NewReplacer(
 		"{host}", host,
 		"{pathWithNamespace}", pathWithNamespace,
 	).Replace(repositoryPathPattern))

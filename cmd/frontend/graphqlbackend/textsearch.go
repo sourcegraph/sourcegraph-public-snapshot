@@ -364,10 +364,10 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 	// Tell zoekt which repos to search
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	repoMap := make(map[api.RepoURI]*types.Repo, len(repos))
+	repoMap := make(map[api.RepoName]*types.Repo, len(repos))
 	for _, repoRev := range repos {
 		repoSet.Set[string(repoRev.Repo.URI)] = true
-		repoMap[api.RepoURI(strings.ToLower(string(repoRev.Repo.URI)))] = repoRev.Repo
+		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.URI)))] = repoRev.Repo
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(query)
@@ -530,7 +530,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
 			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
-			repo:         repoMap[api.RepoURI(strings.ToLower(string(file.Repository)))],
+			repo:         repoMap[api.RepoName(strings.ToLower(string(file.Repository)))],
 			commitID:     "", // zoekt only searches default branch
 		}
 	}
@@ -682,7 +682,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoURI]struct{})}
+	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
 
 	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.Repos)
 	if err != nil {
@@ -838,7 +838,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
 				// returned in the original result set, because indexed search has `limitHit` for the
 				// entire search rather than per repo as in non-indexed search.
-				common.partial[api.RepoURI(repo)] = struct{}{}
+				common.partial[api.RepoName(repo)] = struct{}{}
 			}
 		}
 		if limitHit {

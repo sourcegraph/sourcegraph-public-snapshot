@@ -37,7 +37,7 @@ func (s *Service) startParsers() error {
 	return nil
 }
 
-func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
+func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {

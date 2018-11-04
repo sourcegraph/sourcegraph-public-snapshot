@@ -52,8 +52,8 @@ func newReposList(repos []*schema.Repository) *reposList {
 	}
 }
 
-func (c *reposList) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
-	return api.RepoURI(c.cloneURLToURI[normalizeCloneURL(cloneURL)]), nil
+func (c *reposList) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
+	return api.RepoName(c.cloneURLToURI[normalizeCloneURL(cloneURL)]), nil
 }
 
 // normalizeCloneURL attempts to reduce the cloneURL to a normalized form using some simple

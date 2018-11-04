@@ -16,12 +16,12 @@ import (
 
 type MockRepos struct {
 	Get                  func(v0 context.Context, id api.RepoID) (*types.Repo, error)
-	GetByURI             func(v0 context.Context, uri api.RepoURI) (*types.Repo, error)
-	Add                  func(uri api.RepoURI) error
+	GetByURI             func(v0 context.Context, uri api.RepoName) (*types.Repo, error)
+	Add                  func(uri api.RepoName) error
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 	GetCommit            func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
 	ResolveRev           func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	ListDeps             func(v0 context.Context, v1 []api.RepoURI) ([]api.RepoURI, error)
+	ListDeps             func(v0 context.Context, v1 []api.RepoName) ([]api.RepoName, error)
 	GetInventory         func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo *types.Repo) (err error)
@@ -45,9 +45,9 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 	return
 }
 
-func (s *MockRepos) MockGetByURI(t *testing.T, wantURI api.RepoURI, repo api.RepoID) (called *bool) {
+func (s *MockRepos) MockGetByURI(t *testing.T, wantURI api.RepoName, repo api.RepoID) (called *bool) {
 	called = new(bool)
-	s.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+	s.GetByURI = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
 		*called = true
 		if uri != wantURI {
 			t.Errorf("got repo URI %q, want %q", uri, wantURI)
@@ -71,7 +71,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 	return
 }
 
-func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoURI) (called *bool) {
+func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *bool) {
 	called = new(bool)
 	s.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 		*called = true

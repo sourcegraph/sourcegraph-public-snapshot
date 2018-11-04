@@ -229,7 +229,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	// Eliminate duplicates.
 	type key struct {
-		repoURI api.RepoURI
+		repoURI api.RepoName
 		repoRev string
 		file    string
 		symbol  string

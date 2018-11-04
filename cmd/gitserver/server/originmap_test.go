@@ -70,7 +70,7 @@ func TestMap(t *testing.T) {
 
 		originMaps.originMap = actual
 		for _, mapping := range test.mappings {
-			if got := OriginMap(api.RepoURI(mapping[0])); got != mapping[1] {
+			if got := OriginMap(api.RepoName(mapping[0])); got != mapping[1] {
 				t.Errorf("on input %q, input URI %q, got %q, but expected %q", test.in, mapping[0], got, mapping[1])
 			}
 		}
@@ -82,7 +82,7 @@ func TestDefaults(t *testing.T) {
 	originMaps.mockForTesting = true
 	originMaps.mu.Unlock()
 	tests := []struct {
-		repo   api.RepoURI
+		repo   api.RepoName
 		origin string
 	}{
 		{"github.com/gorilla/mux", "https://github.com/gorilla/mux.git"},

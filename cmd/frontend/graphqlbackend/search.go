@@ -138,7 +138,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	for name, repoPaths := range settings.SearchRepositoryGroups {
 		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &types.Repo{URI: api.RepoURI(repoPath)}
+			repos[i] = &types.Repo{URI: api.RepoName(repoPath)}
 		}
 		groups[name] = repos
 	}
@@ -163,7 +163,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 	sampleReposMu.Lock()
 	defer sampleReposMu.Unlock()
 	if sampleRepos == nil {
-		sampleRepoPaths := []api.RepoURI{
+		sampleRepoPaths := []api.RepoName{
 			"github.com/sourcegraph/jsonrpc2",
 			"github.com/sourcegraph/javascript-typescript-langserver",
 			"github.com/gorilla/mux",
@@ -249,7 +249,7 @@ type patternRevspec struct {
 
 // given a URI, determine whether it matched any patterns for which we have
 // revspecs (or ref globs), and if so, return the matching/allowed ones.
-func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []search.RevisionSpecifier, clashing []search.RevisionSpecifier) {
+func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []search.RevisionSpecifier, clashing []search.RevisionSpecifier) {
 	revLists := make([][]search.RevisionSpecifier, 0, len(pats))
 	for _, rev := range pats {
 		if rev.includePattern.MatchString(string(repo)) {
@@ -318,7 +318,7 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		if _, err := regexp.Compile(string(repoPattern)); err != nil {
 			return nil, &badRequestError{err}
 		}
-		repoPattern = api.RepoURI(optimizeRepoPatternWithHeuristics(string(repoPattern)))
+		repoPattern = api.RepoName(optimizeRepoPatternWithHeuristics(string(repoPattern)))
 		includePatterns[i] = string(repoPattern)
 		if len(revs) > 0 {
 			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")

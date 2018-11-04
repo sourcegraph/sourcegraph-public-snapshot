@@ -50,14 +50,14 @@ const tempDirName = ".tmp"
 // logs to stderr
 var traceLogs bool
 
-var lastCheckAt = make(map[api.RepoURI]time.Time)
+var lastCheckAt = make(map[api.RepoName]time.Time)
 var lastCheckMutex sync.Mutex
 
 // debounce() provides some filtering to prevent spammy requests for the same
 // repository. If the last fetch of the repository was within the given
 // duration, returns false, otherwise returns true and updates the last
 // fetch stamp.
-func debounce(uri api.RepoURI, since time.Duration) bool {
+func debounce(uri api.RepoName, since time.Duration) bool {
 	lastCheckMutex.Lock()
 	defer lastCheckMutex.Unlock()
 	if t, ok := lastCheckAt[uri]; ok && time.Now().Before(t.Add(since)) {
@@ -133,7 +133,7 @@ type Server struct {
 
 	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
-	repoUpdateLocks   map[api.RepoURI]*locks
+	repoUpdateLocks   map[api.RepoName]*locks
 }
 
 type locks struct {
@@ -142,7 +142,7 @@ type locks struct {
 }
 
 type updateRepoRequest struct {
-	repo api.RepoURI
+	repo api.RepoName
 	url  string // remote URL
 }
 
@@ -200,7 +200,7 @@ func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
 	s.updateRepo = s.repoUpdateLoop()
-	s.repoUpdateLocks = make(map[api.RepoURI]*locks)
+	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
 	// can happen at once. Used to prevent throttle limits from a code
@@ -732,7 +732,7 @@ type cloneOptions struct {
 
 // cloneRepo issues a git clone command for the given repo. It is
 // non-blocking.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string, opts *cloneOptions) (string, error) {
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, opts *cloneOptions) (string, error) {
 	dir := filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))
 
 	// PERF: Before doing the network request to check if isCloneable, lets
@@ -877,7 +877,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string, op
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(repo api.RepoURI, url string, lock *RepositoryLock, pr io.Reader) {
+func readCloneProgress(repo api.RepoName, url string, lock *RepositoryLock, pr io.Reader) {
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
 	redactor := newURLRedactor(url)
@@ -968,7 +968,7 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout([]string{"ls-remote"}))
 	defer cancel()
 
-	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoURI(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return nil
 	}
 	if testRepoExists != nil {
@@ -1062,7 +1062,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 
 var headBranchPattern = regexp.MustCompile(`HEAD branch: (.+?)\n`)
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string) error {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	span.SetTag("url", url)
@@ -1239,7 +1239,7 @@ func computeRefHash(dir string) ([]byte, error) {
 	return hash, nil
 }
 
-func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) error {
+func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
@@ -1358,7 +1358,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) error {
 	return nil
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) (didUpdate bool) {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev, repoDir string) (didUpdate bool) {
 	if rev == "" || rev == "HEAD" {
 		return false
 	}

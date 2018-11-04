@@ -379,7 +379,7 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 		// syntax: "repo:github.com/gorilla/mux" or "repo:some/repo"
 		// TODO(slimsag:discussions): support list syntax here.
 		"repo": func(value string) {
-			repo, err := Repos.GetByURI(ctx, api.RepoURI(value))
+			repo, err := Repos.GetByURI(ctx, api.RepoName(value))
 			if err != nil {
 				tmp := api.RepoID(-1)
 				opts.TargetRepoID = &tmp
@@ -388,7 +388,7 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 			opts.TargetRepoID = &repo.ID
 		},
 		"-repo": func(value string) {
-			repo, err := Repos.GetByURI(ctx, api.RepoURI(value))
+			repo, err := Repos.GetByURI(ctx, api.RepoName(value))
 			if err != nil {
 				return
 			}

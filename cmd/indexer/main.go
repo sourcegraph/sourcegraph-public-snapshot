@@ -64,7 +64,7 @@ func main() {
 	}
 
 	http.HandleFunc("/refresh", func(resp http.ResponseWriter, req *http.Request) {
-		repo := api.RepoURI(req.URL.Query().Get("repo"))
+		repo := api.RepoName(req.URL.Query().Get("repo"))
 		rev := req.URL.Query().Get("rev")
 		if repo == "" {
 			http.Error(resp, "missing repo parameter", http.StatusBadRequest)

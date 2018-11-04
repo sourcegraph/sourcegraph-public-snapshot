@@ -267,7 +267,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) {
 	gitHubRepositorySyncWorker.start(ctx)
 }
 
-func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoURI {
+func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoName {
 	return reposource.GitHubRepoURI(conn.config.RepositoryPathPattern, conn.originalHostname, repo.NameWithOwner)
 }
 
@@ -282,7 +282,7 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI:      githubRepositoryToRepoPath(conn, repo),
+				RepoName:     githubRepositoryToRepoPath(conn, repo),
 				ExternalRepo: github.ExternalRepoSpec(repo, *conn.baseURL),
 				Description:  repo.Description,
 				Fork:         repo.IsFork,

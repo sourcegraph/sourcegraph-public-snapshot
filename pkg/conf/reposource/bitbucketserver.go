@@ -13,7 +13,7 @@ type BitbucketServer struct {
 
 var _ repoSource = BitbucketServer{}
 
-func (c BitbucketServer) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c BitbucketServer) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err
@@ -37,11 +37,11 @@ func (c BitbucketServer) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI
 	return BitbucketServerRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), proj, rp), nil
 }
 
-func BitbucketServerRepoURI(repositoryPathPattern, host, projectKey, repoSlug string) api.RepoURI {
+func BitbucketServerRepoURI(repositoryPathPattern, host, projectKey, repoSlug string) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{projectKey}/{repositorySlug}"
 	}
-	return api.RepoURI(strings.NewReplacer(
+	return api.RepoName(strings.NewReplacer(
 		"{host}", host,
 		"{projectKey}", projectKey,
 		"{repositorySlug}", repoSlug,

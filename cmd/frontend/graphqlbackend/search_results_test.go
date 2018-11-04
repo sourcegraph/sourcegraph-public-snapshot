@@ -427,7 +427,7 @@ func TestSearchRevspecs(t *testing.T) {
 			if test.err != nil {
 				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
 			}
-			matched, clashing := getRevsForMatchedRepo(api.RepoURI(test.repo), pats)
+			matched, clashing := getRevsForMatchedRepo(api.RepoName(test.repo), pats)
 			if !reflect.DeepEqual(matched, test.matched) {
 				t.Errorf("matched repo mismatch: actual: %#v, expected: %#v", matched, test.matched)
 			}
@@ -451,14 +451,14 @@ func TestCompareSearchResults(t *testing.T) {
 			a: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						URI: api.RepoURI("a"),
+						URI: api.RepoName("a"),
 					},
 				},
 			},
 			b: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						URI: api.RepoURI("b"),
+						URI: api.RepoName("b"),
 					},
 				},
 			},
@@ -469,7 +469,7 @@ func TestCompareSearchResults(t *testing.T) {
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoURI("a"),
+						URI: api.RepoName("a"),
 					},
 					JPath: "a",
 				},
@@ -477,7 +477,7 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						URI: api.RepoURI("a"),
+						URI: api.RepoName("a"),
 					},
 				},
 			},
@@ -488,7 +488,7 @@ func TestCompareSearchResults(t *testing.T) {
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoURI("a"),
+						URI: api.RepoName("a"),
 					},
 					JPath: "a",
 				},
@@ -496,7 +496,7 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoURI("a"),
+						URI: api.RepoName("a"),
 					},
 					JPath: "b",
 				},
@@ -508,7 +508,7 @@ func TestCompareSearchResults(t *testing.T) {
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoURI("a"),
+						URI: api.RepoName("a"),
 					},
 					JPath: "a",
 				},
@@ -516,7 +516,7 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						URI: api.RepoURI("b"),
+						URI: api.RepoName("b"),
 					},
 					JPath: "a",
 				},

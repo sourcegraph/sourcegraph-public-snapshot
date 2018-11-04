@@ -145,7 +145,7 @@ func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
 	awsCodeCommitRepositorySyncWorker.start(ctx)
 }
 
-func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awscodecommit.Repository) api.RepoURI {
+func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awscodecommit.Repository) api.RepoName {
 	return reposource.AWSRepoURI(conn.config.RepositoryPathPattern, repo.Name)
 }
 
@@ -165,7 +165,7 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 		}
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI:      awsCodeCommitRepositoryToRepoPath(conn, repo),
+				RepoName:     awsCodeCommitRepositoryToRepoPath(conn, repo),
 				ExternalRepo: awscodecommit.ExternalRepoSpec(repo, awscodecommit.ServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)),
 				Description:  repo.Description,
 				Enabled:      conn.config.InitialRepositoryEnablement,

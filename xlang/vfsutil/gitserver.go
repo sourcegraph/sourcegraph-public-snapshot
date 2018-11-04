@@ -15,7 +15,7 @@ import (
 
 // NewGitServer returns a VFS to repo at commit. It is backed by an archive
 // fetched from gitserver.
-func NewGitServer(repo api.RepoURI, commit api.CommitID) *ArchiveFS {
+func NewGitServer(repo api.RepoName, commit api.CommitID) *ArchiveFS {
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
 		span, ctx := opentracing.StartSpanFromContext(ctx, "Archive Fetch")
 		ext.Component.Set(span, "gitserver")
@@ -59,7 +59,7 @@ func NewGitServer(repo api.RepoURI, commit api.CommitID) *ArchiveFS {
 }
 
 // gitserverFetch returns a reader of a zip archive of repo at commit.
-func gitserverFetch(ctx context.Context, repo api.RepoURI, commit api.CommitID) (r io.ReadCloser, err error) {
+func gitserverFetch(ctx context.Context, repo api.RepoName, commit api.CommitID) (r io.ReadCloser, err error) {
 	// Compression level of 0 (no compression) seems to perform the
 	// best overall on fast network links, but this has not been tuned
 	// thoroughly.

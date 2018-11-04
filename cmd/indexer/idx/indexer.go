@@ -9,7 +9,7 @@ import (
 
 // index updates the cross-repo code intelligence indexes for the given repository at the given revision and enqueues
 // further repos to index if applicable.
-func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err error) {
+func (w *Worker) index(repoName api.RepoName, rev string, isPrimary bool) (err error) {
 	repo, commit, err := resolveRevision(w.Ctx, repoName, rev)
 	if err != nil {
 		// Avoid infinite loop for always cloning test.

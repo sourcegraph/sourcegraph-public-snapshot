@@ -4,7 +4,7 @@ import "github.com/sourcegraph/sourcegraph/pkg/api"
 
 // RepoNotExistError is an error that reports a repository doesn't exist.
 type RepoNotExistError struct {
-	Repo api.RepoURI
+	Repo api.RepoName
 
 	// CloneInProgress reports whether the repository is in process of being cloned.
 	CloneInProgress bool

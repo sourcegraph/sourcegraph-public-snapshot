@@ -68,7 +68,7 @@ type Common struct {
 
 // repoShortName trims the first path element of the given repo uri if it has
 // at least two path components.
-func repoShortName(uri api.RepoURI) string {
+func repoShortName(uri api.RepoName) string {
 	split := strings.Split(string(uri), "/")
 	if len(split) < 2 {
 		return string(uri)

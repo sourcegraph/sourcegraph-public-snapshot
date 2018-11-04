@@ -13,7 +13,7 @@ type Gitolite struct {
 
 var _ repoSource = Gitolite{}
 
-func (c Gitolite) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c Gitolite) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoName, err error) {
 	parsedCloneURL, err := parseCloneURL(cloneURL)
 	if err != nil {
 		return "", err
@@ -28,8 +28,8 @@ func (c Gitolite) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err e
 	return GitoliteRepoURI(c.Prefix, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
 }
 
-func GitoliteRepoURI(prefix, path string) api.RepoURI {
-	return api.RepoURI(strings.NewReplacer(
+func GitoliteRepoURI(prefix, path string) api.RepoName {
+	return api.RepoName(strings.NewReplacer(
 		"{prefix}", prefix,
 		"{path}", path,
 	).Replace("{prefix}{path}"))

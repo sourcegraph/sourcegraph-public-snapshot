@@ -23,11 +23,11 @@ var phabricatorRepos = atomicvalue.New()
 func init() {
 	conf.Watch(func() {
 		phabricatorRepos.Set(func() interface{} {
-			repos := map[api.RepoURI]*types.PhabricatorRepo{}
+			repos := map[api.RepoName]*types.PhabricatorRepo{}
 			for _, config := range conf.Get().Phabricator {
 				for _, repo := range config.Repos {
-					repos[api.RepoURI(repo.Path)] = &types.PhabricatorRepo{
-						URI:      api.RepoURI(repo.Path),
+					repos[api.RepoName(repo.Path)] = &types.PhabricatorRepo{
+						URI:      api.RepoName(repo.Path),
 						Callsign: repo.Callsign,
 						URL:      config.Url,
 					}
@@ -44,7 +44,7 @@ func (err errPhabricatorRepoNotFound) Error() string {
 
 func (err errPhabricatorRepoNotFound) NotFound() bool { return true }
 
-func (*phabricator) Create(ctx context.Context, callsign string, uri api.RepoURI, phabURL string) (*types.PhabricatorRepo, error) {
+func (*phabricator) Create(ctx context.Context, callsign string, uri api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		URI:      uri,
@@ -60,7 +60,7 @@ func (*phabricator) Create(ctx context.Context, callsign string, uri api.RepoURI
 	return r, nil
 }
 
-func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, uri api.RepoURI, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, uri api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		URI:      uri,
@@ -79,7 +79,7 @@ func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, uri a
 	return r, nil
 }
 
-func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, uri api.RepoURI, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, uri api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	repo, err := p.GetByURI(ctx, uri)
 	if err != nil {
 		if _, ok := err.(errPhabricatorRepoNotFound); !ok {
@@ -123,11 +123,11 @@ func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...int
 	return rows[0], nil
 }
 
-func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoURI) (*types.PhabricatorRepo, error) {
+func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoName) (*types.PhabricatorRepo, error) {
 	if Mocks.Phabricator.GetByURI != nil {
 		return Mocks.Phabricator.GetByURI(uri)
 	}
-	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoURI]*types.PhabricatorRepo)
+	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoName]*types.PhabricatorRepo)
 	if r := phabricatorRepos[uri]; r != nil {
 		return r, nil
 	}
@@ -135,5 +135,5 @@ func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoURI) (*types.Pha
 }
 
 type MockPhabricator struct {
-	GetByURI func(repo api.RepoURI) (*types.PhabricatorRepo, error)
+	GetByURI func(repo api.RepoName) (*types.PhabricatorRepo, error)
 }

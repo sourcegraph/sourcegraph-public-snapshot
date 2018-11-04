@@ -8,7 +8,7 @@ import (
 
 // RevisionNotFoundError is an error that reports a revision doesn't exist.
 type RevisionNotFoundError struct {
-	Repo api.RepoURI
+	Repo api.RepoName
 	Spec string
 }
 

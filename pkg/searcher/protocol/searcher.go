@@ -9,7 +9,7 @@ import (
 // Request represents a request to searcher
 type Request struct {
 	// Repo is the URI of the repository to search. eg "github.com/gorilla/mux"
-	Repo api.RepoURI
+	Repo api.RepoName
 
 	// URL specifies the repository's Git remote URL (for gitserver). It is optional. See
 	// (gitserver.ExecRequest).URL for documentation on what it is used for.

@@ -15,7 +15,7 @@ import (
 )
 
 type qitem struct {
-	repo api.RepoURI
+	repo api.RepoName
 	rev  string
 }
 
@@ -30,7 +30,7 @@ func NewQueue(lengthGauge prometheus.Gauge) workQueue {
 }
 
 // Enqueue adds an item to the queue and immediately returns.
-func (w *workQueue) Enqueue(repo api.RepoURI, rev string) {
+func (w *workQueue) Enqueue(repo api.RepoName, rev string) {
 	w.enqueue <- qitem{repo: repo, rev: rev}
 }
 
@@ -94,7 +94,7 @@ func SecondaryQueue(ctx context.Context) <-chan qitem {
 			}
 
 			for _, rp := range resp.Data.Repositories.Nodes {
-				c <- qitem{repo: api.RepoURI(rp.Name)}
+				c <- qitem{repo: api.RepoName(rp.Name)}
 			}
 
 			time.Sleep(30 * time.Second)

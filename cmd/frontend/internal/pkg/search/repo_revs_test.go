@@ -9,7 +9,7 @@ import (
 
 func TestParseRepositoryRevisions(t *testing.T) {
 	tests := map[string]struct {
-		repo api.RepoURI
+		repo api.RepoName
 		revs []RevisionSpecifier
 	}{
 		"repo":           {repo: "repo", revs: []RevisionSpecifier{}},

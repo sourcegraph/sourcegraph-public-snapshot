@@ -250,16 +250,16 @@ func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message)
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
-func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
+func (c *internalClient) DefsRefreshIndex(ctx context.Context, repo RepoName, commitID CommitID) error {
 	return c.postInternal(ctx, "defs/refresh-index", &DefsRefreshIndexRequest{
-		RepoURI:  uri,
+		RepoName: repo,
 		CommitID: commitID,
 	}, nil)
 }
 
-func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
+func (c *internalClient) PkgsRefreshIndex(ctx context.Context, repo RepoName, commitID CommitID) error {
 	return c.postInternal(ctx, "pkgs/refresh-index", &PkgsRefreshIndexRequest{
-		RepoURI:  uri,
+		RepoName: repo,
 		CommitID: commitID,
 	}, nil)
 }
@@ -274,8 +274,8 @@ func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCrea
 }
 
 // ReposListEnabled returns a list of all enabled repository names.
-func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoURI, error) {
-	var names []RepoURI
+func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, error) {
+	var names []RepoName
 	err := c.postInternal(ctx, "repos/list-enabled", nil, &names)
 	return names, err
 }
@@ -286,9 +286,9 @@ func (c *internalClient) ConfigurationRawJSON(ctx context.Context) (string, erro
 	return rawJSON, err
 }
 
-func (c *internalClient) ReposUpdateMetadata(ctx context.Context, uri RepoURI, description string, fork bool, archived bool) error {
+func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName, description string, fork bool, archived bool) error {
 	return c.postInternal(ctx, "repos/update-metadata", ReposUpdateMetadataRequest{
-		RepoURI:     uri,
+		RepoName:    repo,
 		Description: description,
 		Fork:        fork,
 		Archived:    archived,
@@ -303,9 +303,9 @@ func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, comm
 	}, nil)
 }
 
-func (c *internalClient) ReposGetByURI(ctx context.Context, uri RepoURI) (*Repo, error) {
+func (c *internalClient) ReposGetByURI(ctx context.Context, repoName RepoName) (*Repo, error) {
 	var repo Repo
-	err := c.postInternal(ctx, "repos/"+string(uri), nil, &repo)
+	err := c.postInternal(ctx, "repos/"+string(repoName), nil, &repo)
 	if err != nil {
 		return nil, err
 	}
@@ -330,9 +330,9 @@ func (c *internalClient) ReposGetInventory(ctx context.Context, repo RepoID, com
 	return &inv, nil
 }
 
-func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri RepoURI, callsign, url string) error {
+func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoName, callsign, url string) error {
 	return c.postInternal(ctx, "phabricator/repo-create", PhabricatorRepoCreateRequest{
-		RepoURI:  uri,
+		RepoName: repo,
 		Callsign: callsign,
 		URL:      url,
 	}, nil)

@@ -130,7 +130,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		}
 	case args.Name != nil:
 		// GitRepo will use just the URI to look up the repository from repo-updater.
-		repo = &types.Repo{URI: api.RepoURI(*args.Name)}
+		repo = &types.Repo{URI: api.RepoName(*args.Name)}
 	}
 
 	gitserverRepo, err := backend.GitRepo(ctx, repo)

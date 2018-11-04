@@ -49,7 +49,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 	return gitserver.Repo{Name: result.Repo.URI, URL: result.Repo.VCS.URL}, nil
 }
 
-func quickGitserverRepo(repo api.RepoURI) *gitserver.Repo {
+func quickGitserverRepo(repo api.RepoName) *gitserver.Repo {
 	// If it is possible to 100% correctly determine it statically, use a fast path. This is
 	// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories
 	// (especially on Sourcegraph.com), which reduces rate limit pressure significantly.

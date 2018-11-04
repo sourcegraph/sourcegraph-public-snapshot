@@ -196,7 +196,7 @@ func TestRouter(t *testing.T) {
 
 func TestRouter_RootPath(t *testing.T) {
 	tests := []struct {
-		repo   api.RepoURI
+		repo   api.RepoName
 		exists bool
 	}{
 		{
@@ -219,7 +219,7 @@ func TestRouter_RootPath(t *testing.T) {
 			}
 
 			// Mock GetByURI to return the proper repo not found error type.
-			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
 				if uri != tst.repo {
 					panic("unexpected")
 				}
