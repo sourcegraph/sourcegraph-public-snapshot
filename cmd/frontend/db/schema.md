@@ -260,14 +260,14 @@ Referenced by:
 ------------+--------------------------+----------------------------------------------------------------
  id         | integer                  | not null default nextval('phabricator_repos_id_seq'::regclass)
  callsign   | citext                   | not null
- uri        | citext                   | not null
+ repo_name  | citext                   | not null
  created_at | timestamp with time zone | not null default now()
  updated_at | timestamp with time zone | not null default now()
  deleted_at | timestamp with time zone | 
  url        | text                     | not null default ''::text
 Indexes:
     "phabricator_repos_pkey" PRIMARY KEY, btree (id)
-    "phabricator_repos_uri_key" UNIQUE CONSTRAINT, btree (uri)
+    "phabricator_repos_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
 
 ```
 
@@ -379,7 +379,7 @@ Referenced by:
          Column          |           Type           |                     Modifiers                     
 -------------------------+--------------------------+---------------------------------------------------
  id                      | integer                  | not null default nextval('repo_id_seq'::regclass)
- uri                     | citext                   | not null
+ name                    | citext                   | not null
  description             | text                     | 
  language                | text                     | 
  fork                    | boolean                  | 
@@ -393,17 +393,20 @@ Referenced by:
  external_service_id     | text                     | 
  enabled                 | boolean                  | not null default true
  archived                | boolean                  | not null default false
+ uri                     | citext                   | not null
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
-    "repo_uri_unique" UNIQUE, btree (uri)
-    "repo_uri_trgm" gin (lower(uri::text) gin_trgm_ops)
+    "repo_name_unique" UNIQUE, btree (name)
+    "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
 Check constraints:
     "check_external" CHECK (external_id IS NULL AND external_service_type IS NULL AND external_service_id IS NULL OR external_id IS NOT NULL AND external_service_type IS NOT NULL AND external_service_id IS NOT NULL)
-    "check_uri_nonempty" CHECK (uri <> ''::citext)
+    "check_name_nonempty" CHECK (name <> ''::citext)
 Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
     TABLE "global_dep" CONSTRAINT "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
     TABLE "pkgs" CONSTRAINT "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
+Triggers:
+    trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW EXECUTE PROCEDURE set_repo_name()
 
 ```
 
