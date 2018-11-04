@@ -1,4 +1,4 @@
-import { combineLatest, from, Observable, of, throwError } from 'rxjs'
+import { from, Observable, of, throwError } from 'rxjs'
 import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { Context } from './context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
@@ -67,10 +67,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
                     return data.extensionRegistry.extension
                 })
             )
-            .pipe(
-                switchMap(registryExtension => this.withConfiguration(of([registryExtension]))),
-                map(configuredExtensions => configuredExtensions[0])
-            )
+            .pipe(map(registryExtension => this.withConfiguration([registryExtension])[0]))
     }
 
     public withRegistryMetadata(
@@ -148,25 +145,19 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
         )
     }
 
-    public withConfiguration(
-        registryExtensions: Observable<GQL.IRegistryExtension[]>
-    ): Observable<ConfiguredExtension[]> {
-        return combineLatest(registryExtensions, this.context.configurationCascade).pipe(
-            map(([registryExtensions, cascade]) => {
-                const configuredExtensions: ConfiguredExtension[] = []
-                for (const registryExtension of registryExtensions) {
-                    configuredExtensions.push({
-                        id: registryExtension.extensionID,
-                        manifest: registryExtension.manifest
-                            ? parseJSONCOrError<ExtensionManifest>(registryExtension.manifest.raw)
-                            : null,
-                        rawManifest:
-                            (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,
-                        registryExtension,
-                    })
-                }
-                return configuredExtensions
+    public withConfiguration(registryExtensions: GQL.IRegistryExtension[]): ConfiguredExtension[] {
+        const configuredExtensions: ConfiguredExtension[] = []
+        for (const registryExtension of registryExtensions) {
+            configuredExtensions.push({
+                id: registryExtension.extensionID,
+                manifest: registryExtension.manifest
+                    ? parseJSONCOrError<ExtensionManifest>(registryExtension.manifest.raw)
+                    : null,
+                rawManifest:
+                    (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,
+                registryExtension,
             })
-        )
+        }
+        return configuredExtensions
     }
 }

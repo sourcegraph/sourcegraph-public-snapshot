@@ -2,13 +2,13 @@ import { isArray } from 'lodash-es'
 import { from, Subscription, throwError, Unsubscribable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
 import { Controller } from 'sourcegraph/module/client/controller'
+import { Extension } from 'sourcegraph/module/client/extension'
 import {
     ActionContributionClientCommandUpdateConfiguration,
     ConfigurationUpdateParams,
 } from 'sourcegraph/module/protocol'
 import { Context } from '../context'
 import { isErrorLike } from '../errors'
-import { ConfiguredExtension } from '../extensions/extension'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
 
 /**
@@ -18,7 +18,7 @@ import { ConfigurationCascade, ConfigurationSubject, Settings } from '../setting
  */
 export function registerBuiltinClientCommands<S extends ConfigurationSubject, C extends Settings>(
     context: Pick<Context<S, C>, 'configurationCascade' | 'updateExtensionSettings' | 'queryGraphQL' | 'queryLSP'>,
-    controller: Controller<ConfiguredExtension, ConfigurationCascade<S, C>>
+    controller: Controller<Extension, ConfigurationCascade<S, C>>
 ): Unsubscribable {
     const subscription = new Subscription()
 

@@ -156,21 +156,6 @@ export function gqlToCascade<S extends ConfigurationSubject, C extends Settings>
     return cascade
 }
 
-/** Converts a ConfigurationCascadeOrError to a ConfigurationCascade, returning the first error it finds. */
-export function extractErrors(
-    c: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
-): ConfigurationCascade | ErrorLike {
-    if (c.subjects === null || isErrorLike(c.subjects)) {
-        return new Error('Subjects was ' + c.subjects)
-    } else if (c.merged === null || isErrorLike(c.merged)) {
-        return new Error('Merged was ' + c.merged)
-    } else if (c.subjects.find(isErrorLike)) {
-        return new Error('One of the subjects was ' + c.subjects.find(isErrorLike))
-    } else {
-        return c as ConfigurationCascade
-    }
-}
-
 /**
  * Deeply merges the settings without modifying any of the input values. The array is ordered from lowest to
  * highest precedence in the merge.
