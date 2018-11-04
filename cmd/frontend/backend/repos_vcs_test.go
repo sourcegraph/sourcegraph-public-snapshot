@@ -26,7 +26,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 			t.Errorf("got %q, want %q", args.Repo, wantRepo)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{URI: wantRepo},
+			Repo: &protocol.RepoInfo{Name: wantRepo},
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
@@ -66,7 +66,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 			t.Errorf("got %q, want %q", args.Repo, wantRepo)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{URI: wantRepo},
+			Repo: &protocol.RepoInfo{Name: wantRepo},
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
@@ -105,7 +105,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 			t.Errorf("got %q, want %q", args.Repo, wantRepo)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{URI: wantRepo},
+			Repo: &protocol.RepoInfo{Name: wantRepo},
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
@@ -144,7 +144,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 			t.Errorf("got %q, want %q", args.Repo, wantRepo)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{URI: wantRepo},
+			Repo: &protocol.RepoInfo{Name: wantRepo},
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()

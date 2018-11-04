@@ -11,7 +11,7 @@ import (
 //
 // Exactly one of Repo and ExternalRepo should be set.
 type RepoLookupArgs struct {
-	// Repo is the repository URI to look up. If the ExternalRepo information is available to the
+	// Repo is the repository name to look up. If the ExternalRepo information is available to the
 	// caller, it is preferred to use that (because it is robust to renames).
 	Repo api.RepoName `json:",omitempty"`
 
@@ -52,9 +52,9 @@ func (r *RepoLookupResult) String() string {
 
 // RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).
 type RepoInfo struct {
-	// URI is the canonical URI of the repository. Its case (uppercase/lowercase) may differ from the URI arg used
-	// in the lookup. If the repository was renamed on the external service, this URI will be the new name.
-	URI api.RepoName
+	// Name the canonical name of the repository. Its case (uppercase/lowercase) may differ from the name arg used
+	// in the lookup. If the repository was renamed on the external service, this name is the new name.
+	Name api.RepoName
 
 	Description string // repository description (from the external service)
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
@@ -73,7 +73,7 @@ type RepoInfo struct {
 }
 
 func (r *RepoInfo) String() string {
-	return fmt.Sprintf("RepoInfo{%s}", r.URI)
+	return fmt.Sprintf("RepoInfo{%s}", r.Name)
 }
 
 // VCSInfo describes how to access an external repository's Git data (to clone or update it).

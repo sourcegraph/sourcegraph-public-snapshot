@@ -52,7 +52,7 @@ func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (r
 	for _, c := range conf.Get().Gitolite {
 		if strings.HasPrefix(string(args.Repo), c.Prefix) {
 			return &protocol.RepoInfo{
-				URI:          args.Repo,
+				Name:         args.Repo,
 				ExternalRepo: args.ExternalRepo,
 			}, true, nil
 		}

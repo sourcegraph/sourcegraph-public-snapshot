@@ -121,7 +121,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 
 	ghrepoToRepoInfo := func(ghrepo *github.Repository, conn *githubConnection) *protocol.RepoInfo {
 		return &protocol.RepoInfo{
-			URI:          githubRepositoryToRepoPath(conn, ghrepo),
+			Name:         githubRepositoryToRepoPath(conn, ghrepo),
 			ExternalRepo: github.ExternalRepoSpec(ghrepo, *conn.baseURL),
 			Description:  ghrepo.Description,
 			Fork:         ghrepo.IsFork,
@@ -185,7 +185,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 			}
 
 			return &protocol.RepoInfo{
-				URI:          args.Repo,
+				Name:         args.Repo,
 				ExternalRepo: nil,
 				Description:  "",
 				Fork:         false,

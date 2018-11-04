@@ -76,7 +76,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 					}
 					webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", conn.awsRegion.ID(), ccrepo.Name)
 					repo = &protocol.RepoInfo{
-						URI:          awsCodeCommitRepositoryToRepoPath(conn, ccrepo),
+						Name:         awsCodeCommitRepositoryToRepoPath(conn, ccrepo),
 						ExternalRepo: awscodecommit.ExternalRepoSpec(ccrepo, serviceID),
 						Description:  ccrepo.Description,
 						VCS:          protocol.VCSInfo{URL: remoteURL},

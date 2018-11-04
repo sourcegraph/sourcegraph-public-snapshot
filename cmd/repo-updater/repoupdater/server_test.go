@@ -97,7 +97,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
 				},
-				URI:         "github.com/c/d",
+				Name:        "github.com/c/d",
 				Description: "b",
 				Fork:        true,
 			},
@@ -178,7 +178,7 @@ func TestRepoLookup(t *testing.T) {
 						ServiceType: github.ServiceType,
 						ServiceID:   "https://github.com/",
 					},
-					URI:         "github.com/c/d",
+					Name:        "github.com/c/d",
 					Description: "b",
 					Fork:        true,
 				},
@@ -210,7 +210,7 @@ func TestRepoLookup(t *testing.T) {
 			select {
 			case got := <-metadataUpdate:
 				want2 := &api.ReposUpdateMetadataRequest{
-					RepoName:    want.Repo.URI,
+					RepoName:    want.Repo.Name,
 					Description: want.Repo.Description,
 					Fork:        want.Repo.Fork,
 					Archived:    want.Repo.Archived,

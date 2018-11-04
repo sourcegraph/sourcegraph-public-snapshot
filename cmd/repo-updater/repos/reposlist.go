@@ -844,7 +844,7 @@ func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLo
 	for _, repo := range conf.Get().ReposList {
 		if api.RepoName(strings.ToLower(string(repo.Path))) == repoNameLower {
 			repoInfo := &protocol.RepoInfo{
-				URI:          api.RepoName(repo.Path),
+				Name:         api.RepoName(repo.Path),
 				ExternalRepo: nil,
 				VCS:          protocol.VCSInfo{URL: repo.Url},
 			}
