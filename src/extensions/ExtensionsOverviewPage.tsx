@@ -1,4 +1,3 @@
-import { ExtensionsList } from '@sourcegraph/extensions-client-common/lib/extensions/manager/ExtensionsList'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -6,6 +5,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionsEmptyState } from './ExtensionsEmptyState'
+import { ExtensionsList } from './ExtensionsList'
 
 interface Props extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {}
 
