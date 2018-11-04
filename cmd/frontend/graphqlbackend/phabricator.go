@@ -13,12 +13,12 @@ func (p *phabricatorRepoResolver) Callsign() string {
 }
 
 func (p *phabricatorRepoResolver) Name() string {
-	return string(p.PhabricatorRepo.URI)
+	return string(p.PhabricatorRepo.Name)
 }
 
 // TODO(chris): Remove URI in favor of Name.
 func (p *phabricatorRepoResolver) URI() string {
-	return string(p.PhabricatorRepo.URI)
+	return string(p.PhabricatorRepo.Name)
 }
 
 func (p *phabricatorRepoResolver) URL() string {
