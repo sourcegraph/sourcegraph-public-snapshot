@@ -34,10 +34,10 @@ func (c BitbucketServer) cloneURLToRepoName(cloneURL string) (repoURI api.RepoNa
 	}
 	proj, rp := projAndRepo[:idx], projAndRepo[idx+1:]
 
-	return BitbucketServerRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), proj, rp), nil
+	return BitbucketServerRepoName(c.RepositoryPathPattern, baseURL.Hostname(), proj, rp), nil
 }
 
-func BitbucketServerRepoURI(repositoryPathPattern, host, projectKey, repoSlug string) api.RepoName {
+func BitbucketServerRepoName(repositoryPathPattern, host, projectKey, repoSlug string) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{projectKey}/{repositorySlug}"
 	}

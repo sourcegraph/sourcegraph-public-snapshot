@@ -85,7 +85,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	if repo.Project != nil {
 		project = repo.Project.Key
 	}
-	repoURI := reposource.BitbucketServerRepoURI(config.RepositoryPathPattern, host.Hostname(), project, repo.Slug)
+	repoURI := reposource.BitbucketServerRepoName(config.RepositoryPathPattern, host.Hostname(), project, repo.Slug)
 
 	// Clone URL
 	var cloneURL string

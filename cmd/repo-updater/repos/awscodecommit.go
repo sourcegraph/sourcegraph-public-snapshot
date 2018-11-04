@@ -146,7 +146,7 @@ func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
 }
 
 func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awscodecommit.Repository) api.RepoName {
-	return reposource.AWSRepoURI(conn.config.RepositoryPathPattern, repo.Name)
+	return reposource.AWSRepoName(conn.config.RepositoryPathPattern, repo.Name)
 }
 
 // updateAWSCodeCommitRepositories ensures that all provided repositories have been added and updated on Sourcegraph.

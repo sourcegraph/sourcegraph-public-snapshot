@@ -25,10 +25,10 @@ func (c Gitolite) cloneURLToRepoName(cloneURL string) (repoURI api.RepoName, err
 	if parsedHostURL.Hostname() != parsedCloneURL.Hostname() {
 		return "", nil
 	}
-	return GitoliteRepoURI(c.Prefix, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
+	return GitoliteRepoName(c.Prefix, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
 }
 
-func GitoliteRepoURI(prefix, path string) api.RepoName {
+func GitoliteRepoName(prefix, path string) api.RepoName {
 	return api.RepoName(strings.NewReplacer(
 		"{prefix}", prefix,
 		"{path}", path,

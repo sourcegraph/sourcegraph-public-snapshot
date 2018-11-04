@@ -186,7 +186,7 @@ func RunGitLabRepositorySyncWorker(ctx context.Context) {
 }
 
 func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.RepoName {
-	return reposource.GitLabRepoURI(conn.config.RepositoryPathPattern, conn.baseURL.Hostname(), proj.PathWithNamespace)
+	return reposource.GitLabRepoName(conn.config.RepositoryPathPattern, conn.baseURL.Hostname(), proj.PathWithNamespace)
 }
 
 // updateGitLabProjects ensures that all provided repositories exist in the repository table.
