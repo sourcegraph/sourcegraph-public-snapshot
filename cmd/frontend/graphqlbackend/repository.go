@@ -210,7 +210,7 @@ func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 
 	_, err := db.Phabricator.CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
 	if err != nil {
-		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI, "url", args.URL)
+		log15.Error("adding phabricator repo", "callsign", args.Callsign, "name", args.URI, "url", args.URL)
 	}
 	return nil, err
 }

@@ -52,7 +52,7 @@ func (*phabricator) Create(ctx context.Context, callsign string, name api.RepoNa
 	}
 	err := dbconn.Global.QueryRowContext(
 		ctx,
-		"INSERT INTO phabricator_repos(callsign, uri, url) VALUES($1, $2, $3) RETURNING id",
+		"INSERT INTO phabricator_repos(callsign, repo_name, url) VALUES($1, $2, $3) RETURNING id",
 		r.Callsign, r.Name, r.URL).Scan(&r.ID)
 	if err != nil {
 		return nil, err
@@ -60,38 +60,38 @@ func (*phabricator) Create(ctx context.Context, callsign string, name api.RepoNa
 	return r, nil
 }
 
-func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, uri api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
-		Name:     uri,
+		Name:     name,
 		URL:      phabURL,
 	}
 	err := dbconn.Global.QueryRowContext(
 		ctx,
-		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE uri=$3 RETURNING id",
+		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE repo_name=$3 RETURNING id",
 		r.Callsign, r.URL, r.Name).Scan(&r.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return p.Create(ctx, callsign, uri, phabURL)
+			return p.Create(ctx, callsign, name, phabURL)
 		}
 		return nil, err
 	}
 	return r, nil
 }
 
-func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, uri api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
-	repo, err := p.GetByName(ctx, uri)
+func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+	repo, err := p.GetByName(ctx, name)
 	if err != nil {
 		if _, ok := err.(errPhabricatorRepoNotFound); !ok {
 			return nil, err
 		}
-		return p.Create(ctx, callsign, uri, phabURL)
+		return p.Create(ctx, callsign, name, phabURL)
 	}
 	return repo, nil
 }
 
 func (*phabricator) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.PhabricatorRepo, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, callsign, uri, url FROM phabricator_repos "+query, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -123,15 +123,15 @@ func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...int
 	return rows[0], nil
 }
 
-func (p *phabricator) GetByName(ctx context.Context, uri api.RepoName) (*types.PhabricatorRepo, error) {
+func (p *phabricator) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
 	if Mocks.Phabricator.GetByName != nil {
-		return Mocks.Phabricator.GetByName(uri)
+		return Mocks.Phabricator.GetByName(name)
 	}
 	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoName]*types.PhabricatorRepo)
-	if r := phabricatorRepos[uri]; r != nil {
+	if r := phabricatorRepos[name]; r != nil {
 		return r, nil
 	}
-	return p.getOneBySQL(ctx, "WHERE uri=$1", uri)
+	return p.getOneBySQL(ctx, "WHERE repo_name=$1", name)
 }
 
 type MockPhabricator struct {
