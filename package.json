@@ -21,7 +21,7 @@
     "semantic-release": "semantic-release",
     "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
-    "schema:graphql": "cp ../sourcegraph/web/src/backend/graphqlschema.ts src/schema/graphqlschema.ts",
+    "schema:graphql": "cp ../sourcegraph/src/backend/graphqlschema.ts src/schema/graphqlschema.ts",
     "clean": "del-cli 'lib/**/*'",
     "typecheck": "tsc -p tsconfig.json",
     "build": "yarn run clean && yarn run build:assets && yarn run build:typescript",
