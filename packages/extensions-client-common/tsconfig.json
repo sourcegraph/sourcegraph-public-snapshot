@@ -1,0 +1,25 @@
+{
+  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "declaration": true,
+    "noEmit": true,
+    "lib": ["dom", "es2018"],
+    "jsx": "react",
+    "sourceRoot": "src",
+    "noErrorTruncation": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "plugins": [
+      {
+        "name": "tslint-language-service"
+      }
+    ]
+  },
+  "exclude": ["lib/**"]
+}

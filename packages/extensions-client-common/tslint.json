@@ -1,0 +1,9 @@
+{
+  "extends": "@sourcegraph/tslint-config",
+  "rules": {
+    "rxjs-no-wholesale": false,
+    "rxjs-no-deep-operators": {
+      "severity": "error"
+    }
+  }
+}

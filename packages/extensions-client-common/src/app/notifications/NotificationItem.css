@@ -1,0 +1,30 @@
+.sourcegraph-notification-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.sourcegraph-notification-item__content {
+    flex: 1;
+}
+
+.sourcegraph-notification-item__content > :last-child {
+    margin-bottom: 0;
+}
+
+.sourcegraph-notification-item__close {
+    cursor: pointer;
+    flex: 0;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
+    background-color: transparent;
+    border-width: 0;
+    outline: 0 !important;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.sourcegraph-notification-item__close:hover,
+.sourcegraph-notification-item__close:focus {
+    opacity: 1;
+}
