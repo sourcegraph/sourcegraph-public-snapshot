@@ -13,14 +13,9 @@ import {
     gqlToCascade,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isEqual } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
-import InfoIcon from 'mdi-react/InformationIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { concat, Observable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take, withLatestFrom } from 'rxjs/operators'
 import { InitData } from 'sourcegraph/module/extension/extensionHost'
@@ -35,7 +30,7 @@ import { Tooltip } from '../components/tooltip/Tooltip'
 import { editConfiguration } from '../configuration/backend'
 import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
-import { isErrorLike } from '../util/errors'
+import { ErrorLike, isErrorLike } from '../util/errors'
 
 export interface ExtensionsControllerProps extends GenericExtensionsControllerProps<ConfigurationSubject, Settings> {}
 
@@ -56,16 +51,11 @@ export function createExtensionsContextController(): ExtensionsContextController
                     ${request}
                 `,
                 variables
-            ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry'>>>,
+            ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry' | 'repository'>>>,
         queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
-            Loader: LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Warning: WarningIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Info: InfoIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             CaretDown: MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             Menu: MenuIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Add: AddIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Settings: SettingsIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
         },
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
     })
@@ -177,4 +167,9 @@ export function createMessageTransports(
             })
     }
     throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
+}
+
+/** Reports whether the given extension is mentioned (enabled or disabled) in the settings. */
+export function isExtensionAdded(settings: Settings | ErrorLike | null, extensionID: string): boolean {
+    return !!settings && !isErrorLike(settings) && !!settings.extensions && extensionID in settings.extensions
 }

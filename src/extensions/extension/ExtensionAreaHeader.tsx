@@ -1,10 +1,11 @@
-import { isExtensionAdded, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { ExtensionToggle } from '@sourcegraph/extensions-client-common/lib/extensions/ExtensionToggle'
+import { isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { isErrorLike } from '../../util/errors'
+import { isExtensionAdded } from '../ExtensionsClientCommonContext'
+import { ExtensionToggle } from '../ExtensionToggle'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
 
