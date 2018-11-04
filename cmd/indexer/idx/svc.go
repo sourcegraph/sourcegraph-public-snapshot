@@ -17,7 +17,7 @@ func resolveRevision(ctx context.Context, repoName api.RepoName, spec string) (*
 		return nil, "", err
 	}
 
-	commit, err := git.ResolveRevision(ctx, gitserver.Repo{Name: repo.URI}, nil, spec, nil)
+	commit, err := git.ResolveRevision(ctx, gitserver.Repo{Name: repo.Name}, nil, spec, nil)
 	if err != nil {
 		return nil, "", err
 	}

@@ -29,8 +29,8 @@ type Repo struct {
 	// service itself).
 	ExternalRepo *ExternalRepoSpec
 
-	// URI is the name of the repository (such as "github.com/user/repo").
-	URI RepoName
+	// Name is the name of the repository (such as "github.com/user/repo").
+	Name RepoName
 	// Enabled is whether the repository is enabled. Disabled repositories are
 	// not accessible by users (except site admins).
 	Enabled bool

@@ -83,7 +83,7 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 			return
 		}
 
-		newList[string(createdRepo.URI)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
+		newList[string(createdRepo.Name)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
 	}
 	for repo := range repoChan {
 		do(repo)
