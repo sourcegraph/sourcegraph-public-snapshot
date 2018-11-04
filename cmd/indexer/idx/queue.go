@@ -104,7 +104,7 @@ func SecondaryQueue(ctx context.Context) <-chan qitem {
 }
 
 const gqlSearchQuery = `query {
-  repositories(orderBy:REPO_CREATED_AT, notCIIndexed:true, descending:true, first:1000) {
+  repositories(orderBy:REPOSITORY_CREATED_AT, notCIIndexed:true, descending:true, first:1000) {
     nodes {
       name
     }
