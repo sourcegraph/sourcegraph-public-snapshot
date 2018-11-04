@@ -37,7 +37,7 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
             filePath,
             commitID,
             rev,
-        })
+        }).pipe(ensureRevisionsAreCloned)
     } catch (error) {
         return throwError(error)
     }
