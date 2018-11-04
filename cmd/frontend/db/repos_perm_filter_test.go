@@ -709,10 +709,10 @@ func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.External
 
 	var userPerms map[api.RepoName]map[authz.Perm]bool = m.perms[*acct]
 	for repo := range repos {
-		if userRepoPerms, ok := userPerms[repo.URI]; ok {
-			retPerms[repo.URI] = make(map[authz.Perm]bool)
+		if userRepoPerms, ok := userPerms[repo.RepoName]; ok {
+			retPerms[repo.RepoName] = make(map[authz.Perm]bool)
 			for k, v := range userRepoPerms {
-				retPerms[repo.URI][k] = v
+				retPerms[repo.RepoName][k] = v
 			}
 		}
 	}
@@ -722,7 +722,7 @@ func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.External
 func (m *MockAuthzProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
 	mine, others = make(map[authz.Repo]struct{}), make(map[authz.Repo]struct{})
 	for repo := range repos {
-		if _, ok := m.repos[repo.URI]; ok {
+		if _, ok := m.repos[repo.RepoName]; ok {
 			mine[repo] = struct{}{}
 		} else {
 			others[repo] = struct{}{}

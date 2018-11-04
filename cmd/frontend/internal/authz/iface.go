@@ -81,8 +81,8 @@ type Provider interface {
 }
 
 type Repo struct {
-	// URI is the unique name/path of the repo on Sourcegraph
-	URI api.RepoName
+	// RepoName is the unique name of the repo on Sourcegraph.
+	RepoName api.RepoName
 
 	// ExternalRepoSpec uniquely identifies the external repo that is the source of the repo.
 	api.ExternalRepoSpec
