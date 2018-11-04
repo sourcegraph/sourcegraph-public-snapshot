@@ -606,7 +606,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	// upsert is logged as a modification to the DB, even if it is a no-op. So
 	// we do this check to avoid log spam if postgres is configured with
 	// log_statement='mod'.
-	r, err := s.GetByName(ctx, op.URI)
+	r, err := s.GetByName(ctx, op.Name)
 	if err != nil {
 		if _, ok := err.(*repoNotFoundErr); !ok {
 			return err
@@ -626,7 +626,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err = dbconn.Global.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
+	_, err = dbconn.Global.ExecContext(ctx, upsertSQL, op.Name, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
 	return err
 }
 

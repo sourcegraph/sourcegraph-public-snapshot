@@ -80,7 +80,7 @@ func TestRepos_Add(t *testing.T) {
 	calledUpsert := false
 	db.Mocks.Repos.Upsert = func(op api.InsertRepoOp) error {
 		calledUpsert = true
-		if want := (api.InsertRepoOp{URI: repoName, Description: "d"}); !reflect.DeepEqual(op, want) {
+		if want := (api.InsertRepoOp{Name: repoName, Description: "d"}); !reflect.DeepEqual(op, want) {
 			t.Errorf("got %+v, want %+v", op, want)
 		}
 		return nil
