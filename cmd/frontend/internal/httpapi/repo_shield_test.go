@@ -37,10 +37,10 @@ func TestRepoShield(t *testing.T) {
 		"value": " 200 projects",
 	}
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
-		switch uri {
+	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+		switch name {
 		case "github.com/gorilla/mux":
-			return &types.Repo{ID: 2, Name: uri}, nil
+			return &types.Repo{ID: 2, Name: name}, nil
 		default:
 			panic("wrong path")
 		}

@@ -46,13 +46,13 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 
 func (s *MockRepos) MockGetByName(t *testing.T, want api.RepoName, repo api.RepoID) (called *bool) {
 	called = new(bool)
-	s.GetByName = func(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
+	s.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		*called = true
-		if uri != want {
-			t.Errorf("got repo URI %q, want %q", uri, want)
-			return nil, &repoNotFoundErr{URI: uri}
+		if name != want {
+			t.Errorf("got repo name %q, want %q", name, want)
+			return nil, &repoNotFoundErr{Name: name}
 		}
-		return &types.Repo{ID: repo, Name: uri, Enabled: true}, nil
+		return &types.Repo{ID: repo, Name: name, Enabled: true}, nil
 	}
 	return
 }

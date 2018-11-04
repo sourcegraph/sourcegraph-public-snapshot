@@ -17,13 +17,13 @@ import (
 )
 
 type repoNotFoundErr struct {
-	ID  api.RepoID
-	URI api.RepoName
+	ID   api.RepoID
+	Name api.RepoName
 }
 
 func (e *repoNotFoundErr) Error() string {
-	if e.URI != "" {
-		return fmt.Sprintf("repo not found: uri=%q", e.URI)
+	if e.Name != "" {
+		return fmt.Sprintf("repo not found: uri=%q", e.Name)
 	}
 	if e.ID != 0 {
 		return fmt.Sprintf("repo not found: id=%d", e.ID)
@@ -59,22 +59,22 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	return repos[0], nil
 }
 
-// GetByName returns the repository with the given URI from the database, or an
+// GetByName returns the repository with the given name from the database, or an
 // error. If the repo doesn't exist in the DB, then errcode.IsNotFound will
 // return true on the error returned. It does not attempt to look up or update
 // the repository on any external service (such as its code host).
-func (s *repos) GetByName(ctx context.Context, uri api.RepoName) (*types.Repo, error) {
+func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, uri)
+		return Mocks.Repos.GetByName(ctx, name)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", uri))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", name))
 	if err != nil {
 		return nil, err
 	}
 
 	if len(repos) == 0 {
-		return nil, &repoNotFoundErr{URI: uri}
+		return nil, &repoNotFoundErr{Name: name}
 	}
 	return repos[0], nil
 }
@@ -574,8 +574,8 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 	return err
 }
 
-func (s *repos) UpdateRepositoryMetadata(ctx context.Context, uri api.RepoName, description string, fork bool, archived bool) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE uri=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, uri)
+func (s *repos) UpdateRepositoryMetadata(ctx context.Context, name api.RepoName, description string, fork bool, archived bool) error {
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE uri=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, name)
 	return err
 }
 
