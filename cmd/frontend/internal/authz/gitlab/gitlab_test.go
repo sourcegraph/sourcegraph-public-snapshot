@@ -789,7 +789,7 @@ func acct(userID int32, serviceType, serviceID, accountID string) *extsvc.Extern
 
 func repo(uri, serviceType, serviceID, id string) authz.Repo {
 	return authz.Repo{
-		URI: api.RepoName(uri),
+		RepoName: api.RepoName(uri),
 		ExternalRepoSpec: api.ExternalRepoSpec{
 			ID:          id,
 			ServiceType: serviceType,

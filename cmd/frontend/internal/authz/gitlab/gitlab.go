@@ -147,7 +147,7 @@ func (p *GitLabAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Ext
 
 	perms := make(map[api.RepoName]map[authz.Perm]bool)
 	for repo := range myRepos {
-		perms[repo.URI] = map[authz.Perm]bool{}
+		perms[repo.RepoName] = map[authz.Perm]bool{}
 
 		projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
 		if err != nil {
@@ -158,7 +158,7 @@ func (p *GitLabAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Ext
 		if !isAccessible {
 			continue
 		}
-		perms[repo.URI][authz.Read] = true
+		perms[repo.RepoName][authz.Read] = true
 	}
 
 	return perms, nil

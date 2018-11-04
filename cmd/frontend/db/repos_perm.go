@@ -117,8 +117,8 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 			return nil, err
 		}
 		for unverifiedRepo := range myUnverified {
-			if repoPerms, ok := perms[unverifiedRepo.URI]; ok && repoPerms[p] {
-				accepted[unverifiedRepo.URI] = struct{}{}
+			if repoPerms, ok := perms[unverifiedRepo.RepoName]; ok && repoPerms[p] {
+				accepted[unverifiedRepo.RepoName] = struct{}{}
 			}
 		}
 		// continue checking repos that didn't belong to this authz provider
@@ -127,7 +127,7 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 
 	if authzAllowByDefault {
 		for r := range unverified {
-			accepted[r.URI] = struct{}{}
+			accepted[r.RepoName] = struct{}{}
 		}
 	}
 
