@@ -12,6 +12,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [Setting the URL for your instance](url.md)
   - [TLS/SSL configuration](tls_ssl.md)
   - [Monitoring and tracing](monitoring_and_tracing.md)
+  - [Repository permissions](repo/permissions.md)
   - [Using external databases (PostgreSQL and Redis)](external_database.md)
 - Features:
   - [Code intelligence and language servers](../extensions/language_servers.md)
