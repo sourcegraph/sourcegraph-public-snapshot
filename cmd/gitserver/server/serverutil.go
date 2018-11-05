@@ -30,8 +30,15 @@ func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress 
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
 
-	// Unset credential helper because the command is non-interactive.
-	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
+	extraArgs := []string{
+		// Unset credential helper because the command is non-interactive.
+		"-c", "credential.helper=",
+
+		// Use Git wire protocol version 2.
+		// https://opensource.googleblog.com/2018/05/introducing-git-protocol-version-2.html
+		"-c", "protocol.version=2",
+	}
+	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
 
 	var b interface {
 		Bytes() []byte
