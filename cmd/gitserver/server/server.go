@@ -164,7 +164,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 		return longGitCommandTimeout
 
 	case "ls-remote":
-		return 5 * time.Second
+		return 30 * time.Second
 
 	default:
 		return time.Minute
