@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../../src/backend/graphqlschema'
+import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
 import { ProductSubscriptionLabel } from '../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 
 export const ProductSubscriptionBilling: React.SFC<{

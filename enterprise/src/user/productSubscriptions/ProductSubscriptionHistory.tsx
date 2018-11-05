@@ -1,8 +1,8 @@
 import format from 'date-fns/format'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
-import * as GQL from '../../../../src/backend/graphqlschema'
-import { LinkOrSpan } from '../../../../src/components/LinkOrSpan'
+import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
+import { LinkOrSpan } from '../../../../packages/webapp/src/components/LinkOrSpan'
 
 export const ProductSubscriptionHistory: React.SFC<{
     productSubscription: Pick<GQL.IProductSubscription, 'events'>

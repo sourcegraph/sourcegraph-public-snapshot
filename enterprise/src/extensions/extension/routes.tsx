@@ -1,6 +1,6 @@
 import React from 'react'
-import { ExtensionAreaRoute } from '../../../../src/extensions/extension/ExtensionArea'
-import { extensionAreaRoutes } from '../../../../src/extensions/extension/routes'
+import { ExtensionAreaRoute } from '../../../../packages/webapp/src/extensions/extension/ExtensionArea'
+import { extensionAreaRoutes } from '../../../../packages/webapp/src/extensions/extension/routes'
 import { RegistryExtensionOverviewPage } from '../registry/RegistryExtensionOverviewPage'
 import { RegistryExtensionManagePage } from './RegistryExtensionManagePage'
 import { RegistryExtensionNewReleasePage } from './RegistryExtensionNewReleasePage'

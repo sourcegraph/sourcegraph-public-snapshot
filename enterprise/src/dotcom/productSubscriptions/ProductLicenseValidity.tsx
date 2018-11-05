@@ -1,6 +1,6 @@
 import format from 'date-fns/format'
 import React from 'react'
-import * as GQL from '../../../../src/backend/graphqlschema'
+import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../productSubscription/helpers'
 
 /**

@@ -3,9 +3,9 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../../../../src/backend/graphql'
-import * as GQL from '../../../../src/backend/graphqlschema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../src/util/errors'
+import { gql, queryGraphQL } from '../../../../packages/webapp/src/backend/graphql'
+import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../packages/webapp/src/util/errors'
 import { ExtensionsExploreSectionExtensionCard } from './ExtensionsExploreSectionExtensionCard'
 
 interface Props {}

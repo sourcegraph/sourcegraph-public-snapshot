@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { withAuthenticatedUser } from '../../../../src/auth/withAuthenticatedUser'
-import { PageTitle } from '../../../../src/components/PageTitle'
+import { withAuthenticatedUser } from '../../../../packages/webapp/src/auth/withAuthenticatedUser'
+import { PageTitle } from '../../../../packages/webapp/src/components/PageTitle'
 
 /** A page for publishing a new release of an extension to the extension registry. */
 export const RegistryExtensionNewReleasePage = withAuthenticatedUser(() => (

@@ -1,0 +1,32 @@
+node_modules
+npm-debug.log
+yarn-error.log
+.DS_Store
+
+# Ignore build/ except for the Phabricator package.json
+/build/*
+!/build/phabricator/
+/build/phabricator/*
+!/build/phabricator/package.json
+!/build/phabricator/package-lock.json
+
+.checksum
+.extension
+
+*.zip
+*.crx
+*.pem
+*.xpi
+update.xml
+npm-debug.log.*
+/.gtm/
+
+*.safariextz
+# Keep safari extension config stuff, remove the rest
+*.safariextension/**/*
+!*.safariextension/*.plist
+!*.safariextension/background.safari.html
+
+# Cypress testing. These will get downloaded as artifacts by buildkite.
+cypress/screenshots/
+cypress/vidoes/

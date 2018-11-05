@@ -1,6 +1,6 @@
 import React from 'react'
-import { ExtensionsAreaRoute } from '../../../src/extensions/ExtensionsArea'
-import { extensionsAreaRoutes } from '../../../src/extensions/routes'
+import { ExtensionsAreaRoute } from '../../../packages/webapp/src/extensions/ExtensionsArea'
+import { extensionsAreaRoutes } from '../../../packages/webapp/src/extensions/routes'
 import { RegistryArea } from './registry/RegistryArea'
 
 export const enterpriseExtensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute> = [

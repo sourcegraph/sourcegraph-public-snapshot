@@ -1,6 +1,6 @@
 import LockIcon from 'mdi-react/LockIcon'
-import { ExtensionAreaHeaderNavItem } from '../../../../src/extensions/extension/ExtensionAreaHeader'
-import { extensionAreaHeaderNavItems } from '../../../../src/extensions/extension/extensionAreaHeaderNavItems'
+import { ExtensionAreaHeaderNavItem } from '../../../../packages/webapp/src/extensions/extension/ExtensionAreaHeader'
+import { extensionAreaHeaderNavItems } from '../../../../packages/webapp/src/extensions/extension/extensionAreaHeaderNavItems'
 
 export const enterpriseExtensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem> = [
     ...extensionAreaHeaderNavItems,

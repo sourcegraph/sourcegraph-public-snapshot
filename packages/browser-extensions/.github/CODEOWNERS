@@ -1,0 +1,5 @@
+* @ijsnow
+
+# Adding permissions to the manifest will disable the extension for all users
+# upon update!
+src/extension/manifest.spec.json @chrismwendt @ijsnow @nicksnyder

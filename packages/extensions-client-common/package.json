@@ -1,0 +1,99 @@
+{
+  "name": "@sourcegraph/extensions-client-common",
+  "version": "12.0.0",
+  "description": "Common TypeScript/React client application code for Sourcegraph extension configuration and management, used in Sourcegraph and \"Sourcegraph for X\" products",
+  "main": "lib/index.js",
+  "module": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "commitmsg": "commitlint -e $GIT_PARAMS",
+    "semantic-release": "semantic-release",
+    "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
+    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
+    "schema:graphql": "cp ../sourcegraph/src/backend/graphqlschema.ts src/schema/graphqlschema.ts",
+    "clean": "del-cli 'lib/**/*'",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "yarn -s run clean && yarn -s run build:assets && yarn -s run build:typescript",
+    "build:assets": "cpy --parents --cwd=src '**/*.{css,d.ts,json}' '../lib/'",
+    "build:typescript": "tsc -p tsconfig.dist.json",
+    "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
+    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
+    "watch:typecheck": "tsc -p tsconfig.json -w",
+    "watch:build:typescript": "tsc -p tsconfig.dist.json -w --preserveWatchOutput",
+    "watch:build:assets": "nodemon -q --watch src/ --ext css,d.ts,json --exec 'yarn -s run build:assets || exit 1'",
+    "watch:build": "concurrently --kill-others 'yarn -s run watch:build:typescript' 'yarn -s run watch:build:assets'",
+    "watch:test": "yarn -s run test -- -w"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "examples/",
+      "**/*.d.ts",
+      "**/*.test.ts",
+      "**/*.js"
+    ],
+    "cache": true,
+    "reporter": [
+      "text",
+      "lcovonly"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@slimsag/react-shortcuts": "^1.2.0",
+    "bootstrap": "^4.1.3",
+    "lodash-es": "^4.17.10",
+    "marked": "^0.5.1",
+    "react": "^16.4.2",
+    "react-router": "^4.3.1",
+    "react-router-dom": "^4.3.1",
+    "reactstrap": "^6.4.0",
+    "rxjs": "^6.3.2",
+    "sourcegraph": "18.4.1",
+    "string-score": "^1.0.1",
+    "ts-key-enum": "^2.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^7.1.1",
+    "@commitlint/config-conventional": "^7.1.1",
+    "@sourcegraph/prettierrc": "^2.2.0",
+    "@sourcegraph/tsconfig": "^3.0.0",
+    "@sourcegraph/tslint-config": "^12.0.0",
+    "@sqs/jsonc-parser": "^1.0.3",
+    "@types/lodash-es": "^4.17.1",
+    "@types/marked": "^0.4.2",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^10.9.4",
+    "@types/react": "^16.4.13",
+    "@types/react-dom": "^16.0.7",
+    "@types/react-router": "^4.0.30",
+    "@types/react-router-dom": "^4.3.0",
+    "@types/reactstrap": "^6.0.2",
+    "concurrently": "^4.0.1",
+    "cpy-cli": "^2.0.0",
+    "del-cli": "^1.1.0",
+    "esm": "^3.0.82",
+    "husky": "^0.14.3",
+    "mocha": "^5.2.0",
+    "nodemon": "^1.18.4",
+    "nyc": "^13.0.1",
+    "prettier": "^1.14.2",
+    "react-dom": "^16.4.2",
+    "semantic-release": "^15.9.12",
+    "source-map-support": "^0.5.9",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "tslint-language-service": "^0.9.9",
+    "typescript": "^3.1.6"
+  }
+}

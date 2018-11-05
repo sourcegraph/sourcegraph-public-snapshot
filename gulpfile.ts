@@ -20,7 +20,7 @@ import tsUnusedExports from 'ts-unused-exports'
 import createWebpackCompiler, { Stats } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
 import { draftV7resolver } from './dev/draftV7Resolver'
-import webpackConfig from './webpack.config'
+import webpackConfig from './packages/webapp/webpack.config'
 
 const WEBPACK_STATS_OPTIONS = {
     all: false,
@@ -111,14 +111,14 @@ export async function graphQLTypes(): Promise<void> {
                 postProcessor: (code: string) => format(code, { ...formatOptions, parser: 'typescript' }),
             }
         )
-    await writeFile(__dirname + '/src/backend/graphqlschema.ts', typings)
+    await writeFile(__dirname + '/packages/webapp/src/backend/graphqlschema.ts', typings)
 }
 
 /**
- * Generates the TypeScript types for the JSON schemas and copies the schemas to src/ so they can be imported
+ * Generates the TypeScript types for the JSON schemas and copies the schemas to the webapp's src/ so they can be imported
  */
 export async function schema(): Promise<void> {
-    await Promise.all([mkdirp(__dirname + '/src/schema'), mkdirp(__dirname + '/dist/schema')])
+    await Promise.all([mkdirp(`${__dirname}/packages/webapp/src/schema`), mkdirp(__dirname + '/dist/schema')])
     await Promise.all(
         ['json-schema-draft-07', 'settings', 'site', 'extension'].map(async file => {
             let schema = await readFile(__dirname + `/schema/${file}.schema.json`, 'utf8')
@@ -141,9 +141,9 @@ export async function schema(): Promise<void> {
                 },
             })
             await Promise.all([
-                writeFile(__dirname + `/src/schema/${file}.schema.d.ts`, types),
+                writeFile(__dirname + `/packages/webapp/src/schema/${file}.schema.d.ts`, types),
                 // Copy schema to src/ so it can be imported in TypeScript
-                writeFile(__dirname + `/src/schema/${file}.schema.json`, schema),
+                writeFile(__dirname + `/packages/webapp/src/schema/${file}.schema.json`, schema),
             ])
         })
     )
@@ -160,7 +160,7 @@ export async function unusedExports(): Promise<void> {
     // https://github.com/pzavolinsky/ts-unused-exports/pull/17 for one possible improvement).
     const analysis: { [file: string]: string[] } = tsUnusedExports(
         path.join(__dirname, 'tsconfig.json'),
-        await globby('src/**/*.{ts?(x),js?(x),json}') // paths are relative to tsconfig.json
+        await globby('packages/webapp/src/**/*.{ts?(x),js?(x),json}') // paths are relative to tsconfig.json
     )
     const filesWithUnusedExports = Object.keys(analysis).sort()
     if (filesWithUnusedExports.length > 0) {
@@ -193,13 +193,46 @@ export async function unusedExports(): Promise<void> {
  * Typechecks the TypeScript code.
  */
 export function typescript(): ChildProcess {
-    return spawn(__dirname + '/node_modules/.bin/tsc', ['-p', __dirname + '/tsconfig.json', '--pretty'], {
+    return spawn('yarn', ['-s', 'run', 'tsc', '-p', 'tsconfig.json', '--pretty'], {
         stdio: 'inherit',
+        cwd: 'packages/webapp',
         shell: true,
     })
 }
 
-const PHABRICATOR_EXTENSION_FILES = './node_modules/@sourcegraph/phabricator-extension/dist/**'
+export function buildSourcegraphExtensionAPI(): ChildProcess {
+    return spawn('yarn', ['-s', 'run', 'build'], {
+        stdio: 'inherit',
+        cwd: 'packages/sourcegraph-extension-api',
+        shell: true,
+    })
+}
+
+export function buildExtensionsClientCommon(): ChildProcess {
+    return spawn('yarn', ['-s', 'run', 'build'], {
+        stdio: 'inherit',
+        cwd: 'packages/extensions-client-common',
+        shell: true,
+    })
+}
+
+export function watchSourcegraphExtensionAPI(): ChildProcess {
+    return spawn('yarn', ['-s', 'run', 'watch:build'], {
+        stdio: 'inherit',
+        cwd: 'packages/sourcegraph-extension-api',
+        shell: true,
+    })
+}
+
+export function watchExtensionsClientCommon(): ChildProcess {
+    return spawn('yarn', ['-s', 'run', 'watch:build'], {
+        stdio: 'inherit',
+        cwd: 'packages/extensions-client-common',
+        shell: true,
+    })
+}
+
+const PHABRICATOR_EXTENSION_FILES = './packages/browser-extensions/build/phabricator/**'
 
 /**
  * Copies the bundles from the `@sourcegraph/phabricator-extension` package over to the ui/assets
@@ -229,5 +262,14 @@ export const build = gulp.parallel(
 export const watch = gulp.series(
     // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
     gulp.parallel(schema, graphQLTypes),
-    gulp.parallel(watchSchema, watchGraphQLTypes, webpackDevServer, watchPhabricator)
+    buildSourcegraphExtensionAPI,
+    buildExtensionsClientCommon,
+    gulp.parallel(
+        watchSchema,
+        watchGraphQLTypes,
+        webpackDevServer,
+        watchPhabricator,
+        watchSourcegraphExtensionAPI,
+        watchExtensionsClientCommon
+    )
 )

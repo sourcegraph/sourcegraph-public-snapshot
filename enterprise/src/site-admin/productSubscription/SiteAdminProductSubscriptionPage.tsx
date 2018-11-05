@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
-import { PageTitle } from '../../../../src/components/PageTitle'
-import { eventLogger } from '../../../../src/tracking/eventLogger'
+import { PageTitle } from '../../../../packages/webapp/src/components/PageTitle'
+import { eventLogger } from '../../../../packages/webapp/src/tracking/eventLogger'
 import { ProductSubscriptionStatus } from './ProductSubscriptionStatus'
 
 interface Props extends RouteComponentProps<{}> {}

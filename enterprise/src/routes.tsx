@@ -1,5 +1,5 @@
-import { LayoutRouteProps, routes } from '../../src/routes'
 import React from 'react'
+import { LayoutRouteProps, routes } from '../../packages/webapp/src/routes'
 import { NewProductSubscriptionPageOrRedirectUser } from './user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'
 
 export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
