@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 node -r ts-node/register scripts/dev",
     "dev:no-reload": "AUTO_RELOAD=false yarn run dev",
-    "dev:firefox": "web-ext run --source-dir ./build/firefox",
+    "dev:firefox": "if type web-ext 2>/dev/null; then web-ext run --source-dir ./build/firefox; else echo 'web-ext not found. Install it with: yarn global add web-ext'; exit 1; fi",
     "build": "NODE_ENV=production ts-node scripts/build",
     "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o app/gqlschema.d.ts",
     "lint": "yarn run tslint && yarn run stylelint",
@@ -109,7 +109,6 @@
     "tslint-language-service": "^0.9.6",
     "typescript": "^3.0.1",
     "uglifyjs-webpack-plugin": "^1.3.0",
-    "web-ext": "^2.5.0",
     "webpack": "^4.6.0",
     "worker-loader": "^2.0.0"
   },

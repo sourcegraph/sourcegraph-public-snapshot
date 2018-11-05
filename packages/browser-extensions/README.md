@@ -96,6 +96,7 @@ Click reload for Sourcegraph at `chrome://extensions`
 In a separate terminal session run:
 
 ```bash
+yarn global add web-ext
 yarn run dev:firefox
 ```
 
