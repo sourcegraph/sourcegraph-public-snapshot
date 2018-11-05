@@ -176,18 +176,6 @@ func mergeStruct(destInterface, srcInterface interface{}) {
 	}
 }
 
-// recursively merge components of site config
-func AppendConfig(dest, src *SiteConfiguration) *SiteConfiguration {
-	if dest == nil {
-		return src
-	}
-	if src == nil {
-		return dest
-	}
-	mergeStruct(dest, src)
-	return dest
-}
-
 // NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
 func NeedRestartToApply(before, after *SiteConfiguration) bool {
