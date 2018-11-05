@@ -126,9 +126,7 @@ func main() {
 		bk.Cmd("yarn workspace browser-extensions run tslint"),
 		bk.Cmd("yarn workspace browser-extensions run browserslist"),
 		bk.Cmd("yarn workspace browser-extensions run build"),
-		bk.Cmd("yarn workspace browser-extensions run test:ci"),
-		// Kill and retry the e2e tests after 3 minutes, and run at most 2 times.
-		bk.Cmd("for i in 1 2; do timeout 180 yarn workspace browser-extensions run test:e2e && break; done"))
+		bk.Cmd("yarn workspace browser-extensions run test:ci"))
 
 	pipeline.AddWait()
 
