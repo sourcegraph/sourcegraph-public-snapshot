@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-## 2.13 (not yet released)
+## 2.13
 
 ### Added
 
