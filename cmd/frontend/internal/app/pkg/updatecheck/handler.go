@@ -23,12 +23,12 @@ var (
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("2.12.3")
+	latestReleaseDockerServerImageBuild = newBuild("2.13.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("2.12.3")
+	latestReleaseKubernetesBuild = newBuild("2.13.0")
 )
 
 func getLatestRelease(deployType string) build {
