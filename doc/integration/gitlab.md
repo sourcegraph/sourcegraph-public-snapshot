@@ -12,6 +12,10 @@ Sourcegraph supports syncing repositories from GitLab.com, GitLab CE, and GitLab
 
 By default, it adds every GitLab project where the token's user is a member. To see other optional GitLab configuration settings, view [all settings](../admin/site_config/index.md) or press Ctrl+Space or Cmd+Space in the site configuration editor.
 
+### Repository permissions
+
+By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use GitLab's per-user repository permissions, see "[Repository permissions](../admin/repo/permissions.md)".
+
 ## Browser extension
 
 The [Sourcegraph browser extension](browser_extension.md) supports GitLab. When installed in your web browser, it adds hover tooltips, go-to-definition, find-references, and code search to files and merge requests viewed on GitLab.
