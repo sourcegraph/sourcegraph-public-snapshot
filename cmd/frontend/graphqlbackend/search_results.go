@@ -438,7 +438,14 @@ loop:
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
-	return r.doResults(ctx, "")
+	start := time.Now()
+	rr, err := r.doResults(ctx, "")
+	if err != nil {
+		log15.Debug("graphql search failed", "query", r.rawQuery(), "duration", time.Since(start), "error", err)
+		return nil, err
+	}
+	log15.Debug("graphql search success", "query", r.rawQuery(), "count", rr.ResultCount(), "duration", time.Since(start))
+	return rr, nil
 }
 
 type searchResultsStats struct {

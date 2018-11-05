@@ -53,6 +53,7 @@ func (r *schemaResolver) Search(args *struct {
 }) (*searchResolver, error) {
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
+		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
 		return nil, err
 	}
 	return &searchResolver{
