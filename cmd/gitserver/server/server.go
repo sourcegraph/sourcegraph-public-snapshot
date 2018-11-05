@@ -979,6 +979,9 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	out, err := s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
+		}
 		if len(out) > 0 {
 			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
 		}
