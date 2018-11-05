@@ -9,6 +9,9 @@ import * as url from '../util/url'
  *   - a line in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3
  *   - a character position in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5
  *   - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
+ *
+ * @deprecated because these git: URIs are nonstandard and not supported by many tools (distinct URI fragments are
+ * not treated as distinct files by many tools)
  */
 export type RepoURI = string
 
@@ -88,7 +91,7 @@ export interface RenderModeSpec {
 }
 
 /**
- * Properties of a RepoURI (like git://github.com/gorilla/mux#mux.go) or a URL (like https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go)
+ * Identifies a file (or position/range in a file) in a repository at a specific commit/revision.
  */
 export interface ParsedRepoURI
     extends RepoSpec,
@@ -173,6 +176,9 @@ const parsePosition = (str: string): Position => {
 
 /**
  * Parses the properties of a repo URI like git://github.com/gorilla/mux#mux.go
+ *
+ * @deprecated because these git: URIs are nonstandard and not supported by many tools (distinct URI fragments are
+ * not treated as distinct files by many tools)
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
@@ -321,6 +327,9 @@ const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + po
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.
+ *
+ * @deprecated because these git: URIs are nonstandard and not supported by many tools (distinct URI fragments are
+ * not treated as distinct files by many tools)
  */
 export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     const rev = parsed.commitID || parsed.rev
@@ -331,6 +340,13 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     uri += parsed.position ? positionStr(parsed.position) : ''
     uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
     return uri
+}
+
+/** Returns a cache key deterministically representing value. */
+export function keyForParsedRepoURI(value: ParsedRepoURI): string {
+    return `${value.repoPath}:${value.rev || ''}:${value.commitID || ''}:${value.filePath}:${
+        value.position ? positionStr(value.position) : ''
+    }:${value.range ? positionStr(value.range.end) + '-' + positionStr(value.range.end) : ''}`
 }
 
 /**

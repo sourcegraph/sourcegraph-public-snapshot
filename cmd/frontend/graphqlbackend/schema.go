@@ -22,6 +22,12 @@ interface Node {
     id: ID!
 }
 
+# An object that is identified by a URI.
+interface Resource {
+    # The URI of the resource. The URI is used internally to identify files in repositories.
+    resourceURI: String!
+}
+
 # A valid JSON value.
 scalar JSONValue
 
@@ -581,6 +587,13 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
+    # Look up a resource by its URI. The following URI schemes are supported: repo, git (deprecated). URIs are used
+    # when it is necessary to have a single string value that refers to a resource accessible via Sourcegraph (such
+    # as in Sourcegraph extensions or language servers).
+    #
+    # See https://docs.sourcegraph.com/dev/uri_schemes for full documentation on the URI schemes supported by
+    # Sourcegraph.
+    resource(uri: String!): Resource
     # Looks up a repository by name.
     repository(
         # The name, for example "github.com/gorilla/mux".

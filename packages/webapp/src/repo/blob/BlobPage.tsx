@@ -4,7 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import { AbsoluteRepoFile, makeRepoURI, ParsedRepoURI } from '..'
+import { AbsoluteRepoFile, keyForParsedRepoURI, ParsedRepoURI } from '..'
 import { ModeSpec } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
@@ -32,7 +32,7 @@ import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
-    return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
+    return keyForParsedRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
 }
 
 export const fetchBlob = memoizeObservable(

@@ -24,6 +24,12 @@ interface Node {
     id: ID!
 }
 
+# An object that is identified by a URI.
+interface Resource {
+    # The URI of the resource. The URI is used internally to identify files in repositories.
+    resourceURI: String!
+}
+
 # A valid JSON value.
 scalar JSONValue
 
@@ -588,6 +594,13 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
+    # Look up a resource by its URI. The following URI schemes are supported: repo, git (deprecated). URIs are used
+    # when it is necessary to have a single string value that refers to a resource accessible via Sourcegraph (such
+    # as in Sourcegraph extensions or language servers).
+    #
+    # See https://docs.sourcegraph.com/dev/uri_schemes for full documentation on the URI schemes supported by
+    # Sourcegraph.
+    resource(uri: String!): Resource
     # Looks up a repository by name.
     repository(
         # The name, for example "github.com/gorilla/mux".
@@ -1779,7 +1792,7 @@ type File {
 }
 
 # A Git blob in a repository.
-type GitBlob implements TreeEntry & File2 {
+type GitBlob implements TreeEntry & File2 & Resource {
     # The full path (relative to the repository root) of this blob.
     path: String!
     # The base name (i.e., file name only) of this blob's path.
@@ -1805,6 +1818,8 @@ type GitBlob implements TreeEntry & File2 {
     canonicalURL: String!
     # The URLs to this blob on its repository's external services.
     externalURLs: [ExternalLink!]!
+    # The URI that identifies this file.
+    resourceURI: String!
     # Blame the blob.
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.

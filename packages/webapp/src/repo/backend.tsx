@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '.'
+import { AbsoluteRepoFile, keyForParsedRepoURI, RepoRev } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { createAggregateError } from '../util/errors'
@@ -80,7 +80,7 @@ export const fetchRepository = memoizeObservable(
                 return data.repository
             })
         ),
-    makeRepoURI
+    keyForParsedRepoURI
 )
 
 export interface ResolvedRev {
@@ -150,7 +150,7 @@ export const resolveRev = memoizeObservable(
                 }
             })
         ),
-    makeRepoURI
+    keyForParsedRepoURI
 )
 
 interface FetchFileCtx {
@@ -208,7 +208,7 @@ const fetchHighlightedFile = memoizeObservable(
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
-    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout} ` + `?isLightTheme=${ctx.isLightTheme}`
+    ctx => keyForParsedRepoURI(ctx) + `:disableTimeout=${ctx.disableTimeout}:isLightTheme=${ctx.isLightTheme}`
 )
 
 /**
@@ -233,7 +233,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
                 return rows
             })
         ),
-    ctx => makeRepoURI(ctx) + `?isLightTheme=${ctx.isLightTheme}`
+    ctx => keyForParsedRepoURI(ctx) + `:isLightTheme=${ctx.isLightTheme}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
@@ -268,7 +268,7 @@ export const fetchFileExternalLinks = memoizeObservable(
                 return data.repository.commit.file.externalURLs
             })
         ),
-    makeRepoURI
+    keyForParsedRepoURI
 )
 
 export const fetchTree = memoizeObservable(
@@ -307,7 +307,7 @@ export const fetchTree = memoizeObservable(
                 return data.repository.commit.tree
             })
         ),
-    makeRepoURI
+    keyForParsedRepoURI
 )
 
 export const fetchTreeEntries = memoizeObservable(
@@ -343,5 +343,5 @@ export const fetchTreeEntries = memoizeObservable(
                 return data.repository.commit.tree
             })
         ),
-    makeRepoURI
+    keyForParsedRepoURI
 )
