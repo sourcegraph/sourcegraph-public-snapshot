@@ -95,6 +95,7 @@ Using Sourcegraph extensions in the editor | [📣](https://docs.google.com/docu
 Extension registry discovery and statistics | [📣](https://github.com/sourcegraph/docs-private/blob/master/201809/tentative/social-cxp-registry.md) | Extensibility, [Sourcegraph][sourcegraph] | [@slimsag][slimsag] [@vanesa][vanesa] [@francisschmaltz][francisschmaltz]
 Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow]
 Ruby language support | | Code intelligence, sourcegraph-ruby | T.B.D.
+Flow (JS) language support | | Code intelligence, sourcegraph-flow | T.B.D.
 Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
 
 <small>Release: week of 7 January 2019 --- [All December 2018 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+author%3Asqs+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%22November+2018%22)</small>
