@@ -201,7 +201,7 @@ func main() {
 			bk.Concurrency(1),
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile"),
-			bk.Cmd("yarn run test-e2e-sgdev --retries 5"),
+			bk.Cmd("yarn workspace webapp run test-e2e-sgdev --retries 5"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 		pipeline.AddWait()
 
