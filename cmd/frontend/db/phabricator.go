@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -18,24 +19,33 @@ type errPhabricatorRepoNotFound struct {
 	args []interface{}
 }
 
-var phabricatorRepos = atomicvalue.New()
+var (
+	phabricatorRepos          = atomicvalue.New()
+	phabricatorReposReadyOnce sync.Once
+	phabricatorReposReady     = make(chan struct{})
+)
 
 func init() {
-	conf.Watch(func() {
-		phabricatorRepos.Set(func() interface{} {
-			repos := map[api.RepoName]*types.PhabricatorRepo{}
-			for _, config := range conf.Get().Phabricator {
-				for _, repo := range config.Repos {
-					repos[api.RepoName(repo.Path)] = &types.PhabricatorRepo{
-						Name:     api.RepoName(repo.Path),
-						Callsign: repo.Callsign,
-						URL:      config.Url,
+	go func() {
+		conf.ConfigurationServerReady()
+
+		conf.Watch(func() {
+			phabricatorRepos.Set(func() interface{} {
+				repos := map[api.RepoName]*types.PhabricatorRepo{}
+				for _, config := range conf.Get().Phabricator {
+					for _, repo := range config.Repos {
+						repos[api.RepoName(repo.Path)] = &types.PhabricatorRepo{
+							Name:     api.RepoName(repo.Path),
+							Callsign: repo.Callsign,
+							URL:      config.Url,
+						}
 					}
 				}
-			}
-			return repos
+				return repos
+			})
 		})
-	})
+	}()
+
 }
 
 func (err errPhabricatorRepoNotFound) Error() string {
