@@ -104,7 +104,7 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	}
 
 	if mode == modeClient {
-		panic("cannot call this function except in client mode")
+		panic("cannot call this function while in client mode")
 	}
 
 	server := NewServer(source)
