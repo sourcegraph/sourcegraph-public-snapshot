@@ -23,16 +23,6 @@
     "test": "mocha --require ts-node/register --watch --watch-extensions ts './src/**/*.test.ts?(x)'",
     "test:ci": "mocha --require ts-node/register './src/**/*.test.ts?(x)'"
   },
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
   "browserslist": [
     "last 3 Chrome versions",
     "last 3 Firefox versions"
@@ -42,8 +32,6 @@
     "@babel/polyfill": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
     "@babel/runtime": "^7.0.0",
-    "@commitlint/cli": "^7.0.0",
-    "@commitlint/config-conventional": "^7.0.1",
     "@semantic-release/exec": "^3.1.0",
     "@sourcegraph/prettierrc": "^2.2.0",
     "@sourcegraph/stylelint-config": "^1.0.1",
@@ -89,7 +77,6 @@
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "get-graphql-schema": "^2.1.1",
     "gql2ts": "^1.2.1",
-    "husky": "^1.1.0",
     "mocha": "^5.2.0",
     "node-sass": "^4.9.0",
     "postcss-loader": "^3.0.0",

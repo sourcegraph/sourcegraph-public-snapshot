@@ -8,7 +8,6 @@
     "lib"
   ],
   "scripts": {
-    "commitmsg": "commitlint -e $GIT_PARAMS",
     "semantic-release": "semantic-release",
     "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
@@ -43,11 +42,6 @@
       "lcovonly"
     ]
   },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
   "sideEffects": false,
   "dependencies": {
     "@slimsag/react-shortcuts": "^1.2.0",
@@ -64,8 +58,6 @@
     "ts-key-enum": "^2.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^7.1.1",
-    "@commitlint/config-conventional": "^7.1.1",
     "@sourcegraph/prettierrc": "^2.2.0",
     "@sourcegraph/tsconfig": "^3.0.0",
     "@sourcegraph/tslint-config": "^12.0.0",
@@ -83,7 +75,6 @@
     "cpy-cli": "^2.0.0",
     "del-cli": "^1.1.0",
     "esm": "^3.0.82",
-    "husky": "^0.14.3",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.4",
     "nyc": "^13.0.1",

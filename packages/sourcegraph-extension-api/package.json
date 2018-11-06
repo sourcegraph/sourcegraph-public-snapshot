@@ -19,7 +19,6 @@
     "module"
   ],
   "scripts": {
-    "commitmsg": "commitlint -e $GIT_PARAMS",
     "semantic-release": "semantic-release",
     "prettier": "prettier '**/{*.{js?(on),ts,yml},.*.yml}' --write --list-different",
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
@@ -53,19 +52,12 @@
       "lcovonly"
     ]
   },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
   "sideEffects": false,
   "dependencies": {
     "minimatch": "^3.0.4",
     "rxjs": "^6.3.2"
   },
   "devDependencies": {
-    "@commitlint/cli": "^7.1.1",
-    "@commitlint/config-conventional": "^7.1.1",
     "@sourcegraph/prettierrc": "^2.2.0",
     "@sourcegraph/tsconfig": "^3.0.0",
     "@sourcegraph/tslint-config": "^12.0.0",
@@ -74,7 +66,6 @@
     "@types/node": "10.12.2",
     "concurrently": "^4.0.1",
     "cpy-cli": "^2.0.0",
-    "husky": "^0.14.3",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.2",
     "nyc": "^13.0.1",
