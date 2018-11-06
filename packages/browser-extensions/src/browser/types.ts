@@ -12,6 +12,12 @@ export interface PhabricatorMapping {
  */
 export interface FeatureFlags {
     /**
+     * Use the simpler options menu.
+     *
+     * @duration temporary - will be on by default after testing.
+     */
+    simpleOptionsMenu: boolean
+    /**
      * Whether or not to render [Mermaid](https://mermaidjs.github.io/) graphs
      * in markdown files viewed on GitHub.
      *
@@ -60,6 +66,7 @@ export interface FeatureFlags {
 }
 
 export const featureFlagDefaults: FeatureFlags = {
+    simpleOptionsMenu: false,
     newInject: false,
     renderMermaidGraphsEnabled: false,
     useExtensions: false,

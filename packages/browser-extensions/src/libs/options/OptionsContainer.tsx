@@ -65,7 +65,10 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             }),
             switchMap(url => {
                 this.setState({ status: 'connecting', connectionError: undefined })
-                return this.props.ensureValidSite(url).pipe(map(() => url), catchError(err => of(err)))
+                return this.props.ensureValidSite(url).pipe(
+                    map(() => url),
+                    catchError(err => of(err))
+                )
             }),
             catchError(err => of(err)),
             share()
@@ -118,7 +121,6 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                             ? of(undefined)
                             : this.props.createAccessToken(user.id).pipe(
                                   tap(createdToken => {
-                                      console.log('setting', url)
                                       this.props.setAccessToken(url, createdToken)
                                   }),
                                   mapTo(undefined)

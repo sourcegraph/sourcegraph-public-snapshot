@@ -18,6 +18,7 @@ import initializeCli from '../../libs/cli'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl, sourcegraphUrl } from '../../shared/util/context'
+import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
@@ -162,7 +163,7 @@ permissions.onRemoved(permissions => {
     })
 })
 
-// Ensure access tokens are in storage and they are in the correct shape.jj
+// Ensure access tokens are in storage and they are in the correct shape.
 storage.addSyncMigration((items, set, remove) => {
     if (!items.accessTokens) {
         set({ accessTokens: {} })
@@ -345,8 +346,14 @@ function handleManagedPermissionRequest(managedUrls: string[]): void {
 
 function setDefaultBrowserAction(): void {
     browserAction.setBadgeText({ text: '' })
-    browserAction.setPopup({ popup: 'options.html?popup=true' })
 }
+
+browserAction.onClicked(async () => {
+    if (await featureFlags.isEnabled('simpleOptionsMenu')) {
+        await browserAction.setPopup({ popup: 'options.html?popup=true' })
+    }
+    runtime.openOptionsPage()
+})
 
 /**
  * Fetches JavaScript from a URL and runs it in a web worker.
