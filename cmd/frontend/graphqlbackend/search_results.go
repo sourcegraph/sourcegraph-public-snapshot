@@ -735,7 +735,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				issuesResults := searchIssues(ctx, &args)
+				issuesResults, err := searchIssues(ctx, &args)
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "issue search failed"))
+					multiErrMu.Unlock()
+				}
 				if issuesResults != nil {
 					// fmt.Println(issuesResults[0].issue.title)
 					results = append(results, issuesResults...)
