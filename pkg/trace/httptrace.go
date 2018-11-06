@@ -72,6 +72,10 @@ func init() {
 			sentryDSN = conf.Get().Log.Sentry.Dsn
 			raven.SetDSN(sentryDSN)
 		})
+
+		ravenReadyOnce.Do(func() {
+			close(ravenReady)
+		})
 	}()
 
 }
