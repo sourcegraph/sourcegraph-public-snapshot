@@ -61,7 +61,7 @@
     "@sourcegraph/extensions-client-common": "^12.0.0",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/react": "16.4.14",
-    "@types/react-dom": "16.0.8",
+    "@types/react-dom": "16.0.9",
     "@types/react-router": "4.0.31",
     "@types/react-router-dom": "4.3.1",
     "babel-plugin-istanbul": "^5.0.1",
