@@ -2268,10 +2268,10 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react-stripe-elements@1.1.7":
-  version "1.1.7"
-  resolved "https://registry.yarnpkg.com/@types/react-stripe-elements/-/react-stripe-elements-1.1.7.tgz#edba2667b1a10a70862801a0c8a8973f7cb8672c"
-  integrity sha512-s4t5oVM3uTQGExHo0wOJJ2J1dHb2hTx4X8wY5UNi1X6qP1WKh/2tV70hra5P7cgFp4SKrohxiZWlP7OzWQIlvA==
+"@types/react-stripe-elements@1.1.8":
+  version "1.1.8"
+  resolved "https://registry.yarnpkg.com/@types/react-stripe-elements/-/react-stripe-elements-1.1.8.tgz#eafdbbb67a0a9dcd7ede0b7811cc72abe3c2f25b"
+  integrity sha512-mggR4i+LCqbDjJ8fhM/CwBlpokYrUJmY/u3ogZSaMIbPFElV5CcPz+0h+QFnULWRjgEpDFjwZOYffHQRRlh2bw==
   dependencies:
     "@types/react" "*"
     "@types/stripe-v3" "*"
