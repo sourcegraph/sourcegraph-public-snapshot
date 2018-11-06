@@ -117,7 +117,6 @@ func (s *Store) WaitUntilInitialized() {
 	if mode == modeServer {
 		select {
 		case <-configurationServerFrontendOnlyInitialized:
-			// Configuration server is initialized or this is not running in server mode.
 		default:
 			panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use goroutines and use conf.WaitUntilConfigurationServerInitialized to block until the frontend has been initialized)")
 		}
