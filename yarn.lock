@@ -1473,22 +1473,6 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^3.9.0":
-  version "3.9.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/codeintellify/-/codeintellify-3.9.0.tgz#1e3f002558cc367e8c5ee9b0a54e0c47c6ee8761"
-  integrity sha512-OLUHpBWp4Rmy1OeaQiom72wj+6vmH0ZIFVIjPJIsfy/ek5UqIEIGungTZigGPJixsdGHzzXSqHE1HIdVl234ZQ==
-  dependencies:
-    "@sourcegraph/event-positions" "^1.0.0"
-    "@sourcegraph/react-loading-spinner" "0.0.6"
-    highlight.js "^9.12.0"
-    lodash "^4.17.10"
-    marked "^0.4.0"
-    mdi-react "^4.0.0"
-    rxjs "^6.3.2"
-    sanitize-html "^1.18.2"
-    ts-key-enum "^2.0.0"
-    vscode-languageserver-types "^3.8.2"
-
 "@sourcegraph/codeintellify@^3.9.1":
   version "3.9.1"
   resolved "https://registry.yarnpkg.com/@sourcegraph/codeintellify/-/codeintellify-3.9.1.tgz#953040bdcf8e4d0a9c5ae1c8c87db763c3d3261e"
