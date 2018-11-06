@@ -22,7 +22,7 @@ var (
 
 func init() {
 	go func() {
-		conf.ConfigurationServerReady()
+		conf.WaitUntilConfigurationServerInitialized()
 
 		conf.Watch(func() {
 			reposListInstance.Store(newReposList(conf.Get().ReposList))

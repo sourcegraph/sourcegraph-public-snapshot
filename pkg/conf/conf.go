@@ -48,10 +48,10 @@ var (
 	configurationServerFrontendOnlyInitialized = make(chan struct{})
 )
 
-// ConfigurationServerReady blocks until frontend's configuration server has been initialized iff the
+// WaitUntilConfigurationServerInitialized blocks until frontend's configuration server has been initialized iff the
 // caller of pkg/conf is the frontend binary. This function is a no-op for every other caller
-//of pkg/conf.
-func ConfigurationServerReady() {
+// of pkg/conf.
+func WaitUntilConfigurationServerInitialized() {
 	<-configurationServerFrontendOnlyInitialized
 }
 

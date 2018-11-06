@@ -27,7 +27,7 @@ var (
 
 func init() {
 	go func() {
-		conf.ConfigurationServerReady()
+		conf.WaitUntilConfigurationServerInitialized()
 
 		conf.Watch(func() {
 			phabricatorRepos.Set(func() interface{} {

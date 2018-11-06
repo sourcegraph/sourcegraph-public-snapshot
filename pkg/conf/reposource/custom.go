@@ -32,7 +32,7 @@ func init() {
 	})
 
 	go func() {
-		conf.ConfigurationServerReady()
+		conf.WaitUntilConfigurationServerInitialized()
 
 		conf.Watch(func() {
 			cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
