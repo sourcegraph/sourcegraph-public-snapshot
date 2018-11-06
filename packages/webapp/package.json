@@ -60,7 +60,7 @@
     "@sourcegraph/codeintellify": "^3.9.1",
     "@sourcegraph/extensions-client-common": "^12.0.0",
     "@sqs/jsonc-parser": "^1.0.3",
-    "@types/react": "16.4.14",
+    "@types/react": "16.4.18",
     "@types/react-dom": "16.0.9",
     "@types/react-router": "4.4.0",
     "@types/react-router-dom": "4.3.1",
