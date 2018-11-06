@@ -6,23 +6,23 @@ Sourcegraph extensions are available in alpha on Sourcegraph.com, in Sourcegraph
 
 ### Using Sourcegraph extensions on Sourcegraph
 
-To view all available extensions, click **User menu > Extensions** in the top navigation bar. To add an extension, visit its page and toggle the slider to on.
+To view all available extensions, click **User menu > Extensions** in the top navigation bar.
 
-In this alpha release, we recommend using the following 2 extensions.
+To enable an extension for yourself, visit its page and toggle the slider to on.
 
-> Note: These recommended extensions are fetched from Sourcegraph.com. See the steps below for each extension if you need to publish a local copy of an extension (because of a firewall preventing network access to Sourcegraph.com, or to run a version of the extension with custom modifications).
+To enable an extension for all users (site admins only) or for all organization members, add to the `extensions` object in global or organization settings (as shown below).
 
-#### Codecov: Code coverage overlays from Codecov
-
-Add the **Codecov** extension as described above. After adding it, visit a repository that contains Codecov code coverage data. If the repository is private, run the "Codecov: Set API token" command in the menu in the top navigation bar.
-
-For more information, see the [sourcegraph-codecov repository](https://github.com/sourcegraph/sourcegraph-codecov).
-
-#### Basic code intelligence: Definitions and references from text search
-
-Add the **Basic code intelligence** extension as described above. After adding it, visit any file. Toggle between precise code intelligence and fuzzy (basic) code intelligence by pressing the **Precise** and **Fuzzy** buttons in the file header. The toggle affects the behavior of **Go to definition** and the reference results shown for **Find references**.
-
-For more information, see the [sourcegraph-basic-code-intel repository](https://github.com/sourcegraph/sourcegraph-basic-code-intel).
+```json
+{
+  ...,
+  "extensions": {
+    ...,
+    "alice/myextension": true,
+    ...
+  },
+  ...
+}
+```
 
 #### Publishing a local copy of an extension
 
