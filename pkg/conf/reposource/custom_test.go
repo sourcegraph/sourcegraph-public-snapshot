@@ -46,7 +46,7 @@ func Test_customCloneURLToRepoName(t *testing.T) {
 	}}
 
 	for i, test := range tests {
-		cloneURLResolvers = test.cloneURLResolvers
+		cloneURLResolvers.Store(test.cloneURLResolvers)
 		for cloneURL, expName := range test.cloneURLToRepoName {
 			if name := customCloneURLToRepoName(cloneURL); name != api.RepoName(expName) {
 				t.Errorf("In test case %d, expected %s -> %s, but got %s", i+1, cloneURL, expName, name)

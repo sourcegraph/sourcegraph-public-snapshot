@@ -98,8 +98,13 @@ func init() {
 // occur. This function should only ever be called once.
 func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	mode := getMode()
-	if mode != modeServer {
-		panic("cannot call this function except in server mode")
+
+	if mode == modeTest {
+		return nil
+	}
+
+	if mode == modeClient {
+		panic("cannot call this function except in client mode")
 	}
 
 	server := NewServer(source)
