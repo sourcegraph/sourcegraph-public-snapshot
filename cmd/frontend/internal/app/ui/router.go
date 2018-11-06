@@ -45,6 +45,7 @@ const (
 	routeThreads        = "threads"
 	routeTree           = "tree"
 	routeBlob           = "blob"
+	routeRaw            = "raw"
 	routeOrganizations  = "org"
 	routeSettings       = "settings"
 	routeSiteAdmin      = "site-admin"
@@ -155,6 +156,9 @@ func newRouter() *mux.Router {
 
 	// blob
 	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
+
+	// raw
+	repoRev.Path("/raw{Path:.*}").Methods("GET").Name(routeRaw)
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
@@ -285,6 +289,9 @@ func initRouter() {
 		fileName := path.Base(mux.Vars(r)["Path"])
 		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.Name))
 	})))
+
+	// raw
+	router.Get(routeRaw).Handler(handler(serveRaw))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
