@@ -30,7 +30,7 @@ Coming soon: extensions that overlay information (from popular 3rd-party dev too
 - security
 - PR and commit comments
 
-Sourcegraph extensions are in alpha. Please [file issues](https://github.com/sourcegraph/sourcegraph-extension-api/issues) for extension requests, problems, and feedback.
+Sourcegraph extensions are in alpha. Please [file issues](https://github.com/sourcegraph/sourcegraph) for extension requests, problems, and feedback.
 
 ## Authoring extensions
 

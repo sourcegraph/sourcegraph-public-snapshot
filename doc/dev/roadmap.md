@@ -56,7 +56,7 @@ Pure Docker cluster deployment | [🌞](https://github.com/sourcegraph/deploy-so
 Repository permissions | [🌞](https://github.com/sourcegraph/sourcegraph/pull/557)[📣](https://github.com/sourcegraph/about/pull/47)[📖](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/acls.md) | Enterprise, integrations, [Sourcegraph][sourcegraph] | [@beyang][beyang]
 Explore page | [🚢](https://sourcegraph.com/explore)[📣](https://github.com/sourcegraph/about/pull/51) | [Sourcegraph][sourcegraph] | [@francisschmaltz][francisschmaltz] [@sqs][sqs]
 Product documentation | [📣](https://github.com/sourcegraph/about/pull/43)[📖](https://docs.sourcegraph.com/dev/documentation)[📖](https://github.com/sourcegraph/docs.sourcegraph.com#readme) | All, [Sourcegraph][sourcegraph] | [@sqs][sqs]
-Sourcegraph extensions usage and authoring experience | [📽](https://drive.google.com/file/d/1lguzuXbKYuSFwIvM7KK6FW8p6jMibxGF/view)[📖](https://github.com/sourcegraph/sourcegraph-extension-docs)[🐞](https://github.com/sourcegraph/sourcegraph-extension-api/issues?q=is%3Aopen+is%3Aissue+label%3Anext-release) | Extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag] [@ryan-blunden][ryan-blunden]
+Sourcegraph extensions usage and authoring experience | [📽](https://drive.google.com/file/d/1lguzuXbKYuSFwIvM7KK6FW8p6jMibxGF/view)[📖](https://github.com/sourcegraph/sourcegraph-extension-docs) | Extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag] [@ryan-blunden][ryan-blunden]
 
 <small>[📣 2.13 announcement](https://about.sourcegraph.com/blog/announcing-sourcegraph-2.13) and [📣 3.0-preview announcement](https://github.com/sourcegraph/about/pull/49), week of 5 November 2018 --- [All October 2018 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+author%3Asqs+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%22October+2018%22)</small>
 
@@ -113,8 +113,8 @@ Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@sl
 <small>Release: week of 4 March 2019</small>
 
 [sourcegraph]: https://github.com/sourcegraph/sourcegraph
-[sourcegraph-extension-api]: https://github.com/sourcegraph/sourcegraph-extension-api
-[browser-extensions]: https://github.com/sourcegraph/browser-extensions
+[sourcegraph-extension-api]: https://github.com/sourcegraph/sourcegraph/tree/master/packages/sourcegraph-extension-api
+[browser-extensions]: https://github.com/sourcegraph/sourcegraph/tree/master/packages/browser-extensions
 [deploy-sourcegraph]: https://github.com/sourcegraph/deploy-sourcegraph
 [src-cli]: https://github.com/sourcegraph/src-cli
 [chrismwendt]: https://github.com/chrismwendt

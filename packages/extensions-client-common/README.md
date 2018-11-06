@@ -6,7 +6,7 @@
 [![sourcegraph: search](https://img.shields.io/badge/sourcegraph-search-brightgreen.svg)](https://sourcegraph.com/github.com/sourcegraph/extensions-client-common)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
-Common TypeScript/React client application code for [Sourcegraph extension](https://github.com/sourcegraph/sourcegraph-extension-api) configuration and management, used in:
+Common TypeScript/React client application code for [Sourcegraph extension](https://docs.sourcegraph.com/extensions) configuration and management, used in:
 
 - Sourcegraph
 - "Sourcegraph for X" products (Chrome extension, Firefox extension, and more soon)

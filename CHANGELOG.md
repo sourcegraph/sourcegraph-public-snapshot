@@ -22,7 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - A new site config option `search.index.enabled` allows toggling on indexed search.
-- Search now uses [Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph-extension-api) that register `queryTransformer`s.
+- Search now uses [Sourcegraph extensions](https://docs.sourcegraph.com/extensions) that register `queryTransformer`s.
 - GitLab repository permissions are now supported. To enable this, you will need to set the `authz`
   field in the `GitLabConnection` configuration object and ensure that the access token set in the
   `token` field has both `sudo` and `api` scope.
@@ -84,7 +84,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Reduced the size of in-memory data structured used for storing search results. This should reduce the backend memory usage of large result sets.
-- Code intelligence is now provided by [Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph-extension-api). The extension for each language in the site configuration `langservers` property is automatically enabled.
+- Code intelligence is now provided by [Sourcegraph extensions](https://docs.sourcegraph.com/extensions). The extension for each language in the site configuration `langservers` property is automatically enabled.
 - Support for multiple authentication providers is now enabled by default. To disable it, set the `experimentalFeatures.multipleAuthProviders` site config option to `"disabled"`. This only applies to Sourcegraph Enterprise.
 - When using the `http-header` auth provider, valid auth cookies (from other auth providers that are currently configured or were previously configured) are now respected and will be used for authentication. These auth cookies also take precedence over the `http-header` auth. Previously, the `http-header` auth took precedence.
 - Bitbucket Server username configuration is now used to clone repositories if the Bitbucket Server API does not set a username.
