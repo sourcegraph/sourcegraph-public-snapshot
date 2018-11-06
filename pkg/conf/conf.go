@@ -48,13 +48,6 @@ var (
 	configurationServerFrontendOnlyInitialized = make(chan struct{})
 )
 
-// WaitUntilConfigurationServerInitialized blocks until frontend's configuration server has been initialized iff the
-// caller of pkg/conf is the frontend binary. This function is a no-op for every other caller
-// of pkg/conf.
-func WaitUntilConfigurationServerInitialized() {
-	<-configurationServerFrontendOnlyInitialized
-}
-
 func init() {
 	clientStore := NewStore()
 	defaultClient = &client{

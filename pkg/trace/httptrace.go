@@ -55,9 +55,7 @@ func init() {
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
 
-	go func() {
-		conf.WaitUntilConfigurationServerInitialized()
-
+	go func() {		
 		conf.Watch(func() {
 			if conf.Get().Log == nil {
 				return

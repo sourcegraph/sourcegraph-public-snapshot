@@ -27,8 +27,6 @@ var (
 
 func init() {
 	go func() {
-		conf.WaitUntilConfigurationServerInitialized()
-
 		conf.Watch(func() {
 			phabricatorRepos.Set(func() interface{} {
 				repos := map[api.RepoName]*types.PhabricatorRepo{}

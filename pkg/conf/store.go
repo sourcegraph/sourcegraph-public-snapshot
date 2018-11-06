@@ -2,6 +2,7 @@ package conf
 
 import (
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
@@ -116,9 +117,12 @@ func (s *Store) WaitUntilInitialized() {
 	mode := getMode()
 	if mode == modeServer {
 		select {
+		// Frontend has initialized its configuration server.
 		case <-configurationServerFrontendOnlyInitialized:
-		default:
-			panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use goroutines and use conf.WaitUntilConfigurationServerInitialized to block until the frontend has been initialized)")
+		// We assume that we're in an unrecoverable deadlock if frontend hasn't
+		// started its configuration server after 30 seconds.
+		case <-time.After(30 * time.Second):
+			panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use a goroutine)")
 		}
 	}
 

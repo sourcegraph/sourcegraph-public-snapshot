@@ -32,8 +32,6 @@ func init() {
 	})
 
 	go func() {
-		conf.WaitUntilConfigurationServerInitialized()
-
 		conf.Watch(func() {
 			cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
 			newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
