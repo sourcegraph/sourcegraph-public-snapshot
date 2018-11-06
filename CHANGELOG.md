@@ -17,7 +17,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-## 2.13.2 (unreleased)
+## 2.13.2
+
+### Fixed
 
 - Fixed an issue where Sourcegraph would try to fetch more than the allowed number of repositories from AWS CodeCommit.
 
