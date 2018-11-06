@@ -197,13 +197,17 @@ export const getDiffLineRanges: CodeView['getLineRanges'] = (codeView, part) => 
 
     for (const row of codeView.querySelectorAll<HTMLTableRowElement>('tr')) {
         const isCode =
-            !row.classList.contains('js-expandable-line') && !row.classList.contains('js-inline-comments-container')
+            !row.classList.contains('js-expandable-line') &&
+            !row.classList.contains('js-inline-comments-container') &&
+            !row.querySelector('[data-line-number="..."]')
 
         if (isCode) {
             const line = row.querySelector<HTMLElement>(
                 `td${isDomSplitDiff() ? `:nth-of-type(${part === 'base' ? 2 : 4})` : '.blob-code'}`
-            )!
+            )
+
             if (
+                !line ||
                 line.classList.contains('empty-cell') ||
                 line.classList.contains(part === 'base' ? 'blob-code-addition' : 'blob-code-deletion')
             ) {
