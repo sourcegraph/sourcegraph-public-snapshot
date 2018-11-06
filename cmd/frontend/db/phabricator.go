@@ -44,6 +44,10 @@ func init() {
 				return repos
 			})
 		})
+
+		phabricatorReposReadyOnce.Do(func() {
+			close(phabricatorReposReady)
+		})
 	}()
 
 }
@@ -137,6 +141,7 @@ func (p *phabricator) GetByName(ctx context.Context, name api.RepoName) (*types.
 	if Mocks.Phabricator.GetByName != nil {
 		return Mocks.Phabricator.GetByName(name)
 	}
+	<-phabricatorReposReady
 	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoName]*types.PhabricatorRepo)
 	if r := phabricatorRepos[name]; r != nil {
 		return r, nil
