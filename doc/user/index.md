@@ -84,15 +84,15 @@ Sourcegraph gives you code intelligence in:
 
 - **code files in Sourcegraph's web UI**
 
-![Hover tooltip](../extensions/language_servers/img/hover-tooltip.png.md)
+![Hover tooltip](../extensions/language_servers/img/hover-tooltip.png)
 
 - **diffs in your code review tool**, via [integrations](../integration/index.md)
 
-![GitHub pull request integration](../integration/img/GitHubDiff.png.md)
+![GitHub pull request integration](../integration/img/GitHubDiff.png)
 
 - **code files on your code host**, via [integrations](../integration/index.md)
 
-![GitHub file integration](img/GitHubFile.png.md)
+![GitHub file integration](img/GitHubFile.png)
 
 Read the [code intelligence documentation](../extensions/language_servers/index.md) to learn more and to set it up.
 
