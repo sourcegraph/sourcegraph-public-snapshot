@@ -5,7 +5,7 @@ EXPOSE 2088
 RUN apt-get -q -y update
 # --no-install-recommends breaks the image.
 # hadolint ignore=DL3015
-RUN apt-get -q -y install unzip=6.0-20ubuntu1 git=1:2.7.4-0ubuntu1.4 maven=3.3.9-3
+RUN apt-get -q -y install unzip=6.0-20ubuntu1 git=1:2.7.4-0ubuntu1.5 maven=3.3.9-3
 
 # Install Gradle binary
 # --no-install-recommends breaks the image.
