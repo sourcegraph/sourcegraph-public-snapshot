@@ -1,10 +1,8 @@
 # Sourcegraph extension API
 
-[![build](https://travis-ci.org/sourcegraph/sourcegraph-extension-api.svg?branch=master)](https://travis-ci.org/sourcegraph/sourcegraph-extension-api)
-[![codecov](https://codecov.io/gh/sourcegraph/sourcegraph-extension-api/branch/master/graph/badge.svg?token=SLtdKY3zQx)](https://codecov.io/gh/sourcegraph/sourcegraph-extension-api)
+[![codecov](https://codecov.io/gh/sourcegraph/sourcegraph-extension-api/branch/master/graph/badge.svg?token=SLtdKY3zQx)](https://codecov.io/gh/sourcegraph/sourcegraph/tree/master/packages/sourcegraph-extension-api/src)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
-[![sourcegraph: search](https://img.shields.io/badge/sourcegraph-search-brightgreen.svg)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph-extension-api)
-[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
+[![sourcegraph: search](https://img.shields.io/badge/sourcegraph-search-brightgreen.svg)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/packages/sourcegraph-extension-api)
 
 **Status:** Alpha
 
