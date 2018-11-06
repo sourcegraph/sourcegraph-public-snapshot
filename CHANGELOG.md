@@ -14,12 +14,17 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
-- The timeout when running `git ls-remote` to determine if a remote url is cloneable has been increased from 5s to 30s.
-- Git commands now use [version 2 of the Git wire protocol](https://opensource.googleblog.com/2018/05/introducing-git-protocol-version-2.html), which should speed up certain operations (e.g. `git ls-remote`, `git fetch`) when communicating with a v2 enabled server.
 
 ### Removed
 
-## 2.13
+## 2.13.1
+
+### Changed
+
+- The timeout when running `git ls-remote` to determine if a remote url is cloneable has been increased from 5s to 30s.
+- Git commands now use [version 2 of the Git wire protocol](https://opensource.googleblog.com/2018/05/introducing-git-protocol-version-2.html), which should speed up certain operations (e.g. `git ls-remote`, `git fetch`) when communicating with a v2 enabled server.
+
+## 2.13.0
 
 ### Added
 
