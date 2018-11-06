@@ -1,7 +1,8 @@
-package store
+package conf
 
 import (
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
@@ -22,8 +23,8 @@ type Store struct {
 	once  sync.Once
 }
 
-// New returns a new configuration store.
-func New() *Store {
+// NewStore returns a new configuration store.
+func NewStore() *Store {
 	return &Store{
 		ready: make(chan struct{}),
 	}
@@ -113,6 +114,18 @@ func (s *Store) MaybeUpdate(rawConfig string) (UpdateResult, error) {
 // WaitUntilInitialized blocks and only returns to the caller once the store
 // has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
 func (s *Store) WaitUntilInitialized() {
+	mode := getMode()
+	if mode == modeServer {
+		select {
+		// Frontend has initialized its configuration server.
+		case <-configurationServerFrontendOnlyInitialized:
+		// We assume that we're in an unrecoverable deadlock if frontend hasn't
+		// started its configuration server after 30 seconds.
+		case <-time.After(30 * time.Second):
+			panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use a goroutine)")
+		}
+	}
+
 	<-s.ready
 }
 

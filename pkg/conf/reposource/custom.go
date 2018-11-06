@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -12,8 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// cloneURLResolvers is the list of clone-URL-to-repo-name mappings, derived from the site config
-var cloneURLResolvers []*cloneURLResolver
+var (
+	// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived from the site config
+	cloneURLResolvers          atomic.Value
+	cloneURLResolversReadyOnce sync.Once
+	cloneURLResolversReady     = make(chan struct{})
+)
 
 func init() {
 	conf.ContributeValidator(func(c schema.SiteConfiguration) (problems []string) {
@@ -25,23 +31,28 @@ func init() {
 		return
 	})
 
-	conf.Watch(func() {
-		cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
-		newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
-		for i, c := range cloneURLConfig {
-			from, err := regexp.Compile(c.From)
-			if err != nil {
-				// Skip if there's an error. A user-visible validation error will appear due to the ContributeValidator call above.
-				log15.Error("Site config: unable to compile Git clone URL mapping regexp", "regexp", c.From)
-				continue
+	go func() {
+		conf.Watch(func() {
+			cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
+			newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
+			for i, c := range cloneURLConfig {
+				from, err := regexp.Compile(c.From)
+				if err != nil {
+					// Skip if there's an error. A user-visible validation error will appear due to the ContributeValidator call above.
+					log15.Error("Site config: unable to compile Git clone URL mapping regexp", "regexp", c.From)
+					continue
+				}
+				newCloneURLResolvers[i] = &cloneURLResolver{
+					from: from,
+					to:   c.To,
+				}
 			}
-			newCloneURLResolvers[i] = &cloneURLResolver{
-				from: from,
-				to:   c.To,
-			}
-		}
-		cloneURLResolvers = newCloneURLResolvers
-	})
+			cloneURLResolvers.Store(newCloneURLResolvers)
+			cloneURLResolversReadyOnce.Do(func() {
+				close(cloneURLResolversReady)
+			})
+		})
+	}()
 }
 
 type cloneURLResolver struct {
@@ -52,7 +63,8 @@ type cloneURLResolver struct {
 // customCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
 func customCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
-	for _, r := range cloneURLResolvers {
+	<-cloneURLResolversReady
+	for _, r := range cloneURLResolvers.Load().([]*cloneURLResolver) {
 		if name := mapString(r.from, cloneURL, r.to); name != "" {
 			return api.RepoName(name)
 		}

@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -14,24 +15,26 @@ import (
 var (
 	// reposListInstance is the global instance of the repos.list repoSource. Do NOT reference this
 	// directly; use getReposListInstance() instead.
-	reposListInstance *reposList
-	reposListMu       sync.Mutex
+	reposListInstance          atomic.Value
+	reposListInstanceReadyOnce sync.Once
+	reposListInstanceReady     = make(chan struct{})
 )
 
 func init() {
-	conf.Watch(func() {
-		newReposListInstance := newReposList(conf.Get().ReposList)
+	go func() {
+		conf.Watch(func() {
+			reposListInstance.Store(newReposList(conf.Get().ReposList))
+		})
 
-		reposListMu.Lock()
-		reposListInstance = newReposListInstance
-		reposListMu.Unlock()
-	})
+		reposListInstanceReadyOnce.Do(func() {
+			close(reposListInstanceReady)
+		})
+	}()
 }
 
 func getReposListInstance() *reposList {
-	reposListMu.Lock()
-	defer reposListMu.Unlock()
-	return reposListInstance
+	<-reposListInstanceReady
+	return reposListInstance.Load().(*reposList)
 }
 
 type reposList struct {
