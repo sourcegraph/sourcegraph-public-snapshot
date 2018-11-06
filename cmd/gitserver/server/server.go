@@ -164,7 +164,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 		return longGitCommandTimeout
 
 	case "ls-remote":
-		return 5 * time.Second
+		return 30 * time.Second
 
 	default:
 		return time.Minute
@@ -965,7 +965,8 @@ var testRepoExists func(ctx context.Context, url string) error
 
 // isCloneable checks to see if the Git remote URL is cloneable.
 func (s *Server) isCloneable(ctx context.Context, url string) error {
-	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout([]string{"ls-remote"}))
+	args := []string{"ls-remote", url, "HEAD"}
+	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(args))
 	defer cancel()
 
 	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
@@ -975,9 +976,12 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 		return testRepoExists(ctx, url)
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "ls-remote", url, "HEAD")
+	cmd := exec.CommandContext(ctx, "git", args...)
 	out, err := s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
+		}
 		if len(out) > 0 {
 			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
 		}
