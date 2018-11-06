@@ -37,6 +37,7 @@ func main() {
 	pipeline := &bk.Pipeline{}
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
+		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("GO111MODULE", "on"))
 
 	pipeline.AddStep(":white_check_mark:",
@@ -46,15 +47,13 @@ func main() {
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run prettier"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Env("CYPRESS_INSTALL_BINARY", "0"),              // for speed
+	pipeline.AddStep(":typescript:", // for speed
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // for speed
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn workspace webapp run tslint"))
 
 	pipeline.AddStep(":stylelint:",
-		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
@@ -65,7 +64,6 @@ func main() {
 		bk.Cmd("yarn run graphql-lint"))
 
 	pipeline.AddStep(":webpack:",
-		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
@@ -76,7 +74,6 @@ func main() {
 		bk.Cmd("GITHUB_TOKEN= yarn workspace webapp run bundlesize"))
 
 	pipeline.AddStep(":mocha:",
-		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
@@ -97,7 +94,6 @@ func main() {
 		bk.ArtifactPaths("coverage.txt"))
 
 	pipeline.AddStep(":typescript:",
-		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn workspace sourcegraph run tslint"),
@@ -108,7 +104,6 @@ func main() {
 		bk.ArtifactPaths("packages/sourcegraph-extension-api/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
-		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn workspace sourcegraph run build"),

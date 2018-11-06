@@ -40,6 +40,7 @@ func main() {
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Cmd("pushd enterprise"),
 	)
 
