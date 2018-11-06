@@ -1,0 +1,1 @@
+web-repo-proxy is a utility to serve Git repositories based on data from the web. The initial application is to serve the code from Stackoverflow posts as Git repositories so that we can show code intelligence for them. See [the original feature request](https://github.com/sourcegraph/sourcegraph/issues/423).
