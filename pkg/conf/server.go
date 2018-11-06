@@ -1,7 +1,6 @@
-package confserver
+package conf
 
 import (
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"sync"
@@ -10,16 +9,22 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// ConfigurationSource provides direct access to read and write to the
+// "raw" configuration.
+type ConfigurationSource interface {
+	Write(data string) error
+	Read() (string, error)
+	FilePath() string
+}
+
 // Server provides access and manages modifications to the site configuration.
 type Server struct {
-	// configFilePath is the path to the site configuration file on disk.
-	configFilePath string
+	source ConfigurationSource
 
-	store *store.Store
+	store *Store
 
 	needRestartMu sync.RWMutex
 	needRestart   bool
@@ -33,15 +38,15 @@ type Server struct {
 }
 
 // NewServer returns a new Server instance that mangages the site config file
-// that is stored at "configFilePath".
+// that is stored at configSource.
 //
 // The server must be started with Start() before it can handle requests.
-func NewServer(configFilePath string) *Server {
+func NewServer(source ConfigurationSource) *Server {
 	fileWrite := make(chan chan struct{}, 1)
 	return &Server{
-		configFilePath: configFilePath,
-		store:          store.New(),
-		fileWrite:      fileWrite,
+		source:    source,
+		store:     NewStore(),
+		fileWrite: fileWrite,
 	}
 }
 
@@ -60,7 +65,8 @@ func (s *Server) Write(input string) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(s.configFilePath, []byte(input), 0600); err != nil {
+	err = s.source.Write(input)
+	if err != nil {
 		return err
 	}
 
@@ -133,7 +139,7 @@ func (s *Server) watchDisk() {
 
 		err := s.updateFromDisk()
 		if err != nil {
-			log.Printf("failed to read configuration file: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err, s.configFilePath)
+			log.Printf("failed to read configuration file: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err, s.source.FilePath())
 		}
 
 		if signalDoneReading != nil {
@@ -143,9 +149,9 @@ func (s *Server) watchDisk() {
 }
 
 func (s *Server) updateFromDisk() error {
-	rawConfig, err := s.readConfig()
+	rawConfig, err := s.source.Read()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to read configuration")
 	}
 
 	configChange, err := s.store.MaybeUpdate(rawConfig)
@@ -171,17 +177,6 @@ func (s *Server) updateFromDisk() error {
 	return nil
 }
 
-// readConfig reads the raw configuration that's currently saved to the disk
-// (bypasses the configStore).
-func (s *Server) readConfig() (string, error) {
-	data, err := ioutil.ReadFile(s.configFilePath)
-	if err != nil {
-		return "", errors.Wrapf(err, "unable to read config file from %q", s.configFilePath)
-	}
-
-	return string(data), nil
-}
-
 // NeedServerRestart tells if the server needs to restart for pending configuration
 // changes to take effect.
 func (s *Server) NeedServerRestart() bool {
@@ -201,5 +196,5 @@ func (s *Server) markNeedServerRestart() {
 // FilePath is the path to the configuration file, if any.
 // TODO@ggilmore: re-evaluate whether or not we need this
 func (s *Server) FilePath() string {
-	return s.configFilePath
+	return s.source.FilePath()
 }

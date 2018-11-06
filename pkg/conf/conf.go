@@ -6,9 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals/confserver"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 )
 
 type configurationMode int
@@ -46,8 +43,20 @@ func getMode() configurationMode {
 	}
 }
 
+var (
+	configurationServerFrontendOnly            *Server
+	configurationServerFrontendOnlyInitialized = make(chan struct{})
+)
+
+// ConfigurationServerReady blocks until frontend's configuration server has been initialized iff the
+// caller of pkg/conf is the frontend binary. This function is a no-op for every other caller
+//of pkg/conf.
+func ConfigurationServerReady() {
+	<-configurationServerFrontendOnlyInitialized
+}
+
 func init() {
-	clientStore := store.New()
+	clientStore := NewStore()
 	defaultClient = &client{
 		store:   clientStore,
 		fetcher: httpFetcher{},
@@ -58,6 +67,8 @@ func init() {
 	// Don't kickoff the background updaters for the client/server
 	// when running test cases.
 	if mode == modeTest {
+		close(configurationServerFrontendOnlyInitialized)
+
 		// Seed the client store with a dummy configuration for test cases.
 		dummyConfig := `
 		{
@@ -72,20 +83,36 @@ func init() {
 		return
 	}
 
-	// If the caller of pkg/conf is the frontend service, instantiate the DefaultServerFrontendOnly
-	// and install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
-	if mode == modeServer {
-		configFilePath := os.Getenv("SOURCEGRAPH_CONFIG_FILE")
-		if configFilePath == "" {
-			configFilePath = "/etc/sourcegraph/config.json"
-		}
-		globals.ConfigurationServerFrontendOnly = confserver.NewServer(configFilePath)
+	// The default client is started in InitConfigurationServerFrontendOnly in
+	// the case of server mode.
+	if mode == modeClient {
+		close(configurationServerFrontendOnlyInitialized)
 
-		globals.ConfigurationServerFrontendOnly.Start()
-		defaultClient.fetcher = passthroughFetcherFrontendOnly{}
+		go defaultClient.continuouslyUpdate()
+
+	}
+}
+
+// InitConfigurationServerFrontendOnly creates and returns a configuration
+// server. This should only be invoked by the frontend, or else a panic will
+// occur. This function should only ever be called once.
+func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
+	mode := getMode()
+	if mode != modeServer {
+		panic("cannot call this function except in server mode")
 	}
 
+	var server *Server
+	server.Start()
+
+	// Install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
+	defaultClient.fetcher = passthroughFetcherFrontendOnly{}
+
+	close(configurationServerFrontendOnlyInitialized)
+
 	go defaultClient.continuouslyUpdate()
+	configurationServerFrontendOnly = server
+	return server
 }
 
 // FormatOptions is the default format options that should be used for jsonx
