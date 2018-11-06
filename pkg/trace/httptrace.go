@@ -55,7 +55,7 @@ func init() {
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
 
-	go func() {		
+	go func() {
 		conf.Watch(func() {
 			if conf.Get().Log == nil {
 				return
