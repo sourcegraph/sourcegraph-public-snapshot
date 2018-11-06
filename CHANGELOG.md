@@ -19,6 +19,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The **Explore** page was replaced with a **Repositories** search link in the top navigation bar.
 
+## 2.13.2 (unreleased)
+
+- Fixed an issue where Sourcegraph would try to fetch more than the allowed number of repositories from AWS CodeCommit.
+
+## 2.13.1
+
+### Changed
+
+- The timeout when running `git ls-remote` to determine if a remote url is cloneable has been increased from 5s to 30s.
+- Git commands now use [version 2 of the Git wire protocol](https://opensource.googleblog.com/2018/05/introducing-git-protocol-version-2.html), which should speed up certain operations (e.g. `git ls-remote`, `git fetch`) when communicating with a v2 enabled server.
+
 ## 2.13 (not yet released)
 
 ### Added
