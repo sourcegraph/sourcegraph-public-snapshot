@@ -26,13 +26,18 @@ The [user documentation](user/index.md) is about how to use Sourcegraph. The mos
 - [Overview](user/index.md): What is Sourcegraph?
 - [Tour](user/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
 - [Code search](user/search/index.md)
-- [Integrations](integration/index.md)
-  - [Browser extension](integration/browser_extension.md)
+- [Sourcegraph extensions](extensions/index.md)
+- [Chrome and Firefox browser extensions](integration/browser_extension.md)
+- [Other integrations](integration/index.md)
 - [GraphQL API](api/graphql.md)
 
 ## For site administrators
 
 The [site administration documentation](admin/index.md) is about deploying and managing a Sourcegraph self-hosted instance.
+
+## For Sourcegraph extension authors
+
+See [Sourcegraph extensions documentation](extensions/index.md) to extend Sourcegraph with new features.
 
 ## For contributors to Sourcegraph
 
