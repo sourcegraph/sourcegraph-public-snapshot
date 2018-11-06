@@ -15,7 +15,7 @@ export const resolveParentRev = memoizeObservable(
         queryGraphQL({
             ctx: getContext({ repoKey: ctx.repoPath }),
             request: `query ResolveParentRev($repoPath: String!, $rev: String!) {
-                repository(uri: $repoPath) {
+                repository(name: $repoPath) {
                     mirrorInfo {
                         cloneInProgress
                     }
@@ -59,7 +59,7 @@ export const resolveRepo = memoizeObservable(
         queryGraphQL({
             ctx: getContext({ repoKey: ctx.repoPath }),
             request: `query ResolveRepo($repoPath: String!) {
-                repository(uri: $repoPath) {
+                repository(name: $repoPath) {
                     url
                 }
             }`,
@@ -85,7 +85,7 @@ export const resolveRev = memoizeObservable(
         queryGraphQL({
             ctx: getContext({ repoKey: ctx.repoPath }),
             request: `query ResolveRev($repoPath: String!, $rev: String!) {
-                repository(uri: $repoPath) {
+                repository(name: $repoPath) {
                     mirrorInfo {
                         cloneInProgress
                     }
@@ -180,7 +180,7 @@ export const fetchBlobContentLines = memoizeObservable(
         queryGraphQL({
             ctx: getContext({ repoKey: ctx.repoPath }),
             request: `query BlobContent($repoPath: String!, $commitID: String!, $filePath: String!) {
-                repository(uri: $repoPath) {
+                repository(name: $repoPath) {
                     commit(rev: $commitID) {
                         file(path: $filePath) {
                             content
