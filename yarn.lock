@@ -1881,10 +1881,15 @@
   dependencies:
     "@types/d3-time" "*"
 
-"@types/d3-selection@*", "@types/d3-selection@1.3.2":
+"@types/d3-selection@*":
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/@types/d3-selection/-/d3-selection-1.3.2.tgz#dd5661a560ba9ce3aba823c424b8d4a1bc7e833f"
   integrity sha512-K23sDOi7yMussv7aiqk097IWWbjFYbJpcDppQAcaf6DfmHxAsjr+6N4HJGokETLDuV7y/qJeeIJINPnkWJM5Hg==
+
+"@types/d3-selection@1.3.3":
+  version "1.3.3"
+  resolved "https://registry.yarnpkg.com/@types/d3-selection/-/d3-selection-1.3.3.tgz#9f89da68c78b6a1f940bf34b90f98b0201da908d"
+  integrity sha512-GG/wKHmbXakO/7UOmc9o/VUOEROQBcCF9X5YPbSOA31O1c0/ZdUA0tirPKAIyO48BbNgFxO9EMbxjEEbAS5unA==
 
 "@types/d3-shape@1.2.4":
   version "1.2.4"
