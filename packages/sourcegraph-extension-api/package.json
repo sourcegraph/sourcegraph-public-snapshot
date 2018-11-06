@@ -74,7 +74,6 @@
     "@types/node": "10.12.2",
     "concurrently": "^4.0.1",
     "cpy-cli": "^2.0.0",
-    "husky": "^0.14.3",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.2",
     "nyc": "^13.0.1",

@@ -23,11 +23,6 @@
     "test": "mocha --require ts-node/register --watch --watch-extensions ts './src/**/*.test.ts?(x)'",
     "test:ci": "mocha --require ts-node/register './src/**/*.test.ts?(x)'"
   },
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
-  },
   "commitlint": {
     "extends": [
       "@commitlint/config-conventional"
@@ -89,7 +84,6 @@
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "get-graphql-schema": "^2.1.1",
     "gql2ts": "^1.2.1",
-    "husky": "^1.1.0",
     "mocha": "^5.2.0",
     "node-sass": "^4.9.0",
     "postcss-loader": "^3.0.0",
