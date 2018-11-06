@@ -59,7 +59,6 @@
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^3.9.1",
     "@sourcegraph/extensions-client-common": "^12.0.0",
-    "@sourcegraph/phabricator-extension": "^1.18.0",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/react": "16.4.14",
     "@types/react-dom": "16.0.8",
