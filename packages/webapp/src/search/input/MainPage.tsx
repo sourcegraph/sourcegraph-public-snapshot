@@ -156,7 +156,6 @@ const integrationsSections = [
                 text: 'Chrome',
                 link: 'https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack',
             },
-            { id: 'btn-firefox', text: 'Firefox', link: 'https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/' },
         ],
     },
 

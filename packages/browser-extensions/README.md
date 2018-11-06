@@ -9,9 +9,6 @@
 [![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg?logo=Google%20Chrome&logoColor=white)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome users](https://img.shields.io/chrome-web-store/users/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)\
-[![firefox version](https://img.shields.io/amo/v/sourcegraph.svg?logo=Mozilla%20Firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
-[![firefox users](https://img.shields.io/amo/users/sourcegraph.svg)](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
-[![firefox rating](https://img.shields.io/amo/rating/sourcegraph.svg)](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
 
 ## Overview
 
@@ -22,7 +19,9 @@ The tooltips include features like:
 - go to definition & find references (currently for Go, Java, TypeScript, JavaScript, Python)
 - find references
 
-#### 🚀 Install: [**Sourcegraph for Chrome**](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack) — [**Sourcegraph for Firefox**](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
+#### 🚀 Install: [**Sourcegraph for Chrome**](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
+
+> Sourcegraph for Firefox is temporarily unavailable on Mozilla's Firefox Add-ons site. See [issue #744](https://github.com/sourcegraph/sourcegraph/issues/744#issuecomment-436163831) for a workaround and updates.
 
 It works as follows:
 

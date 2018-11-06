@@ -2,7 +2,7 @@
 
 Sourcegraph's extension API makes easy to add new features and information to Sourcegraph, GitHub, and other code hosts and review tools that our browser extensions integrate with. The Sourcegraph extension API allows extensions to provide hovers, definitions, references, line decorations, buttons, menu items, and other similar contributions. For more information, see [sourcegraph-extension-api](https://github.com/sourcegraph/sourcegraph/blob/master/packages/sourcegraph-extension-api/README.md).
 
-Sourcegraph extensions are available in alpha on Sourcegraph.com, in Sourcegraph 2.11.2+, [Sourcegraph for Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack), and [Sourcegraph for Firefox](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/).
+Sourcegraph extensions are available in alpha on Sourcegraph.com, in Sourcegraph 2.11.2+, and [Sourcegraph for Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack).
 
 ## Usage
 

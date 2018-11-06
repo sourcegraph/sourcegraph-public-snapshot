@@ -14,9 +14,9 @@ import {
     ExtensionsControllerProps,
     ExtensionsProps,
 } from '../extensions/ExtensionsClientCommonContext'
-import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
+import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
-import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
+import { IS_CHROME } from '../marketing/util'
 import { RouteDescriptor } from '../util/contributions'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { CopyLinkAction } from './actions/CopyLinkAction'
@@ -205,7 +205,6 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         return (
             <div className="repo-rev-container">
                 {IS_CHROME && <ChromeExtensionToast />}
-                {IS_FIREFOX && <FirefoxExtensionToast />}
                 <SurveyToast authenticatedUser={this.props.authenticatedUser} />
                 <RepoHeaderContributionPortal
                     position="nav"

@@ -7,7 +7,6 @@ import { Toast } from './Toast'
 import { daysActiveCount } from './util'
 
 const CHROME_EXTENSION_STORE_LINK = 'https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack'
-const FIREFOX_EXTENSION_STORE_LINK = 'https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/'
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-browser-ext-toast'
 
 interface Props {
@@ -105,19 +104,4 @@ export class ChromeExtensionToast extends React.Component {
     }
 
     private onClickInstall = () => eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Chrome' } })
-}
-
-export class FirefoxExtensionToast extends React.Component {
-    public render(): JSX.Element | null {
-        return (
-            <BrowserExtensionToast
-                browserName="Firefox"
-                browserLogoAsset="/.assets/img/logo-firefox.svg"
-                onClickInstall={this.onClickInstall}
-                link={FIREFOX_EXTENSION_STORE_LINK}
-            />
-        )
-    }
-
-    private onClickInstall = () => eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Firefox' } })
 }
