@@ -77,7 +77,8 @@ export const featureFlagDefaults: FeatureFlags = {
 }
 
 /** A map determining whether a feature flag is configurable by users or not. */
-export const configurableFeatureFlags = {
+export const configurableFeatureFlags: FeatureFlags = {
+    simpleOptionsMenu: true,
     newInject: false,
     renderMermaidGraphsEnabled: true,
     useExtensions: true,

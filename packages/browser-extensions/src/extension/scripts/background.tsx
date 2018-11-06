@@ -3,7 +3,9 @@
 import '../../config/polyfill'
 
 import { without } from 'lodash'
+import { noop } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 import { InitData } from 'sourcegraph/module/extension/extensionHost'
 import DPT from 'webext-domain-permission-toggle'
 import ExtensionHostWorker from 'worker-loader?inline!./extensionHost.worker'
@@ -346,14 +348,31 @@ function handleManagedPermissionRequest(managedUrls: string[]): void {
 
 function setDefaultBrowserAction(): void {
     browserAction.setBadgeText({ text: '' })
+
+    featureFlags.isEnabled('simpleOptionsMenu').then(async enabled => {
+        if (enabled) {
+            await browserAction.setPopup({ popup: 'options.html?popup=true' })
+        }
+    })
 }
 
-browserAction.onClicked(async () => {
-    if (await featureFlags.isEnabled('simpleOptionsMenu')) {
-        await browserAction.setPopup({ popup: 'options.html?popup=true' })
-    }
-    runtime.openOptionsPage()
-})
+storage
+    .observeSync('featureFlags')
+    .pipe(
+        map(({ simpleOptionsMenu }) => simpleOptionsMenu),
+        distinctUntilChanged()
+    )
+    .subscribe(async useSimpleOptionsMenu => {
+        if (useSimpleOptionsMenu) {
+            browserAction.onClicked(noop)
+            setDefaultBrowserAction()
+        } else {
+            await browserAction.setPopup({ popup: '' })
+            browserAction.onClicked(async () => {
+                runtime.openOptionsPage()
+            })
+        }
+    })
 
 /**
  * Fetches JavaScript from a URL and runs it in a web worker.
