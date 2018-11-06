@@ -1,68 +1,98 @@
 # Sourcegraph extensions
 
-Sourcegraph's extension API makes easy to add new features and information to Sourcegraph, GitHub, and other code hosts and review tools that our browser extensions integrate with. The Sourcegraph extension API allows extensions to provide hovers, definitions, references, line decorations, buttons, menu items, and other similar contributions. For more information, see [sourcegraph-extension-api](https://github.com/sourcegraph/sourcegraph/blob/master/packages/sourcegraph-extension-api/README.md).
+Sourcegraph extensions enhance your code host, code reviews, and Sourcegraph itself by adding features such as:
 
-Sourcegraph extensions are available in alpha on Sourcegraph.com, in Sourcegraph 2.11.2+, and [Sourcegraph for Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack).
+- Code intelligence (go-to-definition, find references, hovers, etc.)
+- Test coverage overlays
+- Links to live traces, log output, and performance data for a line of code
+- Git blame
+- Usage examples for functions
+
+When these features are built as Sourcegraph extensions, you get them everywhere you view and review code:
+
+- Sourcegraph.com
+- Your own Sourcegraph instance
+- GitHub and GitHub Enterprise (with the [browser extension](../integration/browser_extension))
+- GitLab (with the [browser extension](../integration/browser_extension))
+- Bitbucket Server (with the [browser extension](../integration/browser_extension))
+- Coming soon: editors, more code hosts, and more code review tools
+
+Extensions can provide the following functionality:
+
+- Go to definition
+- Find references
+- Hovers
+- Line decorations and annotations
+- Toolbar buttons
+- Commands
+- Search keywords
+
+Screenshots of test coverage and Git blame extensions:
+
+<div style="text-align:center;margin:20px 0;display:flex">
+<a href="https://github.com/sourcegraph/sourcegraph-codecov" target="_blank"><img src="https://user-images.githubusercontent.com/1976/45107396-53d56880-b0ee-11e8-96e9-ca83e991101c.png" style="padding:15px"></a>
+<a href="https://github.com/sourcegraph/sourcegraph-git-extras" target="_blank"><img src="https://user-images.githubusercontent.com/1976/47624533-f3a1e800-dada-11e8-81d9-3d4bd67fc08a.png" style="padding:15px"></a>
+</div>
+
+If you've used Sourcegraph before, you've used a Sourcegraph extension. For example, try hovering over tokens or toggling Git blame on [`tuf_store.go`](https://sourcegraph.com/github.com/theupdateframework/notary/-/blob/server/storage/tuf_store.go). Or see a [demo video of code coverage overlays](https://www.youtube.com/watch?v=j1eWBa3rWH8). These features (and many others) are provided by extensions. You could improve these features, or add new features, just by improving or creating extensions to Sourcegraph.
+
+The [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) lists all publicly available extensions.
 
 ## Usage
 
-To view all available extensions, click **User menu > Extensions** in the top navigation bar.
+To view all available extensions on your Sourcegraph instance, click **User menu > Extensions** in the top navigation bar. (To see recommended extensions, click **Explore** in the top navigation bar.)
 
-To enable an extension for yourself, visit its page and toggle the slider to on.
+To enable/disable an extension for yourself, click **User menu > Extensions**, find the extension, and toggle the slider.
 
-To enable an extension for all users (site admins only) or for all organization members, add to the `extensions` object in global or organization settings (as shown below).
+After enabling a Sourcegraph extension, it is immediately ready to use. Of course, some extensions only activate for certain files (e.g., the Python extension only adds code intelligence for `.py` files).
+
+### On your code host
+
+Install the [browser extension](../integration/browser_extension) and point it to your Sourcegraph instance (or Sourcegraph.com) in its options menu. It will consult your Sourcegraph user settings and activate the extensions you've enabled whenever you view code or diffs on your code host or review tool.
+
+### For organizations
+
+To enable/disable an extension for all organization members, add it to the `extensions` object in organization settings (as shown below).
 
 ```json
 {
   ...,
   "extensions": {
     ...,
-    "alice/myextension": true,
+    "alice/myextension": true, // or false to disable
     ...
   },
   ...
 }
 ```
 
-## Publishing a local copy of an extension
+## Authoring
 
-If your Sourcegraph instance is unable to connect to Sourcegraph.com (due to a firewall), or if you want to customize an extension, you need to publish a local copy to your Sourcegraph instance. To do so, follow these steps:
+Ready to create your own extension?
 
-1.  Download and install the latest [src](https://github.com/sourcegraph/src-cli) (Sourcegraph CLI).
-1.  [Configure and authenticate `src`](https://github.com/sourcegraph/src-cli#authentication) with the URL and an access token for your Sourcegraph instance.
-1.  Clone the repository of the extension you want to publish: [sourcegraph-codecov](https://github.com/sourcegraph/sourcegraph-codecov) or [sourcegraph-basic-code-intel](https://github.com/sourcegraph/sourcegraph-basic-code-intel).
-1.  Run `npm install` in the clone directory to install dependencies.
-1.  Run `src extensions publish -extension-id $USER/$NAME` in the clone directory to publish the extension locally to your Sourcegraph instance. Replace `$USER` with your Sourcegraph username and `$NAME` with with `codecov` or `basic-code-intel`.
-1.  Enable the extension for your Sourcegraph user account by clicking on **User menu > Extensions** in the top navigation bar and then toggling the slider to on.
+- [Extension authoring documentation](authoring/index.md)
+  - [**How to create and publish your own Sourcegraph extension**](authoring/creating_and_publishing.md)
+- [Sourcegraph API reference (`sourcegraph.d.ts`)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/packages/sourcegraph-extension-api/src/sourcegraph.d.ts)
+- For inspiration:
+  - Check out the source code for existing extensions on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (on their detail page, click **Repository** in their sidebar)
+  - [Issues labeled `extension-request`](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request)
 
-## Private extension registry
+## Administration
 
-On Sourcegraph Enterprise, you can publish Sourcegraph extensions on your Sourcegraph instance to a private extension registry and control which extensions are available. Sourcegraph extensions that are published to the private extension registry on your instance are only visible to other users on your instance.
+Site administrators can customize how Sourcegraph extensions are used on their instance, with options for:
 
-### Inheritance of Sourcegraph extensions from Sourcegraph.com
+- a private extension registry on their instance
+- allowing only specific extensions to be enabled by users
+- preventing users from enabling any extension from Sourcegraph.com
 
-Sourcegraph Core, Enterprise Starter, and Enterprise instances inherit extensions from Sourcegraph.com with [`extensions.remoteRegistry`](../admin/site_config/all.md#remoteregistry) set to `"https://sourcegraph.com/.api/registry"`. The OSS version of Sourcegraph has no dependencies on external services, and its `extensions.remoteRegistry` defaults to `false`.
+See "[Administration of Sourcegraph extensions and the extension registry](../admin/extensions/index.md)".
 
-You can disable inheritance by setting [`extensions.remoteRegistry`](../admin/site_config/all.md#remoteregistry) to `false` in your site configuration:
+## More information
 
-```json
-{
-  "extensions": { "remoteRegistry": false }
-}
-```
+See "[Principles of extensibility for Sourcegraph](principles.md)" for or more information about why we built the Sourcegraph extension API---and how it's different from other attempts, such as LSP (Language Server Protocol).
 
-### Allowing specific extensions to be inherited from Sourcegraph.com
+See the [Sourcegraph roadmap](../dev/roadmap.md) for future plans related to extensions.
 
-On Sourcegraph Enterprise, you can also set [`extensions.allowRemoteExtensions`](../admin/site_config/all.md#alloweemoteextensions) so that only extensions in that list will be inherited from Sourcegraph.com:
+## Feedback
 
-```json
-{
-  "extensions": { "allowRemoteExtensions": ["chris/token-highlights"] }
-}
-```
-
-## Next steps
-
-- [Sourcegraph extension authoring documentation](https://github.com/sourcegraph/sourcegraph-extension-docs)
-- [sourcegraph-extension-api](https://github.com/sourcegraph/sourcegraph/blob/master/packages/sourcegraph-extension-api/README.md)
-- Sourcegraph extensions also work on Sourcegraph.com for public code, and on GitHub via [Sourcegraph for Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack) or [Sourcegraph for Firefox](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/). (Support for more code hosts is coming soon.) See the [sourcegraph-codecov README](https://github.com/sourcegraph/sourcegraph-codecov) for usage instructions.
+File bugs, feature requests, extension API questions, and all other issues on [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph/issues).
