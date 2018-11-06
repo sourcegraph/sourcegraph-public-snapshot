@@ -89,7 +89,6 @@ func init() {
 		close(configurationServerFrontendOnlyInitialized)
 
 		go defaultClient.continuouslyUpdate()
-
 	}
 }
 
