@@ -102,7 +102,7 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 		panic("cannot call this function except in server mode")
 	}
 
-	var server *Server
+	server := NewServer(source)
 	server.Start()
 
 	// Install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
