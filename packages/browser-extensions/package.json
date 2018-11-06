@@ -52,7 +52,7 @@
     "@types/mermaid": "8.0.0",
     "@types/mocha": "5.2.5",
     "@types/node": "8.0.44",
-    "@types/react": "16.4.13",
+    "@types/react": "16.4.18",
     "@types/react-dom": "16.0.9",
     "@types/react-router": "4.4.0",
     "@types/react-router-dom": "4.3.1",

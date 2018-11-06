@@ -2276,7 +2276,7 @@
     "@types/react" "*"
     "@types/stripe-v3" "*"
 
-"@types/react@*", "@types/react@16.4.13", "@types/react@16.4.14":
+"@types/react@*", "@types/react@16.4.13", "@types/react@16.4.18":
   version "16.4.13"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-16.4.13.tgz#1385f5dc3486aa493849a32ccce626a817543e28"
   integrity sha512-a2Z7UmwnAzZ23bTHV6on141S8vvSC7MEJGG85R5/VG80ybzkt5QJqNzlaJ0Y6OX1dncrXFW8B0vWPIx7QuOUqA==
