@@ -380,7 +380,7 @@ The array object has the following properties:
 
 JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 
-The object is an array with all elements of the type [`CloneURLToRepositoryName`](#cloneurltorepositoryname-object).
+The object is an array with all elements of the type [`CloneURLToRepositoryName`](all.md#cloneurltorepositoryname-object).
 
 <br/>
 
@@ -388,7 +388,7 @@ The object is an array with all elements of the type [`CloneURLToRepositoryName`
 
 JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information.
 
-The object is an array with all elements of the type [`GitHubConnection`](#githubconnection-object).
+The object is an array with all elements of the type [`GitHubConnection`](all.md#githubconnection-object).
 
 <br/>
 
@@ -408,7 +408,7 @@ Client secret for GitHub.
 
 JSON array of configuration for GitLab hosts.
 
-The object is an array with all elements of the type [`GitLabConnection`](#gitlabconnection-object).
+The object is an array with all elements of the type [`GitLabConnection`](all.md#gitlabconnection-object).
 
 <br/>
 
@@ -416,7 +416,7 @@ The object is an array with all elements of the type [`GitLabConnection`](#gitla
 
 JSON array of configuration for AWS CodeCommit endpoints.
 
-The object is an array with all elements of the type [`AWSCodeCommitConnection`](#awscodecommitconnection-object).
+The object is an array with all elements of the type [`AWSCodeCommitConnection`](all.md#awscodecommitconnection-object).
 
 <br/>
 
@@ -424,7 +424,7 @@ The object is an array with all elements of the type [`AWSCodeCommitConnection`]
 
 JSON array of configuration for Bitbucket Server hosts.
 
-The object is an array with all elements of the type [`BitbucketServerConnection`](#bitbucketserverconnection-object).
+The object is an array with all elements of the type [`BitbucketServerConnection`](all.md#bitbucketserverconnection-object).
 
 <br/>
 
@@ -432,7 +432,7 @@ The object is an array with all elements of the type [`BitbucketServerConnection
 
 JSON array of configuration for Gitolite hosts.
 
-The object is an array with all elements of the type [`GitoliteConnection`](#gitoliteconnection-object).
+The object is an array with all elements of the type [`GitoliteConnection`](all.md#gitoliteconnection-object).
 
 <br/>
 
@@ -448,7 +448,7 @@ Default: `5`
 
 JSON array of configuration for external repositories.
 
-The object is an array with all elements of the type [`Repository`](#repository-object).
+The object is an array with all elements of the type [`Repository`](all.md#repository-object).
 
 <br/>
 
@@ -521,7 +521,7 @@ Default: `1`
 
 <br/>
 
-## searchScopes ([SiteConfigSearchScope](#siteconfigsearchscope-object))
+## searchScopes ([SiteConfigSearchScope](all.md#siteconfigsearchscope-object))
 
 <br/>
 
@@ -612,13 +612,13 @@ The authentication providers to use for identifying and signing in users.
 
 The elements of the array must be of the following types:
 
-####[BuiltinAuthProvider](#builtinauthprovider-object)
+####[BuiltinAuthProvider](all.md#builtinauthprovider-object)
 
-####[SAMLAuthProvider](#samlauthprovider-object)
+####[SAMLAuthProvider](all.md#samlauthprovider-object)
 
-####[OpenIDConnectAuthProvider](#openidconnectauthprovider-object)
+####[OpenIDConnectAuthProvider](all.md#openidconnectauthprovider-object)
 
-####[HTTPHeaderAuthProvider](#httpheaderauthprovider-object)
+####[HTTPHeaderAuthProvider](all.md#httpheaderauthprovider-object)
 
 <br/>
 
@@ -683,11 +683,11 @@ Default: `"2160h"`
 
 <br/>
 
-## email.smtp ([SMTPServerConfig](#smtpserverconfig-object))
+## email.smtp ([SMTPServerConfig](all.md#smtpserverconfig-object))
 
 <br/>
 
-## email.imap ([IMAPServerConfig](#imapserverconfig-object))
+## email.imap ([IMAPServerConfig](all.md#imapserverconfig-object))
 
 <br/>
 
@@ -815,7 +815,7 @@ DEPRECATED: Specify site settings in the site admin global settings page instead
 
 Properties of the `settings` object:
 
-### search.scopes ([SiteConfigSearchScope](#siteconfigsearchscope-object))
+### search.scopes ([SiteConfigSearchScope](all.md#siteconfigsearchscope-object))
 
 ### search.repositoryGroups (object)
 
