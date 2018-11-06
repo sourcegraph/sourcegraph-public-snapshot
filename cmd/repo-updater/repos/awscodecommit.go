@@ -308,7 +308,9 @@ func makeSHA256(data []byte) []byte {
 }
 
 func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) <-chan *awscodecommit.Repository {
-	const maxItems = 50
+	// The document limit per page is here:
+	// https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/codecommit/model/MaximumRepositoryNamesExceededException.html
+	const maxItems = 25
 	ch := make(chan *awscodecommit.Repository, maxItems)
 	go func() {
 		defer close(ch)
