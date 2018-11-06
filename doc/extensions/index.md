@@ -1,6 +1,6 @@
-# Sourcegraph extensions - setup and usage instructions (alpha)
+# Sourcegraph extensions
 
-Sourcegraph is getting an extension API that makes easy to add new features and information to Sourcegraph, GitHub, and other code hosts and review tools that our browser extensions integrate with. The [Sourcegraph extension API](https://github.com/sourcegraph/sourcegraph-extension-api) allows extensions to provide hovers, definitions, references, line decorations, buttons, menu items, and other similar contributions. For more information, see the open-source [sourcegraph-extension-api repository](https://github.com/sourcegraph/sourcegraph-extension-api).
+Sourcegraph's extension API makes easy to add new features and information to Sourcegraph, GitHub, and other code hosts and review tools that our browser extensions integrate with. The Sourcegraph extension API allows extensions to provide hovers, definitions, references, line decorations, buttons, menu items, and other similar contributions. For more information, see [sourcegraph-extension-api](https://github.com/sourcegraph/sourcegraph/blob/master/packages/sourcegraph-extension-api/README.md).
 
 Sourcegraph extensions are available in alpha on Sourcegraph.com, in Sourcegraph 2.11.2+, [Sourcegraph for Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack), and [Sourcegraph for Firefox](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/).
 
@@ -63,5 +63,6 @@ On Sourcegraph Enterprise, you can also set [`extensions.allowRemoteExtensions`]
 
 ### Next steps
 
+- [Sourcegraph extension authoring documentation](https://github.com/sourcegraph/sourcegraph-extension-docs)
+- [sourcegraph-extension-api](https://github.com/sourcegraph/sourcegraph/blob/master/packages/sourcegraph-extension-api/README.md)
 - Sourcegraph extensions also work on Sourcegraph.com for public code, and on GitHub via [Sourcegraph for Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack) or [Sourcegraph for Firefox](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/). (Support for more code hosts is coming soon.) See the [sourcegraph-codecov README](https://github.com/sourcegraph/sourcegraph-codecov) for usage instructions.
-- You'll be able to create and distribute your own extensions in the upcoming beta release. See the [sourcegraph-extension-api README](https://github.com/sourcegraph/sourcegraph-extension-api) for an preview of the capabilities and design for extensions.
