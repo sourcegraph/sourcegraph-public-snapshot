@@ -1418,11 +1418,6 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/phabricator-extension@^1.18.0":
-  version "1.18.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/phabricator-extension/-/phabricator-extension-1.18.0.tgz#238be49e449fe7f773e6ff6881e3c480a5e6aaed"
-  integrity sha512-V6VvLyzPo9fqGY1il0krQ5Xs2c60dnL7CEvtQMuvP8RglYu4wiEbxXkC8r+qKrF0cS8caFpQK8Tg88ZANQkUYQ==
-
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@sourcegraph/prettierrc/-/prettierrc-2.2.0.tgz#af4a6fcd465b0a39a07ffbd8f2d3414d01e603e8"

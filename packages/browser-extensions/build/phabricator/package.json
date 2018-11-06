@@ -1,5 +1,0 @@
-{
-  "name": "@sourcegraph/phabricator-extension",
-  "description": "The Sourcegraph Phabricator extension bundle",
-  "license": "MIT"
-}
