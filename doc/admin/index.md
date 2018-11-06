@@ -16,6 +16,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [Using external databases (PostgreSQL and Redis)](external_database.md)
 - Features:
   - [Code intelligence and language servers](../extensions/language_servers.md)
+  - [Sourcegraph extensions and extension registry](extensions.md)
   - [Search](search.md)
   - [Federation](federation.md)
   - [Pings](pings.md)
