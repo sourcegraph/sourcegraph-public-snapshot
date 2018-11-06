@@ -11,7 +11,7 @@
     "enterprise"
   ],
   "engines": {
-    "node": ">=8.0.0 <11.0.0",
+    "node": ">=8.0.0",
     "yarn": "^1.10.1"
   },
   "scripts": {
