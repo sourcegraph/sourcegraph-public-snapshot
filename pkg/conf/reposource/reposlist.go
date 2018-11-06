@@ -26,9 +26,10 @@ func init() {
 
 		conf.Watch(func() {
 			reposListInstance.Store(newReposList(conf.Get().ReposList))
-			reposListInstanceReadyOnce.Do(func() {
-				close(reposListInstanceReady)
-			})
+		})
+
+		reposListInstanceReadyOnce.Do(func() {
+			close(reposListInstanceReady)
 		})
 	}()
 }
