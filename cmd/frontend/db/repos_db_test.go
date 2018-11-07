@@ -487,6 +487,10 @@ func TestRepos_List_queryPattern(t *testing.T) {
 
 		// Some extra tests which test the pattern compiler
 		{
+			q:    "",
+			want: []api.RepoName{"a/b", "c/d", "e/f", "g/h"},
+		},
+		{
 			q:    "^a/b$",
 			want: []api.RepoName{"a/b"},
 		},
