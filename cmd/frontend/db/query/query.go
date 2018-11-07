@@ -123,5 +123,5 @@ func Print(q Q) string {
 type printfBindVar struct{}
 
 func (printfBindVar) BindVar(i int) string {
-	return "%q"
+	return "%#v"
 }
