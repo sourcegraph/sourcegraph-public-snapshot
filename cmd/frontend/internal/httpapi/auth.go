@@ -18,8 +18,22 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
 
-		headerValue := r.Header.Get("Authorization")
+		// Secondary to the Authorization header (see below), access tokens may
+		// be specified via a query parameter (?token=<token>) OR via basic
+		// auth username (https://<token>@sourcegraph.com/foobar).
 		tokenParams, hasTokenParam := r.URL.Query()["token"]
+		tokenParam := ""
+		if hasTokenParam {
+			tokenParam = tokenParams[0]
+		} else {
+			basicAuthUsername, _, hasBasicAuthUsername := r.BasicAuth()
+			if hasBasicAuthUsername {
+				tokenParam = basicAuthUsername
+				hasTokenParam = true
+			}
+		}
+
+		headerValue := r.Header.Get("Authorization")
 		if headerValue != "" || hasTokenParam {
 			if !(conf.AccessTokensAllow() == conf.AccessTokensAll || conf.AccessTokensAllow() == conf.AccessTokensAdmin) {
 				// if conf.AccessTokensAllow() == conf.AccessTokensNone {
@@ -31,7 +45,7 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 			var sudoUser string
 			if hasTokenParam {
 				// Handle token query string param
-				token = tokenParams[0]
+				token = tokenParam
 			} else {
 				// Handle Authorization header
 				var err error
