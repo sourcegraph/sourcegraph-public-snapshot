@@ -2,6 +2,7 @@ package vfsutil
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -18,7 +19,11 @@ import (
 // fetched from gitserver.
 func NewGitServer(repo api.RepoName, commit api.CommitID) *ArchiveFS {
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
-		f, evictor, err := GitServerFetchArchive(ctx, ArchiveOpts{Repo: repo, Commit: commit})
+		f, evictor, err := GitServerFetchArchive(ctx, ArchiveOpts{
+			Repo:   repo,
+			Commit: commit,
+			Format: ArchiveFormatZip,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -38,6 +43,17 @@ func NewGitServer(repo api.RepoName, commit api.CommitID) *ArchiveFS {
 	return &ArchiveFS{fetch: fetch}
 }
 
+// ArchiveFormat represents an archive format (zip, tar, etc).
+type ArchiveFormat string
+
+const (
+	// ArchiveFormatZip indicates a zip archive is desired.
+	ArchiveFormatZip ArchiveFormat = "zip"
+
+	// ArchiveFormatTar indicates a tar archive is desired.
+	ArchiveFormatTar ArchiveFormat = "tar"
+)
+
 // ArchiveOpts describes options for fetching a repository archive.
 type ArchiveOpts struct {
 	// Repo is the repository whose contents should be fetched.
@@ -45,6 +61,13 @@ type ArchiveOpts struct {
 
 	// Commit is the commit whose contents should be fetched.
 	Commit api.CommitID
+
+	// Format indicates the desired archive format.
+	Format ArchiveFormat
+}
+
+func (opts *ArchiveOpts) cacheKey() string {
+	return fmt.Sprintf("%s@%s.%s", opts.Repo, opts.Commit, opts.Format)
 }
 
 // GitServerFetchArchive fetches an archive of a repositories contents from gitserver.
@@ -65,13 +88,18 @@ func GitServerFetchArchive(ctx context.Context, opts ArchiveOpts) (archive *os.F
 		return nil, nil, errors.New("invalid git revision spec (begins with '-')")
 	}
 
-	ff, err := cachedFetch(ctx, "gitserver", string(opts.Repo)+"@"+string(opts.Commit), func(ctx context.Context) (io.ReadCloser, error) {
+	ff, err := cachedFetch(ctx, "gitserver", opts.cacheKey(), func(ctx context.Context) (io.ReadCloser, error) {
 		gitserverFetchTotal.Inc()
 
-		// Compression level of 0 (no compression) seems to perform the
-		// best overall on fast network links, but this has not been tuned
-		// thoroughly.
-		cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", string(opts.Commit))
+		args := []string{"archive", "--format=" + string(opts.Format)}
+		if opts.Format == ArchiveFormatZip {
+			// Compression level of 0 (no compression) seems to perform the
+			// best overall on fast network links, but this has not been tuned
+			// thoroughly.
+			args = append(args, "-0")
+		}
+		args = append(args, string(opts.Commit))
+		cmd := gitserver.DefaultClient.Command("git", args...)
 		cmd.Repo = gitserver.Repo{Name: opts.Repo}
 		r, err := gitserver.StdoutReader(ctx, cmd)
 		if err != nil {
