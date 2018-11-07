@@ -1,11 +1,15 @@
 package search
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
@@ -129,4 +133,140 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 		revspecs = append(revspecs, rev.RevSpec)
 	}
 	return revspecs
+}
+
+// RepoQuery takes a search query q and translates into a query for the
+// repository database. If a repository could match q, it will be returned via
+// Repos.List on the query.
+func RepoQuery(q query.Q) (dbquery.Q, error) {
+	// Given an expression we can convert it to dbquery with the following
+	// observations:
+	//
+	//   RepoQuery((and A B)) == RepoQuery(A) AND RepoQuery(B)
+	//   RepoQuery((or A B))  == RepoQuery(A) OR  RepoQuery(B)
+	//   RepoQuery((type A))  == RepoQuery(A)
+	//   RepoQuery((repo))    == repo.pattern
+	//   RepoQuery((bool))    == bool
+	//
+	// However, query.Q can contain not nodes and atom nodes (such as
+	// content:"foo"). We can't include atoms in our dbquery, since that
+	// requires actually searching the code. So we want them to essentially
+	// act in a way which never reduces the set of repositories that could be
+	// found.
+	//
+	// For a simple query like (and "foo" r:bar) we can see that if we
+	// substitute TRUE for "foo" the query simplifies to r:bar which is the
+	// set of repos we should search. However, for (and (not "foo") r:bar) if
+	// we substitute in TRUE we get:
+	//
+	//   (and (not TRUE) r:bar) == (and FALSE r:bar)
+	//                          == FALSE
+	//
+	// But what we want is r:bar, since bar could contain matches which don't
+	// contain "foo" so should be searched.
+	//
+	// The key insight here is the boolean to substitute in for an atom is
+	// whatever simplifies to TRUE. Given not is the only node which can flip
+	// a boolean, the boolean to substitute in is related to the number of not
+	// nodes which are ancestors of the atom.
+	//
+	//   v         v			=> TRUE
+	//   (not v)   v			=> FALSE
+	//   (not (not v)) v		=> TRUE
+	//   (not (not (not v))) v	=> FALSE
+	//
+	// This generalizes to substituting in AncestorNotCount % 2 == 0
+
+	// Replace all atoms (except constants and repo) with nothing. We use
+	// nothing to count the number of ancestor not nodes.
+	var err error
+	q = query.Map(q, func(q query.Q) query.Q {
+		switch c := q.(type) {
+		case *query.Repo:
+		case *query.Const:
+		case *query.And:
+		case *query.Or:
+
+		case *query.RepoSet:
+			err = errors.Errorf("unsupported RepoSet in RepoQuery %s", q.String())
+
+		case *query.Type:
+			return c.Child
+
+		case *query.Not:
+			return query.Map(q, func(q query.Q) query.Q {
+				if c, ok := q.(*nothing); ok {
+					c.NotCount++
+				}
+				return q
+			})
+
+		default:
+			return &nothing{}
+		}
+		return q
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the nothing atoms into constants (since they have the correct
+	// NotCount now).
+	q = query.Map(q, func(q query.Q) query.Q {
+		if c, ok := q.(*nothing); ok {
+			return &query.Const{Value: c.NotCount%2 == 0}
+		}
+		return q
+	})
+
+	// Constant fold
+	q = query.Simplify(q)
+
+	// We now have a query with only And, Or, Not, boolean constants and Repo
+	// queries. This can now be translated into a Repos.List dbquery.
+	return convertQuery(q), nil
+}
+
+func convertQuery(q query.Q) dbquery.Q {
+	switch c := q.(type) {
+	case *query.And:
+		return dbquery.And(convertQueries(c.Children)...)
+
+	case *query.Or:
+		return dbquery.Or(convertQueries(c.Children)...)
+
+	case *query.Not:
+		return dbquery.Not(convertQuery(c.Child))
+
+	case *query.Const:
+		return c.Value
+
+	case *query.Repo:
+		return c.Pattern
+
+	default:
+		// We control the queries passed into convertQuery, so this shouldn't
+		// happen.
+		panic("unexpected: " + q.String())
+	}
+}
+
+func convertQueries(qs []query.Q) []dbquery.Q {
+	x := make([]dbquery.Q, 0, len(qs))
+	for _, q := range qs {
+		x = append(x, convertQuery(q))
+	}
+	return x
+}
+
+// nothing is a type which should not affect the outcome of a query. In
+// RepoQuery it is used to replace all non-repo atoms. NotCount is stored
+// since it is used to determine which value has no effect on the query.
+type nothing struct {
+	// NotCount is the number of ancestors which are a Not node.
+	NotCount int
+}
+
+func (q *nothing) String() string {
+	return fmt.Sprintf("N(%d)", q.NotCount)
 }
