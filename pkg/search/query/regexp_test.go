@@ -84,6 +84,7 @@ func TestRegexpParse(t *testing.T) {
 
 		got := RegexpToQuery(r, 3)
 		if !reflect.DeepEqual(c.want, got) {
+			printRegexp(r, 0)
 			t.Errorf("regexpToQuery(%q): got %v, want %v", c.in, got, c.want)
 		}
 	}

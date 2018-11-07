@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package query provides a parser and AST for search expressions.
 package query
 
 import (
@@ -44,8 +45,8 @@ type Symbol struct {
 	Atom *Substring
 }
 
-func (s *Symbol) String() string {
-	return fmt.Sprintf("sym:%s", s.Atom)
+func (q *Symbol) String() string {
+	return fmt.Sprintf("sym:%s", q.Atom)
 }
 
 func (q *Regexp) String() string {

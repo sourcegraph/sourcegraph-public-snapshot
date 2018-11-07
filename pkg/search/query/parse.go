@@ -23,8 +23,6 @@ import (
 
 var _ = log.Printf
 
-const ngramSize = 3
-
 type SuggestQueryError struct {
 	Message    string
 	Suggestion string
@@ -67,8 +65,6 @@ loop:
 	return lit, len(in) - len(left), nil
 }
 
-type setCase string
-
 // orOperator is a placeholder intermediate so we can represent [A,
 // or, B] before we convert it to Or{A, B}
 type orOperator struct{}
@@ -79,41 +75,6 @@ func (o *orOperator) String() string {
 
 func isSpace(c byte) bool {
 	return c == ' ' || c == '\t'
-}
-
-// Consumes KEYWORD:<arg>, where arg may be quoted.  Returns the
-// keyword, the number of bytes consumed, whether it matched, and if
-// there was an error.
-func consumeKeyword(in []byte, kw []byte) ([]byte, int, bool, error) {
-	if !bytes.HasPrefix(in, kw) {
-		return nil, 0, false, nil
-	}
-
-	var arg []byte
-	var err error
-	left := in
-	left = left[len(kw):]
-done:
-	for len(left) > 0 {
-		c := left[0]
-		switch {
-		case c == '"':
-			var n int
-			arg, n, err = parseStringLiteral(left)
-			if err != nil {
-				return nil, 0, true, err
-			}
-
-			left = left[n:]
-		case isSpace(c):
-			break done
-		default:
-			arg = append(arg, c)
-			left = left[1:]
-		}
-	}
-
-	return arg, len(in) - len(left), true, nil
 }
 
 // Parse parses a string into a query.
