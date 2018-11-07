@@ -359,19 +359,21 @@ function handleManagedPermissionRequest(managedUrls: string[]): void {
 function setDefaultBrowserAction(): void {
     browserAction.setBadgeText({ text: '' })
 
-    featureFlags.isEnabled('simpleOptionsMenu').then(async enabled => {
-        if (enabled) {
-            await browserAction.setPopup({ popup: 'options.html?popup=true' })
-        }
-    })
+    featureFlags
+        .isEnabled('simpleOptionsMenu')
+        .then(async enabled => {
+            if (enabled) {
+                await browserAction.setPopup({ popup: 'options.html?popup=true' })
+            }
+        })
+        .catch(err => {
+            console.log('unable to get feature flag')
+        })
 }
 
 storage
     .observeSync('featureFlags')
-    .pipe(
-        map(({ simpleOptionsMenu }) => simpleOptionsMenu),
-        distinctUntilChanged()
-    )
+    .pipe(map(({ simpleOptionsMenu }) => simpleOptionsMenu), distinctUntilChanged())
     .subscribe(async useSimpleOptionsMenu => {
         if (useSimpleOptionsMenu) {
             browserAction.onClicked(noop)

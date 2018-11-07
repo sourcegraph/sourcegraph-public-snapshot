@@ -12,8 +12,8 @@ export const noopMigration: MigrateFunc = () => ({})
 
 export function provideMigrations(area: chrome.storage.StorageArea): MigratableStorageArea {
     const migrations = new Subject<MigrateFunc>()
-    const getCalls = new ReplaySubject()
-    const setCalls = new ReplaySubject()
+    const getCalls = new ReplaySubject<any[]>()
+    const setCalls = new ReplaySubject<any[]>()
 
     const migrated = migrations.pipe(
         switchMap(
