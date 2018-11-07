@@ -478,6 +478,20 @@ Indexes:
 
 ```
 
+# Table "public.site_configuration_files"
+```
+   Column   |           Type           |                               Modifiers                               
+------------+--------------------------+-----------------------------------------------------------------------
+ id         | integer                  | not null default nextval('site_configuration_files_id_seq'::regclass)
+ contents   | text                     | 
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "site_configuration_files_pkey" PRIMARY KEY, btree (id)
+    "site_configuration_files_unique" UNIQUE, btree (id)
+
+```
+
 # Table "public.survey_responses"
 ```
    Column   |           Type           |                           Modifiers                           
