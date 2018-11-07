@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { BarChart } from '../../components/d3/BarChart'
-import { fetchSiteAnalytics } from '../../site-admin/backend'
+import { fetchSiteUsageStatistics } from '../../site-admin/backend'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 
 interface Props {
@@ -14,23 +14,23 @@ interface Props {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    /** The site activity, loading, or an error. */
-    siteActivityOrError: typeof LOADING | GQL.ISiteActivity | ErrorLike
+    /** The site usage statistics, loading, or an error. */
+    siteUsageStatisticsOrError: typeof LOADING | GQL.ISiteUsageStatistics | ErrorLike
 }
 
 /**
- * An explore section that shows site usage.
+ * An explore section that shows site usage statistics.
  */
 export class SiteUsageExploreSection extends React.PureComponent<Props, State> {
-    public state: State = { siteActivityOrError: LOADING }
+    public state: State = { siteUsageStatisticsOrError: LOADING }
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            fetchSiteAnalytics()
+            fetchSiteUsageStatistics()
                 .pipe(catchError(err => [asError(err)]))
-                .subscribe(siteActivityOrError => this.setState({ siteActivityOrError }))
+                .subscribe(siteUsageStatisticsOrError => this.setState({ siteUsageStatisticsOrError }))
         )
     }
 
@@ -40,11 +40,11 @@ export class SiteUsageExploreSection extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="extensions-explore-section">
+            <div className="site-usage-explore-section">
                 <h2>Site usage</h2>
-                {isErrorLike(this.state.siteActivityOrError) ? (
-                    <div className="alert alert-danger">Error: {this.state.siteActivityOrError.message}</div>
-                ) : this.state.siteActivityOrError === LOADING ? (
+                {isErrorLike(this.state.siteUsageStatisticsOrError) ? (
+                    <div className="alert alert-danger">Error: {this.state.siteUsageStatisticsOrError.message}</div>
+                ) : this.state.siteUsageStatisticsOrError === LOADING ? (
                     <p>Loading...</p>
                 ) : (
                     <div className="col-md-10 col-lg-8 mt-4">
@@ -54,7 +54,7 @@ export class SiteUsageExploreSection extends React.PureComponent<Props, State> {
                             width={500}
                             height={200}
                             isLightTheme={this.props.isLightTheme}
-                            data={this.state.siteActivityOrError.waus.slice(0, 4).map(p => ({
+                            data={this.state.siteUsageStatisticsOrError.waus.slice(0, 4).map(p => ({
                                 xLabel: format(Date.parse(p.startTime) + 1000 * 60 * 60 * 24, 'E, MMM d'),
                                 yValues: { 'Weekly users': p.registeredUserCount + p.anonymousUserCount },
                             }))}

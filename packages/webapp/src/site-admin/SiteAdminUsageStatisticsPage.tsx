@@ -10,7 +10,7 @@ import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchSiteAnalytics, fetchUserAnalytics } from './backend'
+import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
 
 interface ChartData {
     label: string
@@ -29,13 +29,13 @@ const chartGeneratorOptions: ChartOptions = {
     maus: { label: 'Monthly unique users', dateFormat: 'MMMM YYYY' },
 }
 
-const CHART_ID_KEY = 'latest-analytics-chart-id'
+const CHART_ID_KEY = 'latest-usage-statistics-chart-id'
 
-interface UserActivityHeaderFooterProps {
+interface UserUsageStatisticsHeaderFooterProps {
     nodes: GQL.IUser[]
 }
 
-class UserActivityHeader extends React.PureComponent<UserActivityHeaderFooterProps> {
+class UserUsageStatisticsHeader extends React.PureComponent<UserUsageStatisticsHeaderFooterProps> {
     public render(): JSX.Element | null {
         return (
             <thead>
@@ -44,61 +44,76 @@ class UserActivityHeader extends React.PureComponent<UserActivityHeaderFooterPro
                     <th>Page views</th>
                     <th>Search queries</th>
                     <th>Code intelligence actions</th>
-                    <th className="site-admin-analytics-page__date-column">Last active</th>
-                    <th className="site-admin-analytics-page__date-column">Last active in code host or code review</th>
+                    <th className="site-admin-usage-statistics-page__date-column">Last active</th>
+                    <th className="site-admin-usage-statistics-page__date-column">
+                        Last active in code host or code review
+                    </th>
                 </tr>
             </thead>
         )
     }
 }
 
-class UserActivityFooter extends React.PureComponent<UserActivityHeaderFooterProps> {
+class UserUsageStatisticsFooter extends React.PureComponent<UserUsageStatisticsHeaderFooterProps> {
     public render(): JSX.Element | null {
         return (
             <tfoot>
                 <tr>
                     <th>Total</th>
-                    <td>{this.props.nodes.reduce((c, v) => c + (v.activity ? v.activity.pageViews : 0), 0)}</td>
-                    <td>{this.props.nodes.reduce((c, v) => c + (v.activity ? v.activity.searchQueries : 0), 0)}</td>
                     <td>
                         {this.props.nodes.reduce(
-                            (c, v) => c + (v.activity ? v.activity.codeIntelligenceActions : 0),
+                            (c, v) => c + (v.usageStatistics ? v.usageStatistics.pageViews : 0),
                             0
                         )}
                     </td>
-                    <td className="site-admin-analytics-page__date-column" />
-                    <td className="site-admin-analytics-page__date-column" />
+                    <td>
+                        {this.props.nodes.reduce(
+                            (c, v) => c + (v.usageStatistics ? v.usageStatistics.searchQueries : 0),
+                            0
+                        )}
+                    </td>
+                    <td>
+                        {this.props.nodes.reduce(
+                            (c, v) => c + (v.usageStatistics ? v.usageStatistics.codeIntelligenceActions : 0),
+                            0
+                        )}
+                    </td>
+                    <td className="site-admin-usage-statistics-page__date-column" />
+                    <td className="site-admin-usage-statistics-page__date-column" />
                 </tr>
             </tfoot>
         )
     }
 }
 
-interface UserActivityNodeProps {
+interface UserUsageStatisticsNodeProps {
     /**
      * The user to display in this list item.
      */
     node: GQL.IUser
 }
 
-class UserActivityNode extends React.PureComponent<UserActivityNodeProps> {
+class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNodeProps> {
     public render(): JSX.Element | null {
         return (
             <tr>
                 <td>{this.props.node.username}</td>
-                <td>{this.props.node.activity ? this.props.node.activity.pageViews : 'n/a'}</td>
-                <td>{this.props.node.activity ? this.props.node.activity.searchQueries : 'n/a'}</td>
-                <td>{this.props.node.activity ? this.props.node.activity.codeIntelligenceActions : 'n/a'}</td>
-                <td className="site-admin-analytics-page__date-column">
-                    {this.props.node.activity && this.props.node.activity.lastActiveTime ? (
-                        <Timestamp date={this.props.node.activity.lastActiveTime} />
+                <td>{this.props.node.usageStatistics ? this.props.node.usageStatistics.pageViews : 'n/a'}</td>
+                <td>{this.props.node.usageStatistics ? this.props.node.usageStatistics.searchQueries : 'n/a'}</td>
+                <td>
+                    {this.props.node.usageStatistics ? this.props.node.usageStatistics.codeIntelligenceActions : 'n/a'}
+                </td>
+                <td className="site-admin-usage-statistics-page__date-column">
+                    {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
+                        <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                     ) : (
                         'n/a'
                     )}
                 </td>
-                <td className="site-admin-analytics-page__date-column">
-                    {this.props.node.activity && this.props.node.activity.lastActiveCodeHostIntegrationTime ? (
-                        <Timestamp date={this.props.node.activity.lastActiveCodeHostIntegrationTime} />
+                <td className="site-admin-usage-statistics-page__date-column">
+                    {this.props.node.usageStatistics &&
+                    this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime ? (
+                        <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
                     ) : (
                         'n/a'
                     )}
@@ -136,22 +151,25 @@ export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-interface SiteAdminAnalyticsPageProps extends RouteComponentProps<any> {
+interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<any> {
     isLightTheme: boolean
 }
 
-interface SiteAdminAnalyticsPageState {
+interface SiteAdminUsageStatisticsPageState {
     users?: GQL.IUserConnection
-    siteActivity?: GQL.ISiteActivity
+    stats?: GQL.ISiteUsageStatistics
     error?: Error
     chartID: keyof ChartOptions
 }
 
 /**
- * A page displaying usage analytics for the site.
+ * A page displaying usage statistics for the site.
  */
-export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPageProps, SiteAdminAnalyticsPageState> {
-    public state: SiteAdminAnalyticsPageState = {
+export class SiteAdminUsageStatisticsPage extends React.Component<
+    SiteAdminUsageStatisticsPageProps,
+    SiteAdminUsageStatisticsPageState
+> {
+    public state: SiteAdminUsageStatisticsPageState = {
         chartID: this.loadLatestChartFromStorage(),
     }
 
@@ -163,13 +181,10 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminAnalytics')
+        eventLogger.logViewEvent('SiteAdminUsageStatistics')
 
         this.subscriptions.add(
-            fetchSiteAnalytics().subscribe(
-                siteActivity => this.setState({ siteActivity }),
-                error => this.setState({ error })
-            )
+            fetchSiteUsageStatistics().subscribe(stats => this.setState({ stats }), error => this.setState({ error }))
         )
     }
 
@@ -184,11 +199,11 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
     public render(): JSX.Element | null {
         const chart = chartGeneratorOptions[this.state.chartID]
         return (
-            <div className="site-admin-analytics-page">
-                <PageTitle title="Analytics - Admin" />
-                <h2>Analytics</h2>
+            <div className="site-admin-usage-statistics-page">
+                <PageTitle title="Usage statistics - Admin" />
+                <h2>Usage statistics</h2>
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
-                {this.state.siteActivity && (
+                {this.state.stats && (
                     <>
                         <RadioButtons
                             nodes={Object.entries(chartGeneratorOptions).map(([key, opt]) => ({
@@ -207,7 +222,7 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
                                     width={500}
                                     height={200}
                                     isLightTheme={this.props.isLightTheme}
-                                    data={this.state.siteActivity[this.state.chartID].map(p => ({
+                                    data={this.state.stats[this.state.chartID].map(p => ({
                                         xLabel: format(Date.parse(p.startTime) + 1000 * 60 * 60 * 24, chart.dateFormat),
                                         yValues: {
                                             Registered: p.registeredUserCount,
@@ -215,7 +230,7 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
                                         },
                                     }))}
                                 />
-                                <small className="site-admin-analytics-page__tz-note">
+                                <small className="site-admin-usage-statistics-page__tz-note">
                                     <i>GMT/UTC time</i>
                                 </small>
                             </>
@@ -232,10 +247,10 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
                         noShowMore={false}
                         noun="user"
                         pluralNoun="users"
-                        queryConnection={fetchUserAnalytics}
-                        nodeComponent={UserActivityNode}
-                        headComponent={UserActivityHeader}
-                        footComponent={UserActivityFooter}
+                        queryConnection={fetchUserUsageStatistics}
+                        nodeComponent={UserUsageStatisticsNode}
+                        headComponent={UserUsageStatisticsHeader}
+                        footComponent={UserUsageStatisticsFooter}
                         history={this.props.history}
                         location={this.props.location}
                     />

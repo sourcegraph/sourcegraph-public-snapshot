@@ -64,12 +64,3 @@ func TestNode_User(t *testing.T) {
 		},
 	})
 }
-
-func TestUsers_Activity(t *testing.T) {
-	ctx := context.Background()
-	u := &UserResolver{user: &types.User{}}
-	_, err := u.Activity(ctx)
-	if err == nil {
-		t.Errorf("Non-admin can access endpoint")
-	}
-}

@@ -1980,10 +1980,10 @@ type User implements Node & ConfigurationSubject {
     #
     # Only the user and site admins can access this field.
     tags: [String!]!
-    # The user's usage activity on Sourcegraph.
+    # The user's usage statistics on Sourcegraph.
     #
     # Only the user and site admins can access this field.
-    activity: UserActivity!
+    usageStatistics: UserUsageStatistics!
     # The user's email addresses.
     #
     # Only the user and site admins can access this field.
@@ -2543,15 +2543,15 @@ type Site implements ConfigurationSubject {
     sendsEmailVerificationEmails: Boolean!
     # Information about this site's product subscription status.
     productSubscription: ProductSubscriptionStatus!
-    # The activity.
-    activity(
+    # Usage statistics for this site.
+    usageStatistics(
         # Days of history.
         days: Int
         # Weeks of history.
         weeks: Int
         # Months of history.
         months: Int
-    ): SiteActivity!
+    ): SiteUsageStatistics!
 }
 
 # The configuration for a site.
@@ -2652,8 +2652,8 @@ type Configuration {
     messages: [String!]!
 }
 
-# UserActivity describes a user's activity on the site.
-type UserActivity {
+# UserUsageStatistics describes a user's usage statistics.
+type UserUsageStatistics {
     # The number of search queries that the user has performed.
     searchQueries: Int!
     # The number of page views that the user has performed.
@@ -2686,18 +2686,18 @@ enum UserActivePeriod {
     ALL_TIME
 }
 
-# SiteActivity describes a site's aggregate activity level.
-type SiteActivity {
+# SiteUsageStatistics describes a site's aggregate usage statistics.
+type SiteUsageStatistics {
     # Recent daily active users.
-    daus: [SiteActivityPeriod!]!
+    daus: [SiteUsagePeriod!]!
     # Recent weekly active users.
-    waus: [SiteActivityPeriod!]!
+    waus: [SiteUsagePeriod!]!
     # Recent monthly active users.
-    maus: [SiteActivityPeriod!]!
+    maus: [SiteUsagePeriod!]!
 }
 
-# SiteActivityPeriod describes a site's activity level for a given timespan.
-type SiteActivityPeriod {
+# SiteUsagePeriod describes a site's usage statistics for a given timespan.
+type SiteUsagePeriod {
     # The time when this started.
     startTime: String!
     # The user count.

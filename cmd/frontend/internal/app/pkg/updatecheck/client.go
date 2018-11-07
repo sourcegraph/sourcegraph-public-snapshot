@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
@@ -68,7 +68,7 @@ var baseURL = &url.URL{
 
 func getSiteActivityJSON() ([]byte, error) {
 	days, weeks, months := 2, 1, 1
-	siteActivity, err := useractivity.GetSiteActivity(&useractivity.SiteActivityOptions{
+	siteActivity, err := usagestats.GetSiteUsageStatistics(&usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -90,9 +90,9 @@ func updateURL(ctx context.Context) string {
 	q.Set("site", siteid.Get())
 	q.Set("auth", strings.Join(authProviderTypes(), ","))
 	q.Set("deployType", conf.DeployType())
-	count, err := useractivity.GetUsersActiveTodayCount()
+	count, err := usagestats.GetUsersActiveTodayCount()
 	if err != nil {
-		logFunc("useractivity.GetUsersActiveTodayCount failed", "error", err)
+		logFunc("usagestats.GetUsersActiveTodayCount failed", "error", err)
 	}
 	q.Set("u", strconv.Itoa(count))
 	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
