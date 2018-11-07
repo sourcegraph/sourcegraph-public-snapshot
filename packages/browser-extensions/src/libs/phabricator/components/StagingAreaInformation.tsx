@@ -15,7 +15,7 @@ export const StagingAreaInformation: React.StatelessComponent<StagingAreaInforma
 ) => (
     <div style={{ display: 'inline-block' }}>
         <Button
-            url="https://about.sourcegraph.com/docs/features/phabricator-extension#staging-areas"
+            url="https://docs.sourcegraph.com/integration/phabricator"
             style={props.style}
             iconStyle={props.iconStyle}
             className={props.className}

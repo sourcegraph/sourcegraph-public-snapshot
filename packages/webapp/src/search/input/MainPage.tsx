@@ -164,12 +164,12 @@ const integrationsSections = [
         paragraph:
             'The Sourcegraph browser extension will add go-to-definition, find-references, hover tooltips, and code search to all files and diffs on supported code hosts. The extension will also add code intelligence and code search to public repositories. ',
         buttons: [
-            { id: 'btn-gitlab', text: 'GitLab', link: 'https://about.sourcegraph.com/docs/features/browser-extension' },
-            { id: 'btn-github', text: 'GitHub', link: 'https://about.sourcegraph.com/docs/features/browser-extension' },
+            { id: 'btn-gitlab', text: 'GitLab', link: 'https://docs.sourcegraph.com/integration/browser_extension' },
+            { id: 'btn-github', text: 'GitHub', link: 'https://docs.sourcegraph.com/integration/browser_extension' },
             {
                 id: 'btn-phabricator',
                 text: 'Phabricator',
-                link: 'https://about.sourcegraph.com/docs/features/browser-extension',
+                link: 'https://docs.sourcegraph.com/integration/browser_extension',
             },
         ],
     },
@@ -306,12 +306,12 @@ export class MainPage extends React.Component<Props, State> {
                                 <h1>{heroTitle}</h1>
                                 <p>{heroCopyTop}</p>
                                 <p>{heroCopyBottom}</p>
-                                <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
+                                <a className="btn btn-primary" href="https://docs.sourcegraph.com/#quickstart">
                                     Deploy Sourcegraph
                                 </a>
                                 <a
                                     className="btn btn-secondary"
-                                    href="https://github.com/sourcegraph/sourcegraph/"
+                                    href="https://github.com/sourcegraph/sourcegraph"
                                     target="_blank"
                                 >
                                     Sourcegraph on GitHub
@@ -418,7 +418,7 @@ export class MainPage extends React.Component<Props, State> {
                                     flying cars, a habitat on Mars, and a cure for cancer. That's why developers can get
                                     started and deploy Sourcegraph for free, and contribute to our code on GitHub.
                                 </p>
-                                <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
+                                <a className="btn btn-primary" href="https://docs.sourcegraph.com/#quickstart">
                                     Deploy Sourcegraph
                                 </a>
                                 <a
@@ -439,7 +439,7 @@ export class MainPage extends React.Component<Props, State> {
                                     your deployment.
                                 </p>
                                 <a className="btn btn-secondary" href="//about.sourcegraph.com/pricing/">
-                                    Sourcegraph Pricing
+                                    Sourcegraph pricing
                                 </a>
                             </div>
                         </div>
@@ -465,7 +465,7 @@ export class MainPage extends React.Component<Props, State> {
                                     className="btn btn-primary"
                                     href="https://about.sourcegraph.com/blog/sourcegraph-is-now-open-source/"
                                 >
-                                    Release Announcement
+                                    Release announcement
                                 </a>
                                 <a className="btn btn-secondary" href="https://github.com/sourcegraph/sourcegraph/">
                                     Sourcegraph on GitHub
@@ -569,7 +569,7 @@ export class MainPage extends React.Component<Props, State> {
                                 <input type="checkbox" />
                                 <ul>
                                     <li>
-                                        <a href="//about.sourcegraph.com/docs">Documentation</a>
+                                        <a href="https://docs.sourcegraph.com">Documentation</a>
                                     </li>
                                     <li>
                                         <a href="//about.sourcegraph.com/changelog">Changelog</a>
@@ -686,7 +686,7 @@ export class MainPage extends React.Component<Props, State> {
                                     intelligence, advanced code search, and extensive integrations.
                                 </p>
 
-                                <a className="action-link" href="https://about.sourcegraph.com/docs">
+                                <a className="action-link" href="https://docs.sourcegraph.com/#quickstart">
                                     Deploy Sourcegraph
                                     <ChevronRightIcon className="material-icons" />
                                 </a>
@@ -764,7 +764,7 @@ export class MainPage extends React.Component<Props, State> {
                                     intelligence, advanced code search, and extensive integrations.
                                 </p>
 
-                                <a className="action-link" href="https://about.sourcegraph.com/docs">
+                                <a className="action-link" href="https://docs.sourcegraph.com/#quickstart">
                                     Deploy Sourcegraph
                                     <ChevronRightIcon className="material-icons" />
                                 </a>
@@ -837,7 +837,7 @@ export class MainPage extends React.Component<Props, State> {
                                     intelligence, advanced code search, and extensive integrations.
                                 </p>
 
-                                <a className="action-link" href="https://about.sourcegraph.com/docs">
+                                <a className="action-link" href="https://docs.sourcegraph.com/#quickstart">
                                     Deploy Sourcegraph
                                     <ChevronRightIcon className="material-icons" />
                                 </a>

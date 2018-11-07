@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
@@ -94,8 +95,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                 </p>
                 <p className="mb-4">
                     For information about configuring SSO authentication, see{' '}
-                    <a href="https://about.sourcegraph.com/docs/config/authentication">User authentication</a> in the
-                    Sourcegraph documentation.
+                    <Link to="/help/admin/auth">User authentication</Link> in the Sourcegraph documentation.
                 </p>
                 {this.state.createUserResult ? (
                     <div className="alert alert-success">

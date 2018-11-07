@@ -151,10 +151,8 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                 </div>
                 <p className="mt-2">
                     An organization is a set of users with associated configuration. See{' '}
-                    <a href="https://about.sourcegraph.com/docs/server/config/organizations">
-                        Sourcegraph documentation
-                    </a>{' '}
-                    for information about configuring organizations.
+                    <Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about
+                    configuring organizations.
                 </p>
                 <FilteredOrgConnection
                     className="list-group list-group-flush mt-3"
