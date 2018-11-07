@@ -464,7 +464,7 @@ func TestRepos_List_queryPattern(t *testing.T) {
 	tests := []struct {
 		q    query.Q
 		want []api.RepoName
-		err  bool
+		err  string
 	}{
 		// These are the same tests as TestRepos_List_patterns, but in an
 		// expression form.
@@ -540,12 +540,12 @@ func TestRepos_List_queryPattern(t *testing.T) {
 		// Bad pattern
 		{
 			q:   query.And("a/b", ")*"),
-			err: true,
+			err: "error parsing regexp",
 		},
 		// Only want strings
 		{
 			q:   query.And("a/b", 1),
-			err: true,
+			err: "unexpected token",
 		},
 	}
 	for _, test := range tests {
@@ -554,12 +554,15 @@ func TestRepos_List_queryPattern(t *testing.T) {
 			Enabled:      true,
 		})
 		if err != nil {
-			if test.err {
-				continue
+			if test.err == "" {
+				t.Fatal(err)
 			}
-			t.Fatal(err)
+			if !strings.Contains(err.Error(), test.err) {
+				t.Errorf("expected error to contain %q, got: %v", test.err, err)
+			}
+			continue
 		}
-		if test.err {
+		if test.err != "" {
 			t.Errorf("%s: expected error", query.Print(test.q))
 			continue
 		}
