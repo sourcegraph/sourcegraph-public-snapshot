@@ -269,15 +269,24 @@ type Mutation {
     ): EmptyResponse
     # All mutations that update configuration settings are under this field.
     configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
-    # Updates the site configuration. Returns whether or not a restart is
-    # needed for the update to be applied.
-    updateSiteConfiguration(input: String!): Boolean!
+    # Updates the site configuration. Returns whether or not a restart is required for the update to be applied.
+    #
+    # Only site admins may perform this mutation.
+    updateSiteConfiguration(
+        # A JSON object containing the entire site configuration. The previous site configuration will be replaced
+        # with this new value.
+        input: String!
+    ): Boolean!
     # Manages discussions.
     discussions: DiscussionsMutation
     # Sets whether the user with the specified user ID is a site admin.
+    #
+    # Only site admins may perform this mutation.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     # Reloads the site by restarting the server. This is not supported for all deployment
     # types. This may cause downtime.
+    #
+    # Only site admins may perform this mutation.
     reloadSite: EmptyResponse
     # Submits a user satisfaction (NPS) survey.
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
