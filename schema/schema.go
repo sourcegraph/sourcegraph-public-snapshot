@@ -127,6 +127,29 @@ type Contributions struct {
 	Menus         *Menus             `json:"menus,omitempty"`
 }
 
+// CoreSiteConfiguration description: Core configuration for a Sourcegraph site.
+type CoreSiteConfiguration struct {
+	AppURL                      string              `json:"appURL,omitempty"`
+	AuthProviders               []AuthProviders     `json:"auth.providers,omitempty"`
+	AuthPublic                  bool                `json:"auth.public,omitempty"`
+	AuthUserOrgMap              map[string][]string `json:"auth.userOrgMap,omitempty"`
+	HtmlBodyBottom              string              `json:"htmlBodyBottom,omitempty"`
+	HtmlBodyTop                 string              `json:"htmlBodyTop,omitempty"`
+	HtmlHeadBottom              string              `json:"htmlHeadBottom,omitempty"`
+	HtmlHeadTop                 string              `json:"htmlHeadTop,omitempty"`
+	HttpStrictTransportSecurity interface{}         `json:"httpStrictTransportSecurity,omitempty"`
+	HttpToHttpsRedirect         interface{}         `json:"httpToHttpsRedirect,omitempty"`
+	LicenseKey                  string              `json:"licenseKey,omitempty"`
+	LightstepAccessToken        string              `json:"lightstepAccessToken,omitempty"`
+	LightstepProject            string              `json:"lightstepProject,omitempty"`
+	Log                         *Log                `json:"log,omitempty"`
+	TlsLetsencrypt              string              `json:"tls.letsencrypt,omitempty"`
+	TlsCert                     string              `json:"tlsCert,omitempty"`
+	TlsKey                      string              `json:"tlsKey,omitempty"`
+	UpdateChannel               string              `json:"update.channel,omitempty"`
+	UseJaeger                   bool                `json:"useJaeger,omitempty"`
+}
+
 // Discussions description: Configures Sourcegraph code discussions.
 type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
@@ -326,7 +349,6 @@ type SiteConfiguration struct {
 	AppURL                            string                       `json:"appURL,omitempty"`
 	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
-	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
 	AuthPublic                        bool                         `json:"auth.public,omitempty"`
 	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
 	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
@@ -353,17 +375,7 @@ type SiteConfiguration struct {
 	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`
 	Gitlab                            []*GitLabConnection          `json:"gitlab,omitempty"`
 	Gitolite                          []*GitoliteConnection        `json:"gitolite,omitempty"`
-	HtmlBodyBottom                    string                       `json:"htmlBodyBottom,omitempty"`
-	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
-	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
-	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
-	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
-	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
-	LicenseKey                        string                       `json:"licenseKey,omitempty"`
-	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
-	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
-	Log                               *Log                         `json:"log,omitempty"`
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
 	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
@@ -377,11 +389,6 @@ type SiteConfiguration struct {
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
-	TlsLetsencrypt                    string                       `json:"tls.letsencrypt,omitempty"`
-	TlsCert                           string                       `json:"tlsCert,omitempty"`
-	TlsKey                            string                       `json:"tlsKey,omitempty"`
-	UpdateChannel                     string                       `json:"update.channel,omitempty"`
-	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
 }
 
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.
