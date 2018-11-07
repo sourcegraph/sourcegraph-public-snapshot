@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -17,34 +18,19 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
-
-/*var (
-	addr = flag.String
-)*/
 
 var (
-	repositoriesRoot = "/Users/fae/gitproxy"
-	repositoryTTL    = 30 * 60 // 30 minutes
+	repositoriesRoot    = env.Get("REPOSITORIES_ROOT", "./repositories", "Root path to store repository data")
+	repositoryTTLString = env.Get("REPOSITORY_TTL", "1800", "How long to keep repositories, in seconds")
+	listenerPort        = env.Get("LISTENER_PORT", "4014", "The network port to listen on")
 )
-
-type CreateRepositoryRequest struct {
-	PathPrefix   string            `json:"path_prefix"`
-	FileContents map[string]string `json:"file_contents"`
-}
-
-type CreateRepositoryResponse struct {
-	Path      string `json:"path"`
-	Error     string `json:"error"`
-	GoodUntil int64  `json:"good_until"`
-}
 
 type repository struct {
 	key        string
 	pathPrefix string
 	goodUntil  int64
+	active     bool
 }
 
 func (r *repository) filePathRoot() string {
@@ -68,11 +54,14 @@ func (r *repository) filePathForURLSubpath(subpath string) string {
 
 func (r *repository) writeToDisk(data map[string]string) error {
 	path := r.filePathRoot()
-	// Create path if it doesn't exist
+	// Delete the target directory and its contents if they exist.
+	os.RemoveAll(path)
+	// Create a new empty directory.
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		return err
 	}
+	// Write out the given data to the file system.
 	for filename, content := range data {
 		filePath := filepath.Join(path, filename)
 		err = ioutil.WriteFile(filePath, []byte(content), 0644)
@@ -80,49 +69,64 @@ func (r *repository) writeToDisk(data map[string]string) error {
 			return err
 		}
 	}
-	repo, err := git.PlainInit(path, false)
+	// Initialize the new repo and add the files to it.
+	cmd := exec.Command("git", "init")
+	cmd.Dir = path
+	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("PlainInit failed\n")
 		return err
 	}
-	worktree, err := repo.Worktree()
+	cmd = exec.Command("git", "add", ".")
+	cmd.Dir = path
+	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("Worktree failed\n")
 		return err
 	}
-	for filename := range data {
-		_, err = worktree.Add(filename)
-		if err != nil {
-			fmt.Printf("Add [%s] failed\n", filename)
-			return err
-		}
-	}
-	_, err = worktree.Commit("Initial commit", &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "Sourcegraph git proxy",
-			Email: "sourcegraph@sourcegraph.com",
-			When:  time.Now(),
-		},
-	})
+	cmd = exec.Command("git", "commit", "-m", "Initial commit")
+	cmd.Dir = path
+	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("Commit failed\n")
 		return err
 	}
-
-	// This command builds info/refs in
-	// the repository, which we need to serve repos as static files.
-	// go-git doesn't support update-server-info (see
-	// https://github.com/src-d/go-git/blob/master/COMPATIBILITY.md) so we
-	// need to do it the old-fashioned way.
-	cmd := exec.Command("git", "update-server-info")
+	// This command builds info/refs in the repository, which we need to serve
+	// repos as static files.
+	cmd = exec.Command("git", "update-server-info")
 	cmd.Dir = path
 	return cmd.Run()
 }
 
 var (
-	repositories      = map[string]*repository{}
-	repositoriesMutex = &sync.Mutex{}
+	repositories            = map[string]*repository{}
+	repositoryDeletionQueue = list.New()
+	repositoriesMutex       = &sync.Mutex{}
 )
+
+func deleteRepository(r *repository) {
+	repositoriesMutex.Lock()
+	delete(repositories, r.key)
+	repositoriesMutex.Unlock()
+	os.RemoveAll(r.filePathRoot())
+}
+
+func repositoryDeleter() {
+	// Watches the repository deletion queue and removes repositories once
+	// their goodUntil field is past.
+	for {
+		curTime := time.Now().Unix()
+		for r := repositoryDeletionQueue.Front(); r != nil; r = repositoryDeletionQueue.Front() {
+			repository := r.Value.(*repository)
+			if curTime <= repository.goodUntil {
+				break
+			}
+			repositoriesMutex.Lock()
+			delete(repositories, repository.key)
+			repositoryDeletionQueue.Remove(r)
+			repositoriesMutex.Unlock()
+			os.RemoveAll(repository.filePathRoot())
+		}
+		time.Sleep(time.Minute)
+	}
+}
 
 func createRandomKey() string {
 	keyIndex := rand.Int31()
@@ -142,11 +146,28 @@ func createEmptyRepository() *repository {
 	}
 	repository := &repository{key: key}
 	repositories[key] = repository
+	repositoryDeletionQueue.PushBack(repository)
 	repositoriesMutex.Unlock()
 	return repository
 }
 
+type CreateRepositoryRequest struct {
+	PathPrefix   string            `json:"path_prefix"`
+	FileContents map[string]string `json:"file_contents"`
+}
+
+type CreateRepositoryResponse struct {
+	Path      string `json:"path"`
+	Error     string `json:"error"`
+	GoodUntil int64  `json:"good_until"`
+}
+
 func handleCreateRepository() http.HandlerFunc {
+	repositoryTTL, err := strconv.ParseInt(repositoryTTLString, 10, 32)
+	if err != nil {
+		// Fall back on default of 30 minutes
+		repositoryTTL = 30 * 60
+	}
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		decoder := json.NewDecoder(request.Body)
 		var createRepositoryRequest CreateRepositoryRequest
@@ -200,10 +221,6 @@ func handleRepository() http.HandlerFunc {
 		} else {
 			fmt.Printf("I don't recognize that as a repository command (%s)\n", request.URL.Path)
 		}
-		// Trim "/repository" off the path.
-		/*path := request.URL.Path[11:]
-		path := path.Clean(request.URL.Path)
-		pathComponents := strings.Split(path, "/")*/
 	}
 }
 
@@ -213,12 +230,8 @@ func handleListRepositories() http.HandlerFunc {
 	}
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		repositoryPaths := []string{}
-		for key, repo := range repositories {
-			path := key
-			if repo.pathPrefix != "" {
-				path += "/" + repo.pathPrefix
-			}
-			repositoryPaths = append(repositoryPaths, path)
+		for _, repo := range repositories {
+			repositoryPaths = append(repositoryPaths, repo.urlRoot())
 		}
 		response := ListRepositoriesResponse{repositoryPaths}
 		responseJSON, err := json.Marshal(response)
@@ -234,8 +247,11 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 
+	// Watch the repositories and delete them when they get too old.
+	go repositoryDeleter()
+
 	http.HandleFunc("/create-repository", handleCreateRepository())
-	http.HandleFunc("/repository/", handleRepository())
 	http.HandleFunc("/list-repositories", handleListRepositories())
-	log.Fatal(http.ListenAndServe(":4014", nil))
+	http.HandleFunc("/repository/", handleRepository())
+	log.Fatal(http.ListenAndServe(":"+listenerPort, nil))
 }
