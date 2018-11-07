@@ -1,1 +1,1 @@
-DROP TABLE "site_configuration_file";
+DROP TABLE "site_configuration_files";
