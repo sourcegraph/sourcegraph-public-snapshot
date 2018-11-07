@@ -1981,8 +1981,6 @@ type User implements Node & ConfigurationSubject {
     # Only the user and site admins can access this field.
     tags: [String!]!
     # The user's usage statistics on Sourcegraph.
-    #
-    # Only the user and site admins can access this field.
     usageStatistics: UserUsageStatistics!
     # The user's email addresses.
     #
@@ -2653,6 +2651,8 @@ type Configuration {
 }
 
 # UserUsageStatistics describes a user's usage statistics.
+#
+# This information is visible to all viewers.
 type UserUsageStatistics {
     # The number of search queries that the user has performed.
     searchQueries: Int!
@@ -2687,6 +2687,8 @@ enum UserActivePeriod {
 }
 
 # SiteUsageStatistics describes a site's aggregate usage statistics.
+#
+# This information is visible to all viewers.
 type SiteUsageStatistics {
     # Recent daily active users.
     daus: [SiteUsagePeriod!]!
@@ -2697,6 +2699,8 @@ type SiteUsageStatistics {
 }
 
 # SiteUsagePeriod describes a site's usage statistics for a given timespan.
+#
+# This information is visible to all viewers.
 type SiteUsagePeriod {
     # The time when this started.
     startTime: String!
