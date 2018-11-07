@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -13,10 +12,6 @@ import (
 )
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
-	// 🚨 SECURITY: Only the user and site admins are allowed to access user usage statistics.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
-		return nil, err
-	}
 	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("usage statistics are not available on sourcegraph.com")
 	}

@@ -22,6 +22,7 @@ Welcome to Sourcegraph! As a developer, you can use Sourcegraph to get help whil
 All features:
 
 - [Usage statistics](usage_statistics.md)
+- [User surveys](user_surveys.md)
 
 ## What is Sourcegraph?
 

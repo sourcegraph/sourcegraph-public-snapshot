@@ -2,16 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -114,34 +111,6 @@ func (r *siteResolver) HasCodeIntelligence() bool {
 
 func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 	return &productSubscriptionStatus{}
-}
-
-func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
-	Days   *int32
-	Weeks  *int32
-	Months *int32
-}) (*siteUsageStatisticsResolver, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("site usage statistics are not available on sourcegraph.com")
-	}
-	opt := &usagestats.SiteUsageStatisticsOptions{}
-	if args.Days != nil {
-		d := int(*args.Days)
-		opt.DayPeriods = &d
-	}
-	if args.Weeks != nil {
-		w := int(*args.Weeks)
-		opt.WeekPeriods = &w
-	}
-	if args.Months != nil {
-		m := int(*args.Months)
-		opt.MonthPeriods = &m
-	}
-	activity, err := usagestats.GetSiteUsageStatistics(opt)
-	if err != nil {
-		return nil, err
-	}
-	return &siteUsageStatisticsResolver{activity}, nil
 }
 
 type siteConfigurationResolver struct{}

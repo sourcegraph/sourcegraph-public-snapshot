@@ -41,8 +41,14 @@ const (
 	maxStorageDays = 93
 )
 
+var MockGetByUserID func(userID int32) (*types.UserUsageStatistics, error)
+
 // GetByUserID returns a single user's UserUsageStatistics.
 func GetByUserID(userID int32) (*types.UserUsageStatistics, error) {
+	if MockGetByUserID != nil {
+		return MockGetByUserID(userID)
+	}
+
 	userIDStr := strconv.Itoa(int(userID))
 	key := keyPrefix + userIDStr
 

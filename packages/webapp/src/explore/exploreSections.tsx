@@ -26,8 +26,6 @@ export const exploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
     {
         render: props => <SiteUsageExploreSection {...props} />,
         condition: ({ authenticatedUser }) =>
-            (!window.context.sourcegraphDotComMode || window.context.debug) &&
-            !!authenticatedUser &&
-            authenticatedUser.siteAdmin,
+            (!window.context.sourcegraphDotComMode || window.context.debug) && !!authenticatedUser,
     },
 ]
