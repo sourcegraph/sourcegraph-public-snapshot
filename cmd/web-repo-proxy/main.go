@@ -115,7 +115,9 @@ func repositoryDeleter() {
 		curTime := time.Now().Unix()
 		for r := repositoryDeletionQueue.Front(); r != nil; r = repositoryDeletionQueue.Front() {
 			repository := r.Value.(*repository)
-			if curTime <= repository.goodUntil {
+			if !repository.active || curTime <= repository.goodUntil {
+				// An inactive repository may not have a valid goodUntil field yet,
+				// so try again later.
 				break
 			}
 			repositoriesMutex.Lock()
@@ -184,6 +186,7 @@ func handleCreateRepository() http.HandlerFunc {
 			if err != nil {
 				fmt.Printf("Couldn't write the repository to disk: %v\n", err)
 			} else {
+				repo.active = true
 				response := CreateRepositoryResponse{
 					Path:      repo.urlRoot(),
 					GoodUntil: repo.goodUntil}
@@ -206,8 +209,7 @@ func handleRepository() http.HandlerFunc {
 		if len(pathComponents) >= 3 {
 			repoKey := pathComponents[1]
 			repo := repositories[repoKey]
-			if repo != nil {
-				fmt.Printf("I have repository [%s]\n", repoKey)
+			if repo != nil && repo.active {
 				if strings.HasPrefix(pathComponents[2], repo.pathPrefix) {
 					truncatedPath := pathComponents[2][len(repo.pathPrefix):]
 					filePath := repo.filePathForURLSubpath(truncatedPath)
@@ -231,7 +233,9 @@ func handleListRepositories() http.HandlerFunc {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		repositoryPaths := []string{}
 		for _, repo := range repositories {
-			repositoryPaths = append(repositoryPaths, repo.urlRoot())
+			if repo.active {
+				repositoryPaths = append(repositoryPaths, repo.urlRoot())
+			}
 		}
 		response := ListRepositoriesResponse{repositoryPaths}
 		responseJSON, err := json.Marshal(response)
