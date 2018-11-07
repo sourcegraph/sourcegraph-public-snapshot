@@ -2,13 +2,14 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -156,6 +157,10 @@ type ReposListOptions struct {
 	// returned in the list.
 	ExcludePattern string
 
+	// PatternQuery is an expression tree of patterns to query. The atoms of
+	// the query are strings which are regular expression patterns.
+	PatternQuery query.Q
+
 	// Enabled includes enabled repositories in the list.
 	Enabled bool
 
@@ -282,6 +287,36 @@ func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
+func parsePattern(p string) ([]*sqlf.Query, error) {
+	exact, like, pattern, err := parseIncludePattern(p)
+	if err != nil {
+		return nil, err
+	}
+	var conds []*sqlf.Query
+	if exact != nil {
+		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
+			conds = append(conds, sqlf.Sprintf("TRUE"))
+		} else {
+			items := []*sqlf.Query{}
+			for _, v := range exact {
+				items = append(items, sqlf.Sprintf("%s", v))
+			}
+			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+		}
+	}
+	if len(like) > 0 {
+		var likeConds []*sqlf.Query
+		for _, v := range like {
+			likeConds = append(likeConds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
+	}
+	if pattern != "" {
+		conds = append(conds, sqlf.Sprintf("lower(name) ~* %s", pattern))
+	}
+	return conds, nil
+}
+
 func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
@@ -291,34 +326,34 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
 	}
 	for _, includePattern := range opt.IncludePatterns {
-		exact, like, pattern, err := parseIncludePattern(includePattern)
+		extraConds, err := parsePattern(includePattern)
 		if err != nil {
 			return nil, err
 		}
-		if exact != nil {
-			if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
-				conds = append(conds, sqlf.Sprintf("TRUE"))
-			} else {
-				items := []*sqlf.Query{}
-				for _, v := range exact {
-					items = append(items, sqlf.Sprintf("%s", v))
-				}
-				conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
-			}
-		}
-		if len(like) > 0 {
-			var likeConds []*sqlf.Query
-			for _, v := range like {
-				likeConds = append(likeConds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
-			}
-			conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
-		}
-		if pattern != "" {
-			conds = append(conds, sqlf.Sprintf("lower(name) ~* %s", pattern))
-		}
+		conds = append(conds, extraConds...)
 	}
 	if opt.ExcludePattern != "" {
 		conds = append(conds, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
+	}
+	if opt.PatternQuery != nil {
+		cond, err := query.Eval(opt.PatternQuery, func(q query.Q) (*sqlf.Query, error) {
+			pattern, ok := q.(string)
+			if !ok {
+				return nil, errors.Errorf("unexpected token in repo listing query: %q", q)
+			}
+			extraConds, err := parsePattern(pattern)
+			if err != nil {
+				return nil, err
+			}
+			if len(extraConds) == 0 {
+				return sqlf.Sprintf("TRUE"), nil
+			}
+			return sqlf.Join(extraConds, "AND"), nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		conds = append(conds, cond)
 	}
 
 	if opt.Enabled && opt.Disabled {

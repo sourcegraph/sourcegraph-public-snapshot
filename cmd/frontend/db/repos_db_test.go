@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -440,6 +441,133 @@ func TestRepos_List_patterns(t *testing.T) {
 		}
 		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("include %q exclude %q: got repos %q, want %q", test.includePatterns, test.excludePattern, got, test.want)
+		}
+	}
+}
+
+// TestRepos_List_patterns tests the behavior of Repos.List when called with
+// a QueryPattern.
+func TestRepos_List_queryPattern(t *testing.T) {
+	ctx := dbtesting.TestContext(t)
+
+	ctx = actor.WithActor(ctx, &actor.Actor{})
+
+	createdRepos := []*types.Repo{
+		{Name: "a/b"},
+		{Name: "c/d"},
+		{Name: "e/f"},
+		{Name: "g/h"},
+	}
+	for _, repo := range createdRepos {
+		createRepo(ctx, t, repo)
+	}
+	tests := []struct {
+		q    query.Q
+		want []api.RepoName
+		err  string
+	}{
+		// These are the same tests as TestRepos_List_patterns, but in an
+		// expression form.
+		{
+			q:    "(a|c)",
+			want: []api.RepoName{"a/b", "c/d"},
+		},
+		{
+			q:    query.And("(a|c)", "b"),
+			want: []api.RepoName{"a/b"},
+		},
+		{
+			q:    query.And("(a|c)", query.Not("d")),
+			want: []api.RepoName{"a/b"},
+		},
+		{
+			q:    query.Not("(d|e)"),
+			want: []api.RepoName{"a/b", "g/h"},
+		},
+
+		// Some extra tests which test the pattern compiler
+		{
+			q:    "^a/b$",
+			want: []api.RepoName{"a/b"},
+		},
+		{
+			// Should match only e/f, but pattern compiler doesn't handle this
+			// so matches nothing.
+			q:    "[a-zA-Z]/e",
+			want: nil,
+		},
+
+		// Test OR support
+		{
+			q:    query.Or(query.Not("(d|e)"), "d"),
+			want: []api.RepoName{"a/b", "c/d", "g/h"},
+		},
+
+		// Test deeply nested
+		{
+			q: query.Or(
+				query.And(
+					true,
+					query.Not(query.Or("a", "c"))),
+				query.And(query.Not("e"), query.Not("a"))),
+			want: []api.RepoName{"c/d", "e/f", "g/h"},
+		},
+
+		// Corner cases for Or
+		{
+			q:    query.Or(), // empty Or is false
+			want: nil,
+		},
+		{
+			q:    query.Or("a"),
+			want: []api.RepoName{"a/b"},
+		},
+
+		// Corner cases for And
+		{
+			q:    query.And(), // empty And is true
+			want: []api.RepoName{"a/b", "c/d", "e/f", "g/h"},
+		},
+		{
+			q:    query.And("a"),
+			want: []api.RepoName{"a/b"},
+		},
+		{
+			q:    query.And("a", "d"),
+			want: nil,
+		},
+
+		// Bad pattern
+		{
+			q:   query.And("a/b", ")*"),
+			err: "error parsing regexp",
+		},
+		// Only want strings
+		{
+			q:   query.And("a/b", 1),
+			err: "unexpected token",
+		},
+	}
+	for _, test := range tests {
+		repos, err := Repos.List(ctx, ReposListOptions{
+			PatternQuery: test.q,
+			Enabled:      true,
+		})
+		if err != nil {
+			if test.err == "" {
+				t.Fatal(err)
+			}
+			if !strings.Contains(err.Error(), test.err) {
+				t.Errorf("expected error to contain %q, got: %v", test.err, err)
+			}
+			continue
+		}
+		if test.err != "" {
+			t.Errorf("%s: expected error", query.Print(test.q))
+			continue
+		}
+		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%s: got repos %q, want %q", query.Print(test.q), got, test.want)
 		}
 	}
 }
