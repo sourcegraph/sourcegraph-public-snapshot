@@ -1,12 +1,12 @@
 package query_test
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 )
 
@@ -17,7 +17,11 @@ func ExampleEval() {
 			query.Not("bar"),
 			true),
 		func(q query.Q) (*sqlf.Query, error) {
-			return sqlf.Sprintf("name LIKE %s", "%"+q.(string)+"%"), nil
+			p, ok := q.(string)
+			if !ok {
+				return nil, errors.Errorf("unexpected token in query: %q", q)
+			}
+			return sqlf.Sprintf("name LIKE %s", "%"+p+"%"), nil
 		})
 	if err != nil {
 		log.Fatal("unexpected error", err)

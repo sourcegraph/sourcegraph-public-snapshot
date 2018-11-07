@@ -45,6 +45,21 @@ type not struct {
 //
 // Eval handles And, Or, Not and booleans. Otherwise every other Q will be
 // passed to atomToQueryFn.
+//
+// For example in the expression
+//
+//   And("atom1", Or(true, "atom2", &atom3{})
+//
+// atomToQueryFn is responsible for converting "atom1", "atom2" and &atom3{}
+// into sqlf.Query patterns. Eval will return the expression:
+//
+//   (query1 AND (query2 OR query3))
+//
+// Where queryN is the respective output of atomToQueryFn.
+//
+// Typically we expect atomToQueryFn to return a SQL condition like "name LIKE
+// $q". It should also handle unexpected values/types being passed in via
+// returning an error. See ExampleEval for a real example of a atomToQueryFn.
 func Eval(q Q, atomToQueryFn func(q Q) (*sqlf.Query, error)) (*sqlf.Query, error) {
 	childQueries := func(qs []Q) ([]*sqlf.Query, error) {
 		x := make([]*sqlf.Query, 0, len(qs))
