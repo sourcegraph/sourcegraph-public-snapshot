@@ -117,7 +117,7 @@ func (r *discussionCommentResolver) CanDelete(ctx context.Context) bool {
 	return true
 }
 
-func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
+func (*schemaResolver) DiscussionComments(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	AuthorUserID *graphql.ID
 }) (*discussionCommentsConnectionResolver, error) {

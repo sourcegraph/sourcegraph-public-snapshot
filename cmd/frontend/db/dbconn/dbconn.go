@@ -1,3 +1,4 @@
+// Package dbconn provides functionality to connect to our DB and migrate it.
 package dbconn
 
 import (

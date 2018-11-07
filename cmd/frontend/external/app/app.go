@@ -1,3 +1,5 @@
+// Package app exports symbols from frontend/internal/app. See the parent
+// package godoc for more information.
 package app
 
 import (

@@ -1,3 +1,5 @@
+// Package graphqlfile provides utilities for manipulating our graphql schema
+// files.
 package graphqlfile
 
 import (

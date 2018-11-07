@@ -311,14 +311,14 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 	return &discussionThreadResolver{t: thread}, nil
 }
 
-func (s *schemaResolver) Discussions(ctx context.Context) (*discussionsMutationResolver, error) {
+func (*schemaResolver) Discussions(ctx context.Context) (*discussionsMutationResolver, error) {
 	if err := viewerCanUseDiscussions(ctx); err != nil {
 		return nil, err
 	}
 	return &discussionsMutationResolver{}, nil
 }
 
-func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
+func (*schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query                       *string
 	ThreadID                    *graphql.ID

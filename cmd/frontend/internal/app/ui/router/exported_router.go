@@ -1,3 +1,4 @@
+// Package router contains the route names for our app UI.
 package router
 
 import "github.com/gorilla/mux"

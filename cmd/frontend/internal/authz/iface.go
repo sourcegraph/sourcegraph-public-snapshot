@@ -1,3 +1,5 @@
+// Package authz contains common logic and interfaces for authorization to
+// external providers (such as GitLab).
 package authz
 
 import (

@@ -1,3 +1,4 @@
+// Package envvar contains helpers for reading common environment variables.
 package envvar
 
 import (
