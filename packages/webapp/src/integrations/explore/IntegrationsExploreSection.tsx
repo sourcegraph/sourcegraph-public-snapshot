@@ -1,11 +1,12 @@
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 const DATA: { title: string; description: string; url: string; backgroundImage: string }[] = [
     {
         title: 'Browser extension',
         description: 'Go-to-definition and hovers in your code host and reviews.',
-        url: 'https://docs.sourcegraph.com/integration/browser_extension',
+        url: '/help/integration/browser_extension',
         backgroundImage:
             'linear-gradient(96deg, #397b9c, #b553af 46%, #bb5525), linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))',
     },
@@ -19,7 +20,7 @@ const DATA: { title: string; description: string; url: string; backgroundImage: 
     {
         title: 'Editor extensions',
         description: 'Jump to Sourcegraph from your editor.',
-        url: 'https://docs.sourcegraph.com/integration/editor',
+        url: '/help/integration/editor',
         backgroundImage:
             'linear-gradient(100deg, #36334c, #2b5897), linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))',
     },
@@ -52,9 +53,9 @@ export class IntegrationsExploreSection extends React.PureComponent {
                     ))}
                 </div>
                 <div className="text-right mt-3">
-                    <a href="https://docs.sourcegraph.com/integration" target="_blank">
+                    <Link to="/help/integration" target="_blank">
                         View all integrations<ChevronRightIcon className="icon-inline" />
-                    </a>
+                    </Link>
                 </div>
             </div>
         )

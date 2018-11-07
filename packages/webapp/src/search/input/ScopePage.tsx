@@ -28,7 +28,7 @@ const ScopeNotFound = () => (
             <>
                 No search page found with this scope ID. Add an ID and description to a search scope to create a search
                 page. See{' '}
-                <a href="https://about.sourcegraph.com/docs/server/config/search-scopes">search scope documentation</a>.
+                <Link to="/help/user/search/scopes#creating-search-scope-pages">search scope documentation</Link>.
             </>
         }
     />

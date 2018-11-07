@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 
 /**
@@ -15,10 +16,8 @@ export const DockerForMacAlert: React.SFC<{ className?: string }> = ({ className
             access, search performance and cloning repositories on Sourcegraph will be much slower.
         </span>
         <span className="docker-for-mac-alert__right">
-            <a target="_blank" href="https://about.sourcegraph.com/docs">
-                Run Sourcegraph on a different platform or deploy it to a server
-            </a>{' '}
-            for much faster performance.
+            <Link to="/help/admin">Run Sourcegraph on a different platform or deploy it to a server</Link> for much
+            faster performance.
         </span>
     </DismissibleAlert>
 )

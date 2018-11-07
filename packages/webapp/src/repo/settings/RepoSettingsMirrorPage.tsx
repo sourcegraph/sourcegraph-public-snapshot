@@ -330,18 +330,16 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                                         <strong>No ECDSA host key is known ... Host key verification failed?</strong>
                                     </code>{' '}
                                     See{' '}
-                                    <a href="https://about.sourcegraph.com/docs/server/config/repositories#ssh-authentication-config-keys-known_hosts">
+                                    <Link to="/help/admin/repo/add_from_git_repository#ssh-authentication-config-keys-known-hosts">
                                         SSH repository authentication documentation
-                                    </a>{' '}
+                                    </Link>{' '}
                                     for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
                                     host key.
                                 </li>
                                 <li className="repo-settings-mirror-page__step">
                                     Consult{' '}
-                                    <a href="https://about.sourcegraph.com/docs/server/config/repositories">
-                                        Sourcegraph repositories documentation
-                                    </a>{' '}
-                                    for resolving other authentication issues (such as HTTPS certificates and SSH keys).
+                                    <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link> for
+                                    resolving other authentication issues (such as HTTPS certificates and SSH keys).
                                 </li>
                                 <li className="repo-settings-mirror-page__step">
                                     <FeedbackText headerText="Questions?" />

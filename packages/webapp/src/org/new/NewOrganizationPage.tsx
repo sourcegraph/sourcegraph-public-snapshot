@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
@@ -85,10 +86,8 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                     <h1>Create a new organization</h1>
                     <p>
                         An organization is a set of users with associated configuration. See{' '}
-                        <a href="https://about.sourcegraph.com/docs/server/config/organizations">
-                            Sourcegraph documentation
-                        </a>{' '}
-                        for information about configuring organizations.
+                        <Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about
+                        configuring organizations.
                     </p>
                     {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                     <div className="form-group">

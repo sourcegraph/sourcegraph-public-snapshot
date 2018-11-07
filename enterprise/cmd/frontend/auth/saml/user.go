@@ -90,7 +90,7 @@ func getOrCreateUser(ctx context.Context, info *authnResponseInfo) (_ *actor.Act
 
 	username, err := auth.NormalizeUsername(info.unnormalizedUsername)
 	if err != nil {
-		return nil, fmt.Sprintf("Error normalizing the username %q. See https://about.sourcegraph.com/docs/config/authentication#username-normalization.", info.unnormalizedUsername), err
+		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", info.unnormalizedUsername), err
 	}
 
 	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{

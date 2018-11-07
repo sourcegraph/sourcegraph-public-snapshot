@@ -8,11 +8,8 @@ export const ExtensionsEmptyState: React.SFC<{
 }> = ({ className = 'px-3 py-4', onClick }) => (
     <div className={`${className} text-center`}>
         <h4 className="text-muted mb-3">
-            Extensions add new features to Sourcegraph. Check out the{' '}
-            <a href="https://docs.sourcegraph.com/extensions" target="_blank">
-                Sourcegraph extensions documentation
-            </a>{' '}
-            for how to publish extensions.
+            Extensions add new features to Sourcegraph. See the{' '}
+            <Link to="/help/extensions">Sourcegraph extensions documentation</Link> for how to publish extensions.
         </h4>
         <Link to="/extensions" className="btn btn-primary" onClick={onClick}>
             Add extensions from registry

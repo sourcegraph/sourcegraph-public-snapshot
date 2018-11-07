@@ -45,7 +45,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 {showDotComMarketing && (
                     <li className="nav-item">
                         <a
-                            href="https://docs.sourcegraph.com"
+                            href="https://docs.sourcegraph.com/#quickstart"
                             className="nav-link text-truncate"
                             onClick={this.onClickInstall}
                             title="Install self-hosted Sourcegraph to search your own (private) code"

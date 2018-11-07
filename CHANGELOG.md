@@ -106,7 +106,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Search syntax for filtering archived repositories. `archived:no` will exclude archived repositories from search results, `archived:only` will search over archived repositories only. This applies for GitHub and GitLab repositories.
-- A Bitbucket Server option to exclude personal repositories in the event that you decide to give an admin-level Bitbucket access token to Sourcegraph and do not want to create a bot account. See https://about.sourcegraph.com/docs/config/repositories/#excluding-personal-repositories for more information.
+- A Bitbucket Server option to exclude personal repositories in the event that you decide to give an admin-level Bitbucket access token to Sourcegraph and do not want to create a bot account. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information.
 - Site admins can now see when users of their Sourcegraph instance last used it via a code host integration (e.g. Sourcegraph browser extensions). Visit the site admin Analytics page (e.g. https://sourcegraph.example.com/site-admin/analytics) to view this information.
 - A new site config option `extensions.allowRemoteExtensions` lets you explicitly specify the remote extensions (from, e.g., Sourcegraph.com) that are allowed.
 - Pings now include a total count of user accounts.
@@ -121,7 +121,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-- The deprecated environment variables `SRC_SESSION_STORE_REDIS` and `REDIS_MASTER_ENDPOINT` are no longer used to configure alternative redis endpoints. For more information view the [External Database](https://about.sourcegraph.com/docs/config/external-database) documentation.
+- The deprecated environment variables `SRC_SESSION_STORE_REDIS` and `REDIS_MASTER_ENDPOINT` are no longer used to configure alternative redis endpoints. For more information, see "[Using external databases with Sourcegraph](https://docs.sourcegraph.com/admin/external_database)".
 
 ## 2.11.1
 
@@ -363,7 +363,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where deleting an organization prevented the creation of organizations with the name of the deleted organization.
 - Non-UTF8 encoded files (e.g. ISO-8859-1/Latin1, UTF16, etc) are now displayed as text properly rather than being detected as binary files.
 - Improved error message when lsp-proxy's initalize timeout occurs
-- Fixed compatibility issues and added [instructions for using Microsoft ADFS 2.1 and 3.0 for SAML authentication](https://about.sourcegraph.com/docs/config/authentication/saml-microsoft-adfs).
+- Fixed compatibility issues and added [instructions for using Microsoft ADFS 2.1 and 3.0 for SAML authentication](https://docs.sourcegraph.com/admin/auth/saml_with_microsoft_adfs).
 - Fixed an issue where external accounts associated with deleted user accounts would still be returned by the GraphQL API. This caused the site admin external accounts page to fail to render in some cases.
 - Significantly reduced the number of code host requests for non github.com or gitlab.com repositories.
 
@@ -381,7 +381,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - `gitMaxConcurrentClones` now also limits the concurrency of updates to repos in addition to the initial clone.
 - In the GraphQL API, `site.users` has been renamed to `users`, `site.orgs` has been renamed to `organizations`, and `site.repositories` has been renamed to `repositories`.
-- An authentication provider must be set in site configuration (see [authentication provider documentation](https://about.sourcegraph.com/docs/config/authentication). Previously the server defaulted to builtin auth if none was set.
+- An authentication provider must be set in site configuration (see [authentication provider documentation](https://docs.sourcegraph.com/admin/auth)). Previously the server defaulted to builtin auth if none was set.
 - If a process dies inside the Sourcegraph container the whole container will shut down. We suggest operators configure a [Docker Restart Policy](https://docs.docker.com/config/containers/start-containers-automatically/#restart-policy-details) or a [Kubernetes Restart Policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy). Previously the container would operate in a degraded mode if a process died.
 - Changes to the `auth.public` site config are applied immediately in `sourcegraph/server` (no restart needed).
 - The new search timeout behavior is now enabled by default. Set `"experimentalFeatures": {"searchTimeoutParameter": "disabled"}` in site config to disable it.
@@ -423,7 +423,7 @@ All notable changes to Sourcegraph are documented in this file.
 - There is now a code intelligence status indicator when viewing files. It contains information about the capabailities of the language server that is providing code intelligence for the file.
 - Java code intelligence can now be enabled for repositories that aren't automatically supported using a
   `javaconfig.json` file. For Gradle plugins, this file can be generated using
-  the [Javaconfig Gradle plugin](https://about.sourcegraph.com/docs/code-intelligence/java#build-configuration).
+  the [Javaconfig Gradle plugin](https://docs.sourcegraph.com/extensions/language_servers/java#gradle-execution).
 - The new `auth.providers` site config is an array of authentication provider objects. Currently only 1 auth provider is supported. The singular `auth.provider` is deprecated.
 - Users authenticated with OpenID Connect are now able to sign out of Sourcegraph (if the provider supports token revocation or the end-session endpoint).
 - Users can now specify the number of days, weeks, and months of site activity to query through the GraphQL API.
@@ -446,7 +446,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - When deploying Sourcegraph to Kubernetes, RBAC is now used by default. Most Kubernetes clusters require it. See the Kubernetes installation instructions for more information (including disabling if needed).
 - Increased git ssh connection timeout to 30s from 7s.
-- Phabricator integration no longer requires staging areas though [it is still suggested](https://about.sourcegraph.com/docs/features/phabricator-extension#staging-areas).
+- The Phabricator integration no longer requires staging areas, but using them is still recommended because it improves performance.
 
 ### Fixed
 
@@ -506,7 +506,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code intelligence indexes are now built for all repositories in the background, regardless of whether or not they are visited directly by a user.
 - Language servers are now automatically enabled when visiting a repository. For example, visiting a Go repository will now automatically download and run the relevant Docker container for Go code intelligence.
   - This change only affects when Sourcegraph is deployed using the `sourcegraph/server` Docker image (not using Kubernetes).
-  - You will need to use the new `docker run` command at https://about.sourcegraph.com/docs/server/ in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://about.sourcegraph.com/docs/code-intelligence/install for more information.
+  - You will need to use the new `docker run` command at https://docs.sourcegraph.com/#quickstart in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://docs.sourcegraph.com/extensions/language_servers for more information.
 - The site admin Analytics page will now display the number of "Code Intelligence" actions each user has made, including hovers, jump to definitions, and find references, on the Sourcegraph webapp or in a code host integration or extension.
 - An experimental cross repository jump to definition which consults the OSS index on Sourcegraph.com. This is disabled by default; use `"experimentalFeatures": { "jumpToDefOSSIndex": "enabled" }` in your site configuration to enable it.
 - Users can now view Git branches, tags, and commits, and compare Git branches and revisions on Sourcegraph. (The code host icon in the header takes you to the commit on the code host.)

@@ -145,14 +145,13 @@ export class SavedQueries extends React.Component<Props, State> {
                                         <AddIcon className="icon-inline" /> Add new search
                                     </button>
 
-                                    <a
-                                        href="https://about.sourcegraph.com/docs/search/saved-searches"
+                                    <Link
+                                        to="/help/user/search/saved_searches"
                                         onClick={this.onDidClickQueryHelp}
                                         className="btn btn-link"
-                                        target="_blank"
                                     >
                                         <HelpCircleOutlineIcon className="icon-inline" /> Help
-                                    </a>
+                                    </Link>
                                 </div>
                             </div>
                             {this.state.isCreating && (
