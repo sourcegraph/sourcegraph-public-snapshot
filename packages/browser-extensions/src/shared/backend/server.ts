@@ -2,6 +2,7 @@ import { IClientConfigurationDetails } from '@sourcegraph/extensions-client-comm
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { GQL } from '../../types/gqlschema'
+import { sourcegraphUrl } from '../util/context'
 import { getContext } from './context'
 import { queryGraphQL } from './graphql'
 
@@ -60,7 +61,7 @@ export const fetchCurrentUser = (useAccessToken = true): Observable<GQL.IUser | 
         }, catchError((err, caught) => caught))
     )
 
-export const fetchSite = (): Observable<GQL.ISite> =>
+export const fetchSite = (url = sourcegraphUrl): Observable<GQL.ISite> =>
     queryGraphQL({
         ctx: getContext({ repoKey: '' }),
         request: `query SiteProductVersion() {
@@ -72,6 +73,7 @@ export const fetchSite = (): Observable<GQL.ISite> =>
         }`,
         retry: false,
         requestMightContainPrivateInfo: false,
+        url
     }).pipe(
         map(result => {
             if (!result || !result.data) {

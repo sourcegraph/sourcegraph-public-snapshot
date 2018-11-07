@@ -16,7 +16,7 @@ import {
     Row,
 } from 'reactstrap'
 import { of, Subscription } from 'rxjs'
-import { filter, map, switchMap } from 'rxjs/operators'
+import { filter, map, switchMap, tap } from 'rxjs/operators'
 import * as permissions from '../../../browser/permissions'
 import storage from '../../../browser/storage'
 import { StorageItems } from '../../../browser/types'
@@ -268,7 +268,11 @@ export class ConnectionCard extends React.Component<Props, State> {
 
                         return token && tokenExists
                             ? of(token)
-                            : createAccessToken(user.id).pipe(setAccessToken(sourcegraphUrl))
+                            : createAccessToken(user.id).pipe(
+                                  tap(createdToken => {
+                                      setAccessToken(sourcegraphUrl, createdToken)
+                                  })
+                              )
                     })
                 )
                 .subscribe(() => {

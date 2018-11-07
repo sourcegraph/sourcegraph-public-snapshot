@@ -1,6 +1,6 @@
 import storage from '../../browser/storage'
 import { FeatureFlags } from '../../browser/types'
-import { isInPage } from '../context'
+import { isInPage } from '../../context'
 
 interface FeatureFlagsStorage {
     /**
@@ -41,7 +41,11 @@ const createFeatureFlagStorage = ({ get, set }: FeatureFlagUtilities): FeatureFl
 })
 
 function bextGet<K extends keyof FeatureFlags>(key: K): Promise<FeatureFlags[K]> {
-    return new Promise(resolve => storage.getSync(({ featureFlags }) => resolve(featureFlags[key])))
+    return new Promise(resolve =>
+        storage.getSync(({ featureFlags }) => {
+            resolve(featureFlags[key])
+        })
+    )
 }
 
 function bextSet<K extends keyof FeatureFlags>(key: K, val: FeatureFlags[K]): Promise<FeatureFlags[K]> {
