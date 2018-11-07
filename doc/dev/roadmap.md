@@ -70,7 +70,7 @@ Feature | 🔗 | Themes/products | Team
 ------- | --- | -------- | ----
 More robust code host repository syncing | | Integrations, [Sourcegraph][sourcegraph] | [@nicksnyder][nicksnyder]
 Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] [@ijsnow][ijsnow]
-Onboarding flow for code host integrations | [📣](https://github.com/sourcegraph/about/pull/38) | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
+Onboarding flow for code host integrations | [📣](https://github.com/sourcegraph/about/pull/38) | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] and T.B.D.
 Search results from Sourcegraph extensions | [📽](https://user-images.githubusercontent.com/16265452/47944945-e52d4500-debb-11e8-8c3b-9c8697ec1f68.png)| Search, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@vanesa][vanesa] [@attfarhan][attfarhan] [@keegancsmith][keegancsmith] [@francisschmaltz][francisschmaltz]
 JavaScript/TypeScript language support improvements | | Code intelligence, sourcegraph-typescript | [@felixfbecker][felixfbecker]
 Go language support improvements | | Code intelligence, sourcegraph-go | [@chrismwendt][chrismwendt]
