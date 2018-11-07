@@ -190,6 +190,7 @@ type SiteConfigurationFile struct {
 	ID        int32     // the unique ID of this site configuration file
 	Contents  string    // the raw JSON file (with comments and trailing commas allowed)
 	CreatedAt time.Time // the date when this site configuration file was created
+	UpdatedAt time.Time // the date when this site configuration file was updated
 }
 
 // CoreConfigurationFile contains the contents of a core configuration file along with associated metadata.
@@ -197,4 +198,5 @@ type CoreConfigurationFile struct {
 	ID        int32     // the unique ID of this core configuration file
 	Contents  string    // the raw JSON file (with comments and trailing commas allowed)
 	CreatedAt time.Time // the date when this core configuration file was created
+	UpdatedAt time.Time // the date when this core configuration file was updated
 }
