@@ -20,9 +20,10 @@ import (
 func NewGitServer(repo api.RepoName, commit api.CommitID) *ArchiveFS {
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
 		f, evictor, err := GitServerFetchArchive(ctx, ArchiveOpts{
-			Repo:   repo,
-			Commit: commit,
-			Format: ArchiveFormatZip,
+			Repo:         repo,
+			Commit:       commit,
+			Format:       ArchiveFormatZip,
+			RelativePath: ".",
 		})
 		if err != nil {
 			return nil, err
@@ -64,10 +65,13 @@ type ArchiveOpts struct {
 
 	// Format indicates the desired archive format.
 	Format ArchiveFormat
+
+	// RelativePath indicates the path of the repository that should be archived.
+	RelativePath string
 }
 
 func (opts *ArchiveOpts) cacheKey() string {
-	return fmt.Sprintf("%s@%s.%s", opts.Repo, opts.Commit, opts.Format)
+	return fmt.Sprintf("%s@%s/-/%s.%s", opts.Repo, opts.Commit, opts.RelativePath, opts.Format)
 }
 
 // GitServerFetchArchive fetches an archive of a repositories contents from gitserver.
@@ -99,6 +103,7 @@ func GitServerFetchArchive(ctx context.Context, opts ArchiveOpts) (archive *os.F
 			args = append(args, "-0")
 		}
 		args = append(args, string(opts.Commit))
+		args = append(args, opts.RelativePath)
 		cmd := gitserver.DefaultClient.Command("git", args...)
 		cmd.Repo = gitserver.Repo{Name: opts.Repo}
 		r, err := gitserver.StdoutReader(ctx, cmd)
