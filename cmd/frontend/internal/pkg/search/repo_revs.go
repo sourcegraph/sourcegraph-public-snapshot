@@ -39,6 +39,7 @@ func (r RevisionSpecifier) String() string {
 //
 // possibly-undesired: this results in treating an entity with
 // no revspec, but a refGlob, as "earlier" than any revspec.
+//lint:ignore ST1006 more readable with r1 name
 func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 	if r1.RevSpec != r2.RevSpec {
 		return r1.RevSpec < r2.RevSpec

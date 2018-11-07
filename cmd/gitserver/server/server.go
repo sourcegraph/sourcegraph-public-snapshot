@@ -73,11 +73,11 @@ func init() {
 
 // runCommandMock is set by tests. When non-nil it is run instead of
 // runCommand
-var runCommandMock func(context.Context, *exec.Cmd) (error, int)
+var runCommandMock func(context.Context, *exec.Cmd) (int, error)
 
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func runCommand(ctx context.Context, cmd *exec.Cmd) (err error, exitCode int) {
+func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	if runCommandMock != nil {
 		return runCommandMock(ctx, cmd)
 	}
@@ -99,7 +99,7 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (err error, exitCode int) {
 	if cmd.ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
-	return err, exitStatus
+	return exitStatus, err
 }
 
 // Server is a gitserver server.
@@ -676,7 +676,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	cmd.Stderr = stderrW
 
 	var err error
-	err, exitStatus = runCommand(ctx, cmd)
+	exitStatus, err = runCommand(ctx, cmd)
 	if err != nil {
 		errStr = err.Error()
 	}
@@ -1290,7 +1290,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		}
 		if cmd != nil {
 			cmd.Dir = dir
-			if err, _ := runCommand(ctx, cmd); err != nil {
+			if _, err := runCommand(ctx, cmd); err != nil {
 				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "error", err)
 			}
 		}
