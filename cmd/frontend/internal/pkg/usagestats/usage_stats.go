@@ -1,9 +1,9 @@
-// Package useractivity provides an interface to update and access information about
+// Package usagestats provides an interface to update and access information about
 // individual and aggregate Sourcegraph users' activity levels.
 //
 // Note that this package should not be used on sourcegraph.com, only on self-hosted
 // deployments.
-package useractivity
+package usagestats
 
 import (
 	"fmt"
@@ -41,8 +41,8 @@ const (
 	maxStorageDays = 93
 )
 
-// GetByUserID returns a single user's UserActivity.
-func GetByUserID(userID int32) (*types.UserActivity, error) {
+// GetByUserID returns a single user's UserUsageStatistics.
+func GetByUserID(userID int32) (*types.UserUsageStatistics, error) {
 	userIDStr := strconv.Itoa(int(userID))
 	key := keyPrefix + userIDStr
 
@@ -54,7 +54,7 @@ func GetByUserID(userID int32) (*types.UserActivity, error) {
 	}
 
 	var lastActiveStr, lastActiveCodeHostStr string
-	a := &types.UserActivity{
+	a := &types.UserUsageStatistics{
 		UserID: userID,
 	}
 	_, err = redis.Scan(values, &a.PageViews, &a.SearchQueries, &lastActiveStr, &a.CodeIntelligenceActions, &lastActiveCodeHostStr)
@@ -81,10 +81,10 @@ func GetByUserID(userID int32) (*types.UserActivity, error) {
 	return a, nil
 }
 
-// SiteActivityOptions contains options for the number of daily, weekly, and monthly periods in
+// SiteUsageStatisticsOptions contains options for the number of daily, weekly, and monthly periods in
 // which to calculate the number of unique users (i.e., how many days of Daily Active Users, or DAUs,
 // how many weeks of Weekly Active Users, or WAUs, and how many months of Monthly Active Users, or MAUs).
-type SiteActivityOptions struct {
+type SiteUsageStatisticsOptions struct {
 	DayPeriods   *int
 	WeekPeriods  *int
 	MonthPeriods *int
@@ -115,8 +115,8 @@ func minIntOrZero(a, b int) int {
 	return min
 }
 
-// GetSiteActivity returns the current site's SiteActivity.
-func GetSiteActivity(opt *SiteActivityOptions) (*types.SiteActivity, error) {
+// GetSiteUsageStatistics returns the current site's SiteActivity.
+func GetSiteUsageStatistics(opt *SiteUsageStatisticsOptions) (*types.SiteUsageStatistics, error) {
 	var (
 		dayPeriods   = defaultDays
 		weekPeriods  = defaultWeeks
@@ -147,7 +147,7 @@ func GetSiteActivity(opt *SiteActivityOptions) (*types.SiteActivity, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &types.SiteActivity{
+	return &types.SiteUsageStatistics{
 		DAUs: daus,
 		WAUs: waus,
 		MAUs: maus,
@@ -383,7 +383,7 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 	}
 
 	if uniqueID == "" {
-		log15.Warn("useractivity.LogActivity: no user ID provided")
+		log15.Warn("usagestats.LogActivity: no user ID provided")
 		return nil
 	}
 

@@ -61,8 +61,8 @@ export const otherGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/updates',
         },
         {
-            label: 'Analytics',
-            to: '/site-admin/analytics',
+            label: 'Usage stats',
+            to: '/site-admin/usage-statistics',
         },
         {
             label: 'User surveys',

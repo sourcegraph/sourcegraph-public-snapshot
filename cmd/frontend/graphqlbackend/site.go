@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -116,18 +116,15 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 	return &productSubscriptionStatus{}
 }
 
-func (r *siteResolver) Activity(ctx context.Context, args *struct {
+func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 	Days   *int32
 	Weeks  *int32
 	Months *int32
-}) (*siteActivityResolver, error) {
-	// 🚨 SECURITY
-	// TODO(Dan, Beyang): this endpoint should eventually only be accessible by site admins.
-	// It is temporarily exposed to all users on an instance.
+}) (*siteUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("site analytics is not available on sourcegraph.com")
+		return nil, errors.New("site usage statistics are not available on sourcegraph.com")
 	}
-	opt := &useractivity.SiteActivityOptions{}
+	opt := &usagestats.SiteUsageStatisticsOptions{}
 	if args.Days != nil {
 		d := int(*args.Days)
 		opt.DayPeriods = &d
@@ -140,11 +137,11 @@ func (r *siteResolver) Activity(ctx context.Context, args *struct {
 		m := int(*args.Months)
 		opt.MonthPeriods = &m
 	}
-	activity, err := useractivity.GetSiteActivity(opt)
+	activity, err := usagestats.GetSiteUsageStatistics(opt)
 	if err != nil {
 		return nil, err
 	}
-	return &siteActivityResolver{activity}, nil
+	return &siteUsageStatisticsResolver{activity}, nil
 }
 
 type siteConfigurationResolver struct{}

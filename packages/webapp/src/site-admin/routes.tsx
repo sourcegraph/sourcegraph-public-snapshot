@@ -1,6 +1,5 @@
 import React from 'react'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
-import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
 import { SiteAdminCreateUserPage } from './SiteAdminCreateUserPage'
@@ -12,6 +11,7 @@ import { SiteAdminSettingsPage } from './SiteAdminSettingsPage'
 import { SiteAdminSurveyResponsesPage } from './SiteAdminSurveyResponsesPage'
 import { SiteAdminTokensPage } from './SiteAdminTokensPage'
 import { SiteAdminUpdatesPage } from './SiteAdminUpdatesPage'
+import { SiteAdminUsageStatisticsPage } from './SiteAdminUsageStatisticsPage'
 
 export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     {
@@ -56,9 +56,9 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
         render: props => <SiteAdminTokensPage {...props} />,
     },
     {
-        path: '/analytics',
+        path: '/usage-statistics',
         exact: true,
-        render: props => <SiteAdminAnalyticsPage {...props} />,
+        render: props => <SiteAdminUsageStatisticsPage {...props} />,
     },
     {
         path: '/updates',

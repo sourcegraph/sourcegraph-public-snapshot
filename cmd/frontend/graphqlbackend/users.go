@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -45,26 +45,26 @@ type userConnectionResolver struct {
 // compute caches results from the more expensive user list creation that occurs when activePeriod
 // is set to a specific length of time.
 //
-// Because user activity data isn't stored in PostgreSQL (but rather in
-// Redis), adding this parameter requires accessing a second data store.
+// Because usage statistics data isn't stored in PostgreSQL (but rather in Redis), adding this
+// parameter requires accessing a second data store.
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, int, error) {
 	if r.activePeriod == nil {
 		return nil, 0, errors.New("activePeriod must not be nil")
 	}
 	if r.activePeriod != nil && envvar.SourcegraphDotComMode() {
-		return nil, 0, errors.New("site analytics is not available on sourcegraph.com")
+		return nil, 0, errors.New("usage statistics are not available on sourcegraph.com")
 	}
 	r.once.Do(func() {
-		var users *useractivity.ActiveUsers
+		var users *usagestats.ActiveUsers
 		var err error
 
 		switch *r.activePeriod {
 		case "TODAY":
-			users, err = useractivity.ListUsersToday()
+			users, err = usagestats.ListUsersToday()
 		case "THIS_WEEK":
-			users, err = useractivity.ListUsersThisWeek()
+			users, err = usagestats.ListUsersThisWeek()
 		case "THIS_MONTH":
-			users, err = useractivity.ListUsersThisMonth()
+			users, err = usagestats.ListUsersThisMonth()
 		default:
 			err = fmt.Errorf("unknown user event %s", *r.activePeriod)
 		}

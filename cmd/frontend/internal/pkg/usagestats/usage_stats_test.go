@@ -1,4 +1,4 @@
-package useractivity
+package usagestats
 
 import (
 	"errors"
@@ -17,10 +17,10 @@ func init() {
 	gcOnce.Do(func() {})
 }
 
-func TestUserActivity_None(t *testing.T) {
+func TestUserUsageStatistics_None(t *testing.T) {
 	setupForTest(t)
 
-	want := &types.UserActivity{
+	want := &types.UserUsageStatistics{
 		UserID: 42,
 	}
 	got, err := GetByUserID(42)
@@ -32,7 +32,7 @@ func TestUserActivity_None(t *testing.T) {
 	}
 }
 
-func TestUserActivity_LogPageView(t *testing.T) {
+func TestUserUsageStatistics_LogPageView(t *testing.T) {
 	setupForTest(t)
 
 	user := types.User{
@@ -56,7 +56,7 @@ func TestUserActivity_LogPageView(t *testing.T) {
 	}
 }
 
-func TestUserActivity_LogSearchQuery(t *testing.T) {
+func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	setupForTest(t)
 
 	user := types.User{
@@ -76,7 +76,7 @@ func TestUserActivity_LogSearchQuery(t *testing.T) {
 	}
 }
 
-func TestUserActivity_LogCodeIntelAction(t *testing.T) {
+func TestUserUsageStatistics_LogCodeIntelAction(t *testing.T) {
 	setupForTest(t)
 
 	user := types.User{
@@ -96,7 +96,7 @@ func TestUserActivity_LogCodeIntelAction(t *testing.T) {
 	}
 }
 
-func TestUserActivity_LogCodeHostIntegrationUsage(t *testing.T) {
+func TestUserUsageStatistics_LogCodeHostIntegrationUsage(t *testing.T) {
 	setupForTest(t)
 
 	user := types.User{
@@ -117,7 +117,7 @@ func TestUserActivity_LogCodeHostIntegrationUsage(t *testing.T) {
 	}
 }
 
-func TestUserActivity_getUsersActiveToday(t *testing.T) {
+func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	setupForTest(t)
 
 	user1 := types.User{
@@ -168,7 +168,7 @@ func TestUserActivity_getUsersActiveToday(t *testing.T) {
 	}
 }
 
-func TestUserActivity_DAUs_WAUs_MAUs(t *testing.T) {
+func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 	defer func() {
 		timeNow = time.Now
 	}()
@@ -341,7 +341,7 @@ func TestUserActivity_DAUs_WAUs_MAUs(t *testing.T) {
 		},
 	}
 
-	want := &types.SiteActivity{
+	want := &types.SiteUsageStatistics{
 		DAUs: wantDAUs,
 		WAUs: wantWAUs,
 		MAUs: wantMAUs,
@@ -349,7 +349,7 @@ func TestUserActivity_DAUs_WAUs_MAUs(t *testing.T) {
 
 	mockTimeNow(now)
 	days, weeks, months := 7, 4, 3
-	siteActivity, err := GetSiteActivity(&SiteActivityOptions{
+	siteActivity, err := GetSiteUsageStatistics(&SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -404,7 +404,7 @@ func mockTimeNow(t time.Time) {
 	}
 }
 
-func siteActivityCompare(a, b *types.SiteActivity) error {
+func siteActivityCompare(a, b *types.SiteUsageStatistics) error {
 	if a == nil || b == nil {
 		return errors.New("site activities can not be nil")
 	}
