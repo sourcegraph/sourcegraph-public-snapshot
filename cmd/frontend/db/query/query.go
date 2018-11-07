@@ -39,17 +39,17 @@ type not struct {
 	Child Q
 }
 
-// Eval runs all atoms of q through queryFn, returning the final query to
-// run. If any call of queryFn returns an error, that error is returned by
-// Eval.
+// Eval runs all atoms of q through atomToQueryFn, returning the final query
+// to run. If any call of atomToQueryFn returns an error, that error is
+// returned by Eval.
 //
 // Eval handles And, Or, Not and booleans. Otherwise every other Q will be
-// passed to queryFn.
-func Eval(q Q, queryFn func(q Q) (*sqlf.Query, error)) (*sqlf.Query, error) {
+// passed to atomToQueryFn.
+func Eval(q Q, atomToQueryFn func(q Q) (*sqlf.Query, error)) (*sqlf.Query, error) {
 	childQueries := func(qs []Q) ([]*sqlf.Query, error) {
 		x := make([]*sqlf.Query, 0, len(qs))
 		for _, q := range qs {
-			c, err := Eval(q, queryFn)
+			c, err := Eval(q, atomToQueryFn)
 			if err != nil {
 				return nil, err
 			}
@@ -80,7 +80,7 @@ func Eval(q Q, queryFn func(q Q) (*sqlf.Query, error)) (*sqlf.Query, error) {
 		return sqlf.Sprintf("(%s)", sqlf.Join(children, "OR")), nil
 
 	case *not:
-		child, err := Eval(c.Child, queryFn)
+		child, err := Eval(c.Child, atomToQueryFn)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func Eval(q Q, queryFn func(q Q) (*sqlf.Query, error)) (*sqlf.Query, error) {
 		return sqlf.Sprintf("FALSE"), nil
 
 	default:
-		return queryFn(q)
+		return atomToQueryFn(q)
 	}
 }
 
