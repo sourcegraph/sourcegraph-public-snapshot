@@ -9,20 +9,20 @@ interface Props {
 }
 
 export class FeatureFlagCard extends React.Component<Props, {}> {
-    private onMermaidToggled = () => {
-        featureFlags.toggle('renderMermaidGraphsEnabled')
+    private onMermaidToggled = async () => {
+        await featureFlags.toggle('renderMermaidGraphsEnabled')
     }
 
-    private onInlineSymbolSearchToggled = () => {
-        featureFlags.toggle('inlineSymbolSearchEnabled')
+    private onInlineSymbolSearchToggled = async () => {
+        await featureFlags.toggle('inlineSymbolSearchEnabled')
     }
 
-    private onUseExtensionsToggled = () => {
-        featureFlags.toggle('useExtensions')
+    private onUseExtensionsToggled = async () => {
+        await featureFlags.toggle('useExtensions')
     }
 
-    private onSimpleOptionsMenu = () => {
-        featureFlags.toggle('simpleOptionsMenu')
+    private onSimpleOptionsMenu = async () => {
+        await featureFlags.toggle('simpleOptionsMenu')
     }
 
     public render(): JSX.Element | null {

@@ -15,7 +15,7 @@ import * as permissions from '../../browser/permissions'
 import * as runtime from '../../browser/runtime'
 import storage, { defaultStorageItems } from '../../browser/storage'
 import * as tabs from '../../browser/tabs'
-import { featureFlagDefaults } from '../../browser/types'
+import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import initializeCli from '../../libs/cli'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
 import { resolveClientConfiguration } from '../../shared/backend/server'
@@ -165,41 +165,51 @@ permissions.onRemoved(permissions => {
     })
 })
 
-// Ensure access tokens are in storage and they are in the correct shape.
-storage.addSyncMigration((items, set, remove) => {
-    if (!items.accessTokens) {
-        set({ accessTokens: {} })
+storage.setSyncMigration(items => {
+    const newItems = { ...defaultStorageItems, ...items }
+
+    // Ensure access tokens are in storage and they are in the correct shape.
+    if (!newItems.accessTokens) {
+        newItems.accessTokens = {}
     }
 
-    if (items.accessTokens) {
+    if (newItems.accessTokens) {
         const accessTokens = {}
 
-        for (const url of Object.keys(items.accessTokens)) {
-            const token = items.accessTokens[url]
+        for (const url of Object.keys(newItems.accessTokens)) {
+            const token = newItems.accessTokens[url]
             if (typeof token !== 'string' && token.id && token.token) {
                 accessTokens[url] = token
             }
         }
 
-        set({ accessTokens })
+        newItems.accessTokens = accessTokens
     }
-})
 
-// Ensure all feature flags are in storage.
-storage.addSyncMigration((items, set, remove) => {
+    let featureFlags: FeatureFlags = newItems.featureFlags
+
+    // Ensure featureFlags is in storage.
+    if (!newItems.featureFlags) {
+        featureFlags = featureFlagDefaults
+    } else {
+        featureFlags = { ...featureFlagDefaults, ...newItems.featureFlags }
+    }
+
+    const keysToRemove: string[] = []
+
+    // Ensure all feature flags are in storage.
     for (const key of Object.keys(featureFlagDefaults)) {
-        if (typeof items.featureFlags[key] === 'undefined') {
-            remove(key)
-            set({ featureFlags: { ...featureFlagDefaults, ...items.featureFlags, [key]: featureFlagDefaults[key] } })
+        if (typeof featureFlags[key] === 'undefined') {
+            keysToRemove.push(key)
+            featureFlags = {
+                ...featureFlagDefaults,
+                ...items.featureFlags,
+                [key]: featureFlagDefaults[key],
+            }
         }
     }
-})
 
-// Add access tokens to storage.
-storage.addSyncMigration((items, set) => {
-    if (!items.accessTokens) {
-        set({ accessTokens: {} })
-    }
+    return { newItems, keysToRemove }
 })
 
 tabs.onUpdated((tabId, changeInfo, tab) => {
@@ -349,19 +359,21 @@ function handleManagedPermissionRequest(managedUrls: string[]): void {
 function setDefaultBrowserAction(): void {
     browserAction.setBadgeText({ text: '' })
 
-    featureFlags.isEnabled('simpleOptionsMenu').then(async enabled => {
-        if (enabled) {
-            await browserAction.setPopup({ popup: 'options.html?popup=true' })
-        }
-    })
+    featureFlags
+        .isEnabled('simpleOptionsMenu')
+        .then(async enabled => {
+            if (enabled) {
+                await browserAction.setPopup({ popup: 'options.html?popup=true' })
+            }
+        })
+        .catch(err => {
+            console.log('unable to get feature flag')
+        })
 }
 
 storage
     .observeSync('featureFlags')
-    .pipe(
-        map(({ simpleOptionsMenu }) => simpleOptionsMenu),
-        distinctUntilChanged()
-    )
+    .pipe(map(({ simpleOptionsMenu }) => simpleOptionsMenu), distinctUntilChanged())
     .subscribe(async useSimpleOptionsMenu => {
         if (useSimpleOptionsMenu) {
             browserAction.onClicked(noop)
