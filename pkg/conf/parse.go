@@ -1,4 +1,4 @@
-package parse
+package conf
 
 import (
 	"encoding/json"
@@ -30,7 +30,7 @@ func parseConfigData(data string) (*schema.SiteConfiguration, error) {
 
 // ParseConfigEnvironment reads the provided string, then merges in additional
 // data from the (deprecated) environment.
-func ParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
+func ParseConfigEnvironment(data string) (*UnifiedConfiguration, error) {
 	tmpConfig, err := parseConfigData(data)
 	if err != nil {
 		return nil, err
@@ -44,7 +44,12 @@ func ParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
 			return nil, err
 		}
 	}
-	return tmpConfig, nil
+	// TODO(slimsag): UnifiedConfiguration
+	return &UnifiedConfiguration{
+		SiteConfiguration: *tmpConfig,
+		Core:              schema.CoreSiteConfiguration{},
+		Deployment:        DeploymentConfiguration{},
+	}, nil
 }
 
 // requireRestart describes the list of config properties that require
@@ -83,7 +88,8 @@ var requireRestart = []string{
 
 // NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
-func NeedRestartToApply(before, after *schema.SiteConfiguration) bool {
+func NeedRestartToApply(before, after *UnifiedConfiguration) bool {
+	// TODO(slimsag): UnifiedConfiguration
 	diff := diff(before, after)
 
 	// Check every option that changed to determine whether or not a server

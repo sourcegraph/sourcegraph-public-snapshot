@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // ContributeValidator adds the site configuration validator function to the validation process. It
@@ -13,14 +11,14 @@ import (
 // problems.
 //
 // It may only be called at init time.
-func ContributeValidator(f func(schema.SiteConfiguration) (problems []string)) {
+func ContributeValidator(f func(UnifiedConfiguration) (problems []string)) {
 	contributedValidators = append(contributedValidators, f)
 }
 
-var contributedValidators []func(schema.SiteConfiguration) []string
+var contributedValidators []func(UnifiedConfiguration) []string
 
 func validateCustomRaw(normalizedInput []byte) (problems []string, err error) {
-	var cfg schema.SiteConfiguration
+	var cfg UnifiedConfiguration
 	if err := json.Unmarshal(normalizedInput, &cfg); err != nil {
 		return nil, err
 	}
@@ -29,7 +27,7 @@ func validateCustomRaw(normalizedInput []byte) (problems []string, err error) {
 
 // validateCustom validates the site config using custom validation steps that are not
 // able to be expressed in the JSON Schema.
-func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
+func validateCustom(cfg UnifiedConfiguration) (problems []string) {
 
 	invalid := func(msg string) {
 		problems = append(problems, msg)
@@ -84,7 +82,7 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 func TestValidator(t interface {
 	Errorf(format string, args ...interface{})
 	Helper()
-}, c schema.SiteConfiguration, f func(schema.SiteConfiguration) []string, wantProblems []string) {
+}, c UnifiedConfiguration, f func(UnifiedConfiguration) []string, wantProblems []string) {
 	t.Helper()
 	problems := f(c)
 	wantSet := make(map[string]struct{}, len(wantProblems))

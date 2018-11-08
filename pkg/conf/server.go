@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -60,7 +59,7 @@ func (s *Server) Raw() string {
 func (s *Server) Write(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parse.ParseConfigEnvironment(input)
+	_, err := ParseConfigEnvironment(input)
 	if err != nil {
 		return err
 	}
@@ -94,7 +93,7 @@ func (s *Server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 	raw := s.store.Raw()
 
 	// Compute edits.
-	edits, err := computeEdits(current, raw)
+	edits, err := computeEdits(&current.SiteConfiguration, raw)
 	if err != nil {
 		return errors.Wrap(err, "computeEdits")
 	}
@@ -170,7 +169,7 @@ func (s *Server) updateFromDisk() error {
 	}
 
 	// Update global "needs restart" state.
-	if parse.NeedRestartToApply(configChange.Old, configChange.New) {
+	if NeedRestartToApply(configChange.Old, configChange.New) {
 		s.markNeedServerRestart()
 	}
 

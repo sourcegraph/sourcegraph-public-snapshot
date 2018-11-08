@@ -1,4 +1,4 @@
-package parse
+package conf
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 // diff returns names of the Go fields that have different values between the
 // two configurations.
-func diff(before, after *schema.SiteConfiguration) (fields map[string]struct{}) {
+func diff(before, after interface{}) (fields map[string]struct{}) {
 	fields = make(map[string]struct{})
 	beforeFields := getJSONFields(before)
 	afterFields := getJSONFields(after)

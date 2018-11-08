@@ -1,4 +1,4 @@
-package parse
+package conf
 
 import (
 	"encoding/json"
@@ -59,7 +59,7 @@ var legacyEnvToFieldName = map[string]string{
 // configFromLegacyEnvVars constructs site config JSON from env vars. This is merged into the
 // SOURCEGRAPH_CONFIG site config JSON.
 func configFromEnv() (configJSON []byte, envVarNames []string, err error) {
-	var cfg schema.SiteConfiguration
+	var cfg schema.SiteConfiguration // TODO(slimsag)
 
 	configType := reflect.TypeOf(cfg)
 	configVal := reflect.ValueOf(&cfg)
