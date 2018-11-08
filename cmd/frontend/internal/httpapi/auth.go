@@ -21,20 +21,20 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 		// Secondary to the Authorization header (see below), access tokens may
 		// be specified via a query parameter (?token=<token>) OR via basic
 		// auth username (https://<token>@sourcegraph.com/foobar).
-		tokenParams, hasTokenParam := r.URL.Query()["token"]
-		tokenParam := ""
-		if hasTokenParam {
-			tokenParam = tokenParams[0]
+		tokenParams, hasURLToken := r.URL.Query()["token"]
+		urlToken := ""
+		if hasURLToken {
+			urlToken = tokenParams[0]
 		} else {
 			basicAuthUsername, _, hasBasicAuthUsername := r.BasicAuth()
 			if hasBasicAuthUsername {
-				tokenParam = basicAuthUsername
-				hasTokenParam = true
+				urlToken = basicAuthUsername
+				hasURLToken = true
 			}
 		}
 
 		headerValue := r.Header.Get("Authorization")
-		if headerValue != "" || hasTokenParam {
+		if headerValue != "" || hasURLToken {
 			if !(conf.AccessTokensAllow() == conf.AccessTokensAll || conf.AccessTokensAllow() == conf.AccessTokensAdmin) {
 				// if conf.AccessTokensAllow() == conf.AccessTokensNone {
 				http.Error(w, "Access token authorization is disabled.", http.StatusUnauthorized)
@@ -43,9 +43,9 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 
 			var token string
 			var sudoUser string
-			if hasTokenParam {
+			if hasURLToken {
 				// Handle token query string param
-				token = tokenParam
+				token = urlToken
 			} else {
 				// Handle Authorization header
 				var err error
