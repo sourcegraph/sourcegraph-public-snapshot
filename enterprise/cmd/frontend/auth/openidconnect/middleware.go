@@ -1,3 +1,4 @@
+// Package openidconnect implements auth via OIDC.
 package openidconnect
 
 import (

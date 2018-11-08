@@ -1,3 +1,4 @@
+// Package ratelimit implements rate limiting for discussions.
 package ratelimit
 
 import (

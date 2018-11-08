@@ -1,3 +1,4 @@
+// Package server implements the gitserver service.
 package server
 
 import (

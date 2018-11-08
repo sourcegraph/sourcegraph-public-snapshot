@@ -1,3 +1,5 @@
+// Package actor provides the structures for representing an actor who has
+// access to resources.
 package actor
 
 import (
