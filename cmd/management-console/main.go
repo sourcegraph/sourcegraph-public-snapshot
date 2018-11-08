@@ -1,4 +1,10 @@
 //docker:user sourcegraph
+// Postgres defaults for cluster deployments.
+//docker:env PGDATABASE=sg
+//docker:env PGHOST=pgsql
+//docker:env PGPORT=5432
+//docker:env PGSSLMODE=disable
+//docker:env PGUSER=sg
 //
 // The management console provides a failsafe editor for the core configuration
 // options for the Sourcegraph instance.
