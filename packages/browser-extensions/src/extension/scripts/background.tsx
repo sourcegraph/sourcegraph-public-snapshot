@@ -186,13 +186,9 @@ storage.setSyncMigration(items => {
         newItems.accessTokens = accessTokens
     }
 
-    let featureFlags: FeatureFlags = newItems.featureFlags
-
-    // Ensure featureFlags is in storage.
-    if (!newItems.featureFlags) {
-        featureFlags = featureFlagDefaults
-    } else {
-        featureFlags = { ...featureFlagDefaults, ...newItems.featureFlags }
+    let featureFlags: FeatureFlags = {
+        ...featureFlagDefaults,
+        ...(newItems.featureFlags || {}),
     }
 
     const keysToRemove: string[] = []
@@ -373,7 +369,10 @@ function setDefaultBrowserAction(): void {
 
 storage
     .observeSync('featureFlags')
-    .pipe(map(({ simpleOptionsMenu }) => simpleOptionsMenu), distinctUntilChanged())
+    .pipe(
+        map(({ simpleOptionsMenu }) => simpleOptionsMenu),
+        distinctUntilChanged()
+    )
     .subscribe(async useSimpleOptionsMenu => {
         if (useSimpleOptionsMenu) {
             browserAction.onClicked(noop)
