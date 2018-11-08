@@ -29,7 +29,7 @@ import (
 
 var (
 	dbHandler = confdb.CoreSiteConfigurationFiles{Conn: func() *sql.DB { return dbconn.Global }}
-	address   = flag.String("addr", ":9876", "management console TCP listening address")
+	address   = flag.String("addr", ":6075", "management console TCP listening address")
 )
 
 func main() {
