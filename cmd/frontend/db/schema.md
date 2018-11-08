@@ -47,6 +47,7 @@ Indexes:
  updated_at | timestamp with time zone | not null default now()
 Indexes:
     "core_configuration_files_pkey" PRIMARY KEY, btree (id)
+    "core_configuration_files_unique" UNIQUE, btree (id)
 
 ```
 
@@ -490,7 +491,6 @@ Foreign-key constraints:
  updated_at | timestamp with time zone | not null default now()
 Indexes:
     "site_configuration_files_pkey" PRIMARY KEY, btree (id)
-    "core_configuration_files_unique" UNIQUE, btree (id)
     "site_configuration_files_unique" UNIQUE, btree (id)
 
 ```
