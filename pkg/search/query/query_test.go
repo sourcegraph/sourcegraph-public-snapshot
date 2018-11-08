@@ -100,6 +100,8 @@ func TestMap(t *testing.T) {
 	}
 }
 
+// createListFunc returns a listFn (see ExpandRepo docs) which returns a list
+// of repositories from repos.
 func createListFunc(repos []string) func([]string, []string) (map[string]bool, error) {
 	return func(inc, exc []string) (map[string]bool, error) {
 		set := map[string]bool{}
