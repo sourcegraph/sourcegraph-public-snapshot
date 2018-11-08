@@ -64,39 +64,43 @@ func run() error {
 }
 
 func serveCoreConfigurationGetLatest(w http.ResponseWriter, r *http.Request) {
+	logger := log15.New("route", "serveCoreConfigurationGetLatest")
+
 	coreFile, err := dbHandler.CoreGetLatest(r.Context())
 	if err != nil {
-		log15.Error("dbHandler.CoreGetLatest failed", "error", err, "route", "serveCoreConfigurationGetLatest")
+		logger.Error("dbHandler.CoreGetLatest failed", "error", err)
 		http.Error(w, "Unexpected error when retrieving latest core configuration file.", http.StatusInternalServerError)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(coreFile)
 	if err != nil {
-		log15.Error("json response encoding failed", "error", err, "route", "serveCoreConfigurationGetLatest")
+		logger.Error("json response encoding failed", "error", err)
 		http.Error(w, "Unexpected error when encoding json response.", http.StatusInternalServerError)
 	}
 }
 
 func serveCoreConfigurationCreateIfUpToDate(w http.ResponseWriter, r *http.Request) {
+	logger := log15.New("route", "serveCoreConfigurationCreateIfUpToDate")
+
 	var args createIfUpToDateArgs
 	err := json.NewDecoder(r.Body).Decode(&args)
 	if err != nil {
-		log15.Error("json argument decoding failed", "error", err, "route", "serveCoreConfigurationCreateIfUpToDate")
+		logger.Error("json argument decoding failed", "error", err)
 		http.Error(w, "Unexpected error when decoding arguments.", http.StatusBadRequest)
 		return
 	}
 
 	coreFile, err := dbHandler.CoreCreateIfUpToDate(r.Context(), args.LastID, args.Contents)
 	if err != nil {
-		log15.Error("dbHandler.CoreCreateIfUpToDate failed", "error", err, "route", "serveCoreConfigurationCreateIfUpToDate")
+		logger.Error("dbHandler.CoreCreateIfUpToDate failed", "error", err)
 		http.Error(w, "Unexpected error when updating latest core configuration file.", http.StatusInternalServerError)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(coreFile)
 	if err != nil {
-		log15.Error("json response encoding failed", "error", err, "route", "serveCoreConfigurationCreateIfUpToDate")
+		logger.Error("json response encoding failed", "error", err)
 		http.Error(w, "Unexpected error when encoding json response.", http.StatusInternalServerError)
 	}
 }
