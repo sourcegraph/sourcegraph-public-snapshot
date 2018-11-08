@@ -308,14 +308,14 @@ func parseExprList(in []byte) ([]Q, int, error) {
 			newQS = append(newQS, q)
 		}
 	}
-	qs = mapQueryList(newQS, func(q Q) Q {
-		return Map(q, func(q Q) Q {
+	for _, q := range newQS {
+		VisitAtoms(q, func(q Q) {
 			if sc, ok := q.(setCaser); ok {
 				sc.setCase(setCase)
 			}
-			return q
 		})
-	})
+	}
+	qs = newQS
 	if typeT != 100 {
 		qs = []Q{&Type{Type: typeT, Child: NewAnd(qs...)}}
 	}

@@ -92,9 +92,65 @@ func TestMap(t *testing.T) {
 		}
 		return q
 	}
-	got := Map(in, f)
+	got := Map(in, nil, f)
 	if !reflect.DeepEqual(got, out) {
 		t.Errorf("got %v, want %v", got, out)
+	}
+}
+
+func TestMap_traversal(t *testing.T) {
+	value := func(q Q) string {
+		switch c := q.(type) {
+		case *Repo:
+			return c.Pattern
+		case *And:
+			return "and"
+		case *Or:
+			return "or"
+		default:
+			return "unexpected"
+		}
+	}
+
+	q := NewAnd(
+		&Repo{"a"},
+		NewOr(&Repo{"b"}, &Repo{"c"}, &Repo{"d"}))
+
+	preWant := []string{"and", "a", "or", "b", "c", "c1", "c2", "d"}
+	preGot := []string{}
+	pre := func(q Q) Q {
+		preGot = append(preGot, value(q))
+		if value(q) == "c" {
+			// Test premap works. Should appear in final expression and
+			// pre/post lists.
+			return NewAnd(&Repo{"c1"}, &Repo{"c2"})
+		}
+		return q
+	}
+
+	postWant := []string{"a", "b", "c1", "c2", "and", "d", "or", "and"}
+	postGot := []string{}
+	post := func(q Q) Q {
+		postGot = append(postGot, value(q))
+		if value(q) == "b" {
+			// Test postmap works. They shouldn't appear anywhere but the
+			// final expression.
+			return NewAnd(&Repo{"b1"}, &Repo{"b2"})
+		}
+		return q
+	}
+
+	want := "(and repo:a (or (and repo:b1 repo:b2) (and repo:c1 repo:c2) repo:d))"
+	q = Map(q, pre, post)
+
+	if q.String() != want {
+		t.Errorf("Unexpected Map response\ngot  %s\nwant %s", q.String(), want)
+	}
+	if !reflect.DeepEqual(preGot, preWant) {
+		t.Errorf("Unexpected pre-order traversal\ngot  %#v\nwant %#v", preGot, preWant)
+	}
+	if !reflect.DeepEqual(postGot, postWant) {
+		t.Errorf("Unexpected post-order traversal\ngot  %#v\nwant %#v", postGot, postWant)
 	}
 }
 

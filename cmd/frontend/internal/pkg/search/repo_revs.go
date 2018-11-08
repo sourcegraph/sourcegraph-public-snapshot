@@ -180,7 +180,7 @@ func RepoQuery(q query.Q) (dbquery.Q, error) {
 	// Replace all atoms (except constants and repo) with nothing. We use
 	// nothing to count the number of ancestor not nodes.
 	var err error
-	q = query.Map(q, func(q query.Q) query.Q {
+	q = query.Map(q, nil, func(q query.Q) query.Q {
 		switch c := q.(type) {
 		case *query.Repo:
 		case *query.Const:
@@ -194,7 +194,7 @@ func RepoQuery(q query.Q) (dbquery.Q, error) {
 			return c.Child
 
 		case *query.Not:
-			return query.Map(q, func(q query.Q) query.Q {
+			return query.Map(q, nil, func(q query.Q) query.Q {
 				if c, ok := q.(*nothing); ok {
 					c.NotCount++
 				}
@@ -212,7 +212,7 @@ func RepoQuery(q query.Q) (dbquery.Q, error) {
 
 	// Convert the nothing atoms into constants (since they have the correct
 	// NotCount now).
-	q = query.Map(q, func(q query.Q) query.Q {
+	q = query.Map(q, nil, func(q query.Q) query.Q {
 		if c, ok := q.(*nothing); ok {
 			return &query.Const{Value: c.NotCount%2 == 0}
 		}
