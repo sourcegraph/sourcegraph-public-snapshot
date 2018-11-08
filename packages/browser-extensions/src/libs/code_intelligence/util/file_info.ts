@@ -1,6 +1,7 @@
 import { Observable, zip } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
 
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../shared/backend/errors'
 import { resolveRev, retryWhenCloneInProgressError } from '../../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 
@@ -13,6 +14,15 @@ export const ensureRevisionsAreCloned = (files: Observable<FileInfo>): Observabl
             const resolvingHeadRev = resolveRev({ repoPath, rev }).pipe(retryWhenCloneInProgressError())
             const resolvingBaseRev = resolveRev({ repoPath, rev: baseRev }).pipe(retryWhenCloneInProgressError())
 
-            return zip(resolvingHeadRev, resolvingBaseRev).pipe(map(() => ({ repoPath, rev, baseRev, ...rest })))
+            return zip(resolvingHeadRev, resolvingBaseRev).pipe(
+                map(() => ({ repoPath, rev, baseRev, ...rest })),
+                catchError(err => {
+                    if (err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                        return [{ repoPath, rev, baseRev, ...rest }]
+                    } else {
+                        throw err
+                    }
+                })
+            )
         })
     )
