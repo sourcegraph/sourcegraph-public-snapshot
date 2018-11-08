@@ -29,9 +29,7 @@ type CoreSiteConfigurationFiles struct {
 // responsible for ensuring this or that the response never makes it to a user.
 func (c *CoreSiteConfigurationFiles) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (latest *api.SiteConfigurationFile, err error) {
 	coreSiteFile, err := c.createIfUpToDate(ctx, siteTable, lastID, contents)
-	siteFile := (*api.SiteConfigurationFile)(coreSiteFile)
-
-	return siteFile, err
+	return (*api.SiteConfigurationFile)(coreSiteFile), err
 }
 
 // CoreCreateIfUpToDate saves the given core configuration "contents" to the database iff the
@@ -44,9 +42,7 @@ func (c *CoreSiteConfigurationFiles) SiteCreateIfUpToDate(ctx context.Context, l
 // responsible for ensuring this or that the response never makes it to a user.
 func (c *CoreSiteConfigurationFiles) CoreCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (latest *api.CoreConfigurationFile, err error) {
 	coreSiteFile, err := c.createIfUpToDate(ctx, coreTable, lastID, contents)
-	coreFile := (*api.CoreConfigurationFile)(coreSiteFile)
-
-	return coreFile, err
+	return (*api.CoreConfigurationFile)(coreSiteFile), err
 }
 
 // SiteGetLatest returns the site configuration file that was most recently saved to the database.
@@ -56,9 +52,7 @@ func (c *CoreSiteConfigurationFiles) CoreCreateIfUpToDate(ctx context.Context, l
 // responsible for ensuring this or that the response never makes it to a user.
 func (c *CoreSiteConfigurationFiles) SiteGetLatest(ctx context.Context) (latest *api.SiteConfigurationFile, err error) {
 	coreSiteFile, err := c.getLatest(ctx, siteTable)
-	siteFile := (*api.SiteConfigurationFile)(coreSiteFile)
-
-	return siteFile, err
+	return (*api.SiteConfigurationFile)(coreSiteFile), err
 }
 
 // CoreGetLatest returns core site configuration file that was most recently saved to the database.
@@ -68,9 +62,7 @@ func (c *CoreSiteConfigurationFiles) SiteGetLatest(ctx context.Context) (latest 
 // responsible for ensuring this or that the response never makes it to a user.
 func (c *CoreSiteConfigurationFiles) CoreGetLatest(ctx context.Context) (latest *api.CoreConfigurationFile, err error) {
 	coreSiteFile, err := c.getLatest(ctx, coreTable)
-	coreFile := (*api.CoreConfigurationFile)(coreSiteFile)
-
-	return coreFile, err
+	return (*api.CoreConfigurationFile)(coreSiteFile), err
 }
 
 func (c *CoreSiteConfigurationFiles) createIfUpToDate(ctx context.Context, tableName string, lastID *int32, contents string) (latest *api.CoreSiteConfigurationFile, err error) {
