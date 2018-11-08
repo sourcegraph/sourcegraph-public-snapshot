@@ -16,7 +16,7 @@ type MockStores struct {
 	Orgs       MockOrgs
 	OrgMembers MockOrgMembers
 	Settings   MockSettings
-	SiteConfig MockSiteConfig
+	SiteIDInfo MockSiteIDInfo
 	Users      MockUsers
 	UserEmails MockUserEmails
 

@@ -83,7 +83,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if _, err := SiteConfig.Get(ctx); err != nil {
+	if _, err := SiteIDInfo.Get(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -132,7 +132,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 
 	// Disallow creating a site admin when a user already exists (even if the site is not yet initialized).
-	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
+	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE site_id_info SET initialized=false"); err != nil {
 		t.Fatal(err)
 	}
 	u4, err := Users.Create(ctx, NewUser{
@@ -148,7 +148,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		t.Fatal("want u4 not site admin because site is already initialized")
 	}
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
-	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
+	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE site_id_info SET initialized=false"); err != nil {
 		t.Fatal(err)
 	}
 	_, err = Users.Create(ctx, NewUser{

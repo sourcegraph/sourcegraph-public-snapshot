@@ -184,3 +184,17 @@ type Settings struct {
 	Contents     string               // the raw JSON (with comments and trailing commas allowed)
 	CreatedAt    time.Time            // the date when this settings value was created
 }
+
+// CoreSiteConfigurationFile contains the contents of a core/site configuration file along with associated metadata.
+type CoreSiteConfigurationFile struct {
+	ID        int32     // the unique ID of this configuration file
+	Contents  string    // the raw JSON file (with comments and trailing commas allowed)
+	CreatedAt time.Time // the date when this configuration file was created
+	UpdatedAt time.Time // the date when this configuration file was updated
+}
+
+// SiteConfigurationFile contains the contents of a site configuration file along with associated metadata.
+type SiteConfigurationFile CoreSiteConfigurationFile
+
+// CoreConfigurationFile contains the contents of a core configuration file along with associated metadata.
+type CoreConfigurationFile CoreSiteConfigurationFile

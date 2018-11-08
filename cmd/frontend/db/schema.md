@@ -37,6 +37,19 @@ Indexes:
 
 ```
 
+# Table "public.core_configuration_files"
+```
+   Column   |           Type           |                               Modifiers                               
+------------+--------------------------+-----------------------------------------------------------------------
+ id         | integer                  | not null default nextval('core_configuration_files_id_seq'::regclass)
+ contents   | text                     | 
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "core_configuration_files_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.discussion_comments"
 ```
      Column     |           Type           |                            Modifiers                             
@@ -467,14 +480,29 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.site_config"
+# Table "public.site_configuration_files"
+```
+   Column   |           Type           |                               Modifiers                               
+------------+--------------------------+-----------------------------------------------------------------------
+ id         | integer                  | not null default nextval('site_configuration_files_id_seq'::regclass)
+ contents   | text                     | 
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "site_configuration_files_pkey" PRIMARY KEY, btree (id)
+    "core_configuration_files_unique" UNIQUE, btree (id)
+    "site_configuration_files_unique" UNIQUE, btree (id)
+
+```
+
+# Table "public.site_id_info"
 ```
    Column    |  Type   |       Modifiers        
 -------------+---------+------------------------
  site_id     | uuid    | not null
  initialized | boolean | not null default false
 Indexes:
-    "site_config_pkey" PRIMARY KEY, btree (site_id)
+    "site_id_info_pkey" PRIMARY KEY, btree (site_id)
 
 ```
 
