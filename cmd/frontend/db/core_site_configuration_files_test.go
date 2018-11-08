@@ -7,14 +7,14 @@ import (
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 )
 
-func TestSiteConfigurationFiles_GetLatestEmpty(t *testing.T) {
+func TestCoreSiteConfigurationFiles_CoreGetLatestEmpty(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := dbtesting.TestContext(t)
 
-	latestFile, err := SiteConfigurationFiles.GetLatest(ctx)
+	latestFile, err := CoreSiteConfigurationFiles.CoreGetLatest(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestSiteConfigurationFiles_GetLatestEmpty(t *testing.T) {
 	}
 }
 
-func TestSiteConfigurationFiles_Create_RejectInvalidJSON(t *testing.T) {
+func TestCoreSiteConfigurationFiles_CoreCreate_RejectInvalidJSON(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -33,14 +33,14 @@ func TestSiteConfigurationFiles_Create_RejectInvalidJSON(t *testing.T) {
 
 	malformedJSON := "[This is malformed.}"
 
-	_, err := SiteConfigurationFiles.CreateIfUpToDate(ctx, nil, malformedJSON)
+	_, err := CoreSiteConfigurationFiles.CoreCreateIfUpToDate(ctx, nil, malformedJSON)
 
 	if err == nil || !strings.Contains(err.Error(), "invalid settings JSON") {
 		t.Fatalf("expected parse error after creating site configuration with malformed JSON, got: %+v", err)
 	}
 }
 
-func TestSiteConfigurationFiles_CreateIfUpToDate(t *testing.T) {
+func TestCoreSiteConfigurationFiles_CoreCreateIfUpToDate(t *testing.T) {
 	type input struct {
 		lastID   int32
 		contents string
@@ -147,7 +147,7 @@ func TestSiteConfigurationFiles_CreateIfUpToDate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := dbtesting.TestContext(t)
 			for _, p := range test.sequence {
-				output, err := SiteConfigurationFiles.CreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
+				output, err := CoreSiteConfigurationFiles.CoreCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -160,7 +160,7 @@ func TestSiteConfigurationFiles_CreateIfUpToDate(t *testing.T) {
 					t.Fatalf("returned site configuration file contents after creation - expected: %q, got:%q", p.expected.contents, output.Contents)
 				}
 
-				latestFile, err := SiteConfigurationFiles.GetLatest(ctx)
+				latestFile, err := CoreSiteConfigurationFiles.CoreGetLatest(ctx)
 				if err != nil {
 					t.Fatal(err)
 				}

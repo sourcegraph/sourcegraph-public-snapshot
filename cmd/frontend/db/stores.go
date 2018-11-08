@@ -8,21 +8,21 @@ import (
 )
 
 var (
-	AccessTokens              = &accessTokens{}
-	DiscussionThreads         = &discussionThreads{}
-	DiscussionComments        = &discussionComments{}
-	DiscussionMailReplyTokens = &discussionMailReplyTokens{}
-	Repos                     = &repos{}
-	Phabricator               = &phabricator{}
-	SavedQueries              = &savedQueries{}
-	Orgs                      = &orgs{}
-	OrgMembers                = &orgMembers{}
-	Settings                  = &settings{}
-	Users                     = &users{}
-	UserEmails                = &userEmails{}
-	SiteConfig                = &siteConfig{}
-	CertCache                 = &certCache{}
-	SiteConfigurationFiles    = &confdb.SiteConfigurationFiles{Conn: func() *sql.DB { return dbconn.Global }}
+	AccessTokens               = &accessTokens{}
+	DiscussionThreads          = &discussionThreads{}
+	DiscussionComments         = &discussionComments{}
+	DiscussionMailReplyTokens  = &discussionMailReplyTokens{}
+	Repos                      = &repos{}
+	Phabricator                = &phabricator{}
+	SavedQueries               = &savedQueries{}
+	Orgs                       = &orgs{}
+	OrgMembers                 = &orgMembers{}
+	Settings                   = &settings{}
+	Users                      = &users{}
+	UserEmails                 = &userEmails{}
+	SiteConfig                 = &siteConfig{}
+	CertCache                  = &certCache{}
+	CoreSiteConfigurationFiles = &confdb.CoreSiteConfigurationFiles{Conn: func() *sql.DB { return dbconn.Global }}
 
 	SurveyResponses = &surveyResponses{}
 
