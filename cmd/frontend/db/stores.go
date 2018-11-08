@@ -3,8 +3,8 @@ package db
 import (
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/confdb"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 )
 
 var (
