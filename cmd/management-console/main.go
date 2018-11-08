@@ -11,7 +11,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"flag"
 	"log"
@@ -28,7 +27,7 @@ import (
 )
 
 var (
-	dbHandler = confdb.CoreSiteConfigurationFiles{Conn: func() *sql.DB { return dbconn.Global }}
+	dbHandler = confdb.CoreSiteConfigurationFiles{}
 	address   = flag.String("addr", ":6075", "management console TCP listening address")
 )
 
