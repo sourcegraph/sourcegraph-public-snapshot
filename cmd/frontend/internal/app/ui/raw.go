@@ -180,6 +180,9 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		archiveFS := vfsutil.NewGitServer(common.Repo.Name, common.CommitID)
 		defer archiveFS.Close()
 		fi, err := archiveFS.Lstat(r.Context(), requestedPath)
+		if err != nil {
+			return err
+		}
 		if fi.IsDir() {
 			infos, err := archiveFS.ReadDir(r.Context(), requestedPath)
 			if err != nil {
