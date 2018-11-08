@@ -40,7 +40,7 @@ func TestSiteConfigurationFiles_Create_RejectInvalidJSON(t *testing.T) {
 	}
 }
 
-func TestSiteConfigurationFiles_Create(t *testing.T) {
+func TestSiteConfigurationFiles_CreateIfUpToDate(t *testing.T) {
 	type input struct {
 		lastID   int32
 		contents string
@@ -56,13 +56,13 @@ func TestSiteConfigurationFiles_Create(t *testing.T) {
 	}
 
 	type test struct {
-		description string
-		sequence    []pair
+		name     string
+		sequence []pair
 	}
 
 	for _, test := range []test{
 		test{
-			description: "create one site configuration file",
+			name: "create_one",
 			sequence: []pair{
 				pair{
 					input{
@@ -76,7 +76,7 @@ func TestSiteConfigurationFiles_Create(t *testing.T) {
 			},
 		},
 		test{
-			description: "create two site configuration files",
+			name: "create_two",
 			sequence: []pair{
 				pair{
 					input{
@@ -99,7 +99,7 @@ func TestSiteConfigurationFiles_Create(t *testing.T) {
 			},
 		},
 		test{
-			description: "shouldn't update the configuration if the caller is out of date",
+			name: "do_not_update_if_outdated",
 			sequence: []pair{
 				pair{
 					input{
@@ -122,7 +122,7 @@ func TestSiteConfigurationFiles_Create(t *testing.T) {
 			},
 		},
 	} {
-		t.Run(test.description, func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			ctx := dbtesting.TestContext(t)
 			for _, p := range test.sequence {
 				output, err := SiteConfigurationFiles.CreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
