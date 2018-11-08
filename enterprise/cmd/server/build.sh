@@ -16,6 +16,7 @@ server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/enterprise/cmd/serve
 
 GO111MODULE=on ./.bin/godockerize build --base 'alpine:3.8' -t ${IMAGE} --go-build-flags="-ldflags" --go-build-flags="-X github.com/sourcegraph/sourcegraph/pkg/version.version=${VERSION}" --env VERSION=${VERSION} \
     $server_pkg \
+    github.com/sourcegraph/sourcegraph/cmd/management-console \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
