@@ -114,3 +114,9 @@ func (s *SiteConfigurationFiles) parseQueryRows(ctx context.Context, rows *sql.R
 	}
 	return files, nil
 }
+
+// queryable allows us to reuse the same logic for certain operations both
+// inside and outside an explicit transaction.
+type queryable interface {
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+}
