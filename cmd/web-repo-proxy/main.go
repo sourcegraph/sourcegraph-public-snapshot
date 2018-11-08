@@ -34,10 +34,10 @@ var (
 )
 
 type repository struct {
-	key         string
-	pathPrefix  string
-	goodUntil   int64
-	savedToDisk bool
+	key            string
+	repositoryName string
+	goodUntil      int64
+	savedToDisk    bool
 }
 
 func (r *repository) filePathRoot() string {
@@ -46,8 +46,8 @@ func (r *repository) filePathRoot() string {
 
 func (r *repository) urlRoot() string {
 	root := "/repository/" + r.key
-	if r.pathPrefix != "" {
-		return root + "/" + r.pathPrefix
+	if r.repositoryName != "" {
+		return root + "/" + r.repositoryName
 	}
 	return root
 }
@@ -115,26 +115,30 @@ func deleteRepository(r *repository) {
 	os.RemoveAll(r.filePathRoot())
 }
 
+func deleteExpiredRepositories() {
+	curTime := time.Now().Unix()
+	for r := repositoryDeletionQueue.Front(); r != nil; r = repositoryDeletionQueue.Front() {
+		repository := r.Value.(*repository)
+		if !repository.savedToDisk || curTime <= repository.goodUntil {
+			// If a repository hasn't been saved to disk yet then its goodUntil
+			// field may not be initialized, so try again later.
+			break
+		}
+		log15.Info("Deleting expired repository", "repositoryKey", repository.key)
+		repositoriesMutex.Lock()
+		delete(repositories, repository.key)
+		repositoryDeletionQueue.Remove(r)
+		repositoriesMutex.Unlock()
+		os.RemoveAll(repository.filePathRoot())
+	}
+}
+
 func repositoryDeleter() {
 	// Watches the repository deletion queue and removes repositories once
 	// their goodUntil field is past.
 	for {
-		curTime := time.Now().Unix()
-		for r := repositoryDeletionQueue.Front(); r != nil; r = repositoryDeletionQueue.Front() {
-			repository := r.Value.(*repository)
-			if !repository.savedToDisk || curTime <= repository.goodUntil {
-				// If a repository hasn't been saved to disk yet then its goodUntil
-				// field may not be initialized, so try again later.
-				break
-			}
-			log15.Info("Deleting expired repository", "repositoryKey", repository.key)
-			repositoriesMutex.Lock()
-			delete(repositories, repository.key)
-			repositoryDeletionQueue.Remove(r)
-			repositoriesMutex.Unlock()
-			os.RemoveAll(repository.filePathRoot())
-		}
-		time.Sleep(time.Minute)
+		deleteExpiredRepositories()
+		time.Sleep(time.Second)
 	}
 }
 
@@ -162,8 +166,8 @@ func createEmptyRepository() *repository {
 }
 
 type CreateRepositoryRequest struct {
-	PathPrefix   string            `json:"path_prefix"`
-	FileContents map[string]string `json:"file_contents"`
+	RepositoryName string            `json:"repository_name"`
+	FileContents   map[string]string `json:"file_contents"`
 }
 
 type CreateRepositoryResponse struct {
@@ -180,8 +184,8 @@ func sanitizedCreateRequest(requestBody io.Reader) (*CreateRepositoryRequest, er
 	if err != nil {
 		return nil, errors.Wrap(err, "Couldn't decode create-repository request")
 	}
-	// The path prefix needs to be a valid URL substring.
-	request.PathPrefix = url.PathEscape(request.PathPrefix)
+	// The repository name needs to be a valid URL path substring.
+	request.RepositoryName = url.PathEscape(request.RepositoryName)
 	// File keys with subdirectories are not supported, so immediately reject
 	// anything that has a slash in it.
 	// This is not enough to ensure that a filename is valid, but unsupported
@@ -202,7 +206,9 @@ func handleCreateRepository() http.HandlerFunc {
 	}
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		// Decode the request.
-		createRepositoryRequest, err := sanitizedCreateRequest(request.Body)
+		requestBody := http.MaxBytesReader(responseWriter, request.Body, int64(maxRequestSize))
+		defer requestBody.Close()
+		createRepositoryRequest, err := sanitizedCreateRequest(requestBody)
 		if err != nil {
 			log15.Warn("/create-repository request failed", "error", err)
 			responseWriter.WriteHeader(http.StatusBadRequest)
@@ -210,7 +216,7 @@ func handleCreateRepository() http.HandlerFunc {
 		}
 		// Create a new repository and save it to disk.
 		repo := createEmptyRepository()
-		repo.pathPrefix = createRepositoryRequest.PathPrefix
+		repo.repositoryName = createRepositoryRequest.RepositoryName
 		repo.goodUntil = time.Now().Unix() + int64(repositoryTTL)
 		err = repo.writeToDisk(createRepositoryRequest.FileContents)
 		if err != nil {
@@ -253,13 +259,14 @@ func handleRepository() http.HandlerFunc {
 			log15.Warn("Request for unknown repository", "path", request.URL.Path, "repoKey", repoKey)
 			return
 		}
-		if !strings.HasPrefix(pathComponents[2], repo.pathPrefix) {
-			// All repository file requests must include the repository path prefix.
+		if !strings.HasPrefix(pathComponents[2], repo.repositoryName) {
+			// All repository file requests must include the repository name
+			// if it has one.
 			responseWriter.WriteHeader(http.StatusNotFound)
-			log15.Warn("Repository request doesn't include path prefix", "path", request.URL.Path, "repoKey", repoKey, "pathPrefix", repo.pathPrefix)
+			log15.Warn("Repository request doesn't include repository name", "path", request.URL.Path, "repoKey", repoKey, "repositoryName", repo.repositoryName)
 			return
 		}
-		truncatedPath := pathComponents[2][len(repo.pathPrefix):]
+		truncatedPath := pathComponents[2][len(repo.repositoryName):]
 		filePath := repo.filePathForURLSubpath(truncatedPath)
 		http.ServeFile(responseWriter, request, filePath)
 	}
