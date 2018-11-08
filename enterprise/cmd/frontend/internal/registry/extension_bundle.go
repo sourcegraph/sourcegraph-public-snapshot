@@ -28,10 +28,9 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filename := mux.Vars(r)["RegistryExtensionReleaseFilename"]
-	ext := filepath.Ext(filename)
-	wantSourceMap := ext == ".map"
-	releaseIDStr := strings.TrimSuffix(filename, ext)
-	releaseID, err := strconv.ParseInt(releaseIDStr, 10, 64)
+	wantSourceMap := filepath.Ext(filename) == ".map"
+
+	releaseID, err := parseExtensionBundleFilename(filename)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -96,8 +95,21 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		// app URL, which makes it technically not immutable. But given the blob URL constraint
 		// mentioned above, it's the best known solution.
 		if appURL, _ := url.Parse(conf.Get().AppURL); appURL != nil {
-			sourceMapURL := appURL.ResolveReference(&url.URL{Path: path.Join(path.Dir(r.URL.Path), releaseIDStr+".map")}).String()
+			sourceMapURL := appURL.ResolveReference(&url.URL{Path: path.Join(path.Dir(r.URL.Path), fmt.Sprintf("%d.map", releaseID))}).String()
 			fmt.Fprintf(w, "\n//# sourceMappingURL=%s", sourceMapURL)
 		}
 	}
+}
+
+// parseExtensionBundleFilename parses the release ID from the extension bundle's filename, which is
+// of the form "1234-publisher-extension-id.js" or ".map". The part of the filename after the "-"
+// and before the extension is ignored; it exists to help distinguish log messages from different
+// extensions in debugging.
+func parseExtensionBundleFilename(filename string) (int64, error) {
+	ext := filepath.Ext(filename)
+	releaseIDStr := strings.TrimSuffix(filename, ext)
+	if i := strings.Index(releaseIDStr, "-"); i != -1 {
+		releaseIDStr = releaseIDStr[:i]
+	}
+	return strconv.ParseInt(releaseIDStr, 10, 64)
 }
