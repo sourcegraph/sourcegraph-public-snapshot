@@ -272,15 +272,6 @@ function injectCodeIntelligence(): void {
 }
 
 async function inject(): Promise<void> {
-    featureFlags
-        .isEnabled('newInject')
-        .then(isEnabled => {
-            if (!isEnabled) {
-                injectCodeIntelligence()
-            }
-        })
-        .catch(err => console.error('could not get feature flag', err))
-
     injectServerBanner()
     injectOpenOnSourcegraphButton()
 
