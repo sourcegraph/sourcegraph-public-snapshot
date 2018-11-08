@@ -96,15 +96,11 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 	// Allow users to override the negotiated content type so that e.g. browser
 	// users can easily download tar/zip archives by adding ?format=zip etc. to
 	// the URL.
-	if format := r.URL.Query().Get("format"); format == "zip" || format == "tar" {
-		switch format {
-		case "zip":
-			contentType = applicationZip
-		case "tar":
-			contentType = applicationXTar
-		default:
-			panic("never here")
-		}
+	switch r.URL.Query().Get("format") {
+	case "zip":
+		contentType = applicationZip
+	case "tar":
+		contentType = applicationXTar
 	}
 
 	switch contentType {
