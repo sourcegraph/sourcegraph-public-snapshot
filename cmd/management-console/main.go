@@ -1,4 +1,13 @@
 //docker:user sourcegraph
+//
+// The management console provides a failsafe editor for the core configuration
+// options for the Sourcegraph instance.
+//
+// 🚨 SECURITY: No authentication is done by the management console.
+// It is the user's responsibility to:
+//    1) Limit access to the management console by not exposing its port.
+//    2) Ensure that the management console's responses are never propageted to
+//    unprivileged users.
 package main
 
 import (
