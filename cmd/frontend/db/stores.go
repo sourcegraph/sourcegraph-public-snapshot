@@ -15,6 +15,7 @@ var (
 	UserEmails                = &userEmails{}
 	SiteConfig                = &siteConfig{}
 	CertCache                 = &certCache{}
+	SiteConfigurationFiles    = &siteConfigurationFiles{}
 
 	SurveyResponses = &surveyResponses{}
 
