@@ -121,6 +121,28 @@ func TestSiteConfigurationFiles_CreateIfUpToDate(t *testing.T) {
 				},
 			},
 		},
+		test{
+			name: "maintain_commments_and_whitespace",
+			sequence: []pair{
+				pair{
+					input{
+						lastID: 0,
+						contents: `{"fieldA": "valueA",
+
+// This is a comment.
+             "fieldB": "valueB",
+						}`,
+					},
+					output{
+						contents: `{"fieldA": "valueA",
+
+// This is a comment.
+             "fieldB": "valueB",
+						}`,
+					},
+				},
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := dbtesting.TestContext(t)
