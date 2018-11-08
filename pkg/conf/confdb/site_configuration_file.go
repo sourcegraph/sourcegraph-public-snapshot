@@ -28,7 +28,7 @@ type CoreSiteConfigurationFiles struct {
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
 func (c *CoreSiteConfigurationFiles) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (latest *api.SiteConfigurationFile, err error) {
-	coreSiteFile, err := c.createIfUpToDate(ctx, kindCore, lastID, contents)
+	coreSiteFile, err := c.createIfUpToDate(ctx, siteTable, lastID, contents)
 	siteFile := (*api.SiteConfigurationFile)(coreSiteFile)
 
 	return siteFile, err
@@ -43,7 +43,7 @@ func (c *CoreSiteConfigurationFiles) SiteCreateIfUpToDate(ctx context.Context, l
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
 func (c *CoreSiteConfigurationFiles) CoreCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (latest *api.CoreConfigurationFile, err error) {
-	coreSiteFile, err := c.createIfUpToDate(ctx, kindCore, lastID, contents)
+	coreSiteFile, err := c.createIfUpToDate(ctx, coreTable, lastID, contents)
 	coreFile := (*api.CoreConfigurationFile)(coreSiteFile)
 
 	return coreFile, err
@@ -55,7 +55,7 @@ func (c *CoreSiteConfigurationFiles) CoreCreateIfUpToDate(ctx context.Context, l
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
 func (c *CoreSiteConfigurationFiles) SiteGetLatest(ctx context.Context) (latest *api.SiteConfigurationFile, err error) {
-	coreSiteFile, err := c.getLatest(ctx, kindSite)
+	coreSiteFile, err := c.getLatest(ctx, siteTable)
 	siteFile := (*api.SiteConfigurationFile)(coreSiteFile)
 
 	return siteFile, err
@@ -67,13 +67,13 @@ func (c *CoreSiteConfigurationFiles) SiteGetLatest(ctx context.Context) (latest 
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
 func (c *CoreSiteConfigurationFiles) CoreGetLatest(ctx context.Context) (latest *api.CoreConfigurationFile, err error) {
-	coreSiteFile, err := c.getLatest(ctx, kindCore)
+	coreSiteFile, err := c.getLatest(ctx, coreTable)
 	coreFile := (*api.CoreConfigurationFile)(coreSiteFile)
 
 	return coreFile, err
 }
 
-func (c *CoreSiteConfigurationFiles) createIfUpToDate(ctx context.Context, kind configurationKind, lastID *int32, contents string) (latest *api.CoreSiteConfigurationFile, err error) {
+func (c *CoreSiteConfigurationFiles) createIfUpToDate(ctx context.Context, tableName string, lastID *int32, contents string) (latest *api.CoreSiteConfigurationFile, err error) {
 	// Validate JSON syntax before saving.
 	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
 		return nil, fmt.Errorf("invalid settings JSON: %v", errs)
@@ -99,7 +99,7 @@ func (c *CoreSiteConfigurationFiles) createIfUpToDate(ctx context.Context, kind 
 		err = tx.Commit()
 	}()
 
-	latestFile, err := c.getLatestUnderTx(ctx, tx, kind)
+	latestFile, err := c.getLatestUnderTx(ctx, tx, tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (c *CoreSiteConfigurationFiles) createIfUpToDate(ctx context.Context, kind 
 	creatorIsUpToDate := latestFile != nil && lastID != nil && latestFile.ID == *lastID
 	if latestFile == nil || creatorIsUpToDate {
 		err := tx.QueryRow(
-			fmt.Sprintf("INSERT INTO %s(contents) VALUES($1) RETURNING id, created_at, updated_at", tableName(kind)),
+			fmt.Sprintf("INSERT INTO %s(contents) VALUES($1) RETURNING id, created_at, updated_at", tableName),
 			newFile.Contents).Scan(&newFile.ID, &newFile.CreatedAt, &newFile.UpdatedAt)
 		if err != nil {
 			return nil, err
@@ -118,12 +118,12 @@ func (c *CoreSiteConfigurationFiles) createIfUpToDate(ctx context.Context, kind 
 	return latestFile, nil
 }
 
-func (c *CoreSiteConfigurationFiles) getLatest(ctx context.Context, kind configurationKind) (*api.CoreSiteConfigurationFile, error) {
-	return c.getLatestUnderTx(ctx, c.Conn(), kind)
+func (c *CoreSiteConfigurationFiles) getLatest(ctx context.Context, tableName string) (*api.CoreSiteConfigurationFile, error) {
+	return c.getLatestUnderTx(ctx, c.Conn(), tableName)
 }
 
-func (c *CoreSiteConfigurationFiles) getLatestUnderTx(ctx context.Context, queryTarget queryable, kind configurationKind) (*api.CoreSiteConfigurationFile, error) {
-	q := sqlf.Sprintf(fmt.Sprintf("SELECT s.id, s.contents, s.created_at, s.updated_at FROM %s s ORDER BY id DESC LIMIT 1", tableName(kind)))
+func (c *CoreSiteConfigurationFiles) getLatestUnderTx(ctx context.Context, queryTarget queryable, tableName string) (*api.CoreSiteConfigurationFile, error) {
+	q := sqlf.Sprintf(fmt.Sprintf("SELECT s.id, s.contents, s.created_at, s.updated_at FROM %s s ORDER BY id DESC LIMIT 1", tableName))
 	rows, err := queryTarget.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -162,16 +162,7 @@ type queryable interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-type configurationKind int
-
 const (
-	kindSite configurationKind = iota
-	kindCore
+	coreTable = "core_configuration_files"
+	siteTable = "site_configuration_files"
 )
-
-func tableName(k configurationKind) string {
-	if k == kindSite {
-		return "site_configuration_files"
-	}
-	return "core_configuration_files"
-}
