@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 
 	multierror "github.com/hashicorp/go-multierror"
 
@@ -125,7 +124,6 @@ func (c *CoreSiteConfigurationFiles) getLatest(ctx context.Context, kind configu
 
 func (c *CoreSiteConfigurationFiles) getLatestUnderTx(ctx context.Context, queryTarget queryable, kind configurationKind) (*api.CoreSiteConfigurationFile, error) {
 	q := sqlf.Sprintf(fmt.Sprintf("SELECT s.id, s.contents, s.created_at, s.updated_at FROM %s s ORDER BY id DESC LIMIT 1", tableName(kind)))
-	log.Printf("%+v", q)
 	rows, err := queryTarget.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
