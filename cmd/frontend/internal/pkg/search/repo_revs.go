@@ -3,9 +3,12 @@ package search
 import (
 	"strings"
 
+	"github.com/pkg/errors"
+	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
@@ -130,4 +133,133 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 		revspecs = append(revspecs, rev.RevSpec)
 	}
 	return revspecs
+}
+
+// RepoQuery takes a search query q and translates into a query for the
+// repository database. If a repository could match q, it will be returned via
+// Repos.List on the query.
+func RepoQuery(q query.Q) (dbquery.Q, error) {
+	// Given an expression we can convert it to dbquery with the following
+	// observations:
+	//
+	//   RepoQuery((and A B)) == RepoQuery(A) AND RepoQuery(B)
+	//   RepoQuery((or A B))  == RepoQuery(A) OR  RepoQuery(B)
+	//   RepoQuery((type A))  == RepoQuery(A)
+	//   RepoQuery((repo))    == repo.pattern
+	//   RepoQuery((bool))    == bool
+	//
+	// However, query.Q can contain not nodes and atom nodes (such as
+	// content:"foo"). We can't include atoms in our dbquery, since that
+	// requires actually searching the code. So we want them to essentially
+	// act in a way which never reduces the set of repositories that could be
+	// found.
+	//
+	// For a simple query like (and "foo" r:bar) we can see that if we
+	// substitute TRUE for "foo" the query simplifies to r:bar which is the
+	// set of repos we should search. However, for (and (not "foo") r:bar) if
+	// we substitute in TRUE we get:
+	//
+	//   (and (not TRUE) r:bar) == (and FALSE r:bar)
+	//                          == FALSE
+	//
+	// But what we want is r:bar, since bar could contain matches which don't
+	// contain "foo" so should be searched.
+	//
+	// The key insight here is the boolean to substitute in for an atom is
+	// whatever simplifies to TRUE. Given not is the only node which can flip
+	// a boolean, the boolean to substitute in is related to the number of not
+	// nodes which are ancestors of the atom.
+	//
+	//   v         v			=> TRUE
+	//   (not v)   v			=> FALSE
+	//   (not (not v)) v		=> TRUE
+	//   (not (not (not v))) v	=> FALSE
+	//
+	// This generalizes to substituting in AncestorNotCount % 2 == 0
+
+	// Replace all atoms (except constants and repo) with a constant related
+	// to the ancestor not count. We track the not count by incrementing
+	// notCount when we visit a Not node, and decrementing it when we leave
+	// it.
+	var err error
+	notCount := 0
+	q = query.Map(q, func(q query.Q) query.Q {
+		// pre
+		switch c := q.(type) {
+		case *query.Not:
+			notCount++
+
+		case *query.Type:
+			// Remove Type from expression, doesn't affect repos searched.
+			return c.Child
+		}
+		return q
+	}, func(q query.Q) query.Q {
+		// post
+		switch q.(type) {
+		case *query.Not:
+			notCount--
+
+		case *query.Repo:
+			// Preserve Repo atom.
+			return q
+		case *query.Const:
+			// Preserve Const atom.
+			return q
+
+		case *query.RepoSet:
+			err = errors.Errorf("unsupported RepoSet in RepoQuery %s", q.String())
+		}
+
+		if query.IsAtom(q) {
+			// If this gets constant evaluated all the way to the root, it
+			// will be true => doesn't reduce the set of repositories the
+			// expression will return.
+			return &query.Const{Value: notCount%2 == 0}
+		}
+
+		return q
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Constant fold
+	q = query.Simplify(q)
+
+	// We now have a query with only And, Or, Not, boolean constants and Repo
+	// queries. This can now be translated into a Repos.List dbquery.
+	return convertQuery(q), nil
+}
+
+func convertQuery(q query.Q) dbquery.Q {
+	switch c := q.(type) {
+	case *query.And:
+		return dbquery.And(convertQueries(c.Children)...)
+
+	case *query.Or:
+		return dbquery.Or(convertQueries(c.Children)...)
+
+	case *query.Not:
+		return dbquery.Not(convertQuery(c.Child))
+
+	case *query.Const:
+		return c.Value
+
+	case *query.Repo:
+		return c.Pattern
+
+	default:
+		// We control the queries passed into convertQuery, so this shouldn't
+		// happen.
+		panic("unexpected: " + q.String())
+	}
+}
+
+func convertQueries(qs []query.Q) []dbquery.Q {
+	x := make([]dbquery.Q, 0, len(qs))
+	for _, q := range qs {
+		x = append(x, convertQuery(q))
+	}
+	return x
 }
