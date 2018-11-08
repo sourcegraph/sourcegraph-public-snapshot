@@ -45,10 +45,15 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 🚨 SECURITY: Prevent this URL from being used in a <script> tag from other sites, because
-	// hosting user-provided scripts on this domain would let attackers steal sensitive data from
-	// anyone they lure to the attacker's site.
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	// 🚨 SECURITY: Prevent this URL from being rendered as an HTML page by browsers (to prevent an
+	// XSS attack). That would let attackers upload an HTML file with inline JavaScript and then
+	// cause victims to visit it, thereby executing the attacker's JavaScript in the context of
+	// Sourcegraph's domain.
+	//
+	// Note that it IS safe for the file to be served as application/javascript. If an attacker
+	// references it in a <script> tag on the attacker's site, the JavaScript will execute in the
+	// context of the attacker's site, not Sourcegraph. The script file being hosted by Sourcegraph
+	// does not give it any privileges with respect to Sourcegraph's domain.
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
 	w.Header().Set("X-Frame-Options", "deny")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -71,8 +76,10 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "extension has no source map", http.StatusNotFound)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		data = sourceMap
 	} else {
+		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 		data = bundle
 	}
 	w.Write(data)

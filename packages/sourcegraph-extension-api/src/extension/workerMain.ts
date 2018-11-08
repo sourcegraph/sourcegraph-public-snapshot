@@ -41,7 +41,7 @@ export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void 
             }
 
             const initData: InitData = ev.data
-            if (typeof initData.bundleURL !== 'string' || !initData.bundleURL.startsWith('blob:')) {
+            if (typeof initData.bundleURL !== 'string') {
                 console.error(`Invalid extension bundle URL: ${initData.bundleURL}`)
                 self.close()
             }
