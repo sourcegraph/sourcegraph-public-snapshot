@@ -28,6 +28,7 @@
     "@sourcegraph/stylelint-config": "^1.0.1",
     "@types/webpack": "4.4.17",
     "child_process": "^1.0.2",
+    "concurrently": "^4.0.1",
     "fancy-log": "^1.3.2",
     "globby": "^8.0.1",
     "graphql": "^14.0.2",
