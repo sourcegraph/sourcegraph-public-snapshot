@@ -501,15 +501,24 @@ func ExpandFileContent(q Q) Q {
 	return q
 }
 
+// IsAtom returns true if q is an atom. An atom is a Q without children Q. For
+// example And is not an atom, but Repo is.
+func IsAtom(q Q) bool {
+	switch q.(type) {
+	case *And:
+	case *Or:
+	case *Not:
+	case *Type:
+	default:
+		return true
+	}
+	return false
+}
+
 // VisitAtoms runs `v` on all atom queries within `q`.
 func VisitAtoms(q Q, v func(q Q)) {
 	Map(q, nil, func(iQ Q) Q {
-		switch iQ.(type) {
-		case *And:
-		case *Or:
-		case *Not:
-		case *Type:
-		default:
+		if IsAtom(iQ) {
 			v(iQ)
 		}
 		return iQ

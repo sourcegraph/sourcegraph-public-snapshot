@@ -1,7 +1,6 @@
 package search
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -177,47 +176,52 @@ func RepoQuery(q query.Q) (dbquery.Q, error) {
 	//
 	// This generalizes to substituting in AncestorNotCount % 2 == 0
 
-	// Replace all atoms (except constants and repo) with nothing. We use
-	// nothing to count the number of ancestor not nodes.
+	// Replace all atoms (except constants and repo) with a constant related
+	// to the ancestor not count. We track the not count by incrementing
+	// notCount when we visit a Not node, and decrementing it when we leave
+	// it.
 	var err error
-	q = query.Map(q, nil, func(q query.Q) query.Q {
+	notCount := 0
+	q = query.Map(q, func(q query.Q) query.Q {
+		// pre
 		switch c := q.(type) {
+		case *query.Not:
+			notCount++
+
+		case *query.Type:
+			// Remove Type from expression, doesn't affect repos searched.
+			return c.Child
+		}
+		return q
+	}, func(q query.Q) query.Q {
+		// post
+		switch q.(type) {
+		case *query.Not:
+			notCount--
+
 		case *query.Repo:
+			// Preserve Repo atom.
+			return q
 		case *query.Const:
-		case *query.And:
-		case *query.Or:
+			// Preserve Const atom.
+			return q
 
 		case *query.RepoSet:
 			err = errors.Errorf("unsupported RepoSet in RepoQuery %s", q.String())
-
-		case *query.Type:
-			return c.Child
-
-		case *query.Not:
-			return query.Map(q, nil, func(q query.Q) query.Q {
-				if c, ok := q.(*nothing); ok {
-					c.NotCount++
-				}
-				return q
-			})
-
-		default:
-			return &nothing{}
 		}
+
+		if query.IsAtom(q) {
+			// If this gets constant evaluated all the way to the root, it
+			// will be true => doesn't reduce the set of repositories the
+			// expression will return.
+			return &query.Const{Value: notCount%2 == 0}
+		}
+
 		return q
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	// Convert the nothing atoms into constants (since they have the correct
-	// NotCount now).
-	q = query.Map(q, nil, func(q query.Q) query.Q {
-		if c, ok := q.(*nothing); ok {
-			return &query.Const{Value: c.NotCount%2 == 0}
-		}
-		return q
-	})
 
 	// Constant fold
 	q = query.Simplify(q)
@@ -257,16 +261,4 @@ func convertQueries(qs []query.Q) []dbquery.Q {
 		x = append(x, convertQuery(q))
 	}
 	return x
-}
-
-// nothing is a type which should not affect the outcome of a query. In
-// RepoQuery it is used to replace all non-repo atoms. NotCount is stored
-// since it is used to determine which value has no effect on the query.
-type nothing struct {
-	// NotCount is the number of ancestors which are a Not node.
-	NotCount int
-}
-
-func (q *nothing) String() string {
-	return fmt.Sprintf("N(%d)", q.NotCount)
 }
