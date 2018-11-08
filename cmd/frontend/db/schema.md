@@ -480,17 +480,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.site_config"
-```
-   Column    |  Type   |       Modifiers        
--------------+---------+------------------------
- site_id     | uuid    | not null
- initialized | boolean | not null default false
-Indexes:
-    "site_config_pkey" PRIMARY KEY, btree (site_id)
-
-```
-
 # Table "public.site_configuration_files"
 ```
    Column   |           Type           |                               Modifiers                               
@@ -503,6 +492,17 @@ Indexes:
     "site_configuration_files_pkey" PRIMARY KEY, btree (id)
     "core_configuration_files_unique" UNIQUE, btree (id)
     "site_configuration_files_unique" UNIQUE, btree (id)
+
+```
+
+# Table "public.site_id_info"
+```
+   Column    |  Type   |       Modifiers        
+-------------+---------+------------------------
+ site_id     | uuid    | not null
+ initialized | boolean | not null default false
+Indexes:
+    "site_id_info_pkey" PRIMARY KEY, btree (site_id)
 
 ```
 

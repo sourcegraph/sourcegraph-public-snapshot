@@ -20,7 +20,7 @@ var (
 	Settings                   = &settings{}
 	Users                      = &users{}
 	UserEmails                 = &userEmails{}
-	SiteConfig                 = &siteConfig{}
+	SiteIDInfo                 = &siteIDInfo{}
 	CertCache                  = &certCache{}
 	CoreSiteConfigurationFiles = &confdb.CoreSiteConfigurationFiles{Conn: func() *sql.DB { return dbconn.Global }}
 

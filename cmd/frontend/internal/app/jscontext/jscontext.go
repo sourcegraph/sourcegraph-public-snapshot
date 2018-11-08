@@ -107,8 +107,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	siteConfig, err := db.SiteConfig.Get(req.Context())
-	showOnboarding := err == nil && !siteConfig.Initialized
+	siteIDInfo, err := db.SiteIDInfo.Get(req.Context())
+	showOnboarding := err == nil && !siteIDInfo.Initialized
 
 	// Auth providers
 	var authProviders []authProviderInfo

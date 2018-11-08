@@ -11,26 +11,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-type siteConfig struct{}
+type siteIDInfo struct{}
 
-func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
-	if Mocks.SiteConfig.Get != nil {
-		return Mocks.SiteConfig.Get(ctx)
+func (s *siteIDInfo) Get(ctx context.Context) (*types.SiteIDInfo, error) {
+	if Mocks.SiteIDInfo.Get != nil {
+		return Mocks.SiteIDInfo.Get(ctx)
 	}
 
-	configuration, err := o.getConfiguration(ctx)
+	configuration, err := s.getConfiguration(ctx)
 	if err == nil {
 		return configuration, nil
 	}
-	err = o.tryInsertNew(ctx, dbconn.Global)
+	err = s.tryInsertNew(ctx, dbconn.Global)
 	if err != nil {
 		return nil, err
 	}
-	return o.getConfiguration(ctx)
+	return s.getConfiguration(ctx)
 }
 
 func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT initialized FROM site_config LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, `SELECT initialized FROM site_id_info LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
@@ -49,47 +49,47 @@ func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 // privileges (even if all other users are deleted). This reduces the risk of (1) a site admin
 // accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 // admin and (2) a bug in user account creation code letting attackers create site admin accounts.
-func (o *siteConfig) ensureInitialized(ctx context.Context, dbh interface {
+func (s *siteIDInfo) ensureInitialized(ctx context.Context, dbh interface {
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }) (alreadyInitialized bool, err error) {
-	if err := o.tryInsertNew(ctx, dbh); err != nil {
+	if err := s.tryInsertNew(ctx, dbh); err != nil {
 		return false, err
 	}
 
 	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
 	// would see this initialized value as false and then set it to true below.
-	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM site_config FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM site_id_info FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		return false, err
 	}
 
 	if !alreadyInitialized {
-		_, err = dbh.ExecContext(ctx, "UPDATE site_config SET initialized=true")
+		_, err = dbh.ExecContext(ctx, "UPDATE site_id_info SET initialized=true")
 	}
 
 	return alreadyInitialized, err
 }
 
-func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, error) {
-	configuration := &types.SiteConfig{}
-	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM site_config LIMIT 1").Scan(
+func (s *siteIDInfo) getConfiguration(ctx context.Context) (*types.SiteIDInfo, error) {
+	configuration := &types.SiteIDInfo{}
+	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM site_id_info LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.Initialized,
 	)
 	return configuration, err
 }
 
-func (o *siteConfig) tryInsertNew(ctx context.Context, dbh interface {
+func (s *siteIDInfo) tryInsertNew(ctx context.Context, dbh interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }) error {
 	siteID, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
-	_, err = dbh.ExecContext(ctx, "INSERT INTO site_config(site_id, initialized) values($1, false)", siteID)
+	_, err = dbh.ExecContext(ctx, "INSERT INTO site_id_info(site_id, initialized) values($1, false)", siteID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Constraint == "site_config_pkey" {
+			if pqErr.Constraint == "site_id_info_pkey" {
 				// The row we were trying to insert already exists.
 				// Don't treat this as an error.
 				err = nil

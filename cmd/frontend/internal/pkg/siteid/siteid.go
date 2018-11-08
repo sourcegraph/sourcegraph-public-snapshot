@@ -39,7 +39,7 @@ func Init() {
 		// if it doesn't yet exist.)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		config, err := db.SiteConfig.Get(ctx)
+		config, err := db.SiteIDInfo.Get(ctx)
 		if err != nil {
 			fatalln("Error initializing site configuration:", err)
 		}
