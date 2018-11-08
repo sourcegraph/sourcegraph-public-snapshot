@@ -3,11 +3,13 @@ package main
 import (
 	"container/list"
 	"encoding/json"
-	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +19,9 @@ import (
 	"sync"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -24,13 +29,15 @@ var (
 	repositoriesRoot    = env.Get("REPOSITORIES_ROOT", "./repositories", "Root path to store repository data")
 	repositoryTTLString = env.Get("REPOSITORY_TTL", "1800", "How long to keep repositories, in seconds")
 	listenerPort        = env.Get("LISTENER_PORT", "4014", "The network port to listen on")
+
+	maxRequestSize = 0x10000 // Repo creation requests must be at most 64KB.
 )
 
 type repository struct {
-	key        string
-	pathPrefix string
-	goodUntil  int64
-	active     bool
+	key         string
+	pathPrefix  string
+	goodUntil   int64
+	savedToDisk bool
 }
 
 func (r *repository) filePathRoot() string {
@@ -115,11 +122,12 @@ func repositoryDeleter() {
 		curTime := time.Now().Unix()
 		for r := repositoryDeletionQueue.Front(); r != nil; r = repositoryDeletionQueue.Front() {
 			repository := r.Value.(*repository)
-			if !repository.active || curTime <= repository.goodUntil {
-				// An inactive repository may not have a valid goodUntil field yet,
-				// so try again later.
+			if !repository.savedToDisk || curTime <= repository.goodUntil {
+				// If a repository hasn't been saved to disk yet then its goodUntil
+				// field may not be initialized, so try again later.
 				break
 			}
+			log15.Info("Deleting expired repository", "repositoryKey", repository.key)
 			repositoriesMutex.Lock()
 			delete(repositories, repository.key)
 			repositoryDeletionQueue.Remove(r)
@@ -160,8 +168,30 @@ type CreateRepositoryRequest struct {
 
 type CreateRepositoryResponse struct {
 	Path      string `json:"path"`
-	Error     string `json:"error"`
 	GoodUntil int64  `json:"good_until"`
+}
+
+// Given a Reader with a create-repository request, return the corresponding
+// CreateRepositoryRequest with guaranteed-safe values, or an error.
+func sanitizedCreateRequest(requestBody io.Reader) (*CreateRepositoryRequest, error) {
+	decoder := json.NewDecoder(requestBody)
+	var request CreateRepositoryRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		return nil, errors.Wrap(err, "Couldn't decode create-repository request")
+	}
+	// The path prefix needs to be a valid URL substring.
+	request.PathPrefix = url.PathEscape(request.PathPrefix)
+	// File keys with subdirectories are not supported, so immediately reject
+	// anything that has a slash in it.
+	// This is not enough to ensure that a filename is valid, but unsupported
+	// filename strings are caught in the file creation stage.
+	for filename, _ := range request.FileContents {
+		if strings.Contains(filename, "/") {
+			return nil, errors.New("Repository filenames can't contain '/'")
+		}
+	}
+	return &request, nil
 }
 
 func handleCreateRepository() http.HandlerFunc {
@@ -171,58 +201,67 @@ func handleCreateRepository() http.HandlerFunc {
 		repositoryTTL = 30 * 60
 	}
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
-		decoder := json.NewDecoder(request.Body)
-		var createRepositoryRequest CreateRepositoryRequest
-		err := decoder.Decode(&createRepositoryRequest)
+		// Decode the request.
+		createRepositoryRequest, err := sanitizedCreateRequest(request.Body)
 		if err != nil {
-			fmt.Printf("Couldn't decode request: %s\n", request.Body)
-		} else {
-			fmt.Printf("Decoded request: %#v\n", createRepositoryRequest)
-			// TODO: sanitize / bounds-check all inputs.
-			repo := createEmptyRepository()
-			repo.pathPrefix = createRepositoryRequest.PathPrefix
-			repo.goodUntil = time.Now().Unix() + int64(repositoryTTL)
-			err = repo.writeToDisk(createRepositoryRequest.FileContents)
-			if err != nil {
-				fmt.Printf("Couldn't write the repository to disk: %v\n", err)
-			} else {
-				repo.active = true
-				response := CreateRepositoryResponse{
-					Path:      repo.urlRoot(),
-					GoodUntil: repo.goodUntil}
-				responseJSON, err := json.Marshal(response)
-				if err != nil {
-					responseWriter.WriteHeader(http.StatusInternalServerError)
-				} else {
-					responseWriter.Write(responseJSON)
-				}
-			}
+			log15.Warn("/create-repository request failed", "error", err)
+			responseWriter.WriteHeader(http.StatusBadRequest)
+			return
 		}
+		// Create a new repository and save it to disk.
+		repo := createEmptyRepository()
+		repo.pathPrefix = createRepositoryRequest.PathPrefix
+		repo.goodUntil = time.Now().Unix() + int64(repositoryTTL)
+		err = repo.writeToDisk(createRepositoryRequest.FileContents)
+		if err != nil {
+			log15.Error("/create-repository couldn't write repository to disk", "error", err)
+			responseWriter.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		repo.savedToDisk = true
+		// Send successful response to client.
+		response := CreateRepositoryResponse{
+			Path:      repo.urlRoot(),
+			GoodUntil: repo.goodUntil}
+		responseJSON, err := json.Marshal(response)
+		if err != nil {
+			log15.Error("/create-repository couldn't marshal response for client", "error", err)
+			responseWriter.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		responseWriter.Write(responseJSON)
 	}
 }
 
 func handleRepository() http.HandlerFunc {
+	// Right now repo keys must be hexadecimal strings.
 	repoKeyRegexp := regexp.MustCompile(`^/repository/([0-9a-f]+)/(.*)$`)
 
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		pathComponents := repoKeyRegexp.FindStringSubmatch(request.URL.Path)
-		if len(pathComponents) >= 3 {
-			repoKey := pathComponents[1]
-			repo := repositories[repoKey]
-			if repo != nil && repo.active {
-				if strings.HasPrefix(pathComponents[2], repo.pathPrefix) {
-					truncatedPath := pathComponents[2][len(repo.pathPrefix):]
-					filePath := repo.filePathForURLSubpath(truncatedPath)
-					http.ServeFile(responseWriter, request, filePath)
-				} else {
-					fmt.Printf("Expected prefix [%s] for repo [%s]\n", repo.pathPrefix, repoKey)
-				}
-			} else {
-				fmt.Printf("I don't recognize repository [%s]\n", repoKey)
-			}
-		} else {
-			fmt.Printf("I don't recognize that as a repository command (%s)\n", request.URL.Path)
+		if len(pathComponents) < 3 {
+			// A malformed URL: we need at least a repository key and file subpath.
+			responseWriter.WriteHeader(http.StatusNotFound)
+			log15.Warn("Malformed repository request", "path", request.URL.Path)
+			return
 		}
+		repoKey := pathComponents[1]
+		repo := repositories[repoKey]
+		if repo == nil || !repo.savedToDisk {
+			// This repository doesn't exist or hasn't been initialized yet.
+			responseWriter.WriteHeader(http.StatusNotFound)
+			log15.Warn("Request for unknown repository", "path", request.URL.Path, "repoKey", repoKey)
+			return
+		}
+		if !strings.HasPrefix(pathComponents[2], repo.pathPrefix) {
+			// All repository file requests must include the repository path prefix.
+			responseWriter.WriteHeader(http.StatusNotFound)
+			log15.Warn("Repository request doesn't include path prefix", "path", request.URL.Path, "repoKey", repoKey, "pathPrefix", repo.pathPrefix)
+			return
+		}
+		truncatedPath := pathComponents[2][len(repo.pathPrefix):]
+		filePath := repo.filePathForURLSubpath(truncatedPath)
+		http.ServeFile(responseWriter, request, filePath)
 	}
 }
 
@@ -233,7 +272,7 @@ func handleListRepositories() http.HandlerFunc {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		repositoryPaths := []string{}
 		for _, repo := range repositories {
-			if repo.active {
+			if repo.savedToDisk {
 				repositoryPaths = append(repositoryPaths, repo.urlRoot())
 			}
 		}
@@ -248,6 +287,7 @@ func handleListRepositories() http.HandlerFunc {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	env.Lock()
 	env.HandleHelpFlag()
 
@@ -255,7 +295,18 @@ func main() {
 	go repositoryDeleter()
 
 	http.HandleFunc("/create-repository", handleCreateRepository())
-	http.HandleFunc("/list-repositories", handleListRepositories())
 	http.HandleFunc("/repository/", handleRepository())
-	log.Fatal(http.ListenAndServe(":"+listenerPort, nil))
+	if env.InsecureDev {
+		// list-repositories is for testing, not production.
+		http.HandleFunc("/list-repositories", handleListRepositories())
+	}
+
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+	addr := net.JoinHostPort(host, listenerPort)
+	log15.Info("web-repo-proxy: listening", "addr", addr)
+
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
