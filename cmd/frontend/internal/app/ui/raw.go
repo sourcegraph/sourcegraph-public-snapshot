@@ -5,7 +5,6 @@ import (
 	"io"
 	"mime"
 	"net/http"
-	"os"
 	"path"
 	"strings"
 	"text/template"
@@ -41,7 +40,7 @@ import (
 //     curl -H 'Accept: application/zip' http://fe70a9eeffc8ea7b1edf7c67095c143d1ada7e1b@localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.zip
 //
 // Download an archive without specifying an Accept header (e.g. download via browser):
-//     curl -O -J http://localhost:3080/github.com/gorilla/mux/-/raw.zip
+//     curl -O -J http://localhost:3080/github.com/gorilla/mux/-/raw?format=zip
 //
 // Known issues:
 //
@@ -94,36 +93,29 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 	defaultOffer := textPlain
 	contentType := httputil.NegotiateContentType(r, contentTypeOffers, defaultOffer)
 
-	// If the user requests a tar/zip file that does not actually exist in the
-	// repository, but the directory (without tar/zip extension) does exist, we
-	// serve the user a tar/zip archive of that directory. This allows
-	// downloading .zip/.tar archives of directories without specifying an
-	// Accept header (e.g. for download via a web browser).
-	archiveFS := vfsutil.NewGitServer(common.Repo.Name, common.CommitID)
-	defer archiveFS.Close()
-	fi, err := archiveFS.Lstat(r.Context(), requestedPath)
-	ext := path.Ext(requestedPath)
-	if contentType == defaultOffer && os.IsNotExist(err) && (ext == ".tar" || ext == ".zip") {
-		fi, err := archiveFS.Lstat(r.Context(), strings.TrimSuffix(requestedPath, ext))
-		if err == nil && fi.IsDir() {
-			// The user is requesting a zip/tar archive of a directory.
-			requestedPath = strings.TrimSuffix(requestedPath, ext)
-			switch ext {
-			case ".zip":
-				contentType = applicationZip
-			case ".tar":
-				contentType = applicationXTar
-			default:
-				panic("never here")
-			}
+	// Allow users to override the negotiated content type so that e.g. browser
+	// users can easily download tar/zip archives by adding ?format=zip etc. to
+	// the URL.
+	if format := r.URL.Query().Get("format"); format == "zip" || format == "tar" {
+		switch format {
+		case "zip":
+			contentType = applicationZip
+		case "tar":
+			contentType = applicationXTar
+		default:
+			panic("never here")
 		}
 	}
 
 	switch contentType {
 	case applicationZip, applicationXTar:
-		// Set the proper filename field, so that downloading "/github.com/gorilla/mux/-/raw.zip"
+		// Set the proper filename field, so that downloading "/github.com/gorilla/mux/-/raw"
 		// gives us a "mux.zip" file (e.g. when downloading via a browser).
-		downloadName := path.Base(string(common.Repo.Name)) + ".zip"
+		ext := ".zip"
+		if contentType == applicationXTar {
+			ext = ".tar"
+		}
+		downloadName := path.Base(string(common.Repo.Name)) + ext
 		w.Header().Set("Content-Disposition", mime.FormatMediaType("Attachment", map[string]string{"filename": downloadName}))
 
 		format := vfsutil.ArchiveFormatZip
@@ -189,6 +181,9 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 
+		archiveFS := vfsutil.NewGitServer(common.Repo.Name, common.CommitID)
+		defer archiveFS.Close()
+		fi, err := archiveFS.Lstat(r.Context(), requestedPath)
 		if fi.IsDir() {
 			infos, err := archiveFS.ReadDir(r.Context(), requestedPath)
 			if err != nil {
