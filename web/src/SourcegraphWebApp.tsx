@@ -8,6 +8,7 @@ import { combineLatest, from, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from '../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../shared/src/api/client/types/textDocument'
+import { WorkspaceRoot } from '../../shared/src/api/protocol/plainTypes'
 import { Notifications } from '../../shared/src/app/notifications/Notifications'
 import { createController as createExtensionsController } from '../../shared/src/client/controller'
 import { ConfiguredExtension } from '../../shared/src/extensions/extension'
@@ -260,6 +261,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 // Extensions
                                 extensions={this.state.extensions}
                                 extensionsEnvironment={this.state.extensionsEnvironment}
+                                extensionsOnRootsChange={this.extensionsOnRootsChange}
                                 extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
                                 extensionsController={this.state.extensionsController}
                             />
@@ -319,6 +321,13 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 }
                 return update
             },
+            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
+        )
+    }
+
+    private extensionsOnRootsChange = (roots: WorkspaceRoot[] | null): void => {
+        this.setState(
+            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, roots } }),
             () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }

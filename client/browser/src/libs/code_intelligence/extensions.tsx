@@ -93,6 +93,7 @@ function createControllers(documents: Observable<TextDocumentItem[] | null>): Co
             .pipe(take(1))
             .subscribe(({ context }) => {
                 extensionsController.setEnvironment({
+                    roots: [], // TODO(sqs): set roots in browser extension
                     extensions,
                     configuration,
                     visibleTextDocuments,

@@ -131,6 +131,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     history={this.props.history}
                     location={this.props.location}
                     extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
+                    extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                 />
             </div>
         )

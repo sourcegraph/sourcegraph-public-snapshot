@@ -257,6 +257,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 extensionsOnVisibleTextDocumentsChange={
                                     this.props.extensionsOnVisibleTextDocumentsChange
                                 }
+                                extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                             />
                         </>
                     )}

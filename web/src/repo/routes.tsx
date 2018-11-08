@@ -88,6 +88,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     }
                                     settingsCascade={context.settingsCascade}
                                     extensions={context.extensions}
+                                    extensionsOnRootsChange={context.extensionsOnRootsChange}
                                     extensionsOnVisibleTextDocumentsChange={
                                         context.extensionsOnVisibleTextDocumentsChange
                                     }

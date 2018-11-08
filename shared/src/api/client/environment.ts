@@ -1,4 +1,5 @@
 import { SettingsCascade } from '../protocol'
+import { WorkspaceRoot } from '../protocol/plainTypes'
 import { Context, EMPTY_CONTEXT } from './context/context'
 import { Extension } from './extension'
 import { TextDocumentItem } from './types/textDocument'
@@ -13,6 +14,11 @@ import { TextDocumentItem } from './types/textDocument'
  * @template C settings cascade type
  */
 export interface Environment<X extends Extension = Extension, C extends SettingsCascade = SettingsCascade> {
+    /**
+     * The currently open workspace roots (typically a single repository).
+     */
+    readonly roots: WorkspaceRoot[] | null
+
     /**
      * The text documents that are currently visible. Each text document is represented to extensions as being
      * in its own visible CodeEditor.
@@ -31,6 +37,7 @@ export interface Environment<X extends Extension = Extension, C extends Settings
 
 /** An empty Sourcegraph extension client environment. */
 export const EMPTY_ENVIRONMENT: Environment<any, any> = {
+    roots: null,
     visibleTextDocuments: null,
     extensions: null,
     configuration: { final: {} },

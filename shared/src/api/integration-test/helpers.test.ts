@@ -6,6 +6,7 @@ import { createExtensionHost } from '../extension/extensionHost'
 import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 
 const FIXTURE_ENVIRONMENT: Environment = {
+    roots: [{ uri: 'file:///' }],
     visibleTextDocuments: [
         {
             uri: 'file:///f',
