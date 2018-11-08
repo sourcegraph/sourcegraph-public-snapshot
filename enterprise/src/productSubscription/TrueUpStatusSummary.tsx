@@ -6,12 +6,13 @@ import { formatUserCount } from '../productSubscription/helpers'
 
 interface Props {
     actualUserCount: number
+    actualUserCountDate: string | null
     license: GQL.IProductLicenseInfo
 }
 /**
  * Displays a summary of the site's true-up pricing status.
  */
-export const TrueUpStatusSummary: React.SFC<Props> = ({ actualUserCount, license }) => (
+export const TrueUpStatusSummary: React.SFC<Props> = ({ actualUserCount, actualUserCountDate, license }) => (
     <>
         <div className="true-up-status-summary mb-2 mt-4">
             <div className="true-up-status-summary__container">
@@ -25,13 +26,17 @@ export const TrueUpStatusSummary: React.SFC<Props> = ({ actualUserCount, license
                 <SingleValueCard
                     className="true-up-status-summary__item"
                     value={numberWithCommas(actualUserCount)}
-                    valueTooltip={`${numberWithCommas(actualUserCount)} total users`}
+                    valueTooltip={`${numberWithCommas(actualUserCount)} total users${actualUserCountDate !== '' &&
+                        `(reached on ${actualUserCountDate})`}`}
                     title="Maximum users"
                     subText="This is the highest peak of users on your installation since the license started, and this is the minimum number you need to purchase when you renew your license."
                 />
                 <SingleValueCard
                     className="true-up-status-summary__item"
                     value={numberWithCommas(Math.max(0, actualUserCount - license.userCount))}
+                    valueTooltip={`${numberWithCommas(
+                        Math.max(0, actualUserCount - license.userCount)
+                    )} users over${actualUserCountDate !== '' && `(on ${actualUserCountDate})`}`}
                     title="Users over license"
                     subText="The true-up model has a retroactive charge for these users at the next renewal. If you want to update your license sooner to prevent this, please contact sales@sourcegraph.com."
                     valueClassName={license.userCount - actualUserCount < 0 ? 'text-danger' : ''}

@@ -169,8 +169,8 @@ func TestMiddleware(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
 
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, nil
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 

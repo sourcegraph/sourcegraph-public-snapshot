@@ -18,7 +18,6 @@ github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11 h1:C2jA9xWe9gk/WFMzvR
 github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11/go.mod h1:r8Aw8JqVegEf0w2fDnATrX9VpkMcyFeM0FhwO62wh+A=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 h1:xJ4a3vCFaGF/jqvzLMYoU8P317H5OQ+Via4RmuPwCS0=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
-github.com/beyang/vfsgen v0.0.0-20180926055532-04927b934b6e/go.mod h1:gxuhoRMrB2MpVzi2lRON+0PBvxvx8Pks8BnqxO2Fqs0=
 github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932/go.mod h1:NOuUCSz6Q9T7+igc/hlvDOUdtWKryOrtFyIVABv/p7k=
 github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869/go.mod h1:Ekp36dRnpXw/yCqJaO+ZrUyxD+3VXMFFr56k5XYrpB4=
 github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b h1:PfxLkkgJYE095CKZji++BNwZjxWfoAF21WFPzkzOZEs=
@@ -301,8 +300,6 @@ github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18 h1:XOwy8S85zGn+
 github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18/go.mod h1:tpps84QRlOVVLYk5QpKYX8Tr289D1v/UTWDLqeguiqM=
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd h1:wxP7dU7tNtU03+Z4GIuYGV17AO1i3HfCBArGu0igaro=
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd/go.mod h1:Dl+4tLnKopzymgEhEZCi6/KSIZPFBe1rvoKMxCGh0Ms=
-github.com/sourcegraph/godockerize v0.0.0-20181029061954-5cf4e6d81720 h1:OkqHsJCzy3ZorBLAxbmnnx1NTpIG/+prvCZ50CLdgNw=
-github.com/sourcegraph/godockerize v0.0.0-20181029061954-5cf4e6d81720/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
 github.com/sourcegraph/godockerize v0.0.0-20181102001209-f9c9d82c8d1c h1:0D6Kdy5X2sdLmGSrg6sOgA9xuWLBi4pa6f55Igu6fmA=
 github.com/sourcegraph/godockerize v0.0.0-20181102001209-f9c9d82c8d1c/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
 github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d h1:FxF0pen6r1WOqbm4kVDR3JV078HfPz65inWcMh1aVQI=
