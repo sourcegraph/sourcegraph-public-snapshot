@@ -37,6 +37,19 @@ Indexes:
 
 ```
 
+# Table "public.core_configuration_files"
+```
+   Column   |           Type           |                               Modifiers                               
+------------+--------------------------+-----------------------------------------------------------------------
+ id         | integer                  | not null default nextval('core_configuration_files_id_seq'::regclass)
+ contents   | text                     | 
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "core_configuration_files_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.discussion_comments"
 ```
      Column     |           Type           |                            Modifiers                             
@@ -488,6 +501,7 @@ Indexes:
  updated_at | timestamp with time zone | not null default now()
 Indexes:
     "site_configuration_files_pkey" PRIMARY KEY, btree (id)
+    "core_configuration_files_unique" UNIQUE, btree (id)
     "site_configuration_files_unique" UNIQUE, btree (id)
 
 ```
