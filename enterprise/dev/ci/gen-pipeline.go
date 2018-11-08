@@ -220,6 +220,7 @@ func main() {
 			"gitserver",
 			"indexer",
 			"lsp-proxy",
+			"management-console",
 			"query-runner",
 			"repo-updater",
 			"searcher",
