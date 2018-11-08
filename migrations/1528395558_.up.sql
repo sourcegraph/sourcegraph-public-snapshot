@@ -14,4 +14,4 @@ CREATE TABLE core_configuration_files (
     "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX "core_configuration_files_unique" ON site_configuration_files(id);
+CREATE UNIQUE INDEX "core_configuration_files_unique" ON core_configuration_files(id);
