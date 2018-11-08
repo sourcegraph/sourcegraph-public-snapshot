@@ -130,11 +130,15 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		if contentType == applicationXTar {
 			format = vfsutil.ArchiveFormatTar
 		}
+		relativePath := strings.TrimPrefix(requestedPath, "/")
+		if relativePath == "" {
+			relativePath = "."
+		}
 		f, _, err := vfsutil.GitServerFetchArchive(r.Context(), vfsutil.ArchiveOpts{
 			Repo:         common.Repo.Name,
 			Commit:       common.CommitID,
 			Format:       format,
-			RelativePath: strings.TrimPrefix(requestedPath, "/"),
+			RelativePath: relativePath,
 		})
 		if err != nil {
 			return err
