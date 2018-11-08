@@ -136,6 +136,7 @@ func Main() {
 		`query-runner: query-runner`,
 		`symbols: symbols`,
 		`lsp-proxy: lsp-proxy`,
+		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`frontend: frontend`,

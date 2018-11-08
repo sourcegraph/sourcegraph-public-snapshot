@@ -1,9 +1,6 @@
 package db
 
 import (
-	"database/sql"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/confdb"
 )
 
@@ -22,7 +19,7 @@ var (
 	UserEmails                 = &userEmails{}
 	SiteIDInfo                 = &siteIDInfo{}
 	CertCache                  = &certCache{}
-	CoreSiteConfigurationFiles = &confdb.CoreSiteConfigurationFiles{Conn: func() *sql.DB { return dbconn.Global }}
+	CoreSiteConfigurationFiles = &confdb.CoreSiteConfigurationFiles{}
 
 	SurveyResponses = &surveyResponses{}
 

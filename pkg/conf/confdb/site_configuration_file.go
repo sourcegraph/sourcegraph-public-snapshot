@@ -10,14 +10,12 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 )
 
 // CoreSiteConfigurationFiles provides methods to read and write the
 // core/site configuration files to the database.
-type CoreSiteConfigurationFiles struct {
-	// Conn is a function that returns the connection that is used to connect to the database.
-	Conn func() *sql.DB
-}
+type CoreSiteConfigurationFiles struct{}
 
 // SiteCreateIfUpToDate saves the given site configuration "contents" to the database iff the
 // supplied "lastID" is equal to the one that was most recently saved to the database.
@@ -75,7 +73,7 @@ func (c *CoreSiteConfigurationFiles) createIfUpToDate(ctx context.Context, table
 		Contents: contents,
 	}
 
-	tx, err := c.Conn().BeginTx(ctx, nil)
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +109,7 @@ func (c *CoreSiteConfigurationFiles) createIfUpToDate(ctx context.Context, table
 }
 
 func (c *CoreSiteConfigurationFiles) getLatest(ctx context.Context, tableName string) (*api.CoreSiteConfigurationFile, error) {
-	return c.getLatestUnderTx(ctx, c.Conn(), tableName)
+	return c.getLatestUnderTx(ctx, dbconn.Global, tableName)
 }
 
 func (c *CoreSiteConfigurationFiles) getLatestUnderTx(ctx context.Context, queryTarget queryable, tableName string) (*api.CoreSiteConfigurationFile, error) {

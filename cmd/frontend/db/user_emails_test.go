@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 

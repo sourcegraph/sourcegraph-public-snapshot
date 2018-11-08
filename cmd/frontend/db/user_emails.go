@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 )
 
 // UserEmail represents a row in the `user_emails` table.
