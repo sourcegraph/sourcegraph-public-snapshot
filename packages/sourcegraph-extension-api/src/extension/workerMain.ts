@@ -1,4 +1,3 @@
-import { tryCatchPromise } from '../util'
 import { createExtensionHost, InitData } from './extensionHost'
 
 interface MessageEvent {
@@ -31,7 +30,7 @@ interface DedicatedWorkerGlobalScope {
 export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void {
     self.addEventListener('message', receiveExtensionURL)
 
-    function receiveExtensionURL(ev: MessageEvent): void {
+    async function receiveExtensionURL(ev: MessageEvent): Promise<void> {
         try {
             // Only listen for the 1st URL.
             self.removeEventListener('message', receiveExtensionURL)
@@ -66,19 +65,16 @@ export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void 
             delete (self as any).module
 
             if ('activate' in extensionExports) {
-                try {
-                    tryCatchPromise(() => extensionExports.activate()).catch((err: any) => {
-                        console.error(`Error creating extension host:`, err)
-                        self.close()
-                    })
-                } catch (err) {
-                    console.error(`Error activating extension.`, err)
-                }
+                await Promise.resolve(extensionExports.activate())
             } else {
                 console.error(`Extension did not export an 'activate' function.`)
             }
         } catch (err) {
-            console.error(err)
+            console.error(
+                `Extension host is terminating because the extension's activate function threw an error.`,
+                err
+            )
+            self.close()
         }
     }
 }
