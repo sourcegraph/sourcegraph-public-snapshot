@@ -3,7 +3,6 @@ package licensing
 import (
 	"context"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
