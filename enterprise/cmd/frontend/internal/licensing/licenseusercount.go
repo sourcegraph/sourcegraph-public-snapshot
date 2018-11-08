@@ -25,7 +25,7 @@ var (
 func init() {
 	// Start counting max users on the instance on launch.
 	hooks.AfterDBInit = func() {
-		go StartMaxUserCount()
+		go startMaxUserCount()
 	}
 	// Make the Site.productSubscription.actualUserCount and Site.productSubscription.actualUserCountDate
 	// GraphQL fields return the proper max user count and timestamp on the current license.
@@ -138,8 +138,8 @@ func actualUserCountDate(ctx context.Context) (string, error) {
 	return date, err
 }
 
-// StartMaxUserCount starts checking for a new count of max user accounts periodically.
-func StartMaxUserCount() {
+// startMaxUserCount starts checking for a new count of max user accounts periodically.
+func startMaxUserCount() {
 	if started {
 		panic("already started")
 	}
@@ -150,7 +150,7 @@ func StartMaxUserCount() {
 	for {
 		_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
 		if err != nil {
-			log15.Error("licensing.StartMaxUserCount: error getting configured license info")
+			log15.Error("licensing.startMaxUserCount: error getting configured license info")
 		} else if signature != "" {
 			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 			_ = checkMaxUsers(ctx, signature) // updates global state on its own, can safely ignore return value
