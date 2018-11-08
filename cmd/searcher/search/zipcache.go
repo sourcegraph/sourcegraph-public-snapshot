@@ -106,6 +106,7 @@ type zipFile struct {
 
 func readZipFile(path string) (*zipFile, error) {
 	// Open zip file at path, prepare to read it.
+	fmt.Println("READ ZIP FILE", path)
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err

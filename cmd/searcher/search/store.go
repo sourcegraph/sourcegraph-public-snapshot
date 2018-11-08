@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"log"
 	"sync"
@@ -157,6 +158,7 @@ func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 		if res.err != nil {
 			return "", res.err
 		}
+		fmt.Println("PREPARE ZIP", res.path)
 		return res.path, nil
 	}
 }

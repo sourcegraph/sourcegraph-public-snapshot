@@ -38,6 +38,7 @@ func restartGoremanDev() error {
 		"syntect_server",
 		"zoekt-indexserver",
 		"zoekt-webserver",
+		"issue-syncer",
 		// frontend is restarted separately last
 	}
 

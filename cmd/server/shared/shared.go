@@ -34,6 +34,7 @@ var defaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 	"LSP_PROXY":             "127.0.0.1:4388",
+	"ISSUE_SYNCER":          "http://127.0.0.1:4500",
 	"ZOEKT_HOST":            zoektHost,
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
@@ -138,6 +139,7 @@ func Main() {
 		`lsp-proxy: lsp-proxy`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
+		`issue-syncer: issue-syncer`,
 		`frontend: frontend`,
 		`repo-updater: repo-updater`,
 		`indexer: indexer`,

@@ -54,6 +54,7 @@ export REPO_UPDATER_URL=http://127.0.0.1:3182
 export LSP_PROXY=127.0.0.1:4388
 export REDIS_ENDPOINT=127.0.0.1:6379
 export SRC_INDEXER=127.0.0.1:3179
+export ISSUE_SYNCER=127.0.0.1:4500
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
 export CTAGS_COMMAND=${CTAGS_COMMAND-cmd/symbols/universal-ctags-dev}

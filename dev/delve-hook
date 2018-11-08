@@ -28,6 +28,7 @@ for COMPONENT in "${COMPONENTS[@]}"; do
             *"symbols"*) run 2350 "$COMPONENT";;
             *"github-proxy"*) run 2351 "$COMPONENT";;
             *"lsp-proxy"*) run 2352 "$COMPONENT";;
+            *"issue-syncer"*) run 2353 "$COMPONENT";;
             *"frontend"*) run 2354 "$COMPONENT";;
         esac
     fi
