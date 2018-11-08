@@ -159,14 +159,32 @@ func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveConfigurationRawJSON(w http.ResponseWriter, r *http.Request) error {
-	rawJSON := globals.ConfigurationServerFrontendOnly.Raw()
-	err := json.NewEncoder(w).Encode(rawJSON)
+func serveSiteConfigurationFileGetLatest(w http.ResponseWriter, r *http.Request) error {
+	siteFile, err := db.CoreSiteConfigurationFiles.SiteGetLatest(r.Context())
+	if err != nil {
+		return errors.Wrap(err, "CoreSiteConfigurationFiles.SiteGetLatest")
+	}
+
+	err = json.NewEncoder(w).Encode(siteFile)
 	if err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 
-	return nil
+	return nil 
+}
+
+func serveCoreConfigurationFileGetLatest(w http.ResponseWriter, r *http.Request) error {
+	coreFile, err := db.CoreSiteConfigurationFiles.CoreGetLatest(r.Context())
+	if err != nil {
+		return errors.Wrap(err, "CoreSiteConfigurationFiles.CoreGetLatest")
+	}
+
+	err = json.NewEncoder(w).Encode(coreFile)
+	if err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+
+	return nil 
 }
 
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
