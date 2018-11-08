@@ -41,6 +41,7 @@ export const tsRule: webpack.RuleSetRule = {
         {
             loader: 'ts-loader',
             options: {
+                configFile: path.resolve(__dirname, '../tsconfig.webpack.json'),
                 compilerOptions: {
                     target: 'es6',
                     module: 'esnext',
