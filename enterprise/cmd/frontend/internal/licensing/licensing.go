@@ -34,7 +34,7 @@ var publicKey = func() ssh.PublicKey {
 
 // ParseProductLicenseKey parses and verifies the license key using the license verification public
 // key (publicKey in this package).
-func ParseProductLicenseKey(licenseKey string) (*license.Info, error) {
+func ParseProductLicenseKey(licenseKey string) (*license.Info, string, error) {
 	return license.ParseSignedKey(licenseKey, publicKey)
 }
 
@@ -44,7 +44,7 @@ func ParseProductLicenseKey(licenseKey string) (*license.Info, error) {
 //
 // It is useful for local development when using a test license generation key (whose signatures
 // aren't considered valid when verified using the builtin public key).
-func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*license.Info, error) {
+func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*license.Info, string, error) {
 	var k ssh.PublicKey
 	if licenseGenerationPrivateKey != nil {
 		k = licenseGenerationPrivateKey.PublicKey()
@@ -56,16 +56,24 @@ func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*licen
 
 // Cache the parsing of the license key because public key crypto can be slow.
 var (
-	mu          sync.Mutex
-	lastKeyText string
-	lastInfo    *license.Info
+	mu            sync.Mutex
+	lastKeyText   string
+	lastInfo      *license.Info
+	lastSignature string
 )
 
-var MockGetConfiguredProductLicenseInfo func() (*license.Info, error)
+var MockGetConfiguredProductLicenseInfo func() (*license.Info, string, error)
 
 // GetConfiguredProductLicenseInfo returns information about the current product license key
 // specified in site configuration.
 func GetConfiguredProductLicenseInfo() (*license.Info, error) {
+	info, _, err := GetConfiguredProductLicenseInfoWithSignature()
+	return info, err
+}
+
+// GetConfiguredProductLicenseInfoWithSignature returns information about the current product license key
+// specified in site configuration, with the signed key's signature.
+func GetConfiguredProductLicenseInfoWithSignature() (*license.Info, string, error) {
 	if MockGetConfiguredProductLicenseInfo != nil {
 		return MockGetConfiguredProductLicenseInfo()
 	}
@@ -81,23 +89,27 @@ func GetConfiguredProductLicenseInfo() (*license.Info, error) {
 		mu.Lock()
 		defer mu.Unlock()
 
-		var info *license.Info
+		var (
+			info      *license.Info
+			signature string
+		)
 		if keyText == lastKeyText {
 			info = lastInfo
+			signature = lastSignature
 		} else {
 			var err error
-			info, err = ParseProductLicenseKey(keyText)
+			info, signature, err = ParseProductLicenseKey(keyText)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			lastKeyText = keyText
 			lastInfo = info
+			lastSignature = signature
 		}
-		return info, nil
+		return info, signature, nil
 	}
-
 	// No license key.
-	return nil, nil
+	return nil, "", nil
 }
 
 // Make the Site.productSubscription GraphQL field return the actual info about the product license,
