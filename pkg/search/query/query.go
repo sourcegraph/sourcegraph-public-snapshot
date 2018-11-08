@@ -352,10 +352,10 @@ func flatten(q Q) (Q, bool) {
 	}
 }
 
-func mapQueryList(qs []Q, f func(Q) Q) []Q {
+func mapQueryList(qs []Q, pre, post func(Q) Q) []Q {
 	var neg []Q
 	for _, sub := range qs {
-		neg = append(neg, Map(sub, f))
+		neg = append(neg, Map(sub, pre, post))
 	}
 	return neg
 }
@@ -371,7 +371,7 @@ func invertConst(q Q) Q {
 func evalAndOrConstants(q Q, children []Q) Q {
 	_, isAnd := q.(*And)
 
-	children = mapQueryList(children, evalConstants)
+	children = mapQueryList(children, nil, evalConstants)
 
 	newCH := children[:0]
 	for _, ch := range children {
@@ -455,19 +455,26 @@ func Simplify(q Q) Q {
 	return q
 }
 
-// Map runs f over the q.
-func Map(q Q, f func(q Q) Q) Q {
+// Map runs pre and post over the q. pre if non-nil is called in prefix
+// order. post if non-nil is called in postfix order.
+func Map(q Q, pre, post func(q Q) Q) Q {
+	if pre != nil {
+		q = pre(q)
+	}
 	switch s := q.(type) {
 	case *And:
-		q = &And{Children: mapQueryList(s.Children, f)}
+		q = &And{Children: mapQueryList(s.Children, pre, post)}
 	case *Or:
-		q = &Or{Children: mapQueryList(s.Children, f)}
+		q = &Or{Children: mapQueryList(s.Children, pre, post)}
 	case *Not:
-		q = &Not{Child: Map(s.Child, f)}
+		q = &Not{Child: Map(s.Child, pre, post)}
 	case *Type:
-		q = &Type{Type: s.Type, Child: Map(s.Child, f)}
+		q = &Type{Type: s.Type, Child: Map(s.Child, pre, post)}
 	}
-	return f(q)
+	if post != nil {
+		q = post(q)
+	}
+	return q
 }
 
 // Expand expands Substr queries into (OR file_substr content_substr)
@@ -494,15 +501,24 @@ func ExpandFileContent(q Q) Q {
 	return q
 }
 
+// IsAtom returns true if q is an atom. An atom is a Q without children Q. For
+// example And is not an atom, but Repo is.
+func IsAtom(q Q) bool {
+	switch q.(type) {
+	case *And:
+	case *Or:
+	case *Not:
+	case *Type:
+	default:
+		return true
+	}
+	return false
+}
+
 // VisitAtoms runs `v` on all atom queries within `q`.
 func VisitAtoms(q Q, v func(q Q)) {
-	Map(q, func(iQ Q) Q {
-		switch iQ.(type) {
-		case *And:
-		case *Or:
-		case *Not:
-		case *Type:
-		default:
+	Map(q, nil, func(iQ Q) Q {
+		if IsAtom(iQ) {
 			v(iQ)
 		}
 		return iQ

@@ -16,6 +16,12 @@ var ActualUserCount = func(ctx context.Context) (int32, error) {
 	return 0, nil
 }
 
+// ActualUserCountDate is called to obtain the timestamp when the actual maximum number of user accounts
+// that have been active on this Sourcegraph instance for the current license was reached.
+var ActualUserCountDate = func(ctx context.Context) (string, error) {
+	return "", nil
+}
+
 // productSubscriptionStatus implements the GraphQL type ProductSubscriptionStatus.
 type productSubscriptionStatus struct{}
 
@@ -34,6 +40,10 @@ func (productSubscriptionStatus) ProductNameWithBrand() (string, error) {
 
 func (productSubscriptionStatus) ActualUserCount(ctx context.Context) (int32, error) {
 	return ActualUserCount(ctx)
+}
+
+func (productSubscriptionStatus) ActualUserCountDate(ctx context.Context) (string, error) {
+	return ActualUserCountDate(ctx)
 }
 
 func (r productSubscriptionStatus) License() (*ProductLicenseInfo, error) {

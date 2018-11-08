@@ -1,3 +1,4 @@
+// Package conf provides functions for accessing the Site Configuration.
 package conf
 
 import (

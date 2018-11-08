@@ -6,10 +6,14 @@ export const PasswordInput: React.SFC<
     React.InputHTMLAttributes<HTMLInputElement> & { inputRef?: React.Ref<HTMLInputElement> }
 > = props => {
     const { inputRef, ...other } = props
+    const otherProps = {
+        ...other,
+        unselectable: other.unselectable && other.unselectable === 'on',
+    }
     return (
         <input
             name="password"
-            {...other}
+            {...otherProps}
             className={`form-control ${props.className || ''}`}
             type="password"
             placeholder={props.placeholder === undefined ? 'Password' : props.placeholder}
@@ -23,6 +27,7 @@ export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> 
     <input
         name="email"
         {...props}
+        unselectable={props.unselectable && props.unselectable === 'on'}
         className={`form-control ${props.className || ''}`}
         type="email"
         placeholder="Email"
@@ -35,6 +40,7 @@ export const UsernameInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement
     <input
         name="username"
         {...props}
+        unselectable={props.unselectable && props.unselectable === 'on'}
         className={`form-control ${props.className || ''}`}
         type="text"
         placeholder="Username"

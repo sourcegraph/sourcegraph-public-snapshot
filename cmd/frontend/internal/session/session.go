@@ -1,3 +1,4 @@
+// Package session implements a redis backed user sessions HTTP middleware.
 package session
 
 import (

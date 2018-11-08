@@ -83,6 +83,23 @@ export class NoSourcegraphURLError extends Error {
     }
 }
 
+/**
+ * ERPRIVATEREPOPUBLICSOURCEGRAPHCOM means that the current repository is
+ * private and the current Sourcegraph URL is Sourcegraph.com. Requests made
+ * from a private repository to Sourcegraph.com are blocked unless the
+ * `requestMightContainPrivateInfo` argument to `requestGraphQL` is explicitly
+ * set to false (defaults to true to be conservative).
+ */
+export const ERPRIVATEREPOPUBLICSOURCEGRAPHCOM = 'ERPRIVATEREPOPUBLICSOURCEGRAPHCOM'
+export class PrivateRepoPublicSourcegraphComError extends Error {
+    public readonly code = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
+    constructor(graphQLName: string) {
+        super(
+            `A ${graphQLName} GraphQL request to the public Sourcegraph.com was blocked because the current repository is private.`
+        )
+    }
+}
+
 export const ERAUTHREQUIRED = 'ERAUTHREQUIRED'
 export interface AuthRequiredError extends Error {
     code: typeof ERAUTHREQUIRED

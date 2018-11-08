@@ -1,3 +1,4 @@
+// Package httpheader implements auth via HTTP Headers.
 package httpheader
 
 import (

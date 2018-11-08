@@ -109,7 +109,7 @@ func TestGenerateParseSignedKey(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := ParseSignedKey(text, publicKey)
+		got, _, err := ParseSignedKey(text, publicKey)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,7 +129,7 @@ func TestGenerateParseSignedKey(t *testing.T) {
 		// Add some whitespace.
 		text = text[:20] + " \n \t" + text[20:40] + " " + text[40:]
 
-		got, err := ParseSignedKey(text, publicKey)
+		got, _, err := ParseSignedKey(text, publicKey)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -143,7 +143,7 @@ func TestGenerateParseSignedKey(t *testing.T) {
 
 func TestParseSignedKey(t *testing.T) {
 	t.Run("invalid", func(t *testing.T) {
-		if _, err := ParseSignedKey("invalid", publicKey); err == nil {
+		if _, _, err := ParseSignedKey("invalid", publicKey); err == nil {
 			t.Fatal("want error")
 		}
 	})

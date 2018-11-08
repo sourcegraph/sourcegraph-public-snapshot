@@ -1,7 +1,7 @@
 import * as React from 'react'
 
-interface HeroPageProps {
-    icon?: React.ComponentType
+export interface HeroPageProps {
+    icon?: React.ComponentType<any>
     className?: string
     title?: string | JSX.Element
     subtitle?: string | JSX.Element

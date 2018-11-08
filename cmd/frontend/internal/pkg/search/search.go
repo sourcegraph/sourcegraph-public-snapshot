@@ -1,3 +1,4 @@
+// Package search provides high level search structures and logic.
 package search
 
 import (
