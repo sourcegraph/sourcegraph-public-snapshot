@@ -17,7 +17,6 @@ import (
 )
 
 var (
-	fetchOnce sync.Once
 	pool      = redispool.Store
 	keyPrefix = "license_user_count:"
 
