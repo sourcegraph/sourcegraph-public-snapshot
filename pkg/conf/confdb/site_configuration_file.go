@@ -15,8 +15,8 @@ import (
 // SiteConfigurationFiles provides methods to read and write site configuration
 // files to the database.
 type SiteConfigurationFiles struct {
-	// Conn is the connection that is used to connect to the database.
-	Conn *sql.DB
+	// Conn is a function that returns the connection that is used to connect to the database.
+	Conn func() *sql.DB
 }
 
 // CreateIfUpToDate saves the given site configuration "contents" to the database iff the
@@ -37,7 +37,7 @@ func (s *SiteConfigurationFiles) CreateIfUpToDate(ctx context.Context, lastID *i
 		Contents: contents,
 	}
 
-	tx, err := s.Conn.BeginTx(ctx, nil)
+	tx, err := s.Conn().BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (s *SiteConfigurationFiles) CreateIfUpToDate(ctx context.Context, lastID *i
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
 func (s *SiteConfigurationFiles) GetLatest(ctx context.Context) (*api.SiteConfigurationFile, error) {
-	return s.getLatest(ctx, s.Conn)
+	return s.getLatest(ctx, s.Conn())
 }
 
 func (s *SiteConfigurationFiles) getLatest(ctx context.Context, queryTarget queryable) (*api.SiteConfigurationFile, error) {
