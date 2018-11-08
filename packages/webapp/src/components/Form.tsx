@@ -20,10 +20,14 @@ export class Form extends React.PureComponent<FormProps, FormState> {
     }
 
     public render(): React.ReactNode {
+        const props = {
+            ...this.props,
+            unselectable: this.props.unselectable && this.props.unselectable === 'on',
+        }
         return (
             // tslint:disable-next-line:jsx-ban-elements
             <form
-                {...this.props}
+                {...props}
                 className={`${this.props.className || ''} ${this.state.wasValidated ? 'was-validated' : ''}`}
                 onInvalid={this.onInvalid}
             >
