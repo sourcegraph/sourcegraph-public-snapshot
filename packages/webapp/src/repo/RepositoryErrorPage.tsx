@@ -8,7 +8,7 @@ import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, switchMap, withLatestFrom } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
-import { HeroPage } from '../components/HeroPage'
+import { HeroPage, HeroPageProps } from '../components/HeroPage'
 import { addRepository, checkMirrorRepositoryConnection, setRepositoryEnabled } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
@@ -214,7 +214,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         let title: string
-        let Icon: React.ComponentType
+        let Icon: HeroPageProps['icon']
         if (this.props.error === 'disabled') {
             title = 'Repository disabled'
             Icon = DoNotDisturbIcon

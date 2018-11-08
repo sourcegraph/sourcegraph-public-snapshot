@@ -70,7 +70,7 @@ describe('OptionsContainer', () => {
         const buildRenderer = () => {
             let rerender: RenderResult['rerender'] | undefined
 
-            return (ui: React.ReactElement<OptionsContainerProps>) => {
+            return (ui: React.ReactElement<any>) => {
                 if (rerender) {
                     rerender(ui)
                 } else {

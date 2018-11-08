@@ -46,9 +46,5 @@
     "ts-unused-exports": "^2.0.11",
     "webpack": "^4.23.1",
     "webpack-dev-server": "^3.1.10"
-  },
-  "resolutions": {
-    "@types/react": "16.4.13",
-    "typescript": "3.0.1"
   }
 }
