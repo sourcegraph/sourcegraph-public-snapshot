@@ -36,7 +36,7 @@ func init() {
 		defer mu.Unlock()
 
 		// Only react when the config changes.
-		new := providersOfType(conf.Get().AuthProviders)
+		new := providersOfType(conf.Get().Core.AuthProviders)
 		diff := diffProviderConfig(cur, new)
 		if len(diff) == 0 {
 			return

@@ -47,8 +47,8 @@ var (
 	appURL                  = conf.GetTODO().AppURL
 	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
 
-	tlsCert = conf.GetTODO().TlsCert
-	tlsKey  = conf.GetTODO().TlsKey
+	tlsCert = conf.GetTODO().Core.TlsCert
+	tlsKey  = conf.GetTODO().Core.TlsKey
 
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
@@ -154,7 +154,7 @@ func Main() error {
 	}
 
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
-	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
+	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.Get().Core.TlsLetsencrypt != "off"))
 	if useTLS && globals.AppURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
 	}
@@ -204,7 +204,7 @@ func Main() error {
 		l, err := net.Listen("tcp", httpsAddr)
 		if err != nil {
 			// Fatal if we manually specified TLS or enforce lets encrypt
-			if tlsCertAndKey || conf.GetTODO().TlsLetsencrypt == "on" {
+			if tlsCertAndKey || conf.Get().Core.TlsLetsencrypt == "on" {
 				log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
 			} else {
 				log15.Warn("Failed to bind to HTTPS port, TLS disabled", "address", httpsAddr, "error", err)

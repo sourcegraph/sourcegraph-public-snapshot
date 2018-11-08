@@ -36,7 +36,7 @@ func CanonicalURL(next http.Handler) http.Handler {
 			return
 		}
 
-		httpToHTTPSRedirect := parseStringOrBool(conf.HttpToHttpsRedirect, "off")
+		httpToHTTPSRedirect := parseStringOrBool(conf.Core.HttpToHttpsRedirect, "off")
 		var requireSchemeMatch bool
 		switch httpToHTTPSRedirect {
 		case "off":
