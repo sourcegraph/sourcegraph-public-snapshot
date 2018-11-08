@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/confdb"
 )
 

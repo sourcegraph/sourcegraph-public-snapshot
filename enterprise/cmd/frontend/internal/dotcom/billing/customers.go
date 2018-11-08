@@ -8,7 +8,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
