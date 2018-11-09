@@ -170,7 +170,7 @@ func serveSiteConfigurationFileGetLatest(w http.ResponseWriter, r *http.Request)
 		return errors.Wrap(err, "Encode")
 	}
 
-	return nil 
+	return nil
 }
 
 func serveCoreConfigurationFileGetLatest(w http.ResponseWriter, r *http.Request) error {
@@ -184,7 +184,7 @@ func serveCoreConfigurationFileGetLatest(w http.ResponseWriter, r *http.Request)
 		return errors.Wrap(err, "Encode")
 	}
 
-	return nil 
+	return nil
 }
 
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
