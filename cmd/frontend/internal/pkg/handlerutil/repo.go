@@ -3,10 +3,14 @@ package handlerutil
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
@@ -19,10 +23,13 @@ func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 		return nil, err
 	}
 	if origRepo != repo.Name {
-		return nil, &URLMovedError{NewURL: "/" + repo.Name}
+		return nil, &URLMovedError{NewURL: "/" + string(repo.Name)}
 	}
 	if e, ok := err.(backend.ErrRepoSeeOther); ok {
 		return nil, &URLMovedError{NewURL: e.RedirectURL}
+	}
+	if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
+		return nil, &vcs.RepoNotExistError{Repo: origRepo, CloneInProgress: false}
 	}
 	return repo, nil
 }

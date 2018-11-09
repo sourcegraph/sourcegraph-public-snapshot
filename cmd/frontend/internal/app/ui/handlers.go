@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -122,8 +121,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
 				return nil, nil
 			}
-			if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
-				// Repo does not exist.
+			if vcs.IsCloneInProgress(err) {
+				// Repo is cloning.
+				return common, nil
+			}
+			if vcs.IsRepoNotExist(err) {
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
@@ -140,15 +142,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			if _, ok := errors.Cause(err).(*gitserver.RepoNotCloneableErr); ok {
 				// Repository is not clonable.
 				dangerouslyServeError(w, r, errors.New("repository could not be cloned"), http.StatusInternalServerError)
-				return nil, nil
-			}
-			if vcs.IsRepoNotExist(err) {
-				if vcs.IsCloneInProgress(err) {
-					// Repo is cloning.
-					return common, nil
-				}
-				// Repo does not exist.
-				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
 			return nil, err
