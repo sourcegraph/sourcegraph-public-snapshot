@@ -4,7 +4,9 @@ import '../../config/polyfill'
 
 import * as React from 'react'
 import { render } from 'react-dom'
+import { Subscription } from 'rxjs'
 import storage from '../../browser/storage'
+import { FeatureFlags } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { getAccessToken, setAccessToken } from '../../shared/auth/access_token'
 import { createAccessToken, fetchAccessTokenIDs } from '../../shared/backend/auth'
@@ -15,6 +17,60 @@ import { assertEnv } from '../envAssertion'
 
 assertEnv('OPTIONS')
 
+type State = Pick<FeatureFlags, 'useExtensions'> & { sourcegraphURL: string | null }
+
+class Options extends React.Component<{}, State> {
+    public state: State = { sourcegraphURL: null, useExtensions: false }
+
+    private subscriptions = new Subscription()
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            storage.observeSync('featureFlags').subscribe(({ useExtensions }) => {
+                this.setState({ useExtensions })
+            })
+        )
+
+        this.subscriptions.add(
+            storage.observeSync('sourcegraphURL').subscribe(sourcegraphURL => {
+                console.log('sourcegraphURL', sourcegraphURL)
+                this.setState({ sourcegraphURL })
+            })
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
+    public render(): React.ReactNode {
+        if (this.state.sourcegraphURL === null) {
+            return null
+        }
+
+        const props: OptionsContainerProps = {
+            sourcegraphURL: this.state.sourcegraphURL,
+
+            ensureValidSite: fetchSite,
+            fetchCurrentUser,
+
+            setSourcegraphURL: (url: string) => {
+                storage.setSync({ sourcegraphURL: url })
+            },
+
+            createAccessToken,
+            getAccessToken,
+            setAccessToken,
+            fetchAccessTokenIDs,
+
+            toggleFeatureFlag: featureFlags.toggle,
+            featureFlags: [{ key: 'useExtensions', value: this.state.useExtensions }],
+        }
+
+        return <OptionsContainer {...props} />
+    }
+}
+
 const inject = async () => {
     const injectDOM = document.createElement('div')
     injectDOM.id = 'sourcegraph-options-menu'
@@ -22,34 +78,7 @@ const inject = async () => {
     document.body.appendChild(injectDOM)
 
     if (await featureFlags.isEnabled('simpleOptionsMenu')) {
-        const useExtensions = await featureFlags.isEnabled('useExtensions')
-
-        const renderOptionsContainer = (sourcegraphURL: string) => {
-            const props: OptionsContainerProps = {
-                sourcegraphURL,
-
-                ensureValidSite: fetchSite,
-                fetchCurrentUser,
-
-                setSourcegraphURL: (url: string) => {
-                    storage.setSync({ sourcegraphURL: url })
-                },
-
-                createAccessToken,
-                getAccessToken,
-                setAccessToken,
-                fetchAccessTokenIDs,
-
-                toggleFeatureFlag: featureFlags.toggle,
-                featureFlags: [{ key: 'useExtensions', value: useExtensions }],
-            }
-
-            render(<OptionsContainer {...props} />, injectDOM)
-        }
-
-        storage.observeSync('sourcegraphURL').subscribe(url => {
-            renderOptionsContainer(url)
-        })
+        render(<Options />, injectDOM)
     } else {
         storage.getSync(() => {
             render(<OptionsDashboard />, injectDOM)

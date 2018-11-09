@@ -1,6 +1,5 @@
 import { upperFirst, words } from 'lodash'
 import * as React from 'react'
-import { FormGroup, Input, Label } from 'reactstrap'
 
 import { OptionsHeader, OptionsHeaderProps } from './Header'
 import { ServerURLForm, ServerURLFormProps } from './ServerURLForm'
@@ -43,18 +42,19 @@ export const OptionsMenu: React.SFC<OptionsMenuProps> = ({
                 <label>Experimental configuration</label>
                 <div>
                     {featureFlags.map(({ key, value }) => (
-                        <FormGroup check={true}>
-                            <Label check={true}>
-                                <Input
+                        <div className="form-check" key={key}>
+                            <label className="form-check-label">
+                                <input
                                     onClick={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
-                                    defaultChecked={value}
+                                    className="form-check-input"
                                     type="checkbox"
+                                    checked={value}
                                 />{' '}
                                 {words(key)
                                     .map(upperFirst)
                                     .join(' ')}
-                            </Label>
-                        </FormGroup>
+                            </label>
+                        </div>
                     ))}
                 </div>
             </div>

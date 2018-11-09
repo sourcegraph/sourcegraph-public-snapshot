@@ -53,11 +53,11 @@ export const tsRule: webpack.RuleSetRule = {
             },
         },
     ],
-    exclude: [/node_modules/],
+    // exclude: [/node_modules/],
 }
 
 export const jsRule: webpack.RuleSetRule = {
     test: /\.jsx?$/,
     loader: babelLoader,
-    exclude: [/node_modules/],
+    // exclude: [/node_modules/],
 }
