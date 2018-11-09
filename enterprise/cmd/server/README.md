@@ -1,10 +1,6 @@
 # `sourcegraph/server` release process
 
-The user-facing documentation lives in
-[sourcegraph/website](https://github.com/sourcegraph/website). Quick links:
-
-- https://github.com/sourcegraph/website/blob/master/data/docs/server/docs.md
-- https://about.sourcegraph.com/docs/server/
+The user-facing documentation lives in [sourcegraph/sourcegraph `doc/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc) and is hosted on [docs.sourcegraph.com](https://docs.sourcegraph.com).
 
 This file documents information relevant to developers at Sourcegraph.
 

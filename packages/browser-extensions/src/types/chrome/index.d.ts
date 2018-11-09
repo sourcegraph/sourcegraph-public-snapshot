@@ -488,7 +488,7 @@ declare namespace chrome.browserAction {
      */
     export function getBadgeText(details: TabDetails, callback: (result: string) => void): void
     /** Sets the html document to be opened as a popup when the user clicks on the browser action's icon. */
-    export function setPopup(details: PopupDetails): void
+    export function setPopup(details: PopupDetails, callback: () => void): void
     /**
      * Since browser 22.
      * Disables the browser action for a tab.

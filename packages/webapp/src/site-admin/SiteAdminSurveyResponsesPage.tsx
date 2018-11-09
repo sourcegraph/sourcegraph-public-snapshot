@@ -16,7 +16,7 @@ import {
 } from '../marketing/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
-import { USER_ACTIVITY_FILTERS } from './SiteAdminAnalyticsPage'
+import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 interface SurveyResponseNodeProps {
     /**
@@ -133,8 +133,8 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                         </strong>
                     </td>
                     <td>
-                        {this.props.node.activity && this.props.node.activity.lastActiveTime ? (
-                            <Timestamp date={this.props.node.activity.lastActiveTime} />
+                        {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
+                            <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                         ) : (
                             '?'
                         )}

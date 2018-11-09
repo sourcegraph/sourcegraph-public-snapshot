@@ -317,23 +317,23 @@ export function deleteRepository(repository: GQL.ID): Observable<void> {
 }
 
 /**
- * Fetches usage analytics for all users.
+ * Fetches usage statistics for all users.
  *
  * @return Observable that emits the list of users and their usage data
  */
-export function fetchUserAnalytics(args: {
+export function fetchUserUsageStatistics(args: {
     activePeriod?: GQL.UserActivePeriod
     query?: string
     first?: number
 }): Observable<GQL.IUserConnection> {
     return queryGraphQL(
         gql`
-            query UserAnalytics($activePeriod: UserActivePeriod, $query: String, $first: Int) {
+            query UserUsageStatistics($activePeriod: UserActivePeriod, $query: String, $first: Int) {
                 users(activePeriod: $activePeriod, query: $query, first: $first) {
                     nodes {
                         id
                         username
-                        activity {
+                        usageStatistics {
                             searchQueries
                             pageViews
                             codeIntelligenceActions
@@ -353,15 +353,15 @@ export function fetchUserAnalytics(args: {
 }
 
 /**
- * Fetches site-wide usage analytics.
+ * Fetches site-wide usage statitics.
  *
  * @return Observable that emits the list of users and their usage data
  */
-export function fetchSiteAnalytics(): Observable<GQL.ISiteActivity> {
+export function fetchSiteUsageStatistics(): Observable<GQL.ISiteUsageStatistics> {
     return queryGraphQL(gql`
-        query SiteAnalytics {
+        query SiteUsageStatistics {
             site {
-                activity {
+                usageStatistics {
                     daus {
                         userCount
                         registeredUserCount
@@ -385,7 +385,7 @@ export function fetchSiteAnalytics(): Observable<GQL.ISiteActivity> {
         }
     `).pipe(
         map(dataOrThrowErrors),
-        map(data => data.site.activity)
+        map(data => data.site.usageStatistics)
     )
 }
 

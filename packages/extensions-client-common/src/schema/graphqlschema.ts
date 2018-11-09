@@ -1376,7 +1376,7 @@ export interface ISite {
     disableBuiltInSearches: boolean
     sendsEmailVerificationEmails: boolean
     productSubscription: IProductSubscriptionStatus
-    activity: ISiteActivity
+    activity: ISiteUsageStatistics
 }
 
 export interface IAccessTokensOnSiteArguments {
@@ -1458,14 +1458,14 @@ export interface IProductLicenseInfo {
     expiresAt: string
 }
 
-export interface ISiteActivity {
+export interface ISiteUsageStatistics {
     __typename: 'SiteActivity'
-    daus: ISiteActivityPeriod[]
-    waus: ISiteActivityPeriod[]
-    maus: ISiteActivityPeriod[]
+    daus: ISiteUsageStatisticsPeriod[]
+    waus: ISiteUsageStatisticsPeriod[]
+    maus: ISiteUsageStatisticsPeriod[]
 }
 
-export interface ISiteActivityPeriod {
+export interface ISiteUsageStatisticsPeriod {
     __typename: 'SiteActivityPeriod'
     startTime: string
     userCount: number

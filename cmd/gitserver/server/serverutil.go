@@ -64,7 +64,7 @@ func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress 
 		b = &buf
 	}
 
-	err, _ := runCommand(ctx, cmd)
+	_, err := runCommand(ctx, cmd)
 	return b.Bytes(), err
 }
 
@@ -137,7 +137,7 @@ var repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	err, _ := runCommand(ctx, cmd)
+	_, err := runCommand(ctx, cmd)
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {

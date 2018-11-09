@@ -98,7 +98,7 @@ const addGSuiteOIDCAuthProvider: ConfigInsertionFunction = config => {
 const addSAMLAuthProvider: ConfigInsertionFunction = config => {
     const value: SAMLAuthProvider = {
         type: 'saml',
-        identityProviderMetadataURL: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
+        identityProviderMetadataURL: '<see https://docs.sourcegraph.com/admin/auth/#saml>',
     }
     return {
         edits: [...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions)],

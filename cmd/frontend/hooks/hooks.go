@@ -1,3 +1,4 @@
+// Package hooks allow hooking into the frontend.
 package hooks
 
 import "net/http"

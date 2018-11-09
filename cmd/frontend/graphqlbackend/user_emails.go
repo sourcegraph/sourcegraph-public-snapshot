@@ -9,13 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-func (u *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
+func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, u.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
 		return nil, err
 	}
 
-	userEmails, err := db.UserEmails.ListByUser(ctx, u.user.ID)
+	userEmails, err := db.UserEmails.ListByUser(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (u *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 	for i, userEmail := range userEmails {
 		rs[i] = &userEmailResolver{
 			userEmail: *userEmail,
-			user:      u,
+			user:      r,
 		}
 	}
 	return rs, nil

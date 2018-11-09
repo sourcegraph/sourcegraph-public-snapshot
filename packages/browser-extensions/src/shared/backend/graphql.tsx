@@ -7,7 +7,7 @@ import { GQL } from '../../types/gqlschema'
 import { removeAccessToken } from '../auth/access_token'
 import { DEFAULT_SOURCEGRAPH_URL, isPrivateRepository, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { RequestContext } from './context'
-import { AuthRequiredError, createAuthRequiredError, NoSourcegraphURLError } from './errors'
+import { AuthRequiredError, createAuthRequiredError, PrivateRepoPublicSourcegraphComError } from './errors'
 import { getHeaders } from './headers'
 
 /**
@@ -54,12 +54,13 @@ function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
     authError,
     requestMightContainPrivateInfo = true,
 }: GraphQLRequestArgs): Observable<T> {
-    // Check if it's a private repo - if so don't make a request to Sourcegraph.com.
-    if (isPrivateRepository() && url === DEFAULT_SOURCEGRAPH_URL && requestMightContainPrivateInfo) {
-        return throwError(new NoSourcegraphURLError())
-    }
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const queryName = nameMatch ? '?' + nameMatch[1] : ''
+
+    // Check if it's a private repo - if so don't make a request to Sourcegraph.com.
+    if (isPrivateRepository() && url === DEFAULT_SOURCEGRAPH_URL && requestMightContainPrivateInfo) {
+        return throwError(new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '<unnamed>'))
+    }
 
     return getHeaders(url, useAccessToken).pipe(
         switchMap(headers =>

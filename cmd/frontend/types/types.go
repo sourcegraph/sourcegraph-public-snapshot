@@ -94,7 +94,7 @@ type PhabricatorRepo struct {
 	Callsign string
 }
 
-type UserActivity struct {
+type UserUsageStatistics struct {
 	UserID                      int32
 	PageViews                   int32
 	SearchQueries               int32
@@ -103,7 +103,7 @@ type UserActivity struct {
 	LastCodeHostIntegrationTime *time.Time
 }
 
-type SiteActivity struct {
+type SiteUsageStatistics struct {
 	DAUs []*SiteActivityPeriod
 	WAUs []*SiteActivityPeriod
 	MAUs []*SiteActivityPeriod

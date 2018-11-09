@@ -1,3 +1,5 @@
+// Package mailreply implements an IMAP inbox monitor to consume email replies
+// to discussions.
 package mailreply
 
 import (

@@ -1,0 +1,12 @@
+@import '../components/d3/BarChart';
+
+.site-admin-usage-statistics-page {
+    &__date-column {
+        width: 40%;
+    }
+
+    &__tz-note {
+        display: block;
+        text-align: center;
+    }
+}

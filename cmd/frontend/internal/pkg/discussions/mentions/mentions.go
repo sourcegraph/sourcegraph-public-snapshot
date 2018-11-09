@@ -1,3 +1,4 @@
+// Package mentions provides utilities for at mentions in discussions.
 package mentions
 
 import "regexp"

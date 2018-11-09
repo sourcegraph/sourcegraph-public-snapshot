@@ -1,6 +1,7 @@
 import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 import * as webpack from 'webpack'
+import babelConfig from '../../babel.config'
 
 export const buildStylesLoaders = (baseLoader: webpack.Loader): webpack.Loader[] => [
     baseLoader,
@@ -31,6 +32,7 @@ const babelLoader: webpack.RuleSetUseItem = {
     loader: 'babel-loader',
     options: {
         cacheDirectory: true,
+        ...babelConfig,
     },
 }
 
@@ -41,6 +43,7 @@ export const tsRule: webpack.RuleSetRule = {
         {
             loader: 'ts-loader',
             options: {
+                configFile: path.resolve(__dirname, '../tsconfig.webpack.json'),
                 compilerOptions: {
                     target: 'es6',
                     module: 'esnext',
@@ -50,9 +53,11 @@ export const tsRule: webpack.RuleSetRule = {
             },
         },
     ],
+    exclude: [/node_modules/],
 }
 
 export const jsRule: webpack.RuleSetRule = {
     test: /\.jsx?$/,
     loader: babelLoader,
+    exclude: [/node_modules/],
 }

@@ -1,4 +1,4 @@
-import { isBackground } from '../shared/context'
+import { isBackground } from '../context'
 import { getURL } from './extension'
 import safariMessager from './safari/SafariMessager'
 

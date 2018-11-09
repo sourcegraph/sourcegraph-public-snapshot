@@ -11,13 +11,81 @@ export interface PhabricatorMapping {
  * The feature flags available.
  */
 export interface FeatureFlags {
-    newTooltips: boolean
+    /**
+     * Use the simpler options menu.
+     *
+     * @duration temporary - will be on by default after testing.
+     */
+    simpleOptionsMenu: boolean
+    /**
+     * Whether or not to render [Mermaid](https://mermaidjs.github.io/) graphs
+     * in markdown files viewed on GitHub.
+     *
+     * @duration permanent
+     */
+    renderMermaidGraphsEnabled: boolean
+    /**
+     * Open files from the fuzzy file finder omnibar tool (src :f <file_name>)
+     * on Sourcegraph or the codehost.
+     *
+     * @duration permanent
+     */
+    openFileOnSourcegraph: boolean
+    /**
+     * Whether or not to use the new inject method for code intelligence.
+     *
+     * @duration temporary - to be removed November first.
+     */
     newInject: boolean
+    /**
+     * Enable the use of Sourcegraph extensions.
+     *
+     * @duration temporary - to be removed by @chris when extensions are stable and out of
+     * beta.
+     */
+    useExtensions: boolean
+    /**
+     * Enable inline symbol search by typing `!symbolQueryText` inside of GitHub PR comments (requires reload after toggling).
+     *
+     * @duration temporary - needs feedback from users.
+     */
+    inlineSymbolSearchEnabled: boolean
+    /**
+     * Whether or not to execute a search on Sourcegraph when a search is
+     * executed on the code host.
+     *
+     * @duration permanent
+     */
+    executeSearchEnabled: boolean
+    /**
+     * Display the Sourcegraph file tree in the code host when viewing a repository.
+     *
+     * @duration permanent
+     */
+    repositoryFileTreeEnabled: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
-    newTooltips: true,
+    simpleOptionsMenu: false,
     newInject: false,
+    renderMermaidGraphsEnabled: false,
+    useExtensions: false,
+    openFileOnSourcegraph: true,
+    inlineSymbolSearchEnabled: true,
+    executeSearchEnabled: false,
+    repositoryFileTreeEnabled: true,
+}
+
+/** A map determining whether a feature flag is configurable by users or not. */
+export const configurableFeatureFlags: FeatureFlags = {
+    simpleOptionsMenu: true,
+    newInject: false,
+    renderMermaidGraphsEnabled: true,
+    useExtensions: true,
+    openFileOnSourcegraph: true,
+    inlineSymbolSearchEnabled: true,
+    executeSearchEnabled: false,
+    repositoryFileTreeEnabled: true,
 }
 
 export interface AccessToken {
@@ -42,8 +110,6 @@ export interface StorageItems {
 
     gitHubEnterpriseURL: string
     phabricatorURL: string
-    inlineSymbolSearchEnabled: boolean
-    renderMermaidGraphsEnabled: boolean
     identity: string
     serverUrls: string[]
     enterpriseUrls: string[]
@@ -51,15 +117,10 @@ export interface StorageItems {
     hasSeenServerModal: boolean
     repoLocations: RepoLocations
     phabricatorMappings: PhabricatorMapping[]
-    openFileOnSourcegraph: boolean
     sourcegraphAnonymousUid: string
     disableExtension: boolean
     /**
-     * Enable the use of Sourcegraph extensions.
-     */
-    useExtensions: boolean
-    /**
-     * Storage for feature flags
+     * Storage for feature flags.
      */
     featureFlags: FeatureFlags
     clientConfiguration: ClientConfigurationDetails
@@ -83,18 +144,14 @@ export const defaultStorageItems: StorageItems = {
     serverUrls: ['https://sourcegraph.com'],
     gitHubEnterpriseURL: '',
     phabricatorURL: '',
-    inlineSymbolSearchEnabled: true,
-    renderMermaidGraphsEnabled: false,
     identity: '',
     enterpriseUrls: [],
     serverUserId: '',
     hasSeenServerModal: false,
     repoLocations: {},
     phabricatorMappings: [],
-    openFileOnSourcegraph: true,
     sourcegraphAnonymousUid: '',
     disableExtension: false,
-    useExtensions: false,
     featureFlags: featureFlagDefaults,
     clientConfiguration: {
         contentScriptUrls: [],

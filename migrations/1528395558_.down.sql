@@ -1,2 +1,1 @@
-DROP TABLE "site_configuration_files";
-DROP TABLE "core_configuration_files";
+-- Empty migration to workaround https://github.com/sourcegraph/sourcegraph/issues/898#issuecomment-437264707

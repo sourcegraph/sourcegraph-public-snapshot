@@ -2,6 +2,7 @@ import { History, UnregisterCallback } from 'history'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import * as React from 'react'
 import { matchPath } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
@@ -86,16 +87,21 @@ export class IntegrationsToast extends React.Component<Props, State> {
         return (
             <Toast
                 icon={<PuzzleIcon className="icon-inline" />}
-                title="Configure Integrations"
-                subtitle="Get Sourcegraph code search while reading code on GitHub and more."
+                title="Use with your code host"
+                subtitle="Get Sourcegraph code intelligence while viewing code on GitHub, GitLab, Bitbucket Server, Phabricator, and more."
                 cta={
-                    <div>
-                        <a target="_blank" href="https://about.sourcegraph.com/docs/integrations/">
-                            <button type="button" className="btn btn-primary" onClick={this.onClickConfigure}>
-                                Configure
-                            </button>
-                        </a>
-                    </div>
+                    <>
+                        <Link
+                            to="/help/integration/browser_extension"
+                            className="btn btn-primary mr-2"
+                            onClick={this.onClickConfigure}
+                        >
+                            Install
+                        </Link>
+                        <Link to="/help/integration/browser_extension" onClick={this.onClickConfigure}>
+                            Learn more
+                        </Link>
+                    </>
                 }
                 onDismiss={this.onDismiss}
             />

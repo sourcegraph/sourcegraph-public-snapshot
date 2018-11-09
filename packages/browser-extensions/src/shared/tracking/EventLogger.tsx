@@ -1,7 +1,7 @@
 import uuid from 'uuid'
 import storage from '../../browser/storage'
+import { isInPage } from '../../context'
 import { logUserEvent } from '../backend/userEvents'
-import { isInPage } from '../context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 

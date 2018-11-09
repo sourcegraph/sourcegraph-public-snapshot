@@ -3,6 +3,7 @@ import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import { debounceTime } from 'rxjs/operators'
@@ -174,13 +175,9 @@ export class APIConsole extends React.PureComponent<Props, State> {
                 </GraphiQL>
                 <div className="api-console__footer">
                     <span className="api-console__footer-section api-console__footer-section--docs">
-                        <a href="https://about.sourcegraph.com/docs/features/api" target="_blank">
-                            General API documentation
-                        </a>
+                        <Link to="/help/api/graphql">General API documentation</Link>
                         <span className="api-console__footer-section-spacer">·</span>
-                        <a href="https://about.sourcegraph.com/docs/features/api/examples" target="_blank">
-                            example queries
-                        </a>
+                        <Link to="/help/api/graphql/examples">example queries</Link>
                     </span>
                     <span className="api-console__footer-section">
                         Powered by{' '}

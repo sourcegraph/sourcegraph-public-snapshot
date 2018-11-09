@@ -6,11 +6,14 @@ export const setBadgeText = (details: chrome.browserAction.BadgeTextDetails) => 
     }
 }
 
-export const setPopup = (details: chrome.browserAction.PopupDetails) => {
-    if (chrome && chrome.browserAction) {
-        chrome.browserAction.setPopup(details)
-    }
-}
+export const setPopup = (details: chrome.browserAction.PopupDetails): Promise<void> =>
+    new Promise<void>(resolve => {
+        if (chrome && chrome.browserAction) {
+            chrome.browserAction.setPopup(details, resolve)
+            return
+        }
+        resolve()
+    })
 
 export function onClicked(listener: ((tab: chrome.tabs.Tab) => void)): void {
     if (chrome && chrome.browserAction && chrome.browserAction.onClicked) {

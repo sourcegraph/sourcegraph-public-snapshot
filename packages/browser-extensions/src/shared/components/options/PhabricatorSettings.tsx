@@ -8,7 +8,7 @@ export class PhabricatorSettings extends React.Component<{}, {}> {
                 <div className="options__section-subheader">
                     Phabricator mappings{' '}
                     <a
-                        href="https://about.sourcegraph.com/docs/server/config/phabricator/#docs-content"
+                        href="https://docs.sourcegraph.com/integration/phabricator"
                         target="_blank"
                         // tslint:disable-next-line
                         onClick={e => e.stopPropagation()}

@@ -1,3 +1,5 @@
+// Package jscontext contains functionality for information we pass down into
+// the JS webapp.
 package jscontext
 
 import (

@@ -1,15 +1,10 @@
 import { EMPTY, Observable } from 'rxjs'
 import { shareReplay } from 'rxjs/operators'
 import SafariStorageArea, { SafariSettingsChangeMessage, stringifyStorageArea } from './safari/StorageArea'
+import { MigratableStorageArea, noopMigration, provideMigrations } from './storage_migrations'
 import { StorageChange, StorageItems } from './types'
 
 export { StorageItems, defaultStorageItems } from './types'
-
-type MigrateFunc = (
-    items: StorageItems,
-    set: (items: Partial<StorageItems>) => void,
-    remove: (key: keyof StorageItems) => void
-) => void
 
 export interface Storage {
     getManaged: (callback: (items: StorageItems) => void) => void
@@ -22,8 +17,8 @@ export interface Storage {
     getLocalItem: (key: keyof StorageItems, callback: (items: StorageItems) => void) => void
     setLocal: (items: Partial<StorageItems>, callback?: (() => void) | undefined) => void
     observeLocal: <T extends keyof StorageItems>(key: T) => Observable<StorageItems[T]>
-    addSyncMigration: (migrate: MigrateFunc) => void
-    addLocalMigration: (migrate: MigrateFunc) => void
+    setSyncMigration: MigratableStorageArea['setMigration']
+    setLocalMigration: MigratableStorageArea['setMigration']
     onChanged: (listener: (changes: Partial<StorageChange>, areaName: string) => void) => void
 }
 
@@ -88,37 +83,29 @@ const throwNoopErr = () => {
     throw new Error('do not call browser extension apis from an in page script')
 }
 
-const addMigration = (
-    get: Storage['getSync'],
-    set: Storage['setSync'],
-    remove: (keys: string | string[], callback?: (() => void) | undefined) => void
-) => (migrate: MigrateFunc) => {
-    get(items => {
-        migrate(items as StorageItems, set, remove)
-    })
-}
-
 export default ((): Storage => {
     if (window.SG_ENV === 'EXTENSION') {
         const chrome = global.chrome
         const safari = window.safari
 
-        const syncStorageArea: chrome.storage.StorageArea =
+        const syncStorageArea = provideMigrations(
             typeof chrome !== 'undefined'
                 ? chrome.storage.sync
                 : new SafariStorageArea((safari.extension as SafariExtension).settings, 'sync')
+        )
+
+        const localStorageArea = provideMigrations(
+            typeof chrome !== 'undefined'
+                ? chrome.storage.local
+                : new SafariStorageArea(stringifyStorageArea(window.localStorage), 'local')
+        )
 
         const managedStorageArea: chrome.storage.StorageArea =
             typeof chrome !== 'undefined'
                 ? chrome.storage.managed
                 : new SafariStorageArea((safari.extension as SafariExtension).settings, 'managed')
 
-        const localStorageArea: chrome.storage.StorageArea =
-            typeof chrome !== 'undefined'
-                ? chrome.storage.local
-                : new SafariStorageArea(stringifyStorageArea(window.localStorage), 'local')
-
-        return {
+        const storage: Storage = {
             getManaged: get(managedStorageArea),
             getManagedItem: getItem(managedStorageArea),
 
@@ -132,15 +119,19 @@ export default ((): Storage => {
             setLocal: set(localStorageArea),
             observeLocal: observe(localStorageArea),
 
-            addSyncMigration: addMigration(get(syncStorageArea), set(syncStorageArea), (keys, callback) =>
-                syncStorageArea.remove(keys, callback)
-            ),
-            addLocalMigration: addMigration(get(localStorageArea), set(localStorageArea), (keys, callback) =>
-                localStorageArea.remove(keys, callback)
-            ),
+            setSyncMigration: syncStorageArea.setMigration,
+            setLocalMigration: localStorageArea.setMigration,
 
             onChanged,
         }
+
+        // Only background script should set migrations.
+        if (window.EXTENSION_ENV !== 'BACKGROUND') {
+            storage.setSyncMigration(noopMigration)
+            storage.setLocalMigration(noopMigration)
+        }
+
+        return storage
     }
 
     // Running natively in the webpage(in Phabricator patch) so we don't need any storage.
@@ -156,7 +147,7 @@ export default ((): Storage => {
         getLocalItem: throwNoopErr,
         setLocal: throwNoopErr,
         observeLocal: noopObserve,
-        addSyncMigration: throwNoopErr,
-        addLocalMigration: throwNoopErr,
+        setSyncMigration: throwNoopErr,
+        setLocalMigration: throwNoopErr,
     }
 })()

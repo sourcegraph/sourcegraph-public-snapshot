@@ -191,7 +191,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// fails in order to avoid e.g. failed saved queries from executing
 	// constantly and potentially causing harm to the system. We'll retry at
 	// our normal interval, regardless of errors.
-	v, searchErr, execDuration := performSearch(ctx, newQuery)
+	v, execDuration, searchErr := performSearch(ctx, newQuery)
 	if err := api.InternalClient.SavedQueriesSetInfo(ctx, &api.SavedQueryInfo{
 		Query:        query.Query,
 		LastExecuted: time.Now(),
@@ -216,7 +216,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	return nil
 }
 
-func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, err error, execDuration time.Duration) {
+func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, execDuration time.Duration, err error) {
 	attempts := 0
 	for {
 		// Query for search results.
@@ -224,20 +224,20 @@ func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, err
 		v, err := search(ctx, query)
 		execDuration := time.Since(start)
 		if err != nil {
-			return nil, errors.Wrap(err, "search"), execDuration
+			return nil, execDuration, errors.Wrap(err, "search")
 		}
 		if len(v.Data.Search.Results.Results) > 0 {
-			return v, nil, execDuration // We have at least some search results, so we're done.
+			return v, execDuration, nil // We have at least some search results, so we're done.
 		}
 
 		cloning := len(v.Data.Search.Results.Cloning)
 		timedout := len(v.Data.Search.Results.Timedout)
 		if cloning == 0 && timedout == 0 {
-			return v, nil, execDuration // zero results, but no cloning or timed out repos. No point in retrying.
+			return v, execDuration, nil // zero results, but no cloning or timed out repos. No point in retrying.
 		}
 
 		if attempts > 5 {
-			return nil, fmt.Errorf("found 0 results due to %d cloning %d timedout repos", cloning, timedout), execDuration
+			return nil, execDuration, fmt.Errorf("found 0 results due to %d cloning %d timedout repos", cloning, timedout)
 		}
 
 		// We didn't find any search results. Some repos are cloning or timed

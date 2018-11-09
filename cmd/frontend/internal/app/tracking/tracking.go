@@ -1,3 +1,4 @@
+// Package tracking contains code for tracking users on Sourcegraph.com
 package tracking
 
 import (

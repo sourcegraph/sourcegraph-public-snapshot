@@ -116,16 +116,16 @@ func TestRequest(t *testing.T) {
 		testRepoExists = nil
 	}()
 
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (error, int) {
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "testcommand":
 			cmd.Stdout.Write([]byte("teststdout"))
 			cmd.Stderr.Write([]byte("teststderr"))
-			return nil, 42
+			return 42, nil
 		case "testerror":
-			return errors.New("testerror"), 0
+			return 0, errors.New("testerror")
 		}
-		return nil, 0
+		return 0, nil
 	}
 	defer func() { runCommandMock = nil }()
 

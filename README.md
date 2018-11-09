@@ -11,14 +11,14 @@
 
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming
 - Code intelligence for many languages via the [Language Server Protocol](https://langserver.org/)
-- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://about.sourcegraph.com/docs/features/browser-extension/)
+- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension)
 - Integration with third-party developer tools via the [Sourcegraph extension API](https://docs.sourcegraph.com/extensions)
 
 ## Try it yourself
 
 - Try out the public instance on any open-source repository at [sourcegraph.com](https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/httptest/httptest.go#L41:6&tab=references).
 - Install the free and open-source [browser extension](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en).
-- Spin up your own instance with the [quickstart installation guide](https://about.sourcegraph.com/docs).
+- Spin up your own instance with the [quickstart installation guide](https://docs.sourcegraph.com/#quickstart).
 - File feature requests and bug reports in [our issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 - Visit [about.sourcegraph.com](https://about.sourcegraph.com) for more information about product features.
 

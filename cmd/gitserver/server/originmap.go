@@ -1,10 +1,3 @@
-// Package originmap maps Sourcegraph repository names to repository
-// origins (i.e., clone URLs). It accepts external customization via
-// the ORIGIN_MAP environment variable.
-//
-// It always includes the mapping
-// "github.com/!https://github.com/%.git" (github.com ->
-// https://github.com/%.git)
 package server
 
 import (
@@ -141,7 +134,15 @@ func (o *originMapsT) addGitHubDefaults() {
 	o.originMap = append(o.originMap, prefixAndOrgin{Prefix: "bitbucket.org/", Origin: "git@bitbucket.org:%.git"})
 }
 
-// OriginMap maps the repo name to the repository origin (clone URL). Returns empty string if no mapping was found.
+// OriginMap maps the repo name to the repository origin (clone URL). Returns
+// empty string if no mapping was found.
+//
+// originmap maps Sourcegraph repository names to repository origins (i.e.,
+// clone URLs). It accepts external customization via the ORIGIN_MAP
+// environment variable.
+//
+// It always includes the mapping "github.com/!https://github.com/%.git"
+// (github.com -> https://github.com/%.git)
 func OriginMap(repoName api.RepoName) string {
 	if origin, ok := originMaps.getReposListOriginMap()[string(repoName)]; ok {
 		return origin

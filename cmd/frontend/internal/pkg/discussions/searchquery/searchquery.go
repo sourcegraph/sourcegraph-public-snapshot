@@ -1,3 +1,4 @@
+// Package searchquery implements a parser for discussion search queries.
 package searchquery
 
 import (

@@ -37,11 +37,11 @@ func NewHandler() http.Handler {
 
 	// Redirects
 	r.Get(router.OldToolsRedirect).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/beta", 301)
+		http.Redirect(w, r, "/beta", http.StatusMovedPermanently)
 	})))
 
 	r.Get(router.GopherconLiveBlog).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://about.sourcegraph.com/go", 302)
+		http.Redirect(w, r, "https://about.sourcegraph.com/go", http.StatusFound)
 	})))
 
 	if envvar.SourcegraphDotComMode() {

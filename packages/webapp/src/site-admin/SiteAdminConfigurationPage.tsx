@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
@@ -249,7 +250,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 <h2>Site configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
-                    <a href="https://docs.sourcegraph.com/admin/site_config">documentation</a> for more information.
+                    <Link to="/help/admin/site_config">documentation</Link> for more information.
                 </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
@@ -276,7 +277,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 <small>
                                     Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
                                     more information, see the{' '}
-                                    <a href="https://docs.sourcegraph.com/admin/site_config/all">documentation</a>.
+                                    <Link to="/help/admin/site_config/all">documentation</Link>.
                                 </small>
                             </p>
                         </div>

@@ -285,7 +285,7 @@ Default: `"auto"`
 
 The contents of the PEM-encoded TLS certificate for the web server (for the web app and API).
 
-See [https://about.sourcegraph.com/docs/config/tlsssl/](../tls_ssl.md) for more information.
+See [https://docs.sourcegraph.com/admin/tls_ssl](../tls_ssl.md) for more information.
 
 Additional restrictions:
 
@@ -297,7 +297,7 @@ Additional restrictions:
 
 The contents of the PEM-encoded TLS key for the web server (for the web app and API).
 
-See [https://about.sourcegraph.com/docs/config/tlsssl/](../tls_ssl.md) for more information.
+See [https://docs.sourcegraph.com/admin/tls_ssl](../tls_ssl.md) for more information.
 
 Additional restrictions:
 
@@ -848,7 +848,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Gi
 
 If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 
-If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication)..
 
 This property must be one of the following enum values:
 
@@ -951,7 +951,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Gi
 
 If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).
 
-If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 
@@ -1042,7 +1042,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Bi
 
 If "http", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).
 
-If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 
@@ -1073,7 +1073,7 @@ Default: `"{host}/{projectKey}/{repositorySlug}"`
 
 ### excludePersonalRepositories (boolean)
 
-Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See [https://about.sourcegraph.com/docs/config/repositories/#excluding-personal-repositories](../../integration/bitbucket_server.md#excluding-personal-repositories) for more information. Default: false.
+Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See "[Excluding personal repositories](../../integration/bitbucket_server.md#excluding-personal-repositories)" for more information.
 
 ### initialRepositoryEnablement (boolean)
 

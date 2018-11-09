@@ -1,3 +1,4 @@
+// Package httpapi exports a client for xlang.
 package httpapi
 
 import (
