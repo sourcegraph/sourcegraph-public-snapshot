@@ -62,6 +62,10 @@
         font-size: 12px;
         flex: 0 0 auto;
         padding-right: 0.125rem;
+		// Set height to the same as the line.
+		// TODO: Someone should fix this for real.
+		// stylelint-disable-next-line declaration-property-unit-whitelist
+		height: 29px;
     }
 
     &__spacer {
