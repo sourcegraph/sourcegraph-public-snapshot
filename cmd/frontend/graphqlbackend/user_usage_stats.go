@@ -53,7 +53,7 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 	return nil
 }
 
-func (s *schemaResolver) LogUserEvent(ctx context.Context, args *struct {
+func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 }) (*EmptyResponse, error) {

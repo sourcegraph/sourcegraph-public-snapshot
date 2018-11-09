@@ -1,3 +1,4 @@
+// Package db implements the DB interfaces for enterprise specific features.
 package db
 
 import (

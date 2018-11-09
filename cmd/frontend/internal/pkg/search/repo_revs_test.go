@@ -4,7 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 func TestParseRepositoryRevisions(t *testing.T) {
@@ -43,5 +45,59 @@ func TestParseRepositoryRevisions(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", revs, want.revs)
 			}
 		})
+	}
+}
+
+func TestRepoQuery(t *testing.T) {
+	cases := map[string]string{
+		"r:":         `""`,
+		"r:b":        `"b"`,
+		"r:b r:a":    `("b" AND "a")`,
+		"r:b -r:baz": `("b" AND NOT("baz"))`,
+		"-r:f":       `NOT("f")`,
+
+		"foo -(r:foo r:baz)":                  `NOT(("foo" AND "baz"))`,
+		"foo r:ba -(r:foo or r:baz)":          `("ba" AND NOT(("foo" OR "baz")))`,
+		"foo r:ba -(r:foo or r:baz or hello)": `("ba" AND NOT(("foo" OR "baz")))`,
+		"foo r:ba -(r:foo or hello)":          `("ba" AND NOT("foo"))`,
+
+		// because of the hello, we could match baz. So we actually want to
+		// look at all repos.
+		"foo -(r:baz hello)": `TRUE`,
+
+		// The world makes the subquery irrelevant
+		"foo r:ba -((r:foo or hello) world)": `"ba"`,
+		"foo r:ba -((r:foo or hello) r:foo)": `("ba" AND NOT(("foo" AND "foo")))`,
+
+		"foo -(-(r:bar hello))": `"bar"`,
+		"foo -(-(hello))":       `TRUE`,
+		"foo -(r:bar hello)":    `TRUE`,
+		"foo -(hello)":          `TRUE`,
+
+		"foo r:b -(-(r:bar hello))": `("b" AND "bar")`,
+		"foo r:b -(r:bar hello)":    `"b"`,
+		"foo r:b -(-(hello))":       `"b"`,
+		"foo r:b -(hello)":          `"b"`,
+		"foo r:b":                   `"b"`,
+
+		"r:foo test":                 `"foo"`,
+		"r:foo test -hello":          `"foo"`,
+		"(r:ba test (r:b r:a -r:z))": `("ba" AND "b" AND "a" AND NOT("z"))`,
+
+		"bar -(r:foo test)": `TRUE`,
+	}
+	for qStr, want := range cases {
+		q, err := query.Parse(qStr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rq, err := RepoQuery(q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := dbquery.Print(rq)
+		if got != want {
+			t.Errorf("RepoQuery(%q):\ngot  %s\nwant %s", qStr, got, want)
+		}
 	}
 }

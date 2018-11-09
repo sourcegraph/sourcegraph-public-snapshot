@@ -85,8 +85,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 }
 
-func (c *commitSearchResultResolver) String() string {
-	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", c.commit, c.diffPreview, c.messagePreview)
+func (r *commitSearchResultResolver) String() string {
+	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.commit, r.diffPreview, r.messagePreview)
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {

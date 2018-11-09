@@ -31,7 +31,9 @@ export class OptionsPageSidebar extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            storage.observeSync('useExtensions').subscribe(useExtensions => this.setState(() => ({ useExtensions })))
+            storage
+                .observeSync('featureFlags')
+                .subscribe(({ useExtensions }) => this.setState(() => ({ useExtensions })))
         )
     }
 

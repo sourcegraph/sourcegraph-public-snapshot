@@ -1,3 +1,4 @@
+// Package repoupdater implements the repo-updater service HTTP handler.
 package repoupdater
 
 import (

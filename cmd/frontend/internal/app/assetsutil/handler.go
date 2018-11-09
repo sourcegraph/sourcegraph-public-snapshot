@@ -1,3 +1,4 @@
+// Package assetsutil is a utils package for static files.
 package assetsutil
 
 import (

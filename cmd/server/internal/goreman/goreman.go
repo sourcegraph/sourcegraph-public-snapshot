@@ -1,3 +1,4 @@
+// Package goreman implements a process supervisor for a Procfile.
 package goreman
 
 import (

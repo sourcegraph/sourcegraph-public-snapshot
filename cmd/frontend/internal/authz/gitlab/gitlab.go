@@ -1,3 +1,4 @@
+// Package gitlab contains an authorization provider for GitLab.
 package gitlab
 
 import (

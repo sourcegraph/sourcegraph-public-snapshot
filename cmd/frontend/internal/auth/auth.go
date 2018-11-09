@@ -1,3 +1,4 @@
+// Package auth contains auth related code for the frontend.
 package auth
 
 import (

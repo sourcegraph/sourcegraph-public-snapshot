@@ -1,3 +1,5 @@
+// Package globals exports symbols from frontend/globals. See the parent
+// package godoc for more information.
 package globals
 
 import (

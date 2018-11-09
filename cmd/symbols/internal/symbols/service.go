@@ -1,3 +1,4 @@
+// Package symbols implements the symbol search service.
 package symbols
 
 import (

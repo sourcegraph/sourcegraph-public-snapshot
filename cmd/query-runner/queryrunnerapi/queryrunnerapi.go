@@ -1,3 +1,4 @@
+// Package queryrunnerapi implements a client for the query-runner service.
 package queryrunnerapi
 
 import (

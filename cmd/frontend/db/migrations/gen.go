@@ -1,3 +1,4 @@
+// Package migrations contains the migration scripts for the DB.
 package migrations
 
 //go:generate env GOBIN=$PWD/.bin GO111MODULE=on go install github.com/kevinburke/go-bindata/go-bindata

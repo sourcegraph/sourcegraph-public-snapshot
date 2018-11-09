@@ -20,8 +20,8 @@ import (
 // SEE ALSO FOR MANUAL TESTING: See the Middleware docstring for information about the testproxy
 // helper program, which helps with manual testing of the HTTP auth proxy behavior.
 func TestMiddleware(t *testing.T) {
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, nil
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 

@@ -1,3 +1,5 @@
+// Package auth exports symbols from frontend/internal/auth. See the parent
+// package godoc for more information.
 package auth
 
 import (

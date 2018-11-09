@@ -1,29 +1,37 @@
 import * as React from 'react'
 import { Card, CardBody, CardHeader, Col, Form, FormGroup, Input, Label, Row } from 'reactstrap'
-import storage from '../../../browser/storage'
 import { StorageItems } from '../../../browser/types'
 import { sourcegraphUrl } from '../../util/context'
+import { featureFlags } from '../../util/featureFlags'
 
 interface Props {
     storage: StorageItems
 }
 
 export class FeatureFlagCard extends React.Component<Props, {}> {
-    private onMermaidToggled = () => {
-        const renderMermaidGraphsEnabled = !this.props.storage.renderMermaidGraphsEnabled
-        storage.setSync({ renderMermaidGraphsEnabled })
+    private onMermaidToggled = async () => {
+        await featureFlags.toggle('renderMermaidGraphsEnabled')
     }
 
-    private onInlineSymbolSearchToggled = () => {
-        storage.setSync({ inlineSymbolSearchEnabled: !this.props.storage.inlineSymbolSearchEnabled })
+    private onInlineSymbolSearchToggled = async () => {
+        await featureFlags.toggle('inlineSymbolSearchEnabled')
     }
 
-    private onUseExtensionsToggled = () => {
-        storage.setSync({ useExtensions: !this.props.storage.useExtensions })
+    private onUseExtensionsToggled = async () => {
+        await featureFlags.toggle('useExtensions')
+    }
+
+    private onSimpleOptionsMenu = async () => {
+        await featureFlags.toggle('simpleOptionsMenu')
     }
 
     public render(): JSX.Element | null {
-        const { inlineSymbolSearchEnabled, renderMermaidGraphsEnabled, useExtensions } = this.props.storage
+        const {
+            simpleOptionsMenu,
+            inlineSymbolSearchEnabled,
+            renderMermaidGraphsEnabled,
+            useExtensions,
+        } = this.props.storage.featureFlags
         return (
             <Row className="pb-3">
                 <Col>
@@ -82,6 +90,16 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
                                         />{' '}
                                         Enable inline symbol search by typing <code>!symbolQueryText</code> inside of
                                         GitHub PR comments (requires reload after toggling)
+                                    </Label>
+                                </FormGroup>
+                                <FormGroup check={true}>
+                                    <Label check={true}>
+                                        <Input
+                                            onClick={this.onSimpleOptionsMenu}
+                                            defaultChecked={simpleOptionsMenu}
+                                            type="checkbox"
+                                        />{' '}
+                                        Enable the simpler options menu.
                                     </Label>
                                 </FormGroup>
                             </Form>
