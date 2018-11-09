@@ -50,7 +50,7 @@ export class NavLinks extends React.PureComponent<Props> {
                             onClick={this.onClickInstall}
                             title="Install self-hosted Sourcegraph to search your own (private) code"
                         >
-                            About Sourcegraph
+                            Install Sourcegraph
                         </a>
                     </li>
                 )}
