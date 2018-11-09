@@ -205,6 +205,9 @@ storage.setSyncMigration(items => {
         }
     }
 
+    featureFlags.simpleOptionsMenu = true
+    newItems.featureFlags = featureFlags
+
     return { newItems, keysToRemove }
 })
 
