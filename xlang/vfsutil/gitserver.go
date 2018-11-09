@@ -74,7 +74,7 @@ func (opts *ArchiveOpts) cacheKey() string {
 	return fmt.Sprintf("%s@%s/-/%s.%s", opts.Repo, opts.Commit, opts.RelativePath, opts.Format)
 }
 
-// GitServerFetchArchive fetches an archive of a repositories contents from gitserver.
+// GitServerFetchArchive fetches an archive of a repository's contents from gitserver.
 func GitServerFetchArchive(ctx context.Context, opts ArchiveOpts) (archive *os.File, cacheEvicter Evicter, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Archive Fetch")
 	ext.Component.Set(span, "gitserver")
