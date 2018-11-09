@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -217,6 +218,34 @@ func (s *updateScheduler) UpdateOnce(name api.RepoName, url string) {
 		url:  url,
 	}
 	s.updateQueue.enqueue(repo, priorityHigh)
+}
+
+// ScheduleInfo returns the current schedule info for a repo.
+func (s *updateScheduler) ScheduleInfo(name api.RepoName) *protocol.RepoUpdateSchedulerInfoResult {
+	var result protocol.RepoUpdateSchedulerInfoResult
+
+	s.schedule.mu.Lock()
+	if update := s.schedule.index[name]; update != nil {
+		result.Schedule = &protocol.RepoScheduleState{
+			Index:           update.index,
+			Total:           len(s.schedule.index),
+			IntervalSeconds: int(update.interval / time.Second),
+			Due:             update.due,
+		}
+	}
+	s.schedule.mu.Unlock()
+
+	s.updateQueue.mu.Lock()
+	if update := s.updateQueue.index[name]; update != nil {
+		result.Queue = &protocol.RepoQueueState{
+			Index:    update.index,
+			Total:    len(s.updateQueue.index),
+			Updating: update.updating,
+		}
+	}
+	s.updateQueue.mu.Unlock()
+
+	return &result
 }
 
 // updateQueue is a priority queue of repos to update.
