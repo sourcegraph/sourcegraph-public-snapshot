@@ -27,10 +27,6 @@ const SiteSchemaJSON = `{
         "The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.",
       "type": "string"
     },
-    "appURL": {
-      "description": "Publicly accessible URL to web app (e.g., what you type into your browser).",
-      "type": "string"
-    },
     "dontIncludeSymbolResultsByDefault": {
       "description": "Set to ` + "`" + `true` + "`" + ` to not include symbol results if no ` + "`" + `type:` + "`" + ` filter was given",
       "type": "boolean"
@@ -285,12 +281,6 @@ const SiteSchemaJSON = `{
           "default": "all-users-create"
         }
       }
-    },
-    "auth.public": {
-      "description":
-        "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires usage of the builtin authentication provider.",
-      "type": "boolean",
-      "default": false
     },
     "auth.sessionExpiry": {
       "type": "string",

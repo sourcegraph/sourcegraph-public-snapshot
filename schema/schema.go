@@ -346,10 +346,8 @@ type Settings struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
-	AppURL                            string                       `json:"appURL,omitempty"`
 	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
-	AuthPublic                        bool                         `json:"auth.public,omitempty"`
 	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
 	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
 	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
