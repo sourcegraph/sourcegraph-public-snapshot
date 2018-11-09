@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestComputed(t *testing.T) {
@@ -28,13 +30,13 @@ func TestComputed(t *testing.T) {
 		want: true,
 	}, {
 		name: "SearchIndex enabled",
-		sc:   &UnifiedConfiguration{SearchIndexEnabled: boolPtr(true)},
+		sc:   &UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(true)}},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
 		fun:  SearchIndexEnabled,
 		want: true,
 	}, {
 		name: "SearchIndex disabled",
-		sc:   &UnifiedConfiguration{SearchIndexEnabled: boolPtr(false)},
+		sc:   &UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(false)}},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
 		fun:  SearchIndexEnabled,
 		want: false,

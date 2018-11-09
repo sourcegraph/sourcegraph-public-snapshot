@@ -16,48 +16,65 @@ func TestDiff(t *testing.T) {
 	}{
 		{
 			name:   "diff",
-			before: &UnifiedConfiguration{AppURL: "a"},
-			after:  &UnifiedConfiguration{AppURL: "b"},
-			want:   []string{"appURL"},
+			before: &UnifiedConfiguration{Core: schema.CoreSiteConfiguration{AppURL: "a"}},
+			after:  &UnifiedConfiguration{Core: schema.CoreSiteConfiguration{AppURL: "b"}},
+			want:   []string{"core::appURL"},
 		},
 		{
 			name:   "nodiff",
-			before: &UnifiedConfiguration{AppURL: "a"},
-			after:  &UnifiedConfiguration{AppURL: "a"},
+			before: &UnifiedConfiguration{Core: schema.CoreSiteConfiguration{AppURL: "a"}},
+			after:  &UnifiedConfiguration{Core: schema.CoreSiteConfiguration{AppURL: "a"}},
 			want:   nil,
 		},
 		{
-			name:   "slice_diff",
-			before: &UnifiedConfiguration{AppURL: "a", ReposList: []*schema.Repository{{Path: "a"}}},
-			after:  &UnifiedConfiguration{AppURL: "a", ReposList: []*schema.Repository{{Path: "b"}}},
-			want:   []string{"repos.list"},
+			name: "slice_diff",
+			before: &UnifiedConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "a"}}},
+				Core:              schema.CoreSiteConfiguration{AppURL: "a"},
+			},
+			after: &UnifiedConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "b"}}},
+				Core:              schema.CoreSiteConfiguration{AppURL: "a"},
+			},
+			want: []string{"repos.list"},
 		},
 		{
-			name:   "slice_nodiff",
-			before: &UnifiedConfiguration{AppURL: "a", ReposList: []*schema.Repository{{Path: "a"}}},
-			after:  &UnifiedConfiguration{AppURL: "a", ReposList: []*schema.Repository{{Path: "a"}}},
-			want:   nil,
+			name: "slice_nodiff",
+			before: &UnifiedConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "a"}}},
+				Core:              schema.CoreSiteConfiguration{AppURL: "a"},
+			},
+			after: &UnifiedConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "a"}}},
+				Core:              schema.CoreSiteConfiguration{AppURL: "a"},
+			},
 		},
 		{
-			name:   "multi_diff",
-			before: &UnifiedConfiguration{AppURL: "a", ReposList: []*schema.Repository{{Path: "b"}}},
-			after:  &UnifiedConfiguration{AppURL: "b", ReposList: []*schema.Repository{{Path: "a"}}},
-			want:   []string{"appURL", "repos.list"},
+			name: "multi_diff",
+			before: &UnifiedConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "b"}}},
+				Core:              schema.CoreSiteConfiguration{AppURL: "a"},
+			},
+			after: &UnifiedConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "a"}}},
+				Core:              schema.CoreSiteConfiguration{AppURL: "b"},
+			},
+			want: []string{"core::appURL", "repos.list"},
 		},
 		{
 			name: "experimental_features",
-			before: &UnifiedConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			before: &UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
 				Discussions: "enabled",
-			}},
-			after: &UnifiedConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			}}},
+			after: &UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
 				Discussions: "disabled",
-			}},
+			}}},
 			want: []string{"experimentalFeatures::discussions"},
 		},
 		{
 			name:   "experimental_features_noop",
-			before: &UnifiedConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{}},
-			after:  &UnifiedConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{}},
+			before: &UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{}}},
+			after:  &UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{}}},
 			want:   nil,
 		},
 	}

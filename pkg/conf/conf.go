@@ -16,7 +16,7 @@ import (
 type DeploymentConfiguration struct {
 	// GitServers is the addresses of gitserver instances that should be talked
 	// to.
-	GitServers []string
+	GitServers []string `json:"gitServers"`
 }
 
 // UnifiedConfiguration represents the overall Sourcegraph configuration from

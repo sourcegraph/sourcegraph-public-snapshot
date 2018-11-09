@@ -26,7 +26,7 @@ func AuthProviderType(p schema.AuthProviders) string {
 func AuthPublic() bool { return authPublic(Get()) }
 func authPublic(c *UnifiedConfiguration) bool {
 	for _, p := range c.Core.AuthProviders {
-		if p.Builtin != nil && c.AuthPublic {
+		if p.Builtin != nil && c.Core.AuthPublic {
 			return true
 		}
 	}
