@@ -21,7 +21,7 @@ func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	}
 
 	if origRepo != repo.Name {
-		return nil, &URLMovedError{repo.Name}
+		return nil, &URLMovedError{NewURL: "/" + repo.Name}
 	}
 
 	return repo, nil
