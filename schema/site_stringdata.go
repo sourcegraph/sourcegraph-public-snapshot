@@ -90,6 +90,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "updateScheduler2": {
+          "description": "Enables a new update scheduler algorithm",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       }
     },

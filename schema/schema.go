@@ -138,6 +138,7 @@ type ExperimentalFeatures struct {
 	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
 	Discussions          string `json:"discussions,omitempty"`
 	JumpToDefOSSIndex    string `json:"jumpToDefOSSIndex,omitempty"`
+	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
 }
 
 // ExtensionRepository description: The location of the version control repository for this extension.

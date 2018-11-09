@@ -53,6 +53,12 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		} else {
 			resp.CloneTime = &cloneTime
 		}
+
+		if lastChanged, err := repoLastChanged(dir); err != nil {
+			log15.Warn("error getting last changed", "repo", req.Repo, "err", err)
+		} else {
+			resp.LastChanged = &lastChanged
+		}
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
