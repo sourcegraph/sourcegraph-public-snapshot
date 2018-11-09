@@ -271,7 +271,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
                 this.registries.textDocumentReferences
             )
         )
-        subscription.add(new Search(client, this.registries.queryTransformer))
+        subscription.add(new Search(client, this.registries.queryTransformer, this.registries.issuesResultsProvider))
         subscription.add(new ClientCommands(client, this.registries.commands))
     }
 
