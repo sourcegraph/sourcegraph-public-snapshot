@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"log"
 	"net"
 	"net/http"
@@ -35,6 +36,11 @@ func main() {
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if conf.UpdateScheduler2Enabled() {
+				http.Error(w, "The new update scheduler exposes information in the mirroring tab of the repository settings page.", http.StatusBadRequest)
+				return
+			}
+
 			d, err := json.MarshalIndent(repos.QueueSnapshot(), "", "  ")
 			if err != nil {
 				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
