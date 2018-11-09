@@ -167,3 +167,42 @@ func TestCreateRepositoryLargeRequest(t *testing.T) {
 		t.Errorf("Expected error code 400 for overlong request, got %v", result.StatusCode)
 	}
 }
+
+func TestRepositoryRequest(t *testing.T) {
+	// Real repositories are hard to unit test because our server gives access
+	// to the bare repositories, so realistically we'd need to clone from them.
+	// Instead, create a fake repository entry where we know the contents.
+	resetRepositoriesForTest()
+	repository := &repository{
+		key:            "abcdef",
+		repositoryName: "testName",
+		savedToDisk:    true}
+	dirPath := filepath.Join(repository.filePathRoot(), ".git", "testdir")
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		t.Errorf("Couldn't create test repository directory '%s'", dirPath)
+		return
+	}
+	filePath := filepath.Join(dirPath, "testfile")
+	err = ioutil.WriteFile(filePath, []byte("test\ncontents\n"), 0644)
+	if err != nil {
+		t.Errorf("Couldn't create test repository file '%s'", filePath)
+		return
+	}
+	repositories[repository.key] = repository
+
+	// Now we can try fetching "testfile" through the repository handler.
+	request := httptest.NewRequest("GET", "/repository/abcdef/testName/testdir/testfile", nil)
+	responseWriter := httptest.NewRecorder()
+	repositoryHandler(responseWriter, request)
+
+	result := responseWriter.Result()
+	if result.StatusCode != http.StatusOK {
+		t.Errorf("Repository file request returned error code %v", result.StatusCode)
+		return
+	}
+	body, _ := ioutil.ReadAll(result.Body)
+	if string(body) != "test\ncontents\n" {
+		t.Errorf("Wrong file contents: want:\n{test\ncontents\n}\ngot:\n{%s}", string(body))
+	}
+}

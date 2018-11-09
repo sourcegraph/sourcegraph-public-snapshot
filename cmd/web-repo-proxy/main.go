@@ -108,6 +108,8 @@ var (
 	repositoriesMutex       = &sync.Mutex{}
 )
 
+// Delete a repository on disk and remove it from the global lookup.
+// Doesn't affect repositoryDeletionuQueue.
 func deleteRepository(r *repository) {
 	repositoriesMutex.Lock()
 	delete(repositories, r.key)
@@ -115,6 +117,8 @@ func deleteRepository(r *repository) {
 	os.RemoveAll(r.filePathRoot())
 }
 
+// Check whether any repositories at the start of repositoryDeletionQueue
+// have expired, and delete them if so.
 func deleteExpiredRepositories() {
 	curTime := time.Now().Unix()
 	for r := repositoryDeletionQueue.Front(); r != nil; r = repositoryDeletionQueue.Front() {
@@ -133,9 +137,9 @@ func deleteExpiredRepositories() {
 	}
 }
 
+// Watches the repository deletion queue and removes repositories once
+// their goodUntil field is past.
 func repositoryDeleter() {
-	// Watches the repository deletion queue and removes repositories once
-	// their goodUntil field is past.
 	for {
 		deleteExpiredRepositories()
 		time.Sleep(time.Second)
