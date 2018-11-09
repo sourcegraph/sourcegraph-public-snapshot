@@ -4,7 +4,7 @@ import '../../config/polyfill'
 
 import * as React from 'react'
 import { render } from 'react-dom'
-import { Subscription } from 'rxjs'
+import { noop, Subscription } from 'rxjs'
 import storage from '../../browser/storage'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
@@ -24,7 +24,10 @@ const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
 
 const toggleFeatureFlag = (key: string) => {
     if (keyIsFeatureFlag(key)) {
-        featureFlags.toggle(key)
+        featureFlags
+            .toggle(key)
+            .then(noop)
+            .catch(noop)
     }
 }
 
