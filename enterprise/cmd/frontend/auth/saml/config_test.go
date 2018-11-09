@@ -9,17 +9,17 @@ import (
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		input        schema.SiteConfiguration
+		input        conf.UnifiedConfiguration
 		wantProblems []string
 	}{
 		"duplicates": {
-			input: schema.SiteConfiguration{
+			input: conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{
 				AppURL: "x",
 				AuthProviders: []schema.AuthProviders{
 					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
 					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
 				},
-			},
+			}},
 			wantProblems: []string{"SAML auth provider at index 1 is duplicate of index 0"},
 		},
 	}

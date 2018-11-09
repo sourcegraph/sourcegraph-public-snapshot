@@ -17,7 +17,7 @@ func TestForbidAllMiddleware(t *testing.T) {
 	}))
 
 	t.Run("disabled", func(t *testing.T) {
-		conf.Mock(&schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}}})
+		conf.Mock(&conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}}}})
 		defer conf.Mock(nil)
 
 		rr := httptest.NewRecorder()
@@ -32,7 +32,7 @@ func TestForbidAllMiddleware(t *testing.T) {
 	})
 
 	t.Run("enabled", func(t *testing.T) {
-		conf.Mock(&schema.SiteConfiguration{})
+		conf.Mock(&conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{}})
 		defer conf.Mock(nil)
 
 		rr := httptest.NewRecorder()

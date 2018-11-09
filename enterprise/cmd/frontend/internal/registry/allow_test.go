@@ -24,17 +24,17 @@ func TestIsRemoteExtensionAllowed(t *testing.T) {
 		t.Errorf("want %q to be allowed", "a")
 	}
 
-	conf.Mock(&schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: nil}})
+	conf.Mock(&conf.UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: nil}}})
 	if !frontendregistry.IsRemoteExtensionAllowed("a") {
 		t.Errorf("want %q to be allowed", "a")
 	}
 
-	conf.Mock(&schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: []string{}}})
+	conf.Mock(&conf.UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: []string{}}}})
 	if frontendregistry.IsRemoteExtensionAllowed("a") {
 		t.Errorf("want %q to be disallowed", "a")
 	}
 
-	conf.Mock(&schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: []string{"a"}}})
+	conf.Mock(&conf.UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: []string{"a"}}}})
 	if !frontendregistry.IsRemoteExtensionAllowed("a") {
 		t.Errorf("want %q to be allowed", "a")
 	}
@@ -66,7 +66,7 @@ func TestFilterRemoteExtensions(t *testing.T) {
 	run := func(allowRemoteExtensions *[]string, extensions []string, want []string) {
 		t.Helper()
 		if allowRemoteExtensions != nil {
-			conf.Mock(&schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: *allowRemoteExtensions}})
+			conf.Mock(&conf.UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: *allowRemoteExtensions}}})
 			defer conf.Mock(nil)
 		}
 		var xs []*registry.Extension

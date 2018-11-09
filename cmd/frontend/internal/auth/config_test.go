@@ -9,32 +9,32 @@ import (
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		input        schema.SiteConfiguration
+		input        conf.UnifiedConfiguration
 		wantProblems []string
 	}{
 		"no auth.providers": {
-			input:        schema.SiteConfiguration{},
+			input:        conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{}},
 			wantProblems: []string{"no auth providers set"},
 		},
 		"empty auth.providers": {
-			input:        schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{}},
+			input:        conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{AuthProviders: []schema.AuthProviders{}}},
 			wantProblems: []string{"no auth providers set"},
 		},
 		"single auth provider": {
-			input: schema.SiteConfiguration{
+			input: conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
 				},
-			},
+			}},
 			wantProblems: nil,
 		},
 		"multiple auth providers": {
-			input: schema.SiteConfiguration{
+			input: conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
 				},
-			},
+			}},
 			wantProblems: nil,
 		},
 	}
