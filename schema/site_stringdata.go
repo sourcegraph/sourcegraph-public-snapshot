@@ -360,14 +360,15 @@ const SiteSchemaJSON = `{
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github"]
           }
         },
         "oneOf": [
           { "$ref": "#/definitions/BuiltinAuthProvider" },
           { "$ref": "#/definitions/SAMLAuthProvider" },
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
-          { "$ref": "#/definitions/HTTPHeaderAuthProvider" }
+          { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
+          { "$ref": "#/definitions/GitHubAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -1091,6 +1092,32 @@ const SiteSchemaJSON = `{
             "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.",
           "type": "string"
         }
+      }
+    },
+    "GitHubAuthProvider": {
+      "description": "Configures the GitHub OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. On log-in, Sourcegraph will request ` + "`" + `repo` + "`" + ` scope access.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "github"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
+          "default": "https://github.com/"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers"
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers"
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
       }
     },
     "AuthProviderCommon": {
