@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, Subject, Subscription } from 'rxjs'
+import { concat, Subject, Subscription, forkJoin } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery, SearchOptions } from '..'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -72,6 +72,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         )
 
         this.subscriptions.add(
+            this.props.extensionsController.registries.issuesResultsProvider
+                .provideIssueResults('test')
+                .pipe(
+                    tap(res => {
+                        console.log('from search results', res)
+                    })
+                )
+                .subscribe()
+        )
+
+        this.subscriptions.add(
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
@@ -118,7 +129,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         )
                     )
                 )
-                .subscribe(newState => this.setState(newState as SearchResultsState), err => console.error(err))
+                .subscribe(
+                    newState => {
+                        this.setState(newState as SearchResultsState)
+                    },
+                    err => console.error(err)
+                )
         )
     }
 
