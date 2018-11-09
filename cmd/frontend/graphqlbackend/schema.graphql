@@ -275,6 +275,10 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateSiteConfiguration(
+        # The ID of the last-known site configuration known to the client, or null if
+        # there is none. This field is used to prevent race conditions when there
+        # are concurrent editors.
+        lastID: Int
         # A JSON object containing the entire site configuration. The previous site configuration will be replaced
         # with this new value.
         input: String!
@@ -2570,6 +2574,8 @@ type Site implements ConfigurationSubject {
 
 # The configuration for a site.
 type SiteConfiguration {
+    # The id of this configuration.
+    id: Int!
     # The effective configuration JSON.
     effectiveContents: String!
     # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.

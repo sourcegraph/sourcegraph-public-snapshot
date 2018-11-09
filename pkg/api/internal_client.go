@@ -280,10 +280,16 @@ func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, erro
 	return names, err
 }
 
-func (c *internalClient) ConfigurationRawJSON(ctx context.Context) (string, error) {
-	var rawJSON string
-	err := c.postInternal(ctx, "configuration/raw-json", nil, &rawJSON)
-	return rawJSON, err
+func (c *internalClient) CoreConfigurationFileGetLatest(ctx context.Context) (*CoreConfigurationFile, error) {
+	var file CoreConfigurationFile
+	err := c.postInternal(ctx, "core-configuration-file/get-latest", nil, &file)
+	return &file, err
+}
+
+func (c *internalClient) SiteConfigurationFileGetLatest(ctx context.Context) (*SiteConfigurationFile, error) {
+	var file SiteConfigurationFile
+	err := c.postInternal(ctx, "site-configuration-file/get-latest", nil, &file)
+	return &file, err
 }
 
 func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName, description string, fork bool, archived bool) error {

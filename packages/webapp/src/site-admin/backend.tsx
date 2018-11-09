@@ -419,11 +419,11 @@ export function fetchSite(): Observable<GQL.ISite> {
  * @returns An observable indicating whether or not a service restart is
  * required for the update to be applied.
  */
-export function updateSiteConfiguration(input: string): Observable<boolean> {
+export function updateSiteConfiguration(lastID: number | null, input: string): Observable<boolean> {
     return mutateGraphQL(
         gql`
-            mutation UpdateSiteConfiguration($input: String!) {
-                updateSiteConfiguration(input: $input)
+            mutation UpdateSiteConfiguration($lastID: Int, $input: String!) {
+                updateSiteConfiguration(lastID: $lastID, input: $input)
             }
         `,
         { input }
