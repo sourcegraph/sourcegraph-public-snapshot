@@ -33,7 +33,6 @@ class Options extends React.Component<{}, State> {
 
         this.subscriptions.add(
             storage.observeSync('sourcegraphURL').subscribe(sourcegraphURL => {
-                console.log('sourcegraphURL', sourcegraphURL)
                 this.setState({ sourcegraphURL })
             })
         )
