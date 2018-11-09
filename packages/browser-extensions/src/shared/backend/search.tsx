@@ -80,7 +80,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | null 
             return {
                 type: 'repo',
                 title: item.name,
-                url: `/${item.name}`,
+                url: item.url,
                 urlLabel: 'go to repository',
             }
         }
@@ -158,7 +158,8 @@ export const fetchSuggestions = (options: SearchOptions, first: number) =>
                     suggestions(first: $first) {
                         ... on Repository {
                             __typename
-                            uri
+                            name
+                            url
                         }
                         ... on File {
                             __typename
