@@ -21,7 +21,7 @@ func CanonicalURL(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conf := conf.Get()
 
-		appURLStr := conf.AppURL
+		appURLStr := conf.Core.AppURL
 		if appURLStr == "" {
 			appURLStr = globals.AppURL.String() // default
 		}
@@ -36,7 +36,7 @@ func CanonicalURL(next http.Handler) http.Handler {
 			return
 		}
 
-		httpToHTTPSRedirect := parseStringOrBool(conf.HttpToHttpsRedirect, "off")
+		httpToHTTPSRedirect := parseStringOrBool(conf.Core.HttpToHttpsRedirect, "off")
 		var requireSchemeMatch bool
 		switch httpToHTTPSRedirect {
 		case "off":

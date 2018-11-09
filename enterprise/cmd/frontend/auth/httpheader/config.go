@@ -9,7 +9,7 @@ import (
 // site config; if there is more than 1, it returns multiple == true (which the caller should handle
 // by returning an error and refusing to proceed with auth).
 func getProviderConfig() (pc *schema.HTTPHeaderAuthProvider, multiple bool) {
-	for _, p := range conf.Get().AuthProviders {
+	for _, p := range conf.Get().Core.AuthProviders {
 		if p.HttpHeader != nil {
 			if pc != nil {
 				return pc, true // multiple http-header auth providers
@@ -24,9 +24,9 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c schema.SiteConfiguration) (problems []string) {
+func validateConfig(c conf.UnifiedConfiguration) (problems []string) {
 	var httpHeaderAuthProviders int
-	for _, p := range c.AuthProviders {
+	for _, p := range c.Core.AuthProviders {
 		if p.HttpHeader != nil {
 			httpHeaderAuthProviders++
 		}

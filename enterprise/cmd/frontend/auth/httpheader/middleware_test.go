@@ -35,7 +35,7 @@ func TestMiddleware(t *testing.T) {
 	}))
 
 	const headerName = "x-sso-user-header"
-	conf.Mock(&schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName}}}})
+	conf.Mock(&conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName}}}}})
 	defer conf.Mock(nil)
 
 	t.Run("not sent", func(t *testing.T) {

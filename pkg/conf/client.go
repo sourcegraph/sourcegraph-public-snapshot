@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type client struct {
@@ -40,7 +39,7 @@ var defaultClient *client
 // is running.
 //
 // Get is a wrapper around client.Get.
-func Get() *schema.SiteConfiguration {
+func Get() *UnifiedConfiguration {
 	return defaultClient.Get()
 }
 
@@ -58,7 +57,7 @@ func Get() *schema.SiteConfiguration {
 // exception rather than the rule. In general, ANY use of configuration should
 // be done in such a way that it responds to config changes while the process
 // is running.
-func (c *client) Get() *schema.SiteConfiguration {
+func (c *client) Get() *UnifiedConfiguration {
 	return c.store.LastValid()
 }
 
@@ -68,7 +67,7 @@ func (c *client) Get() *schema.SiteConfiguration {
 // use conf.Watch). See Get documentation for more details.
 //
 // GetTODO is a wrapper around client.GetTODO.
-func GetTODO() *schema.SiteConfiguration {
+func GetTODO() *UnifiedConfiguration {
 	return defaultClient.GetTODO()
 }
 
@@ -76,19 +75,19 @@ func GetTODO() *schema.SiteConfiguration {
 // The code may need to be updated to use conf.Watch, or it may already be e.g.
 // invoked only in response to a user action (in which case it does not need to
 // use conf.Watch). See Get documentation for more details.
-func (c *client) GetTODO() *schema.SiteConfiguration {
+func (c *client) GetTODO() *UnifiedConfiguration {
 	return c.Get()
 }
 
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
-func Mock(mockery *schema.SiteConfiguration) {
+func Mock(mockery *UnifiedConfiguration) {
 	defaultClient.Mock(mockery)
 }
 
 // Mock sets up mock data for the site configuration.
-func (c *client) Mock(mockery *schema.SiteConfiguration) {
+func (c *client) Mock(mockery *UnifiedConfiguration) {
 	c.store.Mock(mockery)
 }
 

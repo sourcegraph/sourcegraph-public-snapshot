@@ -42,9 +42,10 @@ func readOrGenerateConfig(path string) (configJSON string, writable bool, err er
 func generateConfigFile(path string) (configJSON string, err error) {
 	// The default site configuration.
 	defaultSiteConfig := schema.SiteConfiguration{
-		AuthProviders: []schema.AuthProviders{
-			{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
-		},
+		// TODO(slimsag): UnifiedConfiguration
+		//AuthProviders: []schema.AuthProviders{
+		//	{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
+		//},
 		MaxReposToSearch: 50,
 
 		DisablePublicRepoRedirects: true,

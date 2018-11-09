@@ -5,16 +5,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Store manages the in-memory storage, access,
 // and updating of the site configuration in a threadsafe manner.
 type Store struct {
 	configMu  sync.RWMutex
-	lastValid *schema.SiteConfiguration
-	mock      *schema.SiteConfiguration
+	lastValid *UnifiedConfiguration
+	mock      *UnifiedConfiguration
 
 	rawMu sync.RWMutex
 	raw   string
@@ -32,7 +30,7 @@ func NewStore() *Store {
 
 // LastValid returns the last valid site configuration that this
 // store was updated with.
-func (s *Store) LastValid() *schema.SiteConfiguration {
+func (s *Store) LastValid() *UnifiedConfiguration {
 	s.WaitUntilInitialized()
 
 	s.configMu.RLock()
@@ -56,7 +54,7 @@ func (s *Store) Raw() string {
 
 // Mock sets up mock data for the site configuration. It uses the configuration
 // mutex, to avoid possible races between test code and possible config watchers.
-func (s *Store) Mock(mockery *schema.SiteConfiguration) {
+func (s *Store) Mock(mockery *UnifiedConfiguration) {
 	s.configMu.Lock()
 	defer s.configMu.Unlock()
 
@@ -66,8 +64,8 @@ func (s *Store) Mock(mockery *schema.SiteConfiguration) {
 
 type UpdateResult struct {
 	Changed bool
-	Old     *schema.SiteConfiguration
-	New     *schema.SiteConfiguration
+	Old     *UnifiedConfiguration
+	New     *UnifiedConfiguration
 }
 
 // MaybeUpdate attempts to update the store with the supplied rawConfig.
@@ -97,7 +95,7 @@ func (s *Store) MaybeUpdate(rawConfig string) (UpdateResult, error) {
 
 	s.raw = rawConfig
 
-	newConfig, err := parse.ParseConfigEnvironment(rawConfig)
+	newConfig, err := ParseConfigEnvironment(rawConfig)
 	if err != nil {
 		return result, errors.Wrap(err, "when parsing rawConfig during update")
 	}

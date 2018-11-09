@@ -7,7 +7,30 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// DeploymentConfiguration represents configuration about the deployment. These
+// are settings that need to be propagated from the frontend to other services,
+// so that the frontend can be the source of truth for all configuration.
+type DeploymentConfiguration struct {
+	// GitServers is the addresses of gitserver instances that should be talked
+	// to.
+	GitServers []string `json:"gitServers"`
+}
+
+// UnifiedConfiguration represents the overall Sourcegraph configuration from
+// various sources:
+//
+// - The core configuration, from the database (from the management console).
+// - The site configuration, from the database (from the site-admin panel).
+// - Deployment configuration, from the frontend (e.g. which gitservers to talk to).
+//
+type UnifiedConfiguration struct {
+	schema.SiteConfiguration
+	Core       schema.CoreSiteConfiguration
+	Deployment DeploymentConfiguration
+}
 
 type configurationMode int
 

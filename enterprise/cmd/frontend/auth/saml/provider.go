@@ -162,7 +162,7 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 	if pc.ServiceProviderIssuer == "" {
 		return nil, errors.New("invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty appURL)")
 	}
-	appURL, err := url.Parse(conf.Get().AppURL)
+	appURL, err := url.Parse(conf.Get().Core.AppURL)
 	if err != nil {
 		return nil, errors.WithMessage(err, "parsing app URL for SAML Service Provider")
 	}

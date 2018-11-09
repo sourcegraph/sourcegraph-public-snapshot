@@ -99,10 +99,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 	common := &Common{
 		Injected: InjectedHTML{
-			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
-			HeadBottom: template.HTML(conf.Get().HtmlHeadBottom),
-			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
-			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
+			HeadTop:    template.HTML(conf.Get().Core.HtmlHeadTop),
+			HeadBottom: template.HTML(conf.Get().Core.HtmlHeadBottom),
+			BodyTop:    template.HTML(conf.Get().Core.HtmlBodyTop),
+			BodyBottom: template.HTML(conf.Get().Core.HtmlBodyBottom),
 		},
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assetsutil.URL("").String(),

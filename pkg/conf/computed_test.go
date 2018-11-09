@@ -12,43 +12,43 @@ import (
 func TestComputed(t *testing.T) {
 	tests := []struct {
 		name string
-		sc   *schema.SiteConfiguration
+		sc   *UnifiedConfiguration
 		env  []string
 		fun  interface{}
 		want interface{}
 	}{{
 		name: "SearchIndex defaults to false in docker",
-		sc:   &schema.SiteConfiguration{},
+		sc:   &UnifiedConfiguration{},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
 		fun:  SearchIndexEnabled,
 		want: false,
 	}, {
 		name: "SearchIndex defaults to true in k8s",
-		sc:   &schema.SiteConfiguration{},
+		sc:   &UnifiedConfiguration{},
 		env:  []string{"DEPLOY_TYPE=k8s"},
 		fun:  SearchIndexEnabled,
 		want: true,
 	}, {
 		name: "SearchIndex enabled",
-		sc:   &schema.SiteConfiguration{SearchIndexEnabled: boolPtr(true)},
+		sc:   &UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(true)}},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
 		fun:  SearchIndexEnabled,
 		want: true,
 	}, {
 		name: "SearchIndex disabled",
-		sc:   &schema.SiteConfiguration{SearchIndexEnabled: boolPtr(false)},
+		sc:   &UnifiedConfiguration{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(false)}},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
 		fun:  SearchIndexEnabled,
 		want: false,
 	}, {
 		name: "SearchIndex INDEXED_SEARCH=f",
-		sc:   &schema.SiteConfiguration{},
+		sc:   &UnifiedConfiguration{},
 		env:  []string{"DEPLOY_TYPE=docker-container", "INDEXED_SEARCH=f"},
 		fun:  SearchIndexEnabled,
 		want: false,
 	}, {
 		name: "SearchIndex INDEXED_SEARCH=t",
-		sc:   &schema.SiteConfiguration{},
+		sc:   &UnifiedConfiguration{},
 		env:  []string{"DEPLOY_TYPE=docker-container", "INDEXED_SEARCH=t"},
 		fun:  SearchIndexEnabled,
 		want: true,

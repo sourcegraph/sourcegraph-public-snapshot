@@ -62,10 +62,10 @@ type JSContext struct {
 	ShowOnboarding bool   `json:"showOnboarding"`
 	EmailEnabled   bool   `json:"emailEnabled"`
 
-	Site                schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
-	NeedServerRestart   bool                     `json:"needServerRestart"`
-	IsClusterDeployment bool                     `json:"isClusterDeployment"`
+	Core                schema.CoreSiteConfiguration `json:"core"` // public subset of core configuration
+	LikelyDockerOnMac   bool                         `json:"likelyDockerOnMac"`
+	NeedServerRestart   bool                         `json:"needServerRestart"`
+	IsClusterDeployment bool                         `json:"isClusterDeployment"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
@@ -146,7 +146,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ShowOnboarding:      showOnboarding,
 		EmailEnabled:        conf.CanSendEmail(),
-		Site:                publicSiteConfiguration(),
+		Core:                publicCoreConfiguration(),
 		LikelyDockerOnMac:   likelyDockerOnMac(),
 		NeedServerRestart:   globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		IsClusterDeployment: conf.IsDeployTypeCluster(conf.DeployType()),
@@ -167,12 +167,12 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 }
 
-// publicSiteConfiguration is the subset of the site.schema.json site configuration
+// publicCoreConfiguration is the subset of the core.schema.json core configuration
 // that is necessary for the web app and is not sensitive/secret.
-func publicSiteConfiguration() schema.SiteConfiguration {
+func publicCoreConfiguration() schema.CoreSiteConfiguration {
 	c := conf.Get()
-	return schema.SiteConfiguration{
-		AuthPublic: c.AuthPublic,
+	return schema.CoreSiteConfiguration{
+		AuthPublic: c.Core.AuthPublic,
 	}
 }
 

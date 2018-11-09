@@ -61,7 +61,7 @@ func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, 
 }
 
 func makeExtensionBundleURL(registryExtensionReleaseID int64, timestamp int64, extensionIDHint string) (string, error) {
-	u, err := url.Parse(conf.Get().AppURL)
+	u, err := url.Parse(conf.Get().Core.AppURL)
 	if err != nil {
 		return "", err
 	}

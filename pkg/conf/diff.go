@@ -1,4 +1,4 @@
-package parse
+package conf
 
 import (
 	"fmt"
@@ -10,10 +10,21 @@ import (
 
 // diff returns names of the Go fields that have different values between the
 // two configurations.
-func diff(before, after *schema.SiteConfiguration) (fields map[string]struct{}) {
+func diff(before, after *UnifiedConfiguration) (fields map[string]struct{}) {
+	diff := diffStruct(before.SiteConfiguration, after.SiteConfiguration, "")
+	for k, v := range diffStruct(before.Core, after.Core, "core::") {
+		diff[k] = v
+	}
+	for k, v := range diffStruct(before.Deployment, after.Deployment, "deployment::") {
+		diff[k] = v
+	}
+	return diff
+}
+
+func diffStruct(before, after interface{}, prefix string) (fields map[string]struct{}) {
 	fields = make(map[string]struct{})
-	beforeFields := getJSONFields(before)
-	afterFields := getJSONFields(after)
+	beforeFields := getJSONFields(before, prefix)
+	afterFields := getJSONFields(after, prefix)
 	for fieldName, beforeField := range beforeFields {
 		afterField := afterFields[fieldName]
 		if !reflect.DeepEqual(beforeField, afterField) {
@@ -23,9 +34,9 @@ func diff(before, after *schema.SiteConfiguration) (fields map[string]struct{}) 
 	return fields
 }
 
-func getJSONFields(vv interface{}) (fields map[string]interface{}) {
+func getJSONFields(vv interface{}, prefix string) (fields map[string]interface{}) {
 	fields = make(map[string]interface{})
-	v := reflect.ValueOf(vv).Elem()
+	v := reflect.ValueOf(vv)
 	for i := 0; i < v.NumField(); i++ {
 		f := v.Field(i)
 		tag := v.Type().Field(i).Tag.Get("json")
@@ -34,13 +45,13 @@ func getJSONFields(vv interface{}) (fields map[string]interface{}) {
 			panic(fmt.Sprintf("missing json struct field tag on %T field %q", v.Interface(), v.Type().Field(i).Name))
 		}
 		if ef, ok := f.Interface().(*schema.ExperimentalFeatures); ok && ef != nil {
-			for fieldName, fieldValue := range getJSONFields(ef) {
-				fields["experimentalFeatures::"+fieldName] = fieldValue
+			for fieldName, fieldValue := range getJSONFields(*ef, prefix+"experimentalFeatures::") {
+				fields[fieldName] = fieldValue
 			}
 			continue
 		}
 		fieldName := parseJSONTag(tag)
-		fields[fieldName] = f.Interface()
+		fields[prefix+fieldName] = f.Interface()
 	}
 	return fields
 }
