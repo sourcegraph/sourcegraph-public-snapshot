@@ -52,7 +52,7 @@ export function refreshAuthenticatedUser(): Observable<never> {
     )
 }
 
-const initialSiteConfigAuthPublic = window.context.site['auth.public']
+const initialSiteConfigAuthPublic = window.context.core['auth.public']
 
 /**
  * Whether auth is required to perform any action.

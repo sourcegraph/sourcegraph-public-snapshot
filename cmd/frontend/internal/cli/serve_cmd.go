@@ -44,11 +44,11 @@ var (
 	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API. Only used if manual tls cert and key are specified.")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
-	appURL                  = conf.GetTODO().AppURL
+	appURL                  = conf.Get().Core.AppURL
 	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
 
-	tlsCert = conf.GetTODO().Core.TlsCert
-	tlsKey  = conf.GetTODO().Core.TlsKey
+	tlsCert = conf.Get().Core.TlsCert
+	tlsKey  = conf.Get().Core.TlsKey
 
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"

@@ -88,7 +88,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		// This implementation is not ideal because it means the JS bundle's contents depend on the
 		// app URL, which makes it technically not immutable. But given the blob URL constraint
 		// mentioned above, it's the best known solution.
-		if appURL, _ := url.Parse(conf.Get().AppURL); appURL != nil {
+		if appURL, _ := url.Parse(conf.Get().Core.AppURL); appURL != nil {
 			sourceMapURL := appURL.ResolveReference(&url.URL{Path: path.Join(path.Dir(r.URL.Path), releaseIDStr+".map")}).String()
 			fmt.Fprintf(w, "\n//# sourceMappingURL=%s", sourceMapURL)
 		}

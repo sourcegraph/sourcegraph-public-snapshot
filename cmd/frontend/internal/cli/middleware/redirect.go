@@ -21,7 +21,7 @@ func CanonicalURL(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conf := conf.Get()
 
-		appURLStr := conf.AppURL
+		appURLStr := conf.Core.AppURL
 		if appURLStr == "" {
 			appURLStr = globals.AppURL.String() // default
 		}

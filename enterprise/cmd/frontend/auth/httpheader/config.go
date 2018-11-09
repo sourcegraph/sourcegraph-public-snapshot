@@ -24,9 +24,9 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c schema.SiteConfiguration) (problems []string) {
+func validateConfig(c conf.UnifiedConfiguration) (problems []string) {
 	var httpHeaderAuthProviders int
-	for _, p := range c.AuthProviders {
+	for _, p := range c.Core.AuthProviders {
 		if p.HttpHeader != nil {
 			httpHeaderAuthProviders++
 		}

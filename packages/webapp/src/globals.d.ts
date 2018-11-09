@@ -70,9 +70,9 @@ interface SourcegraphContext {
     emailEnabled: boolean
 
     /**
-     * A subset of the site configuration. Not all fields are set.
+     * A subset of the core configuration. Not all fields are set.
      */
-    site: {
+    core: {
         'auth.public': boolean
     }
 
