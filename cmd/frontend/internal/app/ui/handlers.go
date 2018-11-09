@@ -6,14 +6,12 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -120,21 +118,14 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
-				http.Redirect(w, r, "/"+string(e.NewRepo), http.StatusMovedPermanently)
+				http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
 				return nil, nil
 			}
-			if e, ok := err.(backend.ErrRepoSeeOther); ok {
-				// Repo does not exist here, redirect to the recommended location.
-				u, err := url.Parse(e.RedirectURL)
-				if err != nil {
-					return nil, err
-				}
-				u.Path, u.RawQuery = r.URL.Path, r.URL.RawQuery
-				http.Redirect(w, r, u.String(), http.StatusSeeOther)
-				return nil, nil
+			if vcs.IsCloneInProgress(err) {
+				// Repo is cloning.
+				return common, nil
 			}
-			if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
-				// Repo does not exist.
+			if vcs.IsRepoNotExist(err) {
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
@@ -153,19 +144,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				dangerouslyServeError(w, r, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
-			if vcs.IsRepoNotExist(err) {
-				if vcs.IsCloneInProgress(err) {
-					// Repo is cloning.
-					return common, nil
-				}
-				// Repo does not exist.
-				serveError(w, r, err, http.StatusNotFound)
-				return nil, nil
-			}
 			return nil, err
-		}
-		if common.Repo.Name == "github.com/sourcegraphtest/Always500Test" {
-			return nil, errors.New("error caused by Always500Test repo name")
 		}
 		common.Rev = mux.Vars(r)["Rev"]
 		// Update gitserver contents for a repo whenever it is visited.

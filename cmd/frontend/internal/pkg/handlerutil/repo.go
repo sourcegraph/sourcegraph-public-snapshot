@@ -1,15 +1,16 @@
 package handlerutil
 
 import (
-	"net/http"
-
 	"context"
 
-	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
@@ -17,16 +18,22 @@ import (
 // URLMovedError and handle this scenario by warning or redirecting the user.
 func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
-
 	repo, err := backend.Repos.GetByName(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
-
 	if origRepo != repo.Name {
-		return nil, &URLMovedError{repo.Name}
+		return nil, &URLMovedError{NewURL: "/" + string(repo.Name)}
 	}
-
+	if e, ok := err.(backend.ErrRepoSeeOther); ok {
+		return nil, &URLMovedError{NewURL: e.RedirectURL}
+	}
+	if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
+		return nil, &vcs.RepoNotExistError{Repo: origRepo, CloneInProgress: false}
+	}
+	if repo.Name == "github.com/sourcegraphtest/Always500Test" {
+		return nil, errors.New("error caused by Always500Test repo name")
+	}
 	return repo, nil
 }
 
@@ -56,25 +63,4 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (*types.Repo, ap
 
 	_, commitID, err := getRepoRev(ctx, vars, repo.ID)
 	return repo, commitID, err
-}
-
-// RedirectToNewRepoName writes an HTTP redirect response with a
-// Location that matches the request's location except with the
-// Repo route var updated to refer to newRepoName (instead of the
-// originally requested repo name).
-func RedirectToNewRepoName(w http.ResponseWriter, r *http.Request, newRepoName api.RepoName) error {
-	origVars := mux.Vars(r)
-	origVars["Repo"] = string(newRepoName)
-
-	var pairs []string
-	for k, v := range origVars {
-		pairs = append(pairs, k, v)
-	}
-	destURL, err := mux.CurrentRoute(r).URLPath(pairs...)
-	if err != nil {
-		return err
-	}
-
-	http.Redirect(w, r, destURL.String(), http.StatusMovedPermanently)
-	return nil
 }
