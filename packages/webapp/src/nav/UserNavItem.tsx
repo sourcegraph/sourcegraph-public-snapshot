@@ -79,11 +79,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/help" className="dropdown-item">
                         Help
                     </Link>
-                    {this.props.showAbout && (
-                        <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
-                            About Sourcegraph
-                        </a>
-                    )}
                     {this.props.authenticatedUser.siteAdmin && (
                         <>
                             <DropdownItem divider={true} />
@@ -101,6 +96,14 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                 </a>
                             </>
                         )}
+					{this.props.showAbout && (
+						<>
+							<DropdownItem divider={true} />
+							<a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
+								About Sourcegraph
+							</a>
+						</>
+					)}
                 </DropdownMenu>
             </ButtonDropdown>
         )

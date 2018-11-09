@@ -4,6 +4,11 @@
     justify-content: space-between;
     color: #93a9c8;
     padding-bottom: 0.25rem;
+	padding-left: calc(.5rem + 2px);
+
+	svg {
+		margin-right: .125rem;
+	}
 
     &__row {
         display: flex;
