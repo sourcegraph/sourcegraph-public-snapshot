@@ -9,24 +9,24 @@ import (
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		input        schema.SiteConfiguration
+		input        conf.UnifiedConfiguration
 		wantProblems []string
 	}{
 		"single": {
-			input: schema.SiteConfiguration{
+			input: conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
-			},
+			}},
 			wantProblems: nil,
 		},
 		"multiple": {
-			input: schema.SiteConfiguration{
+			input: conf.UnifiedConfiguration{Core: schema.CoreSiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
-			},
+			}},
 			wantProblems: []string{"at most 1"},
 		},
 	}
