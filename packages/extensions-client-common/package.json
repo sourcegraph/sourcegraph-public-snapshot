@@ -19,10 +19,10 @@
     "build:typescript": "tsc -p tsconfig.dist.json",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
-    "watch:typecheck": "tsc -p tsconfig.json -w",
-    "watch:build:typescript": "tsc -p tsconfig.dist.json -w --preserveWatchOutput",
+    "watch:typecheck": "tsc -p tsconfig.json -w --pretty",
+    "watch:build:typescript": "tsc -p tsconfig.dist.json -w --preserveWatchOutput --pretty",
     "watch:build:assets": "nodemon -q --watch src/ --ext css,d.ts,json --exec 'yarn -s run build:assets || exit 1'",
-    "watch:build": "concurrently --kill-others 'yarn -s run watch:build:typescript' 'yarn -s run watch:build:assets'",
+    "watch:build": "concurrently --raw --kill-others 'yarn -s run watch:build:typescript' 'yarn -s run watch:build:assets'",
     "watch:test": "yarn -s run test -- -w"
   },
   "nyc": {
