@@ -19,7 +19,10 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/raw"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/randstring"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -291,7 +294,20 @@ func initRouter() {
 	})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(serveRaw))
+	repoProvider := raw.RepoProviderFunc(func(w http.ResponseWriter, r *http.Request) (*types.Repo, api.CommitID, error) {
+		common, err := newCommon(w, r, "Sourcegraph", serveError)
+		if err == nil {
+			return nil, "", err
+		}
+		if common == nil {
+			return nil, "", raw.ErrRequestHandled
+		}
+		if common.Repo == nil {
+			return nil, "", raw.ErrRepoCloning
+		}
+		return common.Repo, common.CommitID, nil
+	})
+	router.Get(routeRaw).Handler(handler(raw.NewHandler(repoProvider)))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

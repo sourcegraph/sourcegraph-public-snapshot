@@ -10,13 +10,22 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/raw"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -48,6 +57,8 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
+
+	m.Get(apirouter.Raw).Handler(trace.TraceRoute(handler(raw.NewHandler(raw.RepoProviderFunc(repoProvider)))))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -164,4 +175,44 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	if status < 200 || status >= 500 {
 		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
 	}
+}
+
+// repoProvider is a raw.RepoProviderFunc designed to render errors for the
+// httpapi.
+func repoProvider(w http.ResponseWriter, r *http.Request) (*types.Repo, api.CommitID, error) {
+	repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+	isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && git.IsRevisionNotFound(errors.Cause(err)) // should reply with HTTP 200
+	if err != nil && !isRepoEmptyError {
+		if errors.Cause(err) == repoupdater.ErrUnauthorized {
+			// Not authorized to access repository.
+			handleError(w, r, http.StatusUnauthorized, err)
+			return nil, "", raw.ErrRequestHandled
+		}
+		if e, ok := err.(*handlerutil.URLMovedError); ok {
+			// The repository has been renamed, e.g. "github.com/docker/docker"
+			// was renamed to "github.com/moby/moby" -> redirect the user now.
+			http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+			return nil, "", raw.ErrRequestHandled
+		}
+		if vcs.IsCloneInProgress(err) {
+			// Repo is cloning.
+			return nil, "", raw.ErrRepoCloning
+		}
+		if vcs.IsRepoNotExist(err) {
+			handleError(w, r, http.StatusNotFound, err)
+			return nil, "", raw.ErrRequestHandled
+		}
+		if git.IsRevisionNotFound(errors.Cause(err)) {
+			// Revision does not exist.
+			handleError(w, r, http.StatusNotFound, err)
+			return nil, "", raw.ErrRequestHandled
+		}
+		if _, ok := errors.Cause(err).(*gitserver.RepoNotCloneableErr); ok {
+			// Repository is not clonable.
+			handleError(w, r, http.StatusInternalServerError, errors.New("repository could not be cloned"))
+			return nil, "", raw.ErrRequestHandled
+		}
+		return nil, "", err
+	}
+	return repo, commitID, nil
 }
