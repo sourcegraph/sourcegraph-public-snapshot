@@ -66,22 +66,10 @@ export interface FeatureFlags {
 }
 
 export const featureFlagDefaults: FeatureFlags = {
-    simpleOptionsMenu: false,
+    simpleOptionsMenu: true,
     newInject: false,
     renderMermaidGraphsEnabled: false,
     useExtensions: false,
-    openFileOnSourcegraph: true,
-    inlineSymbolSearchEnabled: true,
-    executeSearchEnabled: false,
-    repositoryFileTreeEnabled: true,
-}
-
-/** A map determining whether a feature flag is configurable by users or not. */
-export const configurableFeatureFlags: FeatureFlags = {
-    simpleOptionsMenu: true,
-    newInject: false,
-    renderMermaidGraphsEnabled: true,
-    useExtensions: true,
     openFileOnSourcegraph: true,
     inlineSymbolSearchEnabled: true,
     executeSearchEnabled: false,
