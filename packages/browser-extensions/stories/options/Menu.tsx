@@ -16,6 +16,10 @@ storiesOf('Options - OptionsMenu', module)
                 sourcegraphURL={'https://sourcegraph.com'}
                 onURLChange={action('Sourcegraph URL changed')}
                 onURLSubmit={action('New Sourcegraph URL submitted')}
+                onSettingsClick={action('Settings clicked')}
+                featureFlags={[]}
+                isSettingsOpen={false}
+                toggleFeatureFlag={action('Feture flag toggled')}
             />
         </div>
     ))
@@ -27,6 +31,10 @@ storiesOf('Options - OptionsMenu', module)
                 sourcegraphURL={'https://sourcegraph.com'}
                 onURLChange={action('Sourcegraph URL changed')}
                 onURLSubmit={action('New Sourcegraph URL submitted')}
+                onSettingsClick={action('Settings clicked')}
+                featureFlags={[{ key: 'useExtensions', value: true }]}
+                isSettingsOpen={true}
+                toggleFeatureFlag={action('Feture flag toggled')}
             />
         </div>
     ))

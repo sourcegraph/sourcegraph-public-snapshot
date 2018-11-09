@@ -19,6 +19,8 @@ describe('OptionsContainer', () => {
         | 'createAccessToken'
         | 'fetchCurrentUser'
         | 'ensureValidSite'
+        | 'toggleFeatureFlag'
+        | 'featureFlags'
     > = {
         fetchCurrentUser: () => new Observable<GQL.IUser>(),
         createAccessToken: () => new Observable<AccessToken>(),
@@ -26,6 +28,8 @@ describe('OptionsContainer', () => {
         setAccessToken: (token: string) => undefined,
         fetchAccessTokenIDs: (url: string) => new Observable<Pick<AccessToken, 'id'>[]>(),
         ensureValidSite: (url: string) => new Observable<void>(),
+        toggleFeatureFlag: noop,
+        featureFlags: [],
     }
 
     it('checks the connection status when it mounts', () => {
