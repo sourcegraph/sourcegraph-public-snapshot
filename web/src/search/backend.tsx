@@ -6,6 +6,7 @@ import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { memoizeObservable } from '../util/memoize'
 
 export function search(
     options: SearchOptions,
@@ -48,6 +49,18 @@ export function search(
                                         id
                                         name
                                         url
+                                        label
+                                        icon
+                                        detail
+                                        matches {
+                                            url
+                                            body
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
                                     }
                                     ... on FileMatch {
                                         __typename
@@ -69,10 +82,23 @@ export function search(
                                             url
                                             kind
                                         }
+                                        label
+                                        url
+                                        icon
+                                        detail
                                         lineMatches {
                                             preview
                                             lineNumber
                                             offsetAndLengths
+                                        }
+                                        matches {
+                                            url
+                                            body
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
                                         }
                                     }
                                     ... on CommitSearchResult {
@@ -91,22 +117,6 @@ export function search(
                                             prefix
                                             repository {
                                                 name
-                                            }
-                                        }
-                                        messagePreview {
-                                            value
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        diffPreview {
-                                            value
-                                            highlights {
-                                                line
-                                                character
-                                                length
                                             }
                                         }
                                         commit {
@@ -128,6 +138,19 @@ export function search(
                                             url
                                             tree(path: "") {
                                                 canonicalURL
+                                            }
+                                        }
+                                        label
+                                        url
+                                        icon
+                                        detail
+                                        matches {
+                                            url
+                                            body
+                                            highlights {
+                                                line
+                                                character
+                                                length
                                             }
                                         }
                                     }
@@ -439,3 +462,33 @@ export function deleteSavedQuery(
         })
     )
 }
+
+export const highlightCode = memoizeObservable(
+    (ctx: { code: string; path: string; disableTimeout: boolean; isLightTheme: boolean }): Observable<string> =>
+        queryGraphQL(
+            gql`
+                query highlightCode(
+                    $code: String!
+                    $path: String!
+                    $disableTimeout: Boolean!
+                    $isLightTheme: Boolean!
+                ) {
+                    highlightCode(
+                        code: $code
+                        path: $path
+                        disableTimeout: $disableTimeout
+                        isLightTheme: $isLightTheme
+                    )
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.highlightCode) {
+                    throw createAggregateError(errors)
+                }
+                return data.highlightCode
+            })
+        ),
+    ctx => `${ctx.code}:${ctx.path}:${ctx.disableTimeout}:${ctx.isLightTheme}`
+)

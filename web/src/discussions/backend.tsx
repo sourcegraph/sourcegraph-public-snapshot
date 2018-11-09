@@ -4,6 +4,7 @@ import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { memoizeObservable } from '../util/memoize'
 
 const discussionCommentFieldsFragment = gql`
     fragment DiscussionCommentFields on DiscussionComment {
@@ -271,20 +272,23 @@ export function updateComment(input: GQL.IDiscussionCommentUpdateInput): Observa
  *
  * @return Observable that emits the HTML string, which is already sanitized and escaped and thus is always safe to render.
  */
-export function renderMarkdown(markdown: string, options?: GQL.IMarkdownOptions): Observable<string> {
-    return queryGraphQL(
-        gql`
-            query RenderMarkdown($markdown: String!, $options: MarkdownOptions) {
-                renderMarkdown(markdown: $markdown, options: $options)
-            }
-        `,
-        { markdown }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.renderMarkdown) {
-                throw createAggregateError(errors)
-            }
-            return data.renderMarkdown
-        })
-    )
-}
+// memoize this
+export const renderMarkdown = memoizeObservable(
+    (ctx: { markdown: string; options?: GQL.IMarkdownOptions }): Observable<string> =>
+        queryGraphQL(
+            gql`
+                query RenderMarkdown($markdown: String!, $options: MarkdownOptions) {
+                    renderMarkdown(markdown: $markdown, options: $options)
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.renderMarkdown) {
+                    throw createAggregateError(errors)
+                }
+                return data.renderMarkdown
+            })
+        ),
+    ctx => `${ctx.markdown}:${ctx.options}`
+)

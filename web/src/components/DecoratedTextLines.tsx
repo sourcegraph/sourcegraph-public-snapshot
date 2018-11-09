@@ -18,7 +18,7 @@ interface Props {
     /**
      * The highlights for the lines.
      */
-    highlights?: GQL.IHighlight[]
+    highlights?: GQL.IHighlight[] | HighlightRange[]
 
     /**
      * A list of classes to apply to 1-indexed line numbers.
@@ -31,9 +31,24 @@ interface Props {
     onMouseDown?: () => void
 }
 
+interface HighlightRange {
+    /**
+     * The 0-based line number that this highlight appears in
+     */
+    line: number
+    /**
+     * The 0-based character offset to start highlighting at
+     */
+    character: number
+    /**
+     * The number of characters to highlight
+     */
+    length: number
+}
+
 interface DecoratedLine {
     value: string
-    highlights?: GQL.IHighlight[]
+    highlights?: (GQL.IHighlight | HighlightRange)[]
     classNames?: string[]
     url?: string
 }
@@ -97,6 +112,9 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
         const lines: DecoratedLine[] = lineValues.map(line => ({ value: line }))
         if (props.highlights) {
             for (const highlight of props.highlights) {
+                if (highlight.line > lines.length - 1) {
+                    continue
+                }
                 const line = lines[highlight.line - 1]
                 if (!line.highlights) {
                     line.highlights = []
