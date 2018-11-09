@@ -46,7 +46,7 @@ func issueSession(p *provider, w http.ResponseWriter, r *http.Request) {
 
 	var expiryDuration time.Duration = 0
 	if token.Expiry != (time.Time{}) {
-		expiryDuration = token.Expiry.Sub(time.Now())
+		expiryDuration = time.Until(token.Expiry)
 	}
 	if expiryDuration < 0 {
 		log15.Error("GitHub OAuth failed: token was expired.")

@@ -3,6 +3,7 @@ package githuboauth
 import (
 	"fmt"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
@@ -65,35 +66,19 @@ func parseConfig(cfg *schema.SiteConfiguration) (providers map[schema.GitHubAuth
 			problems = append(problems, fmt.Sprintf("Could not parse GitHub URL %q. You will not be able to login via this GitHub instance.", rawURL))
 			continue
 		}
-		id := extsvc.NormalizeBaseURL(parsedURL)
-		providers[*p] = newProvider(
-			pr,
-			id.String(),
+		baseURL := extsvc.NormalizeBaseURL(parsedURL).String()
+		id := baseURL
+		providers[*p] = newProvider(pr, id,
 			oauth2.Config{
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
 				Scopes:       []string{"repo"},
 				Endpoint: oauth2.Endpoint{
-					AuthURL:  "https://github.com/login/oauth/authorize",
-					TokenURL: "https://github.com/login/oauth/access_token",
+					AuthURL:  strings.TrimSuffix(baseURL, "/") + "/login/oauth/authorize",
+					TokenURL: strings.TrimSuffix(baseURL, "/") + "/login/oauth/access_token",
 				},
 			},
 		)
 	}
 	return providers, problems
-}
-
-func diffProviderConfig(old, new []*schema.GitHubAuthProvider) map[schema.GitHubAuthProvider]bool {
-	diff := map[schema.GitHubAuthProvider]bool{}
-	for _, oldPC := range old {
-		diff[*oldPC] = false
-	}
-	for _, newPC := range new {
-		if _, ok := diff[*newPC]; ok {
-			delete(diff, *newPC)
-		} else {
-			diff[*newPC] = true
-		}
-	}
-	return diff
 }

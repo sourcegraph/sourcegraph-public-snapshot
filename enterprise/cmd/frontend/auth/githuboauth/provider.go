@@ -32,10 +32,10 @@ func getProvider(id string) *provider {
 type provider struct {
 	config       oauth2.Config
 	sourceConfig schema.AuthProviders
+	serviceID    string
 
-	serviceID string
-	login     http.Handler
-	callback  http.Handler
+	login    http.Handler
+	callback http.Handler
 }
 
 var _ auth.Provider = (*provider)(nil)
