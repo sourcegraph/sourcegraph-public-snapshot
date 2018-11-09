@@ -19,17 +19,17 @@ import (
 func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 	repo, err := backend.Repos.GetByName(ctx, origRepo)
-	if err != nil {
-		return nil, err
-	}
-	if origRepo != repo.Name {
-		return nil, &URLMovedError{NewURL: "/" + string(repo.Name)}
-	}
 	if e, ok := err.(backend.ErrRepoSeeOther); ok {
 		return nil, &URLMovedError{NewURL: e.RedirectURL}
 	}
 	if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
 		return nil, &vcs.RepoNotExistError{Repo: origRepo, CloneInProgress: false}
+	}
+	if err != nil {
+		return nil, err
+	}
+	if origRepo != repo.Name {
+		return nil, &URLMovedError{NewURL: "/" + string(repo.Name)}
 	}
 	if repo.Name == "github.com/sourcegraphtest/Always500Test" {
 		return nil, errors.New("error caused by Always500Test repo name")
