@@ -1,11 +1,8 @@
 package handlerutil
 
 import (
-	"net/http"
-
 	"context"
 
-	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -56,25 +53,4 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (*types.Repo, ap
 
 	_, commitID, err := getRepoRev(ctx, vars, repo.ID)
 	return repo, commitID, err
-}
-
-// RedirectToNewRepoName writes an HTTP redirect response with a
-// Location that matches the request's location except with the
-// Repo route var updated to refer to newRepoName (instead of the
-// originally requested repo name).
-func RedirectToNewRepoName(w http.ResponseWriter, r *http.Request, newRepoName api.RepoName) error {
-	origVars := mux.Vars(r)
-	origVars["Repo"] = string(newRepoName)
-
-	var pairs []string
-	for k, v := range origVars {
-		pairs = append(pairs, k, v)
-	}
-	destURL, err := mux.CurrentRoute(r).URLPath(pairs...)
-	if err != nil {
-		return err
-	}
-
-	http.Redirect(w, r, destURL.String(), http.StatusMovedPermanently)
-	return nil
 }
