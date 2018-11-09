@@ -31,6 +31,9 @@ func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
 		return nil, &vcs.RepoNotExistError{Repo: origRepo, CloneInProgress: false}
 	}
+	if repo.Name == "github.com/sourcegraphtest/Always500Test" {
+		return nil, errors.New("error caused by Always500Test repo name")
+	}
 	return repo, nil
 }
 
