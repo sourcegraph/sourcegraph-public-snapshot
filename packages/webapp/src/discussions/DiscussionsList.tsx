@@ -92,7 +92,7 @@ export class DiscussionsList extends React.PureComponent<Props> {
             <FilteredDiscussionsConnection
                 className={'discussions-list' + this.props.noFlex ? 'discussions-list--no-flex' : ''}
                 autoFocus={this.props.autoFocus !== undefined ? this.props.autoFocus : true}
-                compact={true}
+                compact={false}
                 noun={this.props.noun || 'discussion'}
                 pluralNoun={this.props.pluralNoun || 'discussions'}
                 queryConnection={this.fetchThreads}

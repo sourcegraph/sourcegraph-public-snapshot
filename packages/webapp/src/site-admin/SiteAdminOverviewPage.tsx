@@ -56,7 +56,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             link="/explore"
                             icon={EyeIcon}
                             actions={
-                                <Link to="/exlore" className="btn btn-primary btn-sm">
+                                <Link to="/explore" className="btn btn-primary btn-sm">
                                     Explore
                                 </Link>
                             }
