@@ -22,6 +22,8 @@ const inject = async () => {
     document.body.appendChild(injectDOM)
 
     if (await featureFlags.isEnabled('simpleOptionsMenu')) {
+        const useExtensions = await featureFlags.isEnabled('useExtensions')
+
         const renderOptionsContainer = (sourcegraphURL: string) => {
             const props: OptionsContainerProps = {
                 sourcegraphURL,
@@ -37,6 +39,9 @@ const inject = async () => {
                 getAccessToken,
                 setAccessToken,
                 fetchAccessTokenIDs,
+
+                toggleFeatureFlag: featureFlags.toggle,
+                featureFlags: [{ key: 'useExtensions', value: useExtensions }],
             }
 
             render(<OptionsContainer {...props} />, injectDOM)

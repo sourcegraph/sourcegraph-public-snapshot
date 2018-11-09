@@ -21,9 +21,13 @@ export interface OptionsContainerProps {
     getAccessToken: (url: string) => Observable<AccessToken | undefined>
     setAccessToken: (url: string, token: AccessToken) => void
     fetchAccessTokenIDs: (url: string) => Observable<Pick<AccessToken, 'id'>[]>
+
+    toggleFeatureFlag: (key: string) => void
+    featureFlags: { key: string; value: boolean }[]
 }
 
-interface OptionsContainerState extends Pick<OptionsMenuProps, 'status' | 'sourcegraphURL' | 'connectionError'> {}
+interface OptionsContainerState
+    extends Pick<OptionsMenuProps, 'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen'> {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
     private version = getExtensionVersionSync()
@@ -39,6 +43,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             status: 'connecting',
             sourcegraphURL: props.sourcegraphURL,
             connectionError: undefined,
+            isSettingsOpen: false,
         }
 
         const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
@@ -141,6 +146,9 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 version={this.version}
                 onURLChange={this.handleURLChange}
                 onURLSubmit={this.handleURLSubmit}
+                toggleFeatureFlag={this.props.toggleFeatureFlag}
+                featureFlags={this.props.featureFlags}
+                onSettingsClick={this.handleSettingsClick}
             />
         )
     }
@@ -151,5 +159,11 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
     private handleURLSubmit = () => {
         this.props.setSourcegraphURL(this.state.sourcegraphURL)
+    }
+
+    private handleSettingsClick = () => {
+        this.setState(state => ({
+            isSettingsOpen: !state.isSettingsOpen,
+        }))
     }
 }
