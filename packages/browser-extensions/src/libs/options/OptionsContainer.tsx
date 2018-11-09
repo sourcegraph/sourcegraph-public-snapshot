@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mapTo, share, switchMap, tap } from 'rxjs/operators'
 import { getExtensionVersionSync } from '../../browser/runtime'
-import { AccessToken, FeatureFlags } from '../../browser/types'
+import { AccessToken } from '../../browser/types'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
 import { propertyIsDefined } from '../../shared/util/types'
 import { GQL } from '../../types/gqlschema'
@@ -16,8 +16,6 @@ export interface OptionsContainerProps {
     fetchCurrentUser: (useToken: boolean) => Observable<GQL.IUser | undefined>
 
     setSourcegraphURL: (url: string) => void
-    getConfigurableSettings: () => Observable<Partial<FeatureFlags>>
-    setConfigurableSettings: (settings: Partial<FeatureFlags>) => Observable<Partial<FeatureFlags>>
 
     createAccessToken: (url: string) => Observable<AccessToken>
     getAccessToken: (url: string) => Observable<AccessToken | undefined>
@@ -25,17 +23,12 @@ export interface OptionsContainerProps {
     fetchAccessTokenIDs: (url: string) => Observable<Pick<AccessToken, 'id'>[]>
 }
 
-interface OptionsContainerState
-    extends Pick<
-            OptionsMenuProps,
-            'isSettingsOpen' | 'status' | 'sourcegraphURL' | 'settings' | 'settingsHaveChanged' | 'connectionError'
-        > {}
+interface OptionsContainerState extends Pick<OptionsMenuProps, 'status' | 'sourcegraphURL' | 'connectionError'> {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
     private version = getExtensionVersionSync()
 
     private urlUpdates = new Subject<string>()
-    private settingsSaves = new Subject<any>()
 
     private subscriptions = new Subscription()
 
@@ -45,9 +38,6 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         this.state = {
             status: 'connecting',
             sourcegraphURL: props.sourcegraphURL,
-            isSettingsOpen: false,
-            settingsHaveChanged: false,
-            settings: {},
             connectionError: undefined,
         }
 
@@ -131,24 +121,9 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                     // Don't do anything here, we already saved new tokens above.
                 })
         )
-
-        this.subscriptions.add(
-            this.settingsSaves
-                .pipe(switchMap(settings => props.setConfigurableSettings(settings)))
-                .subscribe(settings => {
-                    this.setState({
-                        settings,
-                        settingsHaveChanged: false,
-                    })
-                })
-        )
     }
 
     public componentDidMount(): void {
-        this.props.getConfigurableSettings().subscribe(settings => {
-            this.setState({ settings })
-        })
-
         this.urlUpdates.next(this.state.sourcegraphURL)
     }
     public componentDidUpdate(): void {
@@ -166,9 +141,6 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 version={this.version}
                 onURLChange={this.handleURLChange}
                 onURLSubmit={this.handleURLSubmit}
-                onSettingsClick={this.handleSettingsClick}
-                onSettingsChange={this.handleSettingsChange}
-                onSettingsSave={this.handleSettingsSave}
             />
         )
     }
@@ -179,17 +151,5 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
     private handleURLSubmit = () => {
         this.props.setSourcegraphURL(this.state.sourcegraphURL)
-    }
-
-    private handleSettingsClick = () => {
-        this.setState(({ isSettingsOpen }) => ({ isSettingsOpen: !isSettingsOpen }))
-    }
-
-    private handleSettingsChange = (settings: any) => {
-        this.setState({ settings, settingsHaveChanged: true })
-    }
-
-    private handleSettingsSave = () => {
-        this.settingsSaves.next(this.state.settings)
     }
 }
