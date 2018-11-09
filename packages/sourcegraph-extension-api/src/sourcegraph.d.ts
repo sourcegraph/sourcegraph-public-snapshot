@@ -891,6 +891,18 @@ declare module 'sourcegraph' {
         transformQuery(query: string): string | Promise<string>
     }
 
+    /** A search result from an issue provider */
+    export interface IssueResult {
+        title: string
+        body: string
+        url: string
+    }
+
+    /** A search result provider takes in a user's query and returns a list of issue results */
+    export interface IssueResultsProvider {
+        provideIssueResults(query: string): IssueResult[] | Promise<IssueResult[]>
+    }
+
     /**
      * API for extensions to augment search functionality.
      */
@@ -905,6 +917,7 @@ declare module 'sourcegraph' {
          * @param provider A query transformer.
          */
         export function registerQueryTransformer(provider: QueryTransformer): Unsubscribable
+        export function registerIssueResultsProvider(provider: IssueResultsProvider): Unsubscribable
     }
 
     /**

@@ -28,5 +28,6 @@ export class Services<X extends Extension, C extends SettingsCascade> {
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly queryTransformer = new QueryTransformerRegistry()
+    public readonly issuesResultsProvider = new IssueResultsProviderRegistry()
     public readonly views = new ViewProviderRegistry()
 }
