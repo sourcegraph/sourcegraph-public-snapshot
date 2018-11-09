@@ -164,6 +164,7 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
 
         search: {
             registerQueryTransformer: provider => search.registerQueryTransformer(provider),
+            registerIssueResultsProvider: provider => search.registerIssueResultsProvider(provider),
         },
 
         commands: {

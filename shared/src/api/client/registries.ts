@@ -6,6 +6,7 @@ import { CommandRegistry } from './providers/command'
 import { ContributionRegistry } from './providers/contribution'
 import { TextDocumentDecorationProviderRegistry } from './providers/decoration'
 import { TextDocumentHoverProviderRegistry } from './providers/hover'
+import { IssueResultsProviderRegistry } from './providers/issueResults'
 import { TextDocumentLocationProviderRegistry, TextDocumentReferencesProviderRegistry } from './providers/location'
 import { QueryTransformerRegistry } from './providers/queryTransformer'
 import { ViewProviderRegistry } from './providers/view'
@@ -28,5 +29,6 @@ export class Registries<X extends Extension, C extends SettingsCascade> {
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly queryTransformer = new QueryTransformerRegistry()
+    public readonly issuesResultsProvider = new IssueResultsProviderRegistry()
     public readonly views = new ViewProviderRegistry()
 }
