@@ -6,7 +6,7 @@ import * as React from 'react'
 import { render } from 'react-dom'
 import { Subscription } from 'rxjs'
 import storage from '../../browser/storage'
-import { FeatureFlags } from '../../browser/types'
+import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { getAccessToken, setAccessToken } from '../../shared/auth/access_token'
 import { createAccessToken, fetchAccessTokenIDs } from '../../shared/backend/auth'
@@ -18,6 +18,15 @@ import { assertEnv } from '../envAssertion'
 assertEnv('OPTIONS')
 
 type State = Pick<FeatureFlags, 'useExtensions'> & { sourcegraphURL: string | null }
+
+const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
+    !!Object.keys(featureFlagDefaults).find(k => key === k)
+
+const toggleFeatureFlag = (key: string) => {
+    if (keyIsFeatureFlag(key)) {
+        featureFlags.toggle(key)
+    }
+}
 
 class Options extends React.Component<{}, State> {
     public state: State = { sourcegraphURL: null, useExtensions: false }
@@ -62,7 +71,7 @@ class Options extends React.Component<{}, State> {
             setAccessToken,
             fetchAccessTokenIDs,
 
-            toggleFeatureFlag: featureFlags.toggle,
+            toggleFeatureFlag,
             featureFlags: [{ key: 'useExtensions', value: this.state.useExtensions }],
         }
 
