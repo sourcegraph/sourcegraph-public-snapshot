@@ -185,7 +185,7 @@ func TestMiddleware(t *testing.T) {
 	defer conf.Mock(nil)
 
 	config := withConfigDefaults(&schema.SAMLAuthProvider{
-		Type: "saml",
+		Type:                        "saml",
 		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
 		ServiceProviderCertificate:  testSAMLSPCert,
 		ServiceProviderPrivateKey:   testSAMLSPKey,
