@@ -15,8 +15,10 @@
 package query
 
 import (
+	"errors"
 	"log"
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -95,6 +97,78 @@ func TestMap(t *testing.T) {
 	got := Map(in, nil, f)
 	if !reflect.DeepEqual(got, out) {
 		t.Errorf("got %v, want %v", got, out)
+	}
+}
+
+// createListFunc returns a listFn (see ExpandRepo docs) which returns a list
+// of repositories from repos.
+func createListFunc(repos []string) func([]string, []string) (map[string]bool, error) {
+	return func(inc, exc []string) (map[string]bool, error) {
+		set := map[string]bool{}
+		for _, r := range repos {
+			set[r] = true
+		}
+		for r := range set {
+			for _, re := range inc {
+				if matched, err := regexp.MatchString(re, r); err != nil {
+					return nil, err
+				} else if !matched {
+					delete(set, r)
+				}
+			}
+			for _, re := range exc {
+				if matched, err := regexp.MatchString(re, r); err != nil {
+					return nil, err
+				} else if matched {
+					delete(set, r)
+				}
+			}
+		}
+		return set, nil
+	}
+}
+
+func TestExpandRepo(t *testing.T) {
+	list := createListFunc([]string{"foo", "bar", "baz"})
+
+	cases := map[string]string{
+		"r:":                         "(reposet bar baz foo)",
+		"r:b":                        "(reposet bar baz)",
+		"r:b r:a":                    "(reposet bar baz)",
+		"r:b -r:baz":                 "(reposet bar)",
+		"-r:f":                       "(reposet bar baz)",
+		"r:foo":                      "(reposet foo)",
+		"r:foo r:baz":                "FALSE",
+		"r:foo test":                 "(and substr:\"test\" (reposet foo))",
+		"r:foo test -hello":          "(and substr:\"test\" (not substr:\"hello\") (reposet foo))",
+		"(r:ba test (r:b r:a -r:z))": "(and substr:\"test\" (reposet bar))",
+	}
+	for qStr, want := range cases {
+		q, err := Parse(qStr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := ExpandRepo(q, list)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.String() != want {
+			t.Errorf("expandRepo(%q) got %s want %s", qStr, got.String(), want)
+		}
+	}
+}
+
+func TestExpandRepo_error(t *testing.T) {
+	list := func(inc, exc []string) (map[string]bool, error) {
+		return nil, errors.New("fail")
+	}
+	q, err := Parse("(foo repo:bar) or (baz repo:bam)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	q, err = ExpandRepo(q, list)
+	if err == nil {
+		t.Fatalf("expected error, got %s", q.String())
 	}
 }
 
