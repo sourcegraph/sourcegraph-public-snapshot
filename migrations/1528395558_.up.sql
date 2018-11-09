@@ -1,0 +1,1 @@
+-- Empty migration to workaround https://github.com/sourcegraph/sourcegraph/issues/898#issuecomment-437264707
