@@ -111,6 +111,7 @@ type RepoInfoResponse struct {
 	CloneProgress   string     // a progress message from the running clone command.
 	Cloned          bool       // whether the repository has been cloned successfully
 	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
+	LastChanged     *time.Time // timestamp of the most recent ref in the git repository
 
 	// CloneTime is the time the clone occurred. Note: Repositories may be
 	// recloned automatically, so this time is likely to move forward

@@ -6,7 +6,7 @@ import { noop, Observable, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import sinon from 'sinon'
-import { AccessToken, FeatureFlags } from '../../browser/types'
+import { AccessToken } from '../../browser/types'
 import { GQL } from '../../types/gqlschema'
 import { OptionsContainer, OptionsContainerProps } from './OptionsContainer'
 
@@ -18,12 +18,8 @@ describe('OptionsContainer', () => {
         | 'fetchAccessTokenIDs'
         | 'createAccessToken'
         | 'fetchCurrentUser'
-        | 'setConfigurableSettings'
-        | 'getConfigurableSettings'
         | 'ensureValidSite'
     > = {
-        getConfigurableSettings: () => new Observable<Partial<FeatureFlags>>(),
-        setConfigurableSettings: (settings: Partial<FeatureFlags>) => new Observable<Partial<FeatureFlags>>(),
         fetchCurrentUser: () => new Observable<GQL.IUser>(),
         createAccessToken: () => new Observable<AccessToken>(),
         getAccessToken: (url: string) => new Observable<AccessToken | undefined>(),

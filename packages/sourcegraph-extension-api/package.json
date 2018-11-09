@@ -31,9 +31,9 @@
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",
     "watch:typecheck": "tsc -p tsconfig.json -w --preserveWatchOutput",
     "watch:build:assets": "yarn -s run build:assets && nodemon -q --watch src/protocol/contribution.ts --exec 'yarn -s run build:assets || exit 1'",
-    "watch:build:module": "tsc -p tsconfig.dist.json -w --preserveWatchOutput",
+    "watch:build:module": "tsc -p tsconfig.dist.json -w --preserveWatchOutput --pretty",
     "watch:build:api": "nodemon -q --watch src/sourcegraph.d.ts --watch src/extension/index.js --ext ts,js --exec 'yarn -s run build:api'",
-    "watch:build": "concurrently --kill-others 'yarn -s run watch:build:assets' 'yarn -s run watch:build:module' 'yarn -s run watch:build:api'",
+    "watch:build": "concurrently --raw --kill-others 'yarn -s run watch:build:assets' 'yarn -s run watch:build:module' 'yarn -s run watch:build:api'",
     "watch:test": "yarn -s run test -- -w",
     "watch:cover": "nodemon -q --watch src/ --ext ts,js,json --watch package.json --exec 'yarn -s run cover || exit 1'"
   },

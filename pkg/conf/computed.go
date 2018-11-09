@@ -43,6 +43,13 @@ func JumpToDefOSSIndexEnabled() bool {
 	return p == "enabled"
 }
 
+// UpdateScheduler2Enabled returns true if UpdateScheduler2 experiment is enabled.
+func UpdateScheduler2Enabled() bool {
+	p := Get().ExperimentalFeatures.UpdateScheduler2
+	// default is disabled
+	return p == "enabled"
+}
+
 type AccessTokAllow string
 
 const (

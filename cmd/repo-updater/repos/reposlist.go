@@ -54,11 +54,6 @@ import (
 //
 // TODO: Separate "repos.list" code and the scheduler.
 
-const (
-	minDelay = 45 * time.Second
-	maxDelay = 8 * time.Hour
-)
-
 // repo represents a repository we're tracking.
 type repoData struct {
 	// Name used as the unique key, also sometimes api.RepoName
@@ -188,10 +183,10 @@ type repoList struct {
 
 // A configuredRepo represents the configuration data for a given repo from
 // a configuration source, such as information retrieved from GitHub for a
-// given GitHubConnection. The repo name isn't present because it's the key used
-// to look the repo up in a sourceRepoList.
+// given GitHubConnection.
 type configuredRepo struct {
 	url     string
+	name    api.RepoName // only set and read by new scheduler. TODO(nick): Remove this comment when updateScheduler2 feature flag is disabled
 	enabled bool
 }
 
@@ -664,6 +659,13 @@ func (r *repoList) updateLoop(ctx context.Context) {
 			log15.Debug("woken by ping", "s", s)
 		case <-ctx.Done():
 			log15.Info("context complete, terminating update loop.")
+			// Drop any existing lists; they'll get recreated by periodic updates later
+			// if the scheduler gets reenabled.
+			r.mu.Lock()
+			r.repos = make(map[string]*repoData)
+			r.heap = make([]*repoData, 0)
+			r.bumped = make([]*repoData, 0)
+			r.mu.Unlock()
 			return
 		}
 	}
@@ -717,26 +719,71 @@ func (r *repoList) updateSource(source string, newList sourceRepoList) (enqueued
 	return enqueued, dequeued
 }
 
+// Scheduler schedules repo updates.
+var Scheduler = newUpdateScheduler()
+
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) {
+	var shutdownPreviousScheduler context.CancelFunc
+	newSchedulerRunning, oldSchedulerRunning := false, false
 	conf.Watch(func() {
 		c := conf.Get()
 
-		repos.mu.Lock()
-		repos.autoUpdatesDisabled = c.DisableAutoGitUpdates
-		repos.mu.Unlock()
+		if conf.UpdateScheduler2Enabled() {
+			if oldSchedulerRunning {
+				log15.Info("shutting down old scheduler")
+				shutdownPreviousScheduler()
+				oldSchedulerRunning = false
+			}
+			if c.DisableAutoGitUpdates {
+				if newSchedulerRunning {
+					log15.Info("shutting down new scheduler (auto git updates disabled)")
+					shutdownPreviousScheduler()
+					newSchedulerRunning = false
+				}
+			} else {
+				if !newSchedulerRunning {
+					log15.Info("starting new scheduler")
+					ctx2, cancel := context.WithCancel(ctx)
+					Scheduler.run(ctx2)
+					shutdownPreviousScheduler = cancel
+					newSchedulerRunning = true
+				}
+				_, newMap := updateConfig(ctx, c.ReposList)
+				Scheduler.updateSource("internalConfig", newMap)
+				return
+			}
+		} else {
+			repos.mu.Lock()
+			repos.autoUpdatesDisabled = c.DisableAutoGitUpdates
+			repos.mu.Unlock()
 
-		repos.updateConfig(ctx, c.ReposList)
+			if newSchedulerRunning {
+				log15.Info("shutting down new scheduler")
+				shutdownPreviousScheduler()
+				newSchedulerRunning = false
+			}
+			if !oldSchedulerRunning {
+				log15.Info("starting old scheduler")
+				ctx2, cancel := context.WithCancel(ctx)
+				go repos.updateLoop(ctx2)
+				shutdownPreviousScheduler = cancel
+				oldSchedulerRunning = true
+			}
+			newList, _ := updateConfig(ctx, c.ReposList)
+			repos.updateSource("internalConfig", newList)
+		}
 	})
-	go repos.updateLoop(ctx)
 }
 
 // updateConfig responds to changes in the configured list of repositories;
 // this is specifically the list of repositories directly configured, as opposed
 // to repositories found by looking up keys from various services.
-func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repository) {
+func updateConfig(ctx context.Context, configs []*schema.Repository) (sourceRepoList, sourceRepoMap) {
 	log15.Debug("repolist updateConfig")
 	newList := make(sourceRepoList)
+	newScheduler := conf.UpdateScheduler2Enabled()
+	newMap := make(sourceRepoMap)
 	for _, cfg := range configs {
 		if cfg.Type == "" {
 			cfg.Type = "git"
@@ -754,9 +801,17 @@ func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repositor
 			log15.Warn("error creating or checking for repo", "repo", cfg.Path)
 			continue
 		}
+		if newScheduler {
+			newMap[api.RepoName(cfg.Path)] = &configuredRepo{
+				name:    api.RepoName(cfg.Path),
+				url:     cfg.Url,
+				enabled: newRepo.Enabled,
+			}
+			continue
+		}
 		newList[cfg.Path] = configuredRepo{url: cfg.Url, enabled: newRepo.Enabled}
 	}
-	r.updateSource("internalConfig", newList)
+	return newList, newMap
 }
 
 // Snapshot represents the state of the various queues repo-updater
