@@ -1,6 +1,6 @@
 import H from 'history'
-import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
-import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
+import { TextDocumentItem } from '../../api/client/types/textDocument'
+import { ContributableMenu, Contributions } from '../../api/protocol'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
 import { Settings, SettingsSubject } from '../../settings'

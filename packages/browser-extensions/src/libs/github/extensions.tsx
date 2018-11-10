@@ -1,9 +1,9 @@
+import { ContributableMenu } from '@sourcegraph/extensions-client-common/lib/api/protocol'
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import { Controller as ClientController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
 import { Settings, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import * as H from 'history'
-import { ContributableMenu } from 'sourcegraph/module/protocol'
 
 import * as React from 'react'
 import { render } from 'react-dom'

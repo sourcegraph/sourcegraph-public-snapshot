@@ -1,3 +1,6 @@
+import { TextDocumentItem } from '@sourcegraph/extensions-client-common/lib/api/client/types/textDocument'
+import { ContributableMenu } from '@sourcegraph/extensions-client-common/lib/api/protocol'
+import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
 import {
@@ -16,17 +19,14 @@ import * as React from 'react'
 import { render } from 'react-dom'
 import { combineLatest, from, Observable } from 'rxjs'
 import { map, take } from 'rxjs/operators'
-import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
-import { ContributableMenu } from 'sourcegraph/module/protocol'
-import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { Disposable } from 'vscode-languageserver'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
-import * as H from 'history'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
-} from 'sourcegraph/module/client/providers/decoration'
+} from '@sourcegraph/extensions-client-common/lib/api/client/providers/decoration'
+import * as H from 'history'
 import { isErrorLike } from '../../shared/backend/errors'
 import { createExtensionsContextController, createMessageTransports } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'

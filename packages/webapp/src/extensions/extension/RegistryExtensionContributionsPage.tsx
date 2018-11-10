@@ -1,7 +1,7 @@
+import { ContributableMenu } from '@sourcegraph/extensions-client-common/lib/api/protocol'
 import { ExtensionManifest } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'

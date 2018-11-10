@@ -1,7 +1,7 @@
+import { Environment } from '@sourcegraph/extensions-client-common/lib/api/client/environment'
+import { TextDocumentItem } from '@sourcegraph/extensions-client-common/lib/api/client/types/textDocument'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { Settings, SettingsCascade, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
-import { Environment } from 'sourcegraph/module/client/environment'
-import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
 
 /** React props or state representing the Sourcegraph extensions environment. */
 export interface ExtensionsEnvironmentProps {

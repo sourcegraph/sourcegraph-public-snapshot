@@ -1,4 +1,4 @@
-import { Extension } from 'sourcegraph/module/client/extension'
+import { Extension } from '../api/client/extension'
 import { ErrorLike, isErrorLike } from '../errors'
 import { ExtensionManifest } from '../schema/extension.schema'
 import * as GQL from '../schema/graphqlschema'

@@ -1,6 +1,6 @@
 import { Unsubscribable } from 'rxjs'
 import { QueryTransformer } from 'sourcegraph'
-import { SearchAPI } from 'src/client/api/search'
+import { SearchAPI } from '../../client/api/search'
 import { ProviderMap } from './common'
 
 export interface ExtSearchAPI {

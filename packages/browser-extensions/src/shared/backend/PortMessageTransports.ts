@@ -1,12 +1,12 @@
-import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
-import { Message } from 'sourcegraph/module/protocol/jsonrpc2/messages'
+import { MessageTransports } from '@sourcegraph/extensions-client-common/lib/api/protocol/jsonrpc2/connection'
+import { Message } from '@sourcegraph/extensions-client-common/lib/api/protocol/jsonrpc2/messages'
 import {
     AbstractMessageReader,
     AbstractMessageWriter,
     DataCallback,
     MessageReader,
     MessageWriter,
-} from 'sourcegraph/module/protocol/jsonrpc2/transport'
+} from '@sourcegraph/extensions-client-common/lib/api/protocol/jsonrpc2/transport'
 
 class PortMessageReader extends AbstractMessageReader implements MessageReader {
     private pending: Message[] = []

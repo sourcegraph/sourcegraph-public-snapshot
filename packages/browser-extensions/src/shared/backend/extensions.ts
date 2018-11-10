@@ -1,3 +1,5 @@
+import { MessageTransports } from '@sourcegraph/extensions-client-common/lib/api/protocol/jsonrpc2/connection'
+import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
 import { UpdateExtensionSettingsArgs } from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
@@ -10,16 +12,14 @@ import {
     SettingsCascadeOrError,
     SettingsSubject,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { applyEdits } from '@sqs/jsonc-parser'
 import * as JSONC from '@sqs/jsonc-parser'
+import { applyEdits } from '@sqs/jsonc-parser'
 import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
 import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
 import { combineLatest, from, Observable, Subject, throwError } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take, tap } from 'rxjs/operators'
-import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
-import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import uuid from 'uuid'
 import { Disposable } from 'vscode-languageserver'
 import storage, { StorageItems } from '../../browser/storage'

@@ -1,7 +1,7 @@
+import { decorationAttachmentStyleForTheme } from '@sourcegraph/extensions-client-common/lib/api/client/providers/decoration'
 import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'
-import { decorationAttachmentStyleForTheme } from 'sourcegraph/module/client/providers/decoration'
 import { AbsoluteRepoFile } from '..'
 import { LinkOrSpan } from '../../components/LinkOrSpan'
 

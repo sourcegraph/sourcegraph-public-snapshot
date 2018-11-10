@@ -19,7 +19,7 @@ import { render } from 'react-dom'
 import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subscription } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
-import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
+import { TextDocumentItem } from '@sourcegraph/extensions-client-common/lib/api/client/types/textDocument'
 import { Disposable } from 'vscode-jsonrpc'
 import { createJumpURLFetcher, createLSPFromExtensions, JumpURLLocation } from '../../shared/backend/lsp'
 import { lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/lsp'

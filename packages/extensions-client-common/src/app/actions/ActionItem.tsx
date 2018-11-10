@@ -2,13 +2,13 @@ import H from 'history'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
-import { ExecuteCommandParams } from 'sourcegraph/module/client/providers/command'
-import { ActionContribution } from 'sourcegraph/module/protocol'
+import { ExecuteCommandParams } from '../../api/client/providers/command'
+import { ActionContribution } from '../../api/protocol'
 import { urlForOpenPanel } from '../../client/clientCommands'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
 import { asError, ErrorLike } from '../../errors'
-import { SettingsSubject, Settings } from '../../settings'
+import { Settings, SettingsSubject } from '../../settings'
 import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
@@ -53,10 +53,7 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ActionItem<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>,
-    State
-> {
+export class ActionItem<S extends SettingsSubject, C extends Settings> extends React.PureComponent<Props<S, C>, State> {
     public state: State = { actionOrError: null }
 
     private commandExecutions = new Subject<ExecuteCommandParams>()

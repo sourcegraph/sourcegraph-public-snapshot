@@ -1,3 +1,4 @@
+import { ContributableMenu } from '@sourcegraph/extensions-client-common/lib/api/protocol'
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
 import { ControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
@@ -6,7 +7,6 @@ import { Settings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/ex
 import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { FileInfo } from '../../libs/code_intelligence'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'

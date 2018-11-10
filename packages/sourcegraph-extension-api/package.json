@@ -1,81 +1,34 @@
 {
   "name": "sourcegraph",
-  "version": "18.4.2",
+  "version": "19.0.0",
   "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
   "author": "Sourcegraph",
-  "license": "Apache-2.0",
-  "engines": {
-    "node": ">=8.0.0",
-    "yarn": "^1.10.1"
-  },
   "bugs": {
     "url": "https://github.com/sourcegraph/sourcegraph/issues"
   },
-  "main": "lib/extension/index.js",
-  "module": "lib/extension/index.js",
-  "types": "lib/sourcegraph.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph"
+  },
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "src/sourcegraph.d.ts",
   "files": [
-    "lib",
-    "module"
+    "src"
   ],
-  "scripts": {
-    "semantic-release": "semantic-release",
-    "prettier": "prettier '**/{*.{js?(on),ts,yml},.*.yml}' --write --list-different",
-    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
-    "typecheck": "tsc -p tsconfig.json",
-    "build:assets": "mkdir -p lib/protocol && typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json' --noExtraProps --required --include src/protocol/contribution.ts --out lib/protocol/contribution.schema.json tsconfig.dist.json Contributions && node -e \"/* Deletes the top-level additionalProperties property in the file. */ fs = require('fs');f = process.argv[1];o = JSON.parse(fs.readFileSync(f, 'utf8'));delete o.additionalProperties;fs.writeFileSync(f, JSON.stringify(o, null, 4))\" lib/protocol/contribution.schema.json",
-    "build:module": "tsc -p tsconfig.dist.json",
-    "build:api": "mkdir -p lib/extension && cpy src/sourcegraph.d.ts lib/ && cpy src/extension/index.js lib/extension",
-    "build": "yarn -s run build:module && yarn -s run build:assets && yarn -s run build:api",
-    "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --opts mocha.opts",
-    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",
-    "watch:typecheck": "tsc -p tsconfig.json -w --preserveWatchOutput",
-    "watch:build:assets": "yarn -s run build:assets && nodemon -q --watch src/protocol/contribution.ts --exec 'yarn -s run build:assets || exit 1'",
-    "watch:build:module": "tsc -p tsconfig.dist.json -w --preserveWatchOutput --pretty",
-    "watch:build:api": "nodemon -q --watch src/sourcegraph.d.ts --watch src/extension/index.js --ext ts,js --exec 'yarn -s run build:api'",
-    "watch:build": "concurrently --raw --kill-others 'yarn -s run watch:build:assets' 'yarn -s run watch:build:module' 'yarn -s run watch:build:api'",
-    "watch:test": "yarn -s run test -- -w",
-    "watch:cover": "nodemon -q --watch src/ --ext ts,js,json --watch package.json --exec 'yarn -s run cover || exit 1'"
-  },
-  "nyc": {
-    "extension": [
-      ".ts"
-    ],
-    "exclude": [
-      "**/*.d.ts",
-      "**/*.test.ts",
-      "**/*.js"
-    ],
-    "cache": true,
-    "reporter": [
-      "text",
-      "lcovonly"
-    ]
-  },
   "sideEffects": false,
-  "dependencies": {
-    "minimatch": "^3.0.4",
-    "rxjs": "^6.3.2"
+  "scripts": {
+    "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
+    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
     "@sourcegraph/prettierrc": "^2.2.0",
     "@sourcegraph/tsconfig": "^3.0.0",
     "@sourcegraph/tslint-config": "^12.0.0",
-    "@types/minimatch": "3.0.3",
-    "@types/mocha": "5.2.5",
-    "@types/node": "10.12.2",
-    "concurrently": "^4.0.1",
-    "cpy-cli": "^2.0.0",
-    "mocha": "^5.2.0",
-    "nodemon": "^1.18.2",
-    "nyc": "^13.1.0",
-    "prettier": "^1.14.2",
-    "semantic-release": "^15.9.12",
-    "source-map-support": "^0.5.9",
-    "ts-node": "^7.0.1",
-    "tslint": "^5.10.0",
+    "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
-    "typescript": "^3.0.3",
-    "typescript-json-schema": "^0.32.0"
+    "typescript": "^3.1.6"
   }
 }

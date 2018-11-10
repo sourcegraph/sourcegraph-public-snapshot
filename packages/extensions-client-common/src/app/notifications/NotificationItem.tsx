@@ -1,6 +1,6 @@
 import marked from 'marked'
 import * as React from 'react'
-import { MessageType } from 'sourcegraph/module/protocol'
+import { MessageType } from '../../api/protocol'
 import { isErrorLike } from '../../errors'
 import { Notification } from './notification'
 

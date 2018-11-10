@@ -3,20 +3,18 @@ import H from 'history'
 import { isArray, sortBy, uniq } from 'lodash-es'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
+import { ContributableMenu, Contributions } from '../api/protocol'
 import { ControllerProps } from '../client/controller'
 import { ExtensionsProps } from '../context'
-import { SettingsSubject, Settings } from '../settings'
+import { Settings, SettingsSubject } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { ActionItem, ActionItemProps } from './actions/ActionItem'
 import { getContributedActionItems } from './actions/contributions'
 
-interface Props<S extends SettingsSubject, C extends Settings>
-    extends ControllerProps<S, C>,
-        ExtensionsProps<S, C> {
+interface Props<S extends SettingsSubject, C extends Settings> extends ControllerProps<S, C>, ExtensionsProps<S, C> {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 

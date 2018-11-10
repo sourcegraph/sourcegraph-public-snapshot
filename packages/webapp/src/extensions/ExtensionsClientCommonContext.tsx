@@ -1,3 +1,6 @@
+import { InitData } from '@sourcegraph/extensions-client-common/lib/api/extension/extensionHost'
+import { MessageTransports } from '@sourcegraph/extensions-client-common/lib/api/protocol/jsonrpc2/connection'
+import { createWebWorkerMessageTransports } from '@sourcegraph/extensions-client-common/lib/api/protocol/jsonrpc2/transports/webWorker'
 import { ControllerProps as GenericExtensionsControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import {
     ExtensionsProps as GenericExtensionsProps,
@@ -18,9 +21,6 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import { concat, Observable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take, withLatestFrom } from 'rxjs/operators'
-import { InitData } from 'sourcegraph/module/extension/extensionHost'
-import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
-import { createWebWorkerMessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/transports/webWorker'
 import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
 import { authenticatedUser } from '../auth'
 import { gql, queryGraphQL } from '../backend/graphql'

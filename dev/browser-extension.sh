@@ -2,8 +2,6 @@
 
 yarn
 
-echo "Building sourcegraph-extension-api..."
-yarn workspace sourcegraph run build
 echo "Building extensions-client-common..."
 yarn workspace @sourcegraph/extensions-client-common run build
 
