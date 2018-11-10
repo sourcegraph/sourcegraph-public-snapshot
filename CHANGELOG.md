@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - Removed the `httpStrictTransportSecurity` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 
 ### Removed
 

@@ -100,13 +100,6 @@ const SiteSchemaJSON = `{
         }
       }
     },
-    "tls.letsencrypt": {
-      "description":
-        "Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.\nThe default value is auto, which uses the following conditions to switch on:\n - tlsCert and tlsKey are unset.\n - externalURL is a https:// URL\n - Can successfully bind to port 443",
-      "default": "auto",
-      "enum": ["auto", "on", "off"],
-      "type": "string"
-    },
     "tlsCert": {
       "description":
         "The contents of the PEM-encoded TLS certificate for the web server (for the web app and API).\n\nSee https://docs.sourcegraph.com/admin/tls_ssl for more information.",
