@@ -1,0 +1,10 @@
+import { CancellationToken } from './cancel';
+import { ResponseError } from './messages';
+declare type HandlerResult<R, E> = R | ResponseError<E> | Promise<R> | Promise<ResponseError<E>> | Promise<R | ResponseError<E>>;
+export declare type StarRequestHandler = (method: string, ...params: any[]) => HandlerResult<any, any>;
+export declare type GenericRequestHandler<R, E> = (...params: any[]) => HandlerResult<R, E>;
+export declare type RequestHandler<P, R, E> = (params: P, token: CancellationToken) => HandlerResult<R, E>;
+export declare type StarNotificationHandler = (method: string, ...params: any[]) => void;
+export declare type GenericNotificationHandler = (...params: any[]) => void;
+export declare type NotificationHandler<P> = (params: P) => void;
+export {};

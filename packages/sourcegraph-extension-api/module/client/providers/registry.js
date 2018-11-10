@@ -1,0 +1,39 @@
+import { BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
+/** Base class for provider registries for features. */
+export class FeatureProviderRegistry {
+    constructor(initialEntries) {
+        this.entries = new BehaviorSubject([]);
+        /** All providers, emitted whenever the set of registered providers changed. */
+        this.providers = this.entries.pipe(map(providers => providers.map(({ provider }) => provider)));
+        if (initialEntries) {
+            this.entries.next(initialEntries);
+        }
+    }
+    registerProvider(registrationOptions, provider) {
+        const entry = { registrationOptions, provider };
+        this.entries.next([...this.entries.value, entry]);
+        return {
+            unsubscribe: () => {
+                this.entries.next(this.entries.value.filter(e => e !== entry));
+            },
+        };
+    }
+    /**
+     * The current set of providers. Used by callers that do not need to react to providers being
+     * registered or unregistered.
+     *
+     * NOTE: You should usually use the providers property on this class, not providersSnapshot,
+     * even when you think you don't need live-updating results. Providers are registered
+     * asynchronously after the client connects (or reconnects) to the server. So, the providers
+     * list might be empty at the instant you need the results (because the client was just
+     * instantiated and is waiting on a network roundtrip before it registers providers, or because
+     * there was a temporary network error and the client is reestablishing the connection). By
+     * using the providers property, the consumer will get the results it (probably) expects when
+     * the client connects and registers the providers.
+     */
+    get providersSnapshot() {
+        return this.entries.value.map(({ provider }) => provider);
+    }
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicmVnaXN0cnkuanMiLCJzb3VyY2VSb290Ijoic3JjLyIsInNvdXJjZXMiOlsiY2xpZW50L3Byb3ZpZGVycy9yZWdpc3RyeS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSxPQUFPLEVBQUUsZUFBZSxFQUE4QixNQUFNLE1BQU0sQ0FBQTtBQUNsRSxPQUFPLEVBQUUsR0FBRyxFQUFFLE1BQU0sZ0JBQWdCLENBQUE7QUFRcEMsdURBQXVEO0FBQ3ZELE1BQU0sT0FBZ0IsdUJBQXVCO0lBR3pDLFlBQW1CLGNBQThCO1FBRnZDLFlBQU8sR0FBRyxJQUFJLGVBQWUsQ0FBZ0IsRUFBRSxDQUFDLENBQUE7UUFrQjFELCtFQUErRTtRQUMvRCxjQUFTLEdBQW9CLElBQUksQ0FBQyxPQUFPLENBQUMsSUFBSSxDQUMxRCxHQUFHLENBQUMsU0FBUyxDQUFDLEVBQUUsQ0FBQyxTQUFTLENBQUMsR0FBRyxDQUFDLENBQUMsRUFBRSxRQUFRLEVBQUUsRUFBRSxFQUFFLENBQUMsUUFBUSxDQUFDLENBQUMsQ0FDOUQsQ0FBQTtRQWxCRyxJQUFJLGNBQWMsRUFBRTtZQUNoQixJQUFJLENBQUMsT0FBTyxDQUFDLElBQUksQ0FBQyxjQUFjLENBQUMsQ0FBQTtTQUNwQztJQUNMLENBQUM7SUFFTSxnQkFBZ0IsQ0FBQyxtQkFBc0IsRUFBRSxRQUFXO1FBQ3ZELE1BQU0sS0FBSyxHQUFnQixFQUFFLG1CQUFtQixFQUFFLFFBQVEsRUFBRSxDQUFBO1FBQzVELElBQUksQ0FBQyxPQUFPLENBQUMsSUFBSSxDQUFDLENBQUMsR0FBRyxJQUFJLENBQUMsT0FBTyxDQUFDLEtBQUssRUFBRSxLQUFLLENBQUMsQ0FBQyxDQUFBO1FBQ2pELE9BQU87WUFDSCxXQUFXLEVBQUUsR0FBRyxFQUFFO2dCQUNkLElBQUksQ0FBQyxPQUFPLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBQyxPQUFPLENBQUMsS0FBSyxDQUFDLE1BQU0sQ0FBQyxDQUFDLENBQUMsRUFBRSxDQUFDLENBQUMsS0FBSyxLQUFLLENBQUMsQ0FBQyxDQUFBO1lBQ2xFLENBQUM7U0FDSixDQUFBO0lBQ0wsQ0FBQztJQU9EOzs7Ozs7Ozs7Ozs7T0FZRztJQUNILElBQVcsaUJBQWlCO1FBQ3hCLE9BQU8sSUFBSSxDQUFDLE9BQU8sQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLENBQUMsRUFBRSxRQUFRLEVBQUUsRUFBRSxFQUFFLENBQUMsUUFBUSxDQUFDLENBQUE7SUFDN0QsQ0FBQztDQUNKIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQmVoYXZpb3JTdWJqZWN0LCBPYnNlcnZhYmxlLCBVbnN1YnNjcmliYWJsZSB9IGZyb20gJ3J4anMnXG5pbXBvcnQgeyBtYXAgfSBmcm9tICdyeGpzL29wZXJhdG9ycydcblxuLyoqIEEgcmVnaXN0cnkgZW50cnkgZm9yIGEgcmVnaXN0ZXJlZCBwcm92aWRlci4gKi9cbmV4cG9ydCBpbnRlcmZhY2UgRW50cnk8TywgUD4ge1xuICAgIHJlZ2lzdHJhdGlvbk9wdGlvbnM6IE9cbiAgICBwcm92aWRlcjogUFxufVxuXG4vKiogQmFzZSBjbGFzcyBmb3IgcHJvdmlkZXIgcmVnaXN0cmllcyBmb3IgZmVhdHVyZXMuICovXG5leHBvcnQgYWJzdHJhY3QgY2xhc3MgRmVhdHVyZVByb3ZpZGVyUmVnaXN0cnk8TywgUD4ge1xuICAgIHByb3RlY3RlZCBlbnRyaWVzID0gbmV3IEJlaGF2aW9yU3ViamVjdDxFbnRyeTxPLCBQPltdPihbXSlcblxuICAgIHB1YmxpYyBjb25zdHJ1Y3Rvcihpbml0aWFsRW50cmllcz86IEVudHJ5PE8sIFA+W10pIHtcbiAgICAgICAgaWYgKGluaXRpYWxFbnRyaWVzKSB7XG4gICAgICAgICAgICB0aGlzLmVudHJpZXMubmV4dChpbml0aWFsRW50cmllcylcbiAgICAgICAgfVxuICAgIH1cblxuICAgIHB1YmxpYyByZWdpc3RlclByb3ZpZGVyKHJlZ2lzdHJhdGlvbk9wdGlvbnM6IE8sIHByb3ZpZGVyOiBQKTogVW5zdWJzY3JpYmFibGUge1xuICAgICAgICBjb25zdCBlbnRyeTogRW50cnk8TywgUD4gPSB7IHJlZ2lzdHJhdGlvbk9wdGlvbnMsIHByb3ZpZGVyIH1cbiAgICAgICAgdGhpcy5lbnRyaWVzLm5leHQoWy4uLnRoaXMuZW50cmllcy52YWx1ZSwgZW50cnldKVxuICAgICAgICByZXR1cm4ge1xuICAgICAgICAgICAgdW5zdWJzY3JpYmU6ICgpID0+IHtcbiAgICAgICAgICAgICAgICB0aGlzLmVudHJpZXMubmV4dCh0aGlzLmVudHJpZXMudmFsdWUuZmlsdGVyKGUgPT4gZSAhPT0gZW50cnkpKVxuICAgICAgICAgICAgfSxcbiAgICAgICAgfVxuICAgIH1cblxuICAgIC8qKiBBbGwgcHJvdmlkZXJzLCBlbWl0dGVkIHdoZW5ldmVyIHRoZSBzZXQgb2YgcmVnaXN0ZXJlZCBwcm92aWRlcnMgY2hhbmdlZC4gKi9cbiAgICBwdWJsaWMgcmVhZG9ubHkgcHJvdmlkZXJzOiBPYnNlcnZhYmxlPFBbXT4gPSB0aGlzLmVudHJpZXMucGlwZShcbiAgICAgICAgbWFwKHByb3ZpZGVycyA9PiBwcm92aWRlcnMubWFwKCh7IHByb3ZpZGVyIH0pID0+IHByb3ZpZGVyKSlcbiAgICApXG5cbiAgICAvKipcbiAgICAgKiBUaGUgY3VycmVudCBzZXQgb2YgcHJvdmlkZXJzLiBVc2VkIGJ5IGNhbGxlcnMgdGhhdCBkbyBub3QgbmVlZCB0byByZWFjdCB0byBwcm92aWRlcnMgYmVpbmdcbiAgICAgKiByZWdpc3RlcmVkIG9yIHVucmVnaXN0ZXJlZC5cbiAgICAgKlxuICAgICAqIE5PVEU6IFlvdSBzaG91bGQgdXN1YWxseSB1c2UgdGhlIHByb3ZpZGVycyBwcm9wZXJ0eSBvbiB0aGlzIGNsYXNzLCBub3QgcHJvdmlkZXJzU25hcHNob3QsXG4gICAgICogZXZlbiB3aGVuIHlvdSB0aGluayB5b3UgZG9uJ3QgbmVlZCBsaXZlLXVwZGF0aW5nIHJlc3VsdHMuIFByb3ZpZGVycyBhcmUgcmVnaXN0ZXJlZFxuICAgICAqIGFzeW5jaHJvbm91c2x5IGFmdGVyIHRoZSBjbGllbnQgY29ubmVjdHMgKG9yIHJlY29ubmVjdHMpIHRvIHRoZSBzZXJ2ZXIuIFNvLCB0aGUgcHJvdmlkZXJzXG4gICAgICogbGlzdCBtaWdodCBiZSBlbXB0eSBhdCB0aGUgaW5zdGFudCB5b3UgbmVlZCB0aGUgcmVzdWx0cyAoYmVjYXVzZSB0aGUgY2xpZW50IHdhcyBqdXN0XG4gICAgICogaW5zdGFudGlhdGVkIGFuZCBpcyB3YWl0aW5nIG9uIGEgbmV0d29yayByb3VuZHRyaXAgYmVmb3JlIGl0IHJlZ2lzdGVycyBwcm92aWRlcnMsIG9yIGJlY2F1c2VcbiAgICAgKiB0aGVyZSB3YXMgYSB0ZW1wb3JhcnkgbmV0d29yayBlcnJvciBhbmQgdGhlIGNsaWVudCBpcyByZWVzdGFibGlzaGluZyB0aGUgY29ubmVjdGlvbikuIEJ5XG4gICAgICogdXNpbmcgdGhlIHByb3ZpZGVycyBwcm9wZXJ0eSwgdGhlIGNvbnN1bWVyIHdpbGwgZ2V0IHRoZSByZXN1bHRzIGl0IChwcm9iYWJseSkgZXhwZWN0cyB3aGVuXG4gICAgICogdGhlIGNsaWVudCBjb25uZWN0cyBhbmQgcmVnaXN0ZXJzIHRoZSBwcm92aWRlcnMuXG4gICAgICovXG4gICAgcHVibGljIGdldCBwcm92aWRlcnNTbmFwc2hvdCgpOiBQW10ge1xuICAgICAgICByZXR1cm4gdGhpcy5lbnRyaWVzLnZhbHVlLm1hcCgoeyBwcm92aWRlciB9KSA9PiBwcm92aWRlcilcbiAgICB9XG59XG4iXX0=

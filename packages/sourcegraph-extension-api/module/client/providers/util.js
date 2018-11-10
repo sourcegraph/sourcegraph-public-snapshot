@@ -1,0 +1,10 @@
+import { compact, flatten } from '../../util';
+/** Flattens and compacts the argument. If it is null or if the result is empty, it returns null. */
+export function flattenAndCompact(value) {
+    if (value === null) {
+        return null;
+    }
+    const merged = flatten(compact(value));
+    return merged.length === 0 ? null : merged;
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidXRpbC5qcyIsInNvdXJjZVJvb3QiOiJzcmMvIiwic291cmNlcyI6WyJjbGllbnQvcHJvdmlkZXJzL3V0aWwudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsT0FBTyxFQUFFLE9BQU8sRUFBRSxPQUFPLEVBQUUsTUFBTSxZQUFZLENBQUE7QUFFN0Msb0dBQW9HO0FBQ3BHLE1BQU0sVUFBVSxpQkFBaUIsQ0FBSSxLQUFnQztJQUNqRSxJQUFJLEtBQUssS0FBSyxJQUFJLEVBQUU7UUFDaEIsT0FBTyxJQUFJLENBQUE7S0FDZDtJQUNELE1BQU0sTUFBTSxHQUFHLE9BQU8sQ0FBQyxPQUFPLENBQUMsS0FBSyxDQUFDLENBQUMsQ0FBQTtJQUN0QyxPQUFPLE1BQU0sQ0FBQyxNQUFNLEtBQUssQ0FBQyxDQUFDLENBQUMsQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDLE1BQU0sQ0FBQTtBQUM5QyxDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgY29tcGFjdCwgZmxhdHRlbiB9IGZyb20gJy4uLy4uL3V0aWwnXG5cbi8qKiBGbGF0dGVucyBhbmQgY29tcGFjdHMgdGhlIGFyZ3VtZW50LiBJZiBpdCBpcyBudWxsIG9yIGlmIHRoZSByZXN1bHQgaXMgZW1wdHksIGl0IHJldHVybnMgbnVsbC4gKi9cbmV4cG9ydCBmdW5jdGlvbiBmbGF0dGVuQW5kQ29tcGFjdDxUPih2YWx1ZTogKFQgfCBUW10gfCBudWxsKVtdIHwgbnVsbCk6IFRbXSB8IG51bGwge1xuICAgIGlmICh2YWx1ZSA9PT0gbnVsbCkge1xuICAgICAgICByZXR1cm4gbnVsbFxuICAgIH1cbiAgICBjb25zdCBtZXJnZWQgPSBmbGF0dGVuKGNvbXBhY3QodmFsdWUpKVxuICAgIHJldHVybiBtZXJnZWQubGVuZ3RoID09PSAwID8gbnVsbCA6IG1lcmdlZFxufVxuIl19
