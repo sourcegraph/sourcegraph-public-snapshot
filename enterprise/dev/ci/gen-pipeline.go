@@ -54,28 +54,28 @@ func main() {
 
 	pipeline.AddStep(":lipstick:",
 		bk.Cmd("popd"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn run prettier"))
 
 	pipeline.AddStep(":typescript:",
 		bk.Cmd("popd"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn run tslint"))
 
 	pipeline.AddStep(":stylelint:",
 		bk.Cmd("popd"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn run stylelint --quiet"))
 
 	pipeline.AddStep(":webpack:",
 		bk.Cmd("popd"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
 		bk.Cmd("NODE_ENV=production yarn workspace webapp run build --color"),
@@ -85,7 +85,7 @@ func main() {
 	// pipeline.AddStep(":mocha:",
 	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 	// 	bk.Env("FORCE_COLOR", "1"),
-	// 	bk.Cmd("yarn --frozen-lockfile"),
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 	// 	bk.Cmd("yarn run cover"),
 	// 	bk.Cmd("node_modules/.bin/nyc report -r json"),
 	// 	bk.ArtifactPaths("coverage/coverage-final.json"))
@@ -201,7 +201,7 @@ func main() {
 			bk.ConcurrencyGroup("deploy"),
 			bk.Concurrency(1),
 			bk.Env("FORCE_COLOR", "1"),
-			bk.Cmd("yarn --frozen-lockfile"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn workspace webapp run test-e2e-sgdev --retries 5"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 		pipeline.AddWait()
