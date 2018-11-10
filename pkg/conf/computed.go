@@ -93,23 +93,6 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	}
 }
 
-const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
-
-// HTTPStrictTransportSecurity returns the value of the Strict-Transport-Security HTTP header to set.
-func HTTPStrictTransportSecurity() string {
-	switch v := Get().Critical.HttpStrictTransportSecurity.(type) {
-	case string:
-		return v
-	case bool:
-		if !v {
-			return ""
-		}
-		return defaultHTTPStrictTransportSecurity
-	default:
-		return defaultHTTPStrictTransportSecurity
-	}
-}
-
 // UpdateScheduler2Enabled returns true if UpdateScheduler2 experiment is enabled.
 func UpdateScheduler2Enabled() bool {
 	p := Get().ExperimentalFeatures.UpdateScheduler2

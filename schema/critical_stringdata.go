@@ -72,11 +72,6 @@ const CriticalSchemaJSON = `{
       "anyOf": [{ "type": "string", "enum": ["on", "off", "load-balanced"] }, { "type": "boolean" }],
       "default": "off"
     },
-    "httpStrictTransportSecurity": {
-      "description": "The value of the HTTP Strict-Transport-Security (HSTS) header sent by Sourcegraph, if non-empty",
-      "anyOf": [{ "type": "string" }, { "type": "boolean" }],
-      "default": "max-age=31536000"
-    },
     "lightstepAccessToken": {
       "description": "Access token for sending traces to LightStep.",
       "type": "string"

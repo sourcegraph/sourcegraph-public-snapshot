@@ -25,8 +25,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [httpToHttpsRedirect](all.md#httptohttpsredirect)
 
-- [httpStrictTransportSecurity](all.md#httpstricttransportsecurity)
-
 - [corsOrigin](all.md#corsorigin-string)
 
 - [disableBrowserExtension](all.md#disablebrowserextension-boolean)
@@ -276,14 +274,6 @@ Additional restrictions:
 Redirect users from HTTP to HTTPS. Accepted values are "on", "off", and "load-balanced" (boolean values true and false are also accepted and equivalent to "on" and "off" respectively). If "load-balanced" then additionally we use "X-Forwarded-Proto" to determine if on HTTP.
 
 Default: `"off"`
-
-<br/>
-
-## httpStrictTransportSecurity
-
-The value of the HTTP Strict-Transport-Security (HSTS) header sent by Sourcegraph, if non-empty
-
-Default: `"max-age=31536000"`
 
 <br/>
 
