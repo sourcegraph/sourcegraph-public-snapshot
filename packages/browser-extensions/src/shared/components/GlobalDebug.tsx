@@ -1,6 +1,6 @@
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
 import { Controller as ClientController } from '@sourcegraph/extensions-client-common/lib/client/controller'
-import { SettingsSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'

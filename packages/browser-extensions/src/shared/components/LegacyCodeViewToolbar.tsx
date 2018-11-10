@@ -11,11 +11,7 @@ import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/a
 import { ControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { ISite, IUser } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
-import {
-    SettingsCascadeProps,
-    SettingsSubject,
-    Settings,
-} from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'

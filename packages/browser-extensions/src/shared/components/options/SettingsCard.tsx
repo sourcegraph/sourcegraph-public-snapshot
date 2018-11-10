@@ -1,8 +1,4 @@
-import {
-    SettingsSubject,
-    Settings,
-    SettingsCascadeOrError,
-} from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsCascadeOrError, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import * as React from 'react'
 import { Alert, Card, CardBody, CardHeader, CardLink, CardText, Col, Row } from 'reactstrap'
 import { Subscription } from 'rxjs'

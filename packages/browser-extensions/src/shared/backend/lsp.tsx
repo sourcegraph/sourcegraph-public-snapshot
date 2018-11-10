@@ -1,6 +1,6 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/client/controller'
-import { SettingsSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { from, Observable, of, OperatorFunction, throwError, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
