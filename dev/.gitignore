@@ -2,3 +2,4 @@
 /config_base.json
 /config_combined.json
 /config_backup.json
+/nginx.pid
