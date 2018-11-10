@@ -8,7 +8,7 @@ import { urlForOpenPanel } from '../../client/clientCommands'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
 import { asError, ErrorLike } from '../../errors'
-import { ConfigurationSubject, Settings } from '../../settings'
+import { SettingsSubject, Settings } from '../../settings'
 import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
@@ -39,7 +39,7 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-interface Props<S extends ConfigurationSubject, C extends Settings>
+interface Props<S extends SettingsSubject, C extends Settings>
     extends ActionItemProps,
         ControllerProps<S, C>,
         ExtensionsProps<S, C> {
@@ -53,7 +53,7 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ActionItem<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+export class ActionItem<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
     Props<S, C>,
     State
 > {

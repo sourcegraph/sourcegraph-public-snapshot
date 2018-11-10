@@ -5,11 +5,11 @@ import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExtensionConnection } from 'sourcegraph/module/client/controller'
 import { BrowserConsoleTracer, Trace } from 'sourcegraph/module/protocol/jsonrpc2/trace'
 import { ControllerProps } from '../client/controller'
-import { ConfigurationSubject, Settings } from '../settings'
+import { SettingsSubject, Settings } from '../settings'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { Toggle } from '../ui/generic/Toggle'
 
-interface Props<S extends ConfigurationSubject, C extends Settings> extends ControllerProps<S, C> {
+interface Props<S extends SettingsSubject, C extends Settings> extends ControllerProps<S, C> {
     caretIcon: React.ComponentType<{
         className: 'icon-inline' | string
         onClick?: () => void
@@ -30,7 +30,7 @@ interface State {
     trace?: boolean
 }
 
-export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+export class ExtensionStatus<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
     Props<S, C>,
     State
 > {
@@ -135,7 +135,7 @@ export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings>
 }
 
 /** A button that toggles the visibility of the ExtensionStatus element in a popover. */
-export class ExtensionStatusPopover<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+export class ExtensionStatusPopover<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
     Props<S, C> & { location: H.Location }
 > {
     public render(): JSX.Element | null {

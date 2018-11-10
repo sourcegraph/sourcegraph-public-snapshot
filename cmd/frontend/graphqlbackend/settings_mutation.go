@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
+// DEPRECATED: The GraphQL type Configuration is deprecated.
 type configurationResolver struct {
 	contents string
 	messages []string // error and warning messages
@@ -28,21 +29,21 @@ func (r *configurationResolver) Messages() []string {
 	return r.messages
 }
 
-type configurationMutationGroupInput struct {
+type settingsMutationGroupInput struct {
 	Subject graphql.ID
 	LastID  *int32
 }
 
-type configurationMutationResolver struct {
-	input   *configurationMutationGroupInput
-	subject *configurationSubject
+type settingsMutation struct {
+	input   *settingsMutationGroupInput
+	subject *settingsSubject
 }
 
-// ConfigurationMutation defines the Mutation.configuration field.
-func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct {
-	Input *configurationMutationGroupInput
-}) (*configurationMutationResolver, error) {
-	subject, err := configurationSubjectByID(ctx, args.Input.Subject)
+// SettingsMutation defines the Mutation.settingsMutation field.
+func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
+	Input *settingsMutationGroupInput
+}) (*settingsMutation, error) {
+	subject, err := settingsSubjectByID(ctx, args.Input.Subject)
 	if err != nil {
 		return nil, err
 	}
@@ -51,24 +52,31 @@ func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct
 	// increment the settings.
 
 	// 🚨 SECURITY: Check whether the viewer can administer this subject (which is equivalent to
-	// being able to mutate its configuration).
+	// being able to mutate its settings).
 	if canAdmin, err := subject.ViewerCanAdminister(ctx); err != nil {
 		return nil, err
 	} else if !canAdmin {
 		return nil, errors.New("viewer is not allowed to edit these settings")
 	}
 
-	return &configurationMutationResolver{
+	return &settingsMutation{
 		input:   args.Input,
 		subject: subject,
 	}, nil
 }
 
-type updateConfigurationPayload struct{}
+// DEPRECATED in the GraphQL API
+func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct {
+	Input *settingsMutationGroupInput
+}) (*settingsMutation, error) {
+	return r.SettingsMutation(ctx, args)
+}
 
-func (updateConfigurationPayload) Empty() *EmptyResponse { return nil }
+type updateSettingsPayload struct{}
 
-type configurationEdit struct {
+func (updateSettingsPayload) Empty() *EmptyResponse { return nil }
+
+type settingsEdit struct {
 	KeyPath                   []*keyPathSegment
 	Value                     *jsonValue
 	ValueIsJSONCEncodedString bool
@@ -98,9 +106,9 @@ func toKeyPath(gqlKeyPath []*keyPathSegment) (jsonx.Path, error) {
 	return keyPath, nil
 }
 
-func (r *configurationMutationResolver) EditConfiguration(ctx context.Context, args *struct {
-	Edit *configurationEdit
-}) (*updateConfigurationPayload, error) {
+func (r *settingsMutation) EditSettings(ctx context.Context, args *struct {
+	Edit *settingsEdit
+}) (*updateSettingsPayload, error) {
 	keyPath, err := toKeyPath(args.Edit.KeyPath)
 	if err != nil {
 		return nil, err
@@ -119,67 +127,73 @@ func (r *configurationMutationResolver) EditConfiguration(ctx context.Context, a
 		value = json.RawMessage(s)
 	}
 
-	return r.editConfiguration(ctx, keyPath, value, remove)
+	return r.editSettings(ctx, keyPath, value, remove)
 }
 
-func (r *configurationMutationResolver) editConfiguration(ctx context.Context, keyPath jsonx.Path, value interface{}, remove bool) (*updateConfigurationPayload, error) {
-	_, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
+func (r *settingsMutation) EditConfiguration(ctx context.Context, args *struct {
+	Edit *settingsEdit
+}) (*updateSettingsPayload, error) {
+	return r.EditSettings(ctx, args)
+}
+
+func (r *settingsMutation) editSettings(ctx context.Context, keyPath jsonx.Path, value interface{}, remove bool) (*updateSettingsPayload, error) {
+	_, err := r.doUpdateSettings(ctx, func(oldSettings string) (edits []jsonx.Edit, err error) {
 		if remove {
-			edits, _, err = jsonx.ComputePropertyRemoval(oldConfig, keyPath, conf.FormatOptions)
+			edits, _, err = jsonx.ComputePropertyRemoval(oldSettings, keyPath, conf.FormatOptions)
 		} else {
-			edits, _, err = jsonx.ComputePropertyEdit(oldConfig, keyPath, value, nil, conf.FormatOptions)
+			edits, _, err = jsonx.ComputePropertyEdit(oldSettings, keyPath, value, nil, conf.FormatOptions)
 		}
 		return edits, err
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &updateConfigurationPayload{}, nil
+	return &updateSettingsPayload{}, nil
 }
 
-func (r *configurationMutationResolver) OverwriteConfiguration(ctx context.Context, args *struct {
-	Contents *string
-}) (*updateConfigurationPayload, error) {
-	_, err := settingsCreateIfUpToDate(ctx, r.subject, r.input.LastID, actor.FromContext(ctx).UID, *args.Contents)
+func (r *settingsMutation) OverwriteSettings(ctx context.Context, args *struct {
+	Contents string
+}) (*updateSettingsPayload, error) {
+	_, err := settingsCreateIfUpToDate(ctx, r.subject, r.input.LastID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
-	return &updateConfigurationPayload{}, nil
+	return &updateSettingsPayload{}, nil
 }
 
-// doUpdateConfiguration is a helper for updating configuration.
-func (r *configurationMutationResolver) doUpdateConfiguration(ctx context.Context, computeEdits func(oldConfig string) ([]jsonx.Edit, error)) (idAfterUpdate int32, err error) {
-	currentConfig, err := r.getCurrentConfig(ctx)
+// doUpdateSettings is a helper for updating settings.
+func (r *settingsMutation) doUpdateSettings(ctx context.Context, computeEdits func(oldSettings string) ([]jsonx.Edit, error)) (idAfterUpdate int32, err error) {
+	currentSettings, err := r.getCurrentSettings(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	edits, err := computeEdits(currentConfig)
+	edits, err := computeEdits(currentSettings)
 	if err != nil {
 		return 0, err
 	}
-	newConfig, err := jsonx.ApplyEdits(currentConfig, edits...)
+	newSettings, err := jsonx.ApplyEdits(currentSettings, edits...)
 	if err != nil {
 		return 0, err
 	}
 
 	// Write mutated settings.
-	updatedSettings, err := settingsCreateIfUpToDate(ctx, r.subject, r.input.LastID, actor.FromContext(ctx).UID, newConfig)
+	updatedSettings, err := settingsCreateIfUpToDate(ctx, r.subject, r.input.LastID, actor.FromContext(ctx).UID, newSettings)
 	if err != nil {
 		return 0, err
 	}
 	return updatedSettings.ID, nil
 }
 
-func (r *configurationMutationResolver) getCurrentConfig(ctx context.Context) (string, error) {
+func (r *settingsMutation) getCurrentSettings(ctx context.Context) (string, error) {
 	// Get the settings file whose contents to mutate.
 	settings, err := db.Settings.GetLatest(ctx, r.subject.toSubject())
 	if err != nil {
 		return "", err
 	}
-	var config string
+	var data string
 	if settings != nil && r.input.LastID != nil && settings.ID == *r.input.LastID {
-		config = settings.Contents
+		data = settings.Contents
 	} else if settings == nil && r.input.LastID == nil {
 		// noop
 	} else {
@@ -193,8 +207,8 @@ func (r *configurationMutationResolver) getCurrentConfig(ctx context.Context) (s
 		if settings != nil {
 			lastID = &settings.ID
 		}
-		return "", fmt.Errorf("update configuration version mismatch: last ID is %s (mutation wanted %s)", intOrNull(lastID), intOrNull(r.input.LastID))
+		return "", fmt.Errorf("update settings version mismatch: last ID is %s (mutation wanted %s)", intOrNull(lastID), intOrNull(r.input.LastID))
 	}
 
-	return config, nil
+	return data, nil
 }

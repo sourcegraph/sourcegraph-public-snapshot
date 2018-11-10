@@ -13,9 +13,9 @@ import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -88,7 +88,7 @@ interface Props
     extends AbsoluteRepoFile,
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
-        ConfigurationCascadeProps,
+        SettingsCascadeProps,
         ExtensionsProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
@@ -223,7 +223,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
-                {isDiscussionsEnabled(this.props.configurationCascade) && (
+                {isDiscussionsEnabled(this.props.settingsCascade) && (
                     <RepoHeaderContributionPortal
                         position="right"
                         priority={20}
@@ -280,7 +280,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             html={this.state.blobOrError.highlight.html}
                             rev={this.props.rev}
                             mode={this.props.mode}
-                            configurationCascade={this.props.configurationCascade}
+                            settingsCascade={this.props.settingsCascade}
                             extensions={this.props.extensions}
                             extensionsController={this.props.extensionsController}
                             extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}

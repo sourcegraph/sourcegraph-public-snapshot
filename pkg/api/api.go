@@ -156,14 +156,14 @@ type ListPackagesOp struct {
 	Limit int
 }
 
-// A ConfigurationSubject is something that can have settings. Exactly 1 field must be nonzero.
-type ConfigurationSubject struct {
-	Site bool   // whether this is for site config
+// A SettingsSubject is something that can have settings. Exactly 1 field must be nonzero.
+type SettingsSubject struct {
+	Site bool   // whether this is for global settings
 	Org  *int32 // the org's ID
 	User *int32 // the user's ID
 }
 
-func (s ConfigurationSubject) String() string {
+func (s SettingsSubject) String() string {
 	switch {
 	case s.Site:
 		return "site"
@@ -172,15 +172,15 @@ func (s ConfigurationSubject) String() string {
 	case s.User != nil:
 		return fmt.Sprintf("user %d", *s.User)
 	default:
-		return "unknown configuration subject"
+		return "unknown settings subject"
 	}
 }
 
-// Settings contains configuration settings for a subject.
+// Settings contains settings for a subject.
 type Settings struct {
-	ID           int32                // the unique ID of this settings value
-	Subject      ConfigurationSubject // the subject of these settings
-	AuthorUserID *int32               // the ID of the user who authored this settings value
-	Contents     string               // the raw JSON (with comments and trailing commas allowed)
-	CreatedAt    time.Time            // the date when this settings value was created
+	ID           int32           // the unique ID of this settings value
+	Subject      SettingsSubject // the subject of these settings
+	AuthorUserID *int32          // the ID of the user who authored this settings value
+	Contents     string          // the raw JSON (with comments and trailing commas allowed)
+	CreatedAt    time.Time       // the date when this settings value was created
 }

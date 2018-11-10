@@ -8,7 +8,7 @@ import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { IConfigurationCascade } from '../backend/graphqlschema'
+import { ISettingsCascade } from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import settingsSchemaJSON from '../schema/settings.schema.json'
@@ -20,7 +20,7 @@ const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found"
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends ExtensionsProps {
     /** The subject whose settings to edit. */
-    subject: Pick<GQL.ConfigurationSubject, '__typename' | 'id'>
+    subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
 
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
@@ -31,7 +31,7 @@ interface SettingsAreaPageCommonProps extends ExtensionsProps {
 }
 
 interface SettingsData {
-    subjects: GQL.IConfigurationCascade['subjects']
+    subjects: GQL.ISettingsCascade['subjects']
     settingsJSONSchema: { $id: string }
 }
 
@@ -63,7 +63,7 @@ interface State {
 export class SettingsArea extends React.Component<Props, State> {
     public state: State = { dataOrError: LOADING }
 
-    private subjectChanges = new Subject<Pick<GQL.IConfigurationSubject, 'id'>>()
+    private subjectChanges = new Subject<Pick<GQL.ISettingsSubject, 'id'>>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -74,7 +74,7 @@ export class SettingsArea extends React.Component<Props, State> {
                 .pipe(
                     distinctUntilChanged(),
                     switchMap(([{ id }]) =>
-                        fetchConfigurationCascade(id).pipe(
+                        fetchSettingsCascade(id).pipe(
                             switchMap(cascade =>
                                 this.getMergedSettingsJSONSchema(cascade).pipe(
                                     map(
@@ -160,7 +160,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private onUpdate = () => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(
-        cascade: Pick<GQL.IConfigurationCascade, 'subjects'>
+        cascade: Pick<GQL.ISettingsCascade, 'subjects'>
     ): Observable<{ $id: string }> {
         return this.props.extensions.withRegistryMetadata(gqlToCascade(cascade)).pipe(
             map(configuredExtensions => ({
@@ -186,18 +186,16 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchConfigurationCascade(subject: GQL.ID): Observable<Pick<IConfigurationCascade, 'subjects'>> {
+function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<ISettingsCascade, 'subjects'>> {
     return queryGraphQL(
         gql`
-            query ConfigurationCascade($subject: ID!) {
-                configurationSubject(id: $subject) {
-                    configurationCascade {
+            query SettingsCascade($subject: ID!) {
+                settingsSubject(id: $subject) {
+                    settingsCascade {
                         subjects {
                             latestSettings {
                                 id
-                                configuration {
-                                    contents
-                                }
+                                contents
                             }
                         }
                     }
@@ -207,10 +205,10 @@ function fetchConfigurationCascade(subject: GQL.ID): Observable<Pick<IConfigurat
         { subject }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configurationSubject) {
+            if (!data || !data.settingsSubject) {
                 throw createAggregateError(errors)
             }
-            return data.configurationSubject.configurationCascade
+            return data.settingsSubject.settingsCascade
         })
     )
 }

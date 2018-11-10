@@ -6,11 +6,11 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
 import {
-    ConfigurationCascade,
-    ConfigurationCascadeOrError,
-    ConfigurationSubject,
     ConfiguredSubject,
     Settings,
+    SettingsCascade,
+    SettingsCascadeOrError,
+    SettingsSubject,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import * as React from 'react'
 import { render } from 'react-dom'
@@ -38,49 +38,49 @@ import { MountGetter } from './code_intelligence'
 // This is rather specific to extensions-client-common
 // and could be moved to that package in the future.
 export function logThenDropConfigurationErrors(
-    cascadeOrError: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
-): ConfigurationCascade<ConfigurationSubject, Settings> {
-    const EMPTY_CASCADE: ConfigurationCascade<ConfigurationSubject, Settings> = {
+    cascadeOrError: SettingsCascadeOrError<SettingsSubject, Settings>
+): SettingsCascade<SettingsSubject, Settings> {
+    const EMPTY_CASCADE: SettingsCascade<SettingsSubject, Settings> = {
         subjects: [],
-        merged: {},
+        final: {},
     }
     if (!cascadeOrError.subjects) {
-        console.error('invalid configuration: no configuration subjects available')
+        console.error('invalid configuration: no settings subjects available')
         return EMPTY_CASCADE
     }
-    if (!cascadeOrError.merged) {
-        console.error('invalid configuration: no merged configuration available')
+    if (!cascadeOrError.final) {
+        console.error('invalid configuration: no final settings available')
         return EMPTY_CASCADE
     }
     if (isErrorLike(cascadeOrError.subjects)) {
-        console.error(`invalid configuration: error in configuration subjects: ${cascadeOrError.subjects.message}`)
+        console.error(`invalid configuration: error in settings subjects: ${cascadeOrError.subjects.message}`)
         return EMPTY_CASCADE
     }
-    if (isErrorLike(cascadeOrError.merged)) {
-        console.error(`invalid configuration: error in merged configuration: ${cascadeOrError.merged.message}`)
+    if (isErrorLike(cascadeOrError.final)) {
+        console.error(`invalid configuration: error in final configuration: ${cascadeOrError.final.message}`)
         return EMPTY_CASCADE
     }
     return {
         subjects: cascadeOrError.subjects.filter(
-            (subject): subject is ConfiguredSubject<ConfigurationSubject, Settings> => {
+            (subject): subject is ConfiguredSubject<SettingsSubject, Settings> => {
                 if (!subject) {
-                    console.error('invalid configuration: no configuration subjects available')
+                    console.error('invalid configuration: no settings subjects available')
                     return false
                 }
                 if (isErrorLike(subject)) {
-                    console.error(`invalid configuration: error in configuration subjects: ${subject.message}`)
+                    console.error(`invalid configuration: error in settings subjects: ${subject.message}`)
                     return false
                 }
                 return true
             }
         ),
-        merged: cascadeOrError.merged,
+        final: cascadeOrError.final,
     }
 }
 
 export interface Controllers {
-    extensionsContextController: Controller<ConfigurationSubject, Settings>
-    extensionsController: ClientController<ConfigurationSubject, Settings>
+    extensionsContextController: Controller<SettingsSubject, Settings>
+    extensionsController: ClientController<SettingsSubject, Settings>
 }
 
 function createControllers(documents: Observable<TextDocumentItem[] | null>): Controllers {
@@ -89,7 +89,7 @@ function createControllers(documents: Observable<TextDocumentItem[] | null>): Co
 
     combineLatest(
         extensionsContextController.viewerConfiguredExtensions,
-        from(extensionsContextController.context.configurationCascade).pipe(map(logThenDropConfigurationErrors)),
+        from(extensionsContextController.context.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
         documents
     ).subscribe(([extensions, configuration, visibleTextDocuments]) => {
         from(extensionsController.environment)

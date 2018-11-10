@@ -133,7 +133,7 @@
     "rxjs": "^6.3.2",
     "sinon": "^7.1.0",
     "socket.io-client": "^2.1.1",
-    "sourcegraph": "18.4.1",
+    "sourcegraph": "*",
     "string-score": "^1.0.1",
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.0",

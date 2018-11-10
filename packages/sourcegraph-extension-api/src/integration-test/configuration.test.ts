@@ -55,7 +55,7 @@ describe('Configuration (integration)', () => {
             const prevEnvironment = getEnvironment()
             clientController.setEnvironment({
                 ...prevEnvironment,
-                configuration: { merged: { a: 3 } },
+                configuration: { final: { a: 3 } },
             })
             await extensionHost.internal.sync()
             assert.strictEqual(calls, 2)

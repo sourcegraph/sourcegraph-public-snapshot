@@ -3,9 +3,9 @@ import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
 import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
-import { ConfigurationSubject, Settings } from '../../settings'
+import { Settings, SettingsSubject } from '../../settings'
 
-export interface ActionsProps<S extends ConfigurationSubject, C extends Settings>
+export interface ActionsProps<S extends SettingsSubject, C extends Settings>
     extends ControllerProps<S, C>,
         ExtensionsProps<S, C> {
     menu: ContributableMenu

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { ConfigurationCascade } from '../protocol'
+import { SettingsCascade } from '../protocol'
 import { Environment } from './environment'
 import { Extension } from './extension'
 import { CommandRegistry } from './providers/command'
@@ -14,9 +14,9 @@ import { ViewProviderRegistry } from './providers/view'
  * Registries is a container for all provider registries.
  *
  * @template X extension type
- * @template C configuration cascade type
+ * @template C settings cascade type
  */
-export class Registries<X extends Extension, C extends ConfigurationCascade> {
+export class Registries<X extends Extension, C extends SettingsCascade> {
     constructor(private environment: Observable<Environment<X, C>>) {}
 
     public readonly commands = new CommandRegistry()

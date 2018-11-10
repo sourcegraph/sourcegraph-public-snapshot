@@ -10,9 +10,9 @@ import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from '../extensions/ExtensionsClientCommonContext'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
@@ -29,7 +29,7 @@ import { RevisionsPopover } from './RevisionsPopover'
 
 export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
-        ConfigurationCascadeProps,
+        SettingsCascadeProps,
         ExtensionsControllerProps,
         ExtensionsDocumentsProps,
         ExtensionsProps {
@@ -46,7 +46,7 @@ export interface RepoRevContainerRoute extends RouteDescriptor<RepoRevContainerC
 interface RepoRevContainerProps
     extends RouteComponentProps<{}>,
         RepoHeaderContributionsLifecycleProps,
-        ConfigurationCascadeProps,
+        SettingsCascadeProps,
         ExtensionsProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
@@ -199,7 +199,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             rev: this.props.rev,
             routePrefix: this.props.routePrefix,
             authenticatedUser: this.props.authenticatedUser,
-            configurationCascade: this.props.configurationCascade,
+            settingsCascade: this.props.settingsCascade,
         }
 
         return (

@@ -49,9 +49,13 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                                     )}
                                 <div>
                                     <div className="d-flex align-items-center">
-                                        <h2 className="mb-0"><Link to="/extensions" className="extensions-nav-link">
-											Extensions
-										</Link> <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" /> {(manifest && manifest.title) || props.extension.id}</h2>
+                                        <h2 className="mb-0">
+                                            <Link to="/extensions" className="extensions-nav-link">
+                                                Extensions
+                                            </Link>{' '}
+                                            <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" />{' '}
+                                            {(manifest && manifest.title) || props.extension.id}
+                                        </h2>
                                     </div>
                                     {manifest &&
                                         manifest.title && <div className="text-muted">{props.extension.id}</div>}
@@ -65,7 +69,7 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                                 <div className="mr-2">
                                     <ExtensionToggle
                                         extension={props.extension}
-                                        configurationCascade={props.configurationCascade}
+                                        settingsCascade={props.settingsCascade}
                                         onUpdate={props.onDidUpdateExtension}
                                         addClassName="btn-primary"
                                         extensions={props.extensions}
@@ -74,20 +78,20 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                             )}
                             <ExtensionConfigurationState
                                 className="mr-2"
-                                isAdded={isExtensionAdded(props.configurationCascade.merged, props.extension.id)}
-                                isEnabled={isExtensionEnabled(props.configurationCascade.merged, props.extension.id)}
+                                isAdded={isExtensionAdded(props.settingsCascade.final, props.extension.id)}
+                                isEnabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
                             />
                             {!props.authenticatedUser && (
                                 <div className="d-flex align-items-center">
                                     <Link to="/sign-in" className="btn btn-primary mr-2">
                                         Sign in to{' '}
-                                        {isExtensionEnabled(props.configurationCascade.merged, props.extension.id)
+                                        {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
                                             ? 'configure'
                                             : 'enable'}
                                     </Link>
                                     <small className="text-muted">
                                         An account is required to{' '}
-                                        {isExtensionEnabled(props.configurationCascade.merged, props.extension.id)
+                                        {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
                                             ? ''
                                             : 'enable and'}{' '}
                                         configure extensions.

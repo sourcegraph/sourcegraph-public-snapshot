@@ -9,9 +9,9 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from './extensions/ExtensionsClientCommonContext'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
@@ -31,7 +31,7 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
-        ConfigurationCascadeProps,
+        SettingsCascadeProps,
         ExtensionsProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
@@ -56,10 +56,10 @@ export interface LayoutProps
     authenticatedUser: GQL.IUser | null
 
     /**
-     * The subject GraphQL node ID of the viewer, which is used to look up the viewer's configuration settings.
-     * This is either the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
+     * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
+     * the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
      */
-    viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
     isLightTheme: boolean
     onThemeChange: () => void

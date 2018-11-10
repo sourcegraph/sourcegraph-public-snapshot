@@ -74,24 +74,26 @@ func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (r *siteResolver) configurationSubject() api.ConfigurationSubject {
-	return api.ConfigurationSubject{Site: true}
+func (r *siteResolver) settingsSubject() api.SettingsSubject {
+	return api.SettingsSubject{Site: true}
 }
 
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := db.Settings.GetLatest(ctx, r.configurationSubject())
+	settings, err := db.Settings.GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&configurationSubject{site: r}, settings, nil}, nil
+	return &settingsResolver{&settingsSubject{site: r}, settings, nil}, nil
 }
 
-func (r *siteResolver) ConfigurationCascade() *configurationCascadeResolver {
-	return &configurationCascadeResolver{subject: &configurationSubject{site: r}}
+func (r *siteResolver) SettingsCascade() *settingsCascade {
+	return &settingsCascade{subject: &settingsSubject{site: r}}
 }
+
+func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
 
 func (r *siteResolver) SettingsURL() string { return "/site-admin/global-settings" }
 

@@ -2,10 +2,10 @@ import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } fr
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ContextValues } from 'sourcegraph'
 import {
-    ConfigurationCascade,
     ConfigurationUpdateParams,
     LogMessageParams,
     MessageActionItem,
+    SettingsCascade,
     ShowInputParams,
     ShowMessageParams,
     ShowMessageRequestParams,
@@ -54,9 +54,9 @@ export type ConfigurationUpdate = ConfigurationUpdateParams & PromiseCallback<vo
  * Options for creating the controller.
  *
  * @template X extension type
- * @template C configuration cascade type
+ * @template C settings cascade type
  */
-export interface ControllerOptions<X extends Extension, C extends ConfigurationCascade> {
+export interface ControllerOptions<X extends Extension, C extends SettingsCascade> {
     /** Returns additional options to use when creating a client. */
     clientOptions: (
         key: ExtensionConnectionKey,
@@ -73,9 +73,9 @@ export interface ControllerOptions<X extends Extension, C extends ConfigurationC
  * The controller for the environment.
  *
  * @template X extension type
- * @template C configuration cascade type
+ * @template C settings cascade type
  */
-export class Controller<X extends Extension, C extends ConfigurationCascade> implements Unsubscribable {
+export class Controller<X extends Extension, C extends SettingsCascade> implements Unsubscribable {
     private _environment = new BehaviorSubject<Environment<X, C>>(EMPTY_ENVIRONMENT)
 
     /** The environment. */

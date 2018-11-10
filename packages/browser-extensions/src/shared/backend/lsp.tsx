@@ -1,6 +1,6 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/client/controller'
-import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { from, Observable, of, OperatorFunction, throwError, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
@@ -345,7 +345,7 @@ const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocume
 })
 
 export const createLSPFromExtensions = (
-    extensionsController: Controller<ConfigurationSubject, Settings>
+    extensionsController: Controller<SettingsSubject, Settings>
 ): SimpleProviderFns => ({
     // Use from() to suppress rxjs type incompatibilities between different minor versions of rxjs in
     // node_modules/.

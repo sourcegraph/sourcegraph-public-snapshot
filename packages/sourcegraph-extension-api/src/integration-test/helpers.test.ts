@@ -14,7 +14,7 @@ const FIXTURE_ENVIRONMENT: Environment = {
         },
     ],
     extensions: [{ id: 'x' }],
-    configuration: { merged: { a: 1 } },
+    configuration: { final: { a: 1 } },
     context: {},
 }
 

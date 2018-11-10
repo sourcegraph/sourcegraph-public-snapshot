@@ -10,13 +10,13 @@ import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
-import { refreshConfiguration } from '../user/settings/backend'
+import { refreshSettings } from '../user/settings/backend'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError, ResolvedRev } from './backend'
@@ -38,7 +38,7 @@ const RepoPageNotFound: React.SFC = () => (
 
 export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
-        ConfigurationCascadeProps,
+        SettingsCascadeProps,
         ExtensionsProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
@@ -92,7 +92,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         // Refresh the list of Sourcegraph extensions to use. This helps when a
         // language server gets automatically enabled after the first repository
         // in that language is added.
-        refreshConfiguration()
+        refreshSettings()
             .toPromise()
             .catch(err => console.error(err))
 
@@ -204,7 +204,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             authenticatedUser: this.props.authenticatedUser,
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
-            configurationCascade: this.props.configurationCascade,
+            settingsCascade: this.props.settingsCascade,
             extensions: this.props.extensions,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,

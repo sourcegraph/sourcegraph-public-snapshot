@@ -15,7 +15,7 @@ import (
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
 	}
@@ -66,7 +66,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.Configurati
 	return latestSetting, nil
 }
 
-func (o *settings) GetLatest(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
+func (o *settings) GetLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
 	if Mocks.Settings.GetLatest != nil {
 		return Mocks.Settings.GetLatest(ctx, subject)
 	}
@@ -105,7 +105,7 @@ func (o *settings) ListAll(ctx context.Context) (_ []*api.Settings, err error) {
 	return o.parseQueryRows(ctx, rows)
 }
 
-func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject api.ConfigurationSubject) (*api.Settings, error) {
+func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject api.SettingsSubject) (*api.Settings, error) {
 	var cond *sqlf.Query
 	switch {
 	case subject.Org != nil:

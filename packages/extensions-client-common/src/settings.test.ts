@@ -2,39 +2,39 @@ import assert from 'assert'
 import { cloneDeep } from 'lodash-es'
 import { createAggregateError, ErrorLike, isErrorLike } from './errors'
 import {
-    ConfigurationSubject,
     CustomMergeFunctions,
     gqlToCascade,
     merge,
     mergeSettings,
     Settings,
-    SubjectConfigurationContents,
+    SettingsSubject,
+    SubjectSettingsContents,
 } from './settings'
 
-const FIXTURE_ORG: ConfigurationSubject & SubjectConfigurationContents = {
+const FIXTURE_ORG: SettingsSubject & SubjectSettingsContents = {
     __typename: 'Org',
     name: 'n',
     displayName: 'n',
     id: 'a',
     settingsURL: 'u',
     viewerCanAdminister: true,
-    latestSettings: { configuration: { contents: '{"a":1}' } },
+    latestSettings: { contents: '{"a":1}' },
 }
 
-const FIXTURE_USER: ConfigurationSubject & SubjectConfigurationContents = {
+const FIXTURE_USER: SettingsSubject & SubjectSettingsContents = {
     __typename: 'User',
     username: 'n',
     displayName: 'n',
     id: 'b',
     settingsURL: 'u',
     viewerCanAdminister: true,
-    latestSettings: { configuration: { contents: '{"b":2}' } },
+    latestSettings: { contents: '{"b":2}' },
 }
 
-const FIXTURE_USER_WITH_SETTINGS_ERROR: ConfigurationSubject & SubjectConfigurationContents = {
+const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContents = {
     ...FIXTURE_USER,
     id: 'c',
-    latestSettings: { configuration: { contents: '.' } },
+    latestSettings: { contents: '.' },
 }
 
 const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([
@@ -49,14 +49,14 @@ describe('gqlToCascade', () => {
             }),
             {
                 subjects: [{ subject: FIXTURE_ORG, settings: { a: 1 } }, { subject: FIXTURE_USER, settings: { b: 2 } }],
-                merged: { a: 1, b: 2 },
+                final: { a: 1, b: 2 },
             }
         ))
     it('preserves errors', () => {
         const value = gqlToCascade({
             subjects: [FIXTURE_ORG, FIXTURE_USER_WITH_SETTINGS_ERROR, FIXTURE_USER],
         })
-        assert.strictEqual(isErrorLike(value.merged) && value.merged.message, SETTINGS_ERROR_FOR_FIXTURE_USER.message)
+        assert.strictEqual(isErrorLike(value.final) && value.final.message, SETTINGS_ERROR_FOR_FIXTURE_USER.message)
         assert.strictEqual(
             value.subjects &&
                 !isErrorLike(value.subjects) &&

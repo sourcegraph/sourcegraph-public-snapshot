@@ -32,9 +32,7 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                         siteAdmin
                         latestSettings {
                             createdAt
-                            configuration {
-                                contents
-                            }
+                            contents
                         }
                         organizations {
                             nodes {
@@ -68,9 +66,7 @@ export function fetchAllOrganizations(args: { first?: number; query?: string }):
                         createdAt
                         latestSettings {
                             createdAt
-                            configuration {
-                                contents
-                            }
+                            contents
                         }
                         members {
                             totalCount

@@ -11,15 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func TestConfigurationMutation_EditConfiguration(t *testing.T) {
+func TestSettingsMutation_EditSettings(t *testing.T) {
 	resetMocks()
 	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
 		return &types.User{ID: 1}, nil
 	}
-	db.Mocks.Settings.GetLatest = func(context.Context, api.ConfigurationSubject) (*api.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(context.Context, api.SettingsSubject) (*api.Settings, error) {
 		return &api.Settings{ID: 1, Contents: "{}"}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `{
   "p": {
     "x": 123
@@ -36,8 +36,8 @@ func TestConfigurationMutation_EditConfiguration(t *testing.T) {
 			Schema:  GraphQLSchema,
 			Query: `
 				mutation($value: JSONValue) {
-					configurationMutation(input: {subject: "VXNlcjox", lastID: 1}) {
-						editConfiguration(edit: {keyPath: [{property: "p"}], value: $value}) {
+					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
+						editSettings(edit: {keyPath: [{property: "p"}], value: $value}) {
 							empty {
 								alwaysNil
 							}
@@ -48,8 +48,8 @@ func TestConfigurationMutation_EditConfiguration(t *testing.T) {
 			Variables: map[string]interface{}{"value": map[string]int{"x": 123}},
 			ExpectedResult: `
 				{
-					"configurationMutation": {
-						"editConfiguration": {
+					"settingsMutation": {
+						"editSettings": {
 							"empty": null
 						}
 					}
@@ -59,15 +59,15 @@ func TestConfigurationMutation_EditConfiguration(t *testing.T) {
 	})
 }
 
-func TestConfigurationMutation_OverwriteConfiguration(t *testing.T) {
+func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 	resetMocks()
 	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
 		return &types.User{ID: 1}, nil
 	}
-	db.Mocks.Settings.GetLatest = func(context.Context, api.ConfigurationSubject) (*api.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(context.Context, api.SettingsSubject) (*api.Settings, error) {
 		return &api.Settings{ID: 1, Contents: "{}"}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `x`; contents != want {
 			t.Errorf("got %q, want %q", contents, want)
 		}
@@ -80,8 +80,8 @@ func TestConfigurationMutation_OverwriteConfiguration(t *testing.T) {
 			Schema:  GraphQLSchema,
 			Query: `
 				mutation($contents: String!) {
-					configurationMutation(input: {subject: "VXNlcjox", lastID: 1}) {
-						overwriteConfiguration(contents: $contents) {
+					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
+						overwriteSettings(contents: $contents) {
 							empty {
 								alwaysNil
 							}
@@ -92,8 +92,8 @@ func TestConfigurationMutation_OverwriteConfiguration(t *testing.T) {
 			Variables: map[string]interface{}{"contents": "x"},
 			ExpectedResult: `
 				{
-					"configurationMutation": {
-						"overwriteConfiguration": {
+					"settingsMutation": {
+						"overwriteSettings": {
 							"empty": null
 						}
 					}

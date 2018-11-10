@@ -33,9 +33,9 @@ import * as GQL from '../../../backend/graphqlschema'
 import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from '../../../extensions/ExtensionsClientCommonContext'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
@@ -55,7 +55,7 @@ interface Props
         Partial<PositionSpec>,
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
-        ConfigurationCascadeProps,
+        SettingsCascadeProps,
         ExtensionsProps,
         ExtensionsControllerProps {
     location: H.Location
@@ -320,7 +320,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         />
                     }
                 />
-                {isDiscussionsEnabled(this.props.configurationCascade) && (
+                {isDiscussionsEnabled(this.props.settingsCascade) && (
                     <PanelItemPortal
                         id="discussions"
                         label="File discussions"

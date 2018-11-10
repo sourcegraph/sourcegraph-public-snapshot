@@ -1,8 +1,8 @@
 import { ConfiguredExtension, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
-    ConfigurationCascade,
-    ConfigurationCascadeOrError,
-    ConfigurationSubject,
+    SettingsCascade,
+    SettingsCascadeOrError,
+    SettingsSubject,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { Toggle } from '@sourcegraph/extensions-client-common/lib/ui/generic/Toggle'
 import { last } from 'lodash'
@@ -11,9 +11,9 @@ import { EMPTY, from, Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { Settings } from '../schema/settings.schema'
 import { ErrorLike, isErrorLike } from '../util/errors'
-import { ConfigurationCascadeProps, ExtensionsProps, isExtensionAdded } from './ExtensionsClientCommonContext'
+import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
-interface Props<S extends ConfigurationSubject, C extends Settings> extends ConfigurationCascadeProps, ExtensionsProps {
+interface Props<S extends SettingsSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
     /** The extension that this element is for. */
     extension: ConfiguredExtension
 
@@ -32,9 +32,7 @@ interface Props<S extends ConfigurationSubject, C extends Settings> extends Conf
 /**
  * Displays a toggle button for an extension.
  */
-export class ExtensionToggle<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>
-> {
+export class ExtensionToggle<S extends SettingsSubject, C extends Settings> extends React.PureComponent<Props<S, C>> {
     private toggles = new Subject<boolean>()
     private subscriptions = new Subscription()
 
@@ -43,16 +41,16 @@ export class ExtensionToggle<S extends ConfigurationSubject, C extends Settings>
             this.toggles
                 .pipe(
                     switchMap(enabled => {
-                        if (this.props.configurationCascade.subjects === null) {
+                        if (this.props.settingsCascade.subjects === null) {
                             return EMPTY
                         }
-                        if (isErrorLike(this.props.configurationCascade.subjects)) {
+                        if (isErrorLike(this.props.settingsCascade.subjects)) {
                             // TODO: Show error.
                             return EMPTY
                         }
 
                         // Only operate on the highest precedence settings, for simplicity.
-                        const subjects = this.props.configurationCascade.subjects
+                        const subjects = this.props.settingsCascade.subjects
                         if (subjects.length === 0) {
                             return EMPTY
                         }
@@ -62,7 +60,7 @@ export class ExtensionToggle<S extends ConfigurationSubject, C extends Settings>
                         }
 
                         if (
-                            !isExtensionAdded(this.props.configurationCascade.merged, this.props.extension.id) &&
+                            !isExtensionAdded(this.props.settingsCascade.final, this.props.extension.id) &&
                             !confirmAddExtension(this.props.extension.id, this.props.extension.manifest)
                         ) {
                             return EMPTY
@@ -85,7 +83,7 @@ export class ExtensionToggle<S extends ConfigurationSubject, C extends Settings>
     }
 
     public render(): JSX.Element | null {
-        const cascade = extractErrors(this.props.configurationCascade)
+        const cascade = extractErrors(this.props.settingsCascade)
         const subject = isErrorLike(cascade)
             ? undefined
             : last(cascade.subjects.filter(subject => isExtensionAdded(subject.settings, this.props.extension.id)))
@@ -100,7 +98,7 @@ export class ExtensionToggle<S extends ConfigurationSubject, C extends Settings>
 
         return (
             <Toggle
-                value={isExtensionEnabled(this.props.configurationCascade.merged, this.props.extension.id)}
+                value={isExtensionEnabled(this.props.settingsCascade.final, this.props.extension.id)}
                 onToggle={onToggle}
                 title={state ? `${state.state ? 'Enabled' : 'Disabled'} in ${state.name} settings` : 'Click to enable'}
             />
@@ -126,17 +124,15 @@ function confirmAddExtension(extensionID: string, extensionManifest?: Configured
     )
 }
 
-/** Converts a ConfigurationCascadeOrError to a ConfigurationCascade, returning the first error it finds. */
-function extractErrors(
-    c: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
-): ConfigurationCascade | ErrorLike {
+/** Converts a SettingsCascadeOrError to a SettingsCascade, returning the first error it finds. */
+function extractErrors(c: SettingsCascadeOrError<SettingsSubject, Settings>): SettingsCascade | ErrorLike {
     if (c.subjects === null || isErrorLike(c.subjects)) {
         return new Error('Subjects was ' + c.subjects)
-    } else if (c.merged === null || isErrorLike(c.merged)) {
-        return new Error('Merged was ' + c.merged)
+    } else if (c.final === null || isErrorLike(c.final)) {
+        return new Error('Merged was ' + c.final)
     } else if (c.subjects.find(isErrorLike)) {
         return new Error('One of the subjects was ' + c.subjects.find(isErrorLike))
     } else {
-        return c as ConfigurationCascade
+        return c as SettingsCascade
     }
 }

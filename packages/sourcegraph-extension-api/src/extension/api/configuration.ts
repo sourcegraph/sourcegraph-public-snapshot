@@ -2,7 +2,7 @@ import { BehaviorSubject } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
-import { ConfigurationCascade } from '../../protocol'
+import { SettingsCascade } from '../../protocol'
 
 /**
  * @internal
@@ -43,7 +43,7 @@ export interface ExtConfigurationAPI<C> {
  * @internal
  * @template C - The configuration schema.
  */
-export class ExtConfiguration<C extends ConfigurationCascade<any>> implements ExtConfigurationAPI<C> {
+export class ExtConfiguration<C extends SettingsCascade<any>> implements ExtConfigurationAPI<C> {
     private data = new BehaviorSubject<Readonly<C> | null>(null)
 
     constructor(private proxy: ClientConfigurationAPI) {}
@@ -60,7 +60,7 @@ export class ExtConfiguration<C extends ConfigurationCascade<any>> implements Ex
                 'Configuration is not yet available. `sourcegraph.configuration.get` is not usable until after the extension `activate` function is finished executing. This is a known issue and will be fixed before the beta release of Sourcegraph extensions. In the meantime, work around this limitation by deferring calls to `get`.'
             )
         }
-        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, data.merged))
+        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, data.final))
     }
 
     public subscribe(next: () => void): sourcegraph.Unsubscribable {

@@ -106,8 +106,8 @@ func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 	return &staticUserConnectionResolver{users: users}, nil
 }
 
-func (o *OrgResolver) configurationSubject() api.ConfigurationSubject {
-	return api.ConfigurationSubject{Org: &o.org.ID}
+func (o *OrgResolver) settingsSubject() api.SettingsSubject {
+	return api.SettingsSubject{Org: &o.org.ID}
 }
 
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
@@ -117,19 +117,21 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 		return nil, err
 	}
 
-	settings, err := db.Settings.GetLatest(ctx, o.configurationSubject())
+	settings, err := db.Settings.GetLatest(ctx, o.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&configurationSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{&settingsSubject{org: o}, settings, nil}, nil
 }
 
-func (o *OrgResolver) ConfigurationCascade() *configurationCascadeResolver {
-	return &configurationCascadeResolver{subject: &configurationSubject{org: o}}
+func (o *OrgResolver) SettingsCascade() *settingsCascade {
+	return &settingsCascade{subject: &settingsSubject{org: o}}
 }
+
+func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {

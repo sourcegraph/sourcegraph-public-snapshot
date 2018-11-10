@@ -3,25 +3,25 @@ import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import { authRequired } from '../../auth'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
-import { configurationCascade } from '../../settings/configuration'
+import { settingsCascade } from '../../settings/configuration'
 import { createAggregateError } from '../../util/errors'
 
 /**
- * Refreshes the configuration from the server, which propagates throughout the
- * app to all consumers of configuration settings.
+ * Refreshes the viewer's settings from the server, which propagates throughout the app to all consumers of
+ * settings.
  */
-export function refreshConfiguration(): Observable<never> {
+export function refreshSettings(): Observable<never> {
     return authRequired.pipe(
         take(1),
         filter(authRequired => !authRequired),
-        mergeMap(() => fetchViewerConfiguration()),
-        tap(result => configurationCascade.next(result)),
+        mergeMap(() => fetchViewerSettings()),
+        tap(result => settingsCascade.next(result)),
         mergeMap(() => [])
     )
 }
 
-const configurationCascadeFragment = gql`
-    fragment ConfigurationCascadeFields on ConfigurationCascade {
+const settingsCascadeFragment = gql`
+    fragment SettingsCascadeFields on SettingsCascade {
         subjects {
             __typename
             ... on Org {
@@ -40,45 +40,40 @@ const configurationCascadeFragment = gql`
             }
             latestSettings {
                 id
-                configuration {
-                    contents
-                }
+                contents
             }
             settingsURL
             viewerCanAdminister
         }
-        merged {
-            contents
-            messages
-        }
+        final
     }
 `
 
 /**
- * Fetches the viewer's configuration from the server. Callers should use refreshConfiguration instead of calling
+ * Fetches the viewer's settings from the server. Callers should use refreshSettings instead of calling
  * this function, to ensure that the result is propagated consistently throughout the app instead of only being
  * returned to the caller.
  *
- * @return Observable that emits the configuration
+ * @return Observable that emits the settings
  */
-function fetchViewerConfiguration(): Observable<GQL.IConfigurationCascade> {
+function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
     return queryGraphQL(gql`
-        query Configuration {
-            viewerConfiguration {
-                ...ConfigurationCascadeFields
+        query ViewerSettings {
+            viewerSettings {
+                ...SettingsCascadeFields
             }
         }
-        ${configurationCascadeFragment}
+        ${settingsCascadeFragment}
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.viewerConfiguration) {
+            if (!data || !data.viewerSettings) {
                 throw createAggregateError(errors)
             }
-            return data.viewerConfiguration
+            return data.viewerSettings
         })
     )
 }
 
-refreshConfiguration()
+refreshSettings()
     .toPromise()
     .then(() => void 0, err => console.error(err))

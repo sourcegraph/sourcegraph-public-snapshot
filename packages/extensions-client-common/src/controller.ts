@@ -6,25 +6,24 @@ import { ConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent, GraphQLDocument } from './graphql'
 import { ExtensionManifest } from './schema/extension.schema'
 import * as GQL from './schema/graphqlschema'
-import { ConfigurationCascadeOrError, ConfigurationSubject, Settings } from './settings'
+import { Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
 import { parseJSONCOrError } from './util'
 
 /**
- * A controller that exposes functionality for a configuration cascade and querying extensions from the remote
- * registry.
+ * A controller that exposes functionality for a settings cascade and querying extensions from the remote registry.
  */
-export class Controller<S extends ConfigurationSubject, C extends Settings> {
+export class Controller<S extends SettingsSubject, C extends Settings> {
     public static readonly LOADING: 'loading' = 'loading'
 
     constructor(public readonly context: Context<S, C>) {}
 
     private readonly viewerConfiguredExtensionsOrLoading: Observable<
         typeof Controller.LOADING | ConfiguredExtension[] | ErrorLike
-    > = from(this.context.configurationCascade).pipe(
+    > = from(this.context.settingsCascade).pipe(
         switchMap(
             cascade =>
-                isErrorLike(cascade.merged)
-                    ? [cascade.merged]
+                isErrorLike(cascade.final)
+                    ? [cascade.final]
                     : this.withRegistryMetadata(cascade).pipe(
                           catchError(error => [asError(error) as ErrorLike]),
                           startWith(Controller.LOADING)
@@ -71,15 +70,15 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
     }
 
     public withRegistryMetadata(
-        cascade: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
+        cascade: SettingsCascadeOrError<SettingsSubject, Settings>
     ): Observable<ConfiguredExtension[]> {
-        if (isErrorLike(cascade.merged)) {
-            return throwError(cascade.merged)
+        if (isErrorLike(cascade.final)) {
+            return throwError(cascade.final)
         }
-        if (!cascade.merged || !cascade.merged.extensions) {
+        if (!cascade.final || !cascade.final.extensions) {
             return of([])
         }
-        const extensionIDs = Object.keys(cascade.merged.extensions)
+        const extensionIDs = Object.keys(cascade.final.extensions)
         return from(
             this.context.queryGraphQL(
                 gql`

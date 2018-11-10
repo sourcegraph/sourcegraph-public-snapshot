@@ -1,4 +1,4 @@
-import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
+import { SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -8,7 +8,7 @@ import { Key } from 'ts-key-enum'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { Settings } from '../../schema/settings.schema'
-import { configurationCascade, parseJSON } from '../../settings/configuration'
+import { parseJSON, settingsCascade } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 
 export interface SavedQueryFields {
@@ -33,7 +33,7 @@ interface Props {
 interface State {
     values: SavedQueryFields
 
-    subjectOptions: ConfigurationSubject[]
+    subjectOptions: SettingsSubject[]
     isSubmitting: boolean
     isFocused: boolean
     error?: any
@@ -74,7 +74,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            configurationCascade.pipe(map(({ subjects }) => subjects)).subscribe(subjects => {
+            settingsCascade.pipe(map(({ subjects }) => subjects)).subscribe(subjects => {
                 const subject = subjects.find(s => !!s.id)
 
                 this.setState(state => ({
@@ -89,7 +89,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     if (subject.latestSettings) {
                         let slackWebhookURL: string | null
                         try {
-                            const settings = parseJSON(subject.latestSettings.configuration.contents) as Settings
+                            const settings = parseJSON(subject.latestSettings.contents) as Settings
                             if (settings && settings['notifications.slack']) {
                                 slackWebhookURL = settings['notifications.slack']!.webhookURL
                             }
@@ -168,7 +168,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     <div className="saved-query-form__save-location">
                         {subjectOptions
                             .filter(
-                                (subjectOption: ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
+                                (subjectOption: SettingsSubject): subjectOption is GQL.IOrg | GQL.IUser =>
                                     subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
                             )
                             .map((subjectOption, i) => (
@@ -180,7 +180,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                                         value={subjectOption.id}
                                         checked={subject === subjectOption.id}
                                     />{' '}
-                                    {configurationSubjectLabel(subjectOption)}
+                                    {settingsSubjectLabel(subjectOption)}
                                 </label>
                             ))}
                     </div>
@@ -300,11 +300,11 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private saveTargetName = () => {
         const chosen = this.state.subjectOptions
             .filter(
-                (subjectOption: ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
+                (subjectOption: SettingsSubject): subjectOption is GQL.IOrg | GQL.IUser =>
                     subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
             )
             .find(subjectOption => subjectOption.id === this.state.values.subject)
-        return chosen && configurationSubjectLabel(chosen, true)
+        return chosen && settingsSubjectLabel(chosen, true)
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -373,7 +373,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     }
 }
 
-function configurationSubjectLabel(s: GQL.IUser | GQL.IOrg, short?: boolean): string {
+function settingsSubjectLabel(s: GQL.IUser | GQL.IOrg, short?: boolean): string {
     switch (s.__typename) {
         case 'User':
             return short ? s.username : `${s.username} (user settings)`

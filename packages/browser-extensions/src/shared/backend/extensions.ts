@@ -3,12 +3,12 @@ import { Controller as ExtensionsContextController } from '@sourcegraph/extensio
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { gql, graphQLContent } from '@sourcegraph/extensions-client-common/lib/graphql'
 import {
-    ConfigurationCascade,
-    ConfigurationCascadeOrError,
-    ConfigurationSubject,
     gqlToCascade,
     mergeSettings,
     Settings,
+    SettingsCascade,
+    SettingsCascadeOrError,
+    SettingsSubject,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { applyEdits } from '@sqs/jsonc-parser'
 import * as JSONC from '@sqs/jsonc-parser'
@@ -133,45 +133,46 @@ export const applyDecoration = ({
     return mergeDisposables(...disposables)
 }
 
-const storageConfigurationCascade: Observable<
-    ConfigurationCascade<ConfigurationSubject, Settings>
-> = storage.observeSync('clientSettings').pipe(
-    map(clientSettingsString => JSONC.parse(clientSettingsString || '')),
-    map(clientSettings => ({
-        subjects: [
-            {
-                subject: {
-                    id: 'Client',
-                    settingsURL: 'N/A',
-                    viewerCanAdminister: true,
-                    __typename: 'Client',
-                    displayName: 'Client',
-                } as ConfigurationSubject,
-                settings: clientSettings,
-            },
-        ],
-        merged: clientSettings || {},
-    }))
-)
+const storageSettingsCascade: Observable<SettingsCascade<SettingsSubject, Settings>> = storage
+    .observeSync('clientSettings')
+    .pipe(
+        map(clientSettingsString => JSONC.parse(clientSettingsString || '')),
+        map(clientSettings => ({
+            subjects: [
+                {
+                    subject: {
+                        id: 'Client',
+                        settingsURL: 'N/A',
+                        viewerCanAdminister: true,
+                        __typename: 'Client',
+                        displayName: 'Client',
+                    } as SettingsSubject,
+                    settings: clientSettings,
+                },
+            ],
+            final: clientSettings || {},
+        }))
+    )
 
 const mergeCascades = (
-    cascadeOrError: ConfigurationCascadeOrError<ConfigurationSubject, Settings>,
-    cascade: ConfigurationCascade<ConfigurationSubject, Settings>
-): ConfigurationCascadeOrError<ConfigurationSubject, Settings> => ({
+    cascadeOrError: SettingsCascadeOrError<SettingsSubject, Settings>,
+    cascade: SettingsCascade<SettingsSubject, Settings>
+): SettingsCascadeOrError<SettingsSubject, Settings> => ({
     subjects:
         cascadeOrError.subjects === null
             ? cascade.subjects
             : isErrorLike(cascadeOrError.subjects)
                 ? cascadeOrError.subjects
                 : [...cascadeOrError.subjects, ...cascade.subjects],
-    merged:
-        cascadeOrError.merged === null
-            ? cascade.merged
-            : isErrorLike(cascadeOrError.merged)
-                ? cascadeOrError.merged
-                : mergeSettings([cascadeOrError.merged, cascade.merged]),
+    final:
+        cascadeOrError.final === null
+            ? cascade.final
+            : isErrorLike(cascadeOrError.final)
+                ? cascadeOrError.final
+                : mergeSettings([cascadeOrError.final, cascade.final]),
 })
 
+// This is a fragment on the DEPRECATED GraphQL API type ConfigurationCascade (not SettingsCascade) for backcompat.
 const configurationCascadeFragment = gql`
     fragment ConfigurationCascadeFields on ConfigurationCascade {
         subjects {
@@ -206,16 +207,18 @@ const configurationCascadeFragment = gql`
     }
 `
 
-/** A subject that emits whenever the configuration cascade must be refreshed from the Sourcegraph instance. */
-const configurationCascadeRefreshes = new Subject<void>()
+/** A subject that emits whenever the settings cascade must be refreshed from the Sourcegraph instance. */
+const settingsCascadeRefreshes = new Subject<void>()
 
 /**
- * Always represents the entire configuration cascade; i.e., it contains the
- * individual configs from the various config subjects (orgs, user, etc.).
+ * Always represents the entire settings cascade; i.e., it contains the individual settings from the various
+ * settings subjects (orgs, user, etc.).
+ *
+ * TODO(sqs): This uses the DEPRECATED GraphQL Query.viewerConfiguration and ConfigurationCascade for backcompat.
  */
-export const gqlConfigurationCascade = combineLatest(
+export const gqlSettingsCascade: Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> = combineLatest(
     storage.observeSync('sourcegraphURL'),
-    configurationCascadeRefreshes.pipe(
+    settingsCascadeRefreshes.pipe(
         mapTo(null),
         startWith(null)
     )
@@ -224,7 +227,7 @@ export const gqlConfigurationCascade = combineLatest(
         queryGraphQL({
             ctx: getContext({ repoKey: '', isRepoSpecific: false }),
             request: gql`
-                query Configuration {
+                query ViewerConfiguration {
                     viewerConfiguration {
                         ...ConfigurationCascadeFields
                     }
@@ -245,24 +248,28 @@ export const gqlConfigurationCascade = combineLatest(
                     subject.viewerCanAdminister = false
                 }
 
-                return data.viewerConfiguration
+                return {
+                    subjects: data.viewerConfiguration.subjects,
+                    final: data.viewerConfiguration.merged.contents,
+                }
             })
         )
     )
 )
 
-const EMPTY_CONFIGURATION_CASCADE: ConfigurationCascade = { subjects: [], merged: {} }
+const EMPTY_CONFIGURATION_CASCADE: SettingsCascade = { subjects: [], final: {} }
 
 /**
- * The active configuration cascade.
+ * The active settings cascade.
  *
  * - For unauthenticated users, this is the GraphQL settings plus client settings (which are stored locally in the
  *   browser extension.
  * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify the UX).
  */
-export const configurationCascade: Observable<
-    ConfigurationCascadeOrError<ConfigurationSubject, Settings>
-> = combineLatest(gqlConfigurationCascade, storageConfigurationCascade).pipe(
+export const settingsCascade: Observable<SettingsCascadeOrError<SettingsSubject, Settings>> = combineLatest(
+    gqlSettingsCascade,
+    storageSettingsCascade
+).pipe(
     map(([gqlCascade, storageCascade]) =>
         mergeCascades(
             gqlToCascade(gqlCascade),
@@ -276,12 +283,12 @@ export const configurationCascade: Observable<
 
 export function createExtensionsContextController(
     sourcegraphUrl: string
-): ExtensionsContextController<ConfigurationSubject, Settings> {
+): ExtensionsContextController<SettingsSubject, Settings> {
     const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
     sourcegraphLanguageServerURL.pathname = '.api/xlang'
 
-    return new ExtensionsContextController<ConfigurationSubject, Settings>({
-        configurationCascade,
+    return new ExtensionsContextController<SettingsSubject, Settings>({
+        settingsCascade,
         updateExtensionSettings,
         queryGraphQL: (request, variables, requestMightContainPrivateInfo) =>
             storage.observeSync('sourcegraphURL').pipe(
@@ -314,16 +321,16 @@ export function createExtensionsContextController(
 
 // TODO(sqs): copied from sourcegraph/sourcegraph temporarily
 function updateUserSettings(subject: string, args: UpdateExtensionSettingsArgs): Observable<void> {
-    return gqlConfigurationCascade.pipe(
+    return gqlSettingsCascade.pipe(
         take(1),
-        switchMap(gqlConfigurationCascade => {
-            const subjectConfig = gqlConfigurationCascade.subjects.find(s => s.id === subject)
-            if (!subjectConfig) {
-                throw new Error(`no configuration subject: ${subject}`)
+        switchMap(gqlSettingsCascade => {
+            const subjectSettings = gqlSettingsCascade.subjects.find(s => s.id === subject)
+            if (!subjectSettings) {
+                throw new Error(`no settings subject: ${subject}`)
             }
-            const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
+            const lastID = subjectSettings.latestSettings ? subjectSettings.latestSettings.id : null
 
-            let edit: GQL.IConfigurationEdit
+            let edit: GQL.ISettingsEdit
             if ('edit' in args && args.edit) {
                 edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
             } else if ('extensionID' in args) {
@@ -335,17 +342,19 @@ function updateUserSettings(subject: string, args: UpdateExtensionSettingsArgs):
                 throw new Error('no edit')
             }
 
-            return editConfiguration(subject, lastID, edit)
+            return editSettings(subject, lastID, edit)
         })
     )
 }
 
 // TODO(sqs): copied from sourcegraph/sourcegraph temporarily
-function editConfiguration(subject: GQL.ID, lastID: number | null, edit: GQL.IConfigurationEdit): Observable<void> {
+//
+// NOTE: uses configurationMutation and editConfiguration for backcompat
+function editSettings(subject: GQL.ID, lastID: number | null, edit: GQL.IConfigurationEdit): Observable<void> {
     return mutateGraphQL({
         ctx: getContext({ repoKey: '', isRepoSpecific: false }),
         request: `
-            mutation EditSettings($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
+            mutation EditConfiguration($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                     editConfiguration(edit: $edit) {
                         empty {
@@ -363,7 +372,7 @@ function editConfiguration(subject: GQL.ID, lastID: number | null, edit: GQL.ICo
             }
         }),
         map(() => undefined),
-        tap(() => configurationCascadeRefreshes.next())
+        tap(() => settingsCascadeRefreshes.next())
     )
 }
 

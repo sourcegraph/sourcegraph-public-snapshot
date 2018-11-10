@@ -1,6 +1,6 @@
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
 import { Controller as ClientController } from '@sourcegraph/extensions-client-common/lib/client/controller'
-import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
@@ -10,7 +10,7 @@ import { ShortcutProvider } from './ShortcutProvider'
 
 interface Props {
     location: H.Location
-    extensionsController: ClientController<ConfigurationSubject, Settings>
+    extensionsController: ClientController<SettingsSubject, Settings>
 }
 
 const SHOW_DEBUG = localStorage.getItem('debug') !== null

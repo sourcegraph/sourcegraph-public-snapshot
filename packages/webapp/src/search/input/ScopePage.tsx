@@ -11,7 +11,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { RepoLink } from '../../repo/RepoLink'
 import { SearchScope } from '../../schema/settings.schema'
-import { currentConfiguration } from '../../settings/configuration'
+import { viewerSettings } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { fetchReposByQuery } from '../backend'
@@ -68,7 +68,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         this.subscriptions.add(
             combineLatest(
                 this.propUpdates,
-                currentConfiguration.pipe(map((config): SearchScope[] => config['search.scopes'] || []))
+                viewerSettings.pipe(map((config): SearchScope[] => config['search.scopes'] || []))
             )
                 .pipe(
                     switchMap(([props, searchScopes]) => {

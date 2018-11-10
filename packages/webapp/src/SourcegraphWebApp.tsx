@@ -3,10 +3,10 @@ import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/not
 import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
-    ConfigurationCascadeOrError,
-    ConfigurationSubject,
     ConfiguredSubject,
     Settings,
+    SettingsCascadeOrError,
+    SettingsSubject,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
@@ -29,10 +29,10 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import {
-    ConfigurationCascadeProps,
     createMessageTransports,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from './extensions/ExtensionsClientCommonContext'
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import { KeybindingsProps } from './keybindings'
@@ -69,7 +69,7 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
 }
 
 interface SourcegraphWebAppState
-    extends ConfigurationCascadeProps,
+    extends SettingsCascadeProps,
         ExtensionsProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps {
@@ -98,8 +98,8 @@ interface SourcegraphWebAppState
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 
-/** A fallback configuration subject that can be constructed synchronously at initialization time. */
-const SITE_SUBJECT_NO_ADMIN: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'> = {
+/** A fallback settings subject that can be constructed synchronously at initialization time. */
+const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
     id: window.context.siteGQLID,
     viewerCanAdminister: false,
 }
@@ -114,7 +114,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state = {
             isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
             navbarSearchQuery: '',
-            configurationCascade: { subjects: null, merged: null },
+            settingsCascade: { subjects: null, final: null },
             extensions,
             extensionsEnvironment: {
                 ...EXTENSIONS_EMPTY_ENVIRONMENT,
@@ -145,7 +145,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         this.subscriptions.add(
             combineLatest(
-                from(this.state.extensions.context.configurationCascade).pipe(startWith(null)),
+                from(this.state.extensions.context.settingsCascade).pipe(startWith(null)),
                 authenticatedUser.pipe(startWith(null))
             ).subscribe(([cascade, authenticatedUser]) => {
                 this.setState(() => {
@@ -169,8 +169,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.subscriptions.add(this.state.extensionsController)
 
         this.subscriptions.add(
-            this.state.extensions.context.configurationCascade.subscribe(
-                v => this.onConfigurationCascadeChange(v),
+            this.state.extensions.context.settingsCascade.subscribe(
+                v => this.onSettingsCascadeChange(v),
                 err => console.error(err)
             )
         )
@@ -253,7 +253,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 {...routeComponentProps}
                                 authenticatedUser={authenticatedUser}
                                 viewerSubject={this.state.viewerSubject}
-                                configurationCascade={this.state.configurationCascade}
+                                settingsCascade={this.state.settingsCascade}
                                 // Theme
                                 isLightTheme={this.state.isLightTheme}
                                 onThemeChange={this.onThemeChange}
@@ -294,20 +294,18 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.setState({ navbarSearchQuery })
     }
 
-    private onConfigurationCascadeChange(
-        configurationCascade: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
-    ): void {
+    private onSettingsCascadeChange(settingsCascade: SettingsCascadeOrError<SettingsSubject, Settings>): void {
         this.setState(
             prevState => {
-                const update: Pick<SourcegraphWebAppState, 'configurationCascade' | 'extensionsEnvironment'> = {
-                    configurationCascade,
+                const update: Pick<SourcegraphWebAppState, 'settingsCascade' | 'extensionsEnvironment'> = {
+                    settingsCascade,
                     extensionsEnvironment: prevState.extensionsEnvironment,
                 }
                 if (
-                    configurationCascade.subjects !== null &&
-                    !isErrorLike(configurationCascade.subjects) &&
-                    configurationCascade.merged !== null &&
-                    !isErrorLike(configurationCascade.merged)
+                    settingsCascade.subjects !== null &&
+                    !isErrorLike(settingsCascade.subjects) &&
+                    settingsCascade.final !== null &&
+                    !isErrorLike(settingsCascade.final)
                 ) {
                     // Only update Sourcegraph extensions environment configuration if the configuration was
                     // successfully parsed.
@@ -316,11 +314,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     update.extensionsEnvironment = {
                         ...prevState.extensionsEnvironment,
                         configuration: {
-                            subjects: configurationCascade.subjects.filter(
-                                (subject): subject is ConfiguredSubject<ConfigurationSubject, Settings> =>
+                            subjects: settingsCascade.subjects.filter(
+                                (subject): subject is ConfiguredSubject<SettingsSubject, Settings> =>
                                     subject.settings !== null && !isErrorLike(subject.settings)
                             ),
-                            merged: configurationCascade.merged,
+                            final: settingsCascade.final,
                         },
                     }
                 }

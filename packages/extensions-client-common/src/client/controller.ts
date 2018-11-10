@@ -12,16 +12,16 @@ import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
 import { ExtensionManifest } from '../schema/extension.schema'
-import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
+import { Settings, SettingsCascade, SettingsSubject } from '../settings'
 import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
 import { log } from './log'
 
 /**
  * Extends the {@link BaseController} class to add functionality that is useful to this package's consumers.
  */
-export class Controller<S extends ConfigurationSubject, C extends Settings> extends BaseController<
+export class Controller<S extends SettingsSubject, C extends Settings> extends BaseController<
     ConfiguredExtension,
-    ConfigurationCascade<S, C>
+    SettingsCascade<S, C>
 > {
     /**
      * Global notification messages that should be displayed to the user, from the following sources:
@@ -51,7 +51,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> exte
  * React props or state containing the controller. There should be only a single controller for the whole
  * application.
  */
-export interface ControllerProps<S extends ConfigurationSubject, C extends Settings> {
+export interface ControllerProps<S extends SettingsSubject, C extends Settings> {
     /**
      * The controller, which is used to communicate with the extensions and manages extensions based on the
      * environment.
@@ -63,9 +63,9 @@ export interface ControllerProps<S extends ConfigurationSubject, C extends Setti
  * Filter the environment to omit extensions that should not be activated (based on their manifest's
  * activationEvents).
  *
- * @template CC configuration cascade type
+ * @template CC settings cascade type
  */
-function environmentFilter<S extends ConfigurationSubject, CC extends ConfigurationCascade<S>>(
+function environmentFilter<S extends SettingsSubject, CC extends SettingsCascade<S>>(
     nextEnvironment: Environment<ConfiguredExtension, CC>
 ): Environment<ConfiguredExtension, CC> {
     return {
@@ -74,7 +74,7 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
             nextEnvironment.extensions &&
             nextEnvironment.extensions.filter(x => {
                 try {
-                    if (!isExtensionEnabled(nextEnvironment.configuration.merged, x.id)) {
+                    if (!isExtensionEnabled(nextEnvironment.configuration.final, x.id)) {
                         return false
                     } else if (!x.manifest) {
                         console.warn(
@@ -118,7 +118,7 @@ declare global {
  * It receives state updates via calls to the setEnvironment method from React components. It provides results to
  * React components via its registries and the showMessages, etc., observables.
  */
-export function createController<S extends ConfigurationSubject, C extends Settings>(
+export function createController<S extends SettingsSubject, C extends Settings>(
     context: Context<S, C>,
     createMessageTransports: (extension: ConfiguredExtension) => Promise<MessageTransports>
 ): Controller<S, C> {
@@ -207,7 +207,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
  * {@link module:sourcegraph.module/protocol/contribution.ActionContribution#command} for
  * documentation.
  */
-function registerExtensionContributions<S extends ConfigurationSubject, C extends Settings>(
+function registerExtensionContributions<S extends SettingsSubject, C extends Settings>(
     controller: Controller<S, C>
 ): Unsubscribable {
     const contributions = controller.environment.pipe(

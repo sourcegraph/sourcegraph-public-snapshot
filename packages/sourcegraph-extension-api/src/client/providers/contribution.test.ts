@@ -2,7 +2,7 @@ import * as assert from 'assert'
 import { Observable, of } from 'rxjs'
 import { Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { ConfigurationCascade, ContributableMenu, Contributions } from '../../protocol'
+import { ContributableMenu, Contributions, SettingsCascade } from '../../protocol'
 import { EMPTY_COMPUTED_CONTEXT } from '../context/expr/evaluator'
 import { EMPTY_ENVIRONMENT, Environment } from '../environment'
 import { Extension } from '../extension'
@@ -49,7 +49,7 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
 
 describe('ContributionRegistry', () => {
     function create(
-        env: Observable<Environment<Extension, ConfigurationCascade>> = of(EMPTY_ENVIRONMENT)
+        env: Observable<Environment<Extension, SettingsCascade>> = of(EMPTY_ENVIRONMENT)
     ): ContributionRegistry {
         return new ContributionRegistry(env)
     }

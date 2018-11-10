@@ -6,10 +6,10 @@ import { isDiscussionsEnabled } from '.'
 import { ErrorNotSupportedPage } from '../components/ErrorNotSupportedPage'
 import { PageTitle } from '../components/PageTitle'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { ConfigurationCascadeProps } from '../extensions/ExtensionsClientCommonContext'
+import { SettingsCascadeProps } from '../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../tracking/eventLogger'
 
-interface Props extends ConfigurationCascadeProps, RouteComponentProps<any> {
+interface Props extends SettingsCascadeProps, RouteComponentProps<any> {
     history: H.History
     location: H.Location
 }
@@ -33,7 +33,7 @@ export class DiscussionsPage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!isDiscussionsEnabled(this.props.configurationCascade)) {
+        if (!isDiscussionsEnabled(this.props.settingsCascade)) {
             return <ErrorNotSupportedPage />
         }
 

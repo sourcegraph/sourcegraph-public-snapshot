@@ -1,7 +1,7 @@
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import { Controller as ClientController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
-import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import * as H from 'history'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 
@@ -49,8 +49,8 @@ export function injectExtensionsGlobalComponents(
         extensionsController,
         extensionsContextController,
     }: {
-        extensionsController: ClientController<ConfigurationSubject, Settings>
-        extensionsContextController: Controller<ConfigurationSubject, Settings>
+        extensionsController: ClientController<SettingsSubject, Settings>
+        extensionsContextController: Controller<SettingsSubject, Settings>
     },
     location: H.Location
 ): void {

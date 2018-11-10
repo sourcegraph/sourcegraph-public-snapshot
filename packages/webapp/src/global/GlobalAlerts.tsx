@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Markdown } from '../components/Markdown'
 import { Settings } from '../schema/settings.schema'
-import { currentConfiguration } from '../settings/configuration'
+import { viewerSettings } from '../settings/configuration'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
@@ -19,7 +19,7 @@ interface Props {
 
 interface State {
     siteFlags?: SiteFlags
-    mergedSettings?: Settings
+    finalSettings?: Settings
 }
 
 /**
@@ -32,7 +32,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
-        this.subscriptions.add(currentConfiguration.subscribe(mergedSettings => this.setState({ mergedSettings })))
+        this.subscriptions.add(viewerSettings.subscribe(finalSettings => this.setState({ finalSettings })))
     }
 
     public componentWillUnmount(): void {
@@ -73,10 +73,10 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         ))}
                     </>
                 )}
-                {this.state.mergedSettings &&
-                    this.state.mergedSettings.motd &&
-                    Array.isArray(this.state.mergedSettings.motd) &&
-                    this.state.mergedSettings.motd.map(m => (
+                {this.state.finalSettings &&
+                    this.state.finalSettings.motd &&
+                    Array.isArray(this.state.finalSettings.motd) &&
+                    this.state.finalSettings.motd.map(m => (
                         <DismissibleAlert
                             key={m}
                             partialStorageKey={`motd.${m}`}

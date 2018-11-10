@@ -1,4 +1,4 @@
-import { ConfigurationCascade } from '../protocol'
+import { SettingsCascade } from '../protocol'
 import { Context, EMPTY_CONTEXT } from './context/context'
 import { Extension } from './extension'
 import { TextDocumentItem } from './types/textDocument'
@@ -10,9 +10,9 @@ import { TextDocumentItem } from './types/textDocument'
  * in documents, and support extension configuration.
  *
  * @template X extension type, to support storing additional properties on extensions
- * @template C configuration cascade type
+ * @template C settings cascade type
  */
-export interface Environment<X extends Extension = Extension, C extends ConfigurationCascade = ConfigurationCascade> {
+export interface Environment<X extends Extension = Extension, C extends SettingsCascade = SettingsCascade> {
     /**
      * The text documents that are currently visible. Each text document is represented to extensions as being
      * in its own visible CodeEditor.
@@ -22,7 +22,7 @@ export interface Environment<X extends Extension = Extension, C extends Configur
     /** The active extensions, or null if there are none. */
     readonly extensions: X[] | null
 
-    /** The configuration cascade. */
+    /** The settings cascade. */
     readonly configuration: C
 
     /** Arbitrary key-value pairs that describe other application state. */
@@ -33,6 +33,6 @@ export interface Environment<X extends Extension = Extension, C extends Configur
 export const EMPTY_ENVIRONMENT: Environment<any, any> = {
     visibleTextDocuments: null,
     extensions: null,
-    configuration: { merged: {} },
+    configuration: { final: {} },
     context: EMPTY_CONTEXT,
 }

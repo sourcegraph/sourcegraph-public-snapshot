@@ -8,13 +8,13 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { ControllerProps } from '../client/controller'
 import { ExtensionsProps } from '../context'
-import { ConfigurationSubject, Settings } from '../settings'
+import { SettingsSubject, Settings } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { ActionItem, ActionItemProps } from './actions/ActionItem'
 import { getContributedActionItems } from './actions/contributions'
 
-interface Props<S extends ConfigurationSubject, C extends Settings>
+interface Props<S extends SettingsSubject, C extends Settings>
     extends ControllerProps<S, C>,
         ExtensionsProps<S, C> {
     /** The menu whose commands to display. */
@@ -38,7 +38,7 @@ interface State {
 }
 
 /** Displays a list of commands contributed by extensions for a specific menu. */
-export class CommandList<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+export class CommandList<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
     Props<S, C>,
     State
 > {
@@ -255,7 +255,7 @@ export function filterAndRankItems(
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
 }
 
-export class CommandListPopoverButton<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+export class CommandListPopoverButton<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
     Props<S, C> & {
         toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
     },

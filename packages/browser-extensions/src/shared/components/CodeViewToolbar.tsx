@@ -2,11 +2,7 @@ import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/a
 import { ControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { ISite, IUser } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
-import {
-    ConfigurationCascadeProps,
-    ConfigurationSubject,
-    Settings,
-} from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
@@ -23,8 +19,8 @@ export interface ButtonProps {
 }
 
 interface CodeViewToolbarProps
-    extends Partial<ExtensionsProps<ConfigurationSubject, Settings>>,
-        Partial<ControllerProps<ConfigurationSubject, Settings>>,
+    extends Partial<ExtensionsProps<SettingsSubject, Settings>>,
+        Partial<ControllerProps<SettingsSubject, Settings>>,
         FileInfo {
     onEnabledChange?: (enabled: boolean) => void
 
@@ -37,14 +33,14 @@ interface CodeViewToolbarProps
     location: H.Location
 }
 
-interface CodeViewToolbarState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {
+interface CodeViewToolbarState extends SettingsCascadeProps<SettingsSubject, Settings> {
     site?: ISite
     currentUser?: IUser
 }
 
 export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeViewToolbarState> {
     public state: CodeViewToolbarState = {
-        configurationCascade: { subjects: [], merged: {} },
+        settingsCascade: { subjects: [], final: {} },
     }
 
     private subscriptions = new Subscription()
@@ -52,8 +48,8 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     public componentDidMount(): void {
         if (this.props.extensions) {
             this.subscriptions.add(
-                this.props.extensions.context.configurationCascade.subscribe(
-                    configurationCascade => this.setState({ configurationCascade }),
+                this.props.extensions.context.settingsCascade.subscribe(
+                    settingsCascade => this.setState({ settingsCascade }),
                     err => console.error(err)
                 )
             )

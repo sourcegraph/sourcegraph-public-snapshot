@@ -7,7 +7,7 @@ import { Settings } from '../settings'
 /**
  * Describes a configured extension.
  *
- * @template S the configuration subject type
+ * @template S the settings subject type
  * @template C the type of the extension's settings (overlaid on the base settings JSON Schema-derived type)
  * @template RX the registry extension type
  */

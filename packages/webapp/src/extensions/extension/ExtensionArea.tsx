@@ -9,7 +9,7 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { gql, graphQLContent } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
-import { ConfigurationCascadeProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { ExtensionsProps, SettingsCascadeProps } from '../../extensions/ExtensionsClientCommonContext'
 import { RouteDescriptor } from '../../util/contributions'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
@@ -69,7 +69,7 @@ interface ExtensionAreaState {
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface ExtensionAreaRouteContext extends ConfigurationCascadeProps, ExtensionsProps {
+export interface ExtensionAreaRouteContext extends SettingsCascadeProps, ExtensionsProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -172,7 +172,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
             url,
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdateExtension: this.onDidUpdateExtension,
-            configurationCascade: this.props.configurationCascade,
+            settingsCascade: this.props.settingsCascade,
             extension: this.state.extensionOrError,
             extensions: this.props.extensions,
             isLightTheme: this.props.isLightTheme,

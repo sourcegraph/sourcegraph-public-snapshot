@@ -6,16 +6,15 @@ import { Settings } from '../schema/settings.schema'
 import { createAggregateError } from '../util/errors'
 
 /**
- * Represents the configs from various subjects from GraphQL (user, orgs, and global).
+ * Represents the settings from various subjects from GraphQL (user, orgs, and global).
  */
-export const configurationCascade = new ReplaySubject<GQL.IConfigurationCascade>(1)
+export const settingsCascade = new ReplaySubject<GQL.ISettingsCascade>(1)
 
 /**
- * Always represents the latest merged configuration for the current user
- * or visitor. Callers should cast the value to their own configuration type.
+ * Always represents the final settings for the current user or visitor.
  */
-export const currentConfiguration: Observable<Settings> = configurationCascade.pipe(
-    map(cascade => parseJSON(cascade.merged.contents) as Settings)
+export const viewerSettings: Observable<Settings> = settingsCascade.pipe(
+    map(cascade => parseJSON(cascade.final) as Settings)
 )
 
 /**

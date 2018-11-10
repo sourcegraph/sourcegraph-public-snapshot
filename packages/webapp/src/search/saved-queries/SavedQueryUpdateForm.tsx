@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Observable } from 'rxjs'
 import { concat, mergeMap } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
-import { refreshConfiguration } from '../../user/settings/backend'
+import { refreshSettings } from '../../user/settings/backend'
 import { createSavedQuery, deleteSavedQuery, updateSavedQuery } from '../backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
@@ -46,7 +46,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
             true
         ).pipe(
             mergeMap(() => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.id, true)),
-            mergeMap(() => refreshConfiguration().pipe(concat([null])))
+            mergeMap(() => refreshSettings().pipe(concat([null])))
         )
     }
 
