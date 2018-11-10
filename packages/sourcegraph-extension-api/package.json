@@ -1,6 +1,6 @@
 {
   "name": "sourcegraph",
-  "version": "18.4.1",
+  "version": "18.4.2",
   "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
   "author": "Sourcegraph",
   "license": "Apache-2.0",

@@ -15851,6 +15851,14 @@ source-map@^0.7.2:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.7.3.tgz#5302f8169031735226544092e64981f751750383"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
+sourcegraph@18.4.1:
+  version "18.4.1"
+  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.4.1.tgz#0821836b5e27b1fdc196b507f27e7fbb6cd228a3"
+  integrity sha512-uhLisxIAeQljoZweZ1g2mlLinE8pZ6+NmVNJeSAN9+FoYIK6HlZRc40zFq+MqWbWlgGH8jraGCZXyNVJ05L1ig==
+  dependencies:
+    minimatch "^3.0.4"
+    rxjs "^6.3.2"
+
 sparkles@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/sparkles/-/sparkles-1.0.1.tgz#008db65edce6c50eec0c5e228e1945061dd0437c"
