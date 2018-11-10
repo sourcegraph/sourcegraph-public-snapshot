@@ -1,6 +1,7 @@
 package githuboauth
 
 import (
+	"flag"
 	"fmt"
 	"net/url"
 	"strings"
@@ -14,7 +15,18 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+var (
+	ffIsEnabled bool
+)
+
 func init() {
+	// Don't run this watch loop in tests, because it results in a race condition.
+	// This can be removed once the feature flag is removed.
+	if flag.Lookup("test.v") != nil {
+		ffIsEnabled = true
+		return
+	}
+
 	var (
 		mu  sync.Mutex
 		cur = map[schema.GitHubAuthProvider]auth.Provider{} // tracks current mapping of valid config to auth.Provider
@@ -24,6 +36,26 @@ func init() {
 		conf.Watch(func() {
 			mu.Lock()
 			defer mu.Unlock()
+
+			isEnabled := func() bool {
+				if exp := conf.Get().ExperimentalFeatures; exp != nil {
+					return exp.GithubAuth
+				}
+				return false
+			}()
+			if !isEnabled {
+				new := map[schema.GitHubAuthProvider]auth.Provider{}
+				updates := make(map[auth.Provider]bool)
+				for c, p := range cur {
+					if _, ok := new[c]; !ok {
+						updates[p] = false
+					}
+				}
+				auth.UpdateProviders(updates)
+				cur = new
+				ffIsEnabled = false
+				return
+			}
 
 			log15.Info("Reloading changed GitHub OAuth authentication provider configuration.")
 
@@ -41,6 +73,7 @@ func init() {
 			}
 			auth.UpdateProviders(updates)
 			cur = new
+			ffIsEnabled = true
 		})
 	}()
 	conf.ContributeValidator(func(cfg schema.SiteConfiguration) (problems []string) {

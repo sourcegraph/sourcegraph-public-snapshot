@@ -24,6 +24,11 @@ var Middleware = &auth.Middleware{
 func newOAuthHandler(isAPIRequest bool, next http.Handler) http.Handler {
 	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler())
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !ffIsEnabled {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Delegate to the auth flow handler
 		if !isAPIRequest && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
 			oauthFlowHandler.ServeHTTP(w, r)

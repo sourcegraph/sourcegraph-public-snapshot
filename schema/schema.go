@@ -143,6 +143,7 @@ type Discussions struct {
 type ExperimentalFeatures struct {
 	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
 	Discussions          string `json:"discussions,omitempty"`
+	GithubAuth           bool   `json:"githubAuth,omitempty"`
 	JumpToDefOSSIndex    string `json:"jumpToDefOSSIndex,omitempty"`
 	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
 }

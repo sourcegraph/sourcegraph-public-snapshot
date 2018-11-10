@@ -92,6 +92,10 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "githubAuth": {
+          "description": "Enables GitHub instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitHub instance to the ` + "`" + `auth.providers` + "`" + ` field.",
+          "type": "boolean"
         }
       }
     },
