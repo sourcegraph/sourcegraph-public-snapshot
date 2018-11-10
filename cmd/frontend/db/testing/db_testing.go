@@ -120,20 +120,21 @@ func truncateDB(d *sql.DB) error {
 	return err
 }
 
-// initTest creates a test database, named with the given suffix, if one does
-// not already exist and configures this package to use it. It is called by
-// integration tests (in a package init func) that need to use a real
-// database.
+// initTest creates a test database, named with the given suffix
+// (dropping it if it already exists), and configures this package to use it.
+// It is called by integration tests (in a package init func) that need to use
+// a real database.
 func initTest(nameSuffix string) error {
 	dbname := "sourcegraph-test-" + nameSuffix
 
-	out, err := exec.Command("createdb", dbname).CombinedOutput()
+	out, err := exec.Command("dropdb", "--if-exists", dbname).CombinedOutput()
 	if err != nil {
-		if strings.Contains(string(out), "already exists") {
-			log.Printf("DB %s exists already (run `dropdb %s` to delete and force re-creation)", dbname, dbname)
-		} else {
-			return errors.Errorf("createdb failed: %v\n%s", err, string(out))
-		}
+		return errors.Errorf("dropdb --if-exists failed: %v\n%s", err, string(out))
+	}
+
+	out, err = exec.Command("createdb", dbname).CombinedOutput()
+	if err != nil {
+		return errors.Errorf("createdb failed: %v\n%s", err, string(out))
 	}
 
 	return dbconn.ConnectToDB("dbname=" + dbname)
