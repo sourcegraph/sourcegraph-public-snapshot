@@ -55,6 +55,7 @@ All notable changes to Sourcegraph are documented in this file.
   - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
   - [Other code hosts](https://github.com/sourcegraph/sourcegraph/issues/1324)
 - Removed the `httpStrictTransportSecurity` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 
 ## 2.13.6
 

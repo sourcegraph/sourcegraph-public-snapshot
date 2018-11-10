@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -30,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
-	"golang.org/x/crypto/acme/autocert"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -155,7 +153,7 @@ func Main() error {
 	tlsCert := conf.Get().Critical.TlsCert
 	tlsKey := conf.Get().Critical.TlsKey
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
-	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.ExternalURL.Scheme == "https" && conf.Get().Critical.TlsLetsencrypt != "off"))
+	useTLS := httpsAddr != "" && (tlsCertAndKey || globals.ExternalURL.Scheme == "https")
 	if useTLS && globals.ExternalURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "externalURL", globals.ExternalURL)
 	}
@@ -174,42 +172,19 @@ func Main() error {
 
 	// Start HTTPS server.
 	if useTLS {
-		var tlsConf *tls.Config
-
-		// Configure tlsConf
-		if tlsCertAndKey {
-			// Manual
-			cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
-			if err != nil {
-				return err
-			}
-			tlsConf = &tls.Config{
-				NextProtos:   []string{"h2", "http/1.1"},
-				Certificates: []tls.Certificate{cert},
-			}
-		} else {
-			// LetsEncrypt
-			m := &autocert.Manager{
-				Prompt:     autocert.AcceptTOS,
-				HostPolicy: autocert.HostWhitelist(globals.ExternalURL.Host),
-				Cache:      db.CertCache,
-			}
-			// m.TLSConfig uses m's GetCertificate as well as enabling ACME
-			// "tls-alpn-01" challenges.
-			tlsConf = m.TLSConfig()
-			// We register paths on our HTTP handler so that we can do ACME
-			// "http-01" challenges.
-			srv.SetWrapper(m.HTTPHandler)
+		cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
+		if err != nil {
+			return err
+		}
+		tlsConf := &tls.Config{
+			NextProtos:   []string{"h2", "http/1.1"},
+			Certificates: []tls.Certificate{cert},
 		}
 
 		l, err := net.Listen("tcp", httpsAddr)
 		if err != nil {
-			// Fatal if we manually specified TLS or enforce lets encrypt
-			if tlsCertAndKey || conf.Get().Critical.TlsLetsencrypt == "on" {
-				log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
-			} else {
-				log15.Warn("Failed to bind to HTTPS port, TLS disabled", "address", httpsAddr, "error", err)
-			}
+			// Fatal if we manually specified TLS
+			log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
 		}
 
 		if l != nil {

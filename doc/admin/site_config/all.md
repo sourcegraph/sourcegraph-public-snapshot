@@ -17,8 +17,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [experimentalFeatures](all.md#experimentalfeatures-object)
 
-- [tls.letsencrypt](all.md#tlsletsencrypt-string-enum)
-
 - [tlsCert](all.md#tlscert-string)
 
 - [tlsKey](all.md#tlskey-string)
@@ -225,25 +223,6 @@ Default: `"disabled"`
 ## search.index.enabled (boolean)
 
 Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
-
-## tls.letsencrypt (string, enum)
-
-Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.
-The default value is auto, which uses the following conditions to switch on:
-
-- tlsCert and tlsKey are unset.
-- `externalURL` is a https:// URL (`appURL` in Sourcegraph 2.13 and earlier)
-- Can successfully bind to port 443
-
-This property must be one of the following enum values:
-
-- `auto`
-- `on`
-- `off`
-
-Default: `"auto"`
-
-<br/>
 
 ## tlsCert (string)
 
