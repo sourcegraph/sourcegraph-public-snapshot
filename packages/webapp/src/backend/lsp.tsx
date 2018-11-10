@@ -1,3 +1,4 @@
+import { Location } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
 import {
     ReferenceInformation,
     SymbolLocationInformation,
@@ -6,7 +7,6 @@ import {
 import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Location } from 'sourcegraph/module/protocol/plainTypes'
 import { MarkupContent } from 'vscode-languageserver-types'
 import { InitializeResult } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'

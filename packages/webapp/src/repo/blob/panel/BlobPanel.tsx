@@ -1,3 +1,4 @@
+import { Location, Position } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
@@ -18,7 +19,6 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { Location, Position } from 'sourcegraph/module/protocol/plainTypes'
 import { MarkupContent } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import {

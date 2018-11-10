@@ -1,5 +1,5 @@
+import { TextDocumentItem } from '@sourcegraph/extensions-client-common/lib/api/client/types/textDocument'
 import * as React from 'react'
-import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
 import * as GQL from '../../backend/graphqlschema'
 import { Connection, FilteredConnection } from '../../components/FilteredConnection'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'

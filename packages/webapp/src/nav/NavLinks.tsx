@@ -1,10 +1,10 @@
+import { ContributableMenu } from '@sourcegraph/extensions-client-common/lib/api/protocol'
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as GQL from '../backend/graphqlschema'
 import { isDiscussionsEnabled } from '../discussions'
 import {
