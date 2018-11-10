@@ -9,6 +9,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [Site configuration](site_config/index.md)
   - [User authentication](auth.md)
   - [Updating to a new version of Sourcegraph](updates.md)
+  - [nginx HTTP server configuration](nginx.md)
   - [Setting the URL for your instance](url.md)
   - [TLS/SSL configuration](tls_ssl.md)
   - [Monitoring and tracing](monitoring_and_tracing.md)

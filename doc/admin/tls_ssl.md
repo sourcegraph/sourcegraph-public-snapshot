@@ -2,6 +2,8 @@
 
 If you intend to make your Sourcegraph instance accessible on the Internet or another untrusted network, you should use TLS so that all traffic will be served over HTTPS.
 
+See "[nginx HTTP server settings](nginx.md)" for more information.
+
 ## Let's Encrypt
 
 Sourcegraph will use [Let's Encrypt](https://letsencrypt.org/) by default if the following conditions are met:
