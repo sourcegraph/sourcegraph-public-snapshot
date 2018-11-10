@@ -111,6 +111,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 	m.Get(apirouter.ConfigurationRawJSON).Handler(trace.TraceRoute(handler(serveConfigurationRawJSON)))
+	m.Get(apirouter.Raw).Handler(trace.TraceRoute(handler(raw.NewHandler(raw.RepoProviderFunc(repoProvider)))))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
