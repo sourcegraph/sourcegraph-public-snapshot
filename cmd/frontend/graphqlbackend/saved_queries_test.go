@@ -76,8 +76,8 @@ func TestCreateSavedQuery(t *testing.T) {
 	defer func() { mockSettingsCascadeSubjects = nil }()
 
 	mutation, err := (&schemaResolver{}).ConfigurationMutation(ctx, &struct {
-		Input *configurationMutationGroupInput
-	}{Input: &configurationMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
+		Input *settingsMutationGroupInput
+	}{Input: &settingsMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,8 +145,8 @@ func TestUpdateSavedQuery(t *testing.T) {
 	defer func() { mockSettingsCascadeSubjects = nil }()
 
 	mutation, err := (&schemaResolver{}).ConfigurationMutation(ctx, &struct {
-		Input *configurationMutationGroupInput
-	}{Input: &configurationMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
+		Input *settingsMutationGroupInput
+	}{Input: &settingsMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
 	if err != nil {
 		t.Fatal(err)
 	}

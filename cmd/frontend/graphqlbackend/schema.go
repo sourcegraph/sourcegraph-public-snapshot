@@ -267,8 +267,18 @@ type Mutation {
         # ID of the saved search.
         id: ID!
     ): EmptyResponse
-    # All mutations that update configuration settings are under this field.
-    configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
+    # All mutations that update settings (global, organization, and user settings) are under this field.
+    #
+    # Only the settings subject whose settings are being mutated (and site admins) may perform this mutation.
+    #
+    # This mutation only affects global, organization, and user settings, not site configuration. For site
+    # configuration (which is a separate set of configuration properties from global/organization/user settings),
+    # use updateSiteConfiguration.
+    settingsMutation(input: SettingsMutationGroupInput!): SettingsMutation
+    # DEPRECATED: Use settingsMutation instead. This field is a deprecated alias for settingsMutation and will be
+    # removed in a future release.
+    configurationMutation(input: SettingsMutationGroupInput!): SettingsMutation
+        @deprecated(reason: "use settingsMutation instead")
     # Updates the site configuration. Returns whether or not a restart is required for the update to be applied.
     #
     # Only site admins may perform this mutation.
@@ -456,33 +466,40 @@ input MarkdownOptions {
     alwaysNil: String
 }
 
-# Input for Mutation.configuration, which contains fields that all configuration
-# mutations need.
-input ConfigurationMutationGroupInput {
-    # The subject whose configuration to mutate (organization, user, etc.).
+# Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user
+# settings) mutations need.
+input SettingsMutationGroupInput {
+    # The subject whose settings to mutate (organization, user, etc.).
     subject: ID!
-    # The ID of the last-known configuration known to the client, or null if
-    # there is none. This field is used to prevent race conditions when there
-    # are concurrent editors.
+    # The ID of the last-known settings known to the client, or null if there is none. This field is used to
+    # prevent race conditions when there are concurrent editors.
     lastID: Int
 }
 
-# Mutations that update configuration settings. These mutations are grouped
-# together because they:
+# Mutations that update settings (global, organization, or user settings). These mutations are grouped together
+# because they:
 #
 # - are all versioned to avoid race conditions with concurrent editors
-# - all apply to a specific settings subject
+# - all apply to a specific settings subject (i.e., a user, an organization, or the whole site)
 #
-# Grouping them lets us extract those common parameters to the
-# Mutation.configuration field.
-type ConfigurationMutation {
-    # Edit a single property in the configuration object.
-    editConfiguration(
-        # The configuration edit to apply.
-        edit: ConfigurationEdit!
-    ): UpdateConfigurationPayload
-    # Overwrite the contents to the new contents provided.
-    overwriteConfiguration(contents: String): UpdateConfigurationPayload
+# Grouping them lets us extract those common parameters to the Mutation.settingsMutation field.
+type SettingsMutation {
+    # Edit a single property in the settings object.
+    editSettings(
+        # The edit to apply to the settings.
+        edit: SettingsEdit!
+    ): UpdateSettingsPayload
+    # DEPRECATED
+    editConfiguration(edit: ConfigurationEdit!): UpdateSettingsPayload
+        @deprecated(
+            reason: "Use editSettings instead. This field is a deprecated alias for it and will be removed in a future release."
+        )
+    # Overwrite the existing settings with the new settings.
+    overwriteSettings(
+        # A JSON object (stringified) of the settings. Trailing commas and "//"-style comments are supported. The
+        # entire previous settings value will be overwritten by this new value.
+        contents: String!
+    ): UpdateSettingsPayload
     # Create a saved query.
     createSavedQuery(
         description: String!
@@ -492,7 +509,7 @@ type ConfigurationMutation {
         notifySlack: Boolean = false
         disableSubscriptionNotifications: Boolean = false
     ): SavedQuery!
-    # Update the saved query with the given ID in the configuration.
+    # Update the saved query with the given ID in settings.
     updateSavedQuery(
         id: ID!
         description: String
@@ -501,12 +518,12 @@ type ConfigurationMutation {
         notify: Boolean = false
         notifySlack: Boolean = false
     ): SavedQuery!
-    # Delete the saved query with the given ID in the configuration.
+    # Delete the saved query with the given ID in the settings.
     deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
 }
 
-# An edit to a (nested) configuration property's value.
-input ConfigurationEdit {
+# An edit to a JSON property in a settings JSON object. The JSON property to edit can be nested.
+input SettingsEdit {
     # The key path of the property to update.
     #
     # Inserting into an existing array is not yet supported.
@@ -517,8 +534,17 @@ input ConfigurationEdit {
     # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
     # or else the GraphQL parser will return an error.
     value: JSONValue
-    # Whether to treat the value as a JSONC-encoded string, which makes it possible to perform a configuration edit
-    # that preserves (or adds/removes) comments.
+    # Whether to treat the value as a JSONC-encoded string, which makes it possible to perform an edit that
+    # preserves (or adds/removes) comments.
+    valueIsJSONCEncodedString: Boolean = false
+}
+
+# DEPRECATED: This type was renamed to SettingsEdit.
+#
+# NOTE: GraphQL does not support @deprecated directives on INPUT_FIELD_DEFINITION (input fields).
+input ConfigurationEdit {
+    keyPath: [KeyPathSegment!]!
+    value: JSONValue
     valueIsJSONCEncodedString: Boolean = false
 }
 
@@ -533,8 +559,8 @@ input KeyPathSegment {
     index: Int
 }
 
-# The payload for ConfigurationMutation.updateConfiguration.
-type UpdateConfigurationPayload {
+# The payload for SettingsMutation.updateConfiguration.
+type UpdateSettingsPayload {
     # An empty response.
     empty: EmptyResponse
 }

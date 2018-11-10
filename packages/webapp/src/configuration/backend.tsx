@@ -12,8 +12,8 @@ export function overwriteSettings(subject: GQL.ID, lastID: number | null, conten
     return mutateGraphQL(
         gql`
             mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
-                    overwriteConfiguration(contents: $contents) {
+                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                    overwriteSettings(contents: $contents) {
                         empty {
                             alwaysNil
                         }
@@ -22,19 +22,18 @@ export function overwriteSettings(subject: GQL.ID, lastID: number | null, conten
             }
         `,
         { subject, lastID, contents }
-    ).pipe(map(dataOrThrowErrors), map(() => undefined))
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(() => undefined)
+    )
 }
 
-export function editConfiguration(
-    subject: GQL.ID,
-    lastID: number | null,
-    edit: GQL.IConfigurationEdit
-): Observable<void> {
+export function editSettings(subject: GQL.ID, lastID: number | null, edit: GQL.ISettingsEdit): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation EditSettings($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
-                    editConfiguration(edit: $edit) {
+            mutation EditSettings($subject: ID!, $lastID: Int, $edit: SettingsEdit!) {
+                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                    editSettings(edit: $edit) {
                         empty {
                             alwaysNil
                         }
@@ -43,18 +42,21 @@ export function editConfiguration(
             }
         `,
         { subject, lastID, edit }
-    ).pipe(map(dataOrThrowErrors), map(() => undefined))
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(() => undefined)
+    )
 }
 
 /**
- * Runs a GraphQL mutation that includes configuration mutations, populating the variables object
- * with the lastID and subject for the configuration mutation.
+ * Runs a GraphQL mutation that includes settings mutations, populating the variables object
+ * with the lastID and subject for the settings mutation.
  *
- * @param subject The subject whose configuration to update.
+ * @param subject The subject whose settings to update.
  * @param mutation The GraphQL mutation.
  * @param variables The GraphQL mutation's variables.
  */
-export function mutateConfigurationGraphQL(
+export function mutateSettingsGraphQL(
     subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
     mutation: GraphQLDocument,
     variables: any = {}
@@ -65,12 +67,12 @@ export function mutateConfigurationGraphQL(
     }
     return settingsCascade.pipe(
         take(1),
-        mergeMap(config => {
-            const subjectConfig = config.subjects.find(s => s.id === subjectID)
-            if (!subjectConfig) {
+        mergeMap(settings => {
+            const subjectSettings = settings.subjects.find(s => s.id === subjectID)
+            if (!subjectSettings) {
                 throw new Error(`no settings subject: ${subjectID}`)
             }
-            const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
+            const lastID = subjectSettings.latestSettings ? subjectSettings.latestSettings.id : null
 
             return mutateGraphQL(mutation, { ...variables, subject: subjectID, lastID })
         }),

@@ -27,7 +27,7 @@ import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
-import { editConfiguration } from '../configuration/backend'
+import { editSettings } from '../configuration/backend'
 import { settingsCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshSettings } from '../user/settings/backend'
 import { ErrorLike, isErrorLike } from '../util/errors'
@@ -72,7 +72,7 @@ function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsA
             }
             const lastID = subjectSettings.latestSettings ? subjectSettings.latestSettings.id : null
 
-            let edit: GQL.IConfigurationEdit
+            let edit: GQL.ISettingsEdit
             let editDescription: string
             if ('edit' in args && args.edit) {
                 edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
@@ -102,7 +102,7 @@ function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsA
                 )
             }
 
-            return editConfiguration(subject, lastID, edit)
+            return editSettings(subject, lastID, edit)
         }),
         switchMap(() => concat(refreshSettings(), [void 0]))
     )

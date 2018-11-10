@@ -4,7 +4,7 @@ import { catchError, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs
 import { SearchOptions } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { mutateConfigurationGraphQL } from '../configuration/backend'
+import { mutateSettingsGraphQL } from '../configuration/backend'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { viewerSettings } from '../settings/configuration'
 import { asError, createAggregateError, ErrorLike } from '../util/errors'
@@ -318,7 +318,7 @@ export function createSavedQuery(
     notifySlack: boolean,
     disableSubscriptionNotifications?: boolean
 ): Observable<GQL.ISavedQuery> {
-    return mutateConfigurationGraphQL(
+    return mutateSettingsGraphQL(
         subject,
         gql`
             mutation CreateSavedQuery(
@@ -373,7 +373,7 @@ export function updateSavedQuery(
     notify: boolean,
     notifySlack: boolean
 ): Observable<GQL.ISavedQuery> {
-    return mutateConfigurationGraphQL(
+    return mutateSettingsGraphQL(
         subject,
         gql`
             mutation UpdateSavedQuery(
@@ -417,7 +417,7 @@ export function deleteSavedQuery(
     id: GQL.ID,
     disableSubscriptionNotifications?: boolean
 ): Observable<void> {
-    return mutateConfigurationGraphQL(
+    return mutateSettingsGraphQL(
         subject,
         gql`
             mutation DeleteSavedQuery(

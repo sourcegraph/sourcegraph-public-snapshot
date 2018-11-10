@@ -3,12 +3,12 @@ import { Controller as ExtensionsContextController } from '@sourcegraph/extensio
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { gql, graphQLContent } from '@sourcegraph/extensions-client-common/lib/graphql'
 import {
-    SettingsSubject,
     gqlToCascade,
     mergeSettings,
     Settings,
     SettingsCascade,
     SettingsCascadeOrError,
+    SettingsSubject,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { applyEdits } from '@sqs/jsonc-parser'
 import * as JSONC from '@sqs/jsonc-parser'
@@ -218,7 +218,10 @@ const settingsCascadeRefreshes = new Subject<void>()
  */
 export const gqlSettingsCascade: Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> = combineLatest(
     storage.observeSync('sourcegraphURL'),
-    settingsCascadeRefreshes.pipe(mapTo(null), startWith(null))
+    settingsCascadeRefreshes.pipe(
+        mapTo(null),
+        startWith(null)
+    )
 ).pipe(
     switchMap(([url]) =>
         queryGraphQL({
@@ -327,7 +330,7 @@ function updateUserSettings(subject: string, args: UpdateExtensionSettingsArgs):
             }
             const lastID = subjectSettings.latestSettings ? subjectSettings.latestSettings.id : null
 
-            let edit: GQL.IConfigurationEdit
+            let edit: GQL.ISettingsEdit
             if ('edit' in args && args.edit) {
                 edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
             } else if ('extensionID' in args) {
@@ -339,17 +342,19 @@ function updateUserSettings(subject: string, args: UpdateExtensionSettingsArgs):
                 throw new Error('no edit')
             }
 
-            return editConfiguration(subject, lastID, edit)
+            return editSettings(subject, lastID, edit)
         })
     )
 }
 
 // TODO(sqs): copied from sourcegraph/sourcegraph temporarily
-function editConfiguration(subject: GQL.ID, lastID: number | null, edit: GQL.IConfigurationEdit): Observable<void> {
+//
+// NOTE: uses configurationMutation and editConfiguration for backcompat
+function editSettings(subject: GQL.ID, lastID: number | null, edit: GQL.IConfigurationEdit): Observable<void> {
     return mutateGraphQL({
         ctx: getContext({ repoKey: '', isRepoSpecific: false }),
         request: `
-            mutation EditSettings($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
+            mutation EditConfiguration($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                     editConfiguration(edit: $edit) {
                         empty {

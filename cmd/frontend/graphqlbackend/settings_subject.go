@@ -190,7 +190,7 @@ func (s *settingsSubject) readSettings(ctx context.Context, v interface{}) error
 // ID field that encodes the settings subject. In that case, it's important to check that the
 // subjects are equal to prevent a user from bypassing the permission check to write to the
 // settings of the second ID's subject.
-func (r *configurationMutationResolver) checkArgHasSameSubject(argSubject api.SettingsSubject) error {
+func (r *settingsMutation) checkArgHasSameSubject(argSubject api.SettingsSubject) error {
 	if !settingsSubjectsEqual(r.subject.toSubject(), argSubject) {
 		return fmt.Errorf("settings subject mismatch: %s != %s", r.subject.toSubject(), argSubject)
 	}
