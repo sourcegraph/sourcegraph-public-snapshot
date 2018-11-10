@@ -1,6 +1,7 @@
 import { IClientConfigurationDetails } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
+import { isOptions } from '../../context'
 import { GQL } from '../../types/gqlschema'
 import { sourcegraphUrl } from '../util/context'
 import { getContext } from './context'
@@ -73,7 +74,8 @@ export const fetchSite = (url = sourcegraphUrl): Observable<GQL.ISite> =>
         }`,
         retry: false,
         requestMightContainPrivateInfo: false,
-        url
+        url,
+        useAccessToken: !isOptions,
     }).pipe(
         map(result => {
             if (!result || !result.data) {
