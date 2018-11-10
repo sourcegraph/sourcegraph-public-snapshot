@@ -51,7 +51,7 @@ var (
 	tlsKey  = conf.GetTODO().TlsKey
 
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
-	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
+	devExtension = "chrome-extension://mjloopldincgoefbghiiekkofoicdkbf"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
