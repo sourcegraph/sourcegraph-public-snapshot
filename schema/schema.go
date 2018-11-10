@@ -135,10 +135,9 @@ type Discussions struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
-	Discussions          string `json:"discussions,omitempty"`
-	JumpToDefOSSIndex    string `json:"jumpToDefOSSIndex,omitempty"`
-	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
+	Discussions       string `json:"discussions,omitempty"`
+	JumpToDefOSSIndex string `json:"jumpToDefOSSIndex,omitempty"`
+	UpdateScheduler2  string `json:"updateScheduler2,omitempty"`
 }
 
 // ExtensionRepository description: The location of the version control repository for this extension.
@@ -358,7 +357,6 @@ type SiteConfiguration struct {
 	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
-	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
 	LicenseKey                        string                       `json:"licenseKey,omitempty"`
 	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`

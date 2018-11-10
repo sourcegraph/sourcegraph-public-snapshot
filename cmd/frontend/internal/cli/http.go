@@ -69,7 +69,6 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
 	h = secureHeadersMiddleware(h)
-	h = middleware.CanonicalURL(h)
 	h = gcontext.ClearHandler(h)
 	h = middleware.Trace(h)
 	return h, nil

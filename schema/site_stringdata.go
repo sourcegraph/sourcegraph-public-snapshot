@@ -79,13 +79,6 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "canonicalURLRedirect": {
-          "description":
-            "Enables or disables enforcing that HTTP requests use the externalURL as a prefix, by redirecting other requests to the same request URI on the externalURL. For example, if the externalURL is https://sourcegraph.example.com and the site is also available under the DNS name http://foo, then a request to http://foo/bar would be redirected to https://sourcegraph.example.com/bar. Enabled by default.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "discussions": {
           "description": "Enables the code discussions experiment.",
           "type": "string",
@@ -99,12 +92,6 @@ const SiteSchemaJSON = `{
           "default": "disabled"
         }
       }
-    },
-    "httpToHttpsRedirect": {
-      "description":
-        "Redirect users from HTTP to HTTPS. Accepted values are \"on\", \"off\", and \"load-balanced\" (boolean values true and false are also accepted and equivalent to \"on\" and \"off\" respectively). If \"load-balanced\" then additionally we use \"X-Forwarded-Proto\" to determine if on HTTP.",
-      "anyOf": [{ "type": "string", "enum": ["on", "off", "load-balanced"] }, { "type": "boolean" }],
-      "default": "off"
     },
     "corsOrigin": {
       "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
