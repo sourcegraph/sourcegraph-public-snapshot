@@ -22,6 +22,16 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                         cloneProgress
                         cloned
                         updatedAt
+                        updateSchedule {
+                            due
+                            index
+                            total
+                        }
+                        updateQueue {
+                            updating
+                            index
+                            total
+                        }
                     }
                 }
             }

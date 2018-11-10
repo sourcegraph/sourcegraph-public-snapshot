@@ -82,12 +82,29 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         } else if (this.props.repo.mirrorInfo.cloned) {
             title = (
                 <>
-                    Last refreshed:{' '}
-                    {this.props.repo.mirrorInfo.updatedAt ? (
-                        <Timestamp date={this.props.repo.mirrorInfo.updatedAt} />
-                    ) : (
-                        'unknown'
-                    )}{' '}
+                    <div>
+                        Last refreshed:{' '}
+                        {this.props.repo.mirrorInfo.updatedAt ? (
+                            <Timestamp date={this.props.repo.mirrorInfo.updatedAt} />
+                        ) : (
+                            'unknown'
+                        )}{' '}
+                    </div>
+                    {this.props.repo.mirrorInfo.updateSchedule && (
+                        <div>
+                            Next update <Timestamp date={this.props.repo.mirrorInfo.updateSchedule.due} /> ({
+                                this.props.repo.mirrorInfo.updateSchedule.index
+                            }{' '}
+                            / {this.props.repo.mirrorInfo.updateSchedule.total})
+                        </div>
+                    )}
+                    {this.props.repo.mirrorInfo.updateQueue &&
+                        !this.props.repo.mirrorInfo.updateQueue.updating && (
+                            <div>
+                                Queued for update ({this.props.repo.mirrorInfo.updateQueue.index} /{' '}
+                                {this.props.repo.mirrorInfo.updateQueue.total})
+                            </div>
+                        )}
                 </>
             )
             description =
