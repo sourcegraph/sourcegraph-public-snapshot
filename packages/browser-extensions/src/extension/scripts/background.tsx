@@ -2,11 +2,11 @@
 // prettier-ignore
 import '../../config/polyfill'
 
+import { InitData } from '@sourcegraph/extensions-client-common/lib/api/extension/extensionHost'
 import { without } from 'lodash'
 import { noop } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { InitData } from 'sourcegraph/module/extension/extensionHost'
 import DPT from 'webext-domain-permission-toggle'
 import ExtensionHostWorker from 'worker-loader?inline!./extensionHost.worker'
 import * as browserAction from '../../browser/browserAction'
