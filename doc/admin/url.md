@@ -11,3 +11,5 @@ When that is done, update your DNS records to point to your gateway's external I
   // ...
 }
 ```
+
+> NOTE: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.

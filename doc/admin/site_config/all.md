@@ -11,7 +11,7 @@ For more information, see ["Configuration overview"](index.md).
 
 - [siteID](all.md#siteid-string)
 
-- [externalURL](all.md#externalurl-string)
+- [externalURL](all.md#externalurl-string) (called `appURL` in 2.13 and earlier)
 
 - [dontIncludeSymbolResultsByDefault](all.md#dontincludesymbolresultsbydefault-boolean)
 
@@ -201,6 +201,7 @@ The identifier for this site. A Sourcegraph site is a collection of one or more 
 
 ## externalURL (string)
 
+> NOTE: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.
 
 The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`.
 
@@ -237,7 +238,7 @@ Default: `"disabled"`
 
 ### canonicalURLRedirect (string, enum)
 
-Enables or disables redirecting to the canonical URL (underneath the "externalURL") for incoming HTTP requests. Enabled by default.
+Enables or disables redirecting to the canonical URL (underneath the `externalURL`) for incoming HTTP requests. Enabled by default.
 
 This property must be one of the following enum values:
 
@@ -269,7 +270,7 @@ Toggles ACME functionality for automatically using a TLS certificate issued by t
 The default value is auto, which uses the following conditions to switch on:
 
 - tlsCert and tlsKey are unset.
-- externalURL is a https:// URL
+- `externalURL` is a https:// URL (`appURL` in Sourcegraph 2.13 and earlier)
 - Can successfully bind to port 443
 
 This property must be one of the following enum values:
