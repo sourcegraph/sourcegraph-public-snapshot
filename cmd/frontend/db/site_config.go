@@ -86,7 +86,16 @@ func (o *siteConfig) tryInsertNew(ctx context.Context, dbh interface {
 	if err != nil {
 		return err
 	}
-	_, err = dbh.ExecContext(ctx, "INSERT INTO site_config(site_id, initialized) values($1, false)", siteID)
+	// In the normal case (when no users exist yet because the instance is brand new), create the row
+	// with initialized=false.
+	//
+	// If any users exist, then set the site as initialized so that the init screen doesn't show
+	// up. (It would not let the visitor initialize the site anyway, because other users exist.) The
+	// most likely reason the instance would get into this state (uninitialized but has users) is
+	// because previously site config had a siteID and now we ignore that (or someone ran `DELETE
+	// FROM site_config;` in the PostgreSQL database). In either case, it's safe to generate a new
+	// site ID and set the site as initialized.
+	_, err = dbh.ExecContext(ctx, "INSERT INTO site_config(site_id, initialized) values($1, EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL))", siteID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "site_config_pkey" {

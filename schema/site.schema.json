@@ -37,11 +37,6 @@
         }
       }
     },
-    "siteID": {
-      "description":
-        "The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.",
-      "type": "string"
-    },
     "externalURL": {
       "description":
         "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`.",
