@@ -11,5 +11,5 @@ import {
 export function isDiscussionsEnabled(
     configurationCascade: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
 ): boolean {
-    return isExtensionEnabled(configurationCascade.merged, 'sourcegraph/code-discussions')
+    return isExtensionEnabled(configurationCascade.final, 'sourcegraph/code-discussions')
 }

@@ -74,7 +74,7 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
             nextEnvironment.extensions &&
             nextEnvironment.extensions.filter(x => {
                 try {
-                    if (!isExtensionEnabled(nextEnvironment.configuration.merged, x.id)) {
+                    if (!isExtensionEnabled(nextEnvironment.configuration.final, x.id)) {
                         return false
                     } else if (!x.manifest) {
                         console.warn(

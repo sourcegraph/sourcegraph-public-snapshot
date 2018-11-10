@@ -38,7 +38,7 @@ export const EMPTY_CONTEXT: Context = {}
 export function getComputedContextProperty(environment: Environment, key: string, scope?: TextDocumentItem): any {
     if (key.startsWith('config.')) {
         const prop = key.slice('config.'.length)
-        const value = environment.configuration.merged[prop]
+        const value = environment.configuration.final[prop]
         // Map undefined to null because an undefined value is treated as "does not exist in
         // context" and an error is thrown, which is undesirable for config values (for
         // which a falsey null default is useful).

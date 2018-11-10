@@ -105,7 +105,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     (!!a.settings && !b.settings) ||
                     (!!a.settings &&
                         !!b.settings &&
-                        a.settings.configuration.contents === b.settings.configuration.contents &&
+                        a.settings.contents === b.settings.contents &&
                         a.settings.id === b.settings.id)
             ),
             filter(
@@ -121,7 +121,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 this.setState({
                     saving: false,
                     editingLastID: undefined,
-                    contents: settings ? settings.configuration.contents : undefined,
+                    contents: settings ? settings.contents : undefined,
                 })
             )
         )
@@ -261,7 +261,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private getPropsSettingsContentsOrEmpty(settings = this.props.settings): string {
-        return settings ? settings.configuration.contents : emptySettings
+        return settings ? settings.contents : emptySettings
     }
 
     private getPropsSettingsID(): number | null {

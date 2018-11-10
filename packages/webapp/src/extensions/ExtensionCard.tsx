@@ -96,8 +96,8 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                                 ) : (
                                     <li className="nav-item">
                                         <ExtensionConfigurationState
-                                            isAdded={isExtensionAdded(props.configurationCascade.merged, node.id)}
-                                            isEnabled={isExtensionEnabled(props.configurationCascade.merged, node.id)}
+                                            isAdded={isExtensionAdded(props.configurationCascade.final, node.id)}
+                                            isEnabled={isExtensionEnabled(props.configurationCascade.final, node.id)}
                                         />
                                     </li>
                                 ))}

@@ -23,8 +23,8 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
     > = from(this.context.configurationCascade).pipe(
         switchMap(
             cascade =>
-                isErrorLike(cascade.merged)
-                    ? [cascade.merged]
+                isErrorLike(cascade.final)
+                    ? [cascade.final]
                     : this.withRegistryMetadata(cascade).pipe(
                           catchError(error => [asError(error) as ErrorLike]),
                           startWith(Controller.LOADING)
@@ -73,13 +73,13 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
     public withRegistryMetadata(
         cascade: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
     ): Observable<ConfiguredExtension[]> {
-        if (isErrorLike(cascade.merged)) {
-            return throwError(cascade.merged)
+        if (isErrorLike(cascade.final)) {
+            return throwError(cascade.final)
         }
-        if (!cascade.merged || !cascade.merged.extensions) {
+        if (!cascade.final || !cascade.final.extensions) {
             return of([])
         }
-        const extensionIDs = Object.keys(cascade.merged.extensions)
+        const extensionIDs = Object.keys(cascade.final.extensions)
         return from(
             this.context.queryGraphQL(
                 gql`

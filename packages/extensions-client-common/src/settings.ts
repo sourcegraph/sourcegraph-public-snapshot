@@ -21,7 +21,8 @@ export interface Settings {
     // compiler points out where we misuse a Settings value in place of a ConfigurationCascade value and vice
     // versa.
     subjects?: never
-    merged?: never
+    merged?: never // deprecated name, but keep it around
+    final?: never
 }
 
 /**
@@ -53,7 +54,7 @@ export interface ConfigurationCascade<
      */
     subjects: ConfiguredSubject<S, C>[]
 
-    merged: C
+    final: C
 }
 
 /**
@@ -66,7 +67,7 @@ export interface ConfigurationCascade<
  * @template C the settings type
  */
 export interface ConfigurationCascadeOrError<S extends ConfigurationSubject, C extends Settings = Settings>
-    extends Pick<ConfigurationCascade<S, C>, Exclude<keyof ConfigurationCascade<S, C>, 'subjects' | 'merged'>> {
+    extends Pick<ConfigurationCascade<S, C>, Exclude<keyof ConfigurationCascade<S, C>, 'subjects' | 'final'>> {
     /**
      * The settings for each subject in the cascade, from lowest to highest precedence, null if there are none, or
      * an error.
@@ -80,9 +81,9 @@ export interface ConfigurationCascadeOrError<S extends ConfigurationSubject, C e
      * error (if any occurred while retrieving, parsing, or merging the settings), or null if there are no settings
      * from any of the subjects.
      *
-     * @see ConfigurationCascade#merged
+     * @see ConfigurationCascade#final
      */
-    merged: C | ErrorLike | null
+    final: C | ErrorLike | null
 }
 
 /**
@@ -116,11 +117,9 @@ export interface ConfiguredSubjectOrError<S extends ConfigurationSubject, C exte
 }
 
 /** A minimal subset of a GraphQL ConfigurationSubject type that includes only the single contents value. */
-export interface SubjectConfigurationContents {
+export interface SubjectSettingsContents {
     latestSettings: {
-        configuration: {
-            contents: string
-        }
+        contents: string
     } | null
 }
 
@@ -128,16 +127,16 @@ export interface SubjectConfigurationContents {
 export function gqlToCascade<S extends ConfigurationSubject, C extends Settings>({
     subjects,
 }: {
-    subjects: (S & SubjectConfigurationContents)[]
+    subjects: (S & SubjectSettingsContents)[]
 }): ConfigurationCascadeOrError<S, C> {
     const cascade: ConfigurationCascadeOrError<S, C> & { subjects: ConfiguredSubjectOrError<S, C>[] } = {
         subjects: [],
-        merged: null,
+        final: null,
     }
     const allSettings: C[] = []
     const allSettingsErrors: ErrorLike[] = []
     for (const subject of subjects) {
-        const settings = subject.latestSettings && parseJSONCOrError<C>(subject.latestSettings.configuration.contents)
+        const settings = subject.latestSettings && parseJSONCOrError<C>(subject.latestSettings.contents)
         cascade.subjects.push({ subject, settings })
 
         if (isErrorLike(settings)) {
@@ -148,9 +147,9 @@ export function gqlToCascade<S extends ConfigurationSubject, C extends Settings>
     }
 
     if (allSettingsErrors.length > 0) {
-        cascade.merged = createAggregateError(allSettingsErrors)
+        cascade.final = createAggregateError(allSettingsErrors)
     } else {
-        cascade.merged = mergeSettings<C>(allSettings)
+        cascade.final = mergeSettings<C>(allSettings)
     }
 
     return cascade

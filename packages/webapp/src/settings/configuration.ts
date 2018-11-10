@@ -11,11 +11,10 @@ import { createAggregateError } from '../util/errors'
 export const configurationCascade = new ReplaySubject<GQL.IConfigurationCascade>(1)
 
 /**
- * Always represents the latest merged configuration for the current user
- * or visitor. Callers should cast the value to their own configuration type.
+ * Always represents the final settings for the current user or visitor.
  */
 export const currentConfiguration: Observable<Settings> = configurationCascade.pipe(
-    map(cascade => parseJSON(cascade.merged.contents) as Settings)
+    map(cascade => parseJSON(cascade.final) as Settings)
 )
 
 /**

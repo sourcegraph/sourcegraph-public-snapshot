@@ -33,6 +33,6 @@ export interface Environment<X extends Extension = Extension, C extends Configur
 export const EMPTY_ENVIRONMENT: Environment<any, any> = {
     visibleTextDocuments: null,
     extensions: null,
-    configuration: { merged: {} },
+    configuration: { final: {} },
     context: EMPTY_CONTEXT,
 }

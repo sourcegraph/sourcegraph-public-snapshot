@@ -80,28 +80,32 @@ func viewerMergedConfiguration(ctx context.Context) (*configurationResolver, err
 	return cascade.Merged(ctx)
 }
 
-func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurationResolver, error) {
+func (r *configurationCascadeResolver) Final(ctx context.Context) (string, error) {
 	var configs []string
 	subjects, err := r.Subjects(ctx)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	for _, s := range subjects {
 		settings, err := s.LatestSettings(ctx)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		if settings != nil {
 			configs = append(configs, settings.settings.Contents)
 		}
 	}
+	final, err := mergeConfigs(configs)
+	return string(final), err
+}
 
+func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurationResolver, error) {
 	var messages []string
-	merged, err := mergeConfigs(configs)
+	s, err := r.Final(ctx)
 	if err != nil {
 		messages = append(messages, err.Error())
 	}
-	return &configurationResolver{contents: string(merged), messages: messages}, nil
+	return &configurationResolver{contents: string(s), messages: messages}, nil
 }
 
 // deeplyMergedConfigFields contains the names of top-level configuration fields whose values should

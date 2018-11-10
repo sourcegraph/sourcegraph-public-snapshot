@@ -24,6 +24,7 @@ func (o *settingsResolver) Subject() *configurationSubject {
 	return o.subject
 }
 
+// DEPRECATED: Use the Contents field instead.
 func (o *settingsResolver) Configuration() *configurationResolver {
 	return &configurationResolver{contents: o.settings.Contents}
 }

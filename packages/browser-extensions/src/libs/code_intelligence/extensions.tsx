@@ -42,22 +42,22 @@ export function logThenDropConfigurationErrors(
 ): ConfigurationCascade<ConfigurationSubject, Settings> {
     const EMPTY_CASCADE: ConfigurationCascade<ConfigurationSubject, Settings> = {
         subjects: [],
-        merged: {},
+        final: {},
     }
     if (!cascadeOrError.subjects) {
         console.error('invalid configuration: no configuration subjects available')
         return EMPTY_CASCADE
     }
-    if (!cascadeOrError.merged) {
-        console.error('invalid configuration: no merged configuration available')
+    if (!cascadeOrError.final) {
+        console.error('invalid configuration: no final configuration available')
         return EMPTY_CASCADE
     }
     if (isErrorLike(cascadeOrError.subjects)) {
         console.error(`invalid configuration: error in configuration subjects: ${cascadeOrError.subjects.message}`)
         return EMPTY_CASCADE
     }
-    if (isErrorLike(cascadeOrError.merged)) {
-        console.error(`invalid configuration: error in merged configuration: ${cascadeOrError.merged.message}`)
+    if (isErrorLike(cascadeOrError.final)) {
+        console.error(`invalid configuration: error in final configuration: ${cascadeOrError.final.message}`)
         return EMPTY_CASCADE
     }
     return {
@@ -74,7 +74,7 @@ export function logThenDropConfigurationErrors(
                 return true
             }
         ),
-        merged: cascadeOrError.merged,
+        final: cascadeOrError.final,
     }
 }
 

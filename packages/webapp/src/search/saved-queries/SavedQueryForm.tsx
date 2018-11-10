@@ -89,7 +89,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     if (subject.latestSettings) {
                         let slackWebhookURL: string | null
                         try {
-                            const settings = parseJSON(subject.latestSettings.configuration.contents) as Settings
+                            const settings = parseJSON(subject.latestSettings.contents) as Settings
                             if (settings && settings['notifications.slack']) {
                                 slackWebhookURL = settings['notifications.slack']!.webhookURL
                             }

@@ -114,7 +114,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state = {
             isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
             navbarSearchQuery: '',
-            configurationCascade: { subjects: null, merged: null },
+            configurationCascade: { subjects: null, final: null },
             extensions,
             extensionsEnvironment: {
                 ...EXTENSIONS_EMPTY_ENVIRONMENT,
@@ -306,8 +306,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 if (
                     configurationCascade.subjects !== null &&
                     !isErrorLike(configurationCascade.subjects) &&
-                    configurationCascade.merged !== null &&
-                    !isErrorLike(configurationCascade.merged)
+                    configurationCascade.final !== null &&
+                    !isErrorLike(configurationCascade.final)
                 ) {
                     // Only update Sourcegraph extensions environment configuration if the configuration was
                     // successfully parsed.
@@ -320,7 +320,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 (subject): subject is ConfiguredSubject<ConfigurationSubject, Settings> =>
                                     subject.settings !== null && !isErrorLike(subject.settings)
                             ),
-                            merged: configurationCascade.merged,
+                            final: configurationCascade.final,
                         },
                     }
                 }

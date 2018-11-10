@@ -195,9 +195,7 @@ function fetchConfigurationCascade(subject: GQL.ID): Observable<Pick<IConfigurat
                         subjects {
                             latestSettings {
                                 id
-                                configuration {
-                                    contents
-                                }
+                                contents
                             }
                         }
                     }

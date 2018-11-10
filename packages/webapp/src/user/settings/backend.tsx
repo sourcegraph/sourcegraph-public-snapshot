@@ -40,17 +40,12 @@ const configurationCascadeFragment = gql`
             }
             latestSettings {
                 id
-                configuration {
-                    contents
-                }
+                contents
             }
             settingsURL
             viewerCanAdminister
         }
-        merged {
-            contents
-            messages
-        }
+        final
     }
 `
 

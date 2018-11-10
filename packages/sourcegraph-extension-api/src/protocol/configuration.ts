@@ -28,7 +28,7 @@ export interface ConfigurationUpdateParams {
  */
 export interface ConfigurationCascade<C = any> {
     /** The final settings, merged from all subjects in the cascade. */
-    merged: C
+    final: C
 
     /**
      * The configuration subjects in the cascade, from lower to higher precedence.

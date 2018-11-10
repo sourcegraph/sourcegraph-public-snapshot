@@ -60,7 +60,7 @@ export class ExtConfiguration<C extends ConfigurationCascade<any>> implements Ex
                 'Configuration is not yet available. `sourcegraph.configuration.get` is not usable until after the extension `activate` function is finished executing. This is a known issue and will be fixed before the beta release of Sourcegraph extensions. In the meantime, work around this limitation by deferring calls to `get`.'
             )
         }
-        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, data.merged))
+        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, data.final))
     }
 
     public subscribe(next: () => void): sourcegraph.Unsubscribable {

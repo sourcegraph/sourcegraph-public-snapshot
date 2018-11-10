@@ -59,7 +59,7 @@ interface CodeViewToolbarState extends ConfigurationCascadeProps<ConfigurationSu
 
 export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeViewToolbarState> {
     public state: CodeViewToolbarState = {
-        configurationCascade: { subjects: [], merged: {} },
+        configurationCascade: { subjects: [], final: {} },
     }
 
     private subscriptions = new Subscription()

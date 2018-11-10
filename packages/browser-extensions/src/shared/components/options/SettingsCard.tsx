@@ -59,9 +59,9 @@ export class SettingsCard extends React.Component<Props, State> {
                                     </CardLink>
                                     {this.state.configurationCascadeOrError === undefined ? (
                                         ''
-                                    ) : isErrorLike(this.state.configurationCascadeOrError.merged) ? (
+                                    ) : isErrorLike(this.state.configurationCascadeOrError.final) ? (
                                         <Alert color="danger">
-                                            Error: {this.state.configurationCascadeOrError.merged.message}
+                                            Error: {this.state.configurationCascadeOrError.final.message}
                                         </Alert>
                                     ) : (
                                         <>
@@ -69,7 +69,7 @@ export class SettingsCard extends React.Component<Props, State> {
                                             <pre className="card-text">
                                                 <code>
                                                     {JSON.stringify(
-                                                        this.state.configurationCascadeOrError.merged,
+                                                        this.state.configurationCascadeOrError.final,
                                                         null,
                                                         2
                                                     )}

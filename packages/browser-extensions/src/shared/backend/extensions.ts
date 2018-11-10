@@ -150,7 +150,7 @@ const storageConfigurationCascade: Observable<
                 settings: clientSettings,
             },
         ],
-        merged: clientSettings || {},
+        final: clientSettings || {},
     }))
 )
 
@@ -164,12 +164,12 @@ const mergeCascades = (
             : isErrorLike(cascadeOrError.subjects)
                 ? cascadeOrError.subjects
                 : [...cascadeOrError.subjects, ...cascade.subjects],
-    merged:
-        cascadeOrError.merged === null
-            ? cascade.merged
-            : isErrorLike(cascadeOrError.merged)
-                ? cascadeOrError.merged
-                : mergeSettings([cascadeOrError.merged, cascade.merged]),
+    final:
+        cascadeOrError.final === null
+            ? cascade.final
+            : isErrorLike(cascadeOrError.final)
+                ? cascadeOrError.final
+                : mergeSettings([cascadeOrError.final, cascade.final]),
 })
 
 const configurationCascadeFragment = gql`
@@ -213,7 +213,7 @@ const configurationCascadeRefreshes = new Subject<void>()
  * Always represents the entire configuration cascade; i.e., it contains the
  * individual configs from the various config subjects (orgs, user, etc.).
  */
-export const gqlConfigurationCascade = combineLatest(
+export const gqlConfigurationCascade: Observable<Pick<GQL.IConfigurationCascade, 'subjects' | 'final'>> = combineLatest(
     storage.observeSync('sourcegraphURL'),
     configurationCascadeRefreshes.pipe(
         mapTo(null),
@@ -245,13 +245,18 @@ export const gqlConfigurationCascade = combineLatest(
                     subject.viewerCanAdminister = false
                 }
 
-                return data.viewerConfiguration
+                return {
+                    subjects: data.viewerConfiguration.subjects,
+                    // TODO(sqs): Translate from merged.contents (old/deprecated) to final (new) as part of a
+                    // GraphQL schema migration on 2018-11-09.
+                    final: data.viewerConfiguration.merged.contents,
+                }
             })
         )
     )
 )
 
-const EMPTY_CONFIGURATION_CASCADE: ConfigurationCascade = { subjects: [], merged: {} }
+const EMPTY_CONFIGURATION_CASCADE: ConfigurationCascade = { subjects: [], final: {} }
 
 /**
  * The active configuration cascade.

@@ -2638,32 +2638,41 @@ type ConfigurationCascade {
     # form the final configuration. For example, a user in 2 organizations would have the following
     # configuration subjects: site (global settings), org 1, org 2, and the user.
     subjects: [ConfigurationSubject!]!
+    # The effective configuration as (stringified) JSON, merged from all of the subjects.
+    final: String!
+    # DEPRECATED: This field will be removed in a future release.
+    #
     # The effective configuration, merged from all of the subjects.
-    merged: Configuration!
+    merged: Configuration! @deprecated(reason: "use final instead")
 }
 
 # Settings is a version of a configuration settings file.
 type Settings {
     # The ID.
     id: Int!
-    # The configuration.
-    configuration: Configuration!
     # The subject that these settings are for.
     subject: ConfigurationSubject!
     # The author, or null if there is no author or the authoring user was deleted.
     author: User
     # The time when this was created.
     createdAt: String!
-    # The contents.
-    contents: String! @deprecated(reason: "use configuration.contents instead")
+    # The stringified JSON contents of the settings. The contents may include "//"-style comments and trailing
+    # commas in the JSON.
+    contents: String!
+    # DEPRECATED: This field will be removed in a future release.
+    #
+    # The configuration.
+    configuration: Configuration! @deprecated(reason: "use the contents field instead")
 }
 
-# Configuration contains settings from (possibly) multiple settings files.
+# DEPRECATED: Use the contents field on the parent type instead. This type will be removed in a future release.
 type Configuration {
+    # DEPRECATED: This field will be removed in a future release.
+    #
     # The raw JSON contents, encoded as a string.
-    contents: String!
-    # Error and warning messages about the configuration.
-    messages: [String!]!
+    contents: String! @deprecated(reason: "use the contents field on the parent type instead")
+    # DEPRECATED: This field is always empty. It will be removed in a future release.
+    messages: [String!]! @deprecated(reason: "use client-side JSON Schema validation instead")
 }
 
 # UserUsageStatistics describes a user's usage statistics.

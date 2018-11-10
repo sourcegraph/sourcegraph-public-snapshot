@@ -62,7 +62,7 @@ export class ExtensionToggle<S extends ConfigurationSubject, C extends Settings>
                         }
 
                         if (
-                            !isExtensionAdded(this.props.configurationCascade.merged, this.props.extension.id) &&
+                            !isExtensionAdded(this.props.configurationCascade.final, this.props.extension.id) &&
                             !confirmAddExtension(this.props.extension.id, this.props.extension.manifest)
                         ) {
                             return EMPTY
@@ -100,7 +100,7 @@ export class ExtensionToggle<S extends ConfigurationSubject, C extends Settings>
 
         return (
             <Toggle
-                value={isExtensionEnabled(this.props.configurationCascade.merged, this.props.extension.id)}
+                value={isExtensionEnabled(this.props.configurationCascade.final, this.props.extension.id)}
                 onToggle={onToggle}
                 title={state ? `${state.state ? 'Enabled' : 'Disabled'} in ${state.name} settings` : 'Click to enable'}
             />
@@ -132,8 +132,8 @@ function extractErrors(
 ): ConfigurationCascade | ErrorLike {
     if (c.subjects === null || isErrorLike(c.subjects)) {
         return new Error('Subjects was ' + c.subjects)
-    } else if (c.merged === null || isErrorLike(c.merged)) {
-        return new Error('Merged was ' + c.merged)
+    } else if (c.final === null || isErrorLike(c.final)) {
+        return new Error('Merged was ' + c.final)
     } else if (c.subjects.find(isErrorLike)) {
         return new Error('One of the subjects was ' + c.subjects.find(isErrorLike))
     } else {
