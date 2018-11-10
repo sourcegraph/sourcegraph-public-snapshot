@@ -358,7 +358,6 @@ type SiteConfiguration struct {
 	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
-	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
 	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
 	LicenseKey                        string                       `json:"licenseKey,omitempty"`

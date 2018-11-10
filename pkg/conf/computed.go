@@ -19,23 +19,6 @@ func init() {
 	}
 }
 
-const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
-
-// HTTPStrictTransportSecurity returns the value of the Strict-Transport-Security HTTP header to set.
-func HTTPStrictTransportSecurity() string {
-	switch v := Get().HttpStrictTransportSecurity.(type) {
-	case string:
-		return v
-	case bool:
-		if !v {
-			return ""
-		}
-		return defaultHTTPStrictTransportSecurity
-	default:
-		return defaultHTTPStrictTransportSecurity
-	}
-}
-
 // JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
 func JumpToDefOSSIndexEnabled() bool {
 	p := Get().ExperimentalFeatures.JumpToDefOSSIndex
