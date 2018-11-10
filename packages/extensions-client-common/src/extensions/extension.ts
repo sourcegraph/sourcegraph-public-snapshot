@@ -1,7 +1,7 @@
+import * as GQL from '../../../webapp/src/backend/graphqlschema'
 import { Extension } from '../api/client/extension'
 import { ErrorLike, isErrorLike } from '../errors'
 import { ExtensionManifest } from '../schema/extension.schema'
-import * as GQL from '../schema/graphqlschema'
 import { Settings } from '../settings'
 
 /**

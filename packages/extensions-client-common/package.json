@@ -21,7 +21,7 @@
     "clean": "del-cli 'lib/**/*'",
     "typecheck": "tsc -p tsconfig.json",
     "build": "yarn -s run clean && yarn -s run build:assets && yarn -s run build:typescript",
-    "build:assets": "yarn workspace webapp run graphql && cpy --parents --cwd=src '**/*.{css,d.ts,json}' '../lib/' && yarn -s run build:assets:schema",
+    "build:assets": "cpy --parents --cwd=src '**/*.{css,d.ts,json}' '../lib/' && yarn -s run build:assets:schema",
     "build:assets:schema": "mkdir -p lib/api/protocol && typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json' --noExtraProps --required --include src/api/protocol/contribution.ts --out lib/api/protocol/contribution.schema.json tsconfig.dist.json Contributions && node -e \"/* Deletes the top-level additionalProperties property in the file. */ fs = require('fs');f = process.argv[1];o = JSON.parse(fs.readFileSync(f, 'utf8'));delete o.additionalProperties;fs.writeFileSync(f, JSON.stringify(o, null, 4))\" lib/api/protocol/contribution.schema.json",
     "build:typescript": "tsc -p tsconfig.dist.json",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
