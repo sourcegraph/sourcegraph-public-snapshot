@@ -59,7 +59,7 @@ func parseCommaSeparatedList(list string) []string {
 var noGoGetDomains = &noGoGetDomainsT{}
 
 func init() {
-	conf.Watch(noGoGetDomains.reconfigure)
+	go conf.Watch(noGoGetDomains.reconfigure)
 }
 
 type Directory struct {
