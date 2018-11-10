@@ -44,29 +44,29 @@ func main() {
 		bk.Cmd("./dev/check/all.sh"))
 
 	pipeline.AddStep(":lipstick:",
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn run prettier"))
 
 	pipeline.AddStep(":typescript:", // for speed
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // for speed
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace webapp run tslint"))
 
 	pipeline.AddStep(":stylelint:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace webapp run stylelint --quiet"))
 
 	pipeline.AddStep(":graphql:",
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn run graphql-lint"))
 
 	pipeline.AddStep(":webpack:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace webapp run browserslist"),
 		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
@@ -76,7 +76,7 @@ func main() {
 	pipeline.AddStep(":mocha:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace webapp run cover"),
 		bk.Cmd("yarn workspace webapp run nyc report -r json --report-dir coverage"),
 		bk.ArtifactPaths("packages/webapp/coverage/coverage-final.json"))
@@ -94,7 +94,7 @@ func main() {
 
 	pipeline.AddStep(":typescript:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace sourcegraph run tslint"),
 		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace sourcegraph run typecheck"),
@@ -104,7 +104,7 @@ func main() {
 
 	pipeline.AddStep(":typescript:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run tslint"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
@@ -114,7 +114,7 @@ func main() {
 		bk.ArtifactPaths("packages/extensions-client-common/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
 		bk.Cmd("yarn workspace browser-extensions run tslint"),
