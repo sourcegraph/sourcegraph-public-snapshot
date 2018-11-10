@@ -6,4 +6,11 @@
     &__content {
         height: 100%;
     }
+
+	.extensions-nav-link {
+		margin-top: 1px;
+		&:hover {
+			text-decoration: none !important;
+		}
+	}
 }
