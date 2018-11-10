@@ -63,7 +63,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 			URL      string
 		}{
 			Username: usr.Username,
-			URL:      globals.AppURL.ResolveReference(resetURL).String(),
+			URL:      globals.ExternalURL.ResolveReference(resetURL).String(),
 		},
 	}); err != nil {
 		httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)

@@ -64,7 +64,7 @@ var requireRestart = []string{
 	"noGoGetDomains",
 	"auth.disableAccessTokens",
 	"auth.providers",
-	"appURL",
+	"externalURL",
 	"tls.letsencrypt",
 	"git.cloneURLToRepositoryName",
 	"searchScopes",

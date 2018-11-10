@@ -373,8 +373,8 @@ func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveAppURL(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(globals.AppURL.String()); err != nil {
+func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
+	if err := json.NewEncoder(w).Encode(globals.ExternalURL.String()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil

@@ -157,16 +157,16 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 		}
 	}
 
-	// pc.Issuer's default of ${appURL}/.auth/saml/metadata already applied (in withConfigDefaults).
+	// pc.Issuer's default of ${externalURL}/.auth/saml/metadata already applied (in withConfigDefaults).
 	sp.ServiceProviderIssuer = pc.ServiceProviderIssuer
 	if pc.ServiceProviderIssuer == "" {
-		return nil, errors.New("invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty appURL)")
+		return nil, errors.New("invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty externalURL)")
 	}
-	appURL, err := url.Parse(conf.Get().AppURL)
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
-		return nil, errors.WithMessage(err, "parsing app URL for SAML Service Provider")
+		return nil, errors.WithMessage(err, "parsing external URL for SAML Service Provider")
 	}
-	sp.AssertionConsumerServiceURL = appURL.ResolveReference(&url.URL{Path: path.Join(authPrefix, "acs")}).String()
+	sp.AssertionConsumerServiceURL = externalURL.ResolveReference(&url.URL{Path: path.Join(authPrefix, "acs")}).String()
 	sp.AudienceURI = sp.ServiceProviderIssuer
 
 	return &sp, nil

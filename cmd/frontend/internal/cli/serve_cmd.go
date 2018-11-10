@@ -44,7 +44,7 @@ var (
 	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API. Only used if manual tls cert and key are specified.")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
-	appURL                  = conf.GetTODO().AppURL
+	externalURL             = conf.GetTODO().ExternalURL
 	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
 
 	tlsCert = conf.GetTODO().TlsCert
@@ -56,7 +56,7 @@ var (
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
 
-func configureAppURL() (*url.URL, error) {
+func configureExternalURL() (*url.URL, error) {
 	var hostPort string
 	if strings.HasPrefix(httpAddr, ":") {
 		// Prepend localhost if HTTP listen addr is just a port.
@@ -64,12 +64,12 @@ func configureAppURL() (*url.URL, error) {
 	} else {
 		hostPort = httpAddr
 	}
-	if appURL == "" {
-		appURL = "http://<http-addr>"
+	if externalURL == "" {
+		externalURL = "http://<http-addr>"
 	}
-	appURL = strings.Replace(appURL, "<http-addr>", hostPort, -1)
+	externalURL = strings.Replace(externalURL, "<http-addr>", hostPort, -1)
 
-	u, err := url.Parse(appURL)
+	u, err := url.Parse(externalURL)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func Main() error {
 	siteid.Init()
 
 	var err error
-	globals.AppURL, err = configureAppURL()
+	globals.ExternalURL, err = configureExternalURL()
 	if err != nil {
 		return err
 	}
@@ -154,9 +154,9 @@ func Main() error {
 	}
 
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
-	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
-	if useTLS && globals.AppURL.Scheme == "http" {
-		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
+	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.ExternalURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
+	if useTLS && globals.ExternalURL.Scheme == "http" {
+		log15.Warn("TLS is enabled but app url scheme is http", "externalURL", globals.ExternalURL)
 	}
 
 	// Create the external HTTP handler.
@@ -190,7 +190,7 @@ func Main() error {
 			// LetsEncrypt
 			m := &autocert.Manager{
 				Prompt:     autocert.AcceptTOS,
-				HostPolicy: autocert.HostWhitelist(globals.AppURL.Host),
+				HostPolicy: autocert.HostWhitelist(globals.ExternalURL.Host),
 				Cache:      db.CertCache,
 			}
 			// m.TLSConfig uses m's GetCertificate as well as enabling ACME
@@ -269,7 +269,7 @@ func Main() error {
 		fmt.Println(logoColor)
 		fmt.Println(" ")
 	}
-	fmt.Printf("✱ Sourcegraph is ready at: %s\n", appURL)
+	fmt.Printf("✱ Sourcegraph is ready at: %s\n", externalURL)
 
 	srv.Wait()
 	return nil

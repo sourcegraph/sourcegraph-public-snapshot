@@ -11,7 +11,7 @@ For more information, see ["Configuration overview"](index.md).
 
 - [siteID](all.md#siteid-string)
 
-- [appURL](all.md#appurl-string)
+- [externalURL](all.md#externalurl-string)
 
 - [dontIncludeSymbolResultsByDefault](all.md#dontincludesymbolresultsbydefault-boolean)
 
@@ -199,9 +199,10 @@ The identifier for this site. A Sourcegraph site is a collection of one or more 
 
 <br/>
 
-## appURL (string)
+## externalURL (string)
 
-Publicly accessible URL to web app (e.g., what you type into your browser).
+
+The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`.
 
 <br/>
 
@@ -236,7 +237,7 @@ Default: `"disabled"`
 
 ### canonicalURLRedirect (string, enum)
 
-Enables or disables redirecting to the canonical URL (underneath the "appURL") for incoming HTTP requests. Enabled by default.
+Enables or disables redirecting to the canonical URL (underneath the "externalURL") for incoming HTTP requests. Enabled by default.
 
 This property must be one of the following enum values:
 
@@ -268,7 +269,7 @@ Toggles ACME functionality for automatically using a TLS certificate issued by t
 The default value is auto, which uses the following conditions to switch on:
 
 - tlsCert and tlsKey are unset.
-- appURL is a https:// URL
+- externalURL is a https:// URL
 - Can successfully bind to port 443
 
 This property must be one of the following enum values:
@@ -1308,7 +1309,7 @@ Constant value: `"saml"`
 
 ### serviceProviderIssuer (string)
 
-The name of this SAML Service Provider, which is used by the Identity Provider to identify this Service Provider. It defaults to https://sourcegraph.example.com/.auth/saml/metadata (where https://sourcegraph.example.com is replaced with this Sourcegraph instance's "appURL"). It is only necessary to explicitly set the issuer if you are using multiple SAML authentication providers.
+The name of this SAML Service Provider, which is used by the Identity Provider to identify this Service Provider. It defaults to https://sourcegraph.example.com/.auth/saml/metadata (where https://sourcegraph.example.com is replaced with this Sourcegraph instance's "externalURL"). It is only necessary to explicitly set the issuer if you are using multiple SAML authentication providers.
 
 ### identityProviderMetadataURL (string)
 

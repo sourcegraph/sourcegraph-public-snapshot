@@ -214,17 +214,17 @@ func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (
 }
 
 // TODO(slimsag): In the future, once we're no longer using environment
-// variables to build AppURL, remove this in favor of services just reading it
+// variables to build ExternalURL, remove this in favor of services just reading it
 // directly from the configuration file.
 //
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) AppURL(ctx context.Context) (string, error) {
-	var appURL string
-	err := c.postInternal(ctx, "app-url", nil, &appURL)
+func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
+	var externalURL string
+	err := c.postInternal(ctx, "app-url", nil, &externalURL)
 	if err != nil {
 		return "", err
 	}
-	return appURL, nil
+	return externalURL, nil
 }
 
 func (c *internalClient) GitServerAddrs(ctx context.Context) ([]string, error) {

@@ -14,7 +14,7 @@ func TestValidateCustom(t *testing.T) {
 	}{
 		"duplicates": {
 			input: schema.SiteConfiguration{
-				AppURL: "x",
+				ExternalURL: "x",
 				AuthProviders: []schema.AuthProviders{
 					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
 					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},

@@ -88,7 +88,7 @@ func (p *provider) oauth2Config() *oauth2.Config {
 		// It would be nice if this was "/.auth/openidconnect/callback" not "/.auth/callback", but
 		// many instances have the "/.auth/callback" value hardcoded in their external auth
 		// provider, so we can't change it easily
-		RedirectURL: globals.AppURL().ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).String(),
+		RedirectURL: globals.ExternalURL().ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).String(),
 
 		Endpoint: p.oidc.Endpoint(),
 		Scopes:   []string{oidc.ScopeOpenID, "profile", "email"},

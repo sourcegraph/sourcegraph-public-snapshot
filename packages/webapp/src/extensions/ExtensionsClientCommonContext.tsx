@@ -92,7 +92,7 @@ function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsA
             }
 
             if (!authenticatedUser) {
-                const u = new URL(window.context.appURL)
+                const u = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
                         '\n\n' +
@@ -122,9 +122,7 @@ export function updateHighestPrecedenceExtensionSettings(args: {
     )
 }
 
-export function createMessageTransports(
-    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>
-): MessageTransports {
+export function createMessageTransports(extension: Pick<ConfiguredExtension, 'id' | 'manifest'>): MessageTransports {
     if (!extension.manifest) {
         throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no manifest found`)
     }
@@ -139,7 +137,7 @@ export function createMessageTransports(
             const worker = new ExtensionHostWorker()
             const initData: InitData = {
                 bundleURL: extension.manifest.url,
-                sourcegraphURL: window.context.appURL,
+                sourcegraphURL: window.context.externalURL,
                 clientApplication: 'sourcegraph',
             }
             worker.postMessage(initData)

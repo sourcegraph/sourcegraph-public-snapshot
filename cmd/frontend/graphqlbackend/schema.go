@@ -2829,7 +2829,7 @@ type ExtensionRegistry {
     # A list of publishers that the viewer may publish extensions as.
     viewerPublishers: [RegistryPublisher!]!
     # The extension ID prefix for extensions that are published in the local extension registry. This is the
-    # hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "appURL" site configuration property.
+    # hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "externalURL" site configuration property.
     #
     # It is null if extensions published on this Sourcegraph site do not have an extension ID prefix.
     #

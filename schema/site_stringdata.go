@@ -47,8 +47,9 @@ const SiteSchemaJSON = `{
         "The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.",
       "type": "string"
     },
-    "appURL": {
-      "description": "Publicly accessible URL to web app (e.g., what you type into your browser).",
+    "externalURL": {
+      "description":
+        "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `.",
       "type": "string"
     },
     "dontIncludeSymbolResultsByDefault": {
@@ -80,7 +81,7 @@ const SiteSchemaJSON = `{
         },
         "canonicalURLRedirect": {
           "description":
-            "Enables or disables enforcing that HTTP requests use the appURL as a prefix, by redirecting other requests to the same request URI on the appURL. For example, if the appURL is https://sourcegraph.example.com and the site is also available under the DNS name http://foo, then a request to http://foo/bar would be redirected to https://sourcegraph.example.com/bar. Enabled by default.",
+            "Enables or disables enforcing that HTTP requests use the externalURL as a prefix, by redirecting other requests to the same request URI on the externalURL. For example, if the externalURL is https://sourcegraph.example.com and the site is also available under the DNS name http://foo, then a request to http://foo/bar would be redirected to https://sourcegraph.example.com/bar. Enabled by default.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -101,7 +102,7 @@ const SiteSchemaJSON = `{
     },
     "tls.letsencrypt": {
       "description":
-        "Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.\nThe default value is auto, which uses the following conditions to switch on:\n - tlsCert and tlsKey are unset.\n - appURL is a https:// URL\n - Can successfully bind to port 443",
+        "Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.\nThe default value is auto, which uses the following conditions to switch on:\n - tlsCert and tlsKey are unset.\n - externalURL is a https:// URL\n - Can successfully bind to port 443",
       "default": "auto",
       "enum": ["auto", "on", "off"],
       "type": "string"
@@ -1019,7 +1020,7 @@ const SiteSchemaJSON = `{
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "serviceProviderIssuer": {
           "description":
-            "The name of this SAML Service Provider, which is used by the Identity Provider to identify this Service Provider. It defaults to https://sourcegraph.example.com/.auth/saml/metadata (where https://sourcegraph.example.com is replaced with this Sourcegraph instance's \"appURL\"). It is only necessary to explicitly set the issuer if you are using multiple SAML authentication providers.",
+            "The name of this SAML Service Provider, which is used by the Identity Provider to identify this Service Provider. It defaults to https://sourcegraph.example.com/.auth/saml/metadata (where https://sourcegraph.example.com is replaced with this Sourcegraph instance's \"externalURL\"). It is only necessary to explicitly set the issuer if you are using multiple SAML authentication providers.",
           "type": "string"
         },
         "identityProviderMetadataURL": {

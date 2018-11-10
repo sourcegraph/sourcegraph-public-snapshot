@@ -15,7 +15,7 @@ var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE
 // SourcegraphDotComMode is true if this server is running Sourcegraph.com. It shows
 // add'l marketing and sets up some add'l redirects.
 func SourcegraphDotComMode() bool {
-	u := globals.AppURL.String()
+	u := globals.ExternalURL.String()
 	return sourcegraphDotComMode || u == "https://sourcegraph.com" || u == "https://sourcegraph.com/"
 }
 

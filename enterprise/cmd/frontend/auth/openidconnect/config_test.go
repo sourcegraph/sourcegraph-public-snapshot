@@ -14,7 +14,7 @@ func TestValidateCustom(t *testing.T) {
 	}{
 		"duplicates": {
 			input: schema.SiteConfiguration{
-				AppURL: "x",
+				ExternalURL: "x",
 				AuthProviders: []schema.AuthProviders{
 					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
 					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},

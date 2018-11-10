@@ -267,7 +267,7 @@ func latestResultTime(prevInfo *api.SavedQueryInfo, v *gqlSearchResponse, search
 	return *t
 }
 
-var appURL *url.URL
+var externalURL *url.URL
 
 // notify handles sending notifications for new search results.
 func notify(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery, newQuery string, results *gqlSearchResponse) error {
@@ -311,22 +311,22 @@ const (
 )
 
 func searchURL(query, utmSource string) string {
-	if appURL == nil {
-		// Determine the app URL.
-		appURLStr, err := api.InternalClient.AppURL(context.Background())
+	if externalURL == nil {
+		// Determine the external URL.
+		externalURLStr, err := api.InternalClient.ExternalURL(context.Background())
 		if err != nil {
-			log15.Error("failed to get AppURL", err)
+			log15.Error("failed to get ExternalURL", err)
 			return ""
 		}
-		appURL, err = url.Parse(appURLStr)
+		externalURL, err = url.Parse(externalURLStr)
 		if err != nil {
-			log15.Error("failed to parse AppURL", err)
+			log15.Error("failed to parse ExternalURL", err)
 			return ""
 		}
 	}
 
 	// Construct URL to the search query.
-	u := appURL.ResolveReference(&url.URL{Path: "search"})
+	u := externalURL.ResolveReference(&url.URL{Path: "search"})
 	q := u.Query()
 	q.Set("q", query)
 	q.Set("utm_source", utmSource)
