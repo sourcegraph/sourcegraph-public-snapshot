@@ -1,5 +1,6 @@
 import { isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
@@ -33,7 +34,7 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
     }
 
     return (
-        <div className="extension-area-header border-bottom simple-area-header pt-4">
+        <div className="extension-area-header border-bottom simple-area-header">
             <div className="container">
                 {props.extension && (
                     <>
@@ -48,7 +49,9 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                                     )}
                                 <div>
                                     <div className="d-flex align-items-center">
-                                        <h2 className="mb-0">{(manifest && manifest.title) || props.extension.id}</h2>
+                                        <h2 className="mb-0"><Link to="/extensions" className="extensions-nav-link">
+											Extensions
+										</Link> <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" /> {(manifest && manifest.title) || props.extension.id}</h2>
                                     </div>
                                     {manifest &&
                                         manifest.title && <div className="text-muted">{props.extension.id}</div>}

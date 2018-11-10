@@ -4,6 +4,11 @@
     justify-content: space-between;
     color: #93a9c8;
     padding-bottom: 0.25rem;
+	padding-left: .625rem;
+
+	.mdi-icon {
+		margin-right: .125rem;
+	}
 
     &__row {
         display: flex;

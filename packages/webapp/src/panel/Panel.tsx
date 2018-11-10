@@ -152,7 +152,7 @@ export class Panel extends React.PureComponent<Props, State> {
         const closeButton = (
             <button
                 onClick={this.onDismiss}
-                className="btn btn-icon panel__header-icon tab_bar__close-button tab-bar__end-fragment-other-element"
+                className="btn btn-icon tab-bar__end-fragment-other-element"
                 data-tooltip="Close"
             >
                 <CloseIcon className="icon-inline" />
