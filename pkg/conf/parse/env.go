@@ -15,7 +15,6 @@ import (
 // SiteConfiguration struct field that the env var sets. Only top-level fields
 // are traversed, so we needn't worry about nested names or collisions.
 var legacyEnvToFieldName = map[string]string{
-	"SiteID":      "TRACKING_APP_ID", // this env var name is used in many other places, can't be updated to TRACKING_SITE_ID yet
 	"ExternalURL": "SRC_APP_URL",
 	// AuthUserOrgMap has no env var
 	"CorsOrigin": "CORS_ORIGIN",

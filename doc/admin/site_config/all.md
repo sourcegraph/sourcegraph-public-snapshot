@@ -9,8 +9,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [log](all.md#log-object)
 
-- [siteID](all.md#siteid-string)
-
 - [externalURL](all.md#externalurl-string) (called `appURL` in 2.13 and earlier)
 
 - [dontIncludeSymbolResultsByDefault](all.md#dontincludesymbolresultsbydefault-boolean)
@@ -193,11 +191,6 @@ Additional restrictions:
 
 <br/>
 
-## siteID (string)
-
-The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.
-
-<br/>
 
 ## externalURL (string)
 

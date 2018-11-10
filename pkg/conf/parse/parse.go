@@ -53,7 +53,6 @@ func ParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
 // Experimental features are special in that they are denoted individually
 // via e.g. "experimentalFeatures::myFeatureFlag".
 var requireRestart = []string{
-	"siteID",
 	"executeGradleOriginalRootPaths",
 	"lightstepAccessToken",
 	"lightstepProject",
