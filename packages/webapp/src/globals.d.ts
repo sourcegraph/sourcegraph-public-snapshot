@@ -36,8 +36,8 @@ interface SourcegraphContext {
 
     sentryDSN: string
 
-    /** Base URL for app (e.g., https://sourcegraph.com or http://localhost:3080) */
-    appURL: string
+    /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
+    externalURL: string
 
     /** URL path to image/font/etc. assets on server */
     assetsRoot: string

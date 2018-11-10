@@ -36,7 +36,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 
 - Create your VM, then navigate to its public IP address.
 
-- If you have configured a DNS entry for the IP, configure `appURL` to reflect that. If `appURL` has the HTTPS protocol then Sourcegraph will get a certificate via [Let's Encrypt](https://letsencrypt.org/). For more information or alternative methods view our documentation on [TLS](../../tls_ssl.md).
+- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. If `externalURL` has the HTTPS protocol then Sourcegraph will get a certificate via [Let's Encrypt](https://letsencrypt.org/). For more information or alternative methods view our documentation on [TLS](../../tls_ssl.md).
 
 ---
 

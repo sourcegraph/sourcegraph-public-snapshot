@@ -8,6 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
-func AppURL() *url.URL {
-	return globals.AppURL
+func ExternalURL() *url.URL {
+	return globals.ExternalURL
 }

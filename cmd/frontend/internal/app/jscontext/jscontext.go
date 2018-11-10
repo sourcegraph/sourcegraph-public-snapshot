@@ -46,7 +46,7 @@ type authProviderInfo struct {
 // the server instance here as they would be sent to anonymous users.
 type JSContext struct {
 	AppRoot        string            `json:"appRoot,omitempty"`
-	AppURL         string            `json:"appURL,omitempty"`
+	ExternalURL    string            `json:"externalURL,omitempty"`
 	XHRHeaders     map[string]string `json:"xhrHeaders"`
 	CSRFToken      string            `json:"csrfToken"`
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
@@ -86,7 +86,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	actor := actor.FromContext(req.Context())
 
 	headers := make(map[string]string)
-	headers["x-sourcegraph-client"] = globals.AppURL.String()
+	headers["x-sourcegraph-client"] = globals.ExternalURL.String()
 	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
 
 	// -- currently we don't associate XHR calls with the parent page's span --
@@ -131,7 +131,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	return JSContext{
-		AppURL:              globals.AppURL.String(),
+		ExternalURL:         globals.ExternalURL.String(),
 		XHRHeaders:          headers,
 		CSRFToken:           csrfToken,
 		UserAgentIsBot:      isBot(req.UserAgent()),

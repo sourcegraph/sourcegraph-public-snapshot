@@ -42,5 +42,5 @@ function curlExampleCommand(tokenSecret: string, isSudoToken: boolean): string {
     return `curl \\
   -H 'Authorization: ${credentials}' \\
   -d '{"query":"query { currentUser { username } }"}' \\
-  ${window.context.appURL}/.api/graphql`
+  ${window.context.externalURL}/.api/graphql`
 }

@@ -74,11 +74,11 @@ func init() {
 }
 
 func validateConfig(c schema.SiteConfiguration) (problems []string) {
-	var loggedNeedsAppURL bool
+	var loggedNeedsExternalURL bool
 	for _, p := range c.AuthProviders {
-		if p.Saml != nil && c.AppURL == "" && !loggedNeedsAppURL {
-			problems = append(problems, `saml auth provider requires appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
-			loggedNeedsAppURL = true
+		if p.Saml != nil && c.ExternalURL == "" && !loggedNeedsExternalURL {
+			problems = append(problems, `saml auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+			loggedNeedsExternalURL = true
 		}
 	}
 
@@ -98,15 +98,15 @@ func validateConfig(c schema.SiteConfiguration) (problems []string) {
 
 func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
 	if pc.ServiceProviderIssuer == "" {
-		appURL := conf.Get().AppURL
-		if appURL == "" {
+		externalURL := conf.Get().ExternalURL
+		if externalURL == "" {
 			// An empty issuer will be detected as an error later.
 			return pc
 		}
 
-		// Derive default issuer from appURL.
+		// Derive default issuer from externalURL.
 		tmp := *pc
-		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().AppURL, "/") + path.Join(authPrefix, "metadata")
+		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().ExternalURL, "/") + path.Join(authPrefix, "metadata")
 		return &tmp
 	}
 	return pc

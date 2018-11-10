@@ -6,7 +6,7 @@ If you intend to make your Sourcegraph instance accessible on the Internet or an
 
 Sourcegraph will use [Let's Encrypt](https://letsencrypt.org/) by default if the following conditions are met:
 
-- Your `appURL` site configuration option begins with `https://...`.
+- Your `externalURL` site configuration option begins with `https://...`.
 - The host is reachable on both ports `80` and `443` (see [note](#port-80-must-be-accessible) below).
 - You have not configured manual TLS certificates as described below.
 - You have not configured `tls.letsencrypt` to `off`. (Defaults to `auto`)
@@ -44,7 +44,7 @@ For single-server Docker image deployments, add the following lines to your site
   // ...
   "tlsCert": "-----BEGIN CERTIFICATE-----\nMIIFdTCCBF2gAWiB...",
   "tlsKey": "-----BEGIN RSA PRIVATE KEY-----\nMII...",
-  "appURL": "https://example.com:3443" // Must begin with "https"; replace with the public IP or hostname of your machine
+  "externalURL": "https://example.com:3443" // Must begin with "https"; replace with the public IP or hostname of your machine
   // ...
 }
 ```

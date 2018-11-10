@@ -92,10 +92,10 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		// publish time) because it has no way of knowing the absolute URL to the source map.
 		//
 		// This implementation is not ideal because it means the JS bundle's contents depend on the
-		// app URL, which makes it technically not immutable. But given the blob URL constraint
+		// external URL, which makes it technically not immutable. But given the blob URL constraint
 		// mentioned above, it's the best known solution.
-		if appURL, _ := url.Parse(conf.Get().AppURL); appURL != nil {
-			sourceMapURL := appURL.ResolveReference(&url.URL{Path: path.Join(path.Dir(r.URL.Path), fmt.Sprintf("%d.map", releaseID))}).String()
+		if externalURL, _ := url.Parse(conf.Get().ExternalURL); externalURL != nil {
+			sourceMapURL := externalURL.ResolveReference(&url.URL{Path: path.Join(path.Dir(r.URL.Path), fmt.Sprintf("%d.map", releaseID))}).String()
 			fmt.Fprintf(w, "\n//# sourceMappingURL=%s", sourceMapURL)
 		}
 	}

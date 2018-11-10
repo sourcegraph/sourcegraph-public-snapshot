@@ -10,7 +10,7 @@ These instructions guide you through configuring Sourcegraph as a relying party 
 
 ## 1. Add the SAML auth provider to Sourcegraph site config
 
-1.  Set the `appURL` in site config to a URL that the ADFS server can reach.
+1.  Set the `externalURL` in site config to a URL that the ADFS server can reach.
 1.  Add an entry to `auth.providers` that points to your ADFS server's SAML metadata URL (typically containing the path `/federationmetadata/2007-06/federationmetadata.xml`).
 1.  If needed (e.g., when deploying Sourcegraph to a Kubernetes cluster), redeploy to apply the new configuration. (The `sourcegraph/server` Docker container will automatically reload the configuration and apply this change.)
 1.  Confirm there are no error messages in the `sourcegraph/server` Docker container logs (or the `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata.`.
@@ -20,7 +20,7 @@ The example below demonstrates the properties that you must set. See the [SAMLAu
 ```json
 {
   // ...
-  "appURL": "https://sourcegraph.example.com",
+  "externalURL": "https://sourcegraph.example.com",
   "auth.providers": [
     {
       "type": "saml",

@@ -175,7 +175,7 @@ func TestMiddleware(t *testing.T) {
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
 	conf.Mock(&schema.SiteConfiguration{
-		AppURL:               "http://example.com",
+		ExternalURL:          "http://example.com",
 		ExperimentalFeatures: &schema.ExperimentalFeatures{},
 	})
 	defer conf.Mock(nil)

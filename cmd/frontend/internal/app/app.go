@@ -21,7 +21,7 @@ import (
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
 func NewHandler() http.Handler {
-	session.SetSessionStore(session.NewRedisStore(globals.AppURL.Scheme == "https"))
+	session.SetSessionStore(session.NewRedisStore(globals.ExternalURL.Scheme == "https"))
 
 	r := router.Router()
 

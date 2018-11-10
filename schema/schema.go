@@ -324,7 +324,6 @@ type Settings struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
-	AppURL                            string                       `json:"appURL,omitempty"`
 	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
 	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
@@ -347,6 +346,7 @@ type SiteConfiguration struct {
 	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
 	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
 	Extensions                        *Extensions                  `json:"extensions,omitempty"`
+	ExternalURL                       string                       `json:"externalURL,omitempty"`
 	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName  `json:"git.cloneURLToRepositoryName,omitempty"`
 	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
 	Github                            []*GitHubConnection          `json:"github,omitempty"`

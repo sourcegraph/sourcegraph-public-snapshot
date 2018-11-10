@@ -55,7 +55,6 @@ var defaultEnv = map[string]string{
 	"SRC_LOG_LEVEL": "warn",
 
 	// TODO other bits
-	// * Guess SRC_APP_URL based on hostname
 	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 }
 
