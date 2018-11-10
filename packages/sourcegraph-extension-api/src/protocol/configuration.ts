@@ -6,7 +6,6 @@
  */
 export type KeyPath = (string | number)[]
 
-/** The parameters for the configuration/update request. */
 export interface ConfigurationUpdateParams {
     /** The key path to the value. */
     path: KeyPath
@@ -16,9 +15,9 @@ export interface ConfigurationUpdateParams {
 }
 
 /**
- * The configuration cascade, which describes the configuration at multiple levels (subjects), depending on the
- * client. The merged configuration is the result of shallow-merging configuration objects from all subjects, in
- * order from lower to higher precedence.
+ * The settings cascade, which describes the settings at multiple levels (subjects), depending on the client. The
+ * merged settings is the result of shallow-merging settings objects from all subjects, in order from lower to
+ * higher precedence.
  *
  * For example, the client might support configuring settings globally and per-user, and it is designed so that
  * user settings override global settings. Then there would be two subjects, one for global settings and one for
@@ -26,7 +25,7 @@ export interface ConfigurationUpdateParams {
  *
  * @template S the settings type
  */
-export interface ConfigurationCascade<C = any> {
+export interface SettingsCascade<C = any> {
     /** The final settings, merged from all subjects in the cascade. */
     final: C
 

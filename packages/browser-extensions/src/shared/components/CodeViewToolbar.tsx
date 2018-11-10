@@ -3,7 +3,7 @@ import { ControllerProps } from '@sourcegraph/extensions-client-common/lib/clien
 import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { ISite, IUser } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import {
-    ConfigurationCascadeProps,
+    SettingsCascadeProps,
     ConfigurationSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
@@ -37,14 +37,14 @@ interface CodeViewToolbarProps
     location: H.Location
 }
 
-interface CodeViewToolbarState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {
+interface CodeViewToolbarState extends SettingsCascadeProps<ConfigurationSubject, Settings> {
     site?: ISite
     currentUser?: IUser
 }
 
 export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeViewToolbarState> {
     public state: CodeViewToolbarState = {
-        configurationCascade: { subjects: [], final: {} },
+        settingsCascade: { subjects: [], final: {} },
     }
 
     private subscriptions = new Subscription()
@@ -52,8 +52,8 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     public componentDidMount(): void {
         if (this.props.extensions) {
             this.subscriptions.add(
-                this.props.extensions.context.configurationCascade.subscribe(
-                    configurationCascade => this.setState({ configurationCascade }),
+                this.props.extensions.context.settingsCascade.subscribe(
+                    settingsCascade => this.setState({ settingsCascade }),
                     err => console.error(err)
                 )
             )

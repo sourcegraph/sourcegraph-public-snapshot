@@ -2,8 +2,8 @@ import { Observable } from 'rxjs'
 import { map, mergeMap, take } from 'rxjs/operators'
 import { dataOrThrowErrors, gql, GraphQLDocument, GraphQLResult, mutateGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { configurationCascade } from '../settings/configuration'
-import { refreshConfiguration } from '../user/settings/backend'
+import { settingsCascade } from '../settings/configuration'
+import { refreshSettings } from '../user/settings/backend'
 
 /**
  * Overwrites the settings for the subject.
@@ -69,7 +69,7 @@ export function mutateConfigurationGraphQL(
     if (!subjectID) {
         throw new Error('subject has no id')
     }
-    return configurationCascade.pipe(
+    return settingsCascade.pipe(
         take(1),
         mergeMap(config => {
             const subjectConfig = config.subjects.find(s => s.id === subjectID)
@@ -81,7 +81,7 @@ export function mutateConfigurationGraphQL(
             return mutateGraphQL(mutation, { ...variables, subject: subjectID, lastID })
         }),
         map(result => {
-            refreshConfiguration().subscribe()
+            refreshSettings().subscribe()
             return result
         })
     )

@@ -7,7 +7,7 @@ import { parseSearchURLQuery, SearchOptions } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
 import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
-import { currentConfiguration } from '../../settings/configuration'
+import { viewerSettings } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 import { isErrorLike } from '../../util/errors'
 import { search } from '../backend'
@@ -66,7 +66,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         eventLogger.logViewEvent('SearchResults')
 
         this.subscriptions.add(
-            currentConfiguration
+            viewerSettings
                 .pipe(map(config => config['search.scopes'] || []))
                 .subscribe(scopes => this.setState({ scopes }))
         )

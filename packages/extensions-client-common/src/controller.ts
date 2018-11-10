@@ -6,12 +6,11 @@ import { ConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent, GraphQLDocument } from './graphql'
 import { ExtensionManifest } from './schema/extension.schema'
 import * as GQL from './schema/graphqlschema'
-import { ConfigurationCascadeOrError, ConfigurationSubject, Settings } from './settings'
+import { ConfigurationSubject, Settings, SettingsCascadeOrError } from './settings'
 import { parseJSONCOrError } from './util'
 
 /**
- * A controller that exposes functionality for a configuration cascade and querying extensions from the remote
- * registry.
+ * A controller that exposes functionality for a settings cascade and querying extensions from the remote registry.
  */
 export class Controller<S extends ConfigurationSubject, C extends Settings> {
     public static readonly LOADING: 'loading' = 'loading'
@@ -20,7 +19,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
 
     private readonly viewerConfiguredExtensionsOrLoading: Observable<
         typeof Controller.LOADING | ConfiguredExtension[] | ErrorLike
-    > = from(this.context.configurationCascade).pipe(
+    > = from(this.context.settingsCascade).pipe(
         switchMap(
             cascade =>
                 isErrorLike(cascade.final)
@@ -71,7 +70,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
     }
 
     public withRegistryMetadata(
-        cascade: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
+        cascade: SettingsCascadeOrError<ConfigurationSubject, Settings>
     ): Observable<ConfiguredExtension[]> {
         if (isErrorLike(cascade.final)) {
             return throwError(cascade.final)

@@ -8,7 +8,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
-import { ConfigurationCascadeProps, ExtensionsProps } from './ExtensionsClientCommonContext'
+import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -17,7 +17,7 @@ export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRoute
 /**
  * Properties passed to all page components in the extensions area.
  */
-export interface ExtensionsAreaRouteContext extends ConfigurationCascadeProps, ExtensionsProps {
+export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, ExtensionsProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -30,7 +30,7 @@ export interface ExtensionsAreaRouteContext extends ConfigurationCascadeProps, E
 
 interface ExtensionsAreaProps
     extends RouteComponentProps<{ extensionID: string }>,
-        ConfigurationCascadeProps,
+        SettingsCascadeProps,
         ExtensionsProps {
     routes: ReadonlyArray<ExtensionsAreaRoute>
 
@@ -76,7 +76,7 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
     public render(): JSX.Element | null {
         const context: ExtensionsAreaRouteContext = {
             authenticatedUser: this.props.authenticatedUser,
-            configurationCascade: this.props.configurationCascade,
+            settingsCascade: this.props.settingsCascade,
             extensions: this.props.extensions,
             subject: this.props.viewerSubject,
             extensionAreaRoutes: this.props.extensionAreaRoutes,

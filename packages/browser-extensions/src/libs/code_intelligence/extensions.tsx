@@ -6,8 +6,8 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
 import {
-    ConfigurationCascade,
-    ConfigurationCascadeOrError,
+    SettingsCascade,
+    SettingsCascadeOrError,
     ConfigurationSubject,
     ConfiguredSubject,
     Settings,
@@ -38,9 +38,9 @@ import { MountGetter } from './code_intelligence'
 // This is rather specific to extensions-client-common
 // and could be moved to that package in the future.
 export function logThenDropConfigurationErrors(
-    cascadeOrError: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
-): ConfigurationCascade<ConfigurationSubject, Settings> {
-    const EMPTY_CASCADE: ConfigurationCascade<ConfigurationSubject, Settings> = {
+    cascadeOrError: SettingsCascadeOrError<ConfigurationSubject, Settings>
+): SettingsCascade<ConfigurationSubject, Settings> {
+    const EMPTY_CASCADE: SettingsCascade<ConfigurationSubject, Settings> = {
         subjects: [],
         final: {},
     }
@@ -89,7 +89,7 @@ function createControllers(documents: Observable<TextDocumentItem[] | null>): Co
 
     combineLatest(
         extensionsContextController.viewerConfiguredExtensions,
-        from(extensionsContextController.context.configurationCascade).pipe(map(logThenDropConfigurationErrors)),
+        from(extensionsContextController.context.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
         documents
     ).subscribe(([extensions, configuration, visibleTextDocuments]) => {
         from(extensionsController.environment)

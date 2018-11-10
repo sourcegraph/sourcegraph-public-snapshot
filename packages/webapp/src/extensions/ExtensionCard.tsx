@@ -8,10 +8,10 @@ import { LinkOrSpan } from '../components/LinkOrSpan'
 import { Settings } from '../schema/settings.schema'
 import { isErrorLike } from '../util/errors'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
-import { ConfigurationCascadeProps, ExtensionsProps, isExtensionAdded } from './ExtensionsClientCommonContext'
+import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 import { ExtensionToggle } from './ExtensionToggle'
 
-interface Props<S extends ConfigurationSubject, C extends Settings> extends ConfigurationCascadeProps, ExtensionsProps {
+interface Props<S extends ConfigurationSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
     node: ConfiguredExtension
     subject: Pick<ConfigurationSubject, 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void
@@ -88,7 +88,7 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                                 (props.subject.viewerCanAdminister ? (
                                     <ExtensionToggle
                                         extension={node}
-                                        configurationCascade={this.props.configurationCascade}
+                                        settingsCascade={this.props.settingsCascade}
                                         onUpdate={props.onDidUpdate}
                                         className="btn-sm btn-secondary"
                                         extensions={this.props.extensions}
@@ -96,8 +96,8 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                                 ) : (
                                     <li className="nav-item">
                                         <ExtensionConfigurationState
-                                            isAdded={isExtensionAdded(props.configurationCascade.final, node.id)}
-                                            isEnabled={isExtensionEnabled(props.configurationCascade.final, node.id)}
+                                            isAdded={isExtensionAdded(props.settingsCascade.final, node.id)}
+                                            isEnabled={isExtensionEnabled(props.settingsCascade.final, node.id)}
                                         />
                                     </li>
                                 ))}

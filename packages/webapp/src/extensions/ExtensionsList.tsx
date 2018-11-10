@@ -21,7 +21,7 @@ import * as GQL from '../backend/graphqlschema'
 import { Form } from '../components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionCard } from './ExtensionCard'
-import { ConfigurationCascadeProps, ExtensionsProps } from './ExtensionsClientCommonContext'
+import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -58,7 +58,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-interface Props extends ConfigurationCascadeProps, ExtensionsProps, RouteComponentProps<{}> {
+interface Props extends SettingsCascadeProps, ExtensionsProps, RouteComponentProps<{}> {
     subject: Pick<ConfigurationSubject, 'id' | 'viewerCanAdminister'>
     emptyElement?: React.ReactFragment
 }
@@ -227,7 +227,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                         subject={this.props.subject}
                                         node={e}
                                         onDidUpdate={this.onDidUpdateExtension}
-                                        configurationCascade={this.props.configurationCascade}
+                                        settingsCascade={this.props.settingsCascade}
                                         extensions={this.props.extensions}
                                     />
                                 ))}

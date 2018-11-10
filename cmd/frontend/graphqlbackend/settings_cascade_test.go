@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-func TestMergeConfigs(t *testing.T) {
-	orig := deeplyMergedConfigFields
-	deeplyMergedConfigFields = map[string]int{
+func TestMergeSettings(t *testing.T) {
+	orig := deeplyMergedSettingsFields
+	deeplyMergedSettingsFields = map[string]int{
 		"f1": 1,
 		"f2": 2,
 	}
-	defer func() { deeplyMergedConfigFields = orig }()
+	defer func() { deeplyMergedSettingsFields = orig }()
 
 	tests := map[string]struct {
 		configs []string
@@ -110,7 +110,7 @@ func TestMergeConfigs(t *testing.T) {
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			merged, err := mergeConfigs(test.configs)
+			merged, err := mergeSettings(test.configs)
 			if err != nil {
 				if test.wantErr {
 					return

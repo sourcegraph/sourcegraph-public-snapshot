@@ -18,7 +18,7 @@ export const exploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
     },
     {
         render: props => <DiscussionsExploreSection {...props} />,
-        condition: ({ configurationCascade }) => isDiscussionsEnabled(configurationCascade),
+        condition: ({ settingsCascade }) => isDiscussionsEnabled(settingsCascade),
     },
     {
         render: props => <SavedSearchesExploreSection {...props} />,

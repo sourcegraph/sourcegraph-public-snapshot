@@ -21,9 +21,9 @@ import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -40,7 +40,7 @@ const toPortalID = (line: number) => `line-decoration-attachment-${line}`
 interface BlobProps
     extends AbsoluteRepoFile,
         ModeSpec,
-        ConfigurationCascadeProps,
+        SettingsCascadeProps,
         ExtensionsProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
@@ -477,7 +477,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 />
                             )
                         })}
-                {isDiscussionsEnabled(this.props.configurationCascade) &&
+                {isDiscussionsEnabled(this.props.settingsCascade) &&
                     this.state.selectedPosition &&
                     this.state.selectedPosition.line !== undefined && (
                         <DiscussionsGutterOverlay

@@ -27,10 +27,10 @@ func TestSavedQueries(t *testing.T) {
 		return &api.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
 
-	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
+	mockSettingsCascadeSubjects = func() ([]*configurationSubject, error) {
 		return []*configurationSubject{{user: &UserResolver{user: &types.User{ID: uid}}}}, nil
 	}
-	defer func() { mockConfigurationCascadeSubjects = nil }()
+	defer func() { mockSettingsCascadeSubjects = nil }()
 
 	savedQueries, err := (&schemaResolver{}).SavedQueries(ctx)
 	if err != nil {
@@ -70,10 +70,10 @@ func TestCreateSavedQuery(t *testing.T) {
 		return &api.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
 
-	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
+	mockSettingsCascadeSubjects = func() ([]*configurationSubject, error) {
 		return []*configurationSubject{subject}, nil
 	}
-	defer func() { mockConfigurationCascadeSubjects = nil }()
+	defer func() { mockSettingsCascadeSubjects = nil }()
 
 	mutation, err := (&schemaResolver{}).ConfigurationMutation(ctx, &struct {
 		Input *configurationMutationGroupInput
@@ -139,10 +139,10 @@ func TestUpdateSavedQuery(t *testing.T) {
 		return &api.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
 
-	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
+	mockSettingsCascadeSubjects = func() ([]*configurationSubject, error) {
 		return []*configurationSubject{subject}, nil
 	}
-	defer func() { mockConfigurationCascadeSubjects = nil }()
+	defer func() { mockSettingsCascadeSubjects = nil }()
 
 	mutation, err := (&schemaResolver{}).ConfigurationMutation(ctx, &struct {
 		Input *configurationMutationGroupInput

@@ -5,16 +5,16 @@ import { Subscription } from 'rxjs'
 import { authRequired } from '../auth'
 import * as GQL from '../backend/graphqlschema'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from '../extensions/ExtensionsClientCommonContext'
 import { KeybindingsProps } from '../keybindings'
 import { parseSearchURLQuery, SearchOptions } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { NavLinks } from './NavLinks'
 
-interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps, KeybindingsProps {
+interface Props extends SettingsCascadeProps, ExtensionsProps, ExtensionsControllerProps, KeybindingsProps {
     history: H.History
     location: H.Location
     authenticatedUser: GQL.IUser | null

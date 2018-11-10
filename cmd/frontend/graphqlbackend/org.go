@@ -127,9 +127,11 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	return &settingsResolver{&configurationSubject{org: o}, settings, nil}, nil
 }
 
-func (o *OrgResolver) ConfigurationCascade() *configurationCascadeResolver {
-	return &configurationCascadeResolver{subject: &configurationSubject{org: o}}
+func (o *OrgResolver) SettingsCascade() *settingsCascade {
+	return &settingsCascade{subject: &configurationSubject{org: o}}
 }
+
+func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {

@@ -9,7 +9,7 @@ import { distinctUntilChanged, map } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { Tooltip } from '../../components/tooltip/Tooltip'
 import { routes } from '../../routes'
-import { currentConfiguration } from '../../settings/configuration'
+import { viewerSettings } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
 import { submitSearch, toggleSearchFilter } from '../helpers'
@@ -45,7 +45,7 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            currentConfiguration.pipe(map(config => config['search.scopes'] || [])).subscribe(searchScopes =>
+            viewerSettings.pipe(map(config => config['search.scopes'] || [])).subscribe(searchScopes =>
                 this.setState({
                     configuredScopes: searchScopes,
                 })

@@ -86,7 +86,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
-                                    configurationCascade={context.configurationCascade}
+                                    settingsCascade={context.settingsCascade}
                                     extensions={context.extensions}
                                     extensionsOnVisibleTextDocumentsChange={
                                         context.extensionsOnVisibleTextDocumentsChange
@@ -105,7 +105,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     commitID={context.resolvedRev.commitID}
                                     rev={context.rev}
                                     filePath={context.match.params.filePath || ''}
-                                    configurationCascade={context.configurationCascade}
+                                    settingsCascade={context.settingsCascade}
                                     extensionsController={context.extensionsController}
                                     extensions={context.extensions}
                                     location={context.location}

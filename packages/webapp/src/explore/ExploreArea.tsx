@@ -1,7 +1,7 @@
 import {
-    ConfigurationCascadeOrError,
     ConfigurationSubject,
     Settings,
+    SettingsCascadeOrError,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import H from 'history'
 import * as React from 'react'
@@ -17,11 +17,11 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
-    /** The subject whose extensions and configuration to display. */
+    /** The subject whose extensions and settings to display. */
     viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
 
-    /** The viewer's configuration. */
-    configurationCascade: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
+    /** The viewer's settings. */
+    settingsCascade: SettingsCascadeOrError<ConfigurationSubject, Settings>
 
     isLightTheme: boolean
     location: H.Location
@@ -69,7 +69,7 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
             extensionsController: this.props.extensionsController,
             authenticatedUser: this.props.authenticatedUser,
             viewerSubject: this.props.viewerSubject,
-            configurationCascade: this.props.configurationCascade,
+            settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             location: this.props.location,
             history: this.props.history,

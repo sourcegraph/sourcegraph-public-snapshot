@@ -2,7 +2,7 @@ import { BehaviorSubject } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
-import { ConfigurationCascade } from '../../protocol'
+import { SettingsCascade } from '../../protocol'
 
 /**
  * @internal
@@ -43,7 +43,7 @@ export interface ExtConfigurationAPI<C> {
  * @internal
  * @template C - The configuration schema.
  */
-export class ExtConfiguration<C extends ConfigurationCascade<any>> implements ExtConfigurationAPI<C> {
+export class ExtConfiguration<C extends SettingsCascade<any>> implements ExtConfigurationAPI<C> {
     private data = new BehaviorSubject<Readonly<C> | null>(null)
 
     constructor(private proxy: ClientConfigurationAPI) {}

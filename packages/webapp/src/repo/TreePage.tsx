@@ -23,9 +23,9 @@ import { displayRepoPath } from '../components/RepoFileLink'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
@@ -98,7 +98,7 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends ConfigurationCascadeProps, ExtensionsControllerProps, ExtensionsProps {
+interface Props extends SettingsCascadeProps, ExtensionsControllerProps, ExtensionsProps {
     repoPath: string
     repoID: GQL.ID
     repoDescription: string
@@ -263,7 +263,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     <SearchButton />
                                 </Form>
                             </section>
-                            {!isDiscussionsEnabled(this.props.configurationCascade) &&
+                            {!isDiscussionsEnabled(this.props.settingsCascade) &&
                                 this.state.treeOrError.directories.length > 0 && (
                                     <section className="tree-page__section">
                                         <h3 className="tree-page__section-header">Directories</h3>
@@ -280,7 +280,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         </div>
                                     </section>
                                 )}
-                            {!isDiscussionsEnabled(this.props.configurationCascade) &&
+                            {!isDiscussionsEnabled(this.props.settingsCascade) &&
                                 this.state.treeOrError.files.length > 0 && (
                                     <section className="tree-page__section">
                                         <h3 className="tree-page__section-header">Files</h3>
@@ -297,7 +297,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         </div>
                                     </section>
                                 )}
-                            {isDiscussionsEnabled(this.props.configurationCascade) && (
+                            {isDiscussionsEnabled(this.props.settingsCascade) && (
                                 <div className="tree-page__section mt-2 tree-page__section--discussions">
                                     <h3 className="tree-page__section-header">Discussions</h3>
                                     <DiscussionsList

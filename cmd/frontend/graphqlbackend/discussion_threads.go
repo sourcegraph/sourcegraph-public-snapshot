@@ -739,7 +739,7 @@ func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*gr
 // use code discussions, e.g. due to the extension not being installed or
 // enabled.
 func viewerCanUseDiscussions(ctx context.Context) error {
-	merged, err := viewerMergedConfiguration(ctx)
+	merged, err := viewerFinalSettings(ctx)
 	if err != nil {
 		return err
 	}

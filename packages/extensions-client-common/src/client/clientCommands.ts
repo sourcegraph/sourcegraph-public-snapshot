@@ -9,7 +9,7 @@ import {
 } from 'sourcegraph/module/protocol'
 import { Context } from '../context'
 import { isErrorLike } from '../errors'
-import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
+import { ConfigurationSubject, Settings, SettingsCascade } from '../settings'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See
@@ -17,8 +17,8 @@ import { ConfigurationCascade, ConfigurationSubject, Settings } from '../setting
  * documentation.
  */
 export function registerBuiltinClientCommands<S extends ConfigurationSubject, C extends Settings>(
-    context: Pick<Context<S, C>, 'configurationCascade' | 'updateExtensionSettings' | 'queryGraphQL' | 'queryLSP'>,
-    controller: Controller<Extension, ConfigurationCascade<S, C>>
+    context: Pick<Context<S, C>, 'settingsCascade' | 'updateExtensionSettings' | 'queryGraphQL' | 'queryLSP'>,
+    controller: Controller<Extension, SettingsCascade<S, C>>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -115,12 +115,12 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
  * Applies an edit to the configuration settings of the highest-precedence subject.
  */
 export function updateConfiguration<S extends ConfigurationSubject, C extends Settings>(
-    context: Pick<Context<S, C>, 'configurationCascade' | 'updateExtensionSettings'>,
+    context: Pick<Context<S, C>, 'settingsCascade' | 'updateExtensionSettings'>,
     params: ConfigurationUpdateParams
 ): Promise<void> {
-    // TODO(sqs): Allow extensions to specify which subject's configuration to update
-    // (instead of always updating the highest-precedence subject's configuration).
-    return from(context.configurationCascade)
+    // TODO(sqs): Allow extensions to specify which subject's settings to update
+    // (instead of always updating the highest-precedence subject's settings).
+    return from(context.settingsCascade)
         .pipe(
             take(1),
             switchMap(x => {

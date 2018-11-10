@@ -69,7 +69,7 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                                 <div className="mr-2">
                                     <ExtensionToggle
                                         extension={props.extension}
-                                        configurationCascade={props.configurationCascade}
+                                        settingsCascade={props.settingsCascade}
                                         onUpdate={props.onDidUpdateExtension}
                                         addClassName="btn-primary"
                                         extensions={props.extensions}
@@ -78,20 +78,20 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                             )}
                             <ExtensionConfigurationState
                                 className="mr-2"
-                                isAdded={isExtensionAdded(props.configurationCascade.final, props.extension.id)}
-                                isEnabled={isExtensionEnabled(props.configurationCascade.final, props.extension.id)}
+                                isAdded={isExtensionAdded(props.settingsCascade.final, props.extension.id)}
+                                isEnabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
                             />
                             {!props.authenticatedUser && (
                                 <div className="d-flex align-items-center">
                                     <Link to="/sign-in" className="btn btn-primary mr-2">
                                         Sign in to{' '}
-                                        {isExtensionEnabled(props.configurationCascade.final, props.extension.id)
+                                        {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
                                             ? 'configure'
                                             : 'enable'}
                                     </Link>
                                     <small className="text-muted">
                                         An account is required to{' '}
-                                        {isExtensionEnabled(props.configurationCascade.final, props.extension.id)
+                                        {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
                                             ? ''
                                             : 'enable and'}{' '}
                                         configure extensions.

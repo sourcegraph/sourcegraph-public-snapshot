@@ -3,7 +3,7 @@ import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
 import { Controller } from './controller'
 import { QueryResult } from './graphql'
 import * as GQL from './schema/graphqlschema'
-import { ConfigurationCascadeOrError, ConfigurationSubject, ID, Settings } from './settings'
+import { ConfigurationSubject, ID, Settings, SettingsCascadeOrError } from './settings'
 
 export type UpdateExtensionSettingsArgs =
     | { edit?: ConfigurationUpdateParams }
@@ -19,10 +19,10 @@ export type UpdateExtensionSettingsArgs =
  */
 export interface Context<S extends ConfigurationSubject, C extends Settings> {
     /**
-     * An observable that emits whenever the configuration cascade changes (including when any individual subject's
+     * An observable that emits whenever the settings cascade changes (including when any individual subject's
      * settings change).
      */
-    readonly configurationCascade: Subscribable<ConfigurationCascadeOrError<S, C>>
+    readonly settingsCascade: Subscribable<SettingsCascadeOrError<S, C>>
 
     updateExtensionSettings(subject: ID, args: UpdateExtensionSettingsArgs): Subscribable<void>
 

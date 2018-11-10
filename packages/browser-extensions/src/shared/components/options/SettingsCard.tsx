@@ -1,14 +1,14 @@
 import {
-    ConfigurationCascadeOrError,
     ConfigurationSubject,
     Settings,
+    SettingsCascadeOrError,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import * as React from 'react'
 import { Alert, Card, CardBody, CardHeader, CardLink, CardText, Col, Row } from 'reactstrap'
 import { Subscription } from 'rxjs'
 import { GQL } from '../../../types/gqlschema'
 import { isErrorLike } from '../../backend/errors'
-import { configurationCascade } from '../../backend/extensions'
+import { settingsCascade } from '../../backend/extensions'
 import { sourcegraphUrl } from '../../util/context'
 import { BrowserSettingsEditor } from './BrowserSettingsEditor'
 
@@ -17,7 +17,7 @@ interface Props {
 }
 
 interface State {
-    configurationCascadeOrError?: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
+    settingsCascadeOrError?: SettingsCascadeOrError<ConfigurationSubject, Settings>
 }
 
 export class SettingsCard extends React.Component<Props, State> {
@@ -27,9 +27,7 @@ export class SettingsCard extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            configurationCascade.subscribe(configurationCascadeOrError =>
-                this.setState({ configurationCascadeOrError })
-            )
+            settingsCascade.subscribe(settingsCascadeOrError => this.setState({ settingsCascadeOrError }))
         )
     }
 
@@ -57,22 +55,18 @@ export class SettingsCard extends React.Component<Props, State> {
                                     >
                                         Edit user settings
                                     </CardLink>
-                                    {this.state.configurationCascadeOrError === undefined ? (
+                                    {this.state.settingsCascadeOrError === undefined ? (
                                         ''
-                                    ) : isErrorLike(this.state.configurationCascadeOrError.final) ? (
+                                    ) : isErrorLike(this.state.settingsCascadeOrError.final) ? (
                                         <Alert color="danger">
-                                            Error: {this.state.configurationCascadeOrError.final.message}
+                                            Error: {this.state.settingsCascadeOrError.final.message}
                                         </Alert>
                                     ) : (
                                         <>
                                             <hr />
                                             <pre className="card-text">
                                                 <code>
-                                                    {JSON.stringify(
-                                                        this.state.configurationCascadeOrError.final,
-                                                        null,
-                                                        2
-                                                    )}
+                                                    {JSON.stringify(this.state.settingsCascadeOrError.final, null, 2)}
                                                 </code>
                                             </pre>
                                         </>

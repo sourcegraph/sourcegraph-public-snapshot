@@ -89,9 +89,11 @@ func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	return &settingsResolver{&configurationSubject{site: r}, settings, nil}, nil
 }
 
-func (r *siteResolver) ConfigurationCascade() *configurationCascadeResolver {
-	return &configurationCascadeResolver{subject: &configurationSubject{site: r}}
+func (r *siteResolver) SettingsCascade() *settingsCascade {
+	return &settingsCascade{subject: &configurationSubject{site: r}}
 }
+
+func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
 
 func (r *siteResolver) SettingsURL() string { return "/site-admin/global-settings" }
 

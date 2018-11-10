@@ -8,16 +8,16 @@ import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as GQL from '../backend/graphqlschema'
 import { isDiscussionsEnabled } from '../discussions'
 import {
-    ConfigurationCascadeProps,
     ExtensionsControllerProps,
     ExtensionsProps,
+    SettingsCascadeProps,
 } from '../extensions/ExtensionsClientCommonContext'
 import { KeybindingsProps } from '../keybindings'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { UserNavItem } from './UserNavItem'
 
-interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps, KeybindingsProps {
+interface Props extends SettingsCascadeProps, ExtensionsProps, ExtensionsControllerProps, KeybindingsProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -106,7 +106,7 @@ export class NavLinks extends React.PureComponent<Props> {
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
                             showAbout={showDotComMarketing}
-                            showDiscussions={isDiscussionsEnabled(this.props.configurationCascade)}
+                            showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
                         />
                     </li>
                 )}

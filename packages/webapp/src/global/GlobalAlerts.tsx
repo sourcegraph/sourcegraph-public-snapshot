@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Markdown } from '../components/Markdown'
 import { Settings } from '../schema/settings.schema'
-import { currentConfiguration } from '../settings/configuration'
+import { viewerSettings } from '../settings/configuration'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
@@ -32,7 +32,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
-        this.subscriptions.add(currentConfiguration.subscribe(finalSettings => this.setState({ finalSettings })))
+        this.subscriptions.add(viewerSettings.subscribe(finalSettings => this.setState({ finalSettings })))
     }
 
     public componentWillUnmount(): void {

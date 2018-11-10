@@ -8,7 +8,7 @@ import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { IConfigurationCascade } from '../backend/graphqlschema'
+import { ISettingsCascade } from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import settingsSchemaJSON from '../schema/settings.schema.json'
@@ -31,7 +31,7 @@ interface SettingsAreaPageCommonProps extends ExtensionsProps {
 }
 
 interface SettingsData {
-    subjects: GQL.IConfigurationCascade['subjects']
+    subjects: GQL.ISettingsCascade['subjects']
     settingsJSONSchema: { $id: string }
 }
 
@@ -74,7 +74,7 @@ export class SettingsArea extends React.Component<Props, State> {
                 .pipe(
                     distinctUntilChanged(),
                     switchMap(([{ id }]) =>
-                        fetchConfigurationCascade(id).pipe(
+                        fetchSettingsCascade(id).pipe(
                             switchMap(cascade =>
                                 this.getMergedSettingsJSONSchema(cascade).pipe(
                                     map(
@@ -160,7 +160,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private onUpdate = () => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(
-        cascade: Pick<GQL.IConfigurationCascade, 'subjects'>
+        cascade: Pick<GQL.ISettingsCascade, 'subjects'>
     ): Observable<{ $id: string }> {
         return this.props.extensions.withRegistryMetadata(gqlToCascade(cascade)).pipe(
             map(configuredExtensions => ({
@@ -186,12 +186,12 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchConfigurationCascade(subject: GQL.ID): Observable<Pick<IConfigurationCascade, 'subjects'>> {
+function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<ISettingsCascade, 'subjects'>> {
     return queryGraphQL(
         gql`
-            query ConfigurationCascade($subject: ID!) {
+            query SettingsCascade($subject: ID!) {
                 configurationSubject(id: $subject) {
-                    configurationCascade {
+                    settingsCascade {
                         subjects {
                             latestSettings {
                                 id
@@ -208,7 +208,7 @@ function fetchConfigurationCascade(subject: GQL.ID): Observable<Pick<IConfigurat
             if (!data || !data.configurationSubject) {
                 throw createAggregateError(errors)
             }
-            return data.configurationSubject.configurationCascade
+            return data.configurationSubject.settingsCascade
         })
     )
 }

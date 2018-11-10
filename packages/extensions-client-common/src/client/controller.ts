@@ -12,7 +12,7 @@ import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
 import { ExtensionManifest } from '../schema/extension.schema'
-import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
+import { ConfigurationSubject, Settings, SettingsCascade } from '../settings'
 import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
 import { log } from './log'
 
@@ -21,7 +21,7 @@ import { log } from './log'
  */
 export class Controller<S extends ConfigurationSubject, C extends Settings> extends BaseController<
     ConfiguredExtension,
-    ConfigurationCascade<S, C>
+    SettingsCascade<S, C>
 > {
     /**
      * Global notification messages that should be displayed to the user, from the following sources:
@@ -63,9 +63,9 @@ export interface ControllerProps<S extends ConfigurationSubject, C extends Setti
  * Filter the environment to omit extensions that should not be activated (based on their manifest's
  * activationEvents).
  *
- * @template CC configuration cascade type
+ * @template CC settings cascade type
  */
-function environmentFilter<S extends ConfigurationSubject, CC extends ConfigurationCascade<S>>(
+function environmentFilter<S extends ConfigurationSubject, CC extends SettingsCascade<S>>(
     nextEnvironment: Environment<ConfiguredExtension, CC>
 ): Environment<ConfiguredExtension, CC> {
     return {

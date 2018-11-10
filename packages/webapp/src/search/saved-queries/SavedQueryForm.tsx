@@ -8,7 +8,7 @@ import { Key } from 'ts-key-enum'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { Settings } from '../../schema/settings.schema'
-import { configurationCascade, parseJSON } from '../../settings/configuration'
+import { parseJSON, settingsCascade } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 
 export interface SavedQueryFields {
@@ -74,7 +74,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            configurationCascade.pipe(map(({ subjects }) => subjects)).subscribe(subjects => {
+            settingsCascade.pipe(map(({ subjects }) => subjects)).subscribe(subjects => {
                 const subject = subjects.find(s => !!s.id)
 
                 this.setState(state => ({

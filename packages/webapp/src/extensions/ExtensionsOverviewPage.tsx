@@ -9,7 +9,7 @@ import { ExtensionsList } from './ExtensionsList'
 
 interface Props extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {}
 
-/** A page that displays overview information about viewer's configured extensions. */
+/** A page that displays overview information about the available extensions. */
 export class ExtensionsOverviewPage extends React.PureComponent<Props> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('ExtensionsOverview')
@@ -32,7 +32,7 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
                         {...this.props}
                         emptyElement={<ExtensionsEmptyState />}
                         subject={this.props.subject}
-                        configurationCascade={this.props.configurationCascade}
+                        settingsCascade={this.props.settingsCascade}
                     />
                 </div>
             </div>

@@ -6,7 +6,7 @@ import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
-import { currentConfiguration } from '../settings/configuration'
+import { viewerSettings } from '../settings/configuration'
 import { asError, createAggregateError, ErrorLike } from '../util/errors'
 
 export function search(
@@ -284,7 +284,7 @@ const savedQueryFragment = gql`
 `
 
 export function observeSavedQueries(): Observable<GQL.ISavedQuery[]> {
-    return currentConfiguration.pipe(
+    return viewerSettings.pipe(
         map(config => config['search.savedQueries']),
         distinctUntilChanged((a, b) => isEqual(a, b)),
         mergeMap(fetchSavedQueries)

@@ -8,10 +8,10 @@ import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/e
 import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
 import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import {
-    ConfigurationCascadeProps as GenericConfigurationCascadeProps,
     ConfigurationSubject,
     gqlToCascade,
     Settings,
+    SettingsCascadeProps as GenericSettingsCascadeProps,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { isEqual } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
@@ -28,19 +28,19 @@ import * as GQL from '../backend/graphqlschema'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { editConfiguration } from '../configuration/backend'
-import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
-import { refreshConfiguration } from '../user/settings/backend'
+import { settingsCascade, toGQLKeyPath } from '../settings/configuration'
+import { refreshSettings } from '../user/settings/backend'
 import { ErrorLike, isErrorLike } from '../util/errors'
 
 export interface ExtensionsControllerProps extends GenericExtensionsControllerProps<ConfigurationSubject, Settings> {}
 
-export interface ConfigurationCascadeProps extends GenericConfigurationCascadeProps<ConfigurationSubject, Settings> {}
+export interface SettingsCascadeProps extends GenericSettingsCascadeProps<ConfigurationSubject, Settings> {}
 
 export interface ExtensionsProps extends GenericExtensionsProps<ConfigurationSubject, Settings> {}
 
 export function createExtensionsContextController(): ExtensionsContextController<ConfigurationSubject, Settings> {
     return new ExtensionsContextController<ConfigurationSubject, Settings>({
-        configurationCascade: configurationCascade.pipe(
+        settingsCascade: settingsCascade.pipe(
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
@@ -62,11 +62,11 @@ export function createExtensionsContextController(): ExtensionsContextController
 }
 
 function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsArgs): Observable<void> {
-    return configurationCascade.pipe(
+    return settingsCascade.pipe(
         take(1),
         withLatestFrom(authenticatedUser),
-        switchMap(([configurationCascade, authenticatedUser]) => {
-            const subjectConfig = configurationCascade.subjects.find(s => s.id === subject)
+        switchMap(([settingsCascade, authenticatedUser]) => {
+            const subjectConfig = settingsCascade.subjects.find(s => s.id === subject)
             if (!subjectConfig) {
                 throw new Error(`no configuration subject: ${subject}`)
             }
@@ -104,7 +104,7 @@ function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsA
 
             return editConfiguration(subject, lastID, edit)
         }),
-        switchMap(() => concat(refreshConfiguration(), [void 0]))
+        switchMap(() => concat(refreshSettings(), [void 0]))
     )
 }
 
@@ -112,11 +112,11 @@ export function updateHighestPrecedenceExtensionSettings(args: {
     extensionID: string
     enabled?: boolean
 }): Observable<void> {
-    return configurationCascade.pipe(
+    return settingsCascade.pipe(
         take(1),
-        switchMap(configurationCascade => {
+        switchMap(settingsCascade => {
             // Only support configuring extension settings in user settings with this action.
-            const subject = configurationCascade.subjects[configurationCascade.subjects.length - 1]
+            const subject = settingsCascade.subjects[settingsCascade.subjects.length - 1]
             return updateExtensionSettings(subject.id, args)
         })
     )
