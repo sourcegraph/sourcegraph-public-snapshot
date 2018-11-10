@@ -15,10 +15,6 @@ func (schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID grap
 	return settingsSubjectByID(ctx, args.ID)
 }
 
-func (schemaResolver) ConfigurationSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
-	return schemaResolver{}.SettingsSubject(ctx, args)
-}
-
 var errUnknownSettingsSubject = errors.New("unknown settings subject")
 
 type settingsSubject struct {

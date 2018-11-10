@@ -706,8 +706,6 @@ type Query {
     # Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
     # be a site (which has global settings), an organization, or a user.
     settingsSubject(id: ID!): SettingsSubject
-    # DEPRECATED
-    configurationSubject(id: ID!): ConfigurationSubject @deprecated(reason: "use settingsSubject instead")
     # The settings for the viewer. The viewer is either an anonymous visitor (in which case viewer settings is
     # global settings) or an authenticated user (in which case viewer settings are the user's settings).
     viewerSettings: SettingsCascade!
@@ -1960,7 +1958,7 @@ type UserConnection {
 }
 
 # A user.
-type User implements Node & SettingsSubject & ConfigurationSubject {
+type User implements Node & SettingsSubject {
     # The unique ID for the user.
     id: ID!
     # The user's username.
@@ -2196,7 +2194,7 @@ type OrgConnection {
 }
 
 # An organization, which is a group of users.
-type Org implements Node & SettingsSubject & ConfigurationSubject {
+type Org implements Node & SettingsSubject {
     # The unique ID for the organization.
     id: ID!
     # The organization's name. This is unique among all organizations on this Sourcegraph site.
@@ -2513,7 +2511,7 @@ enum RepositoryOrderBy {
 # servers that share the same configuration and database.
 #
 # The site is a singleton; the API only ever returns the single global site.
-type Site implements SettingsSubject & ConfigurationSubject {
+type Site implements SettingsSubject {
     # The site's opaque GraphQL ID. This is NOT the "site ID" as it is referred to elsewhere;
     # use the siteID field for that. (GraphQL node types conventionally have an id field of type
     # ID! that globally identifies the node.)
@@ -2670,15 +2668,6 @@ interface SettingsSubject {
         )
 }
 
-# DEPRECATED: Renamed to SettingsSubject.
-interface ConfigurationSubject {
-    id: ID! @deprecated(reason: "use SettingsSubject instead")
-    latestSettings: Settings @deprecated(reason: "use SettingsSubject instead")
-    settingsURL: String! @deprecated(reason: "use SettingsSubject instead")
-    viewerCanAdminister: Boolean! @deprecated(reason: "use SettingsSubject instead")
-    configurationCascade: ConfigurationCascade! @deprecated(reason: "use SettingsSubject.settingsCascade instead")
-}
-
 # The configurations for all of the relevant settings subjects, plus the merged settings.
 type SettingsCascade {
     # The other settings subjects that are applied with lower precedence than this subject to
@@ -2695,7 +2684,7 @@ type SettingsCascade {
 
 # DEPRECATED: Renamed to SettingsCascade.
 type ConfigurationCascade {
-    subjects: [ConfigurationSubject!]! @deprecated(reason: "use SettingsCascade.subjects instead")
+    subjects: [SettingsSubject!]! @deprecated(reason: "use SettingsCascade.subjects instead")
     merged: Configuration! @deprecated(reason: "use SettingsCascade.final instead")
 }
 
