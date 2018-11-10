@@ -19,10 +19,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [experimentalFeatures](all.md#experimentalfeatures-object)
 
-- [tlsCert](all.md#tlscert-string)
-
-- [tlsKey](all.md#tlskey-string)
-
 - [httpToHttpsRedirect](all.md#httptohttpsredirect)
 
 - [corsOrigin](all.md#corsorigin-string)
@@ -259,30 +255,6 @@ Default: `"disabled"`
 ## search.index.enabled (boolean)
 
 Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
-
-## tlsCert (string)
-
-The contents of the PEM-encoded TLS certificate for the web server (for the web app and API).
-
-See [https://docs.sourcegraph.com/admin/tls_ssl](../tls_ssl.md) for more information.
-
-Additional restrictions:
-
-- Regex pattern: `^-----BEGIN CERTIFICATE-----`
-
-<br/>
-
-## tlsKey (string)
-
-The contents of the PEM-encoded TLS key for the web server (for the web app and API).
-
-See [https://docs.sourcegraph.com/admin/tls_ssl](../tls_ssl.md) for more information.
-
-Additional restrictions:
-
-- Regex pattern: `^-----BEGIN`
-
-<br/>
 
 ## httpToHttpsRedirect
 

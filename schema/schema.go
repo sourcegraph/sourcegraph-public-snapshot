@@ -377,8 +377,6 @@ type SiteConfiguration struct {
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
-	TlsCert                           string                       `json:"tlsCert,omitempty"`
-	TlsKey                            string                       `json:"tlsKey,omitempty"`
 	UpdateChannel                     string                       `json:"update.channel,omitempty"`
 	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
 }

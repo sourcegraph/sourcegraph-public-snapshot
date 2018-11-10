@@ -69,7 +69,6 @@ var requireRestart = []string{
 	"searchScopes",
 	"extensions",
 	"disableBrowserExtension",
-	"tlsCert",
 	"update.channel",
 	"useJaeger",
 	"privateArtifactRepoPassword",
@@ -77,7 +76,6 @@ var requireRestart = []string{
 	"privateArtifactRepoUsername",
 	"blacklistGoGet",
 	"privateArtifactRepoID",
-	"tlsKey",
 }
 
 // NeedRestartToApply determines if a restart is needed to apply the changes

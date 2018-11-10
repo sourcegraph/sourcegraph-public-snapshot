@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -39,14 +38,10 @@ var (
 	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
 
 	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
-	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API. Only used if manual tls cert and key are specified.")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
 	externalURL             = conf.GetTODO().ExternalURL
 	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
-
-	tlsCert = conf.GetTODO().TlsCert
-	tlsKey  = conf.GetTODO().TlsKey
 
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://mjloopldincgoefbghiiekkofoicdkbf"
@@ -151,12 +146,6 @@ func Main() error {
 		hooks.AfterDBInit()
 	}
 
-	tlsCertAndKey := tlsCert != "" && tlsKey != ""
-	useTLS := httpsAddr != "" && (tlsCertAndKey || globals.ExternalURL.Scheme == "https")
-	if useTLS && globals.ExternalURL.Scheme == "http" {
-		log15.Warn("TLS is enabled but app url scheme is http", "externalURL", globals.ExternalURL)
-	}
-
 	// Create the external HTTP handler.
 	externalHandler, err := newExternalHTTPHandler(context.Background())
 	if err != nil {
@@ -169,48 +158,17 @@ func Main() error {
 	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}
 
-	// Start HTTPS server.
-	if useTLS {
-		cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
-		if err != nil {
-			return err
-		}
-		tlsConf := &tls.Config{
-			NextProtos:   []string{"h2", "http/1.1"},
-			Certificates: []tls.Certificate{cert},
-		}
-
-		l, err := net.Listen("tcp", httpsAddr)
-		if err != nil {
-			// Fatal if we manually specified TLS
-			log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
-		}
-
-		if l != nil {
-			l = tls.NewListener(l, tlsConf)
-			log15.Debug("HTTPS running", "on", l.Addr())
-			srv.GoServe(l, &http.Server{
-				Handler:      externalHandler,
-				ReadTimeout:  75 * time.Second,
-				WriteTimeout: 60 * time.Second,
-			})
-		}
-	}
-
 	// Start HTTP server.
-	if httpAddr != "" {
-		l, err := net.Listen("tcp", httpAddr)
-		if err != nil {
-			return err
-		}
-
-		log15.Debug("HTTP running", "on", httpAddr)
-		srv.GoServe(l, &http.Server{
-			Handler:      externalHandler,
-			ReadTimeout:  75 * time.Second,
-			WriteTimeout: 60 * time.Second,
-		})
+	l, err := net.Listen("tcp", httpAddr)
+	if err != nil {
+		return err
 	}
+	log15.Debug("HTTP running", "on", httpAddr)
+	srv.GoServe(l, &http.Server{
+		Handler:      externalHandler,
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	})
 
 	if httpAddrInternal != "" {
 		l, err := net.Listen("tcp", httpAddrInternal)

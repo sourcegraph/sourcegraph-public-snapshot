@@ -50,9 +50,6 @@ var legacyEnvToFieldName = map[string]string{
 	"SamlSPCert":                     "SAML_CERT",
 	"SamlSPKey":                      "SAML_KEY",
 	"SearchScopes":                   "SEARCH_SCOPES",
-	// Settings has no env var
-	"TlsCert": "TLS_CERT",
-	"TlsKey":  "TLS_KEY",
 }
 
 // configFromLegacyEnvVars constructs site config JSON from env vars. This is merged into the
