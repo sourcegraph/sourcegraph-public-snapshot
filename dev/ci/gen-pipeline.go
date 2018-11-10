@@ -93,9 +93,11 @@ func main() {
 
 	pipeline.AddStep(":typescript:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+		bk.Cmd("pushd packages/sourcegraph-extension-api"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace sourcegraph run tslint"),
-		bk.Cmd("yarn workspace sourcegraph run typecheck"))
+		bk.Cmd("yarn run tslint"),
+		bk.Cmd("yarn run typecheck"),
+		bk.Cmd("popd"))
 
 	pipeline.AddStep(":typescript:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),

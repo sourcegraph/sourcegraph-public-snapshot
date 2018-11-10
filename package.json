@@ -7,7 +7,9 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "workspaces": [
-    "packages/*"
+    "packages/browser-extensions",
+    "packages/extensions-client-common",
+    "packages/webapp"
   ],
   "engines": {
     "node": ">=8.0.0",
