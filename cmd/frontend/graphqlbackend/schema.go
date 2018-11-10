@@ -543,8 +543,11 @@ input SettingsEdit {
 #
 # NOTE: GraphQL does not support @deprecated directives on INPUT_FIELD_DEFINITION (input fields).
 input ConfigurationEdit {
+    # DEPRECATED
     keyPath: [KeyPathSegment!]!
+    # DEPRECATED
     value: JSONValue
+    # DEPRECATED
     valueIsJSONCEncodedString: Boolean = false
 }
 
@@ -2703,7 +2706,9 @@ type SettingsCascade {
 
 # DEPRECATED: Renamed to SettingsCascade.
 type ConfigurationCascade {
+    # DEPRECATED
     subjects: [SettingsSubject!]! @deprecated(reason: "use SettingsCascade.subjects instead")
+    # DEPRECATED
     merged: Configuration! @deprecated(reason: "use SettingsCascade.final instead")
 }
 
