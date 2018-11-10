@@ -99,7 +99,7 @@ func main() {
 		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace sourcegraph run typecheck"),
 		bk.Cmd("yarn workspace sourcegraph run cover"),
-		bk.Cmd("yarn workspace sourcegraph run nyc report -r json --report-dir coverage"),
+		bk.Cmd("([ -f packages/sourcegraph-extension-api/node_modules/.bin/nyc ] || ln -rs node_modules/.bin/nyc packages/sourcegraph-extension-api/node_modules/.bin/nyc) && yarn workspace sourcegraph run nyc report -r json --report-dir coverage"),
 		bk.ArtifactPaths("packages/sourcegraph-extension-api/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
