@@ -65,8 +65,6 @@ var requireRestart = []string{
 	"critical::auth.userOrgMap",
 	"critical::auth.providers",
 	"critical::externalURL",
-	"critical::tlsCert",
-	"critical::tlsKey",
 	"critical::update.channel",
 	"critical::useJaeger",
 }

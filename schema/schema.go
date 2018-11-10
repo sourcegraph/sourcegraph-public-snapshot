@@ -125,8 +125,6 @@ type CriticalConfiguration struct {
 	LightstepAccessToken string              `json:"lightstepAccessToken,omitempty"`
 	LightstepProject     string              `json:"lightstepProject,omitempty"`
 	Log                  *Log                `json:"log,omitempty"`
-	TlsCert              string              `json:"tlsCert,omitempty"`
-	TlsKey               string              `json:"tlsKey,omitempty"`
 	UpdateChannel        string              `json:"update.channel,omitempty"`
 	UseJaeger            bool                `json:"useJaeger,omitempty"`
 }

@@ -51,8 +51,6 @@ func init() {
 		// use in our public documentation (i.e., even though these were
 		// long deprecated, our docs were not up to date).
 		criticalBackcompatVars := map[string]func(value string){
-			"TLS_CERT":               func(v string) { criticalDecoded.TlsCert = v },
-			"TLS_KEY":                func(v string) { criticalDecoded.TlsKey = v },
 			"LIGHTSTEP_PROJECT":      func(v string) { criticalDecoded.LightstepProject = v },
 			"LIGHTSTEP_ACCESS_TOKEN": func(v string) { criticalDecoded.LightstepAccessToken = v },
 		}
@@ -284,4 +282,8 @@ func readSrcGitServers() []string {
 		}
 	}
 	return strings.Fields(v)
+}
+
+func IsExternalURLSecure() bool {
+	return strings.HasPrefix(Get().Critical.ExternalURL, "https:")
 }
