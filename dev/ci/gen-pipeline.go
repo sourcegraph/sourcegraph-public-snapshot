@@ -68,7 +68,6 @@ func main() {
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace webapp run browserslist"),
-		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
 		bk.Cmd("NODE_ENV=production yarn workspace webapp run build --color"),
 		bk.Cmd("GITHUB_TOKEN= yarn workspace webapp run bundlesize"))
@@ -96,16 +95,13 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace sourcegraph run tslint"),
-		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace sourcegraph run typecheck"),
-		bk.Cmd("yarn workspace sourcegraph run cover"),
 		bk.Cmd("([ -f packages/sourcegraph-extension-api/node_modules/.bin/nyc ] || ln -rs node_modules/.bin/nyc packages/sourcegraph-extension-api/node_modules/.bin/nyc) && yarn workspace sourcegraph run nyc report -r json --report-dir coverage"),
 		bk.ArtifactPaths("packages/sourcegraph-extension-api/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run tslint"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run typecheck"),
@@ -115,7 +111,6 @@ func main() {
 
 	pipeline.AddStep(":typescript:",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
 		bk.Cmd("yarn workspace browser-extensions run tslint"),
 		bk.Cmd("yarn workspace browser-extensions run browserslist"),
