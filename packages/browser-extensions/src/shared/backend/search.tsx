@@ -136,7 +136,7 @@ const symbolsFragment = `
             resource {
                 path
                 repository {
-                    uri
+                    name
                 }
             }
             url
@@ -168,7 +168,7 @@ export const fetchSuggestions = (options: SearchOptions, first: number) =>
                             isDirectory
                             url
                             repository {
-                                uri
+                                name
                             }
                         }
                         ... on Symbol {
