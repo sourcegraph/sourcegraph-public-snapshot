@@ -101,13 +101,11 @@ type ConfigurationCascade struct {
 const configurationFragment = `
 fragment ConfigurationFields on Configuration {
     contents
-    messages
 }
 `
 
 type Configuration struct {
 	Contents string
-	Messages []string
 }
 
 const viewerConfigurationQuery = `query ViewerConfiguration {
