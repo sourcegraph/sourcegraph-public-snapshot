@@ -21,7 +21,6 @@ var legacyEnvToFieldName = map[string]string{
 	"CorsOrigin": "CORS_ORIGIN",
 	// DisablePublicRepoRedirects is handled specially (inverted PUBLIC_REPO_REDIRECTS)
 	"ExecuteGradleOriginalRootPaths": "EXECUTE_GRADLE_ORIGINAL_ROOT_PATHS",
-	"GitOriginMap":                   "ORIGIN_MAP",
 	"Github":                         "GITHUB_CONFIG",
 	"GithubClientID":                 "GITHUB_CLIENT_ID",
 	"GithubClientSecret":             "GITHUB_CLIENT_SECRET",

@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -339,9 +339,6 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
-	if req.URL == "" {
-		req.URL = OriginMap(req.Repo)
-	}
 	if req.URL == "" {
 		// BACKCOMPAT: Determine URL from the existing repo on disk if the client didn't send it.
 		dir := path.Join(s.ReposDir, string(req.Repo))
@@ -744,14 +741,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 	// ensure we are not already cloning.
 	if progress, cloneInProgress := s.locker.Status(dir); cloneInProgress {
 		return progress, nil
-	}
-
-	if url == "" {
-		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
-		url = OriginMap(repo)
-		if url == "" {
-			return "", fmt.Errorf("error cloning repo: no URL provided and origin map entry found for %s", repo)
-		}
 	}
 
 	// isCloneable causes a network request, so we limit the number that can
@@ -1262,13 +1251,8 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	repo = protocol.NormalizeRepo(repo)
 	dir := path.Join(s.ReposDir, string(repo))
 
-	// If URL is not set, we can also consult our deprecated OriginMap or the
-	// last known working URL (set as the remote origin).
+	// If URL is not set, we can also use the last known working URL (set as the remote origin).
 	var urlIsGitRemote bool
-	if url == "" {
-		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
-		url = OriginMap(repo)
-	}
 	if url == "" {
 		// log15.Warn("Deprecated: use of saved Git remote for repo updating (API client should set URL)", "repo", repo)
 		var err error
