@@ -1,4 +1,3 @@
-import { tryCatchPromise } from '../util'
 import { createExtensionHost, InitData } from './extensionHost'
 
 interface MessageEvent {
@@ -31,7 +30,7 @@ interface DedicatedWorkerGlobalScope {
 export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void {
     self.addEventListener('message', receiveExtensionURL)
 
-    function receiveExtensionURL(ev: MessageEvent): void {
+    async function receiveExtensionURL(ev: MessageEvent): Promise<void> {
         try {
             // Only listen for the 1st URL.
             self.removeEventListener('message', receiveExtensionURL)
@@ -42,7 +41,7 @@ export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void 
             }
 
             const initData: InitData = ev.data
-            if (typeof initData.bundleURL !== 'string' || !initData.bundleURL.startsWith('blob:')) {
+            if (typeof initData.bundleURL !== 'string') {
                 console.error(`Invalid extension bundle URL: ${initData.bundleURL}`)
                 self.close()
             }
@@ -66,19 +65,21 @@ export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void 
             delete (self as any).module
 
             if ('activate' in extensionExports) {
-                try {
-                    tryCatchPromise(() => extensionExports.activate()).catch((err: any) => {
-                        console.error(`Error creating extension host:`, err)
-                        self.close()
-                    })
-                } catch (err) {
-                    console.error(`Error activating extension.`, err)
-                }
+                await Promise.resolve(extensionExports.activate())
             } else {
                 console.error(`Extension did not export an 'activate' function.`)
             }
         } catch (err) {
-            console.error(err)
+            console.error(
+                `Extension host is terminating because the extension's activate function threw an error.`,
+                err
+            )
+            // Calling self.close() here would kill the Web Worker, which sounds like a good idea (because it won't be used for
+            // anything else given the error that occurred). However, this makes it harder to inspect log messages and
+            // exceptions from this Web Worker in the browser devtools console. In Chrome, the filenames and line numbers from
+            // track traces and log messages open a new window when clicked (instead of opening in the Sources tab). Keeping
+            // the Web Worker alive fixes this issue. The Web Worker will be killed by the client when this extension is no
+            // longer active, so the resource consumption of not killing unused Web Workers is bounded.
         }
     }
 }

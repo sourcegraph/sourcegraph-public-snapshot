@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"regexp"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -60,12 +61,15 @@ func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, 
 	return manifest, nil
 }
 
+var nonLettersDigits = regexp.MustCompile(`[^a-zA-Z0-9-]`)
+
 func makeExtensionBundleURL(registryExtensionReleaseID int64, timestamp int64, extensionIDHint string) (string, error) {
 	u, err := url.Parse(conf.Get().AppURL)
 	if err != nil {
 		return "", err
 	}
-	u.Path = path.Join(u.Path, fmt.Sprintf("/-/static/extension/%d.js", registryExtensionReleaseID))
-	u.RawQuery = extensionIDHint + "--" + strconv.FormatInt(timestamp, 36) // meaningless value, just for cache-busting
+	extensionIDHint = nonLettersDigits.ReplaceAllString(extensionIDHint, "-") // sanitize for URL path
+	u.Path = path.Join(u.Path, fmt.Sprintf("/-/static/extension/%d-%s.js", registryExtensionReleaseID, extensionIDHint))
+	u.RawQuery = strconv.FormatInt(timestamp, 36) + "--" + extensionIDHint // meaningless value, just for cache-busting
 	return u.String(), nil
 }

@@ -124,7 +124,7 @@ export function updateHighestPrecedenceExtensionSettings(args: {
 
 export function createMessageTransports(
     extension: Pick<ConfiguredExtension, 'id' | 'manifest'>
-): Promise<MessageTransports> {
+): MessageTransports {
     if (!extension.manifest) {
         throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no manifest found`)
     }
@@ -135,36 +135,19 @@ export function createMessageTransports(
     }
 
     if (extension.manifest.url) {
-        const url = extension.manifest.url
-        return fetch(url, { credentials: 'same-origin' })
-            .then(resp => {
-                if (resp.status !== 200) {
-                    return resp
-                        .text()
-                        .then(text => Promise.reject(new Error(`loading bundle from ${url} failed: ${text}`)))
-                }
-                return resp.text()
-            })
-            .then(bundleSource => {
-                const blobURL = window.URL.createObjectURL(
-                    new Blob([bundleSource], {
-                        type: 'application/javascript',
-                    })
-                )
-                try {
-                    const worker = new ExtensionHostWorker()
-                    const initData: InitData = {
-                        bundleURL: blobURL,
-                        sourcegraphURL: window.context.appURL,
-                        clientApplication: 'sourcegraph',
-                    }
-                    worker.postMessage(initData)
-                    return createWebWorkerMessageTransports(worker)
-                } catch (err) {
-                    console.error(err)
-                }
-                throw new Error('failed to initialize extension host')
-            })
+        try {
+            const worker = new ExtensionHostWorker()
+            const initData: InitData = {
+                bundleURL: extension.manifest.url,
+                sourcegraphURL: window.context.appURL,
+                clientApplication: 'sourcegraph',
+            }
+            worker.postMessage(initData)
+            return createWebWorkerMessageTransports(worker)
+        } catch (err) {
+            console.error(err)
+        }
+        throw new Error('failed to initialize extension host')
     }
     throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
 }
