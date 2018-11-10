@@ -120,7 +120,6 @@ type CriticalConfiguration struct {
 	HtmlBodyTop          string              `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom       string              `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop          string              `json:"htmlHeadTop,omitempty"`
-	HttpToHttpsRedirect  interface{}         `json:"httpToHttpsRedirect,omitempty"`
 	LicenseKey           string              `json:"licenseKey,omitempty"`
 	LightstepAccessToken string              `json:"lightstepAccessToken,omitempty"`
 	LightstepProject     string              `json:"lightstepProject,omitempty"`
@@ -137,12 +136,11 @@ type Discussions struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
-	Discussions          string `json:"discussions,omitempty"`
-	ExternalServices     string `json:"externalServices,omitempty"`
-	GithubAuth           bool   `json:"githubAuth,omitempty"`
-	GitlabAuth           bool   `json:"gitlabAuth,omitempty"`
-	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
+	Discussions      string `json:"discussions,omitempty"`
+	ExternalServices string `json:"externalServices,omitempty"`
+	GithubAuth       bool   `json:"githubAuth,omitempty"`
+	GitlabAuth       bool   `json:"gitlabAuth,omitempty"`
+	UpdateScheduler2 string `json:"updateScheduler2,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.

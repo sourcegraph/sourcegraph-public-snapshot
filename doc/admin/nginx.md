@@ -14,6 +14,30 @@ Sourcegraph uses [nginx](https://nginx.org/en/) to proxy HTTP traffic between cl
 
 Use the dropdown menus on the Certbot site to find instructions for other setups.
 
+## Redirect to external HTTPS URL
+
+The URL that clients should use to access Sourcegraph is called the [`externalURL`](site_config/all.md#externalurl-string) in site configuration. To enforce that clients access Sourcegraph via this URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
+
+``` nginx
+# Redirect non-HTTPS traffic to HTTPS.
+server {
+    listen 80;
+    server_name _;
+
+    # Uncomment this block if you are using Let's Encrypt (otherwise it will be unable to
+    # communicate with your server to generate the TLS certificate).
+    #
+    # location /.well-known/acme-challenge/ {
+    #    try_files $uri =404;
+    # }
+
+    location / {
+        # REPLACE https://sourcegraph.example.com with your external URL:
+        return 301 https://sourcegraph.example.com$request_uri;
+    }
+}
+```
+
 ## HTTP Strict Transport Security
 
 [HTTP Strict Transport Security](https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security) instructs web clients to only communicate with the server over HTTPS. To configure it, add the following to `nginx.conf` (in the `server` block):

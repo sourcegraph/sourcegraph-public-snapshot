@@ -47,12 +47,6 @@ const CriticalSchemaJSON = `{
         "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `.",
       "type": "string"
     },
-    "httpToHttpsRedirect": {
-      "description":
-        "Redirect users from HTTP to HTTPS. Accepted values are \"on\", \"off\", and \"load-balanced\" (boolean values true and false are also accepted and equivalent to \"on\" and \"off\" respectively). If \"load-balanced\" then additionally we use \"X-Forwarded-Proto\" to determine if on HTTP.",
-      "anyOf": [{ "type": "string", "enum": ["on", "off", "load-balanced"] }, { "type": "boolean" }],
-      "default": "off"
-    },
     "lightstepAccessToken": {
       "description": "Access token for sending traces to LightStep.",
       "type": "string"

@@ -17,8 +17,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [experimentalFeatures](all.md#experimentalfeatures-object)
 
-- [httpToHttpsRedirect](all.md#httptohttpsredirect)
-
 - [corsOrigin](all.md#corsorigin-string)
 
 - [disableBrowserExtension](all.md#disablebrowserextension-boolean)
@@ -192,17 +190,6 @@ Experimental features to enable or disable. Features that are now enabled by def
 
 Properties of the `experimentalFeatures` object:
 
-### canonicalURLRedirect (string, enum)
-
-Enables or disables redirecting to the canonical URL for incoming HTTP requests. Enabled by default.
-
-This property must be one of the following enum values:
-
-- `enabled`
-- `disabled`
-
-Default: `"disabled"`
-
 ### discussions (string, enum)
 
 Enables the code discussions experiment.
@@ -219,14 +206,6 @@ Default: `"disabled"`
 ## search.index.enabled (boolean)
 
 Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
-
-## httpToHttpsRedirect
-
-Redirect users from HTTP to HTTPS. Accepted values are "on", "off", and "load-balanced" (boolean values true and false are also accepted and equivalent to "on" and "off" respectively). If "load-balanced" then additionally we use "X-Forwarded-Proto" to determine if on HTTP.
-
-Default: `"off"`
-
-<br/>
 
 ## corsOrigin (string)
 
