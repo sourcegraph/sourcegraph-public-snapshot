@@ -71,10 +71,10 @@ Feature | 🔗 | Themes/products | Team
 More robust code host repository syncing | | Integrations, [Sourcegraph][sourcegraph] | [@nicksnyder][nicksnyder]
 Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] [@ijsnow][ijsnow]
 Onboarding flow for code host integrations | [📣](https://github.com/sourcegraph/about/pull/38) | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] and T.B.D.
-GitHub issue search | [📣](https://github.com/sourcegraph/about/pull/53) | Search, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@vanesa][vanesa] [@attfarhan][attfarhan] [@keegancsmith][keegancsmith] [@francisschmaltz][francisschmaltz]
+GitHub issue search | [💡](https://docs.google.com/document/d/1OTXPlVxSDNC37hlEVnNmtO1s-doA6O3S1210UWl55tY/edit)[📣](https://github.com/sourcegraph/about/pull/53) | Search, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@vanesa][vanesa] [@attfarhan][attfarhan] [@keegancsmith][keegancsmith] [@francisschmaltz][francisschmaltz]
 JavaScript/TypeScript language support improvements | | Code intelligence, sourcegraph-typescript | [@felixfbecker][felixfbecker]
 LDAP and Active Directory user authentication | | Enterprise, [Sourcegraph][sourcegraph] | [@beyang][beyang]
-Go language support improvements | | Code intelligence, sourcegraph-go | [@chrismwendt][chrismwendt]
+Go language support improvements | [💡](https://docs.google.com/document/d/1j6X6Flw9_GT0QsCv1XVD1_zx0VjWFcD8pvl5uhzazMU/edit) | Code intelligence, sourcegraph-go | [@chrismwendt][chrismwendt]
 Python language support improvements (including MyPy) | | Code intelligence, sourcegraph-python | [@sqs][sqs]
 Swift language support | | Code intelligence, sourcegraph-swift | | T.B.D. ([@nicksnyder][nicksnyder] or [@chrismwendt][chrismwendt]?)
 Cross-language API/IDL support ([GraphQL](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/graphql-sourcegraph-extension.md), Thrift, Protobuf) | | Code intelligence, sourcegraph-{graphql,thrift,protobuf} | [@beyang][beyang]
