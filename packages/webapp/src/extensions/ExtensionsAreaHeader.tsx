@@ -1,4 +1,3 @@
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { ActionButtonDescriptor } from '../util/contributions'
