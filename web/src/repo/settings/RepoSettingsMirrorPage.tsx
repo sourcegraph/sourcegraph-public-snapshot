@@ -29,6 +29,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        // TODO rxjs medic, I just want this to continuously poll
         // If repository is cloning, poll until it's done.
         this.subscriptions.add(
             this.componentUpdates
