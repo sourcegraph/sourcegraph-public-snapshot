@@ -310,7 +310,7 @@ function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
 }
 
 export function createSavedQuery(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
+    subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
     description: string,
     query: string,
     showOnHomepage: boolean,
@@ -365,7 +365,7 @@ export function createSavedQuery(
 }
 
 export function updateSavedQuery(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
+    subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
     id: GQL.ID,
     description: string,
     query: string,
@@ -413,7 +413,7 @@ export function updateSavedQuery(
 }
 
 export function deleteSavedQuery(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
+    subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
     id: GQL.ID,
     disableSubscriptionNotifications?: boolean
 ): Observable<void> {

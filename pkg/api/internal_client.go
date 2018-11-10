@@ -83,7 +83,7 @@ func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
 }
 
 type SavedQueryIDSpec struct {
-	Subject ConfigurationSubject
+	Subject SettingsSubject
 	Key     string
 }
 
@@ -168,7 +168,7 @@ func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query strin
 	return c.postInternal(ctx, "saved-queries/delete-info", query, nil)
 }
 
-func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject ConfigurationSubject) (parsed *schema.Settings, settings *Settings, err error) {
+func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject SettingsSubject) (parsed *schema.Settings, settings *Settings, err error) {
 	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
 	if err == nil {
 		err = jsonc.Unmarshal(settings.Contents, &parsed)

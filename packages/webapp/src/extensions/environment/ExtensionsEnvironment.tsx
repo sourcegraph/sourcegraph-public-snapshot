@@ -1,12 +1,12 @@
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { ConfigurationSubject, Settings, SettingsCascade } from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsCascade, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { Environment } from 'sourcegraph/module/client/environment'
 import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
 
 /** React props or state representing the Sourcegraph extensions environment. */
 export interface ExtensionsEnvironmentProps {
     /** The Sourcegraph extensions environment. */
-    extensionsEnvironment: Environment<ConfiguredExtension, SettingsCascade<ConfigurationSubject, Settings>>
+    extensionsEnvironment: Environment<ConfiguredExtension, SettingsCascade<SettingsSubject, Settings>>
 }
 
 /** React props for components that participate in the Sourcegraph extensions environment. */

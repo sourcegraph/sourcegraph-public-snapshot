@@ -3,7 +3,7 @@ import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
 import { Controller } from './controller'
 import { QueryResult } from './graphql'
 import * as GQL from './schema/graphqlschema'
-import { ConfigurationSubject, ID, Settings, SettingsCascadeOrError } from './settings'
+import { ID, Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
 
 export type UpdateExtensionSettingsArgs =
     | { edit?: ConfigurationUpdateParams }
@@ -17,7 +17,7 @@ export type UpdateExtensionSettingsArgs =
 /**
  * Description of the context in which extensions-client-common is running, and platform-specific hooks.
  */
-export interface Context<S extends ConfigurationSubject, C extends Settings> {
+export interface Context<S extends SettingsSubject, C extends Settings> {
     /**
      * An observable that emits whenever the settings cascade changes (including when any individual subject's
      * settings change).
@@ -72,6 +72,6 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
 /**
  * React partial props for components needing the extensions controller.
  */
-export interface ExtensionsProps<S extends ConfigurationSubject, C extends Settings> {
+export interface ExtensionsProps<S extends SettingsSubject, C extends Settings> {
     extensions: Controller<S, C>
 }

@@ -7,7 +7,7 @@ import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
 interface Props {
     authenticatedUser: GQL.IUser | null
-    subject?: GQL.IConfigurationSubject
+    subject?: GQL.ISettingsSubject
     values?: Partial<SavedQueryFields>
     onDidCreate: () => void
     onDidCancel: () => void

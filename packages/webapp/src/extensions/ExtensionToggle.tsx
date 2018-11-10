@@ -1,8 +1,8 @@
 import { ConfiguredExtension, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
-    ConfigurationSubject,
     SettingsCascade,
     SettingsCascadeOrError,
+    SettingsSubject,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { Toggle } from '@sourcegraph/extensions-client-common/lib/ui/generic/Toggle'
 import { last } from 'lodash'
@@ -13,7 +13,7 @@ import { Settings } from '../schema/settings.schema'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
-interface Props<S extends ConfigurationSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
+interface Props<S extends SettingsSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
     /** The extension that this element is for. */
     extension: ConfiguredExtension
 
@@ -32,9 +32,7 @@ interface Props<S extends ConfigurationSubject, C extends Settings> extends Sett
 /**
  * Displays a toggle button for an extension.
  */
-export class ExtensionToggle<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>
-> {
+export class ExtensionToggle<S extends SettingsSubject, C extends Settings> extends React.PureComponent<Props<S, C>> {
     private toggles = new Subject<boolean>()
     private subscriptions = new Subscription()
 
@@ -127,7 +125,7 @@ function confirmAddExtension(extensionID: string, extensionManifest?: Configured
 }
 
 /** Converts a SettingsCascadeOrError to a SettingsCascade, returning the first error it finds. */
-function extractErrors(c: SettingsCascadeOrError<ConfigurationSubject, Settings>): SettingsCascade | ErrorLike {
+function extractErrors(c: SettingsCascadeOrError<SettingsSubject, Settings>): SettingsCascade | ErrorLike {
     if (c.subjects === null || isErrorLike(c.subjects)) {
         return new Error('Subjects was ' + c.subjects)
     } else if (c.final === null || isErrorLike(c.final)) {

@@ -36,14 +36,14 @@ type configurationMutationGroupInput struct {
 
 type configurationMutationResolver struct {
 	input   *configurationMutationGroupInput
-	subject *configurationSubject
+	subject *settingsSubject
 }
 
 // ConfigurationMutation defines the Mutation.configuration field.
 func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct {
 	Input *configurationMutationGroupInput
 }) (*configurationMutationResolver, error) {
-	subject, err := configurationSubjectByID(ctx, args.Input.Subject)
+	subject, err := settingsSubjectByID(ctx, args.Input.Subject)
 	if err != nil {
 		return nil, err
 	}

@@ -106,8 +106,8 @@ func (r *UserResolver) UpdatedAt() *string {
 	return &t
 }
 
-func (r *UserResolver) configurationSubject() api.ConfigurationSubject {
-	return api.ConfigurationSubject{User: &r.user.ID}
+func (r *UserResolver) settingsSubject() api.SettingsSubject {
+	return api.SettingsSubject{User: &r.user.ID}
 }
 
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
@@ -117,18 +117,18 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 		return nil, err
 	}
 
-	settings, err := db.Settings.GetLatest(ctx, r.configurationSubject())
+	settings, err := db.Settings.GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&configurationSubject{user: r}, settings, nil}, nil
+	return &settingsResolver{&settingsSubject{user: r}, settings, nil}, nil
 }
 
 func (r *UserResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{subject: &configurationSubject{user: r}}
+	return &settingsCascade{subject: &settingsSubject{user: r}}
 }
 
 func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }

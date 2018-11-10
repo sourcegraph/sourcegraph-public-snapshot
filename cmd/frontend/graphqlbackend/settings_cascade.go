@@ -21,17 +21,17 @@ import (
 type settingsCascade struct {
 	// At most 1 of these fields is set.
 	unauthenticatedActor bool
-	subject              *configurationSubject
+	subject              *settingsSubject
 }
 
-var mockSettingsCascadeSubjects func() ([]*configurationSubject, error)
+var mockSettingsCascadeSubjects func() ([]*settingsSubject, error)
 
-func (r *settingsCascade) Subjects(ctx context.Context) ([]*configurationSubject, error) {
+func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, error) {
 	if mockSettingsCascadeSubjects != nil {
 		return mockSettingsCascadeSubjects()
 	}
 
-	subjects := []*configurationSubject{{site: singletonSiteResolver}}
+	subjects := []*settingsSubject{{site: singletonSiteResolver}}
 
 	if r.unauthenticatedActor {
 		return subjects, nil
@@ -55,13 +55,13 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*configurationSubject
 		})
 		// Apply the user's orgs' settings.
 		for _, org := range orgs {
-			subjects = append(subjects, &configurationSubject{org: &OrgResolver{org}})
+			subjects = append(subjects, &settingsSubject{org: &OrgResolver{org}})
 		}
 		// Apply the user's own settings last (it has highest priority).
 		subjects = append(subjects, r.subject)
 
 	default:
-		return nil, errUnknownConfigurationSubject
+		return nil, errUnknownSettingsSubject
 	}
 
 	return subjects, nil
@@ -177,7 +177,7 @@ func (schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, err
 	if user == nil {
 		return &settingsCascade{unauthenticatedActor: true}, nil
 	}
-	return &settingsCascade{subject: &configurationSubject{user: user}}, nil
+	return &settingsCascade{subject: &settingsSubject{user: user}}, nil
 }
 
 // DEPRECATED (in the GraphQL API)

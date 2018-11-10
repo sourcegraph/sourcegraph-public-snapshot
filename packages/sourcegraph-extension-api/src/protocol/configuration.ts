@@ -19,7 +19,7 @@ export interface ConfigurationUpdateParams {
  * merged settings is the result of shallow-merging settings objects from all subjects, in order from lower to
  * higher precedence.
  *
- * For example, the client might support configuring settings globally and per-user, and it is designed so that
+ * For example, the client might support settings globally and per-user, and it is designed so that
  * user settings override global settings. Then there would be two subjects, one for global settings and one for
  * the user.
  *
@@ -30,7 +30,7 @@ export interface SettingsCascade<C = any> {
     final: C
 
     /**
-     * The configuration subjects in the cascade, from lower to higher precedence.
+     * The settings subjects in the cascade, from lower to higher precedence.
      *
      * Extensions: The merged settings value usually suffices.
      */

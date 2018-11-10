@@ -9,14 +9,14 @@ import {
 } from 'sourcegraph/module/protocol'
 import { Context } from '../context'
 import { isErrorLike } from '../errors'
-import { ConfigurationSubject, Settings, SettingsCascade } from '../settings'
+import { Settings, SettingsCascade, SettingsSubject } from '../settings'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See
  * {@link module:sourcegraph.module/protocol/contribution.ActionContribution#command} for
  * documentation.
  */
-export function registerBuiltinClientCommands<S extends ConfigurationSubject, C extends Settings>(
+export function registerBuiltinClientCommands<S extends SettingsSubject, C extends Settings>(
     context: Pick<Context<S, C>, 'settingsCascade' | 'updateExtensionSettings' | 'queryGraphQL' | 'queryLSP'>,
     controller: Controller<Extension, SettingsCascade<S, C>>
 ): Unsubscribable {
@@ -112,9 +112,9 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
 }
 
 /**
- * Applies an edit to the configuration settings of the highest-precedence subject.
+ * Applies an edit to the settings of the highest-precedence subject.
  */
-export function updateConfiguration<S extends ConfigurationSubject, C extends Settings>(
+export function updateConfiguration<S extends SettingsSubject, C extends Settings>(
     context: Pick<Context<S, C>, 'settingsCascade' | 'updateExtensionSettings'>,
     params: ConfigurationUpdateParams
 ): Promise<void> {
@@ -125,14 +125,12 @@ export function updateConfiguration<S extends ConfigurationSubject, C extends Se
             take(1),
             switchMap(x => {
                 if (!x.subjects) {
-                    return throwError(new Error('unable to update configuration: no configuration subjects available'))
+                    return throwError(new Error('unable to update settings: no settings subjects available'))
                 }
                 if (isErrorLike(x.subjects)) {
                     return throwError(
                         new Error(
-                            `unable to update configuration: error retrieving configuration subjects: ${
-                                x.subjects.message
-                            }`
+                            `unable to update settings: error retrieving settings subjects: ${x.subjects.message}`
                         )
                     )
                 }

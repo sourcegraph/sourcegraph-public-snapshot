@@ -291,7 +291,7 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
-	var subject api.ConfigurationSubject
+	var subject api.SettingsSubject
 	if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
 		return errors.Wrap(err, "Decode")
 	}

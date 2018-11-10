@@ -11,22 +11,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
-func (r *schemaResolver) ConfigurationSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*configurationSubject, error) {
-	return configurationSubjectByID(ctx, args.ID)
+func (schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
+	return settingsSubjectByID(ctx, args.ID)
 }
 
-var errUnknownConfigurationSubject = errors.New("unknown configuration subject")
+func (schemaResolver) ConfigurationSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
+	return schemaResolver{}.SettingsSubject(ctx, args)
+}
 
-type configurationSubject struct {
+var errUnknownSettingsSubject = errors.New("unknown settings subject")
+
+type settingsSubject struct {
 	// Exactly 1 of these fields must be set.
 	site *siteResolver
 	org  *OrgResolver
 	user *UserResolver
 }
 
-// configurationSubjectByID fetches the configuration subject with the given ID. If the ID
-// refers to a node that is not a valid configuration subject, an error is returned.
-func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configurationSubject, error) {
+// settingsSubjectByID fetches the settings subject with the given ID. If the ID refers to a node
+// that is not a valid settings subject, an error is returned.
+func settingsSubjectByID(ctx context.Context, id graphql.ID) (*settingsSubject, error) {
 	resolver, err := nodeByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -34,28 +38,28 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 
 	switch s := resolver.(type) {
 	case *siteResolver:
-		return &configurationSubject{site: s}, nil
+		return &settingsSubject{site: s}, nil
 
 	case *UserResolver:
 		// 🚨 SECURITY: Only the user and site admins are allowed to view the user's settings.
 		if err := backend.CheckSiteAdminOrSameUser(ctx, s.user.ID); err != nil {
 			return nil, err
 		}
-		return &configurationSubject{user: s}, nil
+		return &settingsSubject{user: s}, nil
 
 	case *OrgResolver:
 		// 🚨 SECURITY: Check that the current user is a member of the org.
 		if err := backend.CheckOrgAccess(ctx, s.org.ID); err != nil {
 			return nil, err
 		}
-		return &configurationSubject{org: s}, nil
+		return &settingsSubject{org: s}, nil
 
 	default:
-		return nil, errUnknownConfigurationSubject
+		return nil, errUnknownSettingsSubject
 	}
 }
 
-func configurationSubjectID(subject api.ConfigurationSubject) (graphql.ID, error) {
+func settingsSubjectID(subject api.SettingsSubject) (graphql.ID, error) {
 	switch {
 	case subject.Site:
 		return marshalSiteGQLID(singletonSiteResolver.gqlID), nil
@@ -64,11 +68,11 @@ func configurationSubjectID(subject api.ConfigurationSubject) (graphql.ID, error
 	case subject.Org != nil:
 		return marshalOrgID(*subject.Org), nil
 	default:
-		return "", errUnknownConfigurationSubject
+		return "", errUnknownSettingsSubject
 	}
 }
 
-func configurationSubjectsEqual(a, b api.ConfigurationSubject) bool {
+func settingsSubjectsEqual(a, b api.SettingsSubject) bool {
 	switch {
 	case a.Site || b.Site:
 		return a.Site == b.Site
@@ -80,28 +84,28 @@ func configurationSubjectsEqual(a, b api.ConfigurationSubject) bool {
 	return false
 }
 
-func (s *configurationSubject) ToSite() (*siteResolver, bool) {
+func (s *settingsSubject) ToSite() (*siteResolver, bool) {
 	return s.site, s.site != nil
 }
 
-func (s *configurationSubject) ToOrg() (*OrgResolver, bool) { return s.org, s.org != nil }
+func (s *settingsSubject) ToOrg() (*OrgResolver, bool) { return s.org, s.org != nil }
 
-func (s *configurationSubject) ToUser() (*UserResolver, bool) { return s.user, s.user != nil }
+func (s *settingsSubject) ToUser() (*UserResolver, bool) { return s.user, s.user != nil }
 
-func (s *configurationSubject) toSubject() api.ConfigurationSubject {
+func (s *settingsSubject) toSubject() api.SettingsSubject {
 	switch {
 	case s.site != nil:
-		return api.ConfigurationSubject{Site: true}
+		return api.SettingsSubject{Site: true}
 	case s.org != nil:
-		return api.ConfigurationSubject{Org: &s.org.org.ID}
+		return api.SettingsSubject{Org: &s.org.org.ID}
 	case s.user != nil:
-		return api.ConfigurationSubject{User: &s.user.user.ID}
+		return api.SettingsSubject{User: &s.user.user.ID}
 	default:
-		panic("invalid configuration subject")
+		panic("invalid settings subject")
 	}
 }
 
-func (s *configurationSubject) ID() (graphql.ID, error) {
+func (s *settingsSubject) ID() (graphql.ID, error) {
 	switch {
 	case s.site != nil:
 		return s.site.ID(), nil
@@ -110,11 +114,11 @@ func (s *configurationSubject) ID() (graphql.ID, error) {
 	case s.user != nil:
 		return s.user.ID(), nil
 	default:
-		return "", errUnknownConfigurationSubject
+		return "", errUnknownSettingsSubject
 	}
 }
 
-func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
 	case s.site != nil:
 		return s.site.LatestSettings(ctx)
@@ -123,11 +127,11 @@ func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsRes
 	case s.user != nil:
 		return s.user.LatestSettings(ctx)
 	default:
-		return nil, errUnknownConfigurationSubject
+		return nil, errUnknownSettingsSubject
 	}
 }
 
-func (s *configurationSubject) SettingsURL() (string, error) {
+func (s *settingsSubject) SettingsURL() (string, error) {
 	switch {
 	case s.site != nil:
 		return s.site.SettingsURL(), nil
@@ -136,11 +140,11 @@ func (s *configurationSubject) SettingsURL() (string, error) {
 	case s.user != nil:
 		return s.user.SettingsURL(), nil
 	default:
-		return "", errUnknownConfigurationSubject
+		return "", errUnknownSettingsSubject
 	}
 }
 
-func (s *configurationSubject) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (s *settingsSubject) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	switch {
 	case s.site != nil:
 		return s.site.ViewerCanAdminister(ctx)
@@ -149,11 +153,11 @@ func (s *configurationSubject) ViewerCanAdminister(ctx context.Context) (bool, e
 	case s.user != nil:
 		return s.user.ViewerCanAdminister(ctx)
 	default:
-		return false, errUnknownConfigurationSubject
+		return false, errUnknownSettingsSubject
 	}
 }
 
-func (s *configurationSubject) SettingsCascade() (*settingsCascade, error) {
+func (s *settingsSubject) SettingsCascade() (*settingsCascade, error) {
 	switch {
 	case s.site != nil:
 		return s.site.SettingsCascade(), nil
@@ -162,16 +166,16 @@ func (s *configurationSubject) SettingsCascade() (*settingsCascade, error) {
 	case s.user != nil:
 		return s.user.SettingsCascade(), nil
 	default:
-		return nil, errUnknownConfigurationSubject
+		return nil, errUnknownSettingsSubject
 	}
 }
 
-func (s *configurationSubject) ConfigurationCascade() (*settingsCascade, error) {
+func (s *settingsSubject) ConfigurationCascade() (*settingsCascade, error) {
 	return s.SettingsCascade()
 }
 
-// readConfiguration unmarshals s's latest settings into v.
-func (s *configurationSubject) readConfiguration(ctx context.Context, v interface{}) error {
+// readSettings unmarshals s's latest settings into v.
+func (s *settingsSubject) readSettings(ctx context.Context, v interface{}) error {
 	settings, err := s.LatestSettings(ctx)
 	if err != nil {
 		return err
@@ -187,12 +191,12 @@ func (s *configurationSubject) readConfiguration(ctx context.Context, v interfac
 // it returns an error.
 //
 // 🚨 SECURITY: It is used when a mutation field inside the configurationMutation also accepts an
-// ID field that encodes the configuration subject. In that case, it's important to check that the
+// ID field that encodes the settings subject. In that case, it's important to check that the
 // subjects are equal to prevent a user from bypassing the permission check to write to the
-// configuration of the second ID's subject.
-func (r *configurationMutationResolver) checkArgHasSameSubject(argSubject api.ConfigurationSubject) error {
-	if !configurationSubjectsEqual(r.subject.toSubject(), argSubject) {
-		return fmt.Errorf("configuration subject mismatch: %s != %s", r.subject.toSubject(), argSubject)
+// settings of the second ID's subject.
+func (r *configurationMutationResolver) checkArgHasSameSubject(argSubject api.SettingsSubject) error {
+	if !settingsSubjectsEqual(r.subject.toSubject(), argSubject) {
+		return fmt.Errorf("settings subject mismatch: %s != %s", r.subject.toSubject(), argSubject)
 	}
 	return nil
 }

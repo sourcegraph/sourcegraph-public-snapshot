@@ -8,7 +8,7 @@ import { Controller } from '@sourcegraph/extensions-client-common/lib/controller
 import {
     SettingsCascade,
     SettingsCascadeOrError,
-    ConfigurationSubject,
+    SettingsSubject,
     ConfiguredSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
@@ -38,22 +38,22 @@ import { MountGetter } from './code_intelligence'
 // This is rather specific to extensions-client-common
 // and could be moved to that package in the future.
 export function logThenDropConfigurationErrors(
-    cascadeOrError: SettingsCascadeOrError<ConfigurationSubject, Settings>
-): SettingsCascade<ConfigurationSubject, Settings> {
-    const EMPTY_CASCADE: SettingsCascade<ConfigurationSubject, Settings> = {
+    cascadeOrError: SettingsCascadeOrError<SettingsSubject, Settings>
+): SettingsCascade<SettingsSubject, Settings> {
+    const EMPTY_CASCADE: SettingsCascade<SettingsSubject, Settings> = {
         subjects: [],
         final: {},
     }
     if (!cascadeOrError.subjects) {
-        console.error('invalid configuration: no configuration subjects available')
+        console.error('invalid configuration: no settings subjects available')
         return EMPTY_CASCADE
     }
     if (!cascadeOrError.final) {
-        console.error('invalid configuration: no final configuration available')
+        console.error('invalid configuration: no final settings available')
         return EMPTY_CASCADE
     }
     if (isErrorLike(cascadeOrError.subjects)) {
-        console.error(`invalid configuration: error in configuration subjects: ${cascadeOrError.subjects.message}`)
+        console.error(`invalid configuration: error in settings subjects: ${cascadeOrError.subjects.message}`)
         return EMPTY_CASCADE
     }
     if (isErrorLike(cascadeOrError.final)) {
@@ -61,26 +61,24 @@ export function logThenDropConfigurationErrors(
         return EMPTY_CASCADE
     }
     return {
-        subjects: cascadeOrError.subjects.filter(
-            (subject): subject is ConfiguredSubject<ConfigurationSubject, Settings> => {
-                if (!subject) {
-                    console.error('invalid configuration: no configuration subjects available')
-                    return false
-                }
-                if (isErrorLike(subject)) {
-                    console.error(`invalid configuration: error in configuration subjects: ${subject.message}`)
-                    return false
-                }
-                return true
+        subjects: cascadeOrError.subjects.filter((subject): subject is ConfiguredSubject<SettingsSubject, Settings> => {
+            if (!subject) {
+                console.error('invalid configuration: no settings subjects available')
+                return false
             }
-        ),
+            if (isErrorLike(subject)) {
+                console.error(`invalid configuration: error in settings subjects: ${subject.message}`)
+                return false
+            }
+            return true
+        }),
         final: cascadeOrError.final,
     }
 }
 
 export interface Controllers {
-    extensionsContextController: Controller<ConfigurationSubject, Settings>
-    extensionsController: ClientController<ConfigurationSubject, Settings>
+    extensionsContextController: Controller<SettingsSubject, Settings>
+    extensionsController: ClientController<SettingsSubject, Settings>
 }
 
 function createControllers(documents: Observable<TextDocumentItem[] | null>): Controllers {

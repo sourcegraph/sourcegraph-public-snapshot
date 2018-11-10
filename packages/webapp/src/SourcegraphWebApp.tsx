@@ -3,10 +3,10 @@ import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/not
 import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
-    ConfigurationSubject,
     ConfiguredSubject,
     Settings,
     SettingsCascadeOrError,
+    SettingsSubject,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
@@ -98,8 +98,8 @@ interface SourcegraphWebAppState
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 
-/** A fallback configuration subject that can be constructed synchronously at initialization time. */
-const SITE_SUBJECT_NO_ADMIN: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'> = {
+/** A fallback settings subject that can be constructed synchronously at initialization time. */
+const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
     id: window.context.siteGQLID,
     viewerCanAdminister: false,
 }
@@ -294,7 +294,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.setState({ navbarSearchQuery })
     }
 
-    private onSettingsCascadeChange(settingsCascade: SettingsCascadeOrError<ConfigurationSubject, Settings>): void {
+    private onSettingsCascadeChange(settingsCascade: SettingsCascadeOrError<SettingsSubject, Settings>): void {
         this.setState(
             prevState => {
                 const update: Pick<SourcegraphWebAppState, 'settingsCascade' | 'extensionsEnvironment'> = {
@@ -315,7 +315,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         ...prevState.extensionsEnvironment,
                         configuration: {
                             subjects: settingsCascade.subjects.filter(
-                                (subject): subject is ConfiguredSubject<ConfigurationSubject, Settings> =>
+                                (subject): subject is ConfiguredSubject<SettingsSubject, Settings> =>
                                     subject.settings !== null && !isErrorLike(subject.settings)
                             ),
                             final: settingsCascade.final,

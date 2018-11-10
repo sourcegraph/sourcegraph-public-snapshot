@@ -6,13 +6,13 @@ import { ConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent, GraphQLDocument } from './graphql'
 import { ExtensionManifest } from './schema/extension.schema'
 import * as GQL from './schema/graphqlschema'
-import { ConfigurationSubject, Settings, SettingsCascadeOrError } from './settings'
+import { Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
 import { parseJSONCOrError } from './util'
 
 /**
  * A controller that exposes functionality for a settings cascade and querying extensions from the remote registry.
  */
-export class Controller<S extends ConfigurationSubject, C extends Settings> {
+export class Controller<S extends SettingsSubject, C extends Settings> {
     public static readonly LOADING: 'loading' = 'loading'
 
     constructor(public readonly context: Context<S, C>) {}
@@ -70,7 +70,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
     }
 
     public withRegistryMetadata(
-        cascade: SettingsCascadeOrError<ConfigurationSubject, Settings>
+        cascade: SettingsCascadeOrError<SettingsSubject, Settings>
     ): Observable<ConfiguredExtension[]> {
         if (isErrorLike(cascade.final)) {
             return throwError(cascade.final)

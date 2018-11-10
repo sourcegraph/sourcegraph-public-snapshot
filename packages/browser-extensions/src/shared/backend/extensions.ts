@@ -3,7 +3,7 @@ import { Controller as ExtensionsContextController } from '@sourcegraph/extensio
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { gql, graphQLContent } from '@sourcegraph/extensions-client-common/lib/graphql'
 import {
-    ConfigurationSubject,
+    SettingsSubject,
     gqlToCascade,
     mergeSettings,
     Settings,
@@ -133,7 +133,7 @@ export const applyDecoration = ({
     return mergeDisposables(...disposables)
 }
 
-const storageSettingsCascade: Observable<SettingsCascade<ConfigurationSubject, Settings>> = storage
+const storageSettingsCascade: Observable<SettingsCascade<SettingsSubject, Settings>> = storage
     .observeSync('clientSettings')
     .pipe(
         map(clientSettingsString => JSONC.parse(clientSettingsString || '')),
@@ -146,7 +146,7 @@ const storageSettingsCascade: Observable<SettingsCascade<ConfigurationSubject, S
                         viewerCanAdminister: true,
                         __typename: 'Client',
                         displayName: 'Client',
-                    } as ConfigurationSubject,
+                    } as SettingsSubject,
                     settings: clientSettings,
                 },
             ],
@@ -155,9 +155,9 @@ const storageSettingsCascade: Observable<SettingsCascade<ConfigurationSubject, S
     )
 
 const mergeCascades = (
-    cascadeOrError: SettingsCascadeOrError<ConfigurationSubject, Settings>,
-    cascade: SettingsCascade<ConfigurationSubject, Settings>
-): SettingsCascadeOrError<ConfigurationSubject, Settings> => ({
+    cascadeOrError: SettingsCascadeOrError<SettingsSubject, Settings>,
+    cascade: SettingsCascade<SettingsSubject, Settings>
+): SettingsCascadeOrError<SettingsSubject, Settings> => ({
     subjects:
         cascadeOrError.subjects === null
             ? cascade.subjects
@@ -218,10 +218,7 @@ const settingsCascadeRefreshes = new Subject<void>()
  */
 export const gqlSettingsCascade: Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> = combineLatest(
     storage.observeSync('sourcegraphURL'),
-    settingsCascadeRefreshes.pipe(
-        mapTo(null),
-        startWith(null)
-    )
+    settingsCascadeRefreshes.pipe(mapTo(null), startWith(null))
 ).pipe(
     switchMap(([url]) =>
         queryGraphQL({
@@ -266,7 +263,7 @@ const EMPTY_CONFIGURATION_CASCADE: SettingsCascade = { subjects: [], final: {} }
  *   browser extension.
  * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify the UX).
  */
-export const settingsCascade: Observable<SettingsCascadeOrError<ConfigurationSubject, Settings>> = combineLatest(
+export const settingsCascade: Observable<SettingsCascadeOrError<SettingsSubject, Settings>> = combineLatest(
     gqlSettingsCascade,
     storageSettingsCascade
 ).pipe(
@@ -283,11 +280,11 @@ export const settingsCascade: Observable<SettingsCascadeOrError<ConfigurationSub
 
 export function createExtensionsContextController(
     sourcegraphUrl: string
-): ExtensionsContextController<ConfigurationSubject, Settings> {
+): ExtensionsContextController<SettingsSubject, Settings> {
     const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
     sourcegraphLanguageServerURL.pathname = '.api/xlang'
 
-    return new ExtensionsContextController<ConfigurationSubject, Settings>({
+    return new ExtensionsContextController<SettingsSubject, Settings>({
         settingsCascade,
         updateExtensionSettings,
         queryGraphQL: (request, variables, requestMightContainPrivateInfo) =>
@@ -324,11 +321,11 @@ function updateUserSettings(subject: string, args: UpdateExtensionSettingsArgs):
     return gqlSettingsCascade.pipe(
         take(1),
         switchMap(gqlSettingsCascade => {
-            const subjectConfig = gqlSettingsCascade.subjects.find(s => s.id === subject)
-            if (!subjectConfig) {
-                throw new Error(`no configuration subject: ${subject}`)
+            const subjectSettings = gqlSettingsCascade.subjects.find(s => s.id === subject)
+            if (!subjectSettings) {
+                throw new Error(`no settings subject: ${subject}`)
             }
-            const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
+            const lastID = subjectSettings.latestSettings ? subjectSettings.latestSettings.id : null
 
             let edit: GQL.IConfigurationEdit
             if ('edit' in args && args.edit) {

@@ -20,7 +20,7 @@ const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found"
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends ExtensionsProps {
     /** The subject whose settings to edit. */
-    subject: Pick<GQL.ConfigurationSubject, '__typename' | 'id'>
+    subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
 
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
@@ -63,7 +63,7 @@ interface State {
 export class SettingsArea extends React.Component<Props, State> {
     public state: State = { dataOrError: LOADING }
 
-    private subjectChanges = new Subject<Pick<GQL.IConfigurationSubject, 'id'>>()
+    private subjectChanges = new Subject<Pick<GQL.ISettingsSubject, 'id'>>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -190,7 +190,7 @@ function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<ISettingsCascade
     return queryGraphQL(
         gql`
             query SettingsCascade($subject: ID!) {
-                configurationSubject(id: $subject) {
+                settingsSubject(id: $subject) {
                     settingsCascade {
                         subjects {
                             latestSettings {
@@ -205,10 +205,10 @@ function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<ISettingsCascade
         { subject }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configurationSubject) {
+            if (!data || !data.settingsSubject) {
                 throw createAggregateError(errors)
             }
-            return data.configurationSubject.settingsCascade
+            return data.settingsSubject.settingsCascade
         })
     )
 }

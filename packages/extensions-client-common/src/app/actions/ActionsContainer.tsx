@@ -2,12 +2,12 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
-import { ConfigurationSubject, Settings } from '../../settings'
+import { SettingsSubject, Settings } from '../../settings'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
 import { getContributedActionItems } from './contributions'
 
-interface ActionsContainerProps<S extends ConfigurationSubject, C extends Settings> extends ActionsProps<S, C> {
+interface ActionsContainerProps<S extends SettingsSubject, C extends Settings> extends ActionsProps<S, C> {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
@@ -24,7 +24,7 @@ interface ActionsContainerProps<S extends ConfigurationSubject, C extends Settin
 interface ActionsContainerState extends ActionsState {}
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
-export class ActionsContainer<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+export class ActionsContainer<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
     ActionsContainerProps<S, C>,
     ActionsContainerState
 > {

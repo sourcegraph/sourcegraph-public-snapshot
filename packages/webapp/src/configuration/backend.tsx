@@ -22,10 +22,7 @@ export function overwriteSettings(subject: GQL.ID, lastID: number | null, conten
             }
         `,
         { subject, lastID, contents }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(() => undefined)
-    )
+    ).pipe(map(dataOrThrowErrors), map(() => undefined))
 }
 
 export function editConfiguration(
@@ -46,10 +43,7 @@ export function editConfiguration(
             }
         `,
         { subject, lastID, edit }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(() => undefined)
-    )
+    ).pipe(map(dataOrThrowErrors), map(() => undefined))
 }
 
 /**
@@ -61,7 +55,7 @@ export function editConfiguration(
  * @param variables The GraphQL mutation's variables.
  */
 export function mutateConfigurationGraphQL(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
+    subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
     mutation: GraphQLDocument,
     variables: any = {}
 ): Observable<GraphQLResult<GQL.IMutation>> {
@@ -74,7 +68,7 @@ export function mutateConfigurationGraphQL(
         mergeMap(config => {
             const subjectConfig = config.subjects.find(s => s.id === subjectID)
             if (!subjectConfig) {
-                throw new Error(`no configuration subject: ${subjectID}`)
+                throw new Error(`no settings subject: ${subjectID}`)
             }
             const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
 

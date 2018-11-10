@@ -26,10 +26,10 @@ export interface Settings {
 }
 
 /**
- * A configuration subject is something that can have settings associated with it, such as a site ("global
+ * A settings subject is something that can have settings associated with it, such as a site ("global
  * settings"), an organization ("organization settings"), a user ("user settings"), etc.
  */
-export type ConfigurationSubject = Pick<GQL.IConfigurationSubject, 'id' | 'settingsURL' | 'viewerCanAdminister'> &
+export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'settingsURL' | 'viewerCanAdminister'> &
     (
         | Pick<IClient, '__typename' | 'displayName'>
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
@@ -42,10 +42,10 @@ export type ConfigurationSubject = Pick<GQL.IConfigurationSubject, 'id' | 'setti
  *
  * Callers that need to represent the null/error states should use {@link SettingsCascade}.
  *
- * @template S the configuration subject type
+ * @template S the settings subject type
  * @template C the settings type
  */
-export interface SettingsCascade<S extends ConfigurationSubject = ConfigurationSubject, C extends Settings = Settings> {
+export interface SettingsCascade<S extends SettingsSubject = SettingsSubject, C extends Settings = Settings> {
     /**
      * The settings for each subject in the cascade, from lowest to highest precedence.
      */
@@ -60,10 +60,10 @@ export interface SettingsCascade<S extends ConfigurationSubject = ConfigurationS
  *
  * Callers that don't need to represent the null/error states should use {@link SettingsCascade}.
  *
- * @template S the configuration subject type
+ * @template S the settings subject type
  * @template C the settings type
  */
-export interface SettingsCascadeOrError<S extends ConfigurationSubject, C extends Settings = Settings>
+export interface SettingsCascadeOrError<S extends SettingsSubject, C extends Settings = Settings>
     extends Pick<SettingsCascade<S, C>, Exclude<keyof SettingsCascade<S, C>, 'subjects' | 'final'>> {
     /**
      * The settings for each subject in the cascade, from lowest to highest precedence, null if there are none, or
@@ -88,10 +88,10 @@ export interface SettingsCascadeOrError<S extends ConfigurationSubject, C extend
  *
  * Callers that need to represent the null/error states should use {@link ConfiguredSubjectOrError}.
  *
- * @template S the configuration subject type
+ * @template S the settings subject type
  * @template C the settings type
  */
-export interface ConfiguredSubject<S extends ConfigurationSubject, C extends Settings = Settings> {
+export interface ConfiguredSubject<S extends SettingsSubject, C extends Settings = Settings> {
     /** The subject. */
     subject: S
 
@@ -104,7 +104,7 @@ export interface ConfiguredSubject<S extends ConfigurationSubject, C extends Set
  *
  * Callers that don't need to represent the null/error states should use {@link ConfiguredSubject}.
  */
-export interface ConfiguredSubjectOrError<S extends ConfigurationSubject, C extends Settings = Settings>
+export interface ConfiguredSubjectOrError<S extends SettingsSubject, C extends Settings = Settings>
     extends Pick<ConfiguredSubject<S, C>, Exclude<keyof ConfiguredSubject<S, C>, 'settings'>> {
     /**
      * The subject's settings (if any), an error (if any occurred while retrieving or parsing the settings), or
@@ -113,7 +113,7 @@ export interface ConfiguredSubjectOrError<S extends ConfigurationSubject, C exte
     settings: C | ErrorLike | null
 }
 
-/** A minimal subset of a GraphQL ConfigurationSubject type that includes only the single contents value. */
+/** A minimal subset of a GraphQL SettingsSubject type that includes only the single contents value. */
 export interface SubjectSettingsContents {
     latestSettings: {
         contents: string
@@ -121,7 +121,7 @@ export interface SubjectSettingsContents {
 }
 
 /** Converts a GraphQL SettingsCascade value to a value of this library's SettingsCascade type. */
-export function gqlToCascade<S extends ConfigurationSubject, C extends Settings>({
+export function gqlToCascade<S extends SettingsSubject, C extends Settings>({
     subjects,
 }: {
     subjects: (S & SubjectSettingsContents)[]
@@ -198,11 +198,11 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
 }
 
 /**
- * The conventional ordering of extension configuration subject types in a list.
+ * The conventional ordering of extension settings subject types in a list.
  */
-export const SUBJECT_TYPE_ORDER: ConfigurationSubject['__typename'][] = ['Client', 'User', 'Org', 'Site']
+export const SUBJECT_TYPE_ORDER: SettingsSubject['__typename'][] = ['Client', 'User', 'Org', 'Site']
 
-export function subjectTypeHeader(nodeType: ConfigurationSubject['__typename']): string | null {
+export function subjectTypeHeader(nodeType: SettingsSubject['__typename']): string | null {
     switch (nodeType) {
         case 'Client':
             return null
@@ -215,7 +215,7 @@ export function subjectTypeHeader(nodeType: ConfigurationSubject['__typename']):
     }
 }
 
-export function subjectLabel(subject: ConfigurationSubject): string {
+export function subjectLabel(subject: SettingsSubject): string {
     switch (subject.__typename) {
         case 'Client':
             return 'Client'
@@ -231,6 +231,6 @@ export function subjectLabel(subject: ConfigurationSubject): string {
 /**
  * React partial props for components needing the settings cascade.
  */
-export interface SettingsCascadeProps<S extends ConfigurationSubject, C extends Settings> {
+export interface SettingsCascadeProps<S extends SettingsSubject, C extends Settings> {
     settingsCascade: SettingsCascadeOrError<S, C>
 }

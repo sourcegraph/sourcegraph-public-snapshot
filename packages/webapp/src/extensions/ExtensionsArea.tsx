@@ -22,7 +22,7 @@ export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, Extens
     authenticatedUser: GQL.IUser | null
 
     /** The subject whose extensions and configuration to display. */
-    subject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+    subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
     isLightTheme: boolean
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
@@ -39,7 +39,7 @@ interface ExtensionsAreaProps
      */
     authenticatedUser: GQL.IUser | null
 
-    viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
     isLightTheme: boolean
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>

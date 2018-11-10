@@ -1,6 +1,6 @@
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
-import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
+import { SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -59,7 +59,7 @@ export const registryExtensionFragment = gql`
 `
 
 interface Props extends SettingsCascadeProps, ExtensionsProps, RouteComponentProps<{}> {
-    subject: Pick<ConfigurationSubject, 'id' | 'viewerCanAdminister'>
+    subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     emptyElement?: React.ReactFragment
 }
 
@@ -88,7 +88,7 @@ interface State {
 }
 
 /**
- * Displays a list of all extensions used by a configuration subject.
+ * Displays a list of all extensions used by a settings subject.
  */
 export class ExtensionsList extends React.PureComponent<Props, State> {
     private static URL_QUERY_PARAM = 'query'
@@ -158,13 +158,9 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         const resultOrError = this.queryRegistryExtensions({ query }).pipe(
                             catchError(err => [asError(err)])
                         )
-                        return concat(
-                            of(LOADING).pipe(
-                                delay(250),
-                                takeUntil(resultOrError)
-                            ),
-                            resultOrError
-                        ).pipe(map(resultOrError => ({ data: { query, resultOrError } })))
+                        return concat(of(LOADING).pipe(delay(250), takeUntil(resultOrError)), resultOrError).pipe(
+                            map(resultOrError => ({ data: { query, resultOrError } }))
+                        )
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate))

@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
-import { ConfigurationSubject, Settings } from '../../settings'
+import { SettingsSubject, Settings } from '../../settings'
 import { ActionItem } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
 import { getContributedActionItems } from './contributions'
@@ -11,7 +11,7 @@ import { getContributedActionItems } from './contributions'
  * Renders the actions as a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul
  * class="nav"> or <ul class="navbar-nav">.
  */
-export class ActionsNavItems<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+export class ActionsNavItems<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
     ActionsProps<S, C>,
     ActionsState
 > {

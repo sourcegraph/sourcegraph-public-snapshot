@@ -1,8 +1,4 @@
-import {
-    ConfigurationSubject,
-    Settings,
-    SettingsCascadeOrError,
-} from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings, SettingsCascadeOrError, SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
@@ -18,10 +14,10 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
     authenticatedUser: GQL.IUser | null
 
     /** The subject whose extensions and settings to display. */
-    viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
     /** The viewer's settings. */
-    settingsCascade: SettingsCascadeOrError<ConfigurationSubject, Settings>
+    settingsCascade: SettingsCascadeOrError<SettingsSubject, Settings>
 
     isLightTheme: boolean
     location: H.Location

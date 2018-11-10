@@ -4,7 +4,7 @@ import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/conte
 import { ISite, IUser } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import {
     SettingsCascadeProps,
-    ConfigurationSubject,
+    SettingsSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import H from 'history'
@@ -23,8 +23,8 @@ export interface ButtonProps {
 }
 
 interface CodeViewToolbarProps
-    extends Partial<ExtensionsProps<ConfigurationSubject, Settings>>,
-        Partial<ControllerProps<ConfigurationSubject, Settings>>,
+    extends Partial<ExtensionsProps<SettingsSubject, Settings>>,
+        Partial<ControllerProps<SettingsSubject, Settings>>,
         FileInfo {
     onEnabledChange?: (enabled: boolean) => void
 
@@ -37,7 +37,7 @@ interface CodeViewToolbarProps
     location: H.Location
 }
 
-interface CodeViewToolbarState extends SettingsCascadeProps<ConfigurationSubject, Settings> {
+interface CodeViewToolbarState extends SettingsCascadeProps<SettingsSubject, Settings> {
     site?: ISite
     currentUser?: IUser
 }

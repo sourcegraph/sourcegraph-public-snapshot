@@ -478,7 +478,7 @@ input ConfigurationMutationGroupInput {
 # together because they:
 #
 # - are all versioned to avoid race conditions with concurrent editors
-# - all apply to a specific configuration subject
+# - all apply to a specific settings subject
 #
 # Grouping them lets us extract those common parameters to the
 # Mutation.configuration field.
@@ -703,8 +703,11 @@ type Query {
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
-    # Looks up an instance of a type that implements ConfigurationSubject.
-    configurationSubject(id: ID!): ConfigurationSubject
+    # Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
+    # be a site (which has global settings), an organization, or a user.
+    settingsSubject(id: ID!): SettingsSubject
+    # DEPRECATED
+    configurationSubject(id: ID!): ConfigurationSubject @deprecated(reason: "use settingsSubject instead")
     # The settings for the viewer. The viewer is either an anonymous visitor (in which case viewer settings is
     # global settings) or an authenticated user (in which case viewer settings are the user's settings).
     viewerSettings: SettingsCascade!
@@ -854,16 +857,16 @@ type SearchAlert {
     proposedQueries: [SearchQueryDescription!]
 }
 
-# A saved search query, defined in configuration.
+# A saved search query, defined in settings.
 type SavedQuery {
     # The unique ID of the saved query.
     id: ID!
-    # The subject whose configuration this saved query was defined in.
-    subject: ConfigurationSubject!
+    # The subject whose settings this saved query was defined in.
+    subject: SettingsSubject!
     # The unique key of this saved query (unique only among all other saved
     # queries of the same subject).
     key: String
-    # The 0-indexed index of this saved query in the subject's configuration.
+    # The 0-indexed index of this saved query in the subject's settings.
     index: Int!
     # The description.
     description: String!
@@ -1957,7 +1960,7 @@ type UserConnection {
 }
 
 # A user.
-type User implements Node & ConfigurationSubject {
+type User implements Node & SettingsSubject & ConfigurationSubject {
     # The unique ID for the user.
     id: ID!
     # The user's username.
@@ -2193,7 +2196,7 @@ type OrgConnection {
 }
 
 # An organization, which is a group of users.
-type Org implements Node & ConfigurationSubject {
+type Org implements Node & SettingsSubject & ConfigurationSubject {
     # The unique ID for the organization.
     id: ID!
     # The organization's name. This is unique among all organizations on this Sourcegraph site.
@@ -2510,7 +2513,7 @@ enum RepositoryOrderBy {
 # servers that share the same configuration and database.
 #
 # The site is a singleton; the API only ever returns the single global site.
-type Site implements ConfigurationSubject {
+type Site implements SettingsSubject & ConfigurationSubject {
     # The site's opaque GraphQL ID. This is NOT the "site ID" as it is referred to elsewhere;
     # use the siteID field for that. (GraphQL node types conventionally have an id field of type
     # ID! that globally identifies the node.)
@@ -2541,7 +2544,7 @@ type Site implements ConfigurationSubject {
     settingsURL: String!
     # Whether the viewer can reload the site (with the reloadSite mutation).
     canReloadSite: Boolean!
-    # Whether the viewer can modify the subject's configuration.
+    # Whether the viewer can modify the subject's settings.
     viewerCanAdminister: Boolean!
     # A list of all access tokens on this site.
     accessTokens(
@@ -2646,15 +2649,16 @@ type Alert {
     isDismissibleWithKey: String
 }
 
-# ConfigurationSubject is something that can have configuration.
-interface ConfigurationSubject {
+# SettingsSubject is something that can have settings: a site ("global settings", which is different from "site
+# configuration"), an organization, or a user.
+interface SettingsSubject {
     # The ID.
     id: ID!
     # The latest settings.
     latestSettings: Settings
     # The URL to the settings.
     settingsURL: String!
-    # Whether the viewer can modify the subject's configuration.
+    # Whether the viewer can modify the subject's settings.
     viewerCanAdminister: Boolean!
     # All settings for this subject, and the individual levels in the settings cascade (global > organization > user)
     # that were merged to produce the final merged settings.
@@ -2666,12 +2670,21 @@ interface ConfigurationSubject {
         )
 }
 
+# DEPRECATED: Renamed to SettingsSubject.
+interface ConfigurationSubject {
+    id: ID! @deprecated(reason: "use SettingsSubject instead")
+    latestSettings: Settings @deprecated(reason: "use SettingsSubject instead")
+    settingsURL: String! @deprecated(reason: "use SettingsSubject instead")
+    viewerCanAdminister: Boolean! @deprecated(reason: "use SettingsSubject instead")
+    configurationCascade: ConfigurationCascade! @deprecated(reason: "use SettingsSubject.settingsCascade instead")
+}
+
 # The configurations for all of the relevant settings subjects, plus the merged settings.
 type SettingsCascade {
     # The other settings subjects that are applied with lower precedence than this subject to
     # form the final merged settings. For example, a user in 2 organizations would have the following
     # settings subjects: site (global settings), org 1, org 2, and the user.
-    subjects: [ConfigurationSubject!]!
+    subjects: [SettingsSubject!]!
     # The effective final merged settings as (stringified) JSON, merged from all of the subjects.
     final: String!
     # DEPRECATED: This field will be removed in a future release.
@@ -2691,7 +2704,7 @@ type Settings {
     # The ID.
     id: Int!
     # The subject that these settings are for.
-    subject: ConfigurationSubject!
+    subject: SettingsSubject!
     # The author, or null if there is no author or the authoring user was deleted.
     author: User
     # The time when this was created.

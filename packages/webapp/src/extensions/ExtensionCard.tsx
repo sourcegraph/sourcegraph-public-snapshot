@@ -3,7 +3,7 @@ import { ExtensionManifest } from '@sourcegraph/extensions-client-common/lib/sch
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { ConfigurationSubject } from '../backend/graphqlschema'
+import { SettingsSubject } from '../backend/graphqlschema'
 import { LinkOrSpan } from '../components/LinkOrSpan'
 import { Settings } from '../schema/settings.schema'
 import { isErrorLike } from '../util/errors'
@@ -11,14 +11,14 @@ import { ExtensionConfigurationState } from './extension/ExtensionConfigurationS
 import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 import { ExtensionToggle } from './ExtensionToggle'
 
-interface Props<S extends ConfigurationSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
+interface Props<S extends SettingsSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
     node: ConfiguredExtension
-    subject: Pick<ConfigurationSubject, 'id' | 'viewerCanAdminister'>
+    subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void
 }
 
 /** Displays an extension as a card. */
-export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+export class ExtensionCard<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
     Props<S, C>
 > {
     public render(): JSX.Element | null {

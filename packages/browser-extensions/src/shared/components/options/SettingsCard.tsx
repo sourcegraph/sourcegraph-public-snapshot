@@ -1,5 +1,5 @@
 import {
-    ConfigurationSubject,
+    SettingsSubject,
     Settings,
     SettingsCascadeOrError,
 } from '@sourcegraph/extensions-client-common/lib/settings'
@@ -17,7 +17,7 @@ interface Props {
 }
 
 interface State {
-    settingsCascadeOrError?: SettingsCascadeOrError<ConfigurationSubject, Settings>
+    settingsCascadeOrError?: SettingsCascadeOrError<SettingsSubject, Settings>
 }
 
 export class SettingsCard extends React.Component<Props, State> {

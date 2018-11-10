@@ -27,7 +27,7 @@ var (
 )
 
 type SubjectAndConfig struct {
-	Subject api.ConfigurationSubject
+	Subject api.SettingsSubject
 	Config  api.PartialConfigSavedQueries
 }
 
@@ -52,7 +52,7 @@ type SavedQueryWasCreatedOrUpdatedArgs struct {
 
 // SavedQueryWasCreated should be called whenever a saved query was created
 // or updated after the server has started.
-func (c *client) SavedQueryWasCreatedOrUpdated(ctx context.Context, subject api.ConfigurationSubject, config api.PartialConfigSavedQueries, disableSubscriptionNotifications bool) error {
+func (c *client) SavedQueryWasCreatedOrUpdated(ctx context.Context, subject api.SettingsSubject, config api.PartialConfigSavedQueries, disableSubscriptionNotifications bool) error {
 	return c.post(PathSavedQueryWasCreatedOrUpdated, &SavedQueryWasCreatedOrUpdatedArgs{
 		SubjectAndConfig: &SubjectAndConfig{
 			Subject: subject,

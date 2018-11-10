@@ -2,16 +2,16 @@ import assert from 'assert'
 import { cloneDeep } from 'lodash-es'
 import { createAggregateError, ErrorLike, isErrorLike } from './errors'
 import {
-    ConfigurationSubject,
     CustomMergeFunctions,
     gqlToCascade,
     merge,
     mergeSettings,
     Settings,
+    SettingsSubject,
     SubjectSettingsContents,
 } from './settings'
 
-const FIXTURE_ORG: ConfigurationSubject & SubjectSettingsContents = {
+const FIXTURE_ORG: SettingsSubject & SubjectSettingsContents = {
     __typename: 'Org',
     name: 'n',
     displayName: 'n',
@@ -21,7 +21,7 @@ const FIXTURE_ORG: ConfigurationSubject & SubjectSettingsContents = {
     latestSettings: { contents: '{"a":1}' },
 }
 
-const FIXTURE_USER: ConfigurationSubject & SubjectSettingsContents = {
+const FIXTURE_USER: SettingsSubject & SubjectSettingsContents = {
     __typename: 'User',
     username: 'n',
     displayName: 'n',
@@ -31,7 +31,7 @@ const FIXTURE_USER: ConfigurationSubject & SubjectSettingsContents = {
     latestSettings: { contents: '{"b":2}' },
 }
 
-const FIXTURE_USER_WITH_SETTINGS_ERROR: ConfigurationSubject & SubjectSettingsContents = {
+const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContents = {
     ...FIXTURE_USER,
     id: 'c',
     latestSettings: { contents: '.' },
