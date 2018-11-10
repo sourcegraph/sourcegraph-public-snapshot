@@ -15853,7 +15853,7 @@ source-map@^0.7.2:
 
 sourcegraph@18.4.1:
   version "18.4.1"
-  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.4.1.tgz#0821836b5e27b1fdc196b507f27e7fbb6cd228a3"
+  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-18.4.1.tgz#0821836b5e27b1fdc196b507f27e7fbb6cd228a3"
   integrity sha512-uhLisxIAeQljoZweZ1g2mlLinE8pZ6+NmVNJeSAN9+FoYIK6HlZRc40zFq+MqWbWlgGH8jraGCZXyNVJ05L1ig==
   dependencies:
     minimatch "^3.0.4"
