@@ -95,9 +95,7 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace sourcegraph run tslint"),
-		bk.Cmd("yarn workspace sourcegraph run typecheck"),
-		bk.Cmd("([ -f packages/sourcegraph-extension-api/node_modules/.bin/nyc ] || ln -rs node_modules/.bin/nyc packages/sourcegraph-extension-api/node_modules/.bin/nyc) && yarn workspace sourcegraph run nyc report -r json --report-dir coverage"),
-		bk.ArtifactPaths("packages/sourcegraph-extension-api/coverage/coverage-final.json"))
+		bk.Cmd("yarn workspace sourcegraph run typecheck"))
 
 	pipeline.AddStep(":typescript:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
@@ -121,8 +119,6 @@ func main() {
 
 	pipeline.AddStep(":codecov:",
 		bk.Cmd("buildkite-agent artifact download 'packages/webapp/coverage/coverage-final.json' . || true"), // ignore error when no report exists
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
-		bk.Cmd("buildkite-agent artifact download 'packages/sourcegraph-extension-api/coverage/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
 		bk.Cmd("buildkite-agent artifact download 'packages/extensions-client-common/coverage/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
