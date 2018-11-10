@@ -161,7 +161,7 @@ type Extensions struct {
 	RemoteRegistry        interface{} `json:"remoteRegistry,omitempty"`
 }
 
-// GitHubAuthProvider description: Configures the GitHub OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. On log-in, Sourcegraph will request `repo` scope access.
+// GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
 type GitHubAuthProvider struct {
 	ClientID     string `json:"clientID"`
 	ClientSecret string `json:"clientSecret"`

@@ -1099,7 +1099,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GitHubAuthProvider": {
-      "description": "Configures the GitHub OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. On log-in, Sourcegraph will request ` + "`" + `repo` + "`" + ` scope access.",
+      "description": "Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.",
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "clientID", "clientSecret"],
@@ -1115,11 +1115,11 @@ const SiteSchemaJSON = `{
         },
         "clientID": {
           "type": "string",
-          "description": "The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers"
+          "description": "The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
         },
         "clientSecret": {
           "type": "string",
-          "description": "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers"
+          "description": "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
         },
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
       }
