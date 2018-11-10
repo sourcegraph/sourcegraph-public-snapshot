@@ -7,8 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "workspaces": [
-    "packages/*",
-    "enterprise"
+    "packages/*"
   ],
   "engines": {
     "node": ">=8.0.0",
@@ -46,5 +45,8 @@
     "ts-unused-exports": "^2.0.11",
     "webpack": "^4.23.1",
     "webpack-dev-server": "^3.1.10"
+  },
+  "dependencies": {
+    "date-fns": "^2.0.0-alpha.7"
   }
 }
