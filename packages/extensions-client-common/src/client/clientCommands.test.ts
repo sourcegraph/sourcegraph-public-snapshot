@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
+import { ConfigurationUpdateParams } from '../api/protocol'
 import { convertUpdateConfigurationCommandArgs } from './clientCommands'
 
 describe('convertUpdateConfigurationCommandArgs', () => {

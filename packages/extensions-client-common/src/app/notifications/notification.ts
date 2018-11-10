@@ -1,4 +1,4 @@
-import { MessageType } from 'sourcegraph/module/protocol'
+import { MessageType } from '../../api/protocol'
 import { ErrorLike } from '../../errors'
 
 /**

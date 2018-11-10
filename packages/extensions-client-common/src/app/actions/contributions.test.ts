@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { ContributableMenu } from 'sourcegraph/module/protocol'
+import { ContributableMenu } from '../../api/protocol'
 import { ActionItemProps } from './ActionItem'
 import { getContributedActionItems } from './contributions'
 

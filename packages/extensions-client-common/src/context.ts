@@ -1,5 +1,5 @@
 import { Subscribable } from 'rxjs'
-import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
+import { ConfigurationUpdateParams } from './api/protocol'
 import { Controller } from './controller'
 import { QueryResult } from './graphql'
 import * as GQL from './schema/graphqlschema'

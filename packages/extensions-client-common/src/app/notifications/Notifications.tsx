@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ControllerProps } from '../../client/controller'
-import { SettingsSubject, Settings } from '../../settings'
+import { Settings, SettingsSubject } from '../../settings'
 import { Notification } from './notification'
 import { NotificationItem } from './NotificationItem'
 
