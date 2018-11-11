@@ -3,10 +3,10 @@ import * as monaco from 'monaco-editor'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
+import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
+import settingsSchema from '../../../schema/settings.schema.json'
 import contributionSchema from '../../../shared/src/api/protocol/contribution.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
-import jsonSchemaMetaSchema from '../schema/json-schema-draft-07.schema.json'
-import settingsSchema from '../schema/settings.schema.json'
 import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')

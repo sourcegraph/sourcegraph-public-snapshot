@@ -4,7 +4,6 @@ import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'gr
 import gulp from 'gulp'
 import $RefParser from 'json-schema-ref-parser'
 import { compile as compileJSONSchema } from 'json-schema-to-typescript'
-import mkdirp from 'mkdirp-promise'
 import { readFile, writeFile } from 'mz/fs'
 import path from 'path'
 import { format, resolveConfig } from 'prettier'
@@ -51,13 +50,13 @@ export async function graphQLTypes(): Promise<void> {
 }
 
 /**
- * Generates the TypeScript types for the JSON schemas and copies the schemas to the webapp's src/ so they can be imported
+ * Generates the TypeScript types for the JSON schemas.
  */
 export async function schema(): Promise<void> {
-    await Promise.all([mkdirp(`${__dirname}/web/src/schema`), mkdirp(__dirname + '/dist/schema')])
+    const schemaDir = path.join(__dirname, '..', 'schema')
     await Promise.all(
         ['json-schema-draft-07', 'settings', 'site', 'extension'].map(async file => {
-            let schema = await readFile(__dirname + `/../schema/${file}.schema.json`, 'utf8')
+            let schema = await readFile(path.join(schemaDir, `${file}.schema.json`), 'utf8')
             // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
             // when the schema is in a oneOf (to be merged with extension schemas).
             schema = schema.replace(
@@ -66,7 +65,7 @@ export async function schema(): Promise<void> {
             )
 
             const types = await compileJSONSchema(JSON.parse(schema), 'settings.schema', {
-                cwd: __dirname + '/../schema',
+                cwd: schemaDir,
                 $refOptions: {
                     resolve: {
                         draftV7resolver,
@@ -76,11 +75,7 @@ export async function schema(): Promise<void> {
                     } as $RefParser.Options['resolve'],
                 },
             })
-            await Promise.all([
-                writeFile(__dirname + `/../web/src/schema/${file}.schema.d.ts`, types),
-                // Copy schema to src/ so it can be imported in TypeScript
-                writeFile(__dirname + `/../web/src/schema/${file}.schema.json`, schema),
-            ])
+            await writeFile(path.join(__dirname, '..', 'web', 'src', 'schema', `${file}.schema.d.ts`), types)
         })
     )
 }
