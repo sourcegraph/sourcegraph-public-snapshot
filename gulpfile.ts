@@ -2,21 +2,13 @@ import { generateNamespace } from '@gql2ts/from-schema'
 import { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } from '@gql2ts/language-typescript'
 import { ChildProcess, spawn } from 'child_process'
 import log from 'fancy-log'
-import globby from 'globby'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
 import gulp from 'gulp'
 import $RefParser from 'json-schema-ref-parser'
 import { compile as compileJSONSchema } from 'json-schema-to-typescript'
-// @ts-ignore
-import convert from 'koa-connect'
 import mkdirp from 'mkdirp-promise'
-import { readFile, stat, writeFile } from 'mz/fs'
-import * as path from 'path'
-import PluginError from 'plugin-error'
+import { readFile, writeFile } from 'mz/fs'
 import { format, resolveConfig } from 'prettier'
-// ironically, has no published typings (but will soon)
-// @ts-ignore
-import tsUnusedExports from 'ts-unused-exports'
 import createWebpackCompiler, { Stats } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
 import { draftV7resolver } from './dev/draftV7Resolver'
@@ -153,40 +145,6 @@ export async function watchSchema(): Promise<void> {
     await new Promise<never>((resolve, reject) => {
         gulp.watch(__dirname + '/schema/*.schema.json', schema).on('error', reject)
     })
-}
-
-export async function unusedExports(): Promise<void> {
-    // TODO(sqs): Improve our usage of ts-unused-exports when its API improves (see
-    // https://github.com/pzavolinsky/ts-unused-exports/pull/17 for one possible improvement).
-    const analysis: { [file: string]: string[] } = tsUnusedExports(
-        path.join(__dirname, 'tsconfig.json'),
-        await globby('packages/webapp/src/**/*.{ts?(x),js?(x),json}') // paths are relative to tsconfig.json
-    )
-    const filesWithUnusedExports = Object.keys(analysis).sort()
-    if (filesWithUnusedExports.length > 0) {
-        // Convert to absolute file paths with extensions to enable clickable file paths in VS Code console
-        const filesWithExtensions = await Promise.all(
-            filesWithUnusedExports.map(async file => {
-                for (const ext of ['ts', 'tsx']) {
-                    try {
-                        const fullPath = path.resolve(__dirname, `${file}.${ext}`)
-                        await stat(fullPath)
-                        return fullPath
-                    } catch (err) {
-                        continue
-                    }
-                }
-                return file
-            })
-        )
-        throw new PluginError(
-            'ts-unused-exports',
-            [
-                'Unused exports found (must unexport or remove):',
-                ...filesWithExtensions.map((f, i) => `${f}: ${analysis[filesWithUnusedExports[i]].join(' ')}`),
-            ].join('\n\t')
-        )
-    }
 }
 
 /**
