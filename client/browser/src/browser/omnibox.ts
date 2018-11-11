@@ -1,6 +1,6 @@
 const chrome = global.chrome
 
-export const setDefaultSuggestion = (suggestion: chrome.omnibox.Suggestion) => {
+export const setDefaultSuggestion = (suggestion: Pick<chrome.omnibox.SuggestResult, 'description'>) => {
     if (chrome && chrome.omnibox) {
         chrome.omnibox.setDefaultSuggestion(suggestion)
     }
@@ -14,7 +14,7 @@ export const onInputChanged = (
     }
 }
 
-export const onInputEntered = (handler: (url: string, disposition: string) => void) => {
+export const onInputEntered = (handler: (url: string, disposition?: string) => void) => {
     if (chrome && chrome.omnibox) {
         chrome.omnibox.onInputEntered.addListener(handler)
     }

@@ -4,7 +4,7 @@ import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
 import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
-import { combineLatest, from, Observable, Subject, throwError } from 'rxjs'
+import { combineLatest, from, Observable, Subject, Subscribable, throwError } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take, tap } from 'rxjs/operators'
 import uuid from 'uuid'
 import { Disposable } from 'vscode-languageserver'
@@ -13,7 +13,7 @@ import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/p
 import { UpdateExtensionSettingsArgs } from '../../../../../shared/src/context'
 import { Controller as ExtensionsContextController } from '../../../../../shared/src/controller'
 import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
-import { gql, graphQLContent } from '../../../../../shared/src/graphql'
+import { gql, graphQLContent, QueryResult } from '../../../../../shared/src/graphql'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import {
     gqlToCascade,
@@ -302,7 +302,8 @@ export function createExtensionsContextController(
                         requestMightContainPrivateInfo,
                     })
                 )
-            ),
+                // TODO: remove cast added after typescript upgrade
+            ) as Subscribable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry'>>>,
         queryLSP: canFetchForURL(sourcegraphUrl)
             ? requests => sendLSPHTTPRequests(requests)
             : () =>

@@ -4,6 +4,6 @@
     "typeRoots": ["node_modules/@types", "src/types"],
     "jsx": "react"
   },
-  "include": ["src/**/*.ts", "*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts"],
   "exclude": ["node_modules"]
 }

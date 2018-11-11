@@ -37,6 +37,7 @@ export default {
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
+        symlinks: true,
     },
     module: {
         rules: [

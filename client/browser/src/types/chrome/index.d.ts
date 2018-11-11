@@ -4560,12 +4560,6 @@ declare namespace chrome.omnibox {
         description: string
     }
 
-    export interface Suggestion {
-        content?: string
-        /** The text that is displayed in the URL dropdown. Can contain XML-style markup for styling. The supported tags are 'url' (for a literal URL), 'match' (for highlighting text that matched what the user's query), and 'dim' (for dim helper text). The styles can be nested, eg. dimmed match. */
-        description: string
-    }
-
     export interface OmniboxInputEnteredEvent
         extends chrome.events.IEvent<(text: string, disposition?: string) => void> {}
 

@@ -222,7 +222,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
                             this.diffSpec()
                         )
                     ),
-                    filter(el => !!el),
+                    filter((el): el is HTMLElement => !!el),
                     map((target: HTMLElement) => {
                         const loc = this.props.getTargetLineAndOffset(target!, this.diffSpec())
                         const data = { target, loc }

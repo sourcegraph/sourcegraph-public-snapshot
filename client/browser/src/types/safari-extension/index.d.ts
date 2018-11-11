@@ -78,6 +78,12 @@ interface SafariEventListener extends Function {
 }
 
 interface SafariEventTarget {
+    addEventListener(
+        type: 'change',
+        listener: (event: SafariExtensionSettingsChangeEvent) => any,
+        useCapture?: boolean
+    ): void
+    addEventListener(type: 'message', listener: (event: SafariExtensionMessageEvent) => any, useCapture?: boolean): void
     addEventListener(type: string, listener: SafariEventListener, useCapture?: boolean): void
     removeEventListener(type: string, listener: SafariEventListener, useCapture?: boolean): void
 }

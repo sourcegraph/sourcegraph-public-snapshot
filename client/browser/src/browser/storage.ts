@@ -22,14 +22,15 @@ export interface Storage {
     onChanged: (listener: (changes: Partial<StorageChange>, areaName: string) => void) => void
 }
 
-const get = (area: chrome.storage.StorageArea) => (callback: (items: StorageItems) => void) => area.get(callback)
+const get = (area: chrome.storage.StorageArea) => (callback: (items: StorageItems) => void) =>
+    area.get(items => callback(items as StorageItems))
 const set = (area: chrome.storage.StorageArea) => (items: Partial<StorageItems>, callback?: () => void) => {
     area.set(items, callback)
 }
 const getItem = (area: chrome.storage.StorageArea) => (
     key: keyof StorageItems,
     callback: (items: StorageItems) => void
-) => area.get(key, callback)
+) => area.get(key, items => callback(items as StorageItems))
 
 const onChanged = (listener: (changes: Partial<StorageChange>, areaName: string) => void) => {
     if (chrome && chrome.storage) {

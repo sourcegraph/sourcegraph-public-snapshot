@@ -104,12 +104,9 @@
   dependencies:
     esquery "^1.0.1"
 
-"@slimsag/react-shortcuts@^1.2.0":
-  version "1.2.1"
-  resolved "https://registry.npmjs.org/@slimsag/react-shortcuts/-/react-shortcuts-1.2.1.tgz#a3ea054a057137de8636bc9fabac61369103e597"
-  integrity sha512-dUTQjBX1yjnHbqkTL5ditqtx5R6QhcXI3lCnjOy8e5XUOr5LOtVpol1mufU2lAb7DtEYrSVRQpUeNmZrTEgLcg==
-  dependencies:
-    prop-types "^15.6.2"
+"@slimsag/react-shortcuts@link:../node_modules/@slimsag/react-shortcuts":
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@link:../node_modules/@sourcegraph/prettierrc":
   version "0.0.0"

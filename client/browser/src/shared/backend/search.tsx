@@ -213,7 +213,7 @@ export const createSuggestionFetcher = (first = 5) => {
                     take(first),
                     map(createSuggestion),
                     // createSuggestion will return null if we get a type we don't recognize
-                    filter(f => !!f),
+                    filter((f): f is Suggestion => !!f),
                     toArray(),
                     map((suggestions: Suggestion[]) => ({
                         suggestions,

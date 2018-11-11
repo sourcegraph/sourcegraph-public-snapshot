@@ -232,12 +232,14 @@ runtime.onMessage((message, _, cb) => {
             storage.getLocalItem('identity', obj => {
                 const { identity } = obj
 
-                cb(identity)
+                // TODO: remove "!"" added after typescript upgrade
+                cb!(identity)
             })
             return true
 
         case 'setEnterpriseUrl':
-            requestPermissionsForEnterpriseUrls([message.payload], cb)
+            // TODO: remove "!"" added after typescript upgrade
+            requestPermissionsForEnterpriseUrls([message.payload], cb!)
             return true
 
         case 'setSourcegraphUrl':
@@ -245,7 +247,8 @@ runtime.onMessage((message, _, cb) => {
             return true
 
         case 'removeEnterpriseUrl':
-            removeEnterpriseUrl(message.payload, cb)
+            // TODO: remove "!"" added after typescript upgrade
+            removeEnterpriseUrl(message.payload, cb!)
             return true
 
         // We should only need to do this on safari

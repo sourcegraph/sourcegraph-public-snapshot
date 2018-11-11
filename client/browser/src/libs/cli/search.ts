@@ -14,9 +14,9 @@ class SearchCommand {
 
     private suggestionFetcher = createSuggestionFetcher(20)
 
-    private prev: { query: string; suggestions: chrome.omnibox.Suggestion[] } = { query: '', suggestions: [] }
+    private prev: { query: string; suggestions: chrome.omnibox.SuggestResult[] } = { query: '', suggestions: [] }
 
-    public getSuggestions = (query: string): Promise<chrome.omnibox.Suggestion[]> =>
+    public getSuggestions = (query: string): Promise<chrome.omnibox.SuggestResult[]> =>
         new Promise(resolve => {
             if (this.prev.query === query) {
                 resolve(this.prev.suggestions)

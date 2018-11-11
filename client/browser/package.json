@@ -27,8 +27,8 @@
     "last 3 Firefox versions"
   ],
   "dependencies": {
-    "@slimsag/react-shortcuts": "^1.2.1",
-    "@sourcegraph/codeintellify": "^3.9.1",
+    "@slimsag/react-shortcuts": "link:../../node_modules/@slimsag/react-shortcuts",
+    "@sourcegraph/codeintellify": "link:../../node_modules/@sourcegraph/codeintellify",
     "@sourcegraph/react-loading-spinner": "0.0.6",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/sinon": "^5.0.5",
@@ -37,7 +37,7 @@
     "cypress-browser-extension-plugin": "^0.1.0",
     "downshift": "^2.0.14",
     "formdata-polyfill": "^3.0.9",
-    "highlight.js": "^9.12.0",
+    "highlight.js": "link:../../node_modules/highlight.js",
     "intersection-observer": "^0.5.0",
     "javascript-typescript-langserver": "^2.9.4",
     "lodash": "^4.17.10",

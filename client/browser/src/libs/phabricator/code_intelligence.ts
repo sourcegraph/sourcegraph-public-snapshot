@@ -10,8 +10,8 @@ import { resolveDiffFileInfo, resolveDiffusionFileInfo } from './file_info'
 
 function createMount(
     findMountLocation: (file: HTMLElement, part?: DiffPart) => HTMLElement
-): (file: HTMLElement, part: DiffPart) => HTMLElement {
-    return (file: HTMLElement, part: DiffPart) => {
+): (file: HTMLElement, part?: DiffPart) => HTMLElement {
+    return (file, part) => {
         const className = 'sourcegraph-app-annotator' + (part === 'base' ? '-base' : '')
         const existingMount = file.querySelector('.' + className)
         if (existingMount) {

@@ -15,7 +15,7 @@ class PortMessageReader extends AbstractMessageReader implements MessageReader {
     constructor(private port: chrome.runtime.Port) {
         super()
 
-        port.onMessage.addListener((message: Message) => {
+        port.onMessage.addListener((message: any) => {
             try {
                 if (this.callback) {
                     this.callback(message)

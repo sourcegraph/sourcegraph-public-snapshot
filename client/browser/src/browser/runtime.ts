@@ -31,7 +31,7 @@ export const sendMessage = (message: Message, responseCallback?: (response: any)
 }
 
 export const onMessage = (
-    callback: (message: Message, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => void
+    callback: (message: Message, sender: chrome.runtime.MessageSender, sendResponse?: (response: any) => void) => void
 ) => {
     if (chrome && chrome.runtime && chrome.runtime.onMessage) {
         chrome.runtime.onMessage.addListener(callback)

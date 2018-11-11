@@ -42,7 +42,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@slimsag/react-shortcuts": "^1.2.0",
+    "@slimsag/react-shortcuts": "link:../node_modules/@slimsag/react-shortcuts",
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "link:../node_modules/bootstrap",
     "lodash-es": "^4.17.10",
