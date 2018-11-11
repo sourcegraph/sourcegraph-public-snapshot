@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-    "target": "es2015",
+    "target": "es2018",
     "module": "commonjs",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "typeRoots": ["node_modules/@types", "../../node_modules/@types", "src/types"],
-    "lib": ["es2017", "dom", "dom.iterable", "es2017.object"],
+    "lib": ["es2018", "dom", "dom.iterable", "es2017.object", "esnext"],
     "jsx": "react",
     "allowJs": true,
     "checkJs": true,

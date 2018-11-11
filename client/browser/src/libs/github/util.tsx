@@ -234,7 +234,7 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
     }
 
     if (baseCommitID === '' || headCommitID === '') {
-        return getDiffResolvedRevFromPageSource(document.documentElement.innerHTML)
+        return getDiffResolvedRevFromPageSource(document.documentElement!.innerHTML)
     }
     return { baseCommitID, headCommitID }
 }
