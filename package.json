@@ -15,7 +15,7 @@
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'enterprise/**/*.ts?(x)' './*.ts?(x)'",
     "stylelint": "stylelint --quiet 'enterprise/**/*.scss'",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
-    "prepublish": "cd shared && yarn"
+    "prepublish": "(cd shared && yarn) && (cd client/browser && yarn) && (cd web && yarn)"
   },
   "devDependencies": {
     "@babel/core": "^7.1.5",
