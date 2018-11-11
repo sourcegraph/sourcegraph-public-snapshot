@@ -6,8 +6,8 @@ import { noop, Observable, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import sinon from 'sinon'
-import { AccessToken } from '../../browser/types'
 import * as GQL from '../../../../../shared/src/graphqlschema'
+import { AccessToken } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from './OptionsContainer'
 
 describe('OptionsContainer', () => {

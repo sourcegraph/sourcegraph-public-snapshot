@@ -1,11 +1,11 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mapTo, share, switchMap, tap } from 'rxjs/operators'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import { getExtensionVersionSync } from '../../browser/runtime'
 import { AccessToken } from '../../browser/types'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
 import { propertyIsDefined } from '../../shared/util/types'
-import * as GQL from '../../../../../shared/src/graphqlschema'
 import { OptionsMenu, OptionsMenuProps } from './Menu'
 import { ConnectionErrors } from './ServerURLForm'
 

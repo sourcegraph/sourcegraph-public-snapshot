@@ -14,6 +14,7 @@ import { UpdateExtensionSettingsArgs } from '../../../../../shared/src/context'
 import { Controller as ExtensionsContextController } from '../../../../../shared/src/controller'
 import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
 import { gql, graphQLContent } from '../../../../../shared/src/graphql'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import {
     gqlToCascade,
     mergeSettings,
@@ -24,7 +25,6 @@ import {
 } from '../../../../../shared/src/settings'
 import storage, { StorageItems } from '../../browser/storage'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
-import * as GQL from '../../../../../shared/src/graphqlschema'
 import { canFetchForURL } from '../util/context'
 import { getContext } from './context'
 import { createAggregateError, isErrorLike } from './errors'
