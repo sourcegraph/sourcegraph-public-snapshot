@@ -3,8 +3,13 @@
   "compilerOptions": {
     "typeRoots": ["node_modules/@types", "src/types"],
     "jsx": "react",
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "strictPropertyInitialization": false,
+    "resolveJsonModule": true,
     "allowJs": true,
     "checkJs": true
   },
+  "include": ["src/**/*.ts", "config/**/*.js", "config/**/*.ts", "cypress/**/*.ts", "scripts/**/*.ts", "*.ts"],
   "exclude": ["./node_modules", "./build", "./*.safariextension"]
 }

@@ -11,10 +11,10 @@ export const initializeServer = () => {
     // Since this port is hard-coded, it must match background.tsx
     const socketIOServer = io.listen(8890)
     logger.await('Ready for a browser extension to connect')
-    socketIOServer.on('connect', socket => {
+    socketIOServer.on('connect', () => {
         logger.info('Browser extension connected')
     })
-    socketIOServer.on('disconnect', socket => {
+    socketIOServer.on('disconnect', () => {
         logger.info('Browser extension disconnected')
     })
 
