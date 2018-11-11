@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
-import { userURL } from '../../../../packages/webapp/src/user'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
+import { userURL } from '../../../../web/src/user'
 
 /**
  * Displays the account name as a link.

@@ -1,6 +1,6 @@
 import AddIcon from 'mdi-react/AddIcon'
-import { ExtensionsAreaHeaderActionButton } from '../../../packages/webapp/src/extensions/ExtensionsAreaHeader'
-import { extensionsAreaHeaderActionButtons } from '../../../packages/webapp/src/extensions/extensionsAreaHeaderActionButtons'
+import { ExtensionsAreaHeaderActionButton } from '../../../web/src/extensions/ExtensionsAreaHeader'
+import { extensionsAreaHeaderActionButtons } from '../../../web/src/extensions/extensionsAreaHeaderActionButtons'
 
 export const enterpriseExtensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton> = [
     ...extensionsAreaHeaderActionButtons,

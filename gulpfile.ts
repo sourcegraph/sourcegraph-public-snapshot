@@ -12,7 +12,7 @@ import { format, resolveConfig } from 'prettier'
 import createWebpackCompiler, { Stats } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
 import { draftV7resolver } from './dev/draftV7Resolver'
-import webpackConfig from './packages/webapp/webpack.config'
+import webpackConfig from './web/webpack.config'
 
 const WEBPACK_STATS_OPTIONS = {
     all: false,
@@ -103,14 +103,14 @@ export async function graphQLTypes(): Promise<void> {
                 postProcessor: (code: string) => format(code, { ...formatOptions, parser: 'typescript' }),
             }
         )
-    await writeFile(__dirname + '/packages/webapp/src/backend/graphqlschema.ts', typings)
+    await writeFile(__dirname + '/web/src/backend/graphqlschema.ts', typings)
 }
 
 /**
  * Generates the TypeScript types for the JSON schemas and copies the schemas to the webapp's src/ so they can be imported
  */
 export async function schema(): Promise<void> {
-    await Promise.all([mkdirp(`${__dirname}/packages/webapp/src/schema`), mkdirp(__dirname + '/dist/schema')])
+    await Promise.all([mkdirp(`${__dirname}/web/src/schema`), mkdirp(__dirname + '/dist/schema')])
     await Promise.all(
         ['json-schema-draft-07', 'settings', 'site', 'extension'].map(async file => {
             let schema = await readFile(__dirname + `/schema/${file}.schema.json`, 'utf8')
@@ -133,9 +133,9 @@ export async function schema(): Promise<void> {
                 },
             })
             await Promise.all([
-                writeFile(__dirname + `/packages/webapp/src/schema/${file}.schema.d.ts`, types),
+                writeFile(__dirname + `/web/src/schema/${file}.schema.d.ts`, types),
                 // Copy schema to src/ so it can be imported in TypeScript
-                writeFile(__dirname + `/packages/webapp/src/schema/${file}.schema.json`, schema),
+                writeFile(__dirname + `/web/src/schema/${file}.schema.json`, schema),
             ])
         })
     )
@@ -153,7 +153,7 @@ export async function watchSchema(): Promise<void> {
 export function typescript(): ChildProcess {
     return spawn('yarn', ['-s', 'run', 'tsc', '-p', 'tsconfig.json', '--pretty'], {
         stdio: 'inherit',
-        cwd: 'packages/webapp',
+        cwd: 'web',
         shell: true,
     })
 }

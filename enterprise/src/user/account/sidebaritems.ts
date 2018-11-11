@@ -1,4 +1,4 @@
-import { userAccountSideBarItems } from '../../../../packages/webapp/src/user/account/sidebaritems'
+import { userAccountSideBarItems } from '../../../../web/src/user/account/sidebaritems'
 import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
 
 export const enterpriseUserAccountSideBarItems = {

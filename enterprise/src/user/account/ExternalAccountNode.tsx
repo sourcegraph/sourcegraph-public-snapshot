@@ -3,11 +3,11 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import { gql, mutateGraphQL } from '../../../../packages/webapp/src/backend/graphql'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
-import { Timestamp } from '../../../../packages/webapp/src/components/time/Timestamp'
-import { userURL } from '../../../../packages/webapp/src/user'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../packages/webapp/src/util/errors'
+import { gql, mutateGraphQL } from '../../../../web/src/backend/graphql'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
+import { Timestamp } from '../../../../web/src/components/time/Timestamp'
+import { userURL } from '../../../../web/src/user'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../web/src/util/errors'
 
 export const externalAccountFragment = gql`
     fragment ExternalAccountFields on ExternalAccount {

@@ -9,7 +9,7 @@ const config = {
       {
         useBuiltIns: 'entry',
         modules: false,
-        // Must match "browserslist" from packages/webapp/package.json
+        // Must match "browserslist" from web/package.json
         targets: ['last 1 version', '>1%', 'not dead', 'not <0.25%', 'last 1 Chrome versions', 'not IE > 0'],
       },
     ],

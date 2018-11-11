@@ -1,8 +1,8 @@
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
-import { LinkOrSpan } from '../../../../packages/webapp/src/components/LinkOrSpan'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
+import { LinkOrSpan } from '../../../../web/src/components/LinkOrSpan'
 
 export const RegistryExtensionSourceBadge: React.SFC<{
     extension: Pick<GQL.IRegistryExtension, 'remoteURL' | 'registryName' | 'isLocal'>

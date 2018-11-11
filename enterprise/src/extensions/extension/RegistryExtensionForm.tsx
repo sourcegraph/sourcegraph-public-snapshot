@@ -1,12 +1,12 @@
 import * as React from 'react'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
 import {
     EXTENSION_NAME_MAX_LENGTH,
     EXTENSION_NAME_VALID_PATTERN,
     publisherName,
     RegistryPublisher,
-} from '../../../../packages/webapp/src/extensions/extension/extension'
-import { ErrorLike, isErrorLike } from '../../../../packages/webapp/src/util/errors'
+} from '../../../../web/src/extensions/extension/extension'
+import { ErrorLike, isErrorLike } from '../../../../web/src/util/errors'
 
 export const RegistryPublisherFormGroup: React.SFC<{
     className?: string

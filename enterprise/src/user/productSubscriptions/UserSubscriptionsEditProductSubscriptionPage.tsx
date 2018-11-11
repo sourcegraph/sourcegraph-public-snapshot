@@ -15,11 +15,11 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
-import { gql, mutateGraphQL, queryGraphQL } from '../../../../packages/webapp/src/backend/graphql'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
-import { PageTitle } from '../../../../packages/webapp/src/components/PageTitle'
-import { eventLogger } from '../../../../packages/webapp/src/tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../packages/webapp/src/util/errors'
+import { gql, mutateGraphQL, queryGraphQL } from '../../../../web/src/backend/graphql'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
+import { PageTitle } from '../../../../web/src/components/PageTitle'
+import { eventLogger } from '../../../../web/src/tracking/eventLogger'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../web/src/util/errors'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
@@ -179,6 +179,7 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
                         }
                     }
                 }
+
                 fragment ProductSubscriptionFields on ProductSubscription {
                     id
                     name

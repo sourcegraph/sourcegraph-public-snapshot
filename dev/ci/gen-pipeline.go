@@ -77,7 +77,7 @@ func main() {
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace webapp run cover"),
 		bk.Cmd("yarn workspace webapp run nyc report -r json --report-dir coverage"),
-		bk.ArtifactPaths("packages/webapp/coverage/coverage-final.json"))
+		bk.ArtifactPaths("web/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":docker:",
 		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
@@ -119,7 +119,7 @@ func main() {
 	pipeline.AddWait()
 
 	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download 'packages/webapp/coverage/coverage-final.json' . || true"), // ignore error when no report exists
+		bk.Cmd("buildkite-agent artifact download 'web/coverage/coverage-final.json' . || true"), // ignore error when no report exists
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
 		bk.Cmd("buildkite-agent artifact download 'packages/extensions-client-common/coverage/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),

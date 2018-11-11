@@ -4,12 +4,12 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../../../../packages/webapp/src/backend/graphql'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
-import { PageTitle } from '../../../../packages/webapp/src/components/PageTitle'
-import { SiteAdminAlert } from '../../../../packages/webapp/src/site-admin/SiteAdminAlert'
-import { eventLogger } from '../../../../packages/webapp/src/tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../packages/webapp/src/util/errors'
+import { gql, queryGraphQL } from '../../../../web/src/backend/graphql'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
+import { PageTitle } from '../../../../web/src/components/PageTitle'
+import { SiteAdminAlert } from '../../../../web/src/site-admin/SiteAdminAlert'
+import { eventLogger } from '../../../../web/src/tracking/eventLogger'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../web/src/util/errors'
 import { mailtoSales } from '../../productSubscription/helpers'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionBilling } from './ProductSubscriptionBilling'
@@ -192,6 +192,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                         }
                     }
                 }
+
                 fragment ProductSubscriptionFields on ProductSubscription {
                     id
                     name

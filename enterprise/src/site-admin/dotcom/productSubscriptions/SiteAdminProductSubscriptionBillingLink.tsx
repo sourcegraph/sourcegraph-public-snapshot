@@ -13,9 +13,9 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
-import { gql, mutateGraphQL } from '../../../../../packages/webapp/src/backend/graphql'
-import * as GQL from '../../../../../packages/webapp/src/backend/graphqlschema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../packages/webapp/src/util/errors'
+import { gql, mutateGraphQL } from '../../../../../web/src/backend/graphql'
+import * as GQL from '../../../../../web/src/backend/graphqlschema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../web/src/util/errors'
 
 interface Props {
     /** The product subscription to show a billing link for. */

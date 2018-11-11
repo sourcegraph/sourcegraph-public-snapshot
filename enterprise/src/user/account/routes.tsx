@@ -1,6 +1,6 @@
 import React from 'react'
-import { userAccountAreaRoutes } from '../../../../packages/webapp/src/user/account/routes'
-import { UserAccountAreaRoute } from '../../../../packages/webapp/src/user/account/UserAccountArea'
+import { userAccountAreaRoutes } from '../../../../web/src/user/account/routes'
+import { UserAccountAreaRoute } from '../../../../web/src/user/account/UserAccountArea'
 import { UserAccountExternalAccountsPage } from './UserAccountExternalAccountsPage'
 
 export const enterpriseUserAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [

@@ -1,5 +1,5 @@
 import React from 'react'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
 
 /** Displays the price of a tiered plan. */
 export const ProductPlanTiered: React.SFC<{
@@ -19,7 +19,7 @@ export const ProductPlanTiered: React.SFC<{
 function formatAmountForTier(tier: GQL.IPlanTier, minQuantity: number | null): string {
     if (minQuantity !== null && tier.upTo !== 0 && tier.upTo <= minQuantity) {
         // Quote the total annual amount for users up to the minQuantity.
-        const amount = ((tier.unitAmount / 100) /* cents in a USD */ * minQuantity).toLocaleString('en-US', {
+        const amount = (tier.unitAmount / 100 /* cents in a USD */ * minQuantity).toLocaleString('en-US', {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 0,

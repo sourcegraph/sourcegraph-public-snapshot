@@ -4,8 +4,8 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
-import { asError, ErrorLike, isErrorLike } from '../../../../packages/webapp/src/util/errors'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
+import { asError, ErrorLike, isErrorLike } from '../../../../web/src/util/errors'
 import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
 interface RegistryExtensionDeleteButtonProps {

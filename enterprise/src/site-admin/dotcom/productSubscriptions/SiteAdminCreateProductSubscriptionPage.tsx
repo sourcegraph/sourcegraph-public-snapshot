@@ -3,13 +3,13 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { gql, mutateGraphQL, queryGraphQL } from '../../../../../packages/webapp/src/backend/graphql'
-import * as GQL from '../../../../../packages/webapp/src/backend/graphqlschema'
-import { Form } from '../../../../../packages/webapp/src/components/Form'
-import { PageTitle } from '../../../../../packages/webapp/src/components/PageTitle'
-import { eventLogger } from '../../../../../packages/webapp/src/tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../packages/webapp/src/util/errors'
-import { pluralize } from '../../../../../packages/webapp/src/util/strings'
+import { gql, mutateGraphQL, queryGraphQL } from '../../../../../web/src/backend/graphql'
+import * as GQL from '../../../../../web/src/backend/graphqlschema'
+import { Form } from '../../../../../web/src/components/Form'
+import { PageTitle } from '../../../../../web/src/components/PageTitle'
+import { eventLogger } from '../../../../../web/src/tracking/eventLogger'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../web/src/util/errors'
+import { pluralize } from '../../../../../web/src/util/strings'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 
 interface Props extends RouteComponentProps<{}> {
@@ -68,11 +68,7 @@ export class SiteAdminCreateProductSubscriptionPage extends React.Component<Prop
 
         this.subscriptions.add(
             queryAccounts()
-                .pipe(
-                    catchError(err => [asError(err)]),
-                    startWith(LOADING),
-                    map(c => ({ accountsOrError: c }))
-                )
+                .pipe(catchError(err => [asError(err)]), startWith(LOADING), map(c => ({ accountsOrError: c })))
                 .subscribe(stateUpdate => this.setState(stateUpdate))
         )
 

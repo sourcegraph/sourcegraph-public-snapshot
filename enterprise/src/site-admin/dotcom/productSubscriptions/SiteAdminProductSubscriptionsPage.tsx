@@ -4,12 +4,12 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../../../../../packages/webapp/src/backend/graphql'
-import * as GQL from '../../../../../packages/webapp/src/backend/graphqlschema'
-import { FilteredConnection } from '../../../../../packages/webapp/src/components/FilteredConnection'
-import { PageTitle } from '../../../../../packages/webapp/src/components/PageTitle'
-import { eventLogger } from '../../../../../packages/webapp/src/tracking/eventLogger'
-import { createAggregateError } from '../../../../../packages/webapp/src/util/errors'
+import { gql, queryGraphQL } from '../../../../../web/src/backend/graphql'
+import * as GQL from '../../../../../web/src/backend/graphqlschema'
+import { FilteredConnection } from '../../../../../web/src/components/FilteredConnection'
+import { PageTitle } from '../../../../../web/src/components/PageTitle'
+import { eventLogger } from '../../../../../web/src/tracking/eventLogger'
+import { createAggregateError } from '../../../../../web/src/util/errors'
 import {
     siteAdminProductSubscriptionFragment,
     SiteAdminProductSubscriptionNode,

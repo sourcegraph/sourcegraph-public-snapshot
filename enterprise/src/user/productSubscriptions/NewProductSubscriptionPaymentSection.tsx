@@ -6,10 +6,10 @@ import * as React from 'react'
 import { ReactStripeElements } from 'react-stripe-elements'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../../../../packages/webapp/src/backend/graphql'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../packages/webapp/src/util/errors'
-import { numberWithCommas } from '../../../../packages/webapp/src/util/strings'
+import { gql, queryGraphQL } from '../../../../web/src/backend/graphql'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../web/src/util/errors'
+import { numberWithCommas } from '../../../../web/src/util/strings'
 import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
 import { ProductSubscriptionBeforeAfterInvoiceItem } from './ProductSubscriptionBeforeAfterInvoiceItem'
 
@@ -85,10 +85,7 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<
                             account: accountID,
                             subscriptionToUpdate: subscriptionID,
                             productSubscription,
-                        }).pipe(
-                            catchError(err => [asError(err)]),
-                            startWith(LOADING)
-                        )
+                        }).pipe(catchError(err => [asError(err)]), startWith(LOADING))
                     }),
                     tap(result => this.props.onValidityChange(!this.isPreviewInvoiceInvalid(result))),
                     map(result => ({ previewInvoiceOrError: result }))

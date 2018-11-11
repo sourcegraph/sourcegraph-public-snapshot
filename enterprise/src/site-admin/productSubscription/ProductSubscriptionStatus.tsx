@@ -2,10 +2,10 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../../../../packages/webapp/src/backend/graphql'
-import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../packages/webapp/src/util/errors'
-import { numberWithCommas } from '../../../../packages/webapp/src/util/strings'
+import { gql, queryGraphQL } from '../../../../web/src/backend/graphql'
+import * as GQL from '../../../../web/src/backend/graphqlschema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../web/src/util/errors'
+import { numberWithCommas } from '../../../../web/src/util/strings'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount } from '../../productSubscription/helpers'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
@@ -39,10 +39,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.queryProductLicenseInfo()
-                .pipe(
-                    catchError(err => [asError(err)]),
-                    map(v => ({ statusOrError: v }))
-                )
+                .pipe(catchError(err => [asError(err)]), map(v => ({ statusOrError: v })))
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
     }
