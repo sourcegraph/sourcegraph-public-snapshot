@@ -1,0 +1,9 @@
+export function illegalArgument(name) {
+    if (name) {
+        return new Error(`Illegal argument: ${name}`);
+    }
+    else {
+        return new Error('Illegal argument');
+    }
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZXJyb3JzLmpzIiwic291cmNlUm9vdCI6InNyYy8iLCJzb3VyY2VzIjpbImV4dGVuc2lvbi90eXBlcy9lcnJvcnMudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsTUFBTSxVQUFVLGVBQWUsQ0FBQyxJQUFhO0lBQ3pDLElBQUksSUFBSSxFQUFFO1FBQ04sT0FBTyxJQUFJLEtBQUssQ0FBQyxxQkFBcUIsSUFBSSxFQUFFLENBQUMsQ0FBQTtLQUNoRDtTQUFNO1FBQ0gsT0FBTyxJQUFJLEtBQUssQ0FBQyxrQkFBa0IsQ0FBQyxDQUFBO0tBQ3ZDO0FBQ0wsQ0FBQyIsInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBmdW5jdGlvbiBpbGxlZ2FsQXJndW1lbnQobmFtZT86IHN0cmluZyk6IEVycm9yIHtcbiAgICBpZiAobmFtZSkge1xuICAgICAgICByZXR1cm4gbmV3IEVycm9yKGBJbGxlZ2FsIGFyZ3VtZW50OiAke25hbWV9YClcbiAgICB9IGVsc2Uge1xuICAgICAgICByZXR1cm4gbmV3IEVycm9yKCdJbGxlZ2FsIGFyZ3VtZW50JylcbiAgICB9XG59XG4iXX0=
