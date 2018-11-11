@@ -1,5 +1,5 @@
 import React from 'react'
-import { LinkOrSpan } from '../../../../web/src/components/LinkOrSpan'
+import { LinkOrSpan } from '../../../../shared/src/ui/generic/LinkOrSpan'
 
 /**
  * An extension card shown in {@link ExtensionsExploreSection}.
