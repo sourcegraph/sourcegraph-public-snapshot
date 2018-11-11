@@ -10,7 +10,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
-- Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`.
 
 ### Changed
 

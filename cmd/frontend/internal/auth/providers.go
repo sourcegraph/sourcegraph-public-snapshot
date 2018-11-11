@@ -48,6 +48,10 @@ func GetProviderByConfigID(id ProviderConfigID) Provider {
 // It is generally called by site configuration listeners associated with authentication provider
 // implementations after any change to the set of configured instances of that type.
 func UpdateProviders(updates map[Provider]bool) {
+	if MockProviders != nil {
+		panic("not yet implemented: calling UpdateProviders when MockProviders is non-nil")
+	}
+
 	allProvidersMu.Lock()
 	defer allProvidersMu.Unlock()
 
