@@ -5,7 +5,7 @@
     "yarn": ">1.10.0"
   },
   "scripts": {
-    "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 node -r ts-node/register scripts/dev",
+    "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" node -r ts-node/register scripts/dev",
     "dev:no-reload": "AUTO_RELOAD=false yarn run dev",
     "dev:firefox": "if type web-ext 2>/dev/null; then web-ext run --source-dir ./build/firefox; else echo 'web-ext not found. Install it with: yarn global add web-ext'; exit 1; fi",
     "build": "NODE_ENV=production ts-node scripts/build",
@@ -64,9 +64,9 @@
     "whatwg-url": "link:../../node_modules/whatwg-url"
   },
   "devDependencies": {
-    "@babel/core": "^7.0.1",
-    "@babel/polyfill": "^7.0.0",
-    "@babel/preset-env": "^7.0.0",
+    "@babel/core": "link:../../node_modules/@babel/core",
+    "@babel/polyfill": "link:../../node_modules/@babel/polyfill",
+    "@babel/preset-env": "link:../../node_modules/@babel/preset-env",
     "@babel/runtime": "^7.0.0",
     "@semantic-release/exec": "^3.1.0",
     "@sourcegraph/prettierrc": "link:../../node_modules/@sourcegraph/prettierrc",
@@ -76,6 +76,7 @@
     "@storybook/addon-links": "4.0.0-alpha.21",
     "@storybook/addons": "4.0.0-alpha.21",
     "@storybook/react": "4.0.0-alpha.21",
+    "@types/babel__core": "link:../../node_modules/@types/babel__core",
     "@types/bluebird": "3.5.24",
     "@types/chai": "4.1.7",
     "@types/chalk": "2.2.0",

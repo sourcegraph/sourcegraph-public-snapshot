@@ -53,9 +53,7 @@
     "not IE > 0"
   ],
   "dependencies": {
-    "@babel/core": "^7.0.0",
     "@babel/plugin-syntax-dynamic-import": "^7.0.0",
-    "@babel/polyfill": "^7.0.0",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^3.9.1",
     "@sqs/jsonc-parser": "^1.0.3",
@@ -108,13 +106,15 @@
     "whatwg-url": "link:../node_modules/whatwg-url"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.0.0",
-    "@babel/preset-react": "^7.0.0",
+    "@babel/core": "link:../node_modules/@babel/core",
+    "@babel/polyfill": "link:../node_modules/@babel/polyfill",
+    "@babel/preset-env": "link:../node_modules/@babel/preset-env",
+    "@babel/preset-react": "link:../node_modules/@babel/preset-react",
     "@gql2ts/from-schema": "^1.10.1",
     "@sourcegraph/prettierrc": "link:../node_modules/@sourcegraph/prettierrc",
     "@sourcegraph/stylelint-config": "link:../node_modules/@sourcegraph/stylelint-config",
     "@sourcegraph/tslint-config": "link:../node_modules/@sourcegraph/tslint-config",
-    "@types/babel__core": "7.0.1",
+    "@types/babel__core": "link:../node_modules/@types/babel__core",
     "@types/babelify": "7.3.6",
     "@types/bluebird": "3.5.24",
     "@types/browserify": "12.0.36",

@@ -4,7 +4,7 @@ import * as webpack from 'webpack'
 
 import { buildStylesLoaders, jsRule, tsRule } from '../shared/webpack'
 
-const buildEntry = (...files) => files.map(file => path.join(__dirname, file))
+const buildEntry = (...files: string[]) => files.map(file => path.join(__dirname, file))
 
 const contentEntry = '../../src/config/content.entry.js'
 const backgroundEntry = '../../src/config/background.entry.js'
