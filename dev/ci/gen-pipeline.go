@@ -110,11 +110,12 @@ func main() {
 		bk.ArtifactPaths("packages/extensions-client-common/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
+		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace browser-extensions run tslint"),
-		bk.Cmd("yarn workspace browser-extensions run browserslist"),
-		bk.Cmd("yarn workspace browser-extensions run build"),
-		bk.Cmd("yarn workspace browser-extensions run test:ci"))
+		bk.Cmd("yarn -s run tslint"),
+		bk.Cmd("yarn -s run browserslist"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("yarn -s run test:ci"))
 
 	pipeline.AddWait()
 

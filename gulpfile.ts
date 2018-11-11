@@ -158,12 +158,12 @@ export function typescript(): ChildProcess {
     })
 }
 
-const PHABRICATOR_EXTENSION_FILES = './packages/browser-extensions/build/phabricator/**'
+const PHABRICATOR_EXTENSION_FILES = './client/browser/build/phabricator/**'
 
 /**
  * Copies the phabricator extension over to the ui/assets
  * folder so they can be served by the webapp.
- * The package is published from https://github.com/sourcegraph/browser-extensions
+ * The package is published from ./client/browser.
  */
 export function phabricator(): NodeJS.ReadWriteStream {
     return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest('./ui/assets/extension'))

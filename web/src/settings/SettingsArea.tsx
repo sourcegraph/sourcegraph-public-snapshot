@@ -1,4 +1,3 @@
-import { gqlToCascade } from '../../../extensions-client-common/src/settings'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -6,6 +5,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { gqlToCascade } from '../../../extensions-client-common/src/settings'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { ISettingsCascade } from '../backend/graphqlschema'
@@ -159,9 +159,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     private onUpdate = () => this.refreshRequests.next()
 
-    private getMergedSettingsJSONSchema(
-        cascade: Pick<GQL.ISettingsCascade, 'subjects'>
-    ): Observable<{ $id: string }> {
+    private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
         return this.props.extensions.withRegistryMetadata(gqlToCascade(cascade)).pipe(
             map(configuredExtensions => ({
                 $id: 'settings.schema.json',

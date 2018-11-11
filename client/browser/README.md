@@ -70,7 +70,7 @@ It works as follows:
 For each browser run:
 
 ```bash
-sourcegraph/sourcegraph$ ./dev/browser-extension.sh
+yarn run dev
 ```
 
 Now, follow the steps below for the browser you intend to work with.

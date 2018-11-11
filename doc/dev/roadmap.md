@@ -115,7 +115,7 @@ Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@sl
 
 [sourcegraph]: https://github.com/sourcegraph/sourcegraph
 [sourcegraph-extension-api]: https://github.com/sourcegraph/sourcegraph/tree/master/packages/sourcegraph-extension-api
-[browser-extensions]: https://github.com/sourcegraph/sourcegraph/tree/master/packages/browser-extensions
+[browser-extensions]: https://github.com/sourcegraph/sourcegraph/tree/master/client/browser
 [deploy-sourcegraph]: https://github.com/sourcegraph/deploy-sourcegraph
 [src-cli]: https://github.com/sourcegraph/src-cli
 [chrismwendt]: https://github.com/chrismwendt

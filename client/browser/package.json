@@ -1,6 +1,5 @@
 {
   "private": true,
-  "name": "browser-extensions",
   "version": "1.0.0",
   "engines": {
     "yarn": ">1.10.0"
