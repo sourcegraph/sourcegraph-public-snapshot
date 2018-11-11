@@ -1,6 +1,6 @@
-import { IClientConfigurationDetails } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
+import { IClientConfigurationDetails } from '../../../../webapp/src/backend/graphqlschema'
 import { isOptions } from '../../context'
 import { GQL } from '../../types/gqlschema'
 import { sourcegraphUrl } from '../util/context'

@@ -1,5 +1,4 @@
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import { SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
@@ -158,9 +157,13 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         const resultOrError = this.queryRegistryExtensions({ query }).pipe(
                             catchError(err => [asError(err)])
                         )
-                        return concat(of(LOADING).pipe(delay(250), takeUntil(resultOrError)), resultOrError).pipe(
-                            map(resultOrError => ({ data: { query, resultOrError } }))
-                        )
+                        return concat(
+                            of(LOADING).pipe(
+                                delay(250),
+                                takeUntil(resultOrError)
+                            ),
+                            resultOrError
+                        ).pipe(map(resultOrError => ({ data: { query, resultOrError } })))
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
@@ -279,9 +282,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 )
             ),
             map(({ registryExtensions, error }) => ({
-                // TODO(sqs): The cast to extensions-client-common's GQL (called "ECCGQL") is needed, despite that
-                // module being copied from this repository. I don't know why.
-                extensions: this.props.extensions.withConfiguration(registryExtensions as ECCGQL.IRegistryExtension[]),
+                extensions: this.props.extensions.withConfiguration(registryExtensions),
                 error,
             }))
         )

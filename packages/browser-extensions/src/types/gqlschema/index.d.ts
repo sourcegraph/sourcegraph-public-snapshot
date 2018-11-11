@@ -1,3 +1,3 @@
-import * as GQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
+import * as GQL from '../../../../webapp/src/backend/graphqlschema'
 
 export { GQL }

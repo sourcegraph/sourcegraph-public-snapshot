@@ -9,7 +9,6 @@ import {
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
-import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import {
     gqlToCascade,
     Settings,
@@ -51,7 +50,7 @@ export function createExtensionsContextController(): ExtensionsContextController
                     ${request}
                 `,
                 variables
-            ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry' | 'repository'>>>,
+            ) as Observable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry' | 'repository'>>>,
         queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
             CaretDown: MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>,

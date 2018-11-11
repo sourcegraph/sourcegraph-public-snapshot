@@ -1,12 +1,13 @@
 {
   "name": "@sourcegraph/extensions-client-common",
+  "private":true,
   "version": "12.0.0",
   "description": "Common TypeScript/React client application code for Sourcegraph extension configuration and management, used in Sourcegraph and \"Sourcegraph for X\" products",
-  "main": "lib/index.js",
-  "module": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "src/index.d.ts",
   "files": [
-    "lib"
+    "src"
   ],
   "bugs": {
     "url": "https://github.com/sourcegraph/sourcegraph/issues"
@@ -18,19 +19,10 @@
   "scripts": {
     "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
-    "clean": "del-cli 'lib/**/*'",
     "typecheck": "tsc -p tsconfig.json",
-    "build": "yarn -s run clean && yarn -s run build:assets && yarn -s run build:typescript",
-    "build:assets": "cpy --parents --cwd=src '**/*.{css,d.ts,json}' '../lib/' && yarn -s run build:assets:schema",
-    "build:assets:schema": "mkdir -p lib/api/protocol && typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json' --noExtraProps --required --include src/api/protocol/contribution.ts --out lib/api/protocol/contribution.schema.json tsconfig.dist.json Contributions && node -e \"/* Deletes the top-level additionalProperties property in the file. */ fs = require('fs');f = process.argv[1];o = JSON.parse(fs.readFileSync(f, 'utf8'));delete o.additionalProperties;fs.writeFileSync(f, JSON.stringify(o, null, 4))\" lib/api/protocol/contribution.schema.json",
-    "build:typescript": "tsc -p tsconfig.dist.json",
+    "generate-contribution-schema": "typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json' --noExtraProps --required --include src/api/protocol/contribution.ts --out src/api/protocol/contribution.schema.json tsconfig.json Contributions && node -e \"/* Deletes the top-level additionalProperties property in the file. */ fs = require('fs');f = process.argv[1];o = JSON.parse(fs.readFileSync(f, 'utf8'));delete o.additionalProperties;fs.writeFileSync(f, JSON.stringify(o, null, 4))\" src/api/protocol/contribution.schema.json",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
-    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
-    "watch:typecheck": "tsc -p tsconfig.json -w --pretty",
-    "watch:build:typescript": "tsc -p tsconfig.dist.json -w --preserveWatchOutput --pretty",
-    "watch:build:assets": "nodemon -q --watch src/ --ext css,d.ts,json --exec 'yarn -s run build:assets || exit 1'",
-    "watch:build": "concurrently --raw --kill-others 'yarn -s run watch:build:typescript' 'yarn -s run watch:build:assets'",
-    "watch:test": "yarn -s run test -- -w"
+    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000"
   },
   "nyc": {
     "extension": [

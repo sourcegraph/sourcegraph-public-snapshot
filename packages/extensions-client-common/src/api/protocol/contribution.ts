@@ -1,5 +1,8 @@
 import { KeyPath } from './configuration'
 
+// NOTE: After changing this file, you must run `yarn run generate-contribution-schema` to update
+// contribution.schema.json.
+
 /**
  * Contributions describes the functionality provided by an extension.
  */

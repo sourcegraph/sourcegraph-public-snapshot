@@ -18,9 +18,7 @@ interface Props<S extends SettingsSubject, C extends Settings> extends SettingsC
 }
 
 /** Displays an extension as a card. */
-export class ExtensionCard<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>
-> {
+export class ExtensionCard<S extends SettingsSubject, C extends Settings> extends React.PureComponent<Props<S, C>> {
     public render(): JSX.Element | null {
         const { node, ...props } = this.props
         const manifest: ExtensionManifest | undefined =
