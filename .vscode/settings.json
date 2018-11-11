@@ -1,5 +1,4 @@
 {
-  "typescript.tsdk": "./node_modules/typescript/lib",
   "tslint.nodePath": "./node_modules",
   "search.exclude": {
     "**/node_modules": true,

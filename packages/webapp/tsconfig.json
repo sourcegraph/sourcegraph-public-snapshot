@@ -1,10 +1,10 @@
 {
-  "extends": "../../node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
     "target": "es2017",
     "module": "commonjs",
     "moduleResolution": "node",
-    "typeRoots": ["node_modules/@types", "../../node_modules/@types", "src/types"],
+    "typeRoots": ["node_modules/@types", "src/types"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "lib": ["es2017", "es2017.object", "dom", "dom.iterable"],
@@ -21,6 +21,6 @@
       }
     ]
   },
-  "include": ["src/**/*", "*.ts"],
+  "include": ["src/components/RouterLinkOrAnchor.tsx"],
   "exclude": ["node_modules"]
 }
