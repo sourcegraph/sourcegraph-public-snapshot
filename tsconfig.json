@@ -1,15 +1,14 @@
 {
   "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "target": "es2017",
-    "module": "commonjs",
+    "target": "es2018",
+    "module": "esnext",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "lib": ["es2017", "es2017.object", "dom", "dom.iterable"],
+    "lib": ["esnext", "dom", "dom.iterable"],
     "sourceMap": true,
     "noEmit": true,
-    "downlevelIteration": true,
     "skipLibCheck": true,
     "noErrorTruncation": true,
     "importHelpers": true,

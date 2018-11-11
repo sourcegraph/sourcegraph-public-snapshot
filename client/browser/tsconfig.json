@@ -1,30 +1,10 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "es2018",
-    "module": "commonjs",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "typeRoots": ["node_modules/@types", "../../node_modules/@types", "src/types"],
-    "lib": ["es2018", "dom", "dom.iterable", "es2017.object", "esnext"],
+    "typeRoots": ["node_modules/@types", "src/types"],
     "jsx": "react",
     "allowJs": true,
-    "checkJs": true,
-    "sourceMap": true,
-    "strictNullChecks": true,
-    "experimentalDecorators": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
-    "downlevelIteration": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitThis": true,
-    "noErrorTruncation": true,
-    "noEmit": true,
-    "plugins": [
-      {
-        "name": "tslint-language-service"
-      }
-    ]
+    "checkJs": true
   },
   "exclude": ["./node_modules", "./build", "./*.safariextension"]
 }
