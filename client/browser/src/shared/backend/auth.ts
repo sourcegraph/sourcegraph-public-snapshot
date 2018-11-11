@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { AccessToken } from '../../browser/types'
-import { GQL } from '../../types/gqlschema'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import { getPlatformName } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { getContext } from './context'

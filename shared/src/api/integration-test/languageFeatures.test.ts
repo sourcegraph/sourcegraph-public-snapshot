@@ -79,7 +79,10 @@ describe('LanguageFeatures (integration)', () => {
                 provideReferences: (doc, pos, context) => [{ uri: new URI(`file:///${label}`) }],
             } as sourcegraph.ReferenceProvider),
         labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
-        run => ({ provideReferences: run } as sourcegraph.ReferenceProvider),
+        run =>
+            ({
+                provideReferences: (doc, pos, _context: sourcegraph.ReferenceContext) => run(doc, pos),
+            } as sourcegraph.ReferenceProvider),
         clientController =>
             clientController.registries.textDocumentReferences
                 .getLocation({

@@ -25,7 +25,7 @@ import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
 import * as React from 'react'
-import { GQL } from '../../../types/gqlschema'
+import * as GQL from '../../../../../../shared/src/graphqlschema'
 
 /**
  * Returns the icon component for a given symbol kind

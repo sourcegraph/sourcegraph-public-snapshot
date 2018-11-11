@@ -24,7 +24,7 @@ import {
 } from '../../../../../shared/src/settings'
 import storage, { StorageItems } from '../../browser/storage'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
-import { GQL } from '../../types/gqlschema'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import { canFetchForURL } from '../util/context'
 import { getContext } from './context'
 import { createAggregateError, isErrorLike } from './errors'

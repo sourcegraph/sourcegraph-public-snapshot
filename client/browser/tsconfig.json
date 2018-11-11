@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "outDir": "./out",
     "target": "es2015",
     "module": "commonjs",
     "allowSyntheticDefaultImports": true,
@@ -20,6 +19,7 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitThis": true,
     "noErrorTruncation": true,
+    "noEmit": true,
     "plugins": [
       {
         "name": "tslint-language-service"

@@ -1,5 +1,5 @@
 {
-  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "extends": "../node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
     "target": "es2017",
     "module": "commonjs",
