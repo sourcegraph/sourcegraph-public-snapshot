@@ -1,1 +1,1 @@
-export { LinkOrButton as ActionItem } from '../../../extensions-client-common/src/ui/generic/LinkOrButton'
+export { LinkOrButton as ActionItem } from '../../../shared/src/ui/generic/LinkOrButton'

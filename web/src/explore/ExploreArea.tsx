@@ -1,7 +1,7 @@
-import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../extensions-client-common/src/settings'
 import H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
+import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../shared/src/settings'
 import * as GQL from '../backend/graphqlschema'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { ComponentDescriptor } from '../util/contributions'

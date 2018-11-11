@@ -1,26 +1,26 @@
-import { InitData } from '../../../extensions-client-common/src/api/extension/extensionHost'
-import { MessageTransports } from '../../../extensions-client-common/src/api/protocol/jsonrpc2/connection'
-import { createWebWorkerMessageTransports } from '../../../extensions-client-common/src/api/protocol/jsonrpc2/transports/webWorker'
-import { ControllerProps as GenericExtensionsControllerProps } from '../../../extensions-client-common/src/client/controller'
-import {
-    ExtensionsProps as GenericExtensionsProps,
-    UpdateExtensionSettingsArgs,
-} from '../../../extensions-client-common/src/context'
-import { Controller as ExtensionsContextController } from '../../../extensions-client-common/src/controller'
-import { ConfiguredExtension } from '../../../extensions-client-common/src/extensions/extension'
-import { QueryResult } from '../../../extensions-client-common/src/graphql'
-import {
-    gqlToCascade,
-    Settings,
-    SettingsCascadeProps as GenericSettingsCascadeProps,
-    SettingsSubject,
-} from '../../../extensions-client-common/src/settings'
 import { isEqual } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import { concat, Observable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take, withLatestFrom } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
+import { InitData } from '../../../shared/src/api/extension/extensionHost'
+import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
+import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
+import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/client/controller'
+import {
+    ExtensionsProps as GenericExtensionsProps,
+    UpdateExtensionSettingsArgs,
+} from '../../../shared/src/context'
+import { Controller as ExtensionsContextController } from '../../../shared/src/controller'
+import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
+import { QueryResult } from '../../../shared/src/graphql'
+import {
+    gqlToCascade,
+    Settings,
+    SettingsCascadeProps as GenericSettingsCascadeProps,
+    SettingsSubject,
+} from '../../../shared/src/settings'
 import { authenticatedUser } from '../auth'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'

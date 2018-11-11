@@ -1,5 +1,5 @@
-import { ConfiguredExtension } from '../../../../extensions-client-common/src/extensions/extension'
-import extensionSchemaJSON from '../../../../extensions-client-common/src/schema/extension.schema.json'
+import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
+import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
 import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'

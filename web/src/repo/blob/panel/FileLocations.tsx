@@ -1,4 +1,3 @@
-import { Location } from '../../../../../extensions-client-common/src/api/protocol/plainTypes'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -8,6 +7,7 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
 import { isError } from 'util'
 import { parseRepoURI } from '../..'
+import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { FileMatch, IFileMatch, ILineMatch } from '../../../components/FileMatch'
 import { VirtualList } from '../../../components/VirtualList'
 import { asError } from '../../../util/errors'

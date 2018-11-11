@@ -1,4 +1,3 @@
-import { Location } from '../../../../../extensions-client-common/src/api/protocol/plainTypes'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
@@ -7,6 +6,7 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
 import { isError } from 'util'
 import { parseRepoURI } from '../..'
+import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { Resizable } from '../../../components/Resizable'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { asError } from '../../../util/errors'

@@ -4,10 +4,10 @@ import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
-import { HoverMerged } from '../../../../extensions-client-common/src/api/client/types/hover'
-import { TextDocumentPositionParams } from '../../../../extensions-client-common/src/api/protocol'
-import { Controller } from '../../../../extensions-client-common/src/client/controller'
-import { Settings, SettingsSubject } from '../../../../extensions-client-common/src/settings'
+import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
+import { Controller } from '../../../../../shared/src/client/controller'
+import { Settings, SettingsSubject } from '../../../../../shared/src/settings'
 import {
     AbsoluteRepo,
     AbsoluteRepoFile,

@@ -1,9 +1,9 @@
-@import '@sourcegraph/extensions-client-common/lib/ui/generic/PopoverButton.css';
-@import '@sourcegraph/extensions-client-common/lib/ui/generic/Toggle.css';
-@import '@sourcegraph/extensions-client-common/lib/app/CommandList';
-@import '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus';
-@import '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications';
-@import '@sourcegraph/extensions-client-common/lib/app/notifications/NotificationItem';
+@import '../../../shared/src/ui/generic/PopoverButton.css';
+@import '../../../shared/src/ui/generic/Toggle.css';
+@import '../../../shared/src/app/CommandList';
+@import '../../../shared/src/app/ExtensionStatus';
+@import '../../../shared/src/app/notifications/Notifications';
+@import '../../../shared/src/app/notifications/NotificationItem';
 
 $body-color-light: #2b3750;
 $body-color-dark: #f2f4f8;

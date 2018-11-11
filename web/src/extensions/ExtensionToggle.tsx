@@ -1,14 +1,14 @@
-import { ConfiguredExtension, isExtensionEnabled } from '../../../extensions-client-common/src/extensions/extension'
-import {
-    SettingsCascade,
-    SettingsCascadeOrError,
-    SettingsSubject,
-} from '../../../extensions-client-common/src/settings'
-import { Toggle } from '../../../extensions-client-common/src/ui/generic/Toggle'
 import { last } from 'lodash'
 import * as React from 'react'
 import { EMPTY, from, Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
+import {
+    SettingsCascade,
+    SettingsCascadeOrError,
+    SettingsSubject,
+} from '../../../shared/src/settings'
+import { Toggle } from '../../../shared/src/ui/generic/Toggle'
 import { Settings } from '../schema/settings.schema'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'

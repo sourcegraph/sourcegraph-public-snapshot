@@ -8,12 +8,12 @@ import { combineLatest, from, Observable, Subject, throwError } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take, tap } from 'rxjs/operators'
 import uuid from 'uuid'
 import { Disposable } from 'vscode-languageserver'
-import { MessageTransports } from '../../../../extensions-client-common/src/api/protocol/jsonrpc2/connection'
-import { TextDocumentDecoration } from '../../../../extensions-client-common/src/api/protocol/plainTypes'
-import { UpdateExtensionSettingsArgs } from '../../../../extensions-client-common/src/context'
-import { Controller as ExtensionsContextController } from '../../../../extensions-client-common/src/controller'
-import { ConfiguredExtension } from '../../../../extensions-client-common/src/extensions/extension'
-import { gql, graphQLContent } from '../../../../extensions-client-common/src/graphql'
+import { MessageTransports } from '../../../../../shared/src/api/protocol/jsonrpc2/connection'
+import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
+import { UpdateExtensionSettingsArgs } from '../../../../../shared/src/context'
+import { Controller as ExtensionsContextController } from '../../../../../shared/src/controller'
+import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
+import { gql, graphQLContent } from '../../../../../shared/src/graphql'
 import {
     gqlToCascade,
     mergeSettings,
@@ -21,7 +21,7 @@ import {
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '../../../../extensions-client-common/src/settings'
+} from '../../../../../shared/src/settings'
 import storage, { StorageItems } from '../../browser/storage'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
 import { GQL } from '../../types/gqlschema'

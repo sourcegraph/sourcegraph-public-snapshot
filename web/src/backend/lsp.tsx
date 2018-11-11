@@ -1,4 +1,3 @@
-import { Location } from '../../../extensions-client-common/src/api/protocol/plainTypes'
 import {
     ReferenceInformation,
     SymbolLocationInformation,
@@ -9,6 +8,7 @@ import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { MarkupContent } from 'vscode-languageserver-types'
 import { InitializeResult } from 'vscode-languageserver/lib/main'
+import { Location } from '../../../shared/src/api/protocol/plainTypes'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'

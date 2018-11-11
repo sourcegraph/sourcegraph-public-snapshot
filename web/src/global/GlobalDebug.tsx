@@ -1,9 +1,9 @@
-import { ExtensionStatusPopover } from '../../../extensions-client-common/src/app/ExtensionStatus'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { ExtensionStatusPopover } from '../../../shared/src/app/ExtensionStatus'
 import { ExtensionsEnvironmentProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 

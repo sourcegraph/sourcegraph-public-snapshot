@@ -1,4 +1,4 @@
-import { extensionHostWorkerMain } from '../../../extensions-client-common/src/api/extension/workerMain'
+import { extensionHostWorkerMain } from '../../../shared/src/api/extension/workerMain'
 
 // We're running in a Web Worker, so `self` is a DedicatedWorkerGlobalScope. For simplicity, our TypeScript config
 // doesn't include lib.webworker.d.ts, so `self` here is actually not the correct type and requires this cast.

@@ -20,7 +20,7 @@ import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subs
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
 import { Disposable } from 'vscode-jsonrpc'
-import { TextDocumentItem } from '../../../../extensions-client-common/src/api/client/types/textDocument'
+import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
 import { createJumpURLFetcher, createLSPFromExtensions, JumpURLLocation } from '../../shared/backend/lsp'
 import { lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'

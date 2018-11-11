@@ -1,12 +1,12 @@
-import { MessageTransports } from '../../../../extensions-client-common/src/api/protocol/jsonrpc2/connection'
-import { Message } from '../../../../extensions-client-common/src/api/protocol/jsonrpc2/messages'
+import { MessageTransports } from '../../../../../shared/src/api/protocol/jsonrpc2/connection'
+import { Message } from '../../../../../shared/src/api/protocol/jsonrpc2/messages'
 import {
     AbstractMessageReader,
     AbstractMessageWriter,
     DataCallback,
     MessageReader,
     MessageWriter,
-} from '../../../../extensions-client-common/src/api/protocol/jsonrpc2/transport'
+} from '../../../../../shared/src/api/protocol/jsonrpc2/transport'
 
 class PortMessageReader extends AbstractMessageReader implements MessageReader {
     private pending: Message[] = []

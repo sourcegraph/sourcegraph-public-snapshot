@@ -1,8 +1,8 @@
-import { decorationAttachmentStyleForTheme } from '../../../../extensions-client-common/src/api/client/providers/decoration'
 import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'
 import { AbsoluteRepoFile } from '..'
+import { decorationAttachmentStyleForTheme } from '../../../../shared/src/api/client/providers/decoration'
 import { LinkOrSpan } from '../../components/LinkOrSpan'
 
 interface LineDecorationAttachmentProps extends AbsoluteRepoFile {

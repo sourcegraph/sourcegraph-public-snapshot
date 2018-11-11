@@ -1,10 +1,10 @@
-import { ContributableMenu } from '../../../extensions-client-common/src/api/protocol'
-import { ActionsNavItems } from '../../../extensions-client-common/src/app/actions/ActionsNavItems'
-import { CommandListPopoverButton } from '../../../extensions-client-common/src/app/CommandList'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { ActionsNavItems } from '../../../shared/src/app/actions/ActionsNavItems'
+import { CommandListPopoverButton } from '../../../shared/src/app/CommandList'
 import * as GQL from '../backend/graphqlschema'
 import { isDiscussionsEnabled } from '../discussions'
 import {

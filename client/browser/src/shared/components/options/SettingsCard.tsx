@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Alert, Card, CardBody, CardHeader, CardLink, CardText, Col, Row } from 'reactstrap'
 import { Subscription } from 'rxjs'
-import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../../../extensions-client-common/src/settings'
+import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../../../shared/src/settings'
 import { GQL } from '../../../types/gqlschema'
 import { isErrorLike } from '../../backend/errors'
 import { settingsCascade } from '../../backend/extensions'

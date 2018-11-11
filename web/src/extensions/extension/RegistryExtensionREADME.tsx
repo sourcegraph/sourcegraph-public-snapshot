@@ -1,4 +1,4 @@
-import { ConfiguredExtension } from '../../../../extensions-client-common/src/extensions/extension'
+import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
 import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
