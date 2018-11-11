@@ -14,7 +14,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { gql, mutateGraphQL } from '../../../../../web/src/backend/graphql'
-import * as GQL from '../../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../web/src/util/errors'
 
 interface Props {

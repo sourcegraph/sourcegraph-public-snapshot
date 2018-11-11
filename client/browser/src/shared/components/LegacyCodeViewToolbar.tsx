@@ -15,7 +15,7 @@ import { ActionsNavItems } from '../../../../../shared/src/app/actions/ActionsNa
 import { ControllerProps } from '../../../../../shared/src/client/controller'
 import { ExtensionsProps } from '../../../../../shared/src/context'
 import { Settings, SettingsCascadeProps, SettingsSubject } from '../../../../../shared/src/settings'
-import { ISite, IUser } from '../../../../webapp/src/backend/graphqlschema'
+import { ISite, IUser } from '../../../../shared/src/graphqlschema'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'

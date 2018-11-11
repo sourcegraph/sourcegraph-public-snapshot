@@ -1,7 +1,7 @@
 import format from 'date-fns/format'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
-import * as GQL from '../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { LinkOrSpan } from '../../../../web/src/components/LinkOrSpan'
 
 export const ProductSubscriptionHistory: React.SFC<{

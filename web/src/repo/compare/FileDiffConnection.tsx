@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { TextDocumentItem } from '../../../../shared/src/api/client/types/textDocument'
-import * as GQL from '../../backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { Connection, FilteredConnection } from '../../components/FilteredConnection'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { getModeFromPath } from '../../util'

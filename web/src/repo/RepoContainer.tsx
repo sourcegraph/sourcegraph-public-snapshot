@@ -6,7 +6,7 @@ import { merge, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import { parseBrowserRepoURL } from '.'
 import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import {

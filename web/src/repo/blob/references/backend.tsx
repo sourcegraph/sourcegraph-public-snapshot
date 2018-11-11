@@ -4,7 +4,7 @@ import { makeRepoURI } from '../..'
 import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { getXdefinition, getXreferences } from '../../../backend/features'
 import { gql, queryGraphQL } from '../../../backend/graphql'
-import * as GQL from '../../../backend/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { memoizeObservable } from '../../../util/memoize'
 

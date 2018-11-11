@@ -16,7 +16,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { Form } from '../components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionCard } from './ExtensionCard'

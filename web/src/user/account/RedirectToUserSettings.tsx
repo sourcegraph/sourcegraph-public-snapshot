@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Redirect } from 'react-router'
 import { userURL } from '..'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import * as GQL from '../../backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 
 /**
  * Redirects from /settings to /user/$USERNAME/settings, where $USERNAME is the currently authenticated user's

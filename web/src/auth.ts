@@ -1,7 +1,7 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
+import * as GQL from '../../shared/src/graphqlschema'
 import { dataOrThrowErrors, gql, queryGraphQL } from './backend/graphql'
-import * as GQL from './backend/graphqlschema'
 
 /**
  * Always represents the latest state of the currently authenticated user.

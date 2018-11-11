@@ -7,7 +7,7 @@ import {
     mutateGraphQL,
     queryGraphQL,
 } from '../backend/graphql'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { resetAllMemoizationCaches } from '../util/memoize'
 
 /**

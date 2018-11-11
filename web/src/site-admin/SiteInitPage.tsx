@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { SignUpArgs, SignUpForm } from '../auth/SignUpPage'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends RouteComponentProps<{}> {

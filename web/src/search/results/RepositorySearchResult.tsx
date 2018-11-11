@@ -1,5 +1,5 @@
 import * as React from 'react'
-import * as GQL from '../../backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { ResultContainer } from '../../components/ResultContainer'
 import { RepoLink } from '../../repo/RepoLink'
 import { eventLogger } from '../../tracking/eventLogger'

@@ -103,7 +103,7 @@ export async function graphQLTypes(): Promise<void> {
                 postProcessor: (code: string) => format(code, { ...formatOptions, parser: 'typescript' }),
             }
         )
-    await writeFile(__dirname + '/web/src/backend/graphqlschema.ts', typings)
+    await writeFile(__dirname + '/shared/src/graphqlschema.ts', typings)
 }
 
 /**

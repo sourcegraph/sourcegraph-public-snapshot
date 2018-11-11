@@ -1,6 +1,6 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
-import * as GQL from '../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { RedirectToUserPage } from '../../../../web/src/user/account/RedirectToUserPage'
 import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptionsNewProductSubscriptionPage'
 

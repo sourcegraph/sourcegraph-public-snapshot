@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { gql } from '../../../../../web/src/backend/graphql'
-import * as GQL from '../../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import { CopyableText } from '../../../../../web/src/components/CopyableText'
 import { LinkOrSpan } from '../../../../../web/src/components/LinkOrSpan'
 import { Timestamp } from '../../../../../web/src/components/time/Timestamp'

@@ -5,7 +5,7 @@ import { Subscription } from 'rxjs'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { ActionsNavItems } from '../../../shared/src/app/actions/ActionsNavItems'
 import { CommandListPopoverButton } from '../../../shared/src/app/CommandList'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { isDiscussionsEnabled } from '../discussions'
 import {
     ExtensionsControllerProps,

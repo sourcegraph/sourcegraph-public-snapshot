@@ -1,5 +1,5 @@
 import { cloneDeep, isFunction, isPlainObject } from 'lodash-es'
-import * as GQL from '../../webapp/src/backend/graphqlschema'
+import * as GQL from '../../shared/src/graphqlschema'
 import { createAggregateError, ErrorLike, isErrorLike } from './errors'
 import { parseJSONCOrError } from './util'
 

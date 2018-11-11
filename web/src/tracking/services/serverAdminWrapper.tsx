@@ -1,5 +1,5 @@
 import { authenticatedUser } from '../../auth'
-import * as GQL from '../../backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { logUserEvent } from '../../user/account/backend'
 
 class ServerAdminWrapper {

@@ -29,7 +29,7 @@ import {
     HoverMerged,
     ModeSpec,
 } from '../../../backend/features'
-import * as GQL from '../../../backend/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
 import {

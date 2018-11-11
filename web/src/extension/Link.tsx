@@ -1,5 +1,5 @@
 import * as React from 'react'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 
 // Production extension Url
 const extensionUrl = 'chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack'

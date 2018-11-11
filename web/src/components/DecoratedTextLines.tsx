@@ -1,6 +1,6 @@
 import * as React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { highlightNode } from '../util/dom'
 import { LinkOrSpan } from './LinkOrSpan'
 

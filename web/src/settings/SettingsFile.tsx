@@ -5,7 +5,7 @@ import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'

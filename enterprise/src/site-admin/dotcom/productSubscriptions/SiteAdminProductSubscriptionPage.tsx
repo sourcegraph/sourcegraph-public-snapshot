@@ -18,7 +18,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { gql, mutateGraphQL, queryGraphQL } from '../../../../../web/src/backend/graphql'
-import * as GQL from '../../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import { FilteredConnection } from '../../../../../web/src/components/FilteredConnection'
 import { PageTitle } from '../../../../../web/src/components/PageTitle'
 import { Timestamp } from '../../../../../web/src/components/time/Timestamp'

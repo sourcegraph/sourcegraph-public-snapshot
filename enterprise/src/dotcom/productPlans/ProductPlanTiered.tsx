@@ -1,5 +1,5 @@
 import React from 'react'
-import * as GQL from '../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 
 /** Displays the price of a tiered plan. */
 export const ProductPlanTiered: React.SFC<{

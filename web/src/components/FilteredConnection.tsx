@@ -18,7 +18,7 @@ import {
     takeUntil,
     tap,
 } from 'rxjs/operators'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { pluralize } from '../util/strings'
 import { Form } from './Form'

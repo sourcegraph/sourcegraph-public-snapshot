@@ -1,5 +1,5 @@
 import * as React from 'react'
-import * as GQL from '../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import {
     EXTENSION_NAME_MAX_LENGTH,
     EXTENSION_NAME_VALID_PATTERN,

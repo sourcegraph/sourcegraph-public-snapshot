@@ -1,6 +1,6 @@
 import { from, Observable, of, throwError } from 'rxjs'
 import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
-import * as GQL from '../../webapp/src/backend/graphqlschema'
+import * as GQL from '../../shared/src/graphqlschema'
 import { Context } from './context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
 import { ConfiguredExtension } from './extensions/extension'

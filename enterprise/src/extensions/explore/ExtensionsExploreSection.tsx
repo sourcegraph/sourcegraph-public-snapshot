@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../../../web/src/backend/graphql'
-import * as GQL from '../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../web/src/util/errors'
 import { ExtensionsExploreSectionExtensionCard } from './ExtensionsExploreSectionExtensionCard'
 

@@ -16,7 +16,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { gql, mutateGraphQL, queryGraphQL } from '../../../../web/src/backend/graphql'
-import * as GQL from '../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { PageTitle } from '../../../../web/src/components/PageTitle'
 import { eventLogger } from '../../../../web/src/tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../web/src/util/errors'

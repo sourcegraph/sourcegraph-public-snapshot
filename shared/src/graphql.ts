@@ -1,4 +1,4 @@
-import * as GQL from '../../webapp/src/backend/graphqlschema'
+import * as GQL from '../../shared/src/graphqlschema'
 
 export const graphQLContent = Symbol('graphQLContent')
 export interface GraphQLDocument {

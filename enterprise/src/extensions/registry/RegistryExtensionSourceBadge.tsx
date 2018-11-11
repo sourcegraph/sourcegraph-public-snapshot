@@ -1,7 +1,7 @@
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
-import * as GQL from '../../../../web/src/backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { LinkOrSpan } from '../../../../web/src/components/LinkOrSpan'
 
 export const RegistryExtensionSourceBadge: React.SFC<{

@@ -1,6 +1,6 @@
 import * as H from 'history'
 import { buildSearchURLQuery, SearchOptions } from '.'
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 
 export function submitSearch(

@@ -1,4 +1,4 @@
-import * as GQL from '../backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 
 export type SiteFlags = Pick<
     GQL.ISite,

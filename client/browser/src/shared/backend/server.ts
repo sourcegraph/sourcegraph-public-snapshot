@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { IClientConfigurationDetails } from '../../../../webapp/src/backend/graphqlschema'
+import { IClientConfigurationDetails } from '../../../../shared/src/graphqlschema'
 import { isOptions } from '../../context'
 import { GQL } from '../../types/gqlschema'
 import { sourcegraphUrl } from '../util/context'

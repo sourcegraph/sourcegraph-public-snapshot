@@ -1,4 +1,4 @@
-import * as GQL from '../../../webapp/src/backend/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { Extension } from '../api/client/extension'
 import { ErrorLike, isErrorLike } from '../errors'
 import { ExtensionManifest } from '../schema/extension.schema'

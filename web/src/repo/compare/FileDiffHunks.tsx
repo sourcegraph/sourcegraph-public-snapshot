@@ -4,7 +4,7 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { NEVER, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import * as GQL from '../../backend/graphqlschema'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { isDefined } from '../../util/types'
 
