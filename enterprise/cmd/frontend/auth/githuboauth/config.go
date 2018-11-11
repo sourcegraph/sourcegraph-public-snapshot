@@ -1,9 +1,9 @@
 package githuboauth
 
 import (
-	"flag"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 
@@ -20,9 +20,9 @@ var (
 )
 
 func init() {
-	// Don't run this watch loop in tests, because it results in a race condition.
+	// HACK: don't run this watch loop in tests, because it results in a race condition.
 	// This can be removed once the feature flag is removed.
-	if flag.Lookup("test.v") != nil {
+	if strings.HasSuffix(os.Args[0], ".test") {
 		ffIsEnabled = true
 		return
 	}
