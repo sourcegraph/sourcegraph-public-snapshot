@@ -1,10 +1,10 @@
-import { ConfiguredExtension, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
+import { ConfiguredExtension, isExtensionEnabled } from '@sourcegraph/extensions-client-common/src/extensions/extension'
 import {
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '@sourcegraph/extensions-client-common/lib/settings'
-import { Toggle } from '@sourcegraph/extensions-client-common/lib/ui/generic/Toggle'
+} from '@sourcegraph/extensions-client-common/src/settings'
+import { Toggle } from '@sourcegraph/extensions-client-common/src/ui/generic/Toggle'
 import { last } from 'lodash'
 import * as React from 'react'
 import { EMPTY, from, Subject, Subscription } from 'rxjs'

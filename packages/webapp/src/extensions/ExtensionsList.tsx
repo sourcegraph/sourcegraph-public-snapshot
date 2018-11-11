@@ -1,5 +1,5 @@
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { SettingsSubject } from '@sourcegraph/extensions-client-common/lib/settings'
+import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/src/extensions/extension'
+import { SettingsSubject } from '@sourcegraph/extensions-client-common/src/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'

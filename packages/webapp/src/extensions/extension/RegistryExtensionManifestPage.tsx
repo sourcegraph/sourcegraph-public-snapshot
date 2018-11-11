@@ -1,5 +1,5 @@
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import extensionSchemaJSON from '@sourcegraph/extensions-client-common/lib/schema/extension.schema.json'
+import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/src/extensions/extension'
+import extensionSchemaJSON from '@sourcegraph/extensions-client-common/src/schema/extension.schema.json'
 import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'

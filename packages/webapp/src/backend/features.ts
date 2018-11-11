@@ -1,5 +1,5 @@
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
-import { Definition, Location, TextDocumentDecoration } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
+import { Definition, Location, TextDocumentDecoration } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { flatten } from 'lodash'
 import { forkJoin, Observable } from 'rxjs'

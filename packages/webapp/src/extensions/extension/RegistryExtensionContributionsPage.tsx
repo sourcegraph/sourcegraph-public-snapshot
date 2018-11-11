@@ -1,5 +1,5 @@
-import { ContributableMenu } from '@sourcegraph/extensions-client-common/lib/api/protocol'
-import { ExtensionManifest } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
+import { ContributableMenu } from '@sourcegraph/extensions-client-common/src/api/protocol'
+import { ExtensionManifest } from '@sourcegraph/extensions-client-common/src/schema/extension.schema'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../components/PageTitle'

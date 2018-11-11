@@ -1,4 +1,4 @@
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
+import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/src/extensions/extension'
 import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'

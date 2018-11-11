@@ -1,4 +1,4 @@
-import { HoverMerged } from '@sourcegraph/extensions-client-common/lib/api/client/types/hover'
+import { HoverMerged } from '@sourcegraph/extensions-client-common/src/api/client/types/hover'
 import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import * as _ from 'lodash'
 import marked from 'marked'

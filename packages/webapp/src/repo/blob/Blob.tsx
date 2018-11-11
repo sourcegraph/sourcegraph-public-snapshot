@@ -7,8 +7,8 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
-import { decorationStyleForTheme } from '@sourcegraph/extensions-client-common/lib/api/client/providers/decoration'
-import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
+import { decorationStyleForTheme } from '@sourcegraph/extensions-client-common/src/api/client/providers/decoration'
+import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'

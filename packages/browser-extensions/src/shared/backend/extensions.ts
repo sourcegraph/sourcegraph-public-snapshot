@@ -1,9 +1,9 @@
-import { MessageTransports } from '@sourcegraph/extensions-client-common/lib/api/protocol/jsonrpc2/connection'
-import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
-import { UpdateExtensionSettingsArgs } from '@sourcegraph/extensions-client-common/lib/context'
-import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { gql, graphQLContent } from '@sourcegraph/extensions-client-common/lib/graphql'
+import { MessageTransports } from '@sourcegraph/extensions-client-common/src/api/protocol/jsonrpc2/connection'
+import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
+import { UpdateExtensionSettingsArgs } from '@sourcegraph/extensions-client-common/src/context'
+import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/src/controller'
+import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/src/extensions/extension'
+import { gql, graphQLContent } from '@sourcegraph/extensions-client-common/src/graphql'
 import {
     gqlToCascade,
     mergeSettings,
@@ -11,7 +11,7 @@ import {
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '@sourcegraph/extensions-client-common/lib/settings'
+} from '@sourcegraph/extensions-client-common/src/settings'
 import * as JSONC from '@sqs/jsonc-parser'
 import { applyEdits } from '@sqs/jsonc-parser'
 import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'

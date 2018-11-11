@@ -1,4 +1,4 @@
-import { Location } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
+import { Location } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'

@@ -1,5 +1,5 @@
-import { ContributableMenu } from '@sourcegraph/extensions-client-common/lib/api/protocol'
-import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
+import { ContributableMenu } from '@sourcegraph/extensions-client-common/src/api/protocol'
+import { ActionsNavItems } from '@sourcegraph/extensions-client-common/src/app/actions/ActionsNavItems'
 import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'

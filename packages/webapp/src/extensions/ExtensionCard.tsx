@@ -1,5 +1,5 @@
-import { ConfiguredExtension, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { ExtensionManifest } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
+import { ConfiguredExtension, isExtensionEnabled } from '@sourcegraph/extensions-client-common/src/extensions/extension'
+import { ExtensionManifest } from '@sourcegraph/extensions-client-common/src/schema/extension.schema'
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'

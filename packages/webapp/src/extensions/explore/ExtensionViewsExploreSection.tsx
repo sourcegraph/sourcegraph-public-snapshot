@@ -1,5 +1,5 @@
-import { ContributableViewContainer } from '@sourcegraph/extensions-client-common/lib/api/protocol'
-import { PanelView } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
+import { ContributableViewContainer } from '@sourcegraph/extensions-client-common/src/api/protocol'
+import { PanelView } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
 import H from 'history'
 import marked from 'marked'
 import React from 'react'

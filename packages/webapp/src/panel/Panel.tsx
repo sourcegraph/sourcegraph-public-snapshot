@@ -1,5 +1,5 @@
-import { ContributableViewContainer } from '@sourcegraph/extensions-client-common/lib/api/protocol/contribution'
-import { PanelView } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
+import { ContributableViewContainer } from '@sourcegraph/extensions-client-common/src/api/protocol/contribution'
+import { PanelView } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
 import * as H from 'history'
 import marked from 'marked'
 import CancelIcon from 'mdi-react/CancelIcon'

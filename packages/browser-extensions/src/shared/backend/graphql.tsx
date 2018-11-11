@@ -1,4 +1,4 @@
-import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
+import { QueryResult } from '@sourcegraph/extensions-client-common/src/graphql'
 import { Observable, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, map, switchMap } from 'rxjs/operators'

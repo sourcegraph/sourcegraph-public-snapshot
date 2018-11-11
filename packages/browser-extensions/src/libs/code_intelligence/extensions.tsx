@@ -1,20 +1,20 @@
-import { TextDocumentItem } from '@sourcegraph/extensions-client-common/lib/api/client/types/textDocument'
-import { ContributableMenu } from '@sourcegraph/extensions-client-common/lib/api/protocol'
-import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
-import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
-import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
+import { TextDocumentItem } from '@sourcegraph/extensions-client-common/src/api/client/types/textDocument'
+import { ContributableMenu } from '@sourcegraph/extensions-client-common/src/api/protocol'
+import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
+import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/src/app/CommandList'
+import { Notifications } from '@sourcegraph/extensions-client-common/src/app/notifications/Notifications'
 import {
     Controller as ClientController,
     createController,
-} from '@sourcegraph/extensions-client-common/lib/client/controller'
-import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
+} from '@sourcegraph/extensions-client-common/src/client/controller'
+import { Controller } from '@sourcegraph/extensions-client-common/src/controller'
 import {
     ConfiguredSubject,
     Settings,
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '@sourcegraph/extensions-client-common/lib/settings'
+} from '@sourcegraph/extensions-client-common/src/settings'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { combineLatest, from, Observable } from 'rxjs'
@@ -25,7 +25,7 @@ import { DOMFunctions } from '@sourcegraph/codeintellify'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
-} from '@sourcegraph/extensions-client-common/lib/api/client/providers/decoration'
+} from '@sourcegraph/extensions-client-common/src/api/client/providers/decoration'
 import * as H from 'history'
 import { isErrorLike } from '../../shared/backend/errors'
 import { createExtensionsContextController, createMessageTransports } from '../../shared/backend/extensions'

@@ -2,7 +2,7 @@
 // prettier-ignore
 import '../../config/polyfill'
 
-import { InitData } from '@sourcegraph/extensions-client-common/lib/api/extension/extensionHost'
+import { InitData } from '@sourcegraph/extensions-client-common/src/api/extension/extensionHost'
 import { without } from 'lodash'
 import { noop } from 'rxjs'
 import { ajax } from 'rxjs/ajax'

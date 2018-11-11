@@ -1,4 +1,4 @@
-import { Location, Position } from '@sourcegraph/extensions-client-common/lib/api/protocol/plainTypes'
+import { Location, Position } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
