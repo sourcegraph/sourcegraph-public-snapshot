@@ -1,32 +1,32 @@
-import { TextDocumentItem } from '@sourcegraph/extensions-client-common/src/api/client/types/textDocument'
-import { ContributableMenu } from '@sourcegraph/extensions-client-common/src/api/protocol'
-import { TextDocumentDecoration } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
-import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/src/app/CommandList'
-import { Notifications } from '@sourcegraph/extensions-client-common/src/app/notifications/Notifications'
+import * as React from 'react'
+import { render } from 'react-dom'
+import { combineLatest, from, Observable } from 'rxjs'
+import { map, take } from 'rxjs/operators'
+import { Disposable } from 'vscode-languageserver'
+import { TextDocumentItem } from '../../../../extensions-client-common/src/api/client/types/textDocument'
+import { ContributableMenu } from '../../../../extensions-client-common/src/api/protocol'
+import { TextDocumentDecoration } from '../../../../extensions-client-common/src/api/protocol/plainTypes'
+import { CommandListPopoverButton } from '../../../../extensions-client-common/src/app/CommandList'
+import { Notifications } from '../../../../extensions-client-common/src/app/notifications/Notifications'
 import {
     Controller as ClientController,
     createController,
-} from '@sourcegraph/extensions-client-common/src/client/controller'
-import { Controller } from '@sourcegraph/extensions-client-common/src/controller'
+} from '../../../../extensions-client-common/src/client/controller'
+import { Controller } from '../../../../extensions-client-common/src/controller'
 import {
     ConfiguredSubject,
     Settings,
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '@sourcegraph/extensions-client-common/src/settings'
-import * as React from 'react'
-import { render } from 'react-dom'
-import { combineLatest, from, Observable } from 'rxjs'
-import { map, take } from 'rxjs/operators'
-import { Disposable } from 'vscode-languageserver'
+} from '../../../../extensions-client-common/src/settings'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
+import * as H from 'history'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
-} from '@sourcegraph/extensions-client-common/src/api/client/providers/decoration'
-import * as H from 'history'
+} from '../../../../extensions-client-common/src/api/client/providers/decoration'
 import { isErrorLike } from '../../shared/backend/errors'
 import { createExtensionsContextController, createMessageTransports } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'

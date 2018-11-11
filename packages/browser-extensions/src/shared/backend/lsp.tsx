@@ -1,13 +1,13 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
-import { HoverMerged } from '@sourcegraph/extensions-client-common/src/api/client/types/hover'
-import { TextDocumentPositionParams } from '@sourcegraph/extensions-client-common/src/api/protocol'
-import { Controller } from '@sourcegraph/extensions-client-common/src/client/controller'
-import { Settings, SettingsSubject } from '@sourcegraph/extensions-client-common/src/settings'
 import { from, Observable, of, OperatorFunction, throwError, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
+import { HoverMerged } from '../../../../extensions-client-common/src/api/client/types/hover'
+import { TextDocumentPositionParams } from '../../../../extensions-client-common/src/api/protocol'
+import { Controller } from '../../../../extensions-client-common/src/client/controller'
+import { Settings, SettingsSubject } from '../../../../extensions-client-common/src/settings'
 import {
     AbsoluteRepo,
     AbsoluteRepoFile,

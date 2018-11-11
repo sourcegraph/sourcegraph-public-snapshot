@@ -1,10 +1,10 @@
-import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/src/app/ExtensionStatus'
-import { Controller as ClientController } from '@sourcegraph/extensions-client-common/src/client/controller'
-import { Settings, SettingsSubject } from '@sourcegraph/extensions-client-common/src/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
+import { ExtensionStatusPopover } from '../../../../extensions-client-common/src/app/ExtensionStatus'
+import { Controller as ClientController } from '../../../../extensions-client-common/src/client/controller'
+import { Settings, SettingsSubject } from '../../../../extensions-client-common/src/settings'
 import { sourcegraphUrl } from '../util/context'
 import { ShortcutProvider } from './ShortcutProvider'
 

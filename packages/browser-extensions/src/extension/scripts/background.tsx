@@ -2,13 +2,13 @@
 // prettier-ignore
 import '../../config/polyfill'
 
-import { InitData } from '@sourcegraph/extensions-client-common/src/api/extension/extensionHost'
 import { without } from 'lodash'
 import { noop } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import DPT from 'webext-domain-permission-toggle'
 import ExtensionHostWorker from 'worker-loader?inline!./extensionHost.worker'
+import { InitData } from '../../../../extensions-client-common/src/api/extension/extensionHost'
 import * as browserAction from '../../browser/browserAction'
 import * as omnibox from '../../browser/omnibox'
 import * as permissions from '../../browser/permissions'

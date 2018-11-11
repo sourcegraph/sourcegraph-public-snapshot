@@ -1,7 +1,7 @@
-import { QueryResult } from '@sourcegraph/extensions-client-common/src/graphql'
 import { Observable, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, map, switchMap } from 'rxjs/operators'
+import { QueryResult } from '../../../../extensions-client-common/src/graphql'
 import { IQuery } from '../../../../webapp/src/backend/graphqlschema'
 import { GQL } from '../../types/gqlschema'
 import { removeAccessToken } from '../auth/access_token'

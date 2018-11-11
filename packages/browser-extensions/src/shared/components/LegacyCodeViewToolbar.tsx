@@ -7,14 +7,14 @@
  * It wasn't worth making the changes backward compatible or changing the existing inject method to work with the new one.
  */
 
-import { ContributableMenu } from '@sourcegraph/extensions-client-common/src/api/protocol'
-import { ActionsNavItems } from '@sourcegraph/extensions-client-common/src/app/actions/ActionsNavItems'
-import { ControllerProps } from '@sourcegraph/extensions-client-common/src/client/controller'
-import { ExtensionsProps } from '@sourcegraph/extensions-client-common/src/context'
-import { Settings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/extensions-client-common/src/settings'
 import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+import { ContributableMenu } from '../../../../extensions-client-common/src/api/protocol'
+import { ActionsNavItems } from '../../../../extensions-client-common/src/app/actions/ActionsNavItems'
+import { ControllerProps } from '../../../../extensions-client-common/src/client/controller'
+import { ExtensionsProps } from '../../../../extensions-client-common/src/context'
+import { Settings, SettingsCascadeProps, SettingsSubject } from '../../../../extensions-client-common/src/settings'
 import { ISite, IUser } from '../../../../webapp/src/backend/graphqlschema'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'

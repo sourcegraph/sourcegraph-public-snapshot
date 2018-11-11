@@ -1,7 +1,7 @@
-import { Settings, SettingsCascadeOrError, SettingsSubject } from '@sourcegraph/extensions-client-common/src/settings'
 import * as React from 'react'
 import { Alert, Card, CardBody, CardHeader, CardLink, CardText, Col, Row } from 'reactstrap'
 import { Subscription } from 'rxjs'
+import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../../../extensions-client-common/src/settings'
 import { GQL } from '../../../types/gqlschema'
 import { isErrorLike } from '../../backend/errors'
 import { settingsCascade } from '../../backend/extensions'
