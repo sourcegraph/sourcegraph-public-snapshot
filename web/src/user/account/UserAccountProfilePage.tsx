@@ -15,10 +15,10 @@ import {
     tap,
 } from 'rxjs/operators'
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '..'
+import * as GQL from '../../../../shared/src/graphqlschema'
 import { refreshAuthenticatedUser } from '../../auth'
 import { UsernameInput } from '../../auth/SignInSignUpCommon'
 import { gql, queryGraphQL } from '../../backend/graphql'
-import * as GQL from '../../../../shared/src/graphqlschema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

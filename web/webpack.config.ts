@@ -33,8 +33,8 @@ const typescriptLoader: webpack.RuleSetUseItem = {
 }
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE
-const enterpriseDir = path.resolve(rootDir, 'enterprise', 'src')
-const sourceRoots = [path.resolve(__dirname, 'src'), enterpriseDir, path.resolve(rootDir, 'shared')]
+const enterpriseDir = path.resolve(__dirname, 'src', 'enterprise')
+const sourceRoots = [path.resolve(__dirname, 'src'), path.resolve(rootDir, 'shared')]
 
 const config: webpack.Configuration = {
     context: __dirname, // needed when running `gulp webpackDevServer` from the root dir

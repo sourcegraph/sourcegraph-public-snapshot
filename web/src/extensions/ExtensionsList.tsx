@@ -1,5 +1,3 @@
-import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
-import { SettingsSubject } from '../../../shared/src/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -15,8 +13,10 @@ import {
     takeUntil,
     withLatestFrom,
 } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphqlschema'
+import { SettingsSubject } from '../../../shared/src/settings'
+import { gql, queryGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionCard } from './ExtensionCard'

@@ -1,7 +1,7 @@
-import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
 import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
 import { Markdown } from '../../components/Markdown'
 import { isErrorLike } from '../../util/errors'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'

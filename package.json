@@ -11,9 +11,8 @@
     "yarn": "^1.10.1"
   },
   "scripts": {
-    "prettier": "prettier 'enterprise/**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
-    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'enterprise/**/*.ts?(x)' './*.ts?(x)'",
-    "stylelint": "stylelint --quiet 'enterprise/**/*.scss'",
+    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
+    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e ./*.ts'",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
     "prepublish": "(cd shared && yarn) && (cd client/browser && yarn) && (cd web && yarn)"
   },

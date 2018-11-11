@@ -4,8 +4,8 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
+import { gql, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import {
     accessTokenFragment,
