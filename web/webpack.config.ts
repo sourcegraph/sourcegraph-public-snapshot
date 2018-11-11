@@ -63,8 +63,9 @@ const config: webpack.Configuration = {
             isEnterpriseBuild ? path.join(enterpriseDir, 'main.scss') : null,
         ].filter((path): path is string => !!path),
 
-        'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-        'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
+        // TODO(#build): add back
+        // 'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
+        // 'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
     },
     output: {
         path: path.join(rootDir, 'ui', 'assets'),

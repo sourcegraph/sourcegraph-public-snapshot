@@ -54,7 +54,12 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            fromPromise(import('../settings/MonacoSettingsEditor'))
+            // TODO(#build): add back
+            fromPromise(
+                ((): any => {
+                    throw new Error('TODO')
+                })() as any /*import('../settings/MonacoSettingsEditor')*/
+            )
                 .pipe(
                     catchError(error => {
                         console.error(error)
@@ -62,7 +67,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                     })
                 )
                 .subscribe(m => {
-                    this.setState({ monacoSettingsEditorOrError: m })
+                    this.setState({ monacoSettingsEditorOrError: m as any /* TODO(#build) */ })
                 })
         )
 

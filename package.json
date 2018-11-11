@@ -28,7 +28,13 @@
     "@types/fancy-log": "^1.3.0",
     "@types/graphql": "^14.0.3",
     "@types/gulp": "^4.0.5",
+    "@types/marked": "^0.4.2",
     "@types/mkdirp-promise": "^5.0.0",
+    "@types/react": "^16.7.2",
+    "@types/react-dom": "^16.0.9",
+    "@types/react-router": "^4.4.1",
+    "@types/react-router-dom": "^4.3.1",
+    "@types/reactstrap": "^6.4.2",
     "@types/webpack": "4.4.17",
     "@types/webpack-dev-server": "^3.1.1",
     "child_process": "^1.0.2",
@@ -55,6 +61,14 @@
     "webpack-dev-server": "^3.1.10"
   },
   "dependencies": {
-    "date-fns": "^2.0.0-alpha.7"
+    "bootstrap": "^4.1.3",
+    "date-fns": "^2.0.0-alpha.7",
+    "marked": "^0.5.1",
+    "react": "^16.6.1",
+    "react-dom": "^16.6.1",
+    "react-router": "^4.3.1",
+    "react-router-dom": "^4.3.1",
+    "reactstrap": "^6.5.0",
+    "ts-key-enum": "^2.0.0"
   }
 }
