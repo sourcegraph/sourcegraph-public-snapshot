@@ -1,7 +1,7 @@
 import { matchPath } from 'react-router'
 import uuid from 'uuid'
-import { authenticatedUser } from '../auth'
 import * as GQL from '../../../shared/src/graphqlschema'
+import { authenticatedUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { repoRevRoute } from '../routes'
 import { getPathExtension } from '../util'

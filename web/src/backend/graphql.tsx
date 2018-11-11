@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map } from 'rxjs/operators'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { createAggregateError, normalizeAjaxError } from '../util/errors'
-import * as GQL from './graphqlschema'
 
 export const graphQLContent = Symbol('graphQLContent')
 export interface GraphQLDocument {

@@ -2,8 +2,8 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { authRequired } from '../auth'
 import * as GQL from '../../../shared/src/graphqlschema'
+import { authRequired } from '../auth'
 import {
     ExtensionsControllerProps,
     ExtensionsProps,

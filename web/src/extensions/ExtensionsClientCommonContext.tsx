@@ -15,6 +15,7 @@ import {
 import { Controller as ExtensionsContextController } from '../../../shared/src/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { QueryResult } from '../../../shared/src/graphql'
+import * as GQL from '../../../shared/src/graphqlschema'
 import {
     gqlToCascade,
     Settings,
@@ -23,7 +24,6 @@ import {
 } from '../../../shared/src/settings'
 import { authenticatedUser } from '../auth'
 import { gql, queryGraphQL } from '../backend/graphql'
-import * as GQL from '../../../shared/src/graphqlschema'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { editSettings } from '../configuration/backend'

@@ -21,6 +21,7 @@ import {
 import { MarkupContent } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
+import * as GQL from '../../../../../shared/src/graphqlschema'
 import {
     getDefinition,
     getHover,
@@ -29,7 +30,6 @@ import {
     HoverMerged,
     ModeSpec,
 } from '../../../backend/features'
-import * as GQL from '../../../../../shared/src/graphqlschema'
 import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
 import {
