@@ -69,6 +69,7 @@
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
     "reactstrap": "^6.5.0",
-    "ts-key-enum": "^2.0.0"
+    "ts-key-enum": "^2.0.0",
+    "whatwg-url": "^7.0.0"
   }
 }
