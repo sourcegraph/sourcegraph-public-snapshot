@@ -1,7 +1,9 @@
 import { KeyPath } from './configuration'
 
-// NOTE: After changing this file, you must run `yarn run generate-contribution-schema` to update
-// contribution.schema.json.
+// NOTE: You must manually keep this file in sync with contribution.schema.json.
+//
+// The available tools for automatically generating the JSON Schema from this file add more complexity than it's
+// worth.
 
 /**
  * Contributions describes the functionality provided by an extension.

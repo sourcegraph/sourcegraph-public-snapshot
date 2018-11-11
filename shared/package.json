@@ -20,7 +20,6 @@
     "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
     "typecheck": "tsc -p tsconfig.json",
-    "generate-contribution-schema": "typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json' --noExtraProps --required --include src/api/protocol/contribution.ts --out src/api/protocol/contribution.schema.json tsconfig.json Contributions && node -e \"/* Deletes the top-level additionalProperties property in the file. */ fs = require('fs');f = process.argv[1];o = JSON.parse(fs.readFileSync(f, 'utf8'));delete o.additionalProperties;fs.writeFileSync(f, JSON.stringify(o, null, 4))\" src/api/protocol/contribution.schema.json",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000"
   },
@@ -76,7 +75,6 @@
     "source-map-support": "^0.5.9",
     "ts-node": "link:../node_modules/ts-node",
     "tslint": "link:../node_modules/tslint",
-    "typescript": "link:../node_modules/typescript",
-    "typescript-json-schema": "^0.33.0"
+    "typescript": "link:../node_modules/typescript"
   }
 }

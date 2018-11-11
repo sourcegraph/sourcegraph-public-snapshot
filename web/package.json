@@ -22,7 +22,8 @@
     "stylelint": "stylelint --quiet 'src/**/*.scss'",
     "stylelint-compact": "yarn run stylelint --custom-formatter ./node_modules/stylelint-formatter-compact/index.js",
     "bundlesize": "cross-env GITHUB_TOKEN= bundlesize",
-    "browserslist": "browserslist"
+    "browserslist": "browserslist",
+    "prepublish": "yarn -s run graphql && yarn -s run schema"
   },
   "bundlesize": [
     {
