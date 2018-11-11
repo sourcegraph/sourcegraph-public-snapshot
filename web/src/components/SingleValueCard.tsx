@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { LinkOrSpan } from './LinkOrSpan'
+import { LinkOrSpan } from '../../../shared/src/ui/generic/LinkOrSpan'
 
 /**
  * A card that displays a large single value.

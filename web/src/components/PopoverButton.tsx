@@ -3,7 +3,7 @@ import * as React from 'react'
 import Popover, { PopoverProps } from 'reactstrap/lib/Popover'
 import { Subscription } from 'rxjs'
 import { Key } from 'ts-key-enum'
-import { LinkOrSpan } from './LinkOrSpan'
+import { LinkOrSpan } from '../../../shared/src/ui/generic/LinkOrSpan'
 
 interface Props {
     /**

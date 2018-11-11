@@ -1,8 +1,8 @@
 import * as React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import * as GQL from '../../../shared/src/graphqlschema'
+import { LinkOrSpan } from '../../../shared/src/ui/generic/LinkOrSpan'
 import { highlightNode } from '../util/dom'
-import { LinkOrSpan } from './LinkOrSpan'
 
 interface Props {
     /**

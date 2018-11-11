@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'
 import { AbsoluteRepoFile } from '..'
 import { decorationAttachmentStyleForTheme } from '../../../../shared/src/api/client/providers/decoration'
-import { LinkOrSpan } from '../../components/LinkOrSpan'
+import { LinkOrSpan } from '../../../../shared/src/ui/generic/LinkOrSpan'
 
 interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
     line: number
