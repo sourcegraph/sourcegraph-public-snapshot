@@ -1,15 +1,4 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
-import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from '../../shared/src/api/client/environment'
-import { TextDocumentItem } from '../../shared/src/api/client/types/textDocument'
-import { Notifications } from '../../shared/src/app/notifications/Notifications'
-import { createController as createExtensionsController } from '../../shared/src/client/controller'
-import { ConfiguredExtension } from '../../shared/src/extensions/extension'
-import {
-    ConfiguredSubject,
-    Settings,
-    SettingsCascadeOrError,
-    SettingsSubject,
-} from '../../shared/src/settings'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
@@ -17,8 +6,14 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
-import { authenticatedUser } from './auth'
+import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from '../../shared/src/api/client/environment'
+import { TextDocumentItem } from '../../shared/src/api/client/types/textDocument'
+import { Notifications } from '../../shared/src/app/notifications/Notifications'
+import { createController as createExtensionsController } from '../../shared/src/client/controller'
+import { ConfiguredExtension } from '../../shared/src/extensions/extension'
 import * as GQL from '../../shared/src/graphqlschema'
+import { ConfiguredSubject, Settings, SettingsCascadeOrError, SettingsSubject } from '../../shared/src/settings'
+import { authenticatedUser } from './auth'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'

@@ -5,14 +5,11 @@ import rxPaths from 'rxjs/_esm5/path-mapping'
 import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
 import * as webpack from 'webpack'
 
-const rootDir = path.resolve(__dirname, '..', '..')
+const rootDir = path.resolve(__dirname, '..')
 
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
-const monacoEditorPaths = [
-    path.resolve(rootDir, 'node_modules'),
-    path.resolve(__dirname, 'node_modules', 'monaco-editor'),
-]
+const monacoEditorPaths = [path.resolve(__dirname, 'node_modules', 'monaco-editor')]
 
 const babelLoader: webpack.RuleSetUseItem = {
     loader: 'babel-loader',
@@ -37,9 +34,10 @@ const typescriptLoader: webpack.RuleSetUseItem = {
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE
 const enterpriseDir = path.resolve(rootDir, 'enterprise', 'src')
-const sourceRoots = [path.resolve(__dirname, 'src'), enterpriseDir]
+const sourceRoots = [path.resolve(__dirname, 'src'), enterpriseDir, path.resolve(rootDir, 'shared')]
 
 const config: webpack.Configuration = {
+    context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     optimization: {
         minimize: process.env.NODE_ENV === 'production',
