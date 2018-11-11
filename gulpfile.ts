@@ -200,22 +200,6 @@ export function typescript(): ChildProcess {
     })
 }
 
-export function buildExtensionsClientCommon(): ChildProcess {
-    return spawn('yarn', ['-s', 'run', 'build'], {
-        stdio: 'inherit',
-        cwd: 'packages/extensions-client-common',
-        shell: true,
-    })
-}
-
-export function watchExtensionsClientCommon(): ChildProcess {
-    return spawn('yarn', ['-s', 'run', 'watch:build'], {
-        stdio: 'inherit',
-        cwd: 'packages/extensions-client-common',
-        shell: true,
-    })
-}
-
 const PHABRICATOR_EXTENSION_FILES = './packages/browser-extensions/build/phabricator/**'
 
 /**
@@ -246,6 +230,5 @@ export const build = gulp.parallel(
 export const watch = gulp.series(
     // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
     gulp.parallel(schema, graphQLTypes),
-    buildExtensionsClientCommon,
-    gulp.parallel(watchSchema, watchGraphQLTypes, webpackDevServer, watchPhabricator, watchExtensionsClientCommon)
+    gulp.parallel(watchSchema, watchGraphQLTypes, webpackDevServer, watchPhabricator)
 )

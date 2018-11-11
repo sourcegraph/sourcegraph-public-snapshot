@@ -8,7 +8,6 @@
   },
   "workspaces": [
     "packages/browser-extensions",
-    "packages/extensions-client-common",
     "packages/webapp"
   ],
   "engines": {
