@@ -1,5 +1,5 @@
-import { isExtensionEnabled } from '@sourcegraph/extensions-client-common/src/extensions/extension'
-import { ExtensionManifest } from '@sourcegraph/extensions-client-common/src/schema/extension.schema'
+import { isExtensionEnabled } from '../../../../extensions-client-common/src/extensions/extension'
+import { ExtensionManifest } from '../../../../extensions-client-common/src/schema/extension.schema'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'

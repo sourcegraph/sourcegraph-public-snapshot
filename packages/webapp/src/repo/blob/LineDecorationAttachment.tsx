@@ -1,4 +1,4 @@
-import { decorationAttachmentStyleForTheme } from '@sourcegraph/extensions-client-common/src/api/client/providers/decoration'
+import { decorationAttachmentStyleForTheme } from '../../../../extensions-client-common/src/api/client/providers/decoration'
 import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'

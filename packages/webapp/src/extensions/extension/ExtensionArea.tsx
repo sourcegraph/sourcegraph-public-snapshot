@@ -1,4 +1,4 @@
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/src/extensions/extension'
+import { ConfiguredExtension } from '../../../../extensions-client-common/src/extensions/extension'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'

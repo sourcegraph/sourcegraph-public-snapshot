@@ -1379,7 +1379,7 @@
   resolved "https://registry.npmjs.org/@sinonjs/samsam/-/samsam-2.1.2.tgz#16947fce5f57258d01f1688fdc32723093c55d3f"
   integrity sha512-ZwTHAlC9akprWDinwEPD4kOuwaYZlyMwVJIANsKNC3QVp0AHB04m7RnB4eqeWfgmxw8MGTzS9uMaw93Z3QcZbw==
 
-"@slimsag/react-shortcuts@^1.2.0", "@slimsag/react-shortcuts@^1.2.1":
+"@slimsag/react-shortcuts@^1.2.1":
   version "1.2.1"
   resolved "https://registry.npmjs.org/@slimsag/react-shortcuts/-/react-shortcuts-1.2.1.tgz#a3ea054a057137de8636bc9fabac61369103e597"
   integrity sha512-dUTQjBX1yjnHbqkTL5ditqtx5R6QhcXI3lCnjOy8e5XUOr5LOtVpol1mufU2lAb7DtEYrSVRQpUeNmZrTEgLcg==
@@ -1410,24 +1410,6 @@
     lodash "^4.17.10"
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
-
-"@sourcegraph/extensions-client-common@*", "@sourcegraph/extensions-client-common@^12.0.0":
-  version "12.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/extensions-client-common/-/extensions-client-common-12.0.0.tgz#7c48b9725b15b8638dd7eccada9e3680840ef6d8"
-  integrity sha512-RIm3y6uHzFagOlia4UGocZw5AHRTl10xMQ7/p64rLJDOdd8Qx3m7IIJlNKnPnzYHObEretSuQs78dU/1gK9F7w==
-  dependencies:
-    "@slimsag/react-shortcuts" "^1.2.0"
-    bootstrap "^4.1.3"
-    lodash-es "^4.17.10"
-    marked "^0.5.1"
-    react "^16.4.2"
-    react-router "^4.3.1"
-    react-router-dom "^4.3.1"
-    reactstrap "^6.4.0"
-    rxjs "^6.3.2"
-    sourcegraph "^18.2.0"
-    string-score "^1.0.1"
-    ts-key-enum "^2.0.0"
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -10551,11 +10533,6 @@ lockfile@^1.0.4:
   dependencies:
     signal-exit "^3.0.2"
 
-lodash-es@^4.17.10:
-  version "4.17.11"
-  resolved "https://registry.npmjs.org/lodash-es/-/lodash-es-4.17.11.tgz#145ab4a7ac5c5e52a3531fb4f310255a152b4be0"
-  integrity sha512-DHb1ub+rMjjrxqlB3H56/6MXtm1lSksDp2rA2cNWjG8mlDUYFhUj3Di2Zn5IwSU87xLv8tNIQ7sSwE/YOX/D/Q==
-
 lodash._baseuniq@~4.6.0:
   version "4.6.0"
   resolved "https://registry.npmjs.org/lodash._baseuniq/-/lodash._baseuniq-4.6.0.tgz#0ebb44e456814af7905c6212fa2c9b2d51b841e8"
@@ -14029,7 +14006,7 @@ reactstrap@^5.0.0-beta.2:
     react-portal "^4.1.2"
     react-transition-group "^2.2.1"
 
-reactstrap@^6.2.0, reactstrap@^6.4.0:
+reactstrap@^6.2.0:
   version "6.5.0"
   resolved "https://registry.npmjs.org/reactstrap/-/reactstrap-6.5.0.tgz#ba655e32646e2621829f61faa033e607ec6624e5"
   integrity sha512-dWb3fB/wBAiQloteKlf+j9Nl2VLe6BMZgTEt6hpeTt0t9TwtkeU+2v2NBYONZaF4FZATfMiIKozhWpc2HmLW1g==
@@ -15610,13 +15587,17 @@ source-map@^0.7.2:
   resolved "https://registry.npmjs.org/source-map/-/source-map-0.7.3.tgz#5302f8169031735226544092e64981f751750383"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
-sourcegraph@*, sourcegraph@^18.2.0:
+sourcegraph@*:
   version "18.4.2"
   resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-18.4.2.tgz#617fb6a6cad0d95bd0994917f50ec9b65e5439ae"
   integrity sha512-XI5RMd9e/rn5qxS2xSGjDsJHMk7ESeAP1ivRNwcv3el6kjlBEs68zDjHRQEgvWatDjxq0lqpiKUf8KETIXXuRA==
   dependencies:
     minimatch "^3.0.4"
     rxjs "^6.3.2"
+
+"sourcegraph@link:packages/sourcegraph-extension-api":
+  version "0.0.0"
+  uid ""
 
 sparkles@^1.0.0:
   version "1.0.1"

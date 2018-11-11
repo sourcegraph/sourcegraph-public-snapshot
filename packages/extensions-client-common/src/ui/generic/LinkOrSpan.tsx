@@ -11,21 +11,16 @@ export const LinkOrSpan: React.SFC<
         children?: React.ReactNode
     } & React.AnchorHTMLAttributes<HTMLAnchorElement>
 > = ({ to, className = '', children, ...otherProps }) => {
-    const props = {
-        ...otherProps,
-        unselectable: otherProps.unselectable && otherProps.unselectable === 'on',
-    }
-
     if (to) {
         return (
-            <Link to={to} className={className} {...props}>
+            <Link to={to} className={className} {...otherProps}>
                 {children}
             </Link>
         )
     }
 
     return (
-        <span className={className} {...props}>
+        <span className={className} {...otherProps}>
             {children}
         </span>
     )

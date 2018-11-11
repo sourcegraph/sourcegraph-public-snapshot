@@ -1,4 +1,4 @@
-import { Location } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
+import { Location } from '../../../extensions-client-common/src/api/protocol/plainTypes'
 import {
     ReferenceInformation,
     SymbolLocationInformation,

@@ -1,4 +1,4 @@
-import { SettingsSubject } from '@sourcegraph/extensions-client-common/src/settings'
+import { SettingsSubject } from '../../../../extensions-client-common/src/settings'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'

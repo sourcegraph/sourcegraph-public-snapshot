@@ -1,4 +1,4 @@
-import contributionSchema from '@sourcegraph/extensions-client-common/src/api/protocol/contribution.schema.json'
+import contributionSchema from '../../../extensions-client-common/src/api/protocol/contribution.schema.json'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as monaco from 'monaco-editor'
 import * as React from 'react'

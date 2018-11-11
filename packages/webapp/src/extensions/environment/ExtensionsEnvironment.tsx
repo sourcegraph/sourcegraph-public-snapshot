@@ -1,7 +1,7 @@
-import { Environment } from '@sourcegraph/extensions-client-common/src/api/client/environment'
-import { TextDocumentItem } from '@sourcegraph/extensions-client-common/src/api/client/types/textDocument'
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/src/extensions/extension'
-import { Settings, SettingsCascade, SettingsSubject } from '@sourcegraph/extensions-client-common/src/settings'
+import { Environment } from '../../../../extensions-client-common/src/api/client/environment'
+import { TextDocumentItem } from '../../../../extensions-client-common/src/api/client/types/textDocument'
+import { ConfiguredExtension } from '../../../../extensions-client-common/src/extensions/extension'
+import { Settings, SettingsCascade, SettingsSubject } from '../../../../extensions-client-common/src/settings'
 
 /** React props or state representing the Sourcegraph extensions environment. */
 export interface ExtensionsEnvironmentProps {

@@ -102,7 +102,7 @@
     "react-visibility-sensor": "^4.0.0",
     "reactstrap": "^6.2.0",
     "rxjs": "^6.3.2",
-    "sourcegraph": "*",
+    "sourcegraph": "link:../sourcegraph-extension-api",
     "string-score": "^1.0.1",
     "textarea-caret": "3.1.0",
     "ts-key-enum": "^2.0.0",

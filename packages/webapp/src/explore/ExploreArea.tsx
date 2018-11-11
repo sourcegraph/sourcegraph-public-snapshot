@@ -1,4 +1,4 @@
-import { Settings, SettingsCascadeOrError, SettingsSubject } from '@sourcegraph/extensions-client-common/src/settings'
+import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../extensions-client-common/src/settings'
 import H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'

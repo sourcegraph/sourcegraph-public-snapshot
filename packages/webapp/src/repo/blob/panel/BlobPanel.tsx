@@ -1,4 +1,3 @@
-import { Location, Position } from '@sourcegraph/extensions-client-common/src/api/protocol/plainTypes'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
@@ -21,6 +20,7 @@ import {
 } from 'rxjs/operators'
 import { MarkupContent } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
+import { Location, Position } from '../../../../../extensions-client-common/src/api/protocol/plainTypes'
 import {
     getDefinition,
     getHover,

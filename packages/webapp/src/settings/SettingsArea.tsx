@@ -1,4 +1,4 @@
-import { gqlToCascade } from '@sourcegraph/extensions-client-common/src/settings'
+import { gqlToCascade } from '../../../extensions-client-common/src/settings'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'

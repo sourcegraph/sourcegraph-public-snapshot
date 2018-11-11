@@ -1,4 +1,4 @@
-import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/src/app/ExtensionStatus'
+import { ExtensionStatusPopover } from '../../../extensions-client-common/src/app/ExtensionStatus'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'

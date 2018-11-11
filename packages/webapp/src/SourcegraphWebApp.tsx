@@ -1,15 +1,15 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
-import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from '@sourcegraph/extensions-client-common/src/api/client/environment'
-import { TextDocumentItem } from '@sourcegraph/extensions-client-common/src/api/client/types/textDocument'
-import { Notifications } from '@sourcegraph/extensions-client-common/src/app/notifications/Notifications'
-import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/src/client/controller'
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/src/extensions/extension'
+import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from '../../extensions-client-common/src/api/client/environment'
+import { TextDocumentItem } from '../../extensions-client-common/src/api/client/types/textDocument'
+import { Notifications } from '../../extensions-client-common/src/app/notifications/Notifications'
+import { createController as createExtensionsController } from '../../extensions-client-common/src/client/controller'
+import { ConfiguredExtension } from '../../extensions-client-common/src/extensions/extension'
 import {
     ConfiguredSubject,
     Settings,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '@sourcegraph/extensions-client-common/src/settings'
+} from '../../extensions-client-common/src/settings'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
