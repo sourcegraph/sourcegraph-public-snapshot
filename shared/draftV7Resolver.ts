@@ -8,6 +8,6 @@ import path from 'path'
  */
 export const draftV7resolver: ResolverOptions = {
     order: 1,
-    read: () => fs.readFileSync(path.join('__dirname', '../schema/json-schema-draft-07.schema.json')),
+    read: () => fs.readFileSync(path.join(__dirname, '../schema/json-schema-draft-07.schema.json')),
     canRead: file => file.url === 'http://json-schema.org/draft-07/schema',
 }

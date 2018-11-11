@@ -47,7 +47,7 @@ export async function graphQLTypes(): Promise<void> {
                 postProcessor: (code: string) => format(code, { ...formatOptions, parser: 'typescript' }),
             }
         )
-    await writeFile(__dirname + '/shared/src/graphqlschema.ts', typings)
+    await writeFile(__dirname + '/src/graphqlschema.ts', typings)
 }
 
 /**
@@ -77,9 +77,9 @@ export async function schema(): Promise<void> {
                 },
             })
             await Promise.all([
-                writeFile(__dirname + `/web/src/schema/${file}.schema.d.ts`, types),
+                writeFile(__dirname + `/../web/src/schema/${file}.schema.d.ts`, types),
                 // Copy schema to src/ so it can be imported in TypeScript
-                writeFile(__dirname + `/web/src/schema/${file}.schema.json`, schema),
+                writeFile(__dirname + `/../web/src/schema/${file}.schema.json`, schema),
             ])
         })
     )
