@@ -36,9 +36,12 @@ We have tried two things that ended up not satisfying our needs:
 Based on our experience, we decided to:
 
 - Use only the most standard tools: `tsc` and `yarn`. (Bonus points for not using `yarn`-specific features, to preserve optionality to switch back to `npm`.)
+- Do not build shared code to an intermediate output directory. Instead, import shared `.ts` and `.tsx` files directory from product code.
 - Use manual solutions to fill in the gaps:
   - For shared dependencies whose versions should be consistent across both products (such as `react`, `@types/react`, `rxjs`, etc.), use symlinks by specifying `dependencies` and `devDependencies` entries like `"rxjs": "link:../node_modules/rxjs"` in [`web/package.json`](../../../web/package.json), [`client/browser/package.json`](../../../client/browser/package.json), [`shared/package.json`](../../../shared/package.json). We accept the risk of this introducing an unintended, unhoisted version of a linked package from another dependency that also depends on it (which is why it sometimes results in a warning that the `yarn.lock` version is incorrect).
   - To kick off `yarn install` for all products and shared code, add a `prepublish` script to the [root `package.json`](../../../package.json) that runs this for each other build directory.
+
+The first 2 items are big simplicity wins. The 3rd item unfortunately offsets the simplicity gains. There is no silver bullet.
 
 ### Howtos
 
