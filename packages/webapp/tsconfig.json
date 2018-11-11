@@ -21,6 +21,6 @@
       }
     ]
   },
-  "include": ["src/components/RouterLinkOrAnchor.tsx"],
+  "include": ["src/**/*.ts", "*.ts"],
   "exclude": ["node_modules"]
 }
