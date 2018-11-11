@@ -12,6 +12,7 @@ xlang-go: ./enterprise/dev/delve-hook xlang-go -mode=tcp -addr=:4389
 frontend: env CONFIGURATION_MODE=server ./enterprise/dev/delve-hook frontend
 watch: ./enterprise/dev/changewatch.sh
 web: ENTERPRISE=1 ./node_modules/.bin/gulp --color watch
+browser-ext: cd client/browser && yarn run dev
 syntect_server: ./enterprise/dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
 zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc
