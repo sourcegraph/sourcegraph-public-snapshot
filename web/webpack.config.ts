@@ -60,7 +60,7 @@ const config: webpack.Configuration = {
         app: isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
         style: [
             path.join(__dirname, 'src', 'main.scss'),
-            isEnterpriseBuild ? path.join(enterpriseDir, 'main.scss') : null,
+            isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,
         ].filter((path): path is string => !!path),
 
         'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',

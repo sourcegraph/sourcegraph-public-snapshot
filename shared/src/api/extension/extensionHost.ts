@@ -106,8 +106,13 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
         Selection,
         Location,
         MarkupKind: {
-            PlainText: sourcegraph.MarkupKind.PlainText,
-            Markdown: sourcegraph.MarkupKind.Markdown,
+            // The const enum MarkupKind values can't be used because then the `sourcegraph` module import at the
+            // top of the file is emitted in the generated code. That is problematic because it hasn't been defined
+            // yet (in workerMain.ts). It seems that using const enums should *not* emit an import in the generated
+            // code; this is a known issue: https://github.com/Microsoft/TypeScript/issues/16671
+            // https://github.com/palantir/tslint/issues/1798 https://github.com/Microsoft/TypeScript/issues/18644.
+            PlainText: 'plaintext' as sourcegraph.MarkupKind.PlainText,
+            Markdown: 'markdown' as sourcegraph.MarkupKind.Markdown,
         },
 
         app: {

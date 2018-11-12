@@ -196,7 +196,7 @@ export function createController<S extends SettingsSubject, C extends Settings>(
         window.sx = controller
         // This value is synchronously available because observable has an underlying
         // BehaviorSubject source.
-        controller.environment.subscribe(v => (window.sxenv = v)).unsubscribe()
+        controller.environment.subscribe(v => (window.sxenv = v))
     }
 
     return controller
