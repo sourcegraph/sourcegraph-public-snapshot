@@ -17,7 +17,7 @@ interface AppContext {
 const options = /options\.html/
 
 function getContext(): AppContext {
-    const appEnv = window.SG_ENV === 'EXTENSION' ? AppEnv.Extension : AppEnv.Page
+    const appEnv = (window as any).SG_ENV === 'EXTENSION' ? AppEnv.Extension : AppEnv.Page
 
     let scriptEnv: ScriptEnv = ScriptEnv.Content
     if (appEnv === AppEnv.Extension) {
