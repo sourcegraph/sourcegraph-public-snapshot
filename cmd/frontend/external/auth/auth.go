@@ -16,14 +16,13 @@ type (
 )
 
 var (
-	GetProviderByConfigID  = auth.GetProviderByConfigID
-	Providers              = auth.Providers
-	UpdateProviders        = auth.UpdateProviders
-	SafeRedirectURL        = auth.SafeRedirectURL
-	SetExternalAccountData = auth.SetExternalAccountData
-	NormalizeUsername      = auth.NormalizeUsername
-	CreateOrUpdateUser     = auth.CreateOrUpdateUser
-	RegisterMiddlewares    = auth.RegisterMiddlewares
+	GetProviderByConfigID = auth.GetProviderByConfigID
+	Providers             = auth.Providers
+	UpdateProviders       = auth.UpdateProviders
+	SafeRedirectURL       = auth.SafeRedirectURL
+	NormalizeUsername     = auth.NormalizeUsername
+	CreateOrUpdateUser    = auth.CreateOrUpdateUser
+	RegisterMiddlewares   = auth.RegisterMiddlewares
 )
 
 const (

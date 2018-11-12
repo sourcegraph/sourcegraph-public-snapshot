@@ -166,15 +166,7 @@ func (p *GitLabAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Ext
 }
 
 func (p *GitLabAuthzProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
-	mine, others = make(map[authz.Repo]struct{}), make(map[authz.Repo]struct{})
-	for repo := range repos {
-		if p.codeHost.IsHostOf(&repo.ExternalRepoSpec) {
-			mine[repo] = struct{}{}
-		} else {
-			others[repo] = struct{}{}
-		}
-	}
-	return mine, others
+	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
 
 func (p *GitLabAuthzProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {

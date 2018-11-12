@@ -36,7 +36,3 @@ func (h *CodeHost) ServiceID() string {
 func (h *CodeHost) ServiceType() string {
 	return ServiceType
 }
-
-func (h *CodeHost) IsHostOf(repo *api.ExternalRepoSpec) bool {
-	return ServiceType == repo.ServiceType && repo.ServiceID == h.id
-}
