@@ -7,7 +7,6 @@ import {
     GitHubConnection,
     GitLabConnection,
     Repository,
-    SAMLAuthProvider,
     SiteConfiguration,
 } from '../schema/site.schema'
 import { parseJSON } from '../settings/configuration'
@@ -81,16 +80,6 @@ const addOtherRepository: ConfigInsertionFunction = config => {
     return { edits, selectText: urlPlaceholder }
 }
 
-const addSAMLAuthProvider: ConfigInsertionFunction = config => {
-    const value: SAMLAuthProvider = {
-        type: 'saml',
-        identityProviderMetadataURL: '<see https://docs.sourcegraph.com/admin/auth/#saml>',
-    }
-    return {
-        edits: [...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions)],
-    }
-}
-
 const addLicenseKey: ConfigInsertionFunction = config => {
     const value =
         '<input a license key generated from /site-admin/license. See https://about.sourcegraph.com/pricing for more details>'
@@ -137,7 +126,6 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.addBitbucketServer', label: 'Add Bitbucket Server repositories', run: addBitbucketServer },
     { id: 'sourcegraph.site.addAWSCodeCommit', label: 'Add AWS CodeCommit repositories', run: addAWSCodeCommit },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
-    { id: 'sourcegraph.site.addSAMLAUthProvider', label: 'Add SAML user auth', run: addSAMLAuthProvider },
     { id: 'sourcegraph.site.addLicenseKey', label: 'Add license key', run: addLicenseKey },
 ]
 
