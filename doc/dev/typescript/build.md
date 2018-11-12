@@ -39,6 +39,8 @@ Based on our experience, we decided to:
 - Do not build shared code to an intermediate output directory. Instead, import shared `.ts` and `.tsx` files directory from product code.
 - Use a single root `package.json` that specifies all dependencies needed by any product or shared code.
 
+The one "hack" is that each subproject's `node_modules/.bin` is symlinked to the root `node_modules/.bin` so that `package.json` scripts can refer to programs installed by dependencies. (Subprojects' `node_modules` directories are otherwise empty.)
+
 ### Howtos
 
 #### Add a dependency

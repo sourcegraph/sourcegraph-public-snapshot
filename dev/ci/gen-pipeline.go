@@ -51,7 +51,7 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // for speed
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace webapp run tslint"))
+		bk.Cmd("(cd web && tslint"))
 
 	pipeline.AddStep(":stylelint:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
