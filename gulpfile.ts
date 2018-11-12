@@ -4,11 +4,14 @@ import { graphQLTypes, schema, watchGraphQLTypes, watchSchema } from './shared/g
 import { webpack as webWebpack, webpackDevServer as webWebpackDevServer } from './web/gulpfile'
 
 /**
+ * Generates files needed for builds.
+ */
+export const generate = gulp.parallel(schema, graphQLTypes)
+
+/**
  * Builds everything.
  */
-export const build = gulp.parallel(
-    gulp.series(gulp.parallel(schema, graphQLTypes), gulp.parallel(webWebpack, phabricator))
-)
+export const build = gulp.parallel(gulp.series(generate, gulp.parallel(webWebpack, phabricator)))
 
 export { schema, graphQLTypes }
 
@@ -16,7 +19,6 @@ export { schema, graphQLTypes }
  * Watches everything and rebuilds on file changes.
  */
 export const watch = gulp.series(
-    // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-    gulp.parallel(schema, graphQLTypes),
+    generate,
     gulp.parallel(watchSchema, watchGraphQLTypes, webWebpackDevServer, watchPhabricator)
 )
