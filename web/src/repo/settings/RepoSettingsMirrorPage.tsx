@@ -6,7 +6,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { interval, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, takeUntil, tap } from 'rxjs/operators'
+import { catchError, switchMap, tap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { FeedbackText } from '../../components/FeedbackText'
 import { PageTitle } from '../../components/PageTitle'
@@ -29,28 +29,10 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        // TODO rxjs medic, I just want this to continuously poll
-        // If repository is cloning, poll until it's done.
         this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    startWith(this.props),
-                    map(props => props.repo.mirrorInfo),
-                    distinctUntilChanged((a, b) => a.cloneInProgress === b.cloneInProgress && a.cloned === b.cloned),
-                    filter(mirrorInfo => mirrorInfo.cloneInProgress || !mirrorInfo.cloned),
-                    switchMap(() =>
-                        interval(3000).pipe(
-                            takeUntil(
-                                this.componentUpdates.pipe(
-                                    filter(
-                                        props => !props.repo.mirrorInfo.cloneInProgress && props.repo.mirrorInfo.cloned
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-                .subscribe(repo => this.props.onDidUpdateRepository())
+            interval(3000).subscribe(() => {
+                this.props.onDidUpdateRepository()
+            })
         )
     }
 
@@ -93,17 +75,16 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                     </div>
                     {this.props.repo.mirrorInfo.updateSchedule && (
                         <div>
-                            Next update <Timestamp date={this.props.repo.mirrorInfo.updateSchedule.due} /> ({
-                                this.props.repo.mirrorInfo.updateSchedule.index
-                            }{' '}
-                            / {this.props.repo.mirrorInfo.updateSchedule.total})
+                            Next scheduled update <Timestamp date={this.props.repo.mirrorInfo.updateSchedule.due} />{' '}
+                            (position {this.props.repo.mirrorInfo.updateSchedule.index + 1} out of{' '}
+                            {this.props.repo.mirrorInfo.updateSchedule.total} in the schedule)
                         </div>
                     )}
                     {this.props.repo.mirrorInfo.updateQueue &&
                         !this.props.repo.mirrorInfo.updateQueue.updating && (
                             <div>
-                                Queued for update ({this.props.repo.mirrorInfo.updateQueue.index} /{' '}
-                                {this.props.repo.mirrorInfo.updateQueue.total})
+                                Queued for update (position {this.props.repo.mirrorInfo.updateQueue.index + 1} out of{' '}
+                                {this.props.repo.mirrorInfo.updateQueue.total} in the queue)
                             </div>
                         )}
                 </>
