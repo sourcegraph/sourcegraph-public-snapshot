@@ -1,8 +1,17 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, Subject, Subscription, forkJoin } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { concat, Subject, Subscription, forkJoin, combineLatest } from 'rxjs'
+import {
+    catchError,
+    distinctUntilChanged,
+    filter,
+    map,
+    startWith,
+    switchMap,
+    tap,
+    withLatestFrom,
+} from 'rxjs/operators'
 import { parseSearchURLQuery, SearchOptions } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
@@ -71,15 +80,21 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 .subscribe(scopes => this.setState({ scopes }))
         )
 
-        this.subscriptions.add(
-            this.props.extensionsController.registries.issuesResultsProvider
-                .provideIssueResults('test')
-                .pipe(
-                    tap(res => {
-                        console.log('from search results', res)
-                    })
+        const searchProviders = this.props.extensionsController.registries.issuesResultsProvider
+
+        const searchResultsProviders = this.componentUpdates.pipe(
+            map(props => parseSearchURLQuery(props.location.search)),
+            filter((searchOptions): searchOptions is SearchOptions => !!searchOptions),
+            map(searchOptions => {
+                concat(
+                    searchProviders.provideIssueResults(searchOptions.query).pipe(
+                        tap(res => {
+                            console.log('from search results', res)
+                        }),
+                        map(res => res)
+                    )
                 )
-                .subscribe()
+            })
         )
 
         this.subscriptions.add(
@@ -100,10 +115,15 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
-                            search(searchOptions, this.props).pipe(
+                            combineLatest(
+                                search(searchOptions, this.props),
+                                this.props.extensionsController.registries.issuesResultsProvider.provideIssueResults(
+                                    searchOptions.query
+                                )
+                            ).pipe(
                                 // Log telemetry
                                 tap(
-                                    results =>
+                                    ([results, extensionsResults]) =>
                                         eventLogger.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
@@ -123,7 +143,14 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     }
                                 ),
                                 // Update view with results or error
-                                map(results => ({ resultsOrError: results })),
+                                map(([results, extensionsResults]) => {
+                                    if (extensionsResults && !isErrorLike(results)) {
+                                        // if empty, it's not iterable.
+                                        console.log('EXTENSIONS RESULTS', extensionsResults)
+                                        results.results.push(...(extensionsResults as GQL.IIssueResult[]))
+                                    }
+                                    return { resultsOrError: results }
+                                }),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )

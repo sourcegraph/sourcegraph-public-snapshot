@@ -853,8 +853,36 @@ declare module 'sourcegraph' {
         transformQuery(query: string): string | Promise<string>
     }
 
+    /**
+     * For a search result to inject links to a result header. For example, if you want to add a commit hash to the right side of a result header,
+     * specify the hash as the title, and the url is where it should link to.
+     */
+    export type SearchResultHeaderLink = {
+        title: string
+        url: string
+    }
+    /**
+     * A search result. Any search result provider should return results that implement this interface in order
+     * to be properly rendered in Sourcegraph search interfaces.
+     */
+    export interface SearchResult {
+        __typename: 'GenericSearchResult'
+        /** The icon is a react component with a className prop on the frontend. We can pass the className? */
+        icon?: string
+        /**
+         * Location title is the left-most item in the results container header. This should be the highest-level separator of search results.
+         * For example, for code, this would be the repository. For Google docs, it might be the organization.
+         */
+        locationTitle?: SearchResultHeaderLink
+        /**
+         * The title of the search result. For code matches, this is the file name. For commit/diff search results, it is the commit title.
+         * For issue search, it is the issue title.
+         */
+        title: SearchResultHeaderLink
+    }
     /** A search result from an issue provider */
     export interface IssueResult {
+        __typename: string
         title: string
         body: string
         url: string

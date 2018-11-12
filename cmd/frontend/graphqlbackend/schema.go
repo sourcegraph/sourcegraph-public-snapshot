@@ -759,7 +759,13 @@ type Search {
 }
 
 # A search result.
-union SearchResult = FileMatch | CommitSearchResult | Repository
+union SearchResult = FileMatch | CommitSearchResult | Repository | IssueResult
+
+type IssueResult {
+    title: String!
+    body: String!
+    url: String!
+}
 
 # Search results.
 type SearchResults {
