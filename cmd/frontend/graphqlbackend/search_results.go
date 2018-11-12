@@ -930,6 +930,7 @@ type searchResultResolver struct {
 	repo      *repositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
+	issue     *issueSearchResultResolver  // diff or commit match
 }
 
 // getSearchResultURIs returns the repo name and file uri respectiveley
@@ -971,6 +972,10 @@ func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
 }
 func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return g.diff, g.diff != nil
+}
+
+func (g *searchResultResolver) ToIssueResult() (*issueSearchResultResolver, bool) {
+	return g.issue, g.issue != nil
 }
 
 func (g *searchResultResolver) resultCount() int32 {

@@ -428,6 +428,15 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         allExpanded={this.props.allExpanded}
                     />
                 )
+            case 'IssueResult':
+                return (
+                    <div key={result.url} className="result-container">
+                        <a href={result.url}>
+                            <div className="result-container__header">{result.title}</div>
+                        </a>
+                        <p>{result.body}</p>
+                    </div>
+                )
         }
         return undefined
     }
