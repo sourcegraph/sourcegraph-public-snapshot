@@ -11,7 +11,6 @@ const (
 	XLang   = "xlang"
 
 	Registry = "registry"
-	Raw      = "raw"
 
 	RepoShield  = "repo.shield"
 	RepoRefresh = "repo.refresh"
@@ -60,7 +59,6 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
 	addRegistryRoute(base)
-	addRawRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
 
@@ -115,7 +113,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration/raw-json").Methods("POST").Name(ConfigurationRawJSON)
 	addRegistryRoute(base)
-	addRawRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
 
@@ -124,12 +121,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 func addRegistryRoute(m *mux.Router) {
 	m.PathPrefix("/registry").Methods("GET").Name(Registry)
-}
-
-func addRawRoute(m *mux.Router) {
-	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	repoRev := m.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repoRev.Path("/raw{Path:.*}").Methods("GET").Name(Raw)
 }
 
 func addTelemetryRoute(m *mux.Router) {

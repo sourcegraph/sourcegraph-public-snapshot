@@ -115,11 +115,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && git.IsRevisionNotFound(errors.Cause(err)) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
-			if errors.Cause(err) == repoupdater.ErrUnauthorized {
-				// Not authorized to access repository.
-				serveError(w, r, err, http.StatusUnauthorized)
-				return nil, nil
-			}
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
@@ -132,6 +127,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			}
 			if vcs.IsRepoNotExist(err) {
 				serveError(w, r, err, http.StatusNotFound)
+				return nil, nil
+			}
+			if errors.Cause(err) == repoupdater.ErrUnauthorized {
+				// Not authorized to access repository.
+				serveError(w, r, err, http.StatusUnauthorized)
 				return nil, nil
 			}
 			if git.IsRevisionNotFound(errors.Cause(err)) {
