@@ -6,6 +6,7 @@ export function build(): ChildProcess {
     return spawn('yarn', ['-s', 'run', 'build'], {
         stdio: 'inherit',
         shell: true,
+        env: { ...process.env, NODE_OPTIONS: '--max_old_space_size=8192' },
     })
 }
 
@@ -13,6 +14,7 @@ export function watch(): ChildProcess {
     return spawn('yarn', ['-s', 'run', 'dev'], {
         stdio: 'inherit',
         shell: true,
+        env: { ...process.env, NODE_OPTIONS: '--max_old_space_size=8192' },
     })
 }
 
