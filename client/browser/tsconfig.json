@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "typeRoots": ["node_modules/@types", "src/types"],
+    "typeRoots": ["../../node_modules/@types", "src/types"],
     "jsx": "react",
     "noImplicitAny": false,
     "noImplicitReturns": false,
@@ -19,5 +19,5 @@
     "scripts/**/*.ts",
     "*.ts"
   ],
-  "exclude": ["./node_modules", "./build", "./*.safariextension"]
+  "exclude": ["../../node_modules", "./build", "./*.safariextension"]
 }

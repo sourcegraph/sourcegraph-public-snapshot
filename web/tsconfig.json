@@ -1,9 +1,9 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "typeRoots": ["node_modules/@types", "src/types"],
+    "typeRoots": ["../node_modules/@types", "src/types"],
     "jsx": "react"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["../node_modules"]
 }

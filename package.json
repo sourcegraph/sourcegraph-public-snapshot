@@ -12,7 +12,10 @@
   },
   "scripts": {
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
-    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e ./*.ts'",
+    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e './*.ts'",
+    "all:tslint": "dev/foreach-ts-project.sh yarn -s run tslint",
+    "all:stylelint": "(cd web && yarn -s run stylelint) && (cd client/browser && yarn -s run stylelint)",
+    "all:typecheck": "dev/foreach-ts-project.sh $PWD/node_modules/.bin/tsc -p tsconfig.json",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql"
   },
   "browserslist": [
