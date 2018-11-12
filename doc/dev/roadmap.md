@@ -94,9 +94,7 @@ Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegr
 Browser authorization flow for clients | [🌞](https://github.com/sourcegraph/sourcegraph/pull/528)[🐞](https://github.com/sourcegraph/src-cli/issues/28) [📖](https://github.com/sourcegraph/about/pull/42) | Integrations, [Sourcegraph][sourcegraph], [`src`][src-cli] | [@sqs][sqs]
 Swift language support | | Code intelligence, sourcegraph-swift | | T.B.D. ([@nicksnyder][nicksnyder] or [@chrismwendt][chrismwendt]?)
 Cross-language API/IDL support ([GraphQL](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/graphql-sourcegraph-extension.md), Thrift, Protobuf) | | Code intelligence, sourcegraph-{graphql,thrift,protobuf} | T.B.D.
-Ruby language support | | Code intelligence, sourcegraph-ruby | T.B.D.
 Flow (JS) language support | | Code intelligence, sourcegraph-flow | T.B.D.
-Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
 
 <small>Release: week of 7 January 2019 --- [All December 2018 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+author%3Asqs+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%22November+2018%22)</small>
 
@@ -106,7 +104,9 @@ Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@sl
 
 <small>Release: week of 4 February 2019</small>
 
-<!-- TODO: Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] [@ijsnow][ijsnow] -->
+<!-- TODO: Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] [@ijsnow][ijsnow]
+Ruby language support | | Code intelligence, sourcegraph-ruby | T.B.D.
+Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag] -->
 
 ---
 
