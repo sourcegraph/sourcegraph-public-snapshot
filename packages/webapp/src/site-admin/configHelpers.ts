@@ -6,7 +6,6 @@ import {
     BitbucketServerConnection,
     GitHubConnection,
     GitLabConnection,
-    OpenIDConnectAuthProvider,
     Repository,
     SAMLAuthProvider,
     SiteConfiguration,
@@ -82,19 +81,6 @@ const addOtherRepository: ConfigInsertionFunction = config => {
     return { edits, selectText: urlPlaceholder }
 }
 
-const addGSuiteOIDCAuthProvider: ConfigInsertionFunction = config => {
-    const value: OpenIDConnectAuthProvider = {
-        type: 'openidconnect',
-        issuer: 'https://accounts.google.com',
-        clientID: '<see documentation: https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials>',
-        clientSecret: '<see same documentation as clientID>',
-        requireEmailDomain: "<your company's email domain (example: mycompany.com)>",
-    }
-    return {
-        edits: [...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions)],
-    }
-}
-
 const addSAMLAuthProvider: ConfigInsertionFunction = config => {
     const value: SAMLAuthProvider = {
         type: 'saml',
@@ -151,11 +137,6 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.addBitbucketServer', label: 'Add Bitbucket Server repositories', run: addBitbucketServer },
     { id: 'sourcegraph.site.addAWSCodeCommit', label: 'Add AWS CodeCommit repositories', run: addAWSCodeCommit },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
-    {
-        id: 'sourcegraph.site.addGSuiteOIDCAuthProvider',
-        label: 'Add G Suite user auth',
-        run: addGSuiteOIDCAuthProvider,
-    },
     { id: 'sourcegraph.site.addSAMLAUthProvider', label: 'Add SAML user auth', run: addSAMLAuthProvider },
     { id: 'sourcegraph.site.addLicenseKey', label: 'Add license key', run: addLicenseKey },
 ]
