@@ -206,6 +206,8 @@ github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8 h1:XCAOLCXtvhcmu
 github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8/go.mod h1:I7eBHoOOU9N76qKli6iiqWZqh7iyxraK7SgR+kbDgW4=
 github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible h1:GxQXdxHr/j1qkRigV351ePJBbDkwHuDWJU7pJNmi7+k=
 github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible/go.mod h1:/pEEZ72flUW2p0yi30bslSp9YqD9pysLxunQDdb2CPM=
+github.com/kevinburke/go-bindata v3.12.0+incompatible h1:uqjc4ZvbeZgf1RWjHpDguFfY9ahsHqC6yhCl+mFW77g=
+github.com/kevinburke/go-bindata v3.12.0+incompatible/go.mod h1:/pEEZ72flUW2p0yi30bslSp9YqD9pysLxunQDdb2CPM=
 github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
