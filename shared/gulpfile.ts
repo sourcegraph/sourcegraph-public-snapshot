@@ -4,6 +4,7 @@ import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'gr
 import gulp from 'gulp'
 import $RefParser from 'json-schema-ref-parser'
 import { compile as compileJSONSchema } from 'json-schema-to-typescript'
+import mkdirp from 'mkdirp-promise'
 import { readFile, writeFile } from 'mz/fs'
 import path from 'path'
 import { format, resolveConfig } from 'prettier'
@@ -53,6 +54,8 @@ export async function graphQLTypes(): Promise<void> {
  * Generates the TypeScript types for the JSON schemas.
  */
 export async function schema(): Promise<void> {
+    const outputDir = path.join(__dirname, '..', 'web', 'src', 'schema')
+    await mkdirp(outputDir)
     const schemaDir = path.join(__dirname, '..', 'schema')
     await Promise.all(
         ['json-schema-draft-07', 'settings', 'site', 'extension'].map(async file => {
@@ -75,7 +78,7 @@ export async function schema(): Promise<void> {
                     } as $RefParser.Options['resolve'],
                 },
             })
-            await writeFile(path.join(__dirname, '..', 'web', 'src', 'schema', `${file}.schema.d.ts`), types)
+            await writeFile(path.join(outputDir, `${file}.schema.d.ts`), types)
         })
     )
 }
