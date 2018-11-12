@@ -347,7 +347,6 @@ func main() {
 	http.HandleFunc("/repository/", handleRepository())
 	if env.InsecureDev {
 		// list-repositories is for testing, not production.
-		fmt.Printf("enabling list-repositories")
 		http.HandleFunc("/list-repositories", handleListRepositories())
 	}
 
