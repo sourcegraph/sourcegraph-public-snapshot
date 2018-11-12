@@ -139,8 +139,8 @@ func init() {
 
 func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
 	// Handle custom errors
-	if e, ok := err.(*handlerutil.URLMovedError); ok {
-		http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+	if ee, ok := err.(*handlerutil.URLMovedError); ok {
+		http.Redirect(w, r, "/"+ee.NewRepo, http.StatusMovedPermanently)
 		return
 	}
 
