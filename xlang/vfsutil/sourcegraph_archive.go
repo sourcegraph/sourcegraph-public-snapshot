@@ -9,7 +9,7 @@ import (
 // returns a new VFS backed by that zip archive.
 func NewSourcegraphRepoVFS(repo, rev string) (*ArchiveFS, error) {
 	// TODO(chris) switch to the non-internal raw API once authorization is implemented.
-	url := api.InternalClient.URL + "/.internal/" + repo + "@" + rev + "/-/raw"
+	url := api.InternalClient.URL + "/.internal/" + repo + "@" + rev + "/-/raw/"
 	cacheKey := repo + "@" + rev
 	rootDirInZip := "/"
 	return NewZipVFS(url, cacheKey, rootDirInZip, sgFetch.Inc, sgFetchFailed.Inc)
