@@ -18,6 +18,7 @@
       }
     ]
   },
-  "include": ["*.ts"],
+
+  "files": ["gulpfile.ts"],
   "exclude": ["node_modules"]
 }
