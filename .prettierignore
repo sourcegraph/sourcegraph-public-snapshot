@@ -15,8 +15,8 @@ vendor/
 .nyc_output/
 out/
 dist/
-src/backend/graphqlschema.ts
-src/schema/
+shared/src/graphqlschema.ts
+web/src/schema/
 ts-node-*
 testdata
 .github/*
