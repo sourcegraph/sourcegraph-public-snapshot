@@ -19,7 +19,10 @@
   "scripts": {
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
-    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000"
+    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
+    "graphql": "gulp graphQLTypes",
+    "schema": "gulp schema",
+    "watch-schema": "gulp watchSchema"
   },
   "nyc": {
     "extension": [
