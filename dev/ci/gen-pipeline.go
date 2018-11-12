@@ -110,7 +110,7 @@ func main() {
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("yarn -s run build"),
+		// bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn -s run test:ci"),
 		bk.Cmd("popd"))
 
