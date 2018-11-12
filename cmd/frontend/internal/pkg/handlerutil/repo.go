@@ -14,16 +14,16 @@ import (
 // URLMovedError and handle this scenario by warning or redirecting the user.
 func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
+
 	repo, err := backend.Repos.GetByName(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
+
 	if origRepo != repo.Name {
 		return nil, &URLMovedError{NewURL: "/" + repo.Name}
 	}
-	if e, ok := err.(backend.ErrRepoSeeOther); ok {
-		return nil, &URLMovedError{NewURL: e.RedirectURL}
-	}
+
 	return repo, nil
 }
 

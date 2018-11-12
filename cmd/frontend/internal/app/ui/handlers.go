@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -120,6 +121,16 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
 				http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+				return nil, nil
+			}
+			if e, ok := err.(backend.ErrRepoSeeOther); ok {
+				// Repo does not exist here, redirect to the recommended location.
+				u, err := url.Parse(e.RedirectURL)
+				if err != nil {
+					return nil, err
+				}
+				u.Path, u.RawQuery = r.URL.Path, r.URL.RawQuery
+				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
 			if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
