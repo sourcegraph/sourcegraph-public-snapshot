@@ -8,8 +8,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import * as GQL from '../../backend/graphqlschema'
-import { ServerBanner } from '../../marketing/ServerBanner'
-import { showDotComMarketing } from '../../util/features'
 import { pluralize } from '../../util/strings'
 
 interface SearchResultsInfoBarProps {
@@ -132,6 +130,5 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                 </div>
             </small>
         )}
-        {!props.results.alert && showDotComMarketing && <ServerBanner />}
     </div>
 )
