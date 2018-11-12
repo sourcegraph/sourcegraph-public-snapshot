@@ -34,7 +34,7 @@ func NewZipVFS(url, cacheKey, rootDirInZip string, onFetchStart, onFetchFailed f
 			request.Header.Add("Accept", "application/zip")
 			resp, err := ctxhttp.Do(ctx, nil, request)
 			if err != nil {
-				return nil, errors.Errorf("failed to fetch zip archive from %s: %s", url, err)
+				return nil, errors.Wrapf(err, "failed to fetch zip archive from %s", url)
 			}
 			if resp.StatusCode != http.StatusOK {
 				resp.Body.Close()
@@ -44,14 +44,14 @@ func NewZipVFS(url, cacheKey, rootDirInZip string, onFetchStart, onFetchFailed f
 		})
 		if err != nil {
 			onFetchFailed()
-			return nil, errors.Errorf("failed to fetch/write/open zip archive from %s: %s", url, err)
+			return nil, errors.Wrapf(err, "failed to fetch/write/open zip archive from %s", url)
 		}
 		f := ff.File
 
 		zr, err := zipNewFileReader(f)
 		if err != nil {
 			f.Close()
-			return nil, errors.Errorf("failed to read zip archive associated with local disk cache key %s: %s", cacheKey, err)
+			return nil, errors.Wrapf(err, "failed to read zip archive associated with local disk cache key %s", cacheKey)
 		}
 
 		if len(zr.File) == 0 {
