@@ -89,7 +89,8 @@
           "default": "disabled"
         },
         "githubAuth": {
-          "description": "Enables GitHub instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitHub instance to the `auth.providers` field.",
+          "description":
+            "Enables GitHub instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitHub instance to the `auth.providers` field.",
           "type": "boolean"
         }
       }
@@ -1094,7 +1095,8 @@
       }
     },
     "GitHubAuthProvider": {
-      "description": "Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.",
+      "description":
+        "Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.",
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "clientID", "clientSecret"],
@@ -1105,16 +1107,19 @@
         },
         "url": {
           "type": "string",
-          "description": "URL of the GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
+          "description":
+            "URL of the GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
           "default": "https://github.com/"
         },
         "clientID": {
           "type": "string",
-          "description": "The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
+          "description":
+            "The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
         },
         "clientSecret": {
           "type": "string",
-          "description": "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
+          "description":
+            "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
         },
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
       }

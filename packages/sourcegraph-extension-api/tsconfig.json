@@ -1,21 +1,3 @@
 {
-  "extends": "../../node_modules/@sourcegraph/tsconfig/tsconfig.json",
-  "compilerOptions": {
-    "target": "es2018",
-    "module": "es6",
-    "moduleResolution": "node",
-    "declaration": true,
-    "noEmit": true,
-    "lib": ["es2018"],
-    "sourceRoot": "src",
-    "skipLibCheck": true,
-    "inlineSources": true,
-    "inlineSourceMap": true,
-    "noErrorTruncation": true,
-    "plugins": [
-      {
-        "name": "tslint-language-service"
-      }
-    ]
-  }
+  "extends": "../../tsconfig.json"
 }

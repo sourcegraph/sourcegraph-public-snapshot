@@ -96,8 +96,8 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-packages/webapp/src/backend/graphqlschema.ts
-packages/webapp/src/schema/*
+shared/src/graphqlschema.ts
+web/src/schema/*
 puppeteer/
 package-lock.json
 /dist

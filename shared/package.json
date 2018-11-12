@@ -1,0 +1,44 @@
+{
+  "name": "@sourcegraph/extensions-client-common",
+  "private": true,
+  "version": "12.0.0",
+  "description": "Common TypeScript/React client application code for Sourcegraph extension configuration and management, used in Sourcegraph and \"Sourcegraph for X\" products",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src"
+  ],
+  "bugs": {
+    "url": "https://github.com/sourcegraph/sourcegraph/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph"
+  },
+  "scripts": {
+    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
+    "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
+    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
+    "graphql": "gulp graphQLTypes",
+    "schema": "gulp schema",
+    "watch-schema": "gulp watchSchema"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "**/*.test.ts",
+      "**/*.js"
+    ],
+    "cache": true,
+    "reporter": [
+      "text",
+      "lcovonly"
+    ]
+  },
+  "sideEffects": false
+}

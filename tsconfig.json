@@ -1,17 +1,14 @@
 {
   "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "target": "es2017",
+    "target": "esnext",
     "module": "commonjs",
     "moduleResolution": "node",
-    "typeRoots": ["node_modules/@types"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "lib": ["es2017", "es2017.object", "dom", "dom.iterable"],
-    "jsx": "react",
+    "lib": ["esnext", "dom", "dom.iterable"],
     "sourceMap": true,
     "noEmit": true,
-    "downlevelIteration": true,
     "skipLibCheck": true,
     "noErrorTruncation": true,
     "importHelpers": true,
@@ -21,6 +18,7 @@
       }
     ]
   },
-  "include": ["gulpfile.ts", "enterprise/src/**/*"],
+
+  "files": ["gulpfile.ts"],
   "exclude": ["node_modules"]
 }

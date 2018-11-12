@@ -1,6 +1,11 @@
 .bin/
 *.bundle.*
 client/phabricator/scripts/loader.js
+client/browser/build
+**/package.json
+**/*.safariextension
+!**/*.safariextension/background.safari.html
+**/coverage
 cmd/frontend/db/schema.md
 cmd/xlang-python/python-langserver/
 package-lock.json
@@ -8,11 +13,10 @@ package.json
 ui/assets/
 vendor/
 .nyc_output/
-coverage/
 out/
 dist/
-src/backend/graphqlschema.ts
-src/schema/
+shared/src/graphqlschema.ts
+web/src/schema/
 ts-node-*
 testdata
 .github/*
