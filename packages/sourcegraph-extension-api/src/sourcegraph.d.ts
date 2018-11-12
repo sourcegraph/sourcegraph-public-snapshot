@@ -1,7 +1,14 @@
 /**
- * The Sourcegraph extension API.
+ * ## The Sourcegraph extension API
  *
- * @todo Work in progress.
+ * Sourcegraph extensions enhance your code host, code reviews, and Sourcegraph itself by adding features such as:
+ * - Code intelligence (go-to-definition, find references, hovers, etc.)
+ * - Test coverage overlays
+ * - Links to live traces, log output, and performance data for a line of code
+ * - Git blame
+ * - Usage examples for functions
+ *
+ * Check out the [extension authoring documentation](https://docs.sourcegraph.com/extensions/authoring) to get started.
  */
 declare module 'sourcegraph' {
     // tslint:disable member-access
@@ -909,6 +916,7 @@ declare module 'sourcegraph' {
      * be addressed in the beta release.
      *
      * @internal
+     * @hidden
      */
     export namespace internal {
         /**

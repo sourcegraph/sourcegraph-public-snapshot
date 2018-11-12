@@ -19,6 +19,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'"
+    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
+    "docs": "typedoc"
   }
 }
