@@ -1159,8 +1159,9 @@ type MirrorRepositoryInfo {
     cloned: Boolean!
     # When the repository was last successfully updated from the remote source repository..
     updatedAt: String
-
+    # The state of this repository in the update schedule.
     updateSchedule: UpdateSchedule
+    # The state of this repository in the update queue.
     updateQueue: UpdateQueue
 }
 
