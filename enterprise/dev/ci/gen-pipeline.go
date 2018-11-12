@@ -174,7 +174,7 @@ func main() {
 			bk.Concurrency(1),
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd web"),
+			bk.Cmd("pushd ../web"),
 			bk.Cmd("yarn -s run test-e2e-sgdev --retries 5"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
