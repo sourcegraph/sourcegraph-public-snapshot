@@ -34,12 +34,11 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestResolveImportPath(t *testing.T) {
-	defer func(orig []string) { noGoGetDomains.domains = orig }(noGoGetDomains.domains)
-	noGoGetDomains.domains = []string{"mygitolite.aws.me.org"}
-
-	conf := conf.Get()
-	defer func(orig []string) { conf.BlacklistGoGet = orig }(conf.BlacklistGoGet)
-	conf.BlacklistGoGet = []string{"nohttp.google.com"}
+	defer func(orig conf.UnifiedConfiguration) {
+		(*conf.Get()) = orig
+	}(*conf.Get())
+	conf.Get().NoGoGetDomains = "mygitolite.aws.me.org"
+	conf.Get().BlacklistGoGet = []string{"nohttp.google.com"}
 
 	tests := []struct {
 		importPath string
