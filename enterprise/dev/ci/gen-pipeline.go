@@ -56,7 +56,7 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
+		bk.Cmd("pushd ../web"),
 		bk.Cmd("yarn -s run browserslist"),
 		bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
 		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
