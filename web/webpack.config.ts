@@ -5,11 +5,11 @@ import rxPaths from 'rxjs/_esm5/path-mapping'
 import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
 import * as webpack from 'webpack'
 
-const rootDir = path.resolve(__dirname, '..')
-
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
-const monacoEditorPaths = [path.resolve(__dirname, 'node_modules', 'monaco-editor')]
+const rootDir = path.resolve(__dirname, '..')
+const nodeModulesPath = path.resolve(__dirname, '..', 'node_modules')
+const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const babelLoader: webpack.RuleSetUseItem = {
     loader: 'babel-loader',
@@ -120,7 +120,7 @@ const config: webpack.Configuration = {
             },
             {
                 test: /\.mjs$/,
-                include: path.resolve(__dirname, 'node_modules'),
+                include: nodeModulesPath,
                 type: 'javascript/auto',
             },
             {
@@ -144,7 +144,7 @@ const config: webpack.Configuration = {
                     {
                         loader: 'sass-loader',
                         options: {
-                            includePaths: [__dirname + '/node_modules', rootDir + '/node_modules'],
+                            includePaths: [nodeModulesPath],
                         },
                     },
                 ],
