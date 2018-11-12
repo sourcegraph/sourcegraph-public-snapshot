@@ -1,6 +1,9 @@
 import log from 'fancy-log'
+import gulp from 'gulp'
 import createWebpackCompiler, { Stats } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
+import { phabricator, watchPhabricator } from '../client/browser/gulpfile'
+import { graphQLTypes, schema, watchGraphQLTypes, watchSchema } from '../shared/gulpfile'
 import webpackConfig from './webpack.config'
 
 const WEBPACK_STATS_OPTIONS = {
@@ -54,3 +57,19 @@ export async function webpackDevServer(): Promise<void> {
         })
     })
 }
+
+/**
+ * Builds everything.
+ */
+export const build = gulp.parallel(
+    gulp.series(gulp.parallel(schema, graphQLTypes), gulp.parallel(webpack, phabricator))
+)
+
+/**
+ * Watches everything and rebuilds on file changes.
+ */
+export const watch = gulp.series(
+    // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
+    gulp.parallel(schema, graphQLTypes),
+    gulp.parallel(watchSchema, watchGraphQLTypes, webpackDevServer, watchPhabricator)
+)
