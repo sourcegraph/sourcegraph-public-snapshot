@@ -1236,7 +1236,7 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^3.9.2":
+"@sourcegraph/codeintellify@^3.9.3":
   version "3.9.3"
   resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-3.9.3.tgz#c87c1d79aec224be8726213c6a9b90e8570a625d"
   integrity sha512-76LnAflyKuLbuSJ+zu6/xIUAyq8noJRRCmFTW3h6MPHlKfs0EA51HfDKuo7hvLaFQxDCShRGjhrgkvbRjrBbJQ==
