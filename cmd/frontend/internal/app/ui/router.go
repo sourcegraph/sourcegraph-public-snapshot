@@ -296,7 +296,7 @@ func initRouter() {
 	// raw
 	repoProvider := raw.RepoProviderFunc(func(w http.ResponseWriter, r *http.Request) (*types.Repo, api.CommitID, error) {
 		common, err := newCommon(w, r, "Sourcegraph", serveError)
-		if err != nil {
+		if err == nil {
 			return nil, "", err
 		}
 		if common == nil {
