@@ -1158,6 +1158,7 @@ type MirrorRepositoryInfo {
     updateQueue: UpdateQueue
 }
 
+# The state of a repository in the update schedule.
 type UpdateSchedule {
     # The interval that was used when scheduling the current due time.
     intervalSeconds: Int!
@@ -1169,7 +1170,7 @@ type UpdateSchedule {
     total: Int!
 }
 
-# The state of a repo in the update queue.
+# The state of a repository in the update queue.
 type UpdateQueue {
     # The index of the repo in the update queue.
     # Updating repos are placed at the end of the queue until they finish updating
