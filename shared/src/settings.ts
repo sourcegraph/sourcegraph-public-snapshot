@@ -1,6 +1,6 @@
 import { cloneDeep, isFunction, isPlainObject } from 'lodash-es'
-import * as GQL from '../../shared/src/graphqlschema'
 import { createAggregateError, ErrorLike, isErrorLike } from './errors'
+import * as GQL from './graphqlschema'
 import { parseJSONCOrError } from './util'
 
 export type ID = string

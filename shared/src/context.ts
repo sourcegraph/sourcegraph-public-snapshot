@@ -1,8 +1,8 @@
 import { Subscribable } from 'rxjs'
-import * as GQL from '../../shared/src/graphqlschema'
 import { ConfigurationUpdateParams } from './api/protocol'
 import { Controller } from './controller'
 import { QueryResult } from './graphql'
+import * as GQL from './graphqlschema'
 import { ID, Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
 
 export type UpdateExtensionSettingsArgs =
