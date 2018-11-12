@@ -16,8 +16,8 @@
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "cypress:open": "yarn run build && cypress open",
     "test:e2e": "cypress run --browser chrome",
-    "test": "mocha --require ts-node/register --require jsdom-global/register --watch --watch-extensions 'ts?(x)' './src/**/*.test.ts?(x)'",
-    "test:ci": "mocha --require ts-node/register --require jsdom-global/register './src/**/*.test.ts?(x)'",
+    "test": "mocha --require ts-node/register/transpile-only --require jsdom-global/register --watch --watch-extensions 'ts?(x)' './src/**/*.test.ts?(x)'",
+    "test:ci": "mocha --require ts-node/register/transpile-only --require jsdom-global/register './src/**/*.test.ts?(x)'",
     "storybook": "start-storybook -s ./src/extension/assets -c ./config/storybook -p 6006",
     "build-storybook": "build-storybook -c ./config/storybook"
   },
