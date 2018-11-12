@@ -96,14 +96,14 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                 </a>
                             </>
                         )}
-					{this.props.showAbout && (
-						<>
-							<DropdownItem divider={true} />
-							<a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
-								About Sourcegraph
-							</a>
-						</>
-					)}
+                    {this.props.showAbout && (
+                        <>
+                            <DropdownItem divider={true} />
+                            <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
+                                About Sourcegraph
+                            </a>
+                        </>
+                    )}
                 </DropdownMenu>
             </ButtonDropdown>
         )

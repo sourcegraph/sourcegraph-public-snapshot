@@ -68,7 +68,11 @@ export class SiteAdminCreateProductSubscriptionPage extends React.Component<Prop
 
         this.subscriptions.add(
             queryAccounts()
-                .pipe(catchError(err => [asError(err)]), startWith(LOADING), map(c => ({ accountsOrError: c })))
+                .pipe(
+                    catchError(err => [asError(err)]),
+                    startWith(LOADING),
+                    map(c => ({ accountsOrError: c }))
+                )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
         )
 

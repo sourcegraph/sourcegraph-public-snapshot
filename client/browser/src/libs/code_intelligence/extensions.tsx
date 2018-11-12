@@ -8,10 +8,7 @@ import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
 import { Notifications } from '../../../../../shared/src/app/notifications/Notifications'
-import {
-    Controller as ClientController,
-    createController,
-} from '../../../../../shared/src/client/controller'
+import { Controller as ClientController, createController } from '../../../../../shared/src/client/controller'
 import { Controller } from '../../../../../shared/src/controller'
 import {
     ConfiguredSubject,

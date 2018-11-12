@@ -8,10 +8,7 @@ import { InitData } from '../../../shared/src/api/extension/extensionHost'
 import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
 import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/client/controller'
-import {
-    ExtensionsProps as GenericExtensionsProps,
-    UpdateExtensionSettingsArgs,
-} from '../../../shared/src/context'
+import { ExtensionsProps as GenericExtensionsProps, UpdateExtensionSettingsArgs } from '../../../shared/src/context'
 import { Controller as ExtensionsContextController } from '../../../shared/src/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { QueryResult } from '../../../shared/src/graphql'

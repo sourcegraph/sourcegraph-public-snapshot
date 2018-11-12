@@ -85,7 +85,10 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<
                             account: accountID,
                             subscriptionToUpdate: subscriptionID,
                             productSubscription,
-                        }).pipe(catchError(err => [asError(err)]), startWith(LOADING))
+                        }).pipe(
+                            catchError(err => [asError(err)]),
+                            startWith(LOADING)
+                        )
                     }),
                     tap(result => this.props.onValidityChange(!this.isPreviewInvoiceInvalid(result))),
                     map(result => ({ previewInvoiceOrError: result }))

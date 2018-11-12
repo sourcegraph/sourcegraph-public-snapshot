@@ -1,6 +1,0 @@
-package-lock.json
-lib/
-dist/
-.cache/
-.nyc_output/
-src/schema/contribution.schema.json

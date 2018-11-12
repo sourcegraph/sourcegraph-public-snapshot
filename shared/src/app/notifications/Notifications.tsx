@@ -47,14 +47,16 @@ export class Notifications<S extends SettingsSubject, C extends Settings> extend
     public render(): JSX.Element | null {
         return (
             <div className="sourcegraph-notifications">
-                {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map((notification, i) => (
-                    <NotificationItem
-                        key={i}
-                        notification={notification}
-                        onDismiss={this.onDismiss}
-                        className="sourcegraph-notifications__notification rounded-0 m-2"
-                    />
-                ))}
+                {this.state.notifications
+                    .slice(0, Notifications.MAX_RETAIN)
+                    .map((notification, i) => (
+                        <NotificationItem
+                            key={i}
+                            notification={notification}
+                            onDismiss={this.onDismiss}
+                            className="sourcegraph-notifications__notification rounded-0 m-2"
+                        />
+                    ))}
             </div>
         )
     }

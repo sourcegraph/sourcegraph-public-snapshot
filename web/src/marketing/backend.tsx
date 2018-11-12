@@ -17,7 +17,10 @@ export function submitSurvey(input: SurveyResponse): Observable<void> {
             }
         `,
         { input }
-    ).pipe(map(dataOrThrowErrors), map(() => undefined))
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(() => undefined)
+    )
 }
 
 /**
@@ -47,7 +50,10 @@ export function fetchAllSurveyResponses(args: { first?: number }): Observable<GQ
             }
         `,
         { ...args }
-    ).pipe(map(dataOrThrowErrors), map(data => data.surveyResponses))
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.surveyResponses)
+    )
 }
 
 /**
@@ -83,7 +89,10 @@ export function fetchAllUsersWithSurveyResponses(args: {
             }
         `,
         { ...args }
-    ).pipe(map(dataOrThrowErrors), map(data => data.users))
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.users)
+    )
 }
 
 export type SurveyResponseConnectionAggregates = Exclude<GQL.ISurveyResponseConnection, 'nodes'>
@@ -103,5 +112,8 @@ export function fetchSurveyResponseAggregates(): Observable<SurveyResponseConnec
                 }
             }
         `
-    ).pipe(map(dataOrThrowErrors), map(data => data.surveyResponses))
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.surveyResponses)
+    )
 }

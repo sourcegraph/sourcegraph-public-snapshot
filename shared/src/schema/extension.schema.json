@@ -12,7 +12,8 @@
       "type": "string"
     },
     "description": {
-      "description": "The extension's description, which summarizes the extension's purpose and features. It should not exceed a few sentences.",
+      "description":
+        "The extension's description, which summarizes the extension's purpose and features. It should not exceed a few sentences.",
       "type": "string",
       "maxLength": 280
     },
@@ -22,7 +23,8 @@
       "format": "^data:image/png"
     },
     "readme": {
-      "description": "The extension's README, which should describe (in detail) the extension's purpose, features, and usage instructions. Markdown formatting is supported.",
+      "description":
+        "The extension's README, which should describe (in detail) the extension's purpose, features, and usage instructions. Markdown formatting is supported.",
       "type": "string",
       "format": "markdown"
     },
@@ -35,7 +37,8 @@
       "$ref": "#/definitions/ExtensionRepository"
     },
     "activationEvents": {
-      "description": "A list of events that cause this extension to be activated. '*' means that it will always be activated.",
+      "description":
+        "A list of events that cause this extension to be activated. '*' means that it will always be activated.",
       "type": "array",
       "items": {
         "type": "string",
@@ -44,7 +47,8 @@
       }
     },
     "args": {
-      "description": "Arguments provided to the extension upon initialization (in the `initialize` message's `initializationOptions` field).",
+      "description":
+        "Arguments provided to the extension upon initialization (in the `initialize` message's `initializationOptions` field).",
       "type": "object",
       "additionalProperties": true,
       "!go": {
@@ -57,10 +61,12 @@
   },
   "definitions": {
     "Contributions": {
-      "description": "Features contributed by this extension. Extensions may also register certain types of contributions dynamically.",
+      "description":
+        "Features contributed by this extension. Extensions may also register certain types of contributions dynamically.",
       "type": "object",
       "propertyNames": {
-        "$comment": "This properties object must be manually updated to reflect all properties in the allOf entries, so that the JSON Schema does not allow unknown properties in this object.",
+        "$comment":
+          "This properties object must be manually updated to reflect all properties in the allOf entries, so that the JSON Schema does not allow unknown properties in this object.",
         "enum": ["configuration", "actions", "menus"]
       },
       "allOf": [
@@ -68,7 +74,8 @@
           "type": "object",
           "properties": {
             "configuration": {
-              "description": "The JSON Schema for the configuration settings used by this extension. This schema is merged with the Sourcegraph settings schema. The final schema for settings is the union of Sourcegraph settings and all added extensions' settings.",
+              "description":
+                "The JSON Schema for the configuration settings used by this extension. This schema is merged with the Sourcegraph settings schema. The final schema for settings is the union of Sourcegraph settings and all added extensions' settings.",
               "$ref": "http://json-schema.org/draft-07/schema#"
             }
           }

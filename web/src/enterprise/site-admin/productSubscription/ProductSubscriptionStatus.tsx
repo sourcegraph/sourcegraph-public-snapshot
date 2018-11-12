@@ -39,7 +39,10 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.queryProductLicenseInfo()
-                .pipe(catchError(err => [asError(err)]), map(v => ({ statusOrError: v })))
+                .pipe(
+                    catchError(err => [asError(err)]),
+                    map(v => ({ statusOrError: v }))
+                )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
     }

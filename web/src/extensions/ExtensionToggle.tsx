@@ -3,11 +3,7 @@ import * as React from 'react'
 import { EMPTY, from, Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
-import {
-    SettingsCascade,
-    SettingsCascadeOrError,
-    SettingsSubject,
-} from '../../../shared/src/settings'
+import { SettingsCascade, SettingsCascadeOrError, SettingsSubject } from '../../../shared/src/settings'
 import { Toggle } from '../../../shared/src/ui/generic/Toggle'
 import { Settings } from '../schema/settings.schema'
 import { ErrorLike, isErrorLike } from '../util/errors'
