@@ -88,11 +88,10 @@ Codecov and other dev tool extensions | | Integrations, extensibility | T.B.D.
 Feature | 🔗 | Themes/products | Team
 ------- | --- | -------- | ----
 Using Sourcegraph extensions in the editor | [📣](https://docs.google.com/document/d/1_NTon70WY6uHzogGPBG06FRatNCVrKvSbHbZUEKY9xM/edit) | Integrations, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag]
-Extension registry discovery and statistics | [📣](https://github.com/sourcegraph/docs-private/blob/master/201809/tentative/social-cxp-registry.md) | Extensibility, [Sourcegraph][sourcegraph] | [@slimsag][slimsag] [@vanesa][vanesa] [@francisschmaltz][francisschmaltz]
-[Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/about/pull/41) | | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ggilmore][ggilmore] [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
-Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow]
-Browser authorization flow for clients | [🌞](https://github.com/sourcegraph/sourcegraph/pull/528)[🐞](https://github.com/sourcegraph/src-cli/issues/28) [📖](https://github.com/sourcegraph/about/pull/42) | Integrations, [Sourcegraph][sourcegraph], [`src`][src-cli] | [@sqs][sqs]
 Swift language support | | Code intelligence, sourcegraph-swift | | T.B.D. ([@nicksnyder][nicksnyder] or [@chrismwendt][chrismwendt]?)
+[Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/about/pull/41) | | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ggilmore][ggilmore] [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
+Extension registry discovery and statistics | [📣](https://github.com/sourcegraph/docs-private/blob/master/201809/tentative/social-cxp-registry.md) | Extensibility, [Sourcegraph][sourcegraph] | [@slimsag][slimsag] [@vanesa][vanesa] [@francisschmaltz][francisschmaltz]
+Browser authorization flow for clients | [🌞](https://github.com/sourcegraph/sourcegraph/pull/528)[🐞](https://github.com/sourcegraph/src-cli/issues/28) [📖](https://github.com/sourcegraph/about/pull/42) | Integrations, [Sourcegraph][sourcegraph], [`src`][src-cli] | [@sqs][sqs]
 Cross-language API/IDL support ([GraphQL](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/graphql-sourcegraph-extension.md), Thrift, Protobuf) | | Code intelligence, sourcegraph-{graphql,thrift,protobuf} | T.B.D.
 Flow (JS) language support | | Code intelligence, sourcegraph-flow | T.B.D.
 
@@ -106,7 +105,9 @@ Flow (JS) language support | | Code intelligence, sourcegraph-flow | T.B.D.
 
 <!-- TODO: Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] [@ijsnow][ijsnow]
 Ruby language support | | Code intelligence, sourcegraph-ruby | T.B.D.
-Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag] -->
+Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
+Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow] -->
+
 
 ---
 
