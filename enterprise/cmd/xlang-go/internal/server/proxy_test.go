@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -604,6 +604,15 @@ func yza() {}
 				}
 				defer func() {
 					gobuildserver.NewDepRepoVFS = orig
+				}()
+
+				origRemoteFS := gobuildserver.RemoteFS
+				gobuildserver.RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI lsp.DocumentURI) (ctxvfs.FileSystem, error) {
+					return mapFS(test.fs), nil
+				}
+
+				defer func() {
+					gobuildserver.RemoteFS = origRemoteFS
 				}()
 			}
 
