@@ -35,7 +35,14 @@ func remoteFS(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI lsp.Documen
 	if u.Rev() == "" {
 		return nil, errors.Errorf("rev is required in uri: %s", workspaceURI)
 	}
-	archiveFS := vfsutil.NewGitServer(u.Repo(), api.CommitID(u.Rev()))
+
+	archiveFS, err := vfsutil.NewSourcegraphRepoVFS(string(u.Repo()), u.Rev())
+	if err == nil {
+		archiveFS.EvictOnClose = true
+		return archiveFS, nil
+	}
+
+	archiveFS = vfsutil.NewGitServer(u.Repo(), api.CommitID(u.Rev()))
 	archiveFS.EvictOnClose = true
 	return archiveFS, nil
 }

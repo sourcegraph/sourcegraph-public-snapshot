@@ -478,12 +478,27 @@ func FetchCommonDeps() {
 }
 
 // NewDepRepoVFS returns a virtual file system interface for accessing
-// the files in the specified (public) repo at the given commit.
+// the files in the specified repo at the given commit. The returned VFS
+// is always backed by a zip archive in memory. The following sources are
+// tried in sequence, and the first one that has the repo is used:
+//
+// 1. Sourcegraph internal raw API
+// 2. Directly from gitserver (will be removed in favor of the raw API soon)
+// 3. GitHub's codeload endpoint
+// 4. A full `git clone` followed by `git archive --format=zip <rev>`
+//
+// Sources 1-3 are performance optimizations over cloning the whole repo.
+// Sources 1 and 2 can serve private repos, 3 and 4 cannot.
 var NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
-	// First check if we can clone from gitserver. gitserver automatically
-	// clones missing repositories, so to prevent cloning unmanaged
-	// repositories we first check to see if it is present.
 	name := api.RepoName(cloneURL.Host + cloneURL.Path)
+
+	// First check if we can fetch from Sourcegraph's internal raw API.
+	if fs, err := vfsutil.NewSourcegraphRepoVFS(string(name), rev); err == nil {
+		return fs, nil
+	}
+
+	// gitserver automatically clones missing repositories, so to prevent
+	// cloning unmanaged repositories we first check to see if it is present.
 	if cloned, _ := gitserver.DefaultClient.IsRepoCloned(ctx, name); cloned {
 		repo := gitserver.Repo{Name: name}
 		if commit, err := git.ResolveRevision(ctx, repo, nil, rev, nil); err == nil {
