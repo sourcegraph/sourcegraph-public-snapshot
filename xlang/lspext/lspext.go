@@ -169,4 +169,7 @@ type ClientProxyInitializationOptions struct {
 	// LSP sessions using the same workspace and mode. See
 	// (contextID).session for more information.
 	Session string `json:"session,omitempty"`
+
+	// ZipURL is the zip URL to forward to the language server.
+	ZipURL string `json:"zipURL,omitempty"`
 }

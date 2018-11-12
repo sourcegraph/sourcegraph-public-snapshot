@@ -499,7 +499,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 		Mode:            c.id.mode,
 	}
 
-	initParams.InitializationOptions = getInitializationOptions(ctx, c.id.mode)
+	initParams.InitializationOptions = getInitializationOptions(ctx, c.id)
 
 	var res lsp.InitializeResult
 	err := c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
