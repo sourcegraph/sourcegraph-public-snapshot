@@ -140,7 +140,10 @@ func init() {
 func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
 	// Handle custom errors
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
-		http.Redirect(w, r, "/"+ee.NewRepo, http.StatusMovedPermanently)
+		err := handlerutil.RedirectToNewRepoName(w, r, ee.NewRepo)
+		if err != nil {
+			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewRepo)
+		}
 		return
 	}
 
