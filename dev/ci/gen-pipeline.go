@@ -40,70 +40,70 @@ func main() {
 		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("GO111MODULE", "on"))
 
-	pipeline.AddStep(":white_check_mark:",
-		bk.Cmd("./dev/check/all.sh"))
+	// pipeline.AddStep(":white_check_mark:",
+	// 	bk.Cmd("./dev/check/all.sh"))
 
-	pipeline.AddStep(":lipstick:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run prettier"))
+	// pipeline.AddStep(":lipstick:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("yarn -s run prettier"))
 
-	pipeline.AddStep(":typescript:", // for speed
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // for speed
-		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run all:tslint"))
+	// pipeline.AddStep(":typescript:", // for speed
+	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // for speed
+	// 	bk.Env("FORCE_COLOR", "1"),
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("yarn -s run all:tslint"))
 
-	pipeline.AddStep(":stylelint:",
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run all:stylelint"),
-		bk.Cmd("yarn run all:typecheck"))
+	// pipeline.AddStep(":stylelint:",
+	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+	// 	bk.Env("FORCE_COLOR", "1"),
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("yarn -s run all:stylelint"),
+	// 	bk.Cmd("yarn run all:typecheck"))
 
-	pipeline.AddStep(":graphql:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn run graphql-lint"))
+	// pipeline.AddStep(":graphql:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("yarn run graphql-lint"))
 
-	pipeline.AddStep(":webpack:",
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("NODE_ENV=production yarn -s run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-		bk.Cmd("popd"))
+	// pipeline.AddStep(":webpack:",
+	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+	// 	bk.Env("FORCE_COLOR", "1"),
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd web"),
+	// 	bk.Cmd("yarn -s run browserslist"),
+	// 	bk.Cmd("NODE_ENV=production yarn -s run build --color"),
+	// 	bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
+	// 	bk.Cmd("popd"))
 
-	pipeline.AddStep(":docker:",
-		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+	// pipeline.AddStep(":docker:",
+	// 	bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+	// 	bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 
-	pipeline.AddStep(":postgres:",
-		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+	// pipeline.AddStep(":postgres:",
+	// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
-		bk.ArtifactPaths("coverage.txt"))
+	// pipeline.AddStep(":go:",
+	// 	bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+	// 	bk.ArtifactPaths("coverage.txt"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run cover"),
-		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-		bk.Cmd("popd"),
-		bk.ArtifactPaths("web/coverage/coverage-final.json"))
+	// pipeline.AddStep(":typescript:",
+	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+	// 	bk.Env("FORCE_COLOR", "1"),
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd web"),
+	// 	bk.Cmd("yarn -s run cover"),
+	// 	bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
+	// 	bk.Cmd("popd"),
+	// 	bk.ArtifactPaths("web/coverage/coverage-final.json"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd shared"),
-		bk.Cmd("yarn -s run cover"),
-		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-		bk.Cmd("popd"),
-		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
+	// pipeline.AddStep(":typescript:",
+	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+	// 	bk.Env("FORCE_COLOR", "1"),
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd shared"),
+	// 	bk.Cmd("yarn -s run cover"),
+	// 	bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
+	// 	bk.Cmd("popd"),
+	// 	bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
 		bk.Env("FORCE_COLOR", "1"),
