@@ -177,7 +177,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 
 		// Determine the root import path of this workspace (e.g., "github.com/user/repo").
 		span.SetTag("originalRootPath", params.OriginalRootURI)
-		fs, err := remoteFS(ctx, conn, params.OriginalRootURI)
+		fs, err := RemoteFS(ctx, conn, params.OriginalRootURI)
 		if err != nil {
 			return nil, err
 		}
