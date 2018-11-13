@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -48,9 +47,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := search.RepositoryRevisions{
-		Repo:          &types.Repo{ID: 1, Name: "repo"},
-		GitserverRepo: gitserver.Repo{Name: "repo", URL: "u"},
-		Revs:          []search.RevisionSpecifier{{RevSpec: "rev"}},
+		Repo: &types.Repo{ID: 1, Name: "repo"},
+		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,

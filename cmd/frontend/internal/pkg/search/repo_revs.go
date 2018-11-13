@@ -58,8 +58,6 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 type RepositoryRevisions struct {
 	Repo *types.Repo
 	Revs []RevisionSpecifier
-
-	GitserverRepo gitserver.Repo // URL field is optional (see (gitserver.ExecRequest).URL field for behavior)
 }
 
 // ParseRepositoryRevisions parses strings that refer to a repository and 0
@@ -112,6 +110,12 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoName, []Revisi
 		revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
 	}
 	return repo, revs
+}
+
+// GitserverRepo is a convenience function to return the gitserver.Repo for
+// r.Repo. The returned Repo will not have the URL set, only the name.
+func (r RepositoryRevisions) GitserverRepo() gitserver.Repo {
+	return gitserver.Repo{Name: r.Repo.Name}
 }
 
 func (r RepositoryRevisions) String() string {

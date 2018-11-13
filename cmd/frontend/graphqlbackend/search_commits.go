@@ -199,7 +199,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return nil, false, false, err
 	}
 
-	rawResults, complete, err := git.RawLogDiffSearch(ctx, op.repoRevs.GitserverRepo, git.RawLogDiffSearchOptions{
+	rawResults, complete, err := git.RawLogDiffSearch(ctx, op.repoRevs.GitserverRepo(), git.RawLogDiffSearchOptions{
 		Query: op.textSearchOptions,
 		Paths: git.PathOptions{
 			IncludePatterns: op.info.IncludePatterns,

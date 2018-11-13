@@ -790,7 +790,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		go func(repoRev search.RepositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo, rev, args.Pattern, fetchTimeout)
+			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
