@@ -20,6 +20,15 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 
 		var sudoUser string
 		token := r.URL.Query().Get("token")
+
+		if token == "" {
+			// Handle token passed via basic auth (https://<token>@sourcegraph.com/foobar).
+			basicAuthUsername, _, _ := r.BasicAuth()
+			if basicAuthUsername != "" {
+				token = basicAuthUsername
+			}
+		}
+
 		if token == "" {
 			// Handle Authorization header
 			headerValue := r.Header.Get("Authorization")
