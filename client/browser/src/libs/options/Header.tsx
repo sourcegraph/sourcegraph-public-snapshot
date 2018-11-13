@@ -8,7 +8,7 @@ export interface OptionsHeaderProps {
     onSettingsClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
-export const OptionsHeader: React.SFC<OptionsHeaderProps> = ({
+export const OptionsHeader: React.FunctionComponent<OptionsHeaderProps> = ({
     className,
     version,
     assetsDir,

@@ -48,6 +48,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
         const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
             distinctUntilChanged(),
+            map(url => url.replace(/\/$/, '')),
             filter(maybeURL => {
                 let validURL = false
                 try {

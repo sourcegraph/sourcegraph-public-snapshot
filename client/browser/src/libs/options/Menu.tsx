@@ -1,4 +1,4 @@
-import { upperFirst, words } from 'lodash'
+import { lowerCase, upperFirst } from 'lodash'
 import * as React from 'react'
 
 import { OptionsHeader, OptionsHeaderProps } from './Header'
@@ -19,7 +19,7 @@ export interface OptionsMenuProps
 const buildFeatureFlagToggleHandler = (key: string, handler: OptionsMenuProps['toggleFeatureFlag']) => () =>
     handler(key)
 
-export const OptionsMenu: React.SFC<OptionsMenuProps> = ({
+export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
     onURLChange,
     onURLSubmit,
@@ -50,9 +50,7 @@ export const OptionsMenu: React.SFC<OptionsMenuProps> = ({
                                     type="checkbox"
                                     checked={value}
                                 />{' '}
-                                {words(key)
-                                    .map(upperFirst)
-                                    .join(' ')}
+                                {upperFirst(lowerCase(key))}
                             </label>
                         </div>
                     ))}
