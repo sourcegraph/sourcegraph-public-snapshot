@@ -22,8 +22,8 @@ permissions are associated with their GitLab user.
 To enable GitLab permissions, set the `authorization` field in the GitLab site configuration:
 
 1. If you haven't done so already, [add a GitLab connection
-   object](../../integration/gitlab#gitlab-configuration) in the [site configuration
-   editor](../../admin/site_config).
+   object](../../integration/gitlab.md#gitlab-configuration) in the [site configuration
+   editor](../../admin/site_config/index.md).
 1. Add an `authorization` field to that object and fill in the fields. The site config will contain a
    snippet like the following:
    ```

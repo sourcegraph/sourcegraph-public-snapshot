@@ -12,9 +12,9 @@ When these features are built as Sourcegraph extensions, you get them everywhere
 
 - Sourcegraph.com
 - Your own Sourcegraph instance
-- GitHub and GitHub Enterprise (with the [browser extension](../integration/browser_extension))
-- GitLab (with the [browser extension](../integration/browser_extension))
-- Bitbucket Server (with the [browser extension](../integration/browser_extension))
+- GitHub and GitHub Enterprise (with the [browser extension](../integration/browser_extension.md))
+- GitLab (with the [browser extension](../integration/browser_extension.md))
+- Bitbucket Server (with the [browser extension](../integration/browser_extension.md))
 - Coming soon: editors, more code hosts, and more code review tools
 
 Extensions can provide the following functionality:
@@ -48,7 +48,7 @@ After enabling a Sourcegraph extension, it is immediately ready to use. Of cours
 
 ### On your code host
 
-Install the [browser extension](../integration/browser_extension) and point it to your Sourcegraph instance (or Sourcegraph.com) in its options menu. It will consult your Sourcegraph user settings and activate the extensions you've enabled whenever you view code or diffs on your code host or review tool.
+Install the [browser extension](../integration/browser_extension.md) and point it to your Sourcegraph instance (or Sourcegraph.com) in its options menu. It will consult your Sourcegraph user settings and activate the extensions you've enabled whenever you view code or diffs on your code host or review tool.
 
 ### For organizations
 
