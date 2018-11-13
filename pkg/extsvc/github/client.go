@@ -13,6 +13,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -40,12 +41,19 @@ var (
 
 // Client is a GitHub API client.
 type Client struct {
-	apiURL       *url.URL     // base URL of GitHub API; e.g., https://api.github.com
-	githubDotCom bool         // true if this client connects to github.com
-	token        string       // a personal access token to authenticate requests, if set
-	httpClient   *http.Client // the HTTP client to use
+	apiURL       *url.URL // base URL of GitHub API; e.g., https://api.github.com
+	githubDotCom bool     // true if this client connects to github.com
 
-	repoCache *rcache.Cache
+	// TODO: rename to defaultToken
+	token      string       // a personal access token to authenticate requests, if set
+	httpClient *http.Client // the HTTP client to use
+
+	repoCachePrefix string
+	repoCacheTTL    time.Duration
+
+	// repoCache is a map of caches keyed by auth token
+	repoCache   map[string]*rcache.Cache
+	repoCacheMu sync.RWMutex
 
 	RateLimit *ratelimit.Monitor // the API rate limit monitor
 }
@@ -75,22 +83,30 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	return apiURL
 }
 
-// NewRepoCache creates a new cache for GitHub repository metadata.
-func NewRepoCache(apiURL *url.URL, token string) *rcache.Cache {
+// NewRepoCache creates a new cache for GitHub repository metadata. The backing store is Redis and a
+// checksum of the access token and API URL are used as a Redis key prefix to prevent collisions
+// with caches for different tokens and API URLs.
+func NewRepoCache(apiURL *url.URL, token string, keyPrefix string, cacheTTL time.Duration) *rcache.Cache {
+	if keyPrefix == "" {
+		keyPrefix = "gh_repo:"
+	}
+
 	apiURL = canonicalizedURL(apiURL)
-	var cacheTTL time.Duration
-	if urlIsGitHubDotCom(apiURL) {
-		cacheTTL = 10 * time.Minute
-	} else {
-		// GitHub Enterprise
-		cacheTTL = 30 * time.Second
+	if cacheTTL == 0 {
+		if urlIsGitHubDotCom(apiURL) {
+			cacheTTL = 10 * time.Minute
+		} else {
+			// GitHub Enterprise
+			cacheTTL = 30 * time.Second
+		}
 	}
 	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
-	return rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
+	return rcache.NewWithTTL(keyPrefix+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 }
 
-// NewClient creates a new GitHub API client with an optional personal access token to authenticate
-// requests.
+// NewClient creates a new GitHub API client with an optional default personal access token. If
+// non-empty, the access token will be used to authenticate requests that do not have an explicit
+// access token associated with them.
 //
 // The API URL must point to the base URL of the GitHub API. This is https://api.github.com for
 // GitHub.com and http[s]://[github-enterprise-hostname]/api for GitHub Enterprise.
@@ -98,7 +114,7 @@ func NewRepoCache(apiURL *url.URL, token string) *rcache.Cache {
 // NewRepoCache, or nil to create a new one. Clients querying the same
 // host should use the same cache (see repos.githubConnection, which uses
 // multiple clients to track independent rate limits in the same host).
-func NewClient(apiURL *url.URL, token string, transport http.RoundTripper, repoCache *rcache.Cache) *Client {
+func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		transport = disabledTransport{}
@@ -117,26 +133,44 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper, repoC
 		return category
 	})
 
-	if repoCache == nil {
-		// Create a new cache for repository metadata.
-		repoCache = NewRepoCache(apiURL, token)
-	}
-
 	return &Client{
 		apiURL:       apiURL,
 		githubDotCom: urlIsGitHubDotCom(apiURL),
 		token:        token,
 		httpClient:   &http.Client{Transport: transport},
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:    repoCache,
+		repoCache:    map[string]*rcache.Cache{},
 	}
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
+type httpOp func(*http.Request)
+
+func (c *Client) cache(explicitToken string) *rcache.Cache { // TODO
+	token := firstNonEmpty(explicitToken, c.token)
+
+	c.repoCacheMu.RLock()
+	if cache, ok := c.repoCache[token]; ok {
+		c.repoCacheMu.RUnlock()
+		return cache
+	}
+	c.repoCacheMu.RUnlock()
+
+	c.repoCacheMu.Lock()
+	defer c.repoCacheMu.Unlock()
+	if cache, ok := c.repoCache[token]; ok {
+		return cache
+	}
+	c.repoCache[token] = NewRepoCache(c.apiURL, token, c.repoCachePrefix, c.repoCacheTTL)
+	return c.repoCache[token]
+}
+
+func (c *Client) do(ctx context.Context, token string, req *http.Request, result interface{}) (err error) {
 	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
 	req.URL = c.apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.token != "" {
+	if token != "" {
+		req.Header.Set("Authorization", "bearer "+token)
+	} else if c.token != "" {
 		req.Header.Set("Authorization", "bearer "+c.token)
 	}
 
@@ -173,19 +207,27 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 }
 
 func (c *Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
+	return c.requestGetWithToken(ctx, "", requestURI, result)
+}
+
+func (c *Client) requestGetWithToken(ctx context.Context, token, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return err
+	}
+
+	if token != "" {
+		req.Header.Set("Authorization", token)
 	}
 
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
 	req.Header.Add("Accept", "application/vnd.github.jean-grey-preview+json")
 
-	return c.do(ctx, req, result)
+	return c.do(ctx, token, req, result)
 }
 
-func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
+func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars map[string]interface{}, result interface{}) (err error) {
 	reqBody, err := json.Marshal(struct {
 		Query     string                 `json:"query"`
 		Variables map[string]interface{} `json:"variables"`
@@ -204,7 +246,7 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 		Data   json.RawMessage `json:"data"`
 		Errors graphqlErrors   `json:"errors"`
 	}
-	if err := c.do(ctx, req, &respBody); err != nil {
+	if err := c.do(ctx, token, req, &respBody); err != nil {
 		return err
 	}
 	if len(respBody.Errors) > 0 {
@@ -313,4 +355,17 @@ type disabledTransport struct{}
 
 func (t disabledTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return nil, errors.New("http: github communication disabled")
+}
+
+// APIRoot returns the root URL of the API using the base URL of the GitHub instance.
+func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
+	if hostname := strings.ToLower(baseURL.Hostname()); hostname == "github.com" || hostname == "www.github.com" {
+		// GitHub.com's API is hosted on api.github.com.
+		return &url.URL{Scheme: "https", Host: "api.github.com", Path: "/"}, true
+	}
+	// GitHub Enterprise
+	if baseURL.Path == "" || baseURL.Path == "/" {
+		return baseURL.ResolveReference(&url.URL{Path: "/api"}), false
+	}
+	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
 }

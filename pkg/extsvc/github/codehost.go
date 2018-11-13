@@ -19,3 +19,21 @@ func ExternalRepoSpec(repo *Repository, baseURL url.URL) *api.ExternalRepoSpec {
 		ServiceID:   extsvc.NormalizeBaseURL(&baseURL).String(),
 	}
 }
+
+type CodeHost struct {
+	id string
+}
+
+var _ extsvc.CodeHost = ((*CodeHost)(nil))
+
+func NewCodeHost(baseURL *url.URL) *CodeHost {
+	return &CodeHost{id: extsvc.NormalizeBaseURL(baseURL).String()}
+}
+
+func (h *CodeHost) ServiceID() string {
+	return h.id
+}
+
+func (h *CodeHost) ServiceType() string {
+	return ServiceType
+}
