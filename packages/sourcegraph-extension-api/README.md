@@ -6,4 +6,4 @@
 
 This package contains only the types for the Sourcegraph extension API ([`sourcegraph.d.ts`](src/sourcegraph.d.ts)).
 
-See [Sourcegraph extensions documentation](../../doc/extensions/index.md) for more information.
+See [Sourcegraph extensions documentation](https://docs.sourcegraph.com/extensions) for more information.
