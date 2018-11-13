@@ -61,7 +61,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		// It's a vanity import path that maps to "github.com/{sourcegraph,sqs}/*" clone URLs.
 		pathElements := strings.Split(req.URL.Path[1:], "/")
 		if len(pathElements) >= 2 && (pathElements[0] == "sourcegraph" || pathElements[0] == "sqs") {
-			host := globals.AppURL.Host
+			host := globals.ExternalURL.Host
 
 			user := pathElements[0]
 			repo := pathElements[1]

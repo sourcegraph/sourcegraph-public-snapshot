@@ -84,7 +84,7 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 		return nil, err
 	}
 	result := &inviteUserToOrganizationResult{
-		invitationURL: globals.AppURL.ResolveReference(orgInvitationURL(org)).String(),
+		invitationURL: globals.ExternalURL.ResolveReference(orgInvitationURL(org)).String(),
 	}
 
 	// Send a notification to the recipient. If disabled, the frontend will still show the
@@ -255,7 +255,7 @@ func sendOrgInvitationNotification(ctx context.Context, org *types.Org, sender *
 		}{
 			FromName: fromName,
 			OrgName:  org.Name,
-			URL:      globals.AppURL.ResolveReference(orgInvitationURL(org)).String(),
+			URL:      globals.ExternalURL.ResolveReference(orgInvitationURL(org)).String(),
 		},
 	})
 }

@@ -49,7 +49,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 	}
 
 	var data extsvc.ExternalAccountData
-	auth.SetExternalAccountData(&data.AccountData, struct {
+	data.SetAccountData(struct {
 		IDToken    *oidc.IDToken  `json:"idToken"`
 		UserInfo   *oidc.UserInfo `json:"userInfo"`
 		UserClaims *userClaims    `json:"userClaims"`

@@ -61,5 +61,5 @@ func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.Discus
 	default:
 		return nil, nil // can't generate a link to this target type
 	}
-	return globals.AppURL.ResolveReference(u), nil
+	return globals.ExternalURL.ResolveReference(u), nil
 }

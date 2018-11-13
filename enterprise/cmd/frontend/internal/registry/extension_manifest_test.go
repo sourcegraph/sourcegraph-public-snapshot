@@ -45,7 +45,7 @@ func TestGetExtensionManifestWithBundleURL(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := `{"name":"x","url":"/-/static/extension/0.js?x---1fmlvpbbdw2yo"}`; manifest == nil || !jsonDeepEqual(*manifest, want) {
+		if want := `{"name":"x","url":"/-/static/extension/0-x.js?-1fmlvpbbdw2yo--x"}`; manifest == nil || !jsonDeepEqual(*manifest, want) {
 			t.Errorf("got %q, want %q", nilOrEmpty(manifest), want)
 		}
 	})

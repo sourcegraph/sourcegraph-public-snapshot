@@ -280,7 +280,7 @@ The ADFS SAML service should now be accessible from your computer. Confirm that,
     ```json
     {
       ...,
-      "appURL": "https://sourcegraph.example.com",
+      "externalURL": "https://sourcegraph.example.com",
       "auth.providers": [
         {
           "type": "saml",

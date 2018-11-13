@@ -26,13 +26,13 @@ func openSearch(w http.ResponseWriter, r *http.Request) {
 		SearchURL string
 	}
 	data := vars{
-		BaseURL:   globals.AppURL.String(),
-		SearchURL: globals.AppURL.String() + "/search?q={searchTerms}",
+		BaseURL:   globals.ExternalURL.String(),
+		SearchURL: globals.ExternalURL.String() + "/search?q={searchTerms}",
 	}
-	if globals.AppURL.String() == "https://sourcegraph.com" {
+	if globals.ExternalURL.String() == "https://sourcegraph.com" {
 		data.SiteName = "Sourcegraph"
 	} else {
-		data.SiteName = "Sourcegraph (" + globals.AppURL.Host + ")"
+		data.SiteName = "Sourcegraph (" + globals.ExternalURL.Host + ")"
 	}
 
 	var buf bytes.Buffer

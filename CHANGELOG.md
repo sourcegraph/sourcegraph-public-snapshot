@@ -10,16 +10,21 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
+- Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`.
 
 ### Changed
 
 - Site and user usage statistics are now visible to all users. Previously only site admins (and users, for their own usage statistics) could view this information. The information consists of aggregate counts of actions such as searches, page views, etc.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
+- The `appURL` site configuration option was renamed to `externalURL`.
+
 ### Fixed
 
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
 
 ### Removed
+
+- The `siteID` site configuration option was removed because it is no longer needed. If you previously specified this in site configuration, a new, random site ID will be generated upon server startup. You can safely remove the existing `siteID` value from your site configuration after upgrading.
 
 ### Removed
 

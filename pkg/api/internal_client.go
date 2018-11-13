@@ -83,7 +83,7 @@ func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
 }
 
 type SavedQueryIDSpec struct {
-	Subject ConfigurationSubject
+	Subject SettingsSubject
 	Key     string
 }
 
@@ -168,7 +168,7 @@ func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query strin
 	return c.postInternal(ctx, "saved-queries/delete-info", query, nil)
 }
 
-func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject ConfigurationSubject) (parsed *schema.Settings, settings *Settings, err error) {
+func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject SettingsSubject) (parsed *schema.Settings, settings *Settings, err error) {
 	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
 	if err == nil {
 		err = jsonc.Unmarshal(settings.Contents, &parsed)
@@ -214,17 +214,17 @@ func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (
 }
 
 // TODO(slimsag): In the future, once we're no longer using environment
-// variables to build AppURL, remove this in favor of services just reading it
+// variables to build ExternalURL, remove this in favor of services just reading it
 // directly from the configuration file.
 //
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) AppURL(ctx context.Context) (string, error) {
-	var appURL string
-	err := c.postInternal(ctx, "app-url", nil, &appURL)
+func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
+	var externalURL string
+	err := c.postInternal(ctx, "app-url", nil, &externalURL)
 	if err != nil {
 		return "", err
 	}
-	return appURL, nil
+	return externalURL, nil
 }
 
 func (c *internalClient) GitServerAddrs(ctx context.Context) ([]string, error) {

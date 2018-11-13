@@ -42,7 +42,7 @@ The [`openidconnect` auth provider](../site_config/all.md#openidconnectauthprovi
 To configure Sourcegraph to authenticate users via OpenID Connect:
 
 1.  Create a new OpenID Connect client in the external service (such as one of those listed above).
-    - **Redirect/callback URI:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `appURL` property in your config)
+    - **Redirect/callback URI:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `externalURL` property in your config)
 1.  Provide the OpenID Connect client's issuer, client ID, and client secret in the Sourcegraph site configuration shown below.
 1.  (Optional) Require users to have a specific email domain name to authenticate (e.g., to limit users to only those from your organization).
 
@@ -51,7 +51,7 @@ Example [`openidconnect` auth provider](../site_config/all.md#openidconnectauthp
 ```json
 {
   // ...
-  "appURL": "https://sourcegraph.example.com",
+  "externalURL": "https://sourcegraph.example.com",
   "auth.providers": [
     {
       "type": "openidconnect",
@@ -76,7 +76,7 @@ Google's G Suite supports OpenID Connect, which is the best way to enable Source
     - **Application type:** Web application
     - **Name:** Sourcegraph (or any other name your users will recognize)
     - **Authorized JavaScript origins:** (leave blank)
-    - **Authorized redirect URIs:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `appURL` property in your config)
+    - **Authorized redirect URIs:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `externalURL` property in your config)
 1.  Use the **client ID** and **client secret** values in Sourcegraph site configuration (as shown in the example below).
 1.  Set your G Suite domain in `requireEmailDomain` to prevent users outside your organization from signing in.
 
@@ -85,7 +85,7 @@ Example [`openidconnect` auth provider](../site_config/all.md#openidconnectauthp
 ```json
 {
   // ...
-  "appURL": "https://sourcegraph.example.com",
+  "externalURL": "https://sourcegraph.example.com",
   "auth.providers": [
     {
       "type": "openidconnect",
@@ -112,8 +112,8 @@ The [`saml` auth provider](../site_config/all.md#samlauthprovider-object) authen
 To configure Sourcegraph to authenticate users via SAML:
 
 1.  Register Sourcegraph as a SAML Service Provider in the external SAML Identity Provider (such as one of those listed above). Use the following settings (the exact names and labels vary across services).
-    - **Assertion Consumer Service URL, Recipient URL, Destination URL, Single sign-on URL:** `https://sourcegraph.example.com/.auth/saml/acs` (substituting your [`appURL`](../site_config/all.md#appurl-string))
-    - **Service Provider (issuer, entity ID, audience URI, metadata URL):** `https://sourcegraph.example.com/.auth/saml/metadata` (substituting your [`appURL`](../site_config/all.md#appurl-string))
+    - **Assertion Consumer Service URL, Recipient URL, Destination URL, Single sign-on URL:** `https://sourcegraph.example.com/.auth/saml/acs` (substituting your [`externalURL`](../site_config/all.md#externalurl-string))
+    - **Service Provider (issuer, entity ID, audience URI, metadata URL):** `https://sourcegraph.example.com/.auth/saml/metadata` (substituting your [`externalURL`](../site_config/all.md#externalurl-string))
     - **Attribute statements:**
       - `email` (required): the user's email
       - `login` (optional): the user's username
@@ -125,7 +125,7 @@ Example [`saml` auth provider](../site_config/all.md#samlauthprovider-object) co
 ```json
 {
   // ...
-  "appURL": "https://sourcegraph.example.com",
+  "externalURL": "https://sourcegraph.example.com",
   "auth.providers": [
     {
       "type": "saml",

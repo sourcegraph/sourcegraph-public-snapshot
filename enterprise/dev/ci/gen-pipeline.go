@@ -52,43 +52,15 @@ func main() {
 		bk.Cmd("popd"),
 	)
 
-	pipeline.AddStep(":lipstick:",
-		bk.Cmd("popd"),
-		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn run prettier"))
-
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("popd"),
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn run tslint"))
-
-	pipeline.AddStep(":stylelint:",
-		bk.Cmd("popd"),
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn run stylelint --quiet"))
-
 	pipeline.AddStep(":webpack:",
-		bk.Cmd("popd"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn workspace sourcegraph run build"),
-		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
-		bk.Cmd("NODE_ENV=production yarn workspace webapp run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn workspace webapp run bundlesize"))
-
-	// There are no tests yet
-	// pipeline.AddStep(":mocha:",
-	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-	// 	bk.Env("FORCE_COLOR", "1"),
-	// 	bk.Cmd("yarn --frozen-lockfile"),
-	// 	bk.Cmd("yarn run cover"),
-	// 	bk.Cmd("node_modules/.bin/nyc report -r json"),
-	// 	bk.ArtifactPaths("coverage/coverage-final.json"))
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd ../web"),
+		bk.Cmd("yarn -s run browserslist"),
+		bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
+		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
+		bk.Cmd("popd"))
 
 	// addDockerImageStep adds a build step for a given app.
 	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
@@ -201,8 +173,10 @@ func main() {
 			bk.ConcurrencyGroup("deploy"),
 			bk.Concurrency(1),
 			bk.Env("FORCE_COLOR", "1"),
-			bk.Cmd("yarn --frozen-lockfile"),
-			bk.Cmd("yarn workspace webapp run test-e2e-sgdev --retries 5"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd ../web"),
+			bk.Cmd("yarn -s run test-e2e-sgdev --retries 5"),
+			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 		pipeline.AddWait()
 

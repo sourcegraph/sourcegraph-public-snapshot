@@ -11,10 +11,10 @@ package siteid
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 var (
@@ -31,8 +31,10 @@ func Init() {
 		panic("siteid: already initialized")
 	}
 
-	if v := conf.GetTODO().SiteID; v != "" {
-		// Site ID is specified in the JSON site config.
+	if v := os.Getenv("TRACKING_APP_ID"); v != "" {
+		// Legacy way of specifying site ID.
+		//
+		// TODO(dadlerj): remove this
 		siteID = v
 	} else {
 		// Site ID is retrieved from the database (where it might be created automatically

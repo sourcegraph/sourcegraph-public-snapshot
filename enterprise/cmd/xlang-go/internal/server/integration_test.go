@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/jsonrpc2"
+
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -265,12 +268,26 @@ func TestIntegration(t *testing.T) {
 // benefit of fast tests here outweighs the benefits of a coarser integration
 // test.
 func useGithubForVFS() func() {
-	orig := proxy.NewRemoteRepoVFS
+	origNewRemoteRepoVFS := proxy.NewRemoteRepoVFS
 	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (proxy.FileSystem, error) {
 		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
 		return vfsutil.NewGitHubRepoVFS(fullName, string(commitID))
 	}
+
+	origRemoteFS := gobuildserver.RemoteFS
+	gobuildserver.RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI lsp.DocumentURI) (ctxvfs.FileSystem, error) {
+		u, err := gituri.Parse(string(workspaceURI))
+		if err != nil {
+			return nil, errors.Wrap(err, "could not parse workspace URI for remotefs")
+		}
+		if u.Rev() == "" {
+			return nil, errors.Errorf("rev is required in uri: %s", workspaceURI)
+		}
+		return vfsutil.NewGitHubRepoVFS(string(u.Repo()), u.Rev())
+	}
+
 	return func() {
-		proxy.NewRemoteRepoVFS = orig
+		proxy.NewRemoteRepoVFS = origNewRemoteRepoVFS
+		gobuildserver.RemoteFS = origRemoteFS
 	}
 }

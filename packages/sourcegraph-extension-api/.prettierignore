@@ -1,8 +1,0 @@
-package.json
-package-lock.json
-lib/
-module/
-dist/
-.cache/
-.nyc_output/
-coverage/

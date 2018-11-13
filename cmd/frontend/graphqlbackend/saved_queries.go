@@ -17,7 +17,7 @@ import (
 
 type savedQueryResolver struct {
 	key                                 string
-	subject                             *configurationSubject
+	subject                             *settingsSubject
 	index                               int
 	description                         string
 	query                               string
@@ -30,17 +30,17 @@ func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, er
 		return nil, err
 	}
 
-	subjectID, err := configurationSubjectID(spec.Subject)
+	subjectID, err := settingsSubjectID(spec.Subject)
 	if err != nil {
 		return nil, err
 	}
-	subject, err := configurationSubjectByID(ctx, subjectID)
+	subject, err := settingsSubjectByID(ctx, subjectID)
 	if err != nil {
 		return nil, err
 	}
 
 	var config api.PartialConfigSavedQueries
-	if err := subject.readConfiguration(ctx, &config); err != nil {
+	if err := subject.readSettings(ctx, &config); err != nil {
 		return nil, err
 	}
 	for i, e := range config.SavedQueries {
@@ -52,7 +52,7 @@ func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, er
 }
 
 func (r savedQueryResolver) ID() graphql.ID {
-	var subject api.ConfigurationSubject
+	var subject api.SettingsSubject
 	switch {
 	case r.subject.user != nil:
 		subject.User = &r.subject.user.user.ID
@@ -88,7 +88,7 @@ func (r savedQueryResolver) NotifySlack() bool {
 	return r.notifySlack
 }
 
-func (r savedQueryResolver) Subject() *configurationSubject { return r.subject }
+func (r savedQueryResolver) Subject() *settingsSubject { return r.subject }
 
 func (r savedQueryResolver) Key() *string {
 	if r.key == "" {
@@ -103,7 +103,7 @@ func (r savedQueryResolver) Description() string { return r.description }
 
 func (r savedQueryResolver) Query() string { return r.query }
 
-func toSavedQueryResolver(index int, subject *configurationSubject, entry api.ConfigSavedQuery) *savedQueryResolver {
+func toSavedQueryResolver(index int, subject *settingsSubject, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
 		subject:        subject,
 		key:            entry.Key,
@@ -117,7 +117,7 @@ func toSavedQueryResolver(index int, subject *configurationSubject, entry api.Co
 }
 
 func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolver, error) {
-	config, err := r.ViewerConfiguration(ctx)
+	config, err := r.ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolve
 	var savedQueries []*savedQueryResolver
 	for _, subject := range configSubjects {
 		var config api.PartialConfigSavedQueries
-		if err := subject.readConfiguration(ctx, &config); err != nil {
+		if err := subject.readSettings(ctx, &config); err != nil {
 			return nil, err
 		}
 		for i, e := range config.SavedQueries {
@@ -140,7 +140,7 @@ func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolve
 	return savedQueries, nil
 }
 
-func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, args *struct {
+func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
 	Description                         string
 	Query                               string
 	ShowOnHomepage, Notify, NotifySlack bool
@@ -148,7 +148,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 }) (*savedQueryResolver, error) {
 	var index int
 	var key string
-	_, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
+	_, err := r.doUpdateSettings(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 		// Compute the index so we can return it to the caller.
 		var config api.PartialConfigSavedQueries
 		if err := jsonc.Unmarshal(oldConfig, &config); err != nil {
@@ -174,7 +174,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 
 	// Read new configuration and inform the query-runner.
 	var config api.PartialConfigSavedQueries
-	if err := r.subject.readConfiguration(ctx, &config); err != nil {
+	if err := r.subject.readSettings(ctx, &config); err != nil {
 		return nil, err
 	}
 	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config, args.DisableSubscriptionNotifications)
@@ -193,9 +193,9 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 
 // getSavedQueryIndex returns the index within the config of the saved query with the given key,
 // or else an error.
-func (r *configurationMutationResolver) getSavedQueryIndex(ctx context.Context, key string) (int, error) {
+func (r *settingsMutation) getSavedQueryIndex(ctx context.Context, key string) (int, error) {
 	var config api.PartialConfigSavedQueries
-	if err := r.subject.readConfiguration(ctx, &config); err != nil {
+	if err := r.subject.readSettings(ctx, &config); err != nil {
 		return 0, err
 	}
 	for i, e := range config.SavedQueries {
@@ -206,7 +206,7 @@ func (r *configurationMutationResolver) getSavedQueryIndex(ctx context.Context, 
 	return 0, fmt.Errorf("no saved query in config with key %q", key)
 }
 
-func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, args *struct {
+func (r *settingsMutation) UpdateSavedQuery(ctx context.Context, args *struct {
 	ID                                  graphql.ID
 	Description                         *string
 	Query                               *string
@@ -244,7 +244,7 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	fieldUpdates["notifySlack"] = args.NotifySlack
 
 	for propertyName, value := range fieldUpdates {
-		id, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
+		id, err := r.doUpdateSettings(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 			keyPath := jsonx.MakePath("search.savedQueries", index, propertyName)
 			edits, _, err = jsonx.ComputePropertyEdit(oldConfig, keyPath, value, nil, conf.FormatOptions)
 			return edits, err
@@ -257,14 +257,14 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 
 	// Get final saved query value to return.
 	var config api.PartialConfigSavedQueries
-	if err := r.subject.readConfiguration(ctx, &config); err != nil {
+	if err := r.subject.readSettings(ctx, &config); err != nil {
 		return nil, err
 	}
 	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), spec.Subject, config, false)
 	return toSavedQueryResolver(index, r.subject, config.SavedQueries[index]), nil
 }
 
-func (r *configurationMutationResolver) DeleteSavedQuery(ctx context.Context, args *struct {
+func (r *settingsMutation) DeleteSavedQuery(ctx context.Context, args *struct {
 	ID                               graphql.ID
 	DisableSubscriptionNotifications bool
 }) (*EmptyResponse, error) {
@@ -284,7 +284,7 @@ func (r *configurationMutationResolver) DeleteSavedQuery(ctx context.Context, ar
 		return nil, err
 	}
 
-	_, err = r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
+	_, err = r.doUpdateSettings(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 		edits, _, err = jsonx.ComputePropertyRemoval(oldConfig, jsonx.MakePath("search.savedQueries", index), conf.FormatOptions)
 		return edits, err
 	})

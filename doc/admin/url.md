@@ -7,7 +7,9 @@ When that is done, update your DNS records to point to your gateway's external I
 ```json
 {
   // ...
-  "appURL": "https://domain.example.com"
+  "externalURL": "https://domain.example.com"
   // ...
 }
 ```
+
+> NOTE: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.

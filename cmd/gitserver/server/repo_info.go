@@ -24,9 +24,8 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 
 	resp := protocol.RepoInfoResponse{
 		Cloned: repoCloned(dir),
-		URL:    OriginMap(repo),
 	}
-	if resp.Cloned && resp.URL == "" {
+	if resp.Cloned {
 		remoteURL, err := repoRemoteURL(r.Context(), dir)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -52,6 +51,12 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 			log15.Warn("error getting reclone time", "repo", req.Repo, "err", err)
 		} else {
 			resp.CloneTime = &cloneTime
+		}
+
+		if lastChanged, err := repoLastChanged(dir); err != nil {
+			log15.Warn("error getting last changed", "repo", req.Repo, "err", err)
+		} else {
+			resp.LastChanged = &lastChanged
 		}
 	}
 

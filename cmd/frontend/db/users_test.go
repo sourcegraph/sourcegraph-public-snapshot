@@ -400,10 +400,10 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create settings for the user, and for another user authored by this user.
-			if _, err := Settings.CreateIfUpToDate(ctx, api.ConfigurationSubject{User: &user.ID}, nil, &user.ID, ""); err != nil {
+			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, &user.ID, ""); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := Settings.CreateIfUpToDate(ctx, api.ConfigurationSubject{User: &otherUser.ID}, nil, &user.ID, ""); err != nil {
+			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &otherUser.ID}, nil, &user.ID, ""); err != nil {
 				t.Fatal(err)
 			}
 
@@ -467,13 +467,13 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// User's settings no longer exist.
-			if settings, err := Settings.GetLatest(ctx, api.ConfigurationSubject{User: &user.ID}); err != nil {
+			if settings, err := Settings.GetLatest(ctx, api.SettingsSubject{User: &user.ID}); err != nil {
 				t.Error(err)
 			} else if settings != nil {
 				t.Errorf("got settings %+v, want nil", settings)
 			}
 			// Settings authored by user still exist but have nil author.
-			if settings, err := Settings.GetLatest(ctx, api.ConfigurationSubject{User: &otherUser.ID}); err != nil {
+			if settings, err := Settings.GetLatest(ctx, api.SettingsSubject{User: &otherUser.ID}); err != nil {
 				t.Fatal(err)
 			} else if settings.AuthorUserID != nil {
 				t.Errorf("got author %v, want nil", *settings.AuthorUserID)

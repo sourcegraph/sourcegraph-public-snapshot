@@ -11,8 +11,8 @@ import (
 )
 
 // CanonicalURL is an HTTP middleware that intercepts HTTP requests to URLs not matching the scheme
-// (http/https) or host of the `appURL`. For these intercepted requests, it returns a redirect to
-// the same request URI on the canonical `appURL` scheme and host.
+// (http/https) or host of the `externalURL`. For these intercepted requests, it returns a redirect to
+// the same request URI on the canonical `externalURL` scheme and host.
 //
 // It is intended to force redirects to HTTPS and to avoid confusion by clients that access
 // Sourcegraph via a URL other than the canonical one, which may mean the user's requests are
@@ -21,17 +21,17 @@ func CanonicalURL(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conf := conf.Get()
 
-		appURLStr := conf.AppURL
-		if appURLStr == "" {
-			appURLStr = globals.AppURL.String() // default
+		externalURLStr := conf.ExternalURL
+		if externalURLStr == "" {
+			externalURLStr = globals.ExternalURL.String() // default
 		}
-		appURL, err := url.Parse(appURLStr)
-		if err == nil && !appURL.IsAbs() {
+		externalURL, err := url.Parse(externalURLStr)
+		if err == nil && !externalURL.IsAbs() {
 			err = errors.New("non-absolute URL")
 		}
 		if err != nil {
-			text := "Misconfigured appURL value in site configuration."
-			log15.Error(text, "invalidValue", appURLStr, "err", err)
+			text := "Misconfigured externalURL value in site configuration."
+			log15.Error(text, "invalidValue", externalURLStr, "err", err)
 			http.Error(w, text, http.StatusInternalServerError)
 			return
 		}
@@ -50,10 +50,10 @@ func CanonicalURL(next http.Handler) http.Handler {
 			return
 		}
 
-		if requireSchemeMatch && appURL.Scheme != "https" {
-			// It wouldn't make sense to redirect to HTTPS if the appURL is not HTTPS.
-			text := "Misconfigured appURL and httpToHttpsRedirect values in site configuration."
-			log15.Error(text+" If httpToHttpsRedirect is enabled, the appURL scheme must be https.", "appURL", appURLStr, "httpToHttpsRedirect", httpToHTTPSRedirect)
+		if requireSchemeMatch && externalURL.Scheme != "https" {
+			// It wouldn't make sense to redirect to HTTPS if the externalURL is not HTTPS.
+			text := "Misconfigured externalURL and httpToHttpsRedirect values in site configuration."
+			log15.Error(text+" If httpToHttpsRedirect is enabled, the externalURL scheme must be https.", "externalURL", externalURLStr, "httpToHttpsRedirect", httpToHTTPSRedirect)
 			http.Error(w, text, http.StatusInternalServerError)
 			return
 		}
@@ -75,9 +75,9 @@ func CanonicalURL(next http.Handler) http.Handler {
 
 		requireHostMatch := conf.ExperimentalFeatures != nil && canonicalURLRedirect
 		useXForwardedProto := httpToHTTPSRedirect == "load-balanced"
-		if reqURL := getRequestURL(r, useXForwardedProto); (requireHostMatch && reqURL.Host != appURL.Host) || (requireSchemeMatch && !doesSchemeMatch(r, appURL, useXForwardedProto)) {
+		if reqURL := getRequestURL(r, useXForwardedProto); (requireHostMatch && reqURL.Host != externalURL.Host) || (requireSchemeMatch && !doesSchemeMatch(r, externalURL, useXForwardedProto)) {
 			// Redirect.
-			dest := appURL.ResolveReference(&url.URL{Path: reqURL.Path, RawQuery: reqURL.RawQuery, Fragment: reqURL.Fragment})
+			dest := externalURL.ResolveReference(&url.URL{Path: reqURL.Path, RawQuery: reqURL.RawQuery, Fragment: reqURL.Fragment})
 			http.Redirect(w, r, dest.String(), http.StatusMovedPermanently)
 			return
 		}
@@ -87,20 +87,20 @@ func CanonicalURL(next http.Handler) http.Handler {
 	})
 }
 
-// doesSchemeMatch returns true if and only if the request matches the app URL scheme.  Because the
+// doesSchemeMatch returns true if and only if the request matches the external URL scheme.  Because the
 // request URL typically has no scheme set, we use http.Request.TLS to determine if the request's
 // scheme was "https". If useXForwardedProto is true, then use that while ignoring the scheme of the
 // actual request.
-func doesSchemeMatch(r *http.Request, appURL *url.URL, useXForwardedProto bool) bool {
+func doesSchemeMatch(r *http.Request, externalURL *url.URL, useXForwardedProto bool) bool {
 	if useXForwardedProto {
 		if v := r.Header.Get("X-Forwarded-Proto"); v != "" {
-			return v == appURL.Scheme
+			return v == externalURL.Scheme
 		}
 	}
-	if appURL.Scheme == "https" && r.TLS == nil {
+	if externalURL.Scheme == "https" && r.TLS == nil {
 		return false
 	}
-	if appURL.Scheme == "http" && r.TLS != nil {
+	if externalURL.Scheme == "http" && r.TLS != nil {
 		return false
 	}
 	return true

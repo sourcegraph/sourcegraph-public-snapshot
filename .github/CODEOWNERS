@@ -2,10 +2,8 @@
 # Each line is a file pattern followed by one or more owners.
 # https://help.github.com/articles/about-codeowners/
 
-*git* @keegancsmith
-/migrations/ @keegancsmith
-monolith/ @keegancsmith
-search @keegancsmith
+*git*/* @keegancsmith
+/cmd/searcher/ @keegancsmith
 /packages/webapp/src/ @felixfbecker
 /xlang/ @keegancsmith @beyang
 /schema/ @sqs

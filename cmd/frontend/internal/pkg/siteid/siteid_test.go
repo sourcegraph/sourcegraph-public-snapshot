@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestNotInited(t *testing.T) {
@@ -77,9 +77,10 @@ func TestGet(t *testing.T) {
 		}
 	})
 
-	t.Run("from JSON site config", func(t *testing.T) {
+	t.Run("from env var", func(t *testing.T) {
 		defer reset()
-		conf.Mock(&schema.SiteConfiguration{SiteID: "a"})
+		os.Setenv("TRACKING_APP_ID", "a")
+		defer os.Unsetenv("TRACKING_APP_ID")
 
 		if err := tryInit(); err != nil {
 			t.Fatal(err)
@@ -92,9 +93,10 @@ func TestGet(t *testing.T) {
 		}
 	})
 
-	t.Run("JSON site config takes precedence over DB", func(t *testing.T) {
+	t.Run("env var takes precedence over DB", func(t *testing.T) {
 		defer reset()
-		conf.Mock(&schema.SiteConfiguration{SiteID: "a"})
+		os.Setenv("TRACKING_APP_ID", "a")
+		defer os.Unsetenv("TRACKING_APP_ID")
 		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
 			return &types.SiteConfig{SiteID: "b"}, nil
 		}

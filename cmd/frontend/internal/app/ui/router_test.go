@@ -20,7 +20,7 @@ import (
 
 func init() {
 	// Enable SourcegraphDotComMode
-	globals.AppURL = &url.URL{Scheme: "https", Host: "sourcegraph.com"}
+	globals.ExternalURL = &url.URL{Scheme: "https", Host: "sourcegraph.com"}
 
 	// Reinit router
 	initRouter()

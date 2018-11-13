@@ -111,7 +111,7 @@ Indexes symbols in repositories using Ctags.
 
 Syntect is a Rust service that is responsible for syntax highlighting.
 
-### Browser extensions ([code](https://github.com/sourcegraph/browser-extensions) | [docs](https://docs.sourcegraph.com/integration/browser_extension))
+### Browser extensions ([code](https://github.com/sourcegraph/sourcegraph/tree/master/client/browser) | [docs](https://docs.sourcegraph.com/integration/browser_extension))
 
 We publish browser extensions for Chrome, Firefox, and Safari, that provide code intelligence (hover tooltips, jump to definition, find references) when browsing code on code hosts. By default it works for open-source code, but it also works for private code if your company has a Sourcegraph deployment.
 

@@ -43,9 +43,10 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 
 	// App handler (HTML pages).
 	appHandler := app.NewHandler()
-	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddlewares.App(appHandler)                                          // 🚨 SECURITY: auth middleware
-	appHandler = session.CookieMiddleware(appHandler)                                     // app accepts cookies
+	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.ExternalURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
+	appHandler = authMiddlewares.App(appHandler)                                               // 🚨 SECURITY: auth middleware
+	appHandler = session.CookieMiddleware(appHandler)                                          // app accepts cookies
+	appHandler = httpapi.AccessTokenAuthMiddleware(appHandler)                                 // app accepts access tokens
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
@@ -176,7 +177,7 @@ func isTrustedOrigin(r *http.Request) bool {
 		isCORSAllowedRequest = isAllowedOrigin(requestOrigin, strings.Fields(corsOrigin))
 	}
 
-	if appURL := strings.TrimSuffix(conf.Get().AppURL, "/"); appURL != "" && requestOrigin == appURL {
+	if externalURL := strings.TrimSuffix(conf.Get().ExternalURL, "/"); externalURL != "" && requestOrigin == externalURL {
 		isCORSAllowedRequest = true
 	}
 

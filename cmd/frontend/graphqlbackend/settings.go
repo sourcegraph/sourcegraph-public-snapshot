@@ -11,7 +11,7 @@ import (
 )
 
 type settingsResolver struct {
-	subject  *configurationSubject
+	subject  *settingsSubject
 	settings *api.Settings
 	user     *types.User
 }
@@ -20,10 +20,11 @@ func (o *settingsResolver) ID() int32 {
 	return o.settings.ID
 }
 
-func (o *settingsResolver) Subject() *configurationSubject {
+func (o *settingsResolver) Subject() *settingsSubject {
 	return o.subject
 }
 
+// DEPRECATED: Use the Contents field instead.
 func (o *settingsResolver) Configuration() *configurationResolver {
 	return &configurationResolver{contents: o.settings.Contents}
 }
@@ -50,10 +51,10 @@ func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {
 
 // like db.Settings.CreateIfUpToDate, except it handles notifying the
 // query-runner if any saved queries have changed.
-func settingsCreateIfUpToDate(ctx context.Context, subject *configurationSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
+func settingsCreateIfUpToDate(ctx context.Context, subject *settingsSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	// Read current saved queries.
 	var oldSavedQueries api.PartialConfigSavedQueries
-	if err := subject.readConfiguration(ctx, &oldSavedQueries); err != nil {
+	if err := subject.readSettings(ctx, &oldSavedQueries); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +66,7 @@ func settingsCreateIfUpToDate(ctx context.Context, subject *configurationSubject
 
 	// Read new saved queries.
 	var newSavedQueries api.PartialConfigSavedQueries
-	if err := subject.readConfiguration(ctx, &newSavedQueries); err != nil {
+	if err := subject.readSettings(ctx, &newSavedQueries); err != nil {
 		return nil, err
 	}
 

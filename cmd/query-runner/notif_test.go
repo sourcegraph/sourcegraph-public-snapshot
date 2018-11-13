@@ -17,7 +17,7 @@ func TestGetNotificationRecipients(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
 		recipients, err := getNotificationRecipients(ctx,
 			api.SavedQueryIDSpec{
-				Subject: api.ConfigurationSubject{User: &onetwothree},
+				Subject: api.SettingsSubject{User: &onetwothree},
 			},
 			api.ConfigSavedQuery{
 				Notify:      true,
@@ -42,7 +42,7 @@ func TestGetNotificationRecipients(t *testing.T) {
 		defer func() { api.MockOrgsListUsers = nil }()
 		recipients, err := getNotificationRecipients(ctx,
 			api.SavedQueryIDSpec{
-				Subject: api.ConfigurationSubject{Org: &onetwothree},
+				Subject: api.SettingsSubject{Org: &onetwothree},
 			},
 			api.ConfigSavedQuery{
 				Notify:      true,

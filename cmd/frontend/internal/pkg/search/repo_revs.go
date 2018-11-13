@@ -27,14 +27,14 @@ type RevisionSpecifier struct {
 	ExcludeRefGlob string
 }
 
-func (r RevisionSpecifier) String() string {
-	if r.ExcludeRefGlob != "" {
-		return "*!" + r.ExcludeRefGlob
+func (r1 RevisionSpecifier) String() string {
+	if r1.ExcludeRefGlob != "" {
+		return "*!" + r1.ExcludeRefGlob
 	}
-	if r.RefGlob != "" {
-		return "*" + r.RefGlob
+	if r1.RefGlob != "" {
+		return "*" + r1.RefGlob
 	}
-	return r.RevSpec
+	return r1.RevSpec
 }
 
 // Less compares two revspecOrRefGlob entities, suitable for use
@@ -42,7 +42,6 @@ func (r RevisionSpecifier) String() string {
 //
 // possibly-undesired: this results in treating an entity with
 // no revspec, but a refGlob, as "earlier" than any revspec.
-//lint:ignore ST1006 more readable with r1 name
 func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 	if r1.RevSpec != r2.RevSpec {
 		return r1.RevSpec < r2.RevSpec

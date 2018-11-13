@@ -67,5 +67,5 @@ The `docs` folder has additional documentation for developing and understanding 
 Sourcegraph OSS is available freely under the [Apache 2 license](LICENSE.apache). Sourcegraph OSS
 comprises all files in this repository except those in the `enterprise/` directory.
 
-All files in the `enterprise/` directory are subject to the [Sourcegraph Enterprise
-license](LICENSE).
+All files in the `enterprise/` and `src/enterprise/` directories are subject to the [Sourcegraph
+Enterprise license](LICENSE).

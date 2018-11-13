@@ -143,7 +143,7 @@ func SendUserEmailVerificationEmail(ctx context.Context, email, code string) err
 			URL   string
 		}{
 			Email: email,
-			URL: globals.AppURL.ResolveReference(&url.URL{
+			URL: globals.ExternalURL.ResolveReference(&url.URL{
 				Path:     verifyEmailPath.Path,
 				RawQuery: q.Encode(),
 			}).String(),

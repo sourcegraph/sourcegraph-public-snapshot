@@ -10,7 +10,13 @@ import (
 type CodeHost interface {
 	ServiceID() string
 	ServiceType() string
-	IsHostOf(repo *api.ExternalRepoSpec) bool
+}
+
+func IsHostOf(c CodeHost, repo *api.ExternalRepoSpec) bool {
+	if repo == nil {
+		return false
+	}
+	return c.ServiceID() == repo.ServiceID && c.ServiceType() == repo.ServiceType
 }
 
 // NormalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant
