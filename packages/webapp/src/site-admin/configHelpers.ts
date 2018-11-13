@@ -130,7 +130,11 @@ export const siteConfigActions: EditorAction[] = [
 ]
 
 export function getUpdateChannel(text: string): string {
-    const channel = getProperty(text, 'update.channel')
+    // TODO@ggilmore: 🚨 Truly fixing this probably involves wiring up new
+    // graphQL endpoint to fetch the core configuration - which is difficult at the
+    // moment since frontend isn't able to be built. Revisit this once
+    // frontend is healthy again.
+    const channel = ''
     return channel || 'release'
 }
 
