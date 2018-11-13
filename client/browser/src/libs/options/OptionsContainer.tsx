@@ -48,6 +48,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
         const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
             distinctUntilChanged(),
+            map(url => url.replace(/\/$/, '')),
             filter(maybeURL => {
                 let validURL = false
                 try {
@@ -60,10 +61,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             }),
             switchMap(url => {
                 this.setState({ status: 'connecting', connectionError: undefined })
-                return this.props.ensureValidSite(url).pipe(
-                    map(() => url),
-                    catchError(err => of(err))
-                )
+                return this.props.ensureValidSite(url).pipe(map(() => url), catchError(err => of(err)))
             }),
             catchError(err => of(err)),
             share()

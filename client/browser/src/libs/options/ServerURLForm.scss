@@ -3,6 +3,10 @@
         margin-top: 0.5rem;
     }
 
+    &__label {
+        font-weight: 600;
+    }
+
     &__input-container {
         display: flex;
         border: solid 1px $color-light-border-2;

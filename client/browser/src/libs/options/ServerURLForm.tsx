@@ -68,10 +68,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
             })
         )
 
-        const submitAfterInactivity = this.changes.pipe(
-            debounceTime(5000),
-            takeUntil(this.submits)
-        )
+        const submitAfterInactivity = this.changes.pipe(debounceTime(5000), takeUntil(this.submits))
 
         this.subscriptions.add(
             merge(this.submits, submitAfterInactivity).subscribe(() => {
@@ -92,7 +89,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
     public render(): React.ReactNode {
         return (
             <form className={`server-url-form ${this.props.className || ''}`} onSubmit={this.handleSubmit}>
-                <label>Sourcegraph URL</label>
+                <label className="server-url-form__label">Sourcegraph URL</label>
                 <div className="server-url-form__input-container">
                     <div className="server-url-form__input-container__status">
                         <span
