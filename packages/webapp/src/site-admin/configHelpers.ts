@@ -7,9 +7,9 @@ import {
     GitHubConnection,
     GitLabConnection,
     Repository,
-    SiteConfiguration,
+    // SiteConfiguration,
 } from '../schema/site.schema'
-import { parseJSON } from '../settings/configuration'
+// import { parseJSON } from '../settings/configuration'
 import { ConfigInsertionFunction } from '../settings/MonacoSettingsEditor'
 
 const defaultFormattingOptions: FormattingOptions = {
@@ -138,12 +138,12 @@ export function getUpdateChannel(text: string): string {
     return channel || 'release'
 }
 
-function getProperty(text: string, property: keyof SiteConfiguration): any | null {
-    try {
-        const parsedConfig = parseJSON(text) as SiteConfiguration
-        return parsedConfig && parsedConfig[property] !== undefined ? parsedConfig[property] : null
-    } catch (err) {
-        console.error(err)
-        return null
-    }
-}
+// function getProperty(text: string, property: keyof SiteConfiguration): any | null {
+//     try {
+//         const parsedConfig = parseJSON(text) as SiteConfiguration
+//         return parsedConfig && parsedConfig[property] !== undefined ? parsedConfig[property] : null
+//     } catch (err) {
+//         console.error(err)
+//         return null
+//     }
+// }
