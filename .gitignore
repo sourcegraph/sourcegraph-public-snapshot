@@ -4,6 +4,9 @@
 # Vim
 *.swp
 
+# JetBrains/IntelliJ
+.idea
+
 # Emacs
 *~
 \#*\#
