@@ -22,6 +22,14 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 		token := r.URL.Query().Get("token")
 
 		if token == "" {
+			// Handle token passed via basic auth (https://<token>@sourcegraph.com/foobar).
+			basicAuthUsername, _, _ := r.BasicAuth()
+			if basicAuthUsername != "" {
+				token = basicAuthUsername
+			}
+		}
+
+		if token == "" {
 			// Handle Authorization header
 			headerValue := r.Header.Get("Authorization")
 			var err error
@@ -40,14 +48,6 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 				log15.Error("Invalid Authorization header.", "err", err)
 				http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
 				return
-			}
-		}
-
-		if token == "" {
-			// Handle token passed via basic auth (https://<token>@sourcegraph.com/foobar).
-			basicAuthUsername, _, _ := r.BasicAuth()
-			if basicAuthUsername != "" {
-				token = basicAuthUsername
 			}
 		}
 
