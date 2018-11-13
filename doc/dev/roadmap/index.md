@@ -31,12 +31,12 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ### 3.0 (2019-01-07)
 
-- Using Sourcegraph extensions in the editor [📣](https://docs.google.com/document/d/1_NTon70WY6uHzogGPBG06FRatNCVrKvSbHbZUEKY9xM/edit)
-- Swift language support
+- [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
+- [Swift language support](https://github.com/sourcegraph/sourcegraph/issues/979)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/about/pull/41)
-- Extension registry discovery and statistics [📣](https://github.com/sourcegraph/docs-private/blob/master/201809/tentative/social-cxp-registry.md)
-- Cross-language API/IDL support ([GraphQL](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/graphql-sourcegraph-extension.md), Thrift, Protobuf)
-- Flow (JS) language support
+- [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
+- [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981)
+- [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
 
 ---
 
