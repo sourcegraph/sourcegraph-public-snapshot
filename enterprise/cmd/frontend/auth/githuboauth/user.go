@@ -21,6 +21,7 @@ func getOrCreateUser(ctx context.Context, p *provider, ghUser *github.User, toke
 
 	var data extsvc.ExternalAccountData
 	data.SetAccountData(ghUser)
+	data.SetAuthData(token)
 	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
 		Username:        login,
 		Email:           deref(ghUser.Email),
