@@ -41,5 +41,10 @@ func providersFromConfig(cfg *schema.SiteConfiguration) (
 	seriousProblems = append(seriousProblems, glproblems...)
 	warnings = append(warnings, glwarnings...)
 
+	ghp, ghproblems, ghwarnings := githubProvidersFromConfig(cfg)
+	authzProviders = append(authzProviders, ghp...)
+	seriousProblems = append(seriousProblems, ghproblems...)
+	warnings = append(warnings, ghwarnings...)
+
 	return allowAccessByDefault, authzProviders, seriousProblems, warnings
 }

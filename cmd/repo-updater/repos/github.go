@@ -209,7 +209,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	canUseGraphQLAPI := conn.config.Token != "" // GraphQL API requires authentication
 	if canUseGraphQLAPI && args.ExternalRepo != nil && args.ExternalRepo.ServiceType == github.ServiceType {
 		// Look up by external repository spec.
-		ghrepo, err := conn.client.GetRepositoryByNodeID(ctx, args.ExternalRepo.ID)
+		ghrepo, err := conn.client.GetRepositoryByNodeID(ctx, "", args.ExternalRepo.ID)
 		if ghrepo != nil {
 			repo = ghrepoToRepoInfo(ghrepo, conn)
 		}

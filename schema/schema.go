@@ -96,12 +96,6 @@ type AuthnProvider struct {
 	GitlabProvider string `json:"gitlabProvider"`
 	Type           string `json:"type"`
 }
-
-// Authorization description: If non-null, enables GitLab permission checks. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
-type Authorization struct {
-	AuthnProvider AuthnProvider `json:"authnProvider"`
-	Ttl           string        `json:"ttl,omitempty"`
-}
 type BitbucketServerConnection struct {
 	Certificate                 string `json:"certificate,omitempty"`
 	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
@@ -169,25 +163,37 @@ type GitHubAuthProvider struct {
 	Type         string `json:"type"`
 	Url          string `json:"url,omitempty"`
 }
+
+// GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
+type GitHubAuthorization struct {
+	Ttl string `json:"ttl,omitempty"`
+}
 type GitHubConnection struct {
-	Certificate                 string   `json:"certificate,omitempty"`
-	GitURLType                  string   `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool     `json:"initialRepositoryEnablement,omitempty"`
-	Repos                       []string `json:"repos,omitempty"`
-	RepositoryPathPattern       string   `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string `json:"repositoryQuery,omitempty"`
-	Token                       string   `json:"token"`
-	Url                         string   `json:"url"`
+	Authorization               *GitHubAuthorization `json:"authorization,omitempty"`
+	Certificate                 string               `json:"certificate,omitempty"`
+	GitURLType                  string               `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                 `json:"initialRepositoryEnablement,omitempty"`
+	Repos                       []string             `json:"repos,omitempty"`
+	RepositoryPathPattern       string               `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string             `json:"repositoryQuery,omitempty"`
+	Token                       string               `json:"token"`
+	Url                         string               `json:"url"`
+}
+
+// GitLabAuthorization description: If non-null, enforces GitLab repository permissions. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
+type GitLabAuthorization struct {
+	AuthnProvider AuthnProvider `json:"authnProvider"`
+	Ttl           string        `json:"ttl,omitempty"`
 }
 type GitLabConnection struct {
-	Authorization               *Authorization `json:"authorization,omitempty"`
-	Certificate                 string         `json:"certificate,omitempty"`
-	GitURLType                  string         `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool           `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string       `json:"projectQuery,omitempty"`
-	RepositoryPathPattern       string         `json:"repositoryPathPattern,omitempty"`
-	Token                       string         `json:"token"`
-	Url                         string         `json:"url"`
+	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
+	Certificate                 string               `json:"certificate,omitempty"`
+	GitURLType                  string               `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                 `json:"initialRepositoryEnablement,omitempty"`
+	ProjectQuery                []string             `json:"projectQuery,omitempty"`
+	RepositoryPathPattern       string               `json:"repositoryPathPattern,omitempty"`
+	Token                       string               `json:"token"`
+	Url                         string               `json:"url"`
 }
 type GitoliteConnection struct {
 	Blacklist                  string `json:"blacklist,omitempty"`

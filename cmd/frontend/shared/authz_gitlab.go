@@ -31,15 +31,7 @@ func gitlabProvidersFromConfig(cfg *schema.SiteConfiguration) (
 		}
 
 		var ttl time.Duration
-		if gl.Authorization.Ttl == "" {
-			ttl = time.Hour * 3
-		} else {
-			ttl, err = time.ParseDuration(gl.Authorization.Ttl)
-			if err != nil {
-				warnings = append(warnings, fmt.Sprintf("Could not parse time duration %q, falling back to 3 hours.", gl.Authorization.Ttl))
-				ttl = time.Hour * 3
-			}
-		}
+		ttl, warnings = parseTTLOrDefault(gl.Authorization.Ttl, 3*time.Hour, warnings)
 
 		op := permgl.GitLabAuthzProviderOp{
 			BaseURL:   glURL,

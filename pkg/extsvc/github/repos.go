@@ -100,12 +100,12 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 }
 
 // GetRepositoryByNodeIDMock is set by tests to mock (*Client).GetRepositoryByNodeID.
-var GetRepositoryByNodeIDMock func(ctx context.Context, id string) (*Repository, error)
+var GetRepositoryByNodeIDMock func(ctx context.Context, token, id string) (*Repository, error)
 
 // GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID using the specified user token.
-func (c *Client) GetRepositoryByNodeIDWithToken(ctx context.Context, token, id string) (*Repository, error) {
+func (c *Client) GetRepositoryByNodeID(ctx context.Context, token, id string) (*Repository, error) {
 	if GetRepositoryByNodeIDMock != nil {
-		return GetRepositoryByNodeIDMock(ctx, id)
+		return GetRepositoryByNodeIDMock(ctx, token, id)
 	}
 
 	key := nodeIDCacheKey(id)
@@ -118,11 +118,6 @@ func (c *Client) GetRepositoryByNodeIDWithToken(ctx context.Context, token, id s
 		}
 		return repo, keys, err
 	})
-}
-
-// GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID.
-func (c *Client) GetRepositoryByNodeID(ctx context.Context, id string) (*Repository, error) {
-	return c.GetRepositoryByNodeIDWithToken(ctx, "", id)
 }
 
 // cachedGetRepository caches the getRepositoryFromAPI call.

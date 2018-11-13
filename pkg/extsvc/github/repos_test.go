@@ -173,7 +173,7 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 		IsFork:        true,
 	}
 
-	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")
+	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 	}
 
 	// Test that repo is cached (and therefore NOT fetched) from client on second request.
-	repo, err = c.GetRepositoryByNodeID(context.Background(), "i")
+	repo, err = c.GetRepositoryByNodeID(context.Background(), "", "i")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 	c := newTestClient(t)
 	c.httpClient.Transport = &mock
 
-	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")
+	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
 	if !IsNotFound(err) {
 		t.Errorf("got err == %v, want IsNotFound(err) == true", err)
 	}
@@ -302,11 +302,11 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 }
 
 // 🚨 SECURITY: test that cache entries are keyed by auth token
-func TestClient_GetRepositoryByNodeIDWithToken(t *testing.T) {
+func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 	c := newTestClient(t)
 
 	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0" } } }`, http.StatusOK)
-	got, err := c.GetRepositoryByNodeIDWithToken(context.Background(), "tok0", "id0")
+	got, err := c.GetRepositoryByNodeID(context.Background(), "tok0", "id0")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -315,7 +315,7 @@ func TestClient_GetRepositoryByNodeIDWithToken(t *testing.T) {
 	}
 
 	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "SHOULD NOT BE SEEN" } } }`, http.StatusOK)
-	got, err = c.GetRepositoryByNodeIDWithToken(context.Background(), "tok0", "id0")
+	got, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id0")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +324,7 @@ func TestClient_GetRepositoryByNodeIDWithToken(t *testing.T) {
 	}
 
 	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0-tok1" } } }`, http.StatusOK)
-	got, err = c.GetRepositoryByNodeIDWithToken(context.Background(), "tok1", "id0")
+	got, err = c.GetRepositoryByNodeID(context.Background(), "tok1", "id0")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,19 +333,19 @@ func TestClient_GetRepositoryByNodeIDWithToken(t *testing.T) {
 	}
 
 	c.httpClient.Transport = newMockHTTPResponseBody(`{}`, http.StatusNotFound)
-	_, err = c.GetRepositoryByNodeIDWithToken(context.Background(), "tok0", "id1")
+	_, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id1")
 	if err != ErrNotFound {
 		t.Errorf("expected err %v, but got %v", ErrNotFound, err)
 	}
 
 	// "not found" should be cached
 	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1" } } }`, http.StatusOK)
-	_, err = c.GetRepositoryByNodeIDWithToken(context.Background(), "tok0", "id1")
+	_, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id1")
 	if err != ErrNotFound {
 		t.Errorf("expected err %v, but got %v", ErrNotFound, err)
 	}
 	// "not found" not cached with different auth token
-	got, err = c.GetRepositoryByNodeIDWithToken(context.Background(), "tok1", "id1")
+	got, err = c.GetRepositoryByNodeID(context.Background(), "tok1", "id1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -353,7 +353,7 @@ func TestClient_GetRepositoryByNodeIDWithToken(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 	// "not found" not cached with no auth token
-	got, err = c.GetRepositoryByNodeIDWithToken(context.Background(), "", "id1")
+	got, err = c.GetRepositoryByNodeID(context.Background(), "", "id1")
 	if err != nil {
 		t.Fatal(err)
 	}

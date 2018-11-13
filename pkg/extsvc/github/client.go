@@ -44,9 +44,8 @@ type Client struct {
 	apiURL       *url.URL // base URL of GitHub API; e.g., https://api.github.com
 	githubDotCom bool     // true if this client connects to github.com
 
-	// TODO: rename to defaultToken
-	token      string       // a personal access token to authenticate requests, if set
-	httpClient *http.Client // the HTTP client to use
+	defaultToken string       // a personal access token to authenticate requests, if set
+	httpClient   *http.Client // the HTTP client to use
 
 	repoCachePrefix string
 	repoCacheTTL    time.Duration
@@ -136,17 +135,18 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Clie
 	return &Client{
 		apiURL:       apiURL,
 		githubDotCom: urlIsGitHubDotCom(apiURL),
-		token:        token,
+		defaultToken: token,
 		httpClient:   &http.Client{Transport: transport},
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
 		repoCache:    map[string]*rcache.Cache{},
 	}
 }
 
-type httpOp func(*http.Request)
-
-func (c *Client) cache(explicitToken string) *rcache.Cache { // TODO
-	token := firstNonEmpty(explicitToken, c.token)
+// cache returns the cache associated with the token (which can be empty, in which case the default
+// token will be used). Accessors of the caches should use this method rather than referencing
+// repoCache directly.
+func (c *Client) cache(explicitToken string) *rcache.Cache {
+	token := firstNonEmpty(explicitToken, c.defaultToken)
 
 	c.repoCacheMu.RLock()
 	if cache, ok := c.repoCache[token]; ok {
@@ -170,8 +170,8 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if token != "" {
 		req.Header.Set("Authorization", "bearer "+token)
-	} else if c.token != "" {
-		req.Header.Set("Authorization", "bearer "+c.token)
+	} else if c.defaultToken != "" {
+		req.Header.Set("Authorization", "bearer "+c.defaultToken)
 	}
 
 	var resp *http.Response
