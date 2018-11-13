@@ -104,6 +104,23 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
 		},
 
+		// raw
+		{
+			path:      "/r@v/-/raw",
+			wantRoute: routeRaw,
+			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": ""},
+		},
+		{
+			path:      "/r@v/-/raw/f",
+			wantRoute: routeRaw,
+			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/f"},
+		},
+		{
+			path:      "/r@v/-/raw/d/f",
+			wantRoute: routeRaw,
+			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
+		},
+
 		// about.sourcegraph.com redirects
 		{
 			path:      "/about",

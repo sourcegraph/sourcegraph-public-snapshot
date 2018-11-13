@@ -119,6 +119,8 @@ github.com/gogo/protobuf v0.0.0-20170330071051-c0656edd0d9e h1:ago6fNuQ6IhszPsXk
 github.com/gogo/protobuf v0.0.0-20170330071051-c0656edd0d9e/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/golang-migrate/migrate v0.0.0-20180905051849-93d53a5ae84d h1:h/GsOb1QNi0MEVYix4sumfA38pbfJAaZp2HRmPyBb8M=
 github.com/golang-migrate/migrate v0.0.0-20180905051849-93d53a5ae84d/go.mod h1:9NMMgg7DD5gq+6A4BcMseCBNtrSmVZRmQ+ZE3j3lqtU=
+github.com/golang/gddo v0.0.0-20181009135830-6c035858b4d7 h1:/3HWkMEOoIwIBP8hcnupurzoJJfdUPVy2qkpYzmPFmY=
+github.com/golang/gddo v0.0.0-20181009135830-6c035858b4d7/go.mod h1:xEhNfoBDX1hzLm2Nf80qUvZ2sVwoMZ8d6IE2SrsQfh4=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b h1:VKtxabqXZkF25pY9ekfRL6a582T4P37/31XEstQ5p58=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7 h1:u4bArs140e9+AfE52mFHOXVFnOSBJBRlzTHrOPLOIhE=

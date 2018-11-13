@@ -2,7 +2,9 @@ package vfsutil
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -17,31 +19,15 @@ import (
 // fetched from gitserver.
 func NewGitServer(repo api.RepoName, commit api.CommitID) *ArchiveFS {
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
-		span, ctx := opentracing.StartSpanFromContext(ctx, "Archive Fetch")
-		ext.Component.Set(span, "gitserver")
-		span.SetTag("repo", repo)
-		span.SetTag("commit", commit)
-		defer func() {
-			if err != nil {
-				ext.Error.Set(span, true)
-				span.SetTag("err", err)
-			}
-			span.Finish()
-		}()
-
-		if strings.HasPrefix(string(commit), "-") {
-			return nil, errors.New("invalid git revision spec (begins with '-')")
-		}
-
-		ff, err := cachedFetch(ctx, "gitserver", string(repo)+"@"+string(commit), func(ctx context.Context) (io.ReadCloser, error) {
-			gitserverFetchTotal.Inc()
-			return gitserverFetch(ctx, repo, commit)
+		f, evictor, err := GitServerFetchArchive(ctx, ArchiveOpts{
+			Repo:         repo,
+			Commit:       commit,
+			Format:       ArchiveFormatZip,
+			RelativePath: ".",
 		})
 		if err != nil {
-			gitserverFetchFailedTotal.Inc()
 			return nil, err
 		}
-		f := ff.File
 
 		zr, err := zipNewFileReader(f)
 		if err != nil {
@@ -52,24 +38,85 @@ func NewGitServer(repo api.RepoName, commit api.CommitID) *ArchiveFS {
 		return &archiveReader{
 			Reader:  zr,
 			Closer:  f,
-			Evicter: ff,
+			Evicter: evictor,
 		}, nil
 	}
 	return &ArchiveFS{fetch: fetch}
 }
 
-// gitserverFetch returns a reader of a zip archive of repo at commit.
-func gitserverFetch(ctx context.Context, repo api.RepoName, commit api.CommitID) (r io.ReadCloser, err error) {
-	// Compression level of 0 (no compression) seems to perform the
-	// best overall on fast network links, but this has not been tuned
-	// thoroughly.
-	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", string(commit))
-	cmd.Repo = gitserver.Repo{Name: repo}
-	r, err = gitserver.StdoutReader(ctx, cmd)
-	if err != nil {
-		return nil, err
+// ArchiveFormat represents an archive format (zip, tar, etc).
+type ArchiveFormat string
+
+const (
+	// ArchiveFormatZip indicates a zip archive is desired.
+	ArchiveFormatZip ArchiveFormat = "zip"
+
+	// ArchiveFormatTar indicates a tar archive is desired.
+	ArchiveFormatTar ArchiveFormat = "tar"
+)
+
+// ArchiveOpts describes options for fetching a repository archive.
+type ArchiveOpts struct {
+	// Repo is the repository whose contents should be fetched.
+	Repo api.RepoName
+
+	// Commit is the commit whose contents should be fetched.
+	Commit api.CommitID
+
+	// Format indicates the desired archive format.
+	Format ArchiveFormat
+
+	// RelativePath indicates the path of the repository that should be archived.
+	RelativePath string
+}
+
+func (opts *ArchiveOpts) cacheKey() string {
+	return fmt.Sprintf("%s@%s/-/%s.%s", opts.Repo, opts.Commit, opts.RelativePath, opts.Format)
+}
+
+// GitServerFetchArchive fetches an archive of a repositories contents from gitserver.
+func GitServerFetchArchive(ctx context.Context, opts ArchiveOpts) (archive *os.File, cacheEvicter Evicter, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Archive Fetch")
+	ext.Component.Set(span, "gitserver")
+	span.SetTag("repo", opts.Repo)
+	span.SetTag("commit", opts.Commit)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err)
+		}
+		span.Finish()
+	}()
+
+	if strings.HasPrefix(string(opts.Commit), "-") {
+		return nil, nil, errors.New("invalid git revision spec (begins with '-')")
 	}
-	return r, nil
+
+	ff, err := cachedFetch(ctx, "gitserver", opts.cacheKey(), func(ctx context.Context) (io.ReadCloser, error) {
+		gitserverFetchTotal.Inc()
+
+		args := []string{"archive", "--format=" + string(opts.Format)}
+		if opts.Format == ArchiveFormatZip {
+			// Compression level of 0 (no compression) seems to perform the
+			// best overall on fast network links, but this has not been tuned
+			// thoroughly.
+			args = append(args, "-0")
+		}
+		args = append(args, string(opts.Commit))
+		args = append(args, opts.RelativePath)
+		cmd := gitserver.DefaultClient.Command("git", args...)
+		cmd.Repo = gitserver.Repo{Name: opts.Repo}
+		r, err := gitserver.StdoutReader(ctx, cmd)
+		if err != nil {
+			return nil, err
+		}
+		return r, nil
+	})
+	if err != nil {
+		gitserverFetchFailedTotal.Inc()
+		return nil, nil, err
+	}
+	return ff.File, ff, nil
 }
 
 var gitserverFetchTotal = prometheus.NewCounter(prometheus.CounterOpts{
