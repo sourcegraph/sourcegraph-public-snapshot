@@ -400,6 +400,7 @@ export function fetchSite(): Observable<GQL.ISite> {
             site {
                 id
                 configuration {
+                    id
                     effectiveContents
                     validationMessages
                     canUpdate
