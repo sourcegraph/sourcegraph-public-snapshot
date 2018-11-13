@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"net/http"
 	"time"
 
@@ -25,9 +26,28 @@ type Server struct {
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	return mux
+}
+
+func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
+	var args protocol.RepoUpdateSchedulerInfoArgs
+	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var result *protocol.RepoUpdateSchedulerInfoResult
+	if conf.UpdateScheduler2Enabled() {
+		result = repos.Scheduler.ScheduleInfo(args.RepoName)
+	}
+
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +80,11 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if conf.UpdateScheduler2Enabled() {
+		repos.Scheduler.UpdateOnce(req.Repo, req.URL)
 		return
 	}
 

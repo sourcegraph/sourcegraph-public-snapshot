@@ -1152,6 +1152,34 @@ type MirrorRepositoryInfo {
     cloned: Boolean!
     # When the repository was last successfully updated from the remote source repository..
     updatedAt: String
+    # The state of this repository in the update schedule.
+    updateSchedule: UpdateSchedule
+    # The state of this repository in the update queue.
+    updateQueue: UpdateQueue
+}
+
+# The state of a repository in the update schedule.
+type UpdateSchedule {
+    # The interval that was used when scheduling the current due time.
+    intervalSeconds: Int!
+    # The next time that the repo will be inserted into the update queue.
+    due: String!
+    # The index of the repo in the schedule.
+    index: Int!
+    # The total number of repos in the schedule.
+    total: Int!
+}
+
+# The state of a repository in the update queue.
+type UpdateQueue {
+    # The index of the repo in the update queue.
+    # Updating repos are placed at the end of the queue until they finish updating
+    # so don't display this if updating is true.
+    index: Int!
+    # True if the repo is currently updating.
+    updating: Boolean!
+    # The total number of repos in the update queue (including updating repos).
+    total: Int!
 }
 
 # A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).

@@ -3,9 +3,33 @@ package protocol
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
+
+type RepoUpdateSchedulerInfoArgs struct {
+	// RepoName is the repository name to look up.
+	RepoName api.RepoName
+}
+
+type RepoUpdateSchedulerInfoResult struct {
+	Schedule *RepoScheduleState `json:",omitempty"`
+	Queue    *RepoQueueState    `json:",omitempty"`
+}
+
+type RepoScheduleState struct {
+	Index           int
+	Total           int
+	IntervalSeconds int
+	Due             time.Time
+}
+
+type RepoQueueState struct {
+	Index    int
+	Total    int
+	Updating bool
+}
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.
 //

@@ -55,6 +55,22 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
+// RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
+func (c *Client) RepoUpdateSchedulerInfo(ctx context.Context, args protocol.RepoUpdateSchedulerInfoArgs) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
+	resp, err := c.httpPost(ctx, "repo-update-scheduler-info", args)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		stack := fmt.Sprintf("RepoScheduleInfo: %+v", args)
+		return nil, errors.Wrap(fmt.Errorf("http status %d", resp.StatusCode), stack)
+	}
+	defer resp.Body.Close()
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return result, err
+}
+
 // MockRepoLookup mocks (*Client).RepoLookup for tests.
 var MockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
