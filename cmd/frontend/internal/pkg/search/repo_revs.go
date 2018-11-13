@@ -188,18 +188,14 @@ func RepoQuery(q query.Q) (dbquery.Q, error) {
 	notCount := 0
 	q = query.Map(q, func(q query.Q) query.Q {
 		// pre
-		switch c := q.(type) {
+		switch q.(type) {
 		case *query.Not:
 			notCount++
-
-		case *query.Type:
-			// Remove Type from expression, doesn't affect repos searched.
-			return c.Child
 		}
 		return q
 	}, func(q query.Q) query.Q {
 		// post
-		switch q.(type) {
+		switch c := q.(type) {
 		case *query.Not:
 			notCount--
 
@@ -209,6 +205,10 @@ func RepoQuery(q query.Q) (dbquery.Q, error) {
 		case *query.Const:
 			// Preserve Const atom.
 			return q
+
+		case *query.Type:
+			// Remove Type from expression, doesn't affect repos searched.
+			return c.Child
 
 		case *query.RepoSet:
 			err = errors.Errorf("unsupported RepoSet in RepoQuery %s", q.String())

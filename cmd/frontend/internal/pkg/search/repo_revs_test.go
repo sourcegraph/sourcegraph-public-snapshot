@@ -74,6 +74,8 @@ func TestRepoQuery(t *testing.T) {
 		"foo -(r:bar hello)":    `TRUE`,
 		"foo -(hello)":          `TRUE`,
 
+		"foo -(type:repo -(r:bar hello))": `"bar"`,
+
 		"foo r:b -(-(r:bar hello))": `("b" AND "bar")`,
 		"foo r:b -(r:bar hello)":    `"b"`,
 		"foo r:b -(-(hello))":       `"b"`,
