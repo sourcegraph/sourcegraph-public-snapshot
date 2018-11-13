@@ -73,7 +73,7 @@ GitHub issue search | [💡](https://docs.google.com/document/d/1OTXPlVxSDNC37hl
 JavaScript/TypeScript extension | | Code intelligence, sourcegraph-typescript | [@felixfbecker][felixfbecker]
 LDAP and Active Directory user authentication | | Enterprise, [Sourcegraph][sourcegraph] | [@beyang][beyang]
 Go extension | [💡](https://docs.google.com/document/d/1j6X6Flw9_GT0QsCv1XVD1_zx0VjWFcD8pvl5uhzazMU/edit) | Code intelligence, sourcegraph-go | [@chrismwendt][chrismwendt]
-Simpler browser extension options menu | [🌞](https://github.com/sourcegraph/browser-extensions/pull/271)[📣](https://github.com/sourcegraph/about/pull/46) | Integrations, [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
+Simpler browser extension options menu | 🚢[🌞](https://github.com/sourcegraph/browser-extensions/pull/271)[📣](https://github.com/sourcegraph/about/pull/46) | Integrations, [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
 Python extension | [📽](https://slack-files.com/T02FSM7DL-FDXV2DM3J-ecc49122bd) | Code intelligence, sourcegraph-python | [@sqs][sqs]
 Codecov and other dev tool extensions | | Integrations, extensibility | T.B.D.
 
