@@ -65,12 +65,12 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	if hooks.PreAuthMiddleware != nil {
 		h = hooks.PreAuthMiddleware(h)
 	}
-	h = healthCheckMiddleware(h)
 	h = tracepkg.Middleware(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
 	h = secureHeadersMiddleware(h)
 	h = middleware.CanonicalURL(h)
+	h = healthCheckMiddleware(h)
 	h = gcontext.ClearHandler(h)
 	h = middleware.Trace(h)
 	return h, nil
