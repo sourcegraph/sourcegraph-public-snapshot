@@ -14,6 +14,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
+- [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
 - [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
 - [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
 - [LDAP and Active Directory user authentication](https://github.com/sourcegraph/sourcegraph/issues/963)
@@ -21,7 +22,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - [Go language support via extension](https://github.com/sourcegraph/sourcegraph/issues/958)
 - [JavaScript/TypeScript language support via extension](https://github.com/sourcegraph/sourcegraph/issues/960)
 - [Python language support via extension](https://github.com/sourcegraph/sourcegraph/issues/959)
-- Onboarding flow for site admins
+- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 - Codecov and other dev tool extensions
 
 <small>[Draft announcement](https://github.com/sourcegraph/about/pull/49) --- [All 3.0-preview issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+author%3Asqs+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%223.0-preview%22)</small>
