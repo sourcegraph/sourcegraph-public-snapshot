@@ -1,9 +1,6 @@
 # Sourcegraph browser extensions
 
-[![build](https://travis-ci.org/sourcegraph/browser-extensions.svg?branch=master)](https://travis-ci.org/sourcegraph/browser-extensions)
-[![dependencies](https://david-dm.org/sourcegraph/browser-extensions/status.svg)](https://david-dm.org/sourcegraph/browser-extensions)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
-[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
 [![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg?logo=Google%20Chrome&logoColor=white)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
@@ -124,16 +121,3 @@ Click reload for Sourcegraph at `about:debugging`
 ## Testing
 
 Coming soon...
-
-## Deploy
-
-Deployment to Firefox and Chrome extension stores happen automatically in CI when the `release` branch is updated.
-Releases are also uploaded to the [GitHub releases page](https://github.com/sourcegraph/browser-extensions/releases) and tagged in git.
-
-Make sure that commit messages follow the [Conventional Commits Standard](https://conventionalcommits.org/) as the commit message will be used for the (public) release notes and to automatically determine the version number.
-
-To release the latest commit on master, ensure your master is up-to-date and run
-
-```sh
-git push origin master:release
-```
