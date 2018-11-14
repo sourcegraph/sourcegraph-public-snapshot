@@ -202,6 +202,9 @@ export enum ContributableMenu {
     /** A directory page (including for the root directory of a repository). */
     DirectoryPage = 'directory/page',
 
+    /** The filters bar for the search results page */
+    FiltersBar = 'filters/bar',
+
     /** The help menu in the application. */
     Help = 'help',
 }

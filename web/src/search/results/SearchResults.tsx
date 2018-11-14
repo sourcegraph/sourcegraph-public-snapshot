@@ -1,3 +1,4 @@
+import { ActionItem } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionItem'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
@@ -7,8 +8,8 @@ import { parseSearchURLQuery, SearchOptions } from '..'
 import { isErrorLike } from '../../../../shared/src/errors'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
-import { viewerSettings } from '../../settings/configuration'
+import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { currentConfiguration, viewerSettings } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from '../backend'
 import { FilterChip } from '../FilterChip'
@@ -16,10 +17,12 @@ import { isSearchResults, submitSearch, toggleSearchFilter } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultsListOld } from './SearchResultsListOld'
+import { ActionsContainer } from '../../../../shared/src/app/actions/ActionsContainer'
+import { ContributableMenu } from '../../../../shared/src/api/protocol'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps extends ExtensionsControllerProps {
+interface SearchResultsProps extends ExtensionsControllerProps, ExtensionsProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -147,28 +150,60 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public render(): JSX.Element | null {
         const searchOptions = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
+        const extensionFilters = (
+            <ActionsContainer
+                menu={ContributableMenu.FiltersBar}
+                // tslint:disable-next-line:jsx-no-lambda
+                render={items => (
+                    <>
+                        {items
+                            .filter(
+                                item =>
+                                    item.action.title &&
+                                    item.action.commandArguments &&
+                                    item.action.commandArguments.length === 1 &&
+                                    typeof item.action.commandArguments![0] === 'string'
+                            )
+                            .map((item, i) => (
+                                <FilterChip
+                                    query={this.props.navbarSearchQuery}
+                                    onFilterChosen={this.onDynamicFilterClicked}
+                                    key={item.action.title}
+                                    value={item.action.commandArguments![0].toString()}
+                                    name={item.action.title}
+                                />
+                            ))}
+                    </>
+                )}
+                empty={null}
+                extensionsController={this.props.extensionsController}
+                extensions={this.props.extensions}
+                location={this.props.location}
+            />
+        )
         return (
             <div className="search-results">
                 <PageTitle key="page-title" title={searchOptions && searchOptions.query} />
-                {isSearchResults(this.state.resultsOrError) &&
-                    filters.length > 0 && (
-                        <div className="search-results__filters-bar">
-                            Filters:
-                            <div className="search-results__filters">
-                                {filters
-                                    .filter(filter => filter.value !== '')
-                                    .map((filter, i) => (
-                                        <FilterChip
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.onDynamicFilterClicked}
-                                            key={filter.value}
-                                            value={filter.value}
-                                            name={filter.name}
-                                        />
-                                    ))}
-                            </div>
-                        </div>
-                    )}
+                {(isSearchResults(this.state.resultsOrError) && (filters.length > 0) || extensionFilters) &&
+                (
+                <div className="search-results__filters-bar">
+                    Filters:
+                    <div className="search-results__filters">
+                        {extensionFilters}
+                        {filters
+                            .filter(filter => filter.value !== '')
+                            .map((filter, i) => (
+                                <FilterChip
+                                    query={this.props.navbarSearchQuery}
+                                    onFilterChosen={this.onDynamicFilterClicked}
+                                    key={filter.value}
+                                    value={filter.value}
+                                    name={filter.name}
+                                />
+                            ))}
+                    </div>
+                </div>
+                )}
                 {newRepoFilters &&
                     isSearchResults(this.state.resultsOrError) &&
                     this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
