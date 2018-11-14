@@ -79,9 +79,9 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			},
 			expectedUpdates: []*repoUpdate{
 				{
-					repo:     &a,
-					priority: priorityLow,
-					seq:      1,
+					Repo:     &a,
+					Priority: priorityLow,
+					Seq:      1,
 				},
 			},
 			expectedNotifications: 1,
@@ -93,9 +93,9 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			},
 			expectedUpdates: []*repoUpdate{
 				{
-					repo:     &a,
-					priority: priorityHigh,
-					seq:      1,
+					Repo:     &a,
+					Priority: priorityHigh,
+					Seq:      1,
 				},
 			},
 			expectedNotifications: 1,
@@ -108,14 +108,14 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			},
 			expectedUpdates: []*repoUpdate{
 				{
-					repo:     &a,
-					priority: priorityHigh,
-					seq:      2,
+					Repo:     &a,
+					Priority: priorityHigh,
+					Seq:      2,
 				},
 				{
-					repo:     &b,
-					priority: priorityLow,
-					seq:      1,
+					Repo:     &b,
+					Priority: priorityLow,
+					Seq:      1,
 				},
 			},
 			expectedNotifications: 2,
@@ -128,14 +128,14 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			},
 			expectedUpdates: []*repoUpdate{
 				{
-					repo:     &a,
-					priority: priorityHigh,
-					seq:      1,
+					Repo:     &a,
+					Priority: priorityHigh,
+					Seq:      1,
 				},
 				{
-					repo:     &b,
-					priority: priorityLow,
-					seq:      2,
+					Repo:     &b,
+					Priority: priorityLow,
+					Seq:      2,
 				},
 			},
 			expectedNotifications: 2,
@@ -148,9 +148,9 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			},
 			expectedUpdates: []*repoUpdate{
 				{
-					repo:     &a,
-					priority: priorityLow,
-					seq:      1,
+					Repo:     &a,
+					Priority: priorityLow,
+					Seq:      1,
 				},
 			},
 			expectedNotifications: 1,
@@ -163,9 +163,9 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			},
 			expectedUpdates: []*repoUpdate{
 				{
-					repo:     &a,
-					priority: priorityHigh,
-					seq:      1,
+					Repo:     &a,
+					Priority: priorityHigh,
+					Seq:      1,
 				},
 			},
 			expectedNotifications: 1,
@@ -178,9 +178,9 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			},
 			expectedUpdates: []*repoUpdate{
 				{
-					repo:     &a,
-					priority: priorityHigh,
-					seq:      2,
+					Repo:     &a,
+					Priority: priorityHigh,
+					Seq:      2,
 				},
 			},
 			expectedNotifications: 2,
@@ -202,29 +202,29 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			},
 			expectedUpdates: []*repoUpdate{
 				{
-					repo:     &a,
-					priority: priorityHigh,
-					seq:      6,
+					Repo:     &a,
+					Priority: priorityHigh,
+					Seq:      6,
 				},
 				{
-					repo:     &b,
-					priority: priorityHigh,
-					seq:      7,
+					Repo:     &b,
+					Priority: priorityHigh,
+					Seq:      7,
 				},
 				{
-					repo:     &c,
-					priority: priorityHigh,
-					seq:      8,
+					Repo:     &c,
+					Priority: priorityHigh,
+					Seq:      8,
 				},
 				{
-					repo:     &d,
-					priority: priorityHigh,
-					seq:      9,
+					Repo:     &d,
+					Priority: priorityHigh,
+					Seq:      9,
 				},
 				{
-					repo:     &e,
-					priority: priorityHigh,
-					seq:      10,
+					Repo:     &e,
+					Priority: priorityHigh,
+					Seq:      10,
 				},
 			},
 			expectedNotifications: 10,
@@ -275,7 +275,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 		{
 			name: "remove only",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
+				{Repo: a, Seq: 1},
 			},
 			removeCalls: []*removeCall{
 				{repo: a},
@@ -284,54 +284,54 @@ func TestUpdateQueue_remove(t *testing.T) {
 		{
 			name: "remove front",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
-				{repo: b, seq: 2},
+				{Repo: a, Seq: 1},
+				{Repo: b, Seq: 2},
 			},
 			removeCalls: []*removeCall{
 				{repo: a},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: b, seq: 2},
+				{Repo: b, Seq: 2},
 			},
 		},
 		{
 			name: "remove back",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
-				{repo: b, seq: 2},
+				{Repo: a, Seq: 1},
+				{Repo: b, Seq: 2},
 			},
 			removeCalls: []*removeCall{
 				{repo: b},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: a, seq: 1},
+				{Repo: a, Seq: 1},
 			},
 		},
 		{
 			name: "remove middle",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
-				{repo: b, seq: 2},
-				{repo: c, seq: 3},
+				{Repo: a, Seq: 1},
+				{Repo: b, Seq: 2},
+				{Repo: c, Seq: 3},
 			},
 			removeCalls: []*removeCall{
 				{repo: c},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: a, seq: 1},
-				{repo: b, seq: 2},
+				{Repo: a, Seq: 1},
+				{Repo: b, Seq: 2},
 			},
 		},
 		{
 			name: "remove not present",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
+				{Repo: a, Seq: 1},
 			},
 			removeCalls: []*removeCall{
 				{repo: b},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: a, seq: 1},
+				{Repo: a, Seq: 1},
 			},
 		},
 		{
@@ -343,9 +343,9 @@ func TestUpdateQueue_remove(t *testing.T) {
 		{
 			name: "remove all",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
-				{repo: b, seq: 2},
-				{repo: c, seq: 3},
+				{Repo: a, Seq: 1},
+				{Repo: b, Seq: 2},
+				{Repo: c, Seq: 3},
 			},
 			removeCalls: []*removeCall{
 				{repo: a},
@@ -356,9 +356,9 @@ func TestUpdateQueue_remove(t *testing.T) {
 		{
 			name: "remove all reverse",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
-				{repo: b, seq: 2},
-				{repo: c, seq: 3},
+				{Repo: a, Seq: 1},
+				{Repo: b, Seq: 2},
+				{Repo: c, Seq: 3},
 			},
 			removeCalls: []*removeCall{
 				{repo: c},
@@ -369,25 +369,25 @@ func TestUpdateQueue_remove(t *testing.T) {
 		{
 			name: "don't remove updating",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1, updating: true},
+				{Repo: a, Seq: 1, Updating: true},
 			},
 			removeCalls: []*removeCall{
 				{repo: a, updating: false},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: a, seq: 1, updating: true},
+				{Repo: a, Seq: 1, Updating: true},
 			},
 		},
 		{
 			name: "don't remove not updating",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1, updating: false},
+				{Repo: a, Seq: 1, Updating: false},
 			},
 			removeCalls: []*removeCall{
 				{repo: a, updating: true},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: a, seq: 1, updating: false},
+				{Repo: a, Seq: 1, Updating: false},
 			},
 		},
 	}
@@ -433,33 +433,33 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 		{
 			name: "acquire sets updating to true",
 			initialQueue: []*repoUpdate{
-				{repo: a, updating: false, seq: 1},
+				{Repo: a, Updating: false, Seq: 1},
 			},
 			acquireResults: []*configuredRepo2{a},
 			finalQueue: []*repoUpdate{
-				{repo: a, updating: true, seq: 1},
+				{Repo: a, Updating: true, Seq: 1},
 			},
 		},
 		{
 			name: "acquire sends update to back of queue",
 			initialQueue: []*repoUpdate{
-				{repo: a, updating: false, seq: 1},
-				{repo: b, updating: false, seq: 2},
+				{Repo: a, Updating: false, Seq: 1},
+				{Repo: b, Updating: false, Seq: 2},
 			},
 			acquireResults: []*configuredRepo2{a},
 			finalQueue: []*repoUpdate{
-				{repo: b, updating: false, seq: 2},
-				{repo: a, updating: true, seq: 1},
+				{Repo: b, Updating: false, Seq: 2},
+				{Repo: a, Updating: true, Seq: 1},
 			},
 		},
 		{
 			name: "acquire does not return repos that are already updating",
 			initialQueue: []*repoUpdate{
-				{repo: a, updating: true, seq: 1},
+				{Repo: a, Updating: true, Seq: 1},
 			},
 			acquireResults: []*configuredRepo2{nil},
 			finalQueue: []*repoUpdate{
-				{repo: a, updating: true, seq: 1},
+				{Repo: a, Updating: true, Seq: 1},
 			},
 		},
 	}
@@ -502,7 +502,7 @@ func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
 	var actualQueue []*repoUpdate
 	for len(s.updateQueue.heap) > 0 {
 		update := heap.Pop(s.updateQueue).(*repoUpdate)
-		update.index = 0 // this will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
+		update.Index = 0 // this will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
 		actualQueue = append(actualQueue, update)
 	}
 
@@ -535,9 +535,9 @@ func TestSchedule_add(t *testing.T) {
 			},
 			finalSchedule: []*scheduledRepoUpdate{
 				{
-					interval: minDelay,
-					due:      defaultTime.Add(minDelay),
-					repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(minDelay),
+					Repo:     a,
 				},
 			},
 			timeAfterFuncDelays: []time.Duration{minDelay},
@@ -547,9 +547,9 @@ func TestSchedule_add(t *testing.T) {
 			name: "add duplicate is no-op",
 			initialSchedule: []*scheduledRepoUpdate{
 				{
-					interval: minDelay,
-					due:      defaultTime,
-					repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime,
+					Repo:     a,
 				},
 			},
 			addCalls: []*addCall{
@@ -557,9 +557,9 @@ func TestSchedule_add(t *testing.T) {
 			},
 			finalSchedule: []*scheduledRepoUpdate{
 				{
-					interval: minDelay,
-					due:      defaultTime,
-					repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime,
+					Repo:     a,
 				},
 			},
 		},
@@ -567,9 +567,9 @@ func TestSchedule_add(t *testing.T) {
 			name: "add later",
 			initialSchedule: []*scheduledRepoUpdate{
 				{
-					interval: minDelay,
-					due:      defaultTime.Add(30 * time.Second),
-					repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(30 * time.Second),
+					Repo:     a,
 				},
 			},
 			addCalls: []*addCall{
@@ -577,14 +577,14 @@ func TestSchedule_add(t *testing.T) {
 			},
 			finalSchedule: []*scheduledRepoUpdate{
 				{
-					interval: minDelay,
-					due:      defaultTime.Add(30 * time.Second),
-					repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(30 * time.Second),
+					Repo:     a,
 				},
 				{
-					interval: minDelay,
-					due:      defaultTime.Add(time.Second + minDelay),
-					repo:     b,
+					Interval: minDelay,
+					Due:      defaultTime.Add(time.Second + minDelay),
+					Repo:     b,
 				},
 			},
 			timeAfterFuncDelays: []time.Duration{29 * time.Second},
@@ -594,9 +594,9 @@ func TestSchedule_add(t *testing.T) {
 			name: "add before",
 			initialSchedule: []*scheduledRepoUpdate{
 				{
-					interval: minDelay,
-					due:      defaultTime.Add(time.Minute),
-					repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(time.Minute),
+					Repo:     a,
 				},
 			},
 			addCalls: []*addCall{
@@ -604,14 +604,14 @@ func TestSchedule_add(t *testing.T) {
 			},
 			finalSchedule: []*scheduledRepoUpdate{
 				{
-					interval: minDelay,
-					due:      defaultTime.Add(time.Second + minDelay),
-					repo:     b,
+					Interval: minDelay,
+					Due:      defaultTime.Add(time.Second + minDelay),
+					Repo:     b,
 				},
 				{
-					interval: minDelay,
-					due:      defaultTime.Add(time.Minute),
-					repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(time.Minute),
+					Repo:     a,
 				},
 			},
 			timeAfterFuncDelays: []time.Duration{minDelay},
@@ -669,9 +669,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 			name: "update earlier",
 			initialSchedule: []*scheduledRepoUpdate{
 				{
-					repo:     a,
-					interval: minDelay,
-					due:      defaultTime.Add(time.Hour),
+					Repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(time.Hour),
 				},
 			},
 			updateCalls: []*updateCall{
@@ -683,9 +683,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 			},
 			finalSchedule: []*scheduledRepoUpdate{
 				{
-					repo:     a,
-					interval: 123 * time.Second,
-					due:      defaultTime.Add(124 * time.Second),
+					Repo:     a,
+					Interval: 123 * time.Second,
+					Due:      defaultTime.Add(124 * time.Second),
 				},
 			},
 			timeAfterFuncDelays: []time.Duration{123 * time.Second},
@@ -695,9 +695,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 			name: "minimum interval",
 			initialSchedule: []*scheduledRepoUpdate{
 				{
-					repo:     a,
-					interval: maxDelay,
-					due:      defaultTime.Add(maxDelay),
+					Repo:     a,
+					Interval: maxDelay,
+					Due:      defaultTime.Add(maxDelay),
 				},
 			},
 			updateCalls: []*updateCall{
@@ -709,9 +709,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 			},
 			finalSchedule: []*scheduledRepoUpdate{
 				{
-					repo:     a,
-					interval: minDelay,
-					due:      defaultTime.Add(minDelay),
+					Repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(minDelay),
 				},
 			},
 			timeAfterFuncDelays: []time.Duration{minDelay},
@@ -721,9 +721,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 			name: "maximum interval",
 			initialSchedule: []*scheduledRepoUpdate{
 				{
-					repo:     a,
-					interval: minDelay,
-					due:      defaultTime.Add(minDelay),
+					Repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(minDelay),
 				},
 			},
 			updateCalls: []*updateCall{
@@ -735,9 +735,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 			},
 			finalSchedule: []*scheduledRepoUpdate{
 				{
-					repo:     a,
-					interval: maxDelay,
-					due:      defaultTime.Add(maxDelay),
+					Repo:     a,
+					Interval: maxDelay,
+					Due:      defaultTime.Add(maxDelay),
 				},
 			},
 			timeAfterFuncDelays: []time.Duration{maxDelay},
@@ -747,9 +747,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 			name: "update later",
 			initialSchedule: []*scheduledRepoUpdate{
 				{
-					repo:     a,
-					interval: minDelay,
-					due:      defaultTime.Add(time.Hour),
+					Repo:     a,
+					Interval: minDelay,
+					Due:      defaultTime.Add(time.Hour),
 				},
 			},
 			updateCalls: []*updateCall{
@@ -761,9 +761,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 			},
 			finalSchedule: []*scheduledRepoUpdate{
 				{
-					repo:     a,
-					interval: 123 * time.Minute,
-					due:      defaultTime.Add(time.Second + 123*time.Minute),
+					Repo:     a,
+					Interval: 123 * time.Minute,
+					Due:      defaultTime.Add(time.Second + 123*time.Minute),
 				},
 			},
 			timeAfterFuncDelays: []time.Duration{123 * time.Minute},
@@ -772,11 +772,11 @@ func TestSchedule_updateInterval(t *testing.T) {
 		{
 			name: "heap reorders correctly",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: c, interval: minDelay, due: defaultTime.Add(1 * time.Minute)},
-				{repo: d, interval: minDelay, due: defaultTime.Add(2 * time.Minute)},
-				{repo: a, interval: minDelay, due: defaultTime.Add(3 * time.Minute)},
-				{repo: e, interval: minDelay, due: defaultTime.Add(4 * time.Minute)},
-				{repo: b, interval: minDelay, due: defaultTime.Add(5 * time.Minute)},
+				{Repo: c, Interval: minDelay, Due: defaultTime.Add(1 * time.Minute)},
+				{Repo: d, Interval: minDelay, Due: defaultTime.Add(2 * time.Minute)},
+				{Repo: a, Interval: minDelay, Due: defaultTime.Add(3 * time.Minute)},
+				{Repo: e, Interval: minDelay, Due: defaultTime.Add(4 * time.Minute)},
+				{Repo: b, Interval: minDelay, Due: defaultTime.Add(5 * time.Minute)},
 			},
 			updateCalls: []*updateCall{
 				{repo: a, time: defaultTime, interval: 1 * time.Minute},
@@ -786,11 +786,11 @@ func TestSchedule_updateInterval(t *testing.T) {
 				{repo: e, time: defaultTime, interval: 5 * time.Minute},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: 1 * time.Minute, due: defaultTime.Add(1 * time.Minute)},
-				{repo: b, interval: 2 * time.Minute, due: defaultTime.Add(2 * time.Minute)},
-				{repo: c, interval: 3 * time.Minute, due: defaultTime.Add(3 * time.Minute)},
-				{repo: d, interval: 4 * time.Minute, due: defaultTime.Add(4 * time.Minute)},
-				{repo: e, interval: 5 * time.Minute, due: defaultTime.Add(5 * time.Minute)},
+				{Repo: a, Interval: 1 * time.Minute, Due: defaultTime.Add(1 * time.Minute)},
+				{Repo: b, Interval: 2 * time.Minute, Due: defaultTime.Add(2 * time.Minute)},
+				{Repo: c, Interval: 3 * time.Minute, Due: defaultTime.Add(3 * time.Minute)},
+				{Repo: d, Interval: 4 * time.Minute, Due: defaultTime.Add(4 * time.Minute)},
+				{Repo: e, Interval: 5 * time.Minute, Due: defaultTime.Add(5 * time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute, time.Minute, time.Minute, time.Minute, time.Minute},
 			wakeupNotifications: 5,
@@ -843,19 +843,19 @@ func TestSchedule_remove(t *testing.T) {
 		{
 			name: "remove has no effect if repo isn't in schedule",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: a},
+				{Repo: a},
 			},
 			removeCalls: []*removeCall{
 				{repo: b},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: a},
+				{Repo: a},
 			},
 		},
 		{
 			name: "remove last scheduled doesn't reschedule timer",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: a},
+				{Repo: a},
 			},
 			removeCalls: []*removeCall{
 				{repo: a},
@@ -864,16 +864,16 @@ func TestSchedule_remove(t *testing.T) {
 		{
 			name: "remove next reschedules timer",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: minDelay, due: defaultTime},
-				{repo: b, interval: minDelay, due: defaultTime.Add(minDelay)},
-				{repo: c, interval: maxDelay, due: defaultTime.Add(maxDelay)},
+				{Repo: a, Interval: minDelay, Due: defaultTime},
+				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+				{Repo: c, Interval: maxDelay, Due: defaultTime.Add(maxDelay)},
 			},
 			removeCalls: []*removeCall{
 				{repo: a, time: defaultTime},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: b, interval: minDelay, due: defaultTime.Add(minDelay)},
-				{repo: c, interval: maxDelay, due: defaultTime.Add(maxDelay)},
+				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+				{Repo: c, Interval: maxDelay, Due: defaultTime.Add(maxDelay)},
 			},
 			timeAfterFuncDelays: []time.Duration{minDelay},
 			wakeupNotifications: 1,
@@ -881,16 +881,16 @@ func TestSchedule_remove(t *testing.T) {
 		{
 			name: "remove not-next doesn't reschedule timer",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: minDelay, due: defaultTime},
-				{repo: b, interval: minDelay, due: defaultTime.Add(minDelay)},
-				{repo: c, interval: maxDelay, due: defaultTime.Add(maxDelay)},
+				{Repo: a, Interval: minDelay, Due: defaultTime},
+				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+				{Repo: c, Interval: maxDelay, Due: defaultTime.Add(maxDelay)},
 			},
 			removeCalls: []*removeCall{
 				{repo: b, time: defaultTime},
 				{repo: c, time: defaultTime},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: minDelay, due: defaultTime},
+				{Repo: a, Interval: minDelay, Due: defaultTime},
 			},
 		},
 	}
@@ -926,7 +926,7 @@ func verifySchedule(t *testing.T, s *updateScheduler, expected []*scheduledRepoU
 	var actualSchedule []*scheduledRepoUpdate
 	for len(s.schedule.heap) > 0 {
 		update := heap.Pop(s.schedule).(*scheduledRepoUpdate)
-		update.index = 0 // this will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
+		update.Index = 0 // this will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
 		actualSchedule = append(actualSchedule, update)
 	}
 
@@ -974,10 +974,10 @@ func TestUpdateScheduler_runScheduleLoop(t *testing.T) {
 		{
 			name: "no updates due",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: 11 * time.Second, due: defaultTime.Add(time.Minute)},
+				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: 11 * time.Second, due: defaultTime.Add(time.Minute)},
+				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -987,15 +987,15 @@ func TestUpdateScheduler_runScheduleLoop(t *testing.T) {
 		{
 			name: "one update due, rescheduled to front",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: 11 * time.Second, due: defaultTime.Add(1 * time.Microsecond)},
-				{repo: b, interval: 22 * time.Second, due: defaultTime.Add(time.Minute)},
+				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(1 * time.Microsecond)},
+				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: 11 * time.Second, due: defaultTime.Add(11 * time.Second)},
-				{repo: b, interval: 22 * time.Second, due: defaultTime.Add(time.Minute)},
+				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(11 * time.Second)},
+				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: a, priority: priorityLow, seq: 1},
+				{Repo: a, Priority: priorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{11 * time.Second},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1005,15 +1005,15 @@ func TestUpdateScheduler_runScheduleLoop(t *testing.T) {
 		{
 			name: "one update due, rescheduled to back",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: 11 * time.Minute, due: defaultTime},
-				{repo: b, interval: 22 * time.Second, due: defaultTime.Add(time.Minute)},
+				{Repo: a, Interval: 11 * time.Minute, Due: defaultTime},
+				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: b, interval: 22 * time.Second, due: defaultTime.Add(time.Minute)},
-				{repo: a, interval: 11 * time.Minute, due: defaultTime.Add(11 * time.Minute)},
+				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
+				{Repo: a, Interval: 11 * time.Minute, Due: defaultTime.Add(11 * time.Minute)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: a, priority: priorityLow, seq: 1},
+				{Repo: a, Priority: priorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1023,25 +1023,25 @@ func TestUpdateScheduler_runScheduleLoop(t *testing.T) {
 		{
 			name: "all updates due",
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: c, interval: 3 * time.Minute, due: defaultTime.Add(-5 * time.Minute)},
-				{repo: d, interval: 4 * time.Minute, due: defaultTime.Add(-4 * time.Minute)},
-				{repo: a, interval: 1 * time.Minute, due: defaultTime.Add(-3 * time.Minute)},
-				{repo: e, interval: 5 * time.Minute, due: defaultTime.Add(-2 * time.Minute)},
-				{repo: b, interval: 2 * time.Minute, due: defaultTime.Add(-1 * time.Minute)},
+				{Repo: c, Interval: 3 * time.Minute, Due: defaultTime.Add(-5 * time.Minute)},
+				{Repo: d, Interval: 4 * time.Minute, Due: defaultTime.Add(-4 * time.Minute)},
+				{Repo: a, Interval: 1 * time.Minute, Due: defaultTime.Add(-3 * time.Minute)},
+				{Repo: e, Interval: 5 * time.Minute, Due: defaultTime.Add(-2 * time.Minute)},
+				{Repo: b, Interval: 2 * time.Minute, Due: defaultTime.Add(-1 * time.Minute)},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: 1 * time.Minute, due: defaultTime.Add(1 * time.Minute)},
-				{repo: b, interval: 2 * time.Minute, due: defaultTime.Add(2 * time.Minute)},
-				{repo: c, interval: 3 * time.Minute, due: defaultTime.Add(3 * time.Minute)},
-				{repo: d, interval: 4 * time.Minute, due: defaultTime.Add(4 * time.Minute)},
-				{repo: e, interval: 5 * time.Minute, due: defaultTime.Add(5 * time.Minute)},
+				{Repo: a, Interval: 1 * time.Minute, Due: defaultTime.Add(1 * time.Minute)},
+				{Repo: b, Interval: 2 * time.Minute, Due: defaultTime.Add(2 * time.Minute)},
+				{Repo: c, Interval: 3 * time.Minute, Due: defaultTime.Add(3 * time.Minute)},
+				{Repo: d, Interval: 4 * time.Minute, Due: defaultTime.Add(4 * time.Minute)},
+				{Repo: e, Interval: 5 * time.Minute, Due: defaultTime.Add(5 * time.Minute)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: c, priority: priorityLow, seq: 1},
-				{repo: d, priority: priorityLow, seq: 2},
-				{repo: a, priority: priorityLow, seq: 3},
-				{repo: e, priority: priorityLow, seq: 4},
-				{repo: b, priority: priorityLow, seq: 5},
+				{Repo: c, Priority: priorityLow, Seq: 1},
+				{Repo: d, Priority: priorityLow, Seq: 2},
+				{Repo: a, Priority: priorityLow, Seq: 3},
+				{Repo: e, Priority: priorityLow, Seq: 4},
+				{Repo: b, Priority: priorityLow, Seq: 5},
 			},
 			timeAfterFuncDelays: []time.Duration{1 * time.Minute},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1123,19 +1123,19 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 		{
 			name: "non-empty queue at clone limit",
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
+				{Repo: a, Seq: 1},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: a, seq: 1},
+				{Repo: a, Seq: 1},
 			},
 		},
 		{
 			name:                   "queue drains",
 			gitMaxConcurrentClones: 1,
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
-				{repo: b, seq: 2},
-				{repo: c, seq: 3},
+				{Repo: a, Seq: 1},
+				{Repo: b, Seq: 2},
+				{Repo: c, Seq: 3},
 			},
 			mockRequestRepoUpdates: []*mockRequestRepoUpdate{
 				{repo: a},
@@ -1147,11 +1147,11 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			name:                   "schedule updated",
 			gitMaxConcurrentClones: 1,
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: time.Hour, due: defaultTime.Add(time.Hour)},
+				{Repo: a, Interval: time.Hour, Due: defaultTime.Add(time.Hour)},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: a, seq: 1},
-				{repo: b, seq: 1},
+				{Repo: a, Seq: 1},
+				{Repo: b, Seq: 1},
 			},
 			mockRequestRepoUpdates: []*mockRequestRepoUpdate{
 				{
@@ -1170,7 +1170,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: a, interval: time.Minute, due: defaultTime.Add(time.Minute)},
+				{Repo: a, Interval: time.Minute, Due: defaultTime.Add(time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1326,10 +1326,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: false},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Seq: 1, Updating: false},
 			},
 			timeAfterFuncDelays: []time.Duration{minDelay},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1357,10 +1357,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{Repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, seq: 1, updating: false},
+				{Repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, Seq: 1, Updating: false},
 			},
 			timeAfterFuncDelays: []time.Duration{minDelay},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1375,10 +1375,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Interval: minDelay, Due: defaultTime},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: false}, updating: false},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: false}, Updating: false},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
@@ -1402,10 +1402,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Interval: minDelay, Due: defaultTime},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true /* enabled state doesn't get updated once in the queue because concurrency nightmare */}, updating: false},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true /* enabled state doesn't get updated once in the queue because concurrency nightmare */}, Updating: false},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
@@ -1425,10 +1425,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Interval: minDelay, Due: defaultTime},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, updating: true},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Updating: true},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
@@ -1439,7 +1439,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: true},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Seq: 1, Updating: true},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
@@ -1455,10 +1455,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Interval: minDelay, Due: defaultTime},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, updating: true},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Updating: true},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
@@ -1467,7 +1467,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: true},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Seq: 1, Updating: true},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{},
@@ -1481,10 +1481,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: false},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Seq: 1, Updating: false},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
@@ -1500,10 +1500,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{Repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, seq: 1, updating: false},
+				{Repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, Seq: 1, Updating: false},
 			},
 		},
 		{
@@ -1535,10 +1535,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: true},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Seq: 1, Updating: true},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
@@ -1554,10 +1554,10 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{Repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: true},
+				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Seq: 1, Updating: true},
 			},
 		},
 	}

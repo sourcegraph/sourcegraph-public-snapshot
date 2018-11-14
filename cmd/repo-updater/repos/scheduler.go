@@ -103,12 +103,12 @@ func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
 			}
 
 			repoUpdate := s.schedule.heap[0]
-			if !repoUpdate.due.Before(timeNow().Add(time.Millisecond)) {
+			if !repoUpdate.Due.Before(timeNow().Add(time.Millisecond)) {
 				break
 			}
 
-			s.updateQueue.enqueue(repoUpdate.repo, priorityLow)
-			repoUpdate.due = timeNow().Add(repoUpdate.interval)
+			s.updateQueue.enqueue(repoUpdate.Repo, priorityLow)
+			repoUpdate.Due = timeNow().Add(repoUpdate.Interval)
 			heap.Fix(s.schedule, 0)
 		}
 
@@ -236,10 +236,10 @@ func (s *updateScheduler) ScheduleInfo(name api.RepoName) *protocol.RepoUpdateSc
 	s.schedule.mu.Lock()
 	if update := s.schedule.index[name]; update != nil {
 		result.Schedule = &protocol.RepoScheduleState{
-			Index:           update.index,
+			Index:           update.Index,
 			Total:           len(s.schedule.index),
-			IntervalSeconds: int(update.interval / time.Second),
-			Due:             update.due,
+			IntervalSeconds: int(update.Interval / time.Second),
+			Due:             update.Due,
 		}
 	}
 	s.schedule.mu.Unlock()
@@ -247,9 +247,9 @@ func (s *updateScheduler) ScheduleInfo(name api.RepoName) *protocol.RepoUpdateSc
 	s.updateQueue.mu.Lock()
 	if update := s.updateQueue.index[name]; update != nil {
 		result.Queue = &protocol.RepoQueueState{
-			Index:    update.index,
+			Index:    update.Index,
 			Total:    len(s.updateQueue.index),
-			Updating: update.updating,
+			Updating: update.Updating,
 		}
 	}
 	s.updateQueue.mu.Unlock()
@@ -282,11 +282,11 @@ const (
 
 // repoUpdate is a repository that has been queued for an update.
 type repoUpdate struct {
-	repo     *configuredRepo2
-	priority priority
-	seq      uint64 // the sequence number of the update
-	updating bool   // whether the repo has been acquired for update
-	index    int    // the index in the heap
+	Repo     *configuredRepo2
+	Priority priority
+	Seq      uint64 // the sequence number of the update
+	Updating bool   // whether the repo has been acquired for update
+	Index    int    // the index in the heap
 }
 
 // enqueue add the repo to the queue with the given priority.
@@ -297,22 +297,22 @@ func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) {
 	update := q.index[repo.Name]
 	if update == nil {
 		heap.Push(q, &repoUpdate{
-			repo:     repo,
-			priority: p,
+			Repo:     repo,
+			Priority: p,
 		})
 		notify(q.notifyEnqueue)
 		return
 	}
 
-	if p <= update.priority {
+	if p <= update.Priority {
 		// Repo is already in the queue with at least as good priority.
 		return
 	}
 
 	// Repo is in the queue at a lower priority.
-	update.priority = p      // bump the priority
-	update.seq = q.nextSeq() // put it after all existing updates with this priority
-	heap.Fix(q, update.index)
+	update.Priority = p      // bump the priority
+	update.Seq = q.nextSeq() // put it after all existing updates with this priority
+	heap.Fix(q, update.Index)
 	notify(q.notifyEnqueue)
 }
 
@@ -327,17 +327,17 @@ func (q *updateQueue) nextSeq() uint64 {
 // It does nothing if the repo is not in the queue or if the repo is already updating.
 func (q *updateQueue) update(repo *configuredRepo2) {
 	q.mu.Lock()
-	if update := q.index[repo.Name]; update != nil && !update.updating {
-		update.repo = repo
+	if update := q.index[repo.Name]; update != nil && !update.Updating {
+		update.Repo = repo
 	}
 	q.mu.Unlock()
 }
 
-// remove removes the repo from the queue if the repo.updating matches the updating argument.
+// remove removes the repo from the queue if the repo.Updating matches the updating argument.
 func (q *updateQueue) remove(repo *configuredRepo2, updating bool) {
 	q.mu.Lock()
-	if update := q.index[repo.Name]; update != nil && update.updating == updating {
-		heap.Remove(q, update.index)
+	if update := q.index[repo.Name]; update != nil && update.Updating == updating {
+		heap.Remove(q, update.Index)
 	}
 	q.mu.Unlock()
 }
@@ -352,13 +352,13 @@ func (q *updateQueue) acquireNext() *configuredRepo2 {
 		return nil
 	}
 	update := q.heap[0]
-	if update.updating {
+	if update.Updating {
 		// Everything in the queue is already updating.
 		return nil
 	}
-	update.updating = true
-	heap.Fix(q, update.index)
-	return update.repo
+	update.Updating = true
+	heap.Fix(q, update.Index)
+	return update.Repo
 }
 
 // The following methods implement heap.Interface based on the priority queue example:
@@ -368,36 +368,36 @@ func (q *updateQueue) Len() int { return len(q.heap) }
 func (q *updateQueue) Less(i, j int) bool {
 	qi := q.heap[i]
 	qj := q.heap[j]
-	if qi.updating != qj.updating {
+	if qi.Updating != qj.Updating {
 		// Repos that are already updating are sorted last.
-		return qj.updating
+		return qj.Updating
 	}
-	if qi.priority != qj.priority {
+	if qi.Priority != qj.Priority {
 		// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-		return qi.priority > qj.priority
+		return qi.Priority > qj.Priority
 	}
 	// Queue semantics for items with the same priority.
-	return qi.seq < qj.seq
+	return qi.Seq < qj.Seq
 }
 func (q *updateQueue) Swap(i, j int) {
 	q.heap[i], q.heap[j] = q.heap[j], q.heap[i]
-	q.heap[i].index = i
-	q.heap[j].index = j
+	q.heap[i].Index = i
+	q.heap[j].Index = j
 }
 func (q *updateQueue) Push(x interface{}) {
 	n := len(q.heap)
 	item := x.(*repoUpdate)
-	item.index = n
-	item.seq = q.nextSeq()
+	item.Index = n
+	item.Seq = q.nextSeq()
 	q.heap = append(q.heap, item)
-	q.index[item.repo.Name] = item
+	q.index[item.Repo.Name] = item
 }
 func (q *updateQueue) Pop() interface{} {
 	n := len(q.heap)
 	item := q.heap[n-1]
-	item.index = -1 // for safety
+	item.Index = -1 // for safety
 	q.heap = q.heap[0 : n-1]
-	delete(q.index, item.repo.Name)
+	delete(q.index, item.Repo.Name)
 	return item
 }
 
@@ -415,10 +415,10 @@ type schedule struct {
 
 // scheduledRepoUpdate is the update schedule for a single repo.
 type scheduledRepoUpdate struct {
-	repo     *configuredRepo2 // the repo to update
-	interval time.Duration   // how regularly the repo is updated
-	due      time.Time       // the next time that the repo will be enqueued for a update
-	index    int             // the index in the heap
+	Repo     *configuredRepo2 // the repo to update
+	Interval time.Duration   // how regularly the repo is updated
+	Due      time.Time       // the next time that the repo will be enqueued for a update
+	Index    int             // the index in the heap
 }
 
 // add adds a repo to the schedule.
@@ -427,9 +427,9 @@ func (s *schedule) add(repo *configuredRepo2) {
 	s.mu.Lock()
 	if s.index[repo.Name] == nil {
 		heap.Push(s, &scheduledRepoUpdate{
-			repo:     repo,
-			interval: minDelay,
-			due:      timeNow().Add(minDelay),
+			Repo:     repo,
+			Interval: minDelay,
+			Due:      timeNow().Add(minDelay),
 		})
 		s.rescheduleTimer()
 	}
@@ -441,7 +441,7 @@ func (s *schedule) add(repo *configuredRepo2) {
 func (s *schedule) update(repo *configuredRepo2) {
 	s.mu.Lock()
 	if update := s.index[repo.Name]; update != nil {
-		update.repo = repo
+		update.Repo = repo
 	}
 	s.mu.Unlock()
 }
@@ -453,15 +453,15 @@ func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration)
 	if update := s.index[repo.Name]; update != nil {
 		switch {
 		case interval > maxDelay:
-			update.interval = maxDelay
+			update.Interval = maxDelay
 		case interval < minDelay:
-			update.interval = minDelay
+			update.Interval = minDelay
 		default:
-			update.interval = interval
+			update.Interval = interval
 		}
-		update.due = timeNow().Add(update.interval)
-		log15.Debug("updated repo", "repo", repo.Name, "due", update.due.Sub(timeNow()))
-		heap.Fix(s, update.index)
+		update.Due = timeNow().Add(update.Interval)
+		log15.Debug("updated repo", "repo", repo.Name, "due", update.Due.Sub(timeNow()))
+		heap.Fix(s, update.Index)
 		s.rescheduleTimer()
 	}
 	s.mu.Unlock()
@@ -471,8 +471,8 @@ func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration)
 func (s *schedule) remove(repo *configuredRepo2) {
 	s.mu.Lock()
 	if update := s.index[repo.Name]; update != nil {
-		reschedule := update.index == 0
-		heap.Remove(s, update.index)
+		reschedule := update.Index == 0
+		heap.Remove(s, update.Index)
 		if reschedule {
 			s.rescheduleTimer()
 		}
@@ -489,7 +489,7 @@ func (s *schedule) rescheduleTimer() {
 		s.timer = nil
 	}
 	if len(s.heap) > 0 {
-		delay := s.heap[0].due.Sub(timeNow())
+		delay := s.heap[0].Due.Sub(timeNow())
 		s.timer = timeAfterFunc(delay, func() {
 			notify(s.wakeup)
 		})
@@ -501,26 +501,26 @@ func (s *schedule) rescheduleTimer() {
 
 func (s *schedule) Len() int { return len(s.heap) }
 func (s *schedule) Less(i, j int) bool {
-	return s.heap[i].due.Before(s.heap[j].due)
+	return s.heap[i].Due.Before(s.heap[j].Due)
 }
 func (s *schedule) Swap(i, j int) {
 	s.heap[i], s.heap[j] = s.heap[j], s.heap[i]
-	s.heap[i].index = i
-	s.heap[j].index = j
+	s.heap[i].Index = i
+	s.heap[j].Index = j
 }
 func (s *schedule) Push(x interface{}) {
 	n := len(s.heap)
 	item := x.(*scheduledRepoUpdate)
-	item.index = n
+	item.Index = n
 	s.heap = append(s.heap, item)
-	s.index[item.repo.Name] = item
+	s.index[item.Repo.Name] = item
 }
 func (s *schedule) Pop() interface{} {
 	n := len(s.heap)
 	item := s.heap[n-1]
-	item.index = -1 // for safety
+	item.Index = -1 // for safety
 	s.heap = s.heap[0 : n-1]
-	delete(s.index, item.repo.Name)
+	delete(s.index, item.Repo.Name)
 	return item
 }
 
