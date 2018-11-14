@@ -30,11 +30,8 @@ var RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, initializeParams l
 		if !ok {
 			return ""
 		}
-		url, ok := initializationOptions["zipURL"].(string)
-		if ok {
-			return url
-		}
-		return ""
+		url, _ := initializationOptions["zipURL"].(string)
+		return url
 	}()
 	if zipURL != "" {
 		return vfsutil.NewZipVFS(zipURL, zipFetch.Inc, zipFetchFailed.Inc, true)
