@@ -170,7 +170,7 @@ type CreateRepositoryRequest struct {
 }
 
 type CreateRepositoryResponse struct {
-	UrlPath   string `json:"urlPath"`
+	URLPath   string `json:"urlPath"`
 	GoodUntil int64  `json:"goodUntil"`
 }
 
@@ -201,12 +201,21 @@ func handleCreateRepository() http.HandlerFunc {
 		// Decode the request.
 		requestBody := http.MaxBytesReader(responseWriter, request.Body, int64(maxRequestSize))
 		defer requestBody.Close()
+
+		// Sanitize and error-check the request fields.
 		createRepositoryRequest, err := sanitizedCreateRequest(requestBody)
 		if err != nil {
 			log15.Warn("/create-repository request failed", "error", err)
 			responseWriter.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		// Empty repositories are considered invalid requests.
+		if len(createRepositoryRequest.FileContents) == 0 {
+			log15.Warn("/create-repository called with empty file contents")
+			responseWriter.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		// Create the new repository.
 		repo, err := createNewRepository(createRepositoryRequest.RepositoryName, createRepositoryRequest.FileContents)
 		if err != nil {
@@ -217,7 +226,7 @@ func handleCreateRepository() http.HandlerFunc {
 		goodUntil, _ := repo.goodUntil()
 		// Send successful response to client.
 		response := CreateRepositoryResponse{
-			UrlPath:   repo.urlPath(),
+			URLPath:   repo.urlPath(),
 			GoodUntil: goodUntil.Unix(),
 		}
 		responseJSON, err := json.Marshal(response)
@@ -291,7 +300,7 @@ func main() {
 
 	err := os.MkdirAll(repositoriesRoot, 0755)
 	if err != nil {
-		panic(fmt.Sprintf("Couldn't access repositories root path", "repositoriesRoot", repositoriesRoot))
+		panic(fmt.Sprintf("Couldn't access repositories root path '%s'", repositoriesRoot))
 	}
 
 	// Watch the repositories and delete them when they get too old.
