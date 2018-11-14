@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"sort"
 	"sync"
 	"time"
 
@@ -53,7 +54,7 @@ type updateScheduler struct {
 // given GitHubConnection.
 type configuredRepo2 struct {
 	URL     string
-	Name    api.RepoName 
+	Name    api.RepoName
 	Enabled bool
 }
 
@@ -229,6 +230,69 @@ func (s *updateScheduler) UpdateOnce(name api.RepoName, url string) {
 	s.updateQueue.enqueue(repo, priorityHigh)
 }
 
+// DebugDump returns the state of the update scheduler for debugging.
+func (s *updateScheduler) DebugDump() interface{} {
+	data := struct {
+		UpdateQueue []*repoUpdate
+		Schedule    []*scheduledRepoUpdate
+		SourceRepos map[string][]configuredRepo2
+	}{
+		SourceRepos: map[string][]configuredRepo2{},
+	}
+
+	s.mu.Lock()
+	for source, v := range s.sourceRepos {
+		data.SourceRepos[source] = make([]configuredRepo2, 0, len(v))
+		for _, repo := range v {
+			data.SourceRepos[source] = append(data.SourceRepos[source], *repo)
+		}
+		sort.Slice(data.SourceRepos[source], func(i, j int) bool {
+			return data.SourceRepos[source][i].Name < data.SourceRepos[source][j].Name
+		})
+	}
+	s.mu.Unlock()
+
+	s.schedule.mu.Lock()
+	schedule := schedule{
+		heap: make([]*scheduledRepoUpdate, len(s.schedule.heap)),
+	}
+	for i, update := range s.schedule.heap {
+		// Copy the scheduledRepoUpdate as a value so that
+		// poping off the heap here won't update the index value of the real heap, and
+		// we don't do a racy read on the repo pointer which may change concurrently in the real heap.
+		updateCopy := *update
+		schedule.heap[i] = &updateCopy
+	}
+	s.schedule.mu.Unlock()
+
+	for len(schedule.heap) > 0 {
+		update := heap.Pop(&schedule).(*scheduledRepoUpdate)
+		data.Schedule = append(data.Schedule, update)
+	}
+
+	s.updateQueue.mu.Lock()
+	updateQueue := updateQueue{
+		heap: make([]*repoUpdate, len(s.updateQueue.heap)),
+	}
+	for i, update := range s.updateQueue.heap {
+		// Copy the repoUpdate as a value so that
+		// poping off the heap here won't update the index value of the real heap, and
+		// we don't do a racy read on the repo pointer which may change concurrently in the real heap.
+		updateCopy := *update
+		updateQueue.heap[i] = &updateCopy
+	}
+	s.updateQueue.mu.Unlock()
+
+	for len(updateQueue.heap) > 0 {
+		// Copy the scheduledRepoUpdate as a value so that the repo pointer
+		// won't change concurrently after we release the lock.
+		update := heap.Pop(&updateQueue).(*repoUpdate)
+		data.UpdateQueue = append(data.UpdateQueue, update)
+	}
+
+	return &data
+}
+
 // ScheduleInfo returns the current schedule info for a repo.
 func (s *updateScheduler) ScheduleInfo(name api.RepoName) *protocol.RepoUpdateSchedulerInfoResult {
 	var result protocol.RepoUpdateSchedulerInfoResult
@@ -286,7 +350,7 @@ type repoUpdate struct {
 	Priority priority
 	Seq      uint64 // the sequence number of the update
 	Updating bool   // whether the repo has been acquired for update
-	Index    int    // the index in the heap
+	Index    int    `json:"-"` // the index in the heap
 }
 
 // enqueue add the repo to the queue with the given priority.
@@ -416,9 +480,9 @@ type schedule struct {
 // scheduledRepoUpdate is the update schedule for a single repo.
 type scheduledRepoUpdate struct {
 	Repo     *configuredRepo2 // the repo to update
-	Interval time.Duration   // how regularly the repo is updated
-	Due      time.Time       // the next time that the repo will be enqueued for a update
-	Index    int             // the index in the heap
+	Interval time.Duration    // how regularly the repo is updated
+	Due      time.Time        // the next time that the repo will be enqueued for a update
+	Index    int              `json:"-"` // the index in the heap
 }
 
 // add adds a repo to the schedule.
