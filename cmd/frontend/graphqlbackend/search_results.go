@@ -758,7 +758,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					resultsMu.Unlock()
 					results2Mu.Lock()
 					for _, repoMatch := range repoResults {
-						results2 = append(results2, &genericSearchResultResolver{icon: fileIcon, label: fmt.Sprintf("[%s](%s)", repoMatch.repo.Name(), repoMatch.repo.URL()), url: repoMatch.repo.URL()})
+						repoName := fmt.Sprintf("[%s](%s)", repoMatch.repo.Name(), repoMatch.repo.URL())
+						results2 = append(results2, &genericSearchResultResolver{icon: fileIcon, label: repoName, url: repoMatch.repo.URL()})
 					}
 					results2Mu.Unlock()
 				}
@@ -831,14 +832,21 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 						resultsMu.Lock()
 						results = append(results, &searchResultResolver{fileMatch: r})
 						resultsMu.Unlock()
-						results2Mu.Lock()
+
 						var matches []*genericSearchMatchResolver
 						language := strings.TrimPrefix(filepath.Ext(r.File().Name()), ".")
 						for _, lm := range r.LineMatches() {
-							matches = append(matches, &genericSearchMatchResolver{url: fmt.Sprintf("%s#L%d", r.File().URL(), lm.LineNumber()+1), body: lm.Preview(), language: language})
+							url := fmt.Sprintf("%s#L%d", r.File().URL(), lm.LineNumber()+1)
+							var highlights []*highlightedRange
+							for _, ol := range lm.OffsetAndLengths() {
+								highlights = append(highlights, &highlightedRange{line: lm.LineNumber(), character: ol[0], length: ol[1]})
+							}
+							matches = append(matches, &genericSearchMatchResolver{url: url, body: lm.Preview(), language: language, highlights: highlights})
 						}
-						label := fmt.Sprintf("[%s](%s)", r.File().Name(), r.File().URL())
-
+						fileName := fmt.Sprintf("[%s](%s)", r.File().Name(), r.File().URL())
+						repoName := fmt.Sprintf("[%s](%s)", r.Repository().Name(), r.Repository().URL())
+						label := fmt.Sprintf("%s › %s", repoName, fileName)
+						results2Mu.Lock()
 						results2 = append(results2, &genericSearchResultResolver{icon: fileIcon, label: label, url: r.File().URL(), results: matches})
 						results2Mu.Unlock()
 					}

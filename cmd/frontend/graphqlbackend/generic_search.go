@@ -37,9 +37,10 @@ func (g *genericSearchResultResolver) Detail() *string {
 }
 
 type genericSearchMatchResolver struct {
-	url      string
-	body     string
-	language string
+	url        string
+	body       string
+	language   string
+	highlights []*highlightedRange
 }
 
 func (g *genericSearchResultResolver) Results() []*genericSearchMatchResolver {
@@ -52,6 +53,10 @@ func (m *genericSearchMatchResolver) URL() string {
 
 func (m *genericSearchMatchResolver) Body(ctx context.Context) string {
 	return m.Highlight(ctx)
+}
+
+func (m *genericSearchMatchResolver) Highlights(ctx context.Context) []*highlightedRange {
+	return m.highlights
 }
 
 func (m *genericSearchMatchResolver) MarkdownRenderedBody(ctx context.Context) string {
