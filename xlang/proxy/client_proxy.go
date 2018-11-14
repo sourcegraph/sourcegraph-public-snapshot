@@ -226,10 +226,13 @@ type contextID struct {
 	session string
 
 	share bool // if true, allow sharing server connections among multiple clients (with equal contextID values)
+
+	// zipURL is the URL where a language server can fetch a zip archive of the code files.
+	zipURL string
 }
 
 func (id contextID) String() string {
-	return fmt.Sprintf("context(%s mode=%s session=%q)", id.rootURI.String(), id.mode, id.session)
+	return fmt.Sprintf("context(%s mode=%s session=%q zipURL=%q)", id.rootURI.String(), id.mode, id.session, id.zipURL)
 }
 
 // clientID is used to uniquely identify a client connection in this
@@ -427,6 +430,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.rootURI = *rootURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
+		c.context.zipURL = c.init.InitializationOptions.ZipURL
 		isolated := c.context.session == "isolated" // special value "isolated" yields a server-side generated unique session value
 		c.context.share = !isolated
 		if isolated {

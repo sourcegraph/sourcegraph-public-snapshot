@@ -607,7 +607,7 @@ func yza() {}
 				}()
 
 				origRemoteFS := gobuildserver.RemoteFS
-				gobuildserver.RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI lsp.DocumentURI) (ctxvfs.FileSystem, error) {
+				gobuildserver.RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
 					return mapFS(test.fs), nil
 				}
 

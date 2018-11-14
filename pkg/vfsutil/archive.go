@@ -21,9 +21,14 @@ type archiveReader struct {
 	io.Closer
 	Evicter
 
-	// Prefix is the path prefix to strip. For example a GitHub archive
-	// has a top-level dir "{repobasename}-{sha}/".
-	Prefix string
+	// StripTopLevelDir specifies whether or not to strip the top level
+	// directory in the zip archive (e.g. GitHub archives always have 1 top
+	// level directory "{repobasename}-{sha}/").
+	StripTopLevelDir bool
+
+	// prefix is the name of the directory that was stripped from the archive
+	// (or "" if nothing was stripped).
+	prefix string
 }
 
 // ArchiveFS is a ctxvfs.FileSystem backed by an Archiver.
@@ -61,9 +66,16 @@ func (fs *ArchiveFS) fetchOrWait(ctx context.Context) error {
 		fs.ar, fs.err = fs.fetch(ctx)
 		if fs.err == nil {
 			fs.fs = zipfs.New(&zip.ReadCloser{Reader: *fs.ar.Reader}, "")
-			if fs.ar.Prefix != "" {
+			if fs.ar.StripTopLevelDir {
+				entries, err := fs.fs.ReadDir("/")
+				if err == nil && len(entries) == 1 && entries[0].IsDir() {
+					fs.ar.prefix = entries[0].Name()
+				}
+			}
+
+			if fs.ar.prefix != "" {
 				ns := vfs.NameSpace{}
-				ns.Bind("/", fs.fs, "/"+fs.ar.Prefix, vfs.BindReplace)
+				ns.Bind("/", fs.fs, "/"+fs.ar.prefix, vfs.BindReplace)
 				fs.fs = ns
 			}
 		}
@@ -107,7 +119,7 @@ func (fs *ArchiveFS) ListAllFiles(ctx context.Context) ([]string, error) {
 	filenames := make([]string, 0, len(fs.ar.File))
 	for _, f := range fs.ar.File {
 		if f.Mode().IsRegular() {
-			filenames = append(filenames, strings.TrimPrefix(f.Name, fs.ar.Prefix))
+			filenames = append(filenames, strings.TrimPrefix(f.Name, fs.ar.prefix+"/"))
 		}
 	}
 	return filenames, nil
