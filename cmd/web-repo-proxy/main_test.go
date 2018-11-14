@@ -1,14 +1,13 @@
 // Unit tests for web-repo-proxy.
 //
-// To run with end-to-end tests (starting a server and cloning repositories
-// from it) use the endToEnd flag, e.g. "go test -endToEnd".
+// To run without end-to-end tests (starting a server and cloning repositories
+// from it) run go test with the -short option.
 
 package main
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -28,10 +27,6 @@ var (
 	createRepositoryHandler = handleCreateRepository()
 	repositoryHandler       = handleRepository()
 	listRepositoriesHandler = handleListRepositories()
-
-	// Whether to run an end-to-end test (starting the server and cloning a
-	// repository).
-	endToEnd = flag.Bool("endToEnd", false, "run database integration tests")
 )
 
 func TestMain(m *testing.M) {
@@ -211,9 +206,9 @@ func TestRepositoryRequest(t *testing.T) {
 
 func TestEndToEnd(t *testing.T) {
 	// This test starts the server and clones a git repository over the network,
-	// so only run it if the -endToEnd flag was specified.
-	if !*endToEnd {
-		return
+	// so don't run in short mode.
+	if testing.Short() {
+		t.Skip()
 	}
 
 	// Build the server. We can't start it directly with "go run" because
