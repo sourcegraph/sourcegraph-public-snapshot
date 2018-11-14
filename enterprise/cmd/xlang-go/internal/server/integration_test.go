@@ -275,13 +275,13 @@ func useGithubForVFS() func() {
 	}
 
 	origRemoteFS := gobuildserver.RemoteFS
-	gobuildserver.RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI lsp.DocumentURI) (ctxvfs.FileSystem, error) {
-		u, err := gituri.Parse(string(workspaceURI))
+	gobuildserver.RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
+		u, err := gituri.Parse(string(initializeParams.OriginalRootURI))
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse workspace URI for remotefs")
 		}
 		if u.Rev() == "" {
-			return nil, errors.Errorf("rev is required in uri: %s", workspaceURI)
+			return nil, errors.Errorf("rev is required in uri: %s", initializeParams.OriginalRootURI)
 		}
 		return vfsutil.NewGitHubRepoVFS(string(u.Repo()), u.Rev())
 	}
