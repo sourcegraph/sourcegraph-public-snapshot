@@ -332,7 +332,12 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		"q":    []string{searchString},
 		"page": []string{strconv.Itoa(page)},
 	}
-	path := "/search/repositories?" + urlValues.Encode()
+	var path string
+	if c.githubDotCom {
+		path = "search/repositories?" + urlValues.Encode()
+	} else {
+		path = "v3/search/repositories?" + urlValues.Encode()
+	}
 	var response restSearchResponse
 	if err := c.requestGet(ctx, path, &response); err != nil {
 		return nil, false, 1, err
