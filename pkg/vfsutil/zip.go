@@ -31,6 +31,9 @@ func NewZipVFS(url string, onFetchStart, onFetchFailed func(), evictOnClose bool
 		ff, err := cachedFetch(ctx, "zipvfs", url, func(ctx context.Context) (io.ReadCloser, error) {
 			onFetchStart()
 			request, err := http.NewRequest("GET", url, nil)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to construct a new request with URL %s", url)
+			}
 			request.Header.Add("Accept", "application/zip")
 			resp, err := ctxhttp.Do(ctx, nil, request)
 			if err != nil {
