@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/die-net/lrucache"
 	"github.com/gregjones/httpcache"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -90,7 +91,8 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, conn *jsonrpc2.Conn,
 		return err
 	}
 	h.init = init
-	h.cachingClient = &http.Client{Transport: httpcache.NewTransport(&lspCache{context.Background(), conn})}
+	// 100 MiB cache, no age-based eviction
+	h.cachingClient = &http.Client{Transport: httpcache.NewTransport(lrucache.New(100*1024*1024, 0))}
 	h.depURLMutex = newKeyMutex()
 	h.gopathDeps = nil
 	h.pinnedDepsOnce = sync.Once{}
