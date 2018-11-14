@@ -22,14 +22,7 @@ type jsonrpc2ConnImpl struct {
 }
 
 func (c *jsonrpc2ConnImpl) Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error {
-	switch method {
-	case "xcache/get":
-		// we just pass cache requests through
-		return c.conn.Call(ctx, method, params, result, opt...)
-
-	default:
-		return &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("gobuildserver client: method not supported: %q", method)}
-	}
+	return &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("gobuildserver client: method not supported: %q", method)}
 }
 
 func (c *jsonrpc2ConnImpl) Notify(ctx context.Context, method string, params interface{}, opt ...jsonrpc2.CallOption) error {
@@ -70,10 +63,6 @@ func (c *jsonrpc2ConnImpl) Notify(ctx context.Context, method string, params int
 			return rewriteErr
 		}
 
-		return c.conn.Notify(ctx, method, params, opt...)
-
-	case "xcache/set":
-		// we just pass cache requests through
 		return c.conn.Notify(ctx, method, params, opt...)
 
 	default:
