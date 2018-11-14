@@ -15780,6 +15780,11 @@ use@^3.1.0:
   resolved "https://registry.npmjs.org/use/-/use-3.1.1.tgz#d50c8cac79a19fbc20f2911f56eb973f4e10070f"
   integrity sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==
 
+utc-version@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/utc-version/-/utc-version-1.1.0.tgz#f323066fd043520b36141a3e579331e6f073b752"
+  integrity sha512-CBiM9zlQnWwwCH8PrUdpXnd2UGRUgtOkkic56BhmTMngW9VFTl9DgSI/KcvXKsu80qCcTStRSF9gHx3zEsL56Q==
+
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"

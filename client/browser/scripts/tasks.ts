@@ -3,6 +3,7 @@ import { omit, pick } from 'lodash'
 import path from 'path'
 import shelljs from 'shelljs'
 import signale from 'signale'
+import utcVersion from 'utc-version'
 import { Stats } from 'webpack'
 import extensionInfo from '../src/extension/manifest.spec.json'
 import schema from '../src/extension/schema.json'
@@ -72,6 +73,8 @@ function writeSchema(env, browser, writeDir): void {
     fs.writeFileSync(`${writeDir}/schema.json`, JSON.stringify(schema, null, 4))
 }
 
+const version = utcVersion()
+
 function writeManifest(env, browser, writeDir): void {
     let envInfo = omit(extensionInfo[env], browserBlacklist[browser])
 
@@ -92,6 +95,10 @@ function writeManifest(env, browser, writeDir): void {
     }
 
     delete manifest.$schema
+
+    if (env === 'prod') {
+        manifest.version = version
+    }
 
     fs.writeFileSync(`${writeDir}/manifest.json`, JSON.stringify(manifest, null, 4))
 }
