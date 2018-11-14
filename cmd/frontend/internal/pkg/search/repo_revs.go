@@ -1,6 +1,7 @@
 package search
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -96,20 +97,21 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoName, []Revisi
 		if part == "" {
 			continue
 		}
-		var rev RevisionSpecifier
-		if strings.HasPrefix(part, "*!") {
-			rev.ExcludeRefGlob = part[2:]
-		} else if strings.HasPrefix(part, "*") {
-			rev.RefGlob = part[1:]
-		} else {
-			rev.RevSpec = part
-		}
-		revs = append(revs, rev)
+		revs = append(revs, parseRev(part))
 	}
 	if len(revs) == 0 {
 		revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
 	}
 	return repo, revs
+}
+
+func parseRev(spec string) RevisionSpecifier {
+	if strings.HasPrefix(spec, "*!") {
+		return RevisionSpecifier{ExcludeRefGlob: spec[2:]}
+	} else if strings.HasPrefix(spec, "*") {
+		return RevisionSpecifier{RefGlob: spec[1:]}
+	}
+	return RevisionSpecifier{RevSpec: spec}
 }
 
 // GitserverRepo is a convenience function to return the gitserver.Repo for
@@ -136,6 +138,105 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 		revspecs = append(revspecs, rev.RevSpec)
 	}
 	return revspecs
+}
+
+// RepoRevisionsQuery evaulates ref specifiers in q to find out which
+// revisions need to be searched for each repository.
+func RepoRevisionsQuery(q query.Q, repos []*types.Repo) ([]RepositoryRevisions, error) {
+	// If we have no ref specifiers, then we can shortcut this evaluation and
+	// just search default branch.
+	hasRef := false
+	hasNotRef := false
+	notCount := 0
+	query.Map(q, func(q query.Q) query.Q {
+		switch q.(type) {
+		case *query.Not:
+			notCount++
+		case *query.Branch:
+			hasRef = true
+			if notCount > 0 {
+				hasNotRef = true
+			}
+		}
+		return q
+	}, func(q query.Q) query.Q {
+		switch q.(type) {
+		case *query.Not:
+			notCount--
+		}
+		return q
+	})
+	if hasNotRef {
+		return nil, errors.Errorf("search clauses that filter git refs cannot be negated: %s", q)
+	}
+	if !hasRef {
+		rr := make([]RepositoryRevisions, len(repos))
+		for i, r := range repos {
+			rr[i].Repo = r
+			rr[i].Revs = []RevisionSpecifier{{RevSpec: ""}}
+		}
+		return rr, nil
+	}
+
+	// We need to evaluate the repo atoms as regular expressions. This should
+	// happen inside the query package, for now we do it here.
+	var reErr error
+	re := map[string]*regexp.Regexp{}
+	query.VisitAtoms(q, func(q query.Q) {
+		if r, ok := q.(*query.Repo); ok {
+			m, err := regexp.Compile(r.Pattern)
+			if err != nil {
+				reErr = err
+				return
+			}
+			re[r.Pattern] = m
+		}
+	})
+	if reErr != nil {
+		return nil, reErr
+	}
+
+	// Now for each repository we evaluate each Repo* atom. Whatever ref
+	// specifiers are left apply to the repository.
+	rr := make([]RepositoryRevisions, 0, len(repos))
+	for _, r := range repos {
+		eval := query.Map(q, nil, func(q query.Q) query.Q {
+			switch a := q.(type) {
+			case *query.Repo:
+				return &query.Const{Value: re[a.Pattern].MatchString(string(r.Name))}
+			case *query.RepoSet:
+				return &query.Const{Value: a.Set[string(r.Name)]}
+			}
+			return q
+		})
+		eval = query.Simplify(eval)
+
+		if c, ok := eval.(*query.Const); ok && !c.Value {
+			// We don't expect this to happen, since we expect repos to be
+			// populated via RepoQuery. But checking just in case.
+			continue
+		}
+
+		// Collect refs. Also set them to false to see if we have to
+		// additionally evaluate the default branch.
+		var revs []RevisionSpecifier
+		eval = query.Map(eval, nil, func(q query.Q) query.Q {
+			if b, ok := q.(*query.Branch); ok {
+				revs = append(revs, parseRev(b.Pattern))
+				return &query.Const{Value: false}
+			}
+			return q
+		})
+		eval = query.Simplify(eval)
+
+		if c, ok := eval.(*query.Const); !ok || c.Value {
+			// We have to also check the default branch.
+			revs = append(revs, parseRev(""))
+		}
+
+		rr = append(rr, RepositoryRevisions{Repo: r, Revs: revs})
+	}
+	return rr, nil
 }
 
 // RepoQuery takes a search query q and translates into a query for the

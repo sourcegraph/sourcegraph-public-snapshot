@@ -2,9 +2,11 @@ package search
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
@@ -45,6 +47,70 @@ func TestParseRepositoryRevisions(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", revs, want.revs)
 			}
 		})
+	}
+}
+
+func TestRepoRevisionsQuery(t *testing.T) {
+	repos := []*types.Repo{{Name: "foo"}, {Name: "bar"}, {Name: "baz"}}
+	cases := map[string]string{
+		// Short circuit (no ref specifier) which doesn't filter input
+		"r:":         "foo@ bar@ baz@",
+		"r:b":        "foo@ bar@ baz@",
+		"r:b -r:baz": "foo@ bar@ baz@",
+		"x":          "foo@ bar@ baz@",
+
+		"x branch:dev": "foo@dev bar@dev baz@dev",
+
+		// Zero or more branch specifiers, including default branch
+		"x r:foo branch:dev":                              "foo@dev",
+		"x r:foo (branch:dev or branch:insiders)":         "foo@dev:insiders",
+		"x r:foo (branch:dev or branch:insiders or TRUE)": "foo@dev:insiders:",
+
+		// Search insiders for foo and dev for b*
+		"x ((r:foo branch:insiders) or (r:b branch:dev))": "foo@insiders bar@dev baz@dev",
+
+		// Our older funky branch specifiers. Not exactly sure how this will
+		// evolve yet.
+		"x r:foo branch:*refs/heads/:^refs/heads/master": "foo@*refs/heads/:^refs/heads/master",
+
+		// We don't know how to translate branch specifiers across nots, so we
+		// disallow it.
+		"x -branch:dev":      "error: search clauses that filter git refs cannot be negated",
+		"x -(y branch:dev)":  "error: search clauses that filter git refs cannot be negated",
+		"x -(y -branch:dev)": "error: search clauses that filter git refs cannot be negated",
+
+		// Temp: Check we correctly handle regex
+		"r:[f] branch:dev":       "foo@dev",
+		"r:(foo|bar) branch:dev": "foo@dev bar@dev",
+		"r:f$ branch:dev":        "",
+		"r:f** branch:dev":       "error: invalid nested repetition operator",
+	}
+
+	for qStr, want := range cases {
+		q, err := query.Parse(qStr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rr, err := RepoRevisionsQuery(q, repos)
+		if err != nil {
+			if strings.HasPrefix(want, "error: ") {
+				got := err.Error()
+				want = want[len("error: "):]
+				if !strings.Contains(got, want) {
+					t.Errorf("RepoRevisionsQuery(%q) error:\ngot  %s\nwant %s", qStr, got, want)
+				}
+				continue
+			}
+			t.Fatal(err)
+		}
+		var parts []string
+		for _, r := range rr {
+			parts = append(parts, r.String())
+		}
+		got := strings.Join(parts, " ")
+		if got != want {
+			t.Errorf("RepoRevisionsQuery(%q):\ngot  %s\nwant %s", qStr, got, want)
+		}
 	}
 }
 
