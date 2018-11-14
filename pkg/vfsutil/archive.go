@@ -119,7 +119,7 @@ func (fs *ArchiveFS) ListAllFiles(ctx context.Context) ([]string, error) {
 	filenames := make([]string, 0, len(fs.ar.File))
 	for _, f := range fs.ar.File {
 		if f.Mode().IsRegular() {
-			filenames = append(filenames, strings.TrimPrefix(f.Name, fs.ar.prefix))
+			filenames = append(filenames, strings.TrimPrefix(f.Name, fs.ar.prefix+"/"))
 		}
 	}
 	return filenames, nil
