@@ -729,6 +729,7 @@ func RunRepositorySyncWorker(ctx context.Context) {
 		c := conf.Get()
 
 		if conf.UpdateScheduler2Enabled() {
+			schedScale.Set(0) // this metric doesn't apply to the new scheduler; remove it when old scheduler is removed
 			if oldSchedulerRunning {
 				log15.Info("shutting down old scheduler")
 				shutdownPreviousScheduler()

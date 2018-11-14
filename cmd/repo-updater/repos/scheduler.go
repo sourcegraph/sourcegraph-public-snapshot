@@ -108,6 +108,7 @@ func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
 				break
 			}
 
+			schedAutoFetch.Inc()
 			s.updateQueue.enqueue(repoUpdate.Repo, priorityLow)
 			repoUpdate.Due = timeNow().Add(repoUpdate.Interval)
 			heap.Fix(s.schedule, 0)
@@ -115,6 +116,8 @@ func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
 
 		s.schedule.rescheduleTimer()
 		s.schedule.mu.Unlock()
+
+		schedLoops.Inc()
 	}
 }
 
@@ -148,6 +151,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 
 				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
 				if err != nil {
+					schedError.Inc()
 					log15.Warn("error requesting repo update", "uri", repo.Name, "err", err)
 				}
 				if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
@@ -218,6 +222,8 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 	}
 
 	s.sourceRepos[source] = newList
+
+	schedKnownRepos.Set(float64(len(newList)))
 }
 
 // UpdateOnce causes a single update of the given repository.
@@ -227,6 +233,7 @@ func (s *updateScheduler) UpdateOnce(name api.RepoName, url string) {
 		Name: name,
 		URL:  url,
 	}
+	schedManualFetch.Inc()
 	s.updateQueue.enqueue(repo, priorityHigh)
 }
 
