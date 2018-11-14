@@ -186,7 +186,6 @@ type repoList struct {
 // given GitHubConnection.
 type configuredRepo struct {
 	url     string
-	name    api.RepoName // only set and read by new scheduler. TODO(nick): Remove this comment when updateScheduler2 feature flag is disabled
 	enabled bool
 }
 
@@ -730,6 +729,7 @@ func RunRepositorySyncWorker(ctx context.Context) {
 		c := conf.Get()
 
 		if conf.UpdateScheduler2Enabled() {
+			schedScale.Set(0) // this metric doesn't apply to the new scheduler; remove it when old scheduler is removed
 			if oldSchedulerRunning {
 				log15.Info("shutting down old scheduler")
 				shutdownPreviousScheduler()
@@ -802,10 +802,10 @@ func updateConfig(ctx context.Context, configs []*schema.Repository) (sourceRepo
 			continue
 		}
 		if newScheduler {
-			newMap[api.RepoName(cfg.Path)] = &configuredRepo{
-				name:    api.RepoName(cfg.Path),
-				url:     cfg.Url,
-				enabled: newRepo.Enabled,
+			newMap[api.RepoName(cfg.Path)] = &configuredRepo2{
+				Name:    api.RepoName(cfg.Path),
+				URL:     cfg.Url,
+				Enabled: newRepo.Enabled,
 			}
 			continue
 		}
