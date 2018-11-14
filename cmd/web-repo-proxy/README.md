@@ -31,29 +31,29 @@ curl -i http://localhost:4014/create-repository \
   -d @create-repository.json
 
     HTTP/1.1 200 OK
-    Date: Mon, 12 Nov 2018 20:01:38 GMT
+    Date: Wed, 14 Nov 2018 16:01:20 GMT
     Content-Length: 66
     Content-Type: text/plain; charset=utf-8
 
-    {"urlPath":"/repository/5b25c3bb/testRepo","goodUntil":1542054698}
+    {"urlPath":"/repository/testRepo-60d25052","goodUntil":1542213080}
 
 # List all repositories (when run with INSECURE_DEV="true")
 curl -i http://localhost:4014/list-repositories
 
-HTTP/1.1 200 OK
-Date: Mon, 12 Nov 2018 20:02:02 GMT
-Content-Length: 54
-Content-Type: text/plain; charset=utf-8
+    HTTP/1.1 200 OK
+    Date: Wed, 14 Nov 2018 16:02:15 GMT
+    Content-Length: 54
+    Content-Type: text/plain; charset=utf-8
 
-{"repository_paths":["/repository/5b25c3bb/testRepo"]}
+    {"repository_paths":["/repository/testRepo-60d25052"]}
 
 # Clone the repository
-git clone http://localhost:4014/repository/5b25c3bb/testRepo
+git clone http://localhost:4014/repository/testRepo-60d25052
 
-    Cloning into 'testRepo'...
+    Cloning into 'testRepo-60d25052'...
 
-ls -l testRepo
+ls -l testRepo-60d25052
 
-    -rw-r--r--  1 fae  staff  16 Nov 12 15:02 another_file
-    -rw-r--r--  1 fae  staff  14 Nov 12 15:02 asdf
+    -rw-r--r--  1 fae  staff  16 Nov 14 11:02 another_file
+    -rw-r--r--  1 fae  staff  14 Nov 14 11:02 asdf
 ```
