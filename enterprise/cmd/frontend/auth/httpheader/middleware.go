@@ -3,6 +3,7 @@ package httpheader
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
@@ -52,7 +53,8 @@ func middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		headerValue := r.Header.Get(authProvider.UsernameHeader)
+		rawUsername := strings.TrimPrefix(r.Header.Get(authProvider.UsernameHeader), authProvider.StripUsernameHeaderPrefix)
+
 		// Continue onto next auth provider if no header is set (in case the auth proxy allows
 		// unauthenticated users to bypass it, which some do). Also respect already authenticated
 		// actors (e.g., via access token).
@@ -60,7 +62,7 @@ func middleware(next http.Handler) http.Handler {
 		// It would NOT add any additional security to return an error here, because a user who can
 		// access this HTTP endpoint directly can just as easily supply a fake username whose
 		// identity to assume.
-		if headerValue == "" || actor.FromContext(r.Context()).IsAuthenticated() {
+		if rawUsername == "" || actor.FromContext(r.Context()).IsAuthenticated() {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -72,22 +74,22 @@ func middleware(next http.Handler) http.Handler {
 		}
 
 		// Otherwise, get or create the user and proceed with the authenticated request.
-		username, err := auth.NormalizeUsername(headerValue)
+		username, err := auth.NormalizeUsername(rawUsername)
 		if err != nil {
-			log15.Error("Error normalizing username from HTTP auth proxy.", "username", headerValue, "err", err)
+			log15.Error("Error normalizing username from HTTP auth proxy.", "username", rawUsername, "err", err)
 			http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 			return
 		}
 		userID, safeErrMsg, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{Username: username}, extsvc.ExternalAccountSpec{
 			ServiceType: providerType,
 
-			// Store headerValue, not normalized username, to prevent two users with distinct
+			// Store rawUsername, not normalized username, to prevent two users with distinct
 			// pre-normalization usernames from being merged into the same normalized username
 			// (and therefore letting them each impersonate the other).
-			AccountID: headerValue,
+			AccountID: rawUsername,
 		}, extsvc.ExternalAccountData{})
 		if err != nil {
-			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err, "userErr", safeErrMsg)
+			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "rawUsername", rawUsername, "err", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}

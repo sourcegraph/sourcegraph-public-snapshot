@@ -198,8 +198,9 @@ type GitoliteConnection struct {
 
 // HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
 type HTTPHeaderAuthProvider struct {
-	Type           string `json:"type"`
-	UsernameHeader string `json:"usernameHeader"`
+	StripUsernameHeaderPrefix string `json:"stripUsernameHeaderPrefix,omitempty"`
+	Type                      string `json:"type"`
+	UsernameHeader            string `json:"usernameHeader"`
 }
 
 // IMAPServerConfig description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
