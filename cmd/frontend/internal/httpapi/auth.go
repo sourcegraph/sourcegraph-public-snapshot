@@ -29,15 +29,14 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		if token == "" {
+		if headerValue := r.Header.Get("Authorization"); headerValue != "" && token == "" {
 			// Handle Authorization header
-			headerValue := r.Header.Get("Authorization")
 			var err error
 			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
 			if err != nil {
 				if authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
-					log15.Debug("Ignoring unrecognized Authorization header.", "err", err)
+					log15.Warn("Ignoring unrecognized Authorization header.", "err", err, "value", headerValue)
 					next.ServeHTTP(w, r)
 					return
 				}
