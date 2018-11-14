@@ -22,6 +22,7 @@ import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
+import { GenericMatch } from '../../components/GenericMatch'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
@@ -285,7 +286,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         itemsToShow={this.state.resultsShown}
                                         onShowMoreItems={this.onBottomHit(results.results.length)}
                                         onVisibilityChange={this.nextItemVisibilityChange}
-                                        items={results.results
+                                        items={results.results2
                                             .map((result, i) => this.renderResult(result, i <= 15))
                                             .filter(isDefined)}
                                         containment={this.scrollableElementRef || undefined}
@@ -400,45 +401,46 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(result: GQL.SearchResult, expanded: boolean): JSX.Element | undefined {
-        switch (result.__typename) {
-            case 'Repository':
-                return <RepositorySearchResult key={'repo:' + result.id} result={result} onSelect={this.logEvent} />
-            case 'FileMatch':
-                return (
-                    <FileMatch
-                        key={'file:' + result.file.url}
-                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
-                        result={result}
-                        onSelect={this.logEvent}
-                        expanded={false}
-                        showAllMatches={false}
-                        isLightTheme={this.props.isLightTheme}
-                        allExpanded={this.props.allExpanded}
-                    />
-                )
-            case 'CommitSearchResult':
-                return (
-                    <CommitSearchResult
-                        key={'commit:' + result.commit.id}
-                        location={this.props.location}
-                        result={result}
-                        onSelect={this.logEvent}
-                        expanded={expanded}
-                        allExpanded={this.props.allExpanded}
-                    />
-                )
-            case 'IssueResult':
-                return (
-                    <div key={result.url} className="result-container">
-                        <a href={result.url}>
-                            <div className="result-container__header">{result.title}</div>
-                        </a>
-                        <p>{result.body}</p>
-                    </div>
-                )
-        }
-        return undefined
+    private renderResult(result: GQL.IGenericSearchResult, expanded: boolean): JSX.Element | undefined {
+        // switch (result.__typename) {
+        //     case 'Repository':
+        //         return <RepositorySearchResult key={'repo:' + result.id} result={result} onSelect={this.logEvent} />
+        //     case 'FileMatch':
+        //         return (
+        //             <FileMatch
+        //                 key={'file:' + result.file.url}
+        //                 icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
+        //                 result={result}
+        //                 onSelect={this.logEvent}
+        //                 expanded={false}
+        //                 showAllMatches={false}
+        //                 isLightTheme={this.props.isLightTheme}
+        //                 allExpanded={this.props.allExpanded}
+        //             />
+        //         )
+        //     case 'CommitSearchResult':
+        //         return (
+        //             <CommitSearchResult
+        //                 key={'commit:' + result.commit.id}
+        //                 location={this.props.location}
+        //                 result={result}
+        //                 onSelect={this.logEvent}
+        //                 expanded={expanded}
+        //                 allExpanded={this.props.allExpanded}
+        //             />
+        //         )
+        //     case 'IssueResult':
+        //         return (
+        //             <div key={result.url} className="result-container">
+        //                 <a href={result.url}>
+        //                     <div className="result-container__header">{result.title}</div>
+        //                 </a>
+        //                 <p>{result.body}</p>
+        //             </div>
+        //         )
+        // }
+        return <GenericMatch result={result} />
+        // return undefined
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */

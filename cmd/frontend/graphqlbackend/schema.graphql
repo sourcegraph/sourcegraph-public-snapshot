@@ -836,8 +836,32 @@ type IssueResult {
     url: String!
 }
 
+# Search results. E
+type GenericSearchResult {
+    icon: String!
+    # A markdown string that is rendered prominently. Rendered as markdown. If this should link somewhere, ensure it is
+    label: String!
+    # The URL of the result.
+    url: String!
+    # Additional details that is rendered less prominently. Rendered as markdown.
+    detail: String
+    # The result previews of the result. Rendered as markdown.
+    results: [GenericSearchMatch!]!
+    # preview: HighlightedString
+    # diffPreview: HighlightedString
+    # messagePreview: HighlightedString
+}
+
+type GenericSearchMatch {
+    url: String!
+    body: String!
+    # Optional language
+    language: String!
+}
+
 # Search results.
 type SearchResults {
+    results2: [GenericSearchResult!]!
     # The results. Inside each SearchResult there may be multiple matches, e.g.
     # a FileMatch may contain multiple line matches.
     results: [SearchResult!]!

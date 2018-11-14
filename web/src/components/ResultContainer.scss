@@ -26,6 +26,10 @@
         &:hover {
             background-color: darken($background-color, 0.05);
         }
+
+        p {
+            margin-bottom: 0;
+        }
     }
 
     &__toggle-matches-container {
