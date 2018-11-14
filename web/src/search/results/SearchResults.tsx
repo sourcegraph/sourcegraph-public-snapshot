@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, Subject, Subscription, forkJoin, combineLatest } from 'rxjs'
+import { combineLatest, concat, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     distinctUntilChanged,
@@ -91,15 +91,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
-                            combineLatest(
-                                search(searchOptions, this.props),
-                                this.props.extensionsController.registries.issuesResultsProvider.provideIssueResults(
-                                    searchOptions.query
-                                )
-                            ).pipe(
+                            search(searchOptions, this.props).pipe(
                                 // Log telemetry
                                 tap(
-                                    ([results, extensionsResults]) =>
+                                    results =>
                                         eventLogger.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
@@ -118,15 +113,16 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         console.error(error)
                                     }
                                 ),
+                                map(results => ({ resultsOrError: results })),
                                 // Update view with results or error
-                                map(([results, extensionsResults]) => {
-                                    if (extensionsResults && !isErrorLike(results)) {
-                                        // if empty, it's not iterable.
-                                        console.log('EXTENSIONS RESULTS', extensionsResults)
-                                        results.results.push(...(extensionsResults as GQL.IIssueResult[]))
-                                    }
-                                    return { resultsOrError: results }
-                                }),
+                                // map(([results, extensionsResults]) => {
+                                //     if (extensionsResults && !isErrorLike(results)) {
+                                //         // if empty, it's not iterable.
+                                //         console.log('EXTENSIONS RESULTS', extensionsResults)
+                                //         results.results.push(...(extensionsResults as GQL.IIssueResult[]))
+                                //     }
+                                //     return { resultsOrError: results }
+                                // }),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )
