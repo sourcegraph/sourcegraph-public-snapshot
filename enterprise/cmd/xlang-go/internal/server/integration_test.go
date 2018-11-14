@@ -18,9 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
+	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
-	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 func init() {
