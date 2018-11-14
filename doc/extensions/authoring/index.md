@@ -5,6 +5,7 @@ A [Sourcegraph extension](../index.md) is just a JavaScript/TypeScript program t
 ## Topics
 
 - [Creating and publishing a Sourcegraph extension](creating_and_publishing.md)
+- [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html)
 - [Debugging Sourcegraph extensions](debugging.md)
 - [Sample extensions (`sourcegraph-extension-samples`)](https://github.com/sourcegraph/sourcegraph-extension-samples)
 - [Cookbook (sample code)](cookbook.md)
