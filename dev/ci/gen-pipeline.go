@@ -136,6 +136,8 @@ func main() {
 			bk.Cmd("popd"))
 	}
 
+	pipeline.AddWait()
+
 	_, err := pipeline.WriteTo(os.Stdout)
 	if err != nil {
 		panic(err)
