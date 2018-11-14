@@ -186,7 +186,6 @@ type repoList struct {
 // given GitHubConnection.
 type configuredRepo struct {
 	url     string
-	name    api.RepoName // only set and read by new scheduler. TODO(nick): Remove this comment when updateScheduler2 feature flag is disabled
 	enabled bool
 }
 
@@ -802,7 +801,7 @@ func updateConfig(ctx context.Context, configs []*schema.Repository) (sourceRepo
 			continue
 		}
 		if newScheduler {
-			newMap[api.RepoName(cfg.Path)] = &configuredRepo{
+			newMap[api.RepoName(cfg.Path)] = &configuredRepo2{
 				name:    api.RepoName(cfg.Path),
 				url:     cfg.Url,
 				enabled: newRepo.Enabled,
