@@ -53,7 +53,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.7.0 // indirect
 	gopkg.in/yaml.v2 v2.2.1
-	honnef.co/go/tools v0.0.0-20180910201051-f1b53a58b022
+	honnef.co/go/tools v0.0.0-20180920030910-6b04966a29ff
 )
 
 replace (
