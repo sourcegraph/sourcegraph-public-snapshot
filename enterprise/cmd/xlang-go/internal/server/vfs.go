@@ -25,19 +25,19 @@ import (
 // to read the repo. We assume permission checks happen before a request reaches
 // a build server.
 var RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
-	zipURL := func() *string {
+	zipURL := func() string {
 		initializationOptions, ok := initializeParams.InitializationOptions.(map[string]interface{})
 		if !ok {
-			return nil
+			return ""
 		}
 		url, ok := initializationOptions["zipURL"].(string)
 		if ok {
-			return &url
+			return url
 		}
-		return nil
+		return ""
 	}()
-	if zipURL != nil {
-		return vfsutil.NewZipVFS(*zipURL, zipFetch.Inc, zipFetchFailed.Inc, true)
+	if zipURL != "" {
+		return vfsutil.NewZipVFS(zipURL, zipFetch.Inc, zipFetchFailed.Inc, true)
 	}
 
 	gitURL, err := gituri.Parse(string(initializeParams.OriginalRootURI))
