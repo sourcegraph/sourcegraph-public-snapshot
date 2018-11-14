@@ -838,8 +838,9 @@ type IssueResult {
 
 # Search results.
 type GenericSearchResult {
+    # Base64 data uri to an icon.
     icon: String!
-    # A markdown string that is rendered prominently. Rendered as markdown. If this should link somewhere, ensure it is wrapped
+    # A markdown string that is rendered prominently. Rendered as markdown.
     label: String!
     # The URL of the result.
     url: String!
@@ -855,7 +856,6 @@ type GenericSearchResult {
 type GenericSearchMatch {
     url: String!
     body: String!
-    language: String!
     # Used to highlight matches in lines.
     highlights: [Highlight!]!
 }
