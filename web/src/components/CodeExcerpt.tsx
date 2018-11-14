@@ -73,7 +73,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     public componentWillReceiveProps(nextProps: Props): void {
         this.propsChanges.next(nextProps)
     }
-
+    // cp this into generic result container
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')

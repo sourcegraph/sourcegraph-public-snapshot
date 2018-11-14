@@ -52,6 +52,11 @@ export function search(
                                     results {
                                         url
                                         body
+                                        highlights {
+                                            line
+                                            character
+                                            length
+                                        }
                                     }
                                 }
                                 results {

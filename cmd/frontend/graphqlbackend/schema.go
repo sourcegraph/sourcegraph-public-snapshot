@@ -829,10 +829,10 @@ type IssueResult {
     url: String!
 }
 
-# Search results. E
+# Search results.
 type GenericSearchResult {
     icon: String!
-    # A markdown string that is rendered prominently. Rendered as markdown. If this should link somewhere, ensure it is
+    # A markdown string that is rendered prominently. Rendered as markdown. If this should link somewhere, ensure it is wrapped
     label: String!
     # The URL of the result.
     url: String!
@@ -848,8 +848,9 @@ type GenericSearchResult {
 type GenericSearchMatch {
     url: String!
     body: String!
-    # Optional language
     language: String!
+    # Used to highlight matches in lines.
+    highlights: [Highlight!]!
 }
 
 # Search results.
