@@ -228,7 +228,7 @@ type contextID struct {
 	share bool // if true, allow sharing server connections among multiple clients (with equal contextID values)
 
 	// zipURL is the URL where a language server can fetch a zip archive of the code files.
-	zipURL string `json:"zipURL,omitempty"`
+	zipURL string
 }
 
 func (id contextID) String() string {
