@@ -16,6 +16,7 @@ This documentation is for developers contributing to Sourcegraph itself.
 
 - [Roadmap](roadmap.md)
 - [Documentation guide](documentation/index.md)
+- [Website (about.sourcegraph.com)](https://github.com/sourcegraph/about/tree/master/website)
 
 ## Other
 
