@@ -88,9 +88,9 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 
 		if newScheduler {
 			newMap[createdRepo.Name] = &configuredRepo2{
-				name:    createdRepo.Name,
-				url:     op.URL,
-				enabled: createdRepo.Enabled,
+				Name:    createdRepo.Name,
+				URL:     op.URL,
+				Enabled: createdRepo.Enabled,
 			}
 			return
 		}

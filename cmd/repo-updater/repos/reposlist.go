@@ -802,9 +802,9 @@ func updateConfig(ctx context.Context, configs []*schema.Repository) (sourceRepo
 		}
 		if newScheduler {
 			newMap[api.RepoName(cfg.Path)] = &configuredRepo2{
-				name:    api.RepoName(cfg.Path),
-				url:     cfg.Url,
-				enabled: newRepo.Enabled,
+				Name:    api.RepoName(cfg.Path),
+				URL:     cfg.Url,
+				Enabled: newRepo.Enabled,
 			}
 			continue
 		}

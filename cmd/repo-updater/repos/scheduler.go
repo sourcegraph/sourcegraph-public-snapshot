@@ -52,9 +52,9 @@ type updateScheduler struct {
 // a configuration source, such as information retrieved from GitHub for a
 // given GitHubConnection.
 type configuredRepo2 struct {
-	url     string
-	name    api.RepoName 
-	enabled bool
+	URL     string
+	Name    api.RepoName 
+	Enabled bool
 }
 
 // sourceRepoMap is the set of repositories associated with a specific configuration source.
@@ -147,7 +147,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 
 				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
 				if err != nil {
-					log15.Warn("error requesting repo update", "uri", repo.name, "err", err)
+					log15.Warn("error requesting repo update", "uri", repo.Name, "err", err)
 				}
 				if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
 					// This is the heuristic that is described in the updateScheduler documentation.
@@ -162,7 +162,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 
 // requestRepoUpdate sends a request to gitserver to request an update.
 var requestRepoUpdate = func(ctx context.Context, repo *configuredRepo2, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
-	return gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: repo.name, URL: repo.url}, since)
+	return gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: repo.Name, URL: repo.URL}, since)
 }
 
 // configuredLimiter returns a mutable limiter that is
@@ -193,7 +193,7 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 	// Remove repos that don't exist in the new list or are disabled in the new list.
 	oldList := s.sourceRepos[source]
 	for key, repo := range oldList {
-		if updatedRepo, ok := newList[key]; !ok || !updatedRepo.enabled {
+		if updatedRepo, ok := newList[key]; !ok || !updatedRepo.Enabled {
 			s.schedule.remove(repo)
 			updating := false // don't immediately remove repos that are already updating; they will automatically get removed when the update finishes
 			s.updateQueue.remove(repo, updating)
@@ -202,12 +202,12 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 
 	// Schedule enabled repos.
 	for key, updatedRepo := range newList {
-		if !updatedRepo.enabled {
+		if !updatedRepo.Enabled {
 			continue
 		}
 
 		oldRepo := oldList[key]
-		if oldRepo == nil || !oldRepo.enabled {
+		if oldRepo == nil || !oldRepo.Enabled {
 			s.schedule.add(updatedRepo)
 			s.updateQueue.enqueue(updatedRepo, priorityLow)
 		} else {
@@ -223,8 +223,8 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 // It neither adds nor removes the repo from the schedule.
 func (s *updateScheduler) UpdateOnce(name api.RepoName, url string) {
 	repo := &configuredRepo2{
-		name: name,
-		url:  url,
+		Name: name,
+		URL:  url,
 	}
 	s.updateQueue.enqueue(repo, priorityHigh)
 }
@@ -294,7 +294,7 @@ func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	update := q.index[repo.name]
+	update := q.index[repo.Name]
 	if update == nil {
 		heap.Push(q, &repoUpdate{
 			repo:     repo,
@@ -327,7 +327,7 @@ func (q *updateQueue) nextSeq() uint64 {
 // It does nothing if the repo is not in the queue or if the repo is already updating.
 func (q *updateQueue) update(repo *configuredRepo2) {
 	q.mu.Lock()
-	if update := q.index[repo.name]; update != nil && !update.updating {
+	if update := q.index[repo.Name]; update != nil && !update.updating {
 		update.repo = repo
 	}
 	q.mu.Unlock()
@@ -336,7 +336,7 @@ func (q *updateQueue) update(repo *configuredRepo2) {
 // remove removes the repo from the queue if the repo.updating matches the updating argument.
 func (q *updateQueue) remove(repo *configuredRepo2, updating bool) {
 	q.mu.Lock()
-	if update := q.index[repo.name]; update != nil && update.updating == updating {
+	if update := q.index[repo.Name]; update != nil && update.updating == updating {
 		heap.Remove(q, update.index)
 	}
 	q.mu.Unlock()
@@ -390,14 +390,14 @@ func (q *updateQueue) Push(x interface{}) {
 	item.index = n
 	item.seq = q.nextSeq()
 	q.heap = append(q.heap, item)
-	q.index[item.repo.name] = item
+	q.index[item.repo.Name] = item
 }
 func (q *updateQueue) Pop() interface{} {
 	n := len(q.heap)
 	item := q.heap[n-1]
 	item.index = -1 // for safety
 	q.heap = q.heap[0 : n-1]
-	delete(q.index, item.repo.name)
+	delete(q.index, item.repo.Name)
 	return item
 }
 
@@ -425,7 +425,7 @@ type scheduledRepoUpdate struct {
 // It does nothing if the repo already exists in the schedule.
 func (s *schedule) add(repo *configuredRepo2) {
 	s.mu.Lock()
-	if s.index[repo.name] == nil {
+	if s.index[repo.Name] == nil {
 		heap.Push(s, &scheduledRepoUpdate{
 			repo:     repo,
 			interval: minDelay,
@@ -440,7 +440,7 @@ func (s *schedule) add(repo *configuredRepo2) {
 // It does nothing if the repo is not in the schedule.
 func (s *schedule) update(repo *configuredRepo2) {
 	s.mu.Lock()
-	if update := s.index[repo.name]; update != nil {
+	if update := s.index[repo.Name]; update != nil {
 		update.repo = repo
 	}
 	s.mu.Unlock()
@@ -450,7 +450,7 @@ func (s *schedule) update(repo *configuredRepo2) {
 // It does nothing if the repo is not in the schedule.
 func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration) {
 	s.mu.Lock()
-	if update := s.index[repo.name]; update != nil {
+	if update := s.index[repo.Name]; update != nil {
 		switch {
 		case interval > maxDelay:
 			update.interval = maxDelay
@@ -460,7 +460,7 @@ func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration)
 			update.interval = interval
 		}
 		update.due = timeNow().Add(update.interval)
-		log15.Debug("updated repo", "repo", repo.name, "due", update.due.Sub(timeNow()))
+		log15.Debug("updated repo", "repo", repo.Name, "due", update.due.Sub(timeNow()))
 		heap.Fix(s, update.index)
 		s.rescheduleTimer()
 	}
@@ -470,7 +470,7 @@ func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration)
 // remove removes a repo from the schedule.
 func (s *schedule) remove(repo *configuredRepo2) {
 	s.mu.Lock()
-	if update := s.index[repo.name]; update != nil {
+	if update := s.index[repo.Name]; update != nil {
 		reschedule := update.index == 0
 		heap.Remove(s, update.index)
 		if reschedule {
@@ -513,14 +513,14 @@ func (s *schedule) Push(x interface{}) {
 	item := x.(*scheduledRepoUpdate)
 	item.index = n
 	s.heap = append(s.heap, item)
-	s.index[item.repo.name] = item
+	s.index[item.repo.Name] = item
 }
 func (s *schedule) Pop() interface{} {
 	n := len(s.heap)
 	item := s.heap[n-1]
 	item.index = -1 // for safety
 	s.heap = s.heap[0 : n-1]
-	delete(s.index, item.repo.name)
+	delete(s.index, item.repo.Name)
 	return item
 }
 

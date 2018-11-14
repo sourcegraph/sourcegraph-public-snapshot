@@ -55,11 +55,11 @@ func startRecording() (*recording, func()) {
 }
 
 func TestUpdateQueue_enqueue(t *testing.T) {
-	a := configuredRepo2{name: "a", url: "a.com"}
-	b := configuredRepo2{name: "b", url: "b.com"}
-	c := configuredRepo2{name: "c", url: "c.com"}
-	d := configuredRepo2{name: "d", url: "d.com"}
-	e := configuredRepo2{name: "e", url: "e.com"}
+	a := configuredRepo2{Name: "a", URL: "a.com"}
+	b := configuredRepo2{Name: "b", URL: "b.com"}
+	c := configuredRepo2{Name: "c", URL: "c.com"}
+	d := configuredRepo2{Name: "d", URL: "d.com"}
+	e := configuredRepo2{Name: "e", URL: "e.com"}
 
 	type enqueueCall struct {
 		repo     configuredRepo2
@@ -257,9 +257,9 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 }
 
 func TestUpdateQueue_remove(t *testing.T) {
-	a := &configuredRepo2{name: "a", url: "a.com"}
-	b := &configuredRepo2{name: "b", url: "b.com"}
-	c := &configuredRepo2{name: "c", url: "c.com"}
+	a := &configuredRepo2{Name: "a", URL: "a.com"}
+	b := &configuredRepo2{Name: "b", URL: "b.com"}
+	c := &configuredRepo2{Name: "c", URL: "c.com"}
 
 	type removeCall struct {
 		repo     *configuredRepo2
@@ -417,8 +417,8 @@ func TestUpdateQueue_remove(t *testing.T) {
 }
 
 func TestUpdateQueue_acquireNext(t *testing.T) {
-	a := &configuredRepo2{name: "a", url: "a.com"}
-	b := &configuredRepo2{name: "b", url: "b.com"}
+	a := &configuredRepo2{Name: "a", URL: "a.com"}
+	b := &configuredRepo2{Name: "b", URL: "b.com"}
 
 	tests := []struct {
 		name           string
@@ -512,8 +512,8 @@ func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
 }
 
 func TestSchedule_add(t *testing.T) {
-	a := &configuredRepo2{name: "a", url: "a.com"}
-	b := &configuredRepo2{name: "b", url: "b.com"}
+	a := &configuredRepo2{Name: "a", URL: "a.com"}
+	b := &configuredRepo2{Name: "b", URL: "b.com"}
 
 	type addCall struct {
 		time time.Time
@@ -639,11 +639,11 @@ func TestSchedule_add(t *testing.T) {
 }
 
 func TestSchedule_updateInterval(t *testing.T) {
-	a := &configuredRepo2{name: "a", url: "a.com"}
-	b := &configuredRepo2{name: "b", url: "b.com"}
-	c := &configuredRepo2{name: "c", url: "c.com"}
-	d := &configuredRepo2{name: "d", url: "d.com"}
-	e := &configuredRepo2{name: "e", url: "e.com"}
+	a := &configuredRepo2{Name: "a", URL: "a.com"}
+	b := &configuredRepo2{Name: "b", URL: "b.com"}
+	c := &configuredRepo2{Name: "c", URL: "c.com"}
+	d := &configuredRepo2{Name: "d", URL: "d.com"}
+	e := &configuredRepo2{Name: "e", URL: "e.com"}
 
 	type updateCall struct {
 		time     time.Time
@@ -817,9 +817,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 }
 
 func TestSchedule_remove(t *testing.T) {
-	a := &configuredRepo2{name: "a", url: "a.com"}
-	b := &configuredRepo2{name: "b", url: "b.com"}
-	c := &configuredRepo2{name: "c", url: "c.com"}
+	a := &configuredRepo2{Name: "a", URL: "a.com"}
+	b := &configuredRepo2{Name: "b", URL: "b.com"}
+	c := &configuredRepo2{Name: "c", URL: "c.com"}
 
 	type removeCall struct {
 		time time.Time
@@ -954,11 +954,11 @@ func verifyScheduleRecording(t *testing.T, s *updateScheduler, timeAfterFuncDela
 }
 
 func TestUpdateScheduler_runScheduleLoop(t *testing.T) {
-	a := &configuredRepo2{name: "a", url: "a.com"}
-	b := &configuredRepo2{name: "b", url: "b.com"}
-	c := &configuredRepo2{name: "c", url: "c.com"}
-	d := &configuredRepo2{name: "d", url: "d.com"}
-	e := &configuredRepo2{name: "e", url: "e.com"}
+	a := &configuredRepo2{Name: "a", URL: "a.com"}
+	b := &configuredRepo2{Name: "b", URL: "b.com"}
+	c := &configuredRepo2{Name: "c", URL: "c.com"}
+	d := &configuredRepo2{Name: "d", URL: "d.com"}
+	e := &configuredRepo2{Name: "e", URL: "e.com"}
 
 	tests := []struct {
 		name                  string
@@ -1096,9 +1096,9 @@ func TestUpdateScheduler_runScheduleLoop(t *testing.T) {
 }
 
 func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
-	a := &configuredRepo2{name: "a", url: "a.com"}
-	b := &configuredRepo2{name: "b", url: "b.com"}
-	c := &configuredRepo2{name: "c", url: "c.com"}
+	a := &configuredRepo2{Name: "a", URL: "a.com"}
+	b := &configuredRepo2{Name: "b", URL: "b.com"}
+	c := &configuredRepo2{Name: "c", URL: "c.com"}
 
 	type mockRequestRepoUpdate struct {
 		repo *configuredRepo2
@@ -1299,13 +1299,13 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: false},
+						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: false},
 					},
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: false},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: false},
 				},
 			},
 		},
@@ -1316,20 +1316,20 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: true},
+						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 					},
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, seq: 1, updating: false},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: false},
 			},
 			timeAfterFuncDelays: []time.Duration{minDelay},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1340,27 +1340,27 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 			name: "update disabled repo",
 			initialSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: false},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: false},
 				},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: true},
+						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 					},
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "aa.com", enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "aa.com", enabled: true}, seq: 1, updating: false},
+				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, seq: 1, updating: false},
 			},
 			timeAfterFuncDelays: []time.Duration{minDelay},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1371,26 +1371,26 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 			name: "disabled repo removed from schedule and queue",
 			initialSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, interval: minDelay, due: defaultTime},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: false}, updating: false},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: false}, updating: false},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: false},
+						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 					},
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: false},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 				},
 			},
 		},
@@ -1398,14 +1398,14 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 			name: "missing repo removed from schedule and queue",
 			initialSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, interval: minDelay, due: defaultTime},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true /* enabled state doesn't get updated once in the queue because concurrency nightmare */}, updating: false},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true /* enabled state doesn't get updated once in the queue because concurrency nightmare */}, updating: false},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
@@ -1421,29 +1421,29 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 			name: "disabled repo not removed from queue when updating",
 			initialSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, interval: minDelay, due: defaultTime},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, updating: true},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, updating: true},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: false},
+						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 					},
 				},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, seq: 1, updating: true},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: true},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: false},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 				},
 			},
 		},
@@ -1451,14 +1451,14 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 			name: "missing repo not removed from queue when updating",
 			initialSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, interval: minDelay, due: defaultTime},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, updating: true},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, updating: true},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
@@ -1467,7 +1467,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, seq: 1, updating: true},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: true},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{},
@@ -1477,53 +1477,53 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 			name: "enabled repo updated",
 			initialSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, seq: 1, updating: false},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: false},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: true},
+						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 					},
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "aa.com", enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "aa.com", enabled: true}, seq: 1, updating: false},
+				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, seq: 1, updating: false},
 			},
 		},
 		{
 			name: "disabled repo updated",
 			initialSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: false},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: false},
 				},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: false},
+						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 					},
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: false},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 				},
 			},
 		},
@@ -1531,33 +1531,33 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 			name: "update enabled repo while updating",
 			initialSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "a.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
 			initialSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
 			},
 			initialQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, seq: 1, updating: true},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: true},
 			},
 			updateSourceCalls: []*updateSourceCall{
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: true},
+						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 					},
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
 				"a": sourceRepoMap{
-					api.RepoName("a/a"): &configuredRepo2{name: "a", url: "aa.com", enabled: true},
+					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "aa.com", enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
+				{repo: &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true}, interval: minDelay, due: defaultTime.Add(minDelay)},
 			},
 			finalQueue: []*repoUpdate{
-				{repo: &configuredRepo2{name: "a", url: "a.com", enabled: true}, seq: 1, updating: true},
+				{repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, seq: 1, updating: true},
 			},
 		},
 	}
