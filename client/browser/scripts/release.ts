@@ -54,5 +54,6 @@ const release = async (extensionId: string, asset: string) => {
 release('dgjhfomjieaadpoljlnidmbgkdffpack', path.resolve(__dirname, '../build/bundles/chrome-bundle.zip'))
     .then(res => console.log(res))
     .catch(err => {
-        throw err
+        console.error(err)
+        process.exit(1)
     })
