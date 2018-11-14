@@ -29,6 +29,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 2.13.4
+
+- Fixed a CORS policy issue that prevented the Sourcegraph Chrome extension from connecting to a local Sourcegraph instance.
+- Fixed an issue that prevented `repositoryQuery` from working correctly on GitHub enterprise instances.
+
+## 2.13.3
+
+### Fixed
+
+- Fixed an issue that would cause the frontend health check endpoint `/healthz` to not respond. This only impacts Kubernetes deployments.
+
 ## 2.13.2
 
 ### Fixed
