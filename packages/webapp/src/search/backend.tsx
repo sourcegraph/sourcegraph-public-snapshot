@@ -44,6 +44,15 @@ export function search(
                                     limitHit
                                     kind
                                 }
+                                results2 {
+                                    label
+                                    url
+                                    icon
+                                    results {
+                                        url
+                                        body
+                                    }
+                                }
                                 results {
                                     ... on Repository {
                                         __typename
