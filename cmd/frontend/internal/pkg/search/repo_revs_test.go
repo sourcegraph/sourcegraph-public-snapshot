@@ -75,9 +75,9 @@ func TestRepoRevisionsQuery(t *testing.T) {
 
 		// We don't know how to translate branch specifiers across nots, so we
 		// disallow it.
-		"x -branch:dev":      "error: ref/branch specifier does not support a not ancestor",
-		"x -(y branch:dev)":  "error: ref/branch specifier does not support a not ancestor",
-		"x -(y -branch:dev)": "error: ref/branch specifier does not support a not ancestor",
+		"x -branch:dev":      "error: search clauses that filter git refs cannot be negated",
+		"x -(y branch:dev)":  "error: search clauses that filter git refs cannot be negated",
+		"x -(y -branch:dev)": "error: search clauses that filter git refs cannot be negated",
 
 		// Temp: Check we correctly handle regex
 		"r:[f] branch:dev":       "foo@dev",

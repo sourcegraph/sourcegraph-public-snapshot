@@ -167,7 +167,7 @@ func RepoRevisionsQuery(q query.Q, repos []*types.Repo) ([]RepositoryRevisions, 
 		return q
 	})
 	if hasNotRef {
-		return nil, errors.Errorf("ref/branch specifier does not support a not ancestor. We do not support '-branch:' queries: %s", q)
+		return nil, errors.Errorf("search clauses that filter git refs cannot be negated: %s", q)
 	}
 	if !hasRef {
 		rr := make([]RepositoryRevisions, len(repos))
