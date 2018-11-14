@@ -33,7 +33,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
 - [Swift language support](https://github.com/sourcegraph/sourcegraph/issues/979)
-- [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/about/pull/41)
+- [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981)
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
