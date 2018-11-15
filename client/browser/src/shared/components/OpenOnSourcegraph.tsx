@@ -16,7 +16,7 @@ export interface Props {
 export class OpenOnSourcegraph extends React.Component<Props, {}> {
     public render(): JSX.Element {
         const url = this.getOpenInSourcegraphUrl(this.props.openProps)
-        return <Button {...this.props} url={url} />
+        return <Button {...this.props} className={`open-on-sourcegraph ${this.props.className}`} url={url} />
     }
 
     private getOpenInSourcegraphUrl(props: OpenInSourcegraphProps): string {
