@@ -37,7 +37,6 @@ func main() {
 	pipeline := &bk.Pipeline{}
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
-		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("GO111MODULE", "on"))
 
 	pipeline.AddStep(":white_check_mark:",

@@ -47,7 +47,7 @@ It works as follows:
   - Code shared by the extension and the libraries. Ideally, nothing in here should reach into any other directory.
 - `src/config/`
   - Polyfills and configuration/plumbing code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
-- `cypress`
+- `src/e2e/`
   - E2e test suite.
 - `scripts/`
   - Development scripts.
