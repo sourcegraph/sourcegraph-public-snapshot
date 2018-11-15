@@ -144,10 +144,8 @@ export class Controller<S extends SettingsSubject, C extends Settings> {
         )
     }
 
-    public withConfiguration(
-        registryExtensions: GQL.IRegistryExtension[]
-    ): ConfiguredExtension<GQL.IRegistryExtension>[] {
-        const configuredExtensions: ConfiguredExtension<GQL.IRegistryExtension>[] = []
+    public withConfiguration(registryExtensions: GQL.IRegistryExtension[]): ConfiguredExtension[] {
+        const configuredExtensions: ConfiguredExtension[] = []
         for (const registryExtension of registryExtensions) {
             configuredExtensions.push({
                 id: registryExtension.extensionID,

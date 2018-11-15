@@ -61,7 +61,6 @@ func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionAr
 	if args.PrioritizeExtensionIDs != nil {
 		opt.PrioritizeExtensionIDs = *args.PrioritizeExtensionIDs
 	}
-	opt.ExcludeWIP = !args.IncludeWIP
 	return opt, nil
 }
 

@@ -61,10 +61,6 @@ func (r *extensionDBResolver) RegistryName() (string, error) {
 
 func (r *extensionDBResolver) IsLocal() bool { return true }
 
-func (r *extensionDBResolver) IsWorkInProgress() bool {
-	return r.v.NonCanonicalIsWorkInProgress
-}
-
 func (r *extensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx)
 	if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAnOrgMember || err == backend.ErrNotAuthenticated {
