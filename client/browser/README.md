@@ -120,4 +120,18 @@ Click reload for Sourcegraph at `about:debugging`
 
 ## Testing
 
-Coming soon...
+- Unit tests: `yarn test`
+- E2E tests: `yarn test:e2e`
+
+## Deploy
+
+Deployment the Chrome web store happen automatically in CI when the `bext/release` branch is updated.
+Releases are also uploaded to the [GitHub releases
+page](https://github.com/sourcegraph/browser-extensions/releases) and tagged in
+git.
+
+To release the latest commit on master, ensure your master is up-to-date and run
+
+```sh
+git push origin master:bext/release
+```
