@@ -26,7 +26,7 @@ interface ChartOptions {
 const chartGeneratorOptions: ChartOptions = {
     daus: { label: 'Daily unique users', dateFormat: 'E, MMM d' },
     waus: { label: 'Weekly unique users', dateFormat: 'E, MMM d' },
-    maus: { label: 'Monthly unique users', dateFormat: 'MMMM YYYY' },
+    maus: { label: 'Monthly unique users', dateFormat: 'MMMM yyyy' },
 }
 
 const CHART_ID_KEY = 'latest-usage-statistics-chart-id'
@@ -197,7 +197,6 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
     }
 
     public render(): JSX.Element | null {
-        const chart = chartGeneratorOptions[this.state.chartID]
         return (
             <div className="site-admin-usage-statistics-page">
                 <PageTitle title="Usage statistics - Admin" />
@@ -213,28 +212,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                             onChange={this.onChartIndexChange}
                             selected={this.state.chartID}
                         />
-                        {
-                            <>
-                                <h3>{chart.label}</h3>
-                                <BarChart
-                                    showLabels={true}
-                                    showLegend={true}
-                                    width={500}
-                                    height={200}
-                                    isLightTheme={this.props.isLightTheme}
-                                    data={this.state.stats[this.state.chartID].map(p => ({
-                                        xLabel: format(Date.parse(p.startTime) + 1000 * 60 * 60 * 24, chart.dateFormat),
-                                        yValues: {
-                                            Registered: p.registeredUserCount,
-                                            Anonymous: p.anonymousUserCount,
-                                        },
-                                    }))}
-                                />
-                                <small className="site-admin-usage-statistics-page__tz-note">
-                                    <i>GMT/UTC time</i>
-                                </small>
-                            </>
-                        }
+                        <UsageChart {...this.props} chartID={this.state.chartID} stats={this.state.stats} />
                     </>
                 )}
                 <h3 className="mt-4">All registered users</h3>
@@ -274,3 +252,37 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         this.setState({ chartID: e.target.value as keyof ChartOptions })
     }
 }
+
+interface UsageChartPageProps {
+    isLightTheme: boolean
+    stats: GQL.ISiteUsageStatistics
+    chartID: keyof ChartOptions
+    className?: string
+    header?: JSX.Element
+}
+
+export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
+    <div className={props.className}>
+        {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
+        <BarChart
+            showLabels={true}
+            showLegend={true}
+            width={500}
+            height={200}
+            isLightTheme={props.isLightTheme}
+            data={props.stats[props.chartID].map(p => ({
+                xLabel: format(
+                    Date.parse(p.startTime) + 1000 * 60 * 60 * 24,
+                    chartGeneratorOptions[props.chartID].dateFormat
+                ),
+                yValues: {
+                    Registered: p.registeredUserCount,
+                    Anonymous: p.anonymousUserCount,
+                },
+            }))}
+        />
+        <small className="site-admin-usage-statistics-page__tz-note">
+            <i>GMT/UTC time</i>
+        </small>
+    </div>
+)
