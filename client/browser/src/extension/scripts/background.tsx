@@ -208,6 +208,10 @@ storage.setSyncMigration(items => {
     featureFlags.simpleOptionsMenu = true
     newItems.featureFlags = featureFlags
 
+    if (typeof process.env.USE_EXTENSIONS !== 'undefined') {
+        newItems.featureFlags.useExtensions = process.env.USE_EXTENSIONS === 'true'
+    }
+
     return { newItems, keysToRemove }
 })
 
@@ -375,10 +379,7 @@ function setDefaultBrowserAction(): void {
 
 storage
     .observeSync('featureFlags')
-    .pipe(
-        map(({ simpleOptionsMenu }) => simpleOptionsMenu),
-        distinctUntilChanged()
-    )
+    .pipe(map(({ simpleOptionsMenu }) => simpleOptionsMenu), distinctUntilChanged())
     .subscribe(async useSimpleOptionsMenu => {
         if (useSimpleOptionsMenu) {
             browserAction.onClicked(noop)

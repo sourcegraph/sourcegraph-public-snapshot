@@ -23,6 +23,7 @@ export default {
                 'process.env': {
                     NODE_ENV: JSON.stringify('development'),
                     BUNDLE_UID: JSON.stringify(generateBundleUID()),
+                    USE_EXTENSIONS: JSON.stringify(process.env.USE_EXTENSIONS),
                 },
             }),
         ]
