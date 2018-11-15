@@ -138,7 +138,7 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 			{
 				HttpHeader: &schema.HTTPHeaderAuthProvider{
 					UsernameHeader:            headerName,
-					StripUsernameHeaderPrefix: "accounts-google-com-",
+					StripUsernameHeaderPrefix: "accounts.google.com:",
 				},
 			},
 		},
@@ -148,7 +148,7 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 	t.Run("sent, user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(headerName, "accounts-google-com-alice")
+		req.Header.Set(headerName, "accounts.google.com:alice")
 		var calledMock bool
 		auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
 			calledMock = true

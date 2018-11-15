@@ -1099,8 +1099,9 @@ const SiteSchemaJSON = `{
         },
         "stripUsernameHeaderPrefix": {
           "description":
-            "The prefix that precedes the username portion of the HTTP header specified in ` + "`" + `usernameHeader` + "`" + `. If specified, the prefix will be stripped from the header value and the remainder will be used as the username.",
-          "type": "string"
+            "The prefix that precedes the username portion of the HTTP header specified in ` + "`" + `usernameHeader` + "`" + `. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set this value to ` + "`" + `accounts.google.com:` + "`" + `.",
+          "type": "string",
+          "examples": ["accounts.google.com:"]
         }
       }
     },
