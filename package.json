@@ -15,6 +15,7 @@
     "all:tslint": "dev/foreach-ts-project.sh yarn -s run tslint",
     "all:stylelint": "(cd web && yarn -s run stylelint) && (cd client/browser && yarn -s run stylelint)",
     "all:typecheck": "gulp generate && dev/foreach-ts-project.sh $PWD/node_modules/.bin/tsc -p tsconfig.json",
+    "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
     "prepublish": "gulp generate"
   },
