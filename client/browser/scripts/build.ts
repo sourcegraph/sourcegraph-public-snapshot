@@ -11,6 +11,7 @@ tasks.copyAssets('prod')
 const compiler = webpack(config)
 
 signale.await('Webpack compilation')
+
 compiler.run((err, stats) => {
     console.log(stats.toString(tasks.WEBPACK_STATS_OPTIONS))
 

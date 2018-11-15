@@ -112,6 +112,7 @@
     "chai": "^4.1.2",
     "child_process": "^1.0.2",
     "chokidar-cli": "^1.2.1",
+    "chrome-webstore-upload-cli": "^1.2.0",
     "concurrently": "^4.0.1",
     "cpy": "^7.0.1",
     "cross-env": "^5.2.0",
@@ -170,12 +171,13 @@
     "tsify": "^4.0.0",
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
+    "typedoc": "^0.13.0",
     "typescript": "^3.1.6",
     "uglifyjs-webpack-plugin": "^1.2.4",
+    "utc-version": "^1.1.0",
     "webpack": "^4.23.1",
     "webpack-dev-server": "^3.1.10",
-    "worker-loader": "^2.0.0",
-    "typedoc": "^0.13.0"
+    "worker-loader": "^2.0.0"
   },
   "dependencies": {
     "@slimsag/react-shortcuts": "^1.2.1",

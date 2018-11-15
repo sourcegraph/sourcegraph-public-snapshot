@@ -126,6 +126,18 @@ func main() {
 
 	pipeline.AddWait()
 
+	if os.Getenv("BUILDKITE_BRANCH") == "bext/release" {
+		pipeline.AddStep(":chrome:",
+			bk.Env("FORCE_COLOR", "1"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd client/browser"),
+			bk.Cmd("yarn -s run build"),
+			bk.Cmd("yarn -s run release"),
+			bk.Cmd("popd"))
+	}
+
+	pipeline.AddWait()
+
 	_, err := pipeline.WriteTo(os.Stdout)
 	if err != nil {
 		panic(err)

@@ -4378,7 +4378,21 @@ chrome-trace-event@^1.0.0:
   dependencies:
     tslib "^1.9.0"
 
-chrome-webstore-upload@^0.2.2:
+chrome-webstore-upload-cli@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.npmjs.org/chrome-webstore-upload-cli/-/chrome-webstore-upload-cli-1.2.0.tgz#583af660a8362f811dbc88e1342a0d0468f4bff6"
+  integrity sha512-1//m4IhjZ5vLeKi5HaOJ6mEbYoSuXFRPGvdT1IMczjxZWU7ZTHT0CNWO3pQMNmX7bnGeaLQ6MJGxC2NtpcUSlQ==
+  dependencies:
+    chalk "^1.1.3"
+    chrome-webstore-upload "^0.2.0"
+    junk "^1.0.2"
+    meow "^3.7.0"
+    ora "^0.2.3"
+    pify "^2.3.0"
+    recursive-readdir "^2.0.0"
+    yazl "^2.3.1"
+
+chrome-webstore-upload@^0.2.0, chrome-webstore-upload@^0.2.2:
   version "0.2.2"
   resolved "https://registry.npmjs.org/chrome-webstore-upload/-/chrome-webstore-upload-0.2.2.tgz#6293463a5d0475c8826ffd799a98357b04af4fcb"
   integrity sha512-4lqjRnG9MbqWpWgaQDORUB8jcTwEpWGGFWwTiVy00MMrYshV085uwqtHDNNLtHrnnB5U+rwtVV/sHAocm+CVNQ==
@@ -9313,6 +9327,11 @@ jszip@^3.1.0:
     pako "~1.0.2"
     readable-stream "~2.0.6"
 
+junk@^1.0.2:
+  version "1.0.3"
+  resolved "https://registry.npmjs.org/junk/-/junk-1.0.3.tgz#87be63488649cbdca6f53ab39bec9ccd2347f592"
+  integrity sha1-h75jSIZJy9ym9Tqzm+yczSNH9ZI=
+
 just-debounce@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/just-debounce/-/just-debounce-1.0.0.tgz#87fccfaeffc0b68cd19d55f6722943f929ea35ea"
@@ -11931,7 +11950,7 @@ performance-now@^2.1.0:
   resolved "https://registry.npmjs.org/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
-pify@^2.0.0, pify@^2.2.0:
+pify@^2.0.0, pify@^2.2.0, pify@^2.3.0:
   version "2.3.0"
   resolved "http://registry.npmjs.org/pify/-/pify-2.3.0.tgz#ed141a6ac043a849ea588498e7dca8b15330e90c"
   integrity sha1-7RQaasBDqEnqWISY59yosVMw6Qw=
@@ -12999,7 +13018,7 @@ rechoir@^0.6.2:
   dependencies:
     resolve "^1.1.6"
 
-recursive-readdir@2.2.2:
+recursive-readdir@2.2.2, recursive-readdir@^2.0.0:
   version "2.2.2"
   resolved "https://registry.npmjs.org/recursive-readdir/-/recursive-readdir-2.2.2.tgz#9946fb3274e1628de6e36b2f6714953b4845094f"
   integrity sha512-nRCcW9Sj7NuZwa2XvH9co8NPeXUBhZP7CRKJtU+cS6PW9FpCIFoI5ib0NT1ZrbNuPoRy0ylyCaUL8Gih4LSyFg==
@@ -15780,6 +15799,11 @@ use@^3.1.0:
   resolved "https://registry.npmjs.org/use/-/use-3.1.1.tgz#d50c8cac79a19fbc20f2911f56eb973f4e10070f"
   integrity sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==
 
+utc-version@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/utc-version/-/utc-version-1.1.0.tgz#f323066fd043520b36141a3e579331e6f073b752"
+  integrity sha512-CBiM9zlQnWwwCH8PrUdpXnd2UGRUgtOkkic56BhmTMngW9VFTl9DgSI/KcvXKsu80qCcTStRSF9gHx3zEsL56Q==
+
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
@@ -16502,6 +16526,13 @@ yauzl@2.8.0:
   dependencies:
     buffer-crc32 "~0.2.3"
     fd-slicer "~1.0.1"
+
+yazl@^2.3.1:
+  version "2.4.3"
+  resolved "https://registry.npmjs.org/yazl/-/yazl-2.4.3.tgz#ec26e5cc87d5601b9df8432dbdd3cd2e5173a071"
+  integrity sha1-7CblzIfVYBud+EMtvdPNLlFzoHE=
+  dependencies:
+    buffer-crc32 "~0.2.3"
 
 yeast@0.1.2:
   version "0.1.2"
