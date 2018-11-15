@@ -136,7 +136,28 @@ export interface ActionContributionClientCommandUpdateConfiguration extends Acti
     commandArguments: [KeyPath, any] | [KeyPath, string, null, 'json']
 }
 
-/** A description of how to display a button on a toolbar. */
+/**
+ * A description of how to display an {@link ActionContribution} on a toolbar. This value is set on the
+ * {@link ActionContribution#actionItem} interface field (it always is directly associated with an
+ * {@link ActionContribution}).
+ *
+ * It is necessary because an action's ({@link ActionContribution}'s) fields are intended for display in a command
+ * palette or list, not in a button. The {@link ActionContribution} fields usually have long, descriptive text
+ * values, and it does not make sense for them to show an icon. When the action is displayed as a button, however,
+ * it needs to have a much shorter text label and it often does make sense to show an icon. Therefore, the action's
+ * representation as a command in a list ({@link ActionContribution}) is separate from its representation as a
+ * button (in this type, {@link ActionItem}).
+ *
+ * Example: Consider a code coverage extension that adds an action to toggle showing coverage overlays on a file.
+ * The command title ({@link ActionContribution#title}) might be "Show/hide code coverage overlays", and the button
+ * label ({@link ActionItem#label}) would be "Coverage: 78%" (where the "78%" is the live coverage ratio).
+ *
+ * It is convenient to be able to specify both the command and button display representations of an action
+ * together, which is why {@link ActionItem} is in the field {@link ActionContribution#actionItem} instead of being
+ * listed as a separate contribution. They share most behavior and many other fields, so it reduces the amount of
+ * duplicate code to combine them. Also, some clients may not be able to display buttons and need to display the
+ * more verbose command form of an action, which is possible when they are combined.
+ */
 export interface ActionItem {
     /** The text label for this item. */
     label?: string

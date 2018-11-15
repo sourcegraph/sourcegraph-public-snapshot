@@ -52,7 +52,8 @@
     },
     "ActionItem": {
       "additionalProperties": false,
-      "description": "A description of how to display a button on a toolbar.",
+      "description":
+        "A description of how to display a action's button on a toolbar. This value is always associated with an action.",
       "properties": {
         "description": {
           "description":
