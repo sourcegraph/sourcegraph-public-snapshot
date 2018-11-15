@@ -1,5 +1,7 @@
+import * as path from 'path'
 import puppeteer from 'puppeteer'
-import { chromeExtensionPath } from './utils/extension'
+
+const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'build/chrome')
 
 async function getTokenWithSelector(
     page: puppeteer.Page,
