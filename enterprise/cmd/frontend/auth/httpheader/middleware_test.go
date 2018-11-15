@@ -116,3 +116,54 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 }
+
+func TestMiddleware_stripPrefix(t *testing.T) {
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
+	}
+	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+
+	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		actor := actor.FromContext(r.Context())
+		if actor.IsAuthenticated() {
+			fmt.Fprintf(w, "user %v", actor.UID)
+		} else {
+			fmt.Fprint(w, "no user")
+		}
+	}))
+
+	const headerName = "x-sso-user-header"
+	conf.Mock(&schema.SiteConfiguration{
+		AuthProviders: []schema.AuthProviders{
+			{
+				HttpHeader: &schema.HTTPHeaderAuthProvider{
+					UsernameHeader:            headerName,
+					StripUsernameHeaderPrefix: "accounts.google.com:",
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	t.Run("sent, user", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set(headerName, "accounts.google.com:alice")
+		var calledMock bool
+		auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
+			calledMock = true
+			if a.ServiceType == "http-header" && a.ServiceID == "" && a.ClientID == "" && a.AccountID == "alice" {
+				return 1, nil
+			}
+			return 0, fmt.Errorf("account %v not found in mock", a)
+		})
+		defer auth.SetMockCreateOrUpdateUser(nil)
+		handler.ServeHTTP(rr, req)
+		if got, want := rr.Body.String(), "user 1"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+		if !calledMock {
+			t.Error("!calledMock")
+		}
+	})
+}
