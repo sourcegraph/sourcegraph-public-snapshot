@@ -48,9 +48,20 @@ describe('Sourcegraph Chrome extension', () => {
     before(async function(): Promise<void> {
         this.timeout(90 * 1000)
 
+        let args: string[] = []
+        if (process.getuid() === 0) {
+            // TODO don't run as root in CI
+            console.warn('Running as root, disabling sandbox')
+            args = ['--no-sandbox', '--disable-setuid-sandbox']
+        }
+
         browser = await puppeteer.launch({
             headless: false,
-            args: [`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`],
+            args: [
+                ...args,
+                `--disable-extensions-except=${chromeExtensionPath}`,
+                `--load-extension=${chromeExtensionPath}`,
+            ],
         })
     })
 
