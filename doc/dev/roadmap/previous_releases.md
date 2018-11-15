@@ -9,7 +9,6 @@ See the [Sourcegraph changelog](https://about.sourcegraph.com/changelog) for a d
 Feature | 🔗 | Team
 ------- | --- | ----
 Language support via Sourcegraph extensions | [🐍📽](https://slack-files.com/T02FSM7DL-FDVNVV83G-1af26916ad)[📣](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/simplified-language-support.md) | [@chrismwendt](http://github.com/chrismwendt) [@felixfbecker](http://github.com/felixfbecker)
-Sub-query support in search | [📣](https://github.com/sourcegraph/about/pull/8)[💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201809/hierarchical-search-2.md) | [@keegancsmith](http://github.com/keegancsmith)
 Indexed search enabled via config | 🚢[🌞](https://github.com/sourcegraph/sourcegraph/pull/502)[📣](https://github.com/sourcegraph/sourcegraph/pull/502) | [@keegancsmith](http://github.com/keegancsmith)
 Search query transformations via Sourcegraph extensions | [🌞](https://github.com/sourcegraph/sourcegraph/pull/499)[📣](https://github.com/sourcegraph/about/pull/40)[📽️](https://cl.ly/5159339a6016) | [@attfarhan](http://github.com/attfarhan)
 Primary workflow UX improvements | [📣](https://github.com/sourcegraph/about/pull/39)[🐞](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+assignee%3Avanesa+milestone%3A%22October+2018%22) | [@vanesa](http://github.com/vanesa) [@francisschmaltz](http://github.com/francisschmaltz)
