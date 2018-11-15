@@ -113,7 +113,7 @@ func createNewRepository(name string, data map[string]string) (*repository, erro
 	// Choose the real repository path and move it there.
 	for i := 0; i < 3; i++ {
 		// Retry up to 3 times to avoid ephemeral errors and name collisions.
-		var repository = repository(name + "-" + createRandomKey())
+		repository := repository(name + "-" + createRandomKey())
 		repositoryRoot := repository.filePath()
 		err = os.Rename(tempRoot, repositoryRoot)
 		if err == nil {
