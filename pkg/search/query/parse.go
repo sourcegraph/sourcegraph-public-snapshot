@@ -125,8 +125,8 @@ func parseExpr(in []byte) (Q, int, error) {
 		expr = &caseQ{text}
 	case tokRepo:
 		expr = &Repo{Pattern: text}
-	case tokBranch:
-		expr = &Branch{Pattern: text}
+	case tokRef:
+		expr = &Ref{Pattern: text}
 	case tokText, tokRegex:
 		q, err := regexpQuery(text, false, false)
 		if err != nil {
@@ -341,7 +341,7 @@ const (
 	tokFile       = 1
 	tokRepo       = 2
 	tokCase       = 3
-	tokBranch     = 4
+	tokRef        = 4
 	tokParenOpen  = 5
 	tokParenClose = 6
 	tokError      = 7
@@ -355,7 +355,7 @@ const (
 )
 
 var tokNames = map[int]string{
-	tokBranch:     "Branch",
+	tokRef:        "Ref",
 	tokCase:       "Case",
 	tokError:      "Error",
 	tokFile:       "File",
@@ -372,17 +372,18 @@ var tokNames = map[int]string{
 }
 
 var prefixes = map[string]int{
-	"b:":       tokBranch,
-	"branch:":  tokBranch,
+	"b:":       tokRef,
+	"branch:":  tokRef,
 	"c:":       tokContent,
 	"case:":    tokCase,
 	"content:": tokContent,
 	"f:":       tokFile,
 	"file:":    tokFile,
+	"lang:":    tokLang,
 	"r:":       tokRepo,
+	"ref:":     tokRef,
 	"regex:":   tokRegex,
 	"repo:":    tokRepo,
-	"lang:":    tokLang,
 	"sym:":     tokSym,
 	"t:":       tokType,
 	"type:":    tokType,

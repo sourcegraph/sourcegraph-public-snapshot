@@ -152,7 +152,7 @@ func RepoRevisionsQuery(q query.Q, repos []*types.Repo) ([]RepositoryRevisions, 
 		switch q.(type) {
 		case *query.Not:
 			notCount++
-		case *query.Branch:
+		case *query.Ref:
 			hasRef = true
 			if notCount > 0 {
 				hasNotRef = true
@@ -221,7 +221,7 @@ func RepoRevisionsQuery(q query.Q, repos []*types.Repo) ([]RepositoryRevisions, 
 		// additionally evaluate the default branch.
 		var revs []RevisionSpecifier
 		eval = query.Map(eval, nil, func(q query.Q) query.Q {
-			if b, ok := q.(*query.Branch); ok {
+			if b, ok := q.(*query.Ref); ok {
 				revs = append(revs, parseRev(b.Pattern))
 				return &query.Const{Value: false}
 			}

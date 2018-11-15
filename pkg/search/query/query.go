@@ -287,13 +287,13 @@ func NewOr(qs ...Q) Q {
 	return &Or{Children: qs}
 }
 
-// Branch limits search to a specific branch.
-type Branch struct {
+// Ref limits search to a specific git ref. In zoekt this is called Branch.
+type Ref struct {
 	Pattern string
 }
 
-func (q *Branch) String() string {
-	return fmt.Sprintf("branch:%q", q.Pattern)
+func (q *Ref) String() string {
+	return fmt.Sprintf("ref:%q", q.Pattern)
 }
 
 func queryChildren(q Q) []Q {
@@ -430,7 +430,7 @@ func evalConstants(q Q) Q {
 		if s.Regexp.Op == syntax.OpEmptyMatch {
 			return &Const{true}
 		}
-	case *Branch:
+	case *Ref:
 		if s.Pattern == "" {
 			return &Const{true}
 		}
