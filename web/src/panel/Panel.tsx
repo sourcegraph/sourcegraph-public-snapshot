@@ -36,9 +36,6 @@ interface Props extends ExtensionsControllerProps {
 }
 
 interface State {
-    /** Panel title. */
-    title?: React.ReactFragment
-
     /** Panel items to display. */
     items: PanelItem[]
 
@@ -60,26 +57,11 @@ export class Panel extends React.PureComponent<Props, State> {
 
     // We'll use ReplaySubject so everything will get emitted even if the panel isn't mounted
     private static newItems = new ReplaySubject<PanelItem>()
-    private static newTitles = new ReplaySubject<React.ReactFragment>()
     private static itemsToRemove = new ReplaySubject<PanelItem>()
-    private static titlesToRemove = new ReplaySubject<React.ReactFragment>()
 
     private subscriptions = new Subscription()
 
     public state: State = { items: [] }
-
-    /**
-     * Set the panel title. Do not call directly; use PanelTitlePortal instead.
-     * @param fragment to set as the panel title
-     */
-    public static setTitle(fragment: React.ReactFragment | undefined): Unsubscribable {
-        Panel.newTitles.next(fragment)
-        return {
-            unsubscribe: () => {
-                Panel.titlesToRemove.next(fragment)
-            },
-        }
-    }
 
     /**
      * Add an item to the panel. Do not call directly; use PanelItemPortal instead.
@@ -121,22 +103,6 @@ export class Panel extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            Panel.newTitles.pipe(distinctUntilChanged()).subscribe(title => {
-                this.setState({
-                    title,
-                })
-            })
-        )
-
-        this.subscriptions.add(
-            Panel.titlesToRemove.subscribe(title => {
-                if (this.state.title === title) {
-                    this.setState({ title: undefined })
-                }
-            })
-        )
-
-        this.subscriptions.add(
             this.props.extensionsController.registries.views
                 .getViews(ContributableViewContainer.Panel)
                 .pipe(map(panelViews => ({ panelViews })))
@@ -149,16 +115,6 @@ export class Panel extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const closeButton = (
-            <button
-                onClick={this.onDismiss}
-                className="btn btn-icon tab-bar__end-fragment-other-element"
-                data-tooltip="Close"
-            >
-                <CloseIcon className="icon-inline" />
-            </button>
-        )
-
         let items = this.state.items
         if (this.state.panelViews) {
             items = [
@@ -183,19 +139,19 @@ export class Panel extends React.PureComponent<Props, State> {
 
         return (
             <div className="panel">
-                {(!hasTabs || this.state.title) && (
-                    <header className="panel__header">
-                        <div className="panel__header-title">{this.state.title}</div>
-                        {closeButton}
-                    </header>
-                )}
                 {hasTabs ? (
                     <TabsWithURLViewStatePersistence
                         tabs={items || []}
                         tabBarEndFragment={
                             <>
                                 <Spacer />
-                                {!this.state.title && closeButton}
+                                <button
+                                    onClick={this.onDismiss}
+                                    className="btn btn-icon tab-bar__end-fragment-other-element"
+                                    data-tooltip="Close"
+                                >
+                                    <CloseIcon className="icon-inline" />
+                                </button>
                             </>
                         }
                         className="panel__tabs"

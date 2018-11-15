@@ -33,17 +33,6 @@
         padding: 0.25rem 0.25rem 0.25rem 0.5rem;
         display: flex;
         align-items: center;
-        &-title {
-            flex: 1;
-
-            // Override .hljs styles (for titles that have syntax highlighting).
-            > .hljs {
-                padding: 0 0.25rem 0 0;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-        }
         &-icon {
             flex: 0;
             align-self: flex-start;
