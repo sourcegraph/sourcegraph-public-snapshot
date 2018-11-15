@@ -6,7 +6,7 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
 
 <p>
   <a target="_blank" href="https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack" style="display:flex;align-items:center">
-  <img src="img/chrome.svg" width="24" height="24" style="margin-right:5px" /> <strong>Sourcegraph for Chrome</strong>
+  <img src="img/chrome.svg" width="24" height="24" style="margin-right:5px" /> <strong>Install Sourcegraph for Chrome</strong>
   </a>
 </p>
 
