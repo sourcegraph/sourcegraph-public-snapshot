@@ -111,6 +111,9 @@ func main() {
 		bk.Cmd("yarn -s run browserslist"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn -s run test:ci"),
+		bk.Cmd("yarn -s run test:e2e"),
+		bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
+		bk.Cmd("yarn -s run test:e2e"),
 		bk.Cmd("popd"))
 
 	pipeline.AddWait()
