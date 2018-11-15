@@ -32,6 +32,8 @@ var (
 	maxRequestSize = 0x10000 // Repo creation requests must be at most 64KB.
 )
 
+const repositoryRequestPrefix = "/repository/"
+
 func mustParseDuration(durationString string) time.Duration {
 	duration, err := time.ParseDuration(durationString)
 	if err != nil {
@@ -50,7 +52,7 @@ func (r *repository) filePath() string {
 
 // urlPath returns the URL path to use when cloning this repository over http.
 func (r *repository) urlPath() string {
-	return "/repository/" + string(*r)
+	return repositoryRequestPrefix + string(*r)
 }
 
 // goodUntil checks the repository's directory on disk and returns the time
@@ -140,6 +142,7 @@ func deleteExpiredRepositories() {
 				log15.Error("Couldn't create temporary directory", "error", err)
 				continue
 			}
+			defer os.RemoveAll(tempDir)
 			fromPath := filepath.Join(repositoriesRoot, file.Name())
 			toPath := filepath.Join(tempDir, file.Name())
 			err = os.Rename(fromPath, toPath)
@@ -241,13 +244,7 @@ func handleCreateRepository() http.HandlerFunc {
 
 func handleRepository() http.HandlerFunc {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
-		if !strings.HasPrefix(request.URL.Path, "/repository/") {
-			// This should never happen, but let's make sure.
-			responseWriter.WriteHeader(http.StatusNotFound)
-			log15.Warn("Malformed repository request", "path", request.URL.Path)
-			return
-		}
-		trailingPath := request.URL.Path[12:]
+		trailingPath := request.URL.Path[len(repositoryRequestPrefix):]
 
 		// Trim the repository string off the start of the path.
 		pathComponents := strings.SplitN(trailingPath, "/", 2)
@@ -307,7 +304,7 @@ func main() {
 	go repositoryDeleter()
 
 	http.HandleFunc("/create-repository", handleCreateRepository())
-	http.HandleFunc("/repository/", handleRepository())
+	http.HandleFunc(repositoryRequestPrefix, handleRepository())
 	if env.InsecureDev {
 		// list-repositories is for testing, not production.
 		http.HandleFunc("/list-repositories", handleListRepositories())
