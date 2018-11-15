@@ -1,4 +1,3 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
 import { castArray, isEqual } from 'lodash'
@@ -38,7 +37,6 @@ import {
     SettingsCascadeProps,
 } from '../../../extensions/ExtensionsClientCommonContext'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
-import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
@@ -180,30 +178,16 @@ export class BlobPanel extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        let titleRendered: React.ReactFragment | undefined
         let extraRendered: React.ReactFragment | undefined
         const { hoverOrError } = this.state
-        if (hoverOrError === LOADING) {
-            titleRendered = <LoadingSpinner className="icon-inline" />
-        } else if (hoverOrError === undefined) {
-            // Don't show loading indicator yet (to reduce UI jitter).
-            titleRendered = undefined
-        } else if (hoverOrError && !isErrorLike(hoverOrError) && !isEmptyHover(hoverOrError)) {
-            // Hover with one or more MarkedStrings.
-            titleRendered = renderHoverContents(hoverOrError.contents[0])
-
+        if (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && !isEmptyHover(hoverOrError)) {
             if (Array.isArray(hoverOrError.contents) && hoverOrError.contents.length >= 2) {
-                extraRendered = hoverOrError.contents.slice(1).map((s, i) => (
+                extraRendered = hoverOrError.contents.map((s, i) => (
                     <div key={i} className="blob-panel__extra-item px-2 pt-1">
                         {renderHoverContents(s)}
                     </div>
                 ))
             }
-        } else {
-            // Error or no hover information.
-            //
-            // Don't bother showing the error, if any; if it occurs on the panel contents fetches, it will be
-            // displayed.
         }
 
         const isValidToken = hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)
@@ -212,7 +196,6 @@ export class BlobPanel extends React.PureComponent<Props, State> {
 
         return (
             <>
-                {titleRendered && <PanelTitlePortal>{titleRendered}</PanelTitlePortal>}
                 {extraRendered && (
                     <PanelItemPortal
                         id="info"
