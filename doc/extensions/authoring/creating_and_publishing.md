@@ -42,19 +42,7 @@ The last command builds and publishes your extension to Sourcegraph. It prints t
 
 > NOTE: If your extension is under development, prefix its title with "WIP" or similar to indicate that it's not ready. In the future, we will improve this experience. See [issue #480](https://github.com/sourcegraph/sourcegraph/issues/480) and [issue #489](https://github.com/sourcegraph/sourcegraph/issues/489).
 
-## Development
-
-### Work-in-progress (WIP) extensions
-
-To prevent other users from accidentally using unfinished and experimental extensions, Sourcegraph allows extension authors to mark extensions as **work-in-progress**. To mark an extension as a work-in-progress, start its title with `WIP:` or `[WIP]` (in its `package.json` file's `title` field).
-
-For example, an extension whose title is `WIP: Python code examples` is considered to be a work-in-progress extension.
-
-On the extension registry, work-in-progress extensions are hidden from or demoted on the list of extensions, and they display a special WIP badge. To find a work-in-progress extension, a user can search for it by name or navigate to its URL directly.
-
-When your work-in-progress extension is ready for use, just remove `WIP:` or `[WIP]` from the title and publish a new release to remove the work-in-progress marker.
-
-### Seeing local changes without republishing
+### Development: seeing local changes without republishing
 
 Using the above steps, each time you change your extension's source code, you must republish it. During development, you can speed up this process by using the Parcel bundler's development server. This lets you see changes in your browser without needing to republish. (You still need to reload the page.)
 

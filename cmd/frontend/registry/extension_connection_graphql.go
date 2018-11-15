@@ -86,16 +86,6 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			}
 			remote = append(remote, xs...)
 		}
-		// Filter out WIP extensions from the remote extensions list if WIP extensions are excluded.
-		if !r.args.IncludeWIP {
-			keep := remote[:0]
-			for _, x := range remote {
-				if !IsWorkInProgressExtension(x.Manifest) {
-					keep = append(keep, x)
-				}
-			}
-			remote = keep
-		}
 
 		r.registryExtensions = make([]graphqlbackend.RegistryExtension, len(local)+len(remote))
 		copy(r.registryExtensions, local)
@@ -112,12 +102,6 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 				return pi && !pj
 			})
 		}
-
-		// Sort WIP extensions last. (The local extensions list is already sorted in that way, but
-		// the remote extensions list isn't, so therefore the combined list isn't.)
-		sort.SliceStable(r.registryExtensions, func(i, j int) bool {
-			return !r.registryExtensions[i].IsWorkInProgress() && r.registryExtensions[j].IsWorkInProgress()
-		})
 	})
 	return r.registryExtensions, r.err
 }

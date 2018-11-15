@@ -91,10 +91,6 @@ func (r *registryExtensionRemoteResolver) RegistryName() (string, error) {
 
 func (r *registryExtensionRemoteResolver) IsLocal() bool { return r.v.IsSynthesizedLocalExtension }
 
-func (r *registryExtensionRemoteResolver) IsWorkInProgress() bool {
-	return IsWorkInProgressExtension(r.v.Manifest)
-}
-
 func (r *registryExtensionRemoteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return false, nil // can't administer remote extensions
 }

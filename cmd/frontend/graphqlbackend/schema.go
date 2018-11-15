@@ -2930,8 +2930,6 @@ type ExtensionRegistry {
         # Typically, the client passes the list of added and enabled extension IDs in this parameter so that the
         # results include those extensions first (which is typically what the user prefers).
         prioritizeExtensionIDs: [String!]
-        # Include WIP (work-in-progress) extensions.
-        includeWIP: Boolean = true
     ): RegistryExtensionConnection!
     # A list of publishers with at least 1 extension in the registry.
     publishers(
@@ -3063,8 +3061,6 @@ type RegistryExtension implements Node {
     registryName: String!
     # Whether the registry extension is published on this Sourcegraph site.
     isLocal: Boolean!
-    # Whether the extension is marked as a work-in-progress extension by the extension author.
-    isWorkInProgress: Boolean!
     # Whether the viewer has admin privileges on this registry extension.
     viewerCanAdminister: Boolean!
 }

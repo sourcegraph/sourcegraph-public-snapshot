@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 )
 
 // dbExtension describes an extension in the extension registry.
@@ -45,11 +44,6 @@ type dbExtension struct {
 	// directly from a method on RegistryExtensions. Do not persist this value, because the
 	// (denormalized) registry name can change.
 	NonCanonicalRegistry string
-
-	// NonCanonicalIsWorkInProgress is whether this extension was marked as a WIP extension when it
-	// was fetched. This information comes from a separate table (registry_extension_releases, not
-	// registry_extensions), so it is not canonical.
-	NonCanonicalIsWorkInProgress bool
 }
 
 type dbExtensions struct{}
@@ -184,11 +178,8 @@ type dbExtensionsListOptions struct {
 	Publisher              dbPublisher
 	Query                  string // matches the extension ID
 	PrioritizeExtensionIDs []string
-	ExcludeWIP             bool // exclude extensions marked as WIP
 	*db.LimitOffset
 }
-
-var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR rer.manifest::json->>'title' SIMILAR TO %s`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query
@@ -200,9 +191,6 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf(extensionIDExpr+" ILIKE %s", "%"+strings.Replace(strings.ToLower(o.Query), " ", "%", -1)+"%"))
-	}
-	if o.ExcludeWIP {
-		conds = append(conds, sqlf.Sprintf("NOT (%s)", extensionIsWIPExpr))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
@@ -232,15 +220,7 @@ func (dbExtensions) listCountSQL(conds []*sqlf.Query) *sqlf.Query {
 FROM registry_extensions x
 LEFT JOIN users ON users.id=publisher_user_id AND users.deleted_at IS NULL
 LEFT JOIN orgs ON orgs.id=publisher_org_id AND orgs.deleted_at IS NULL
-LEFT JOIN registry_extension_releases rer ON rer.registry_extension_id=x.id AND rer.deleted_at IS NULL
-WHERE (%s)
-  -- Join only to latest release from registry_extension_releases.
-  AND NOT EXISTS (SELECT 1 FROM registry_extension_releases rer2
-                  WHERE rer.registry_extension_id=rer2.registry_extension_id
-                    AND rer2.deleted_at IS NULL
-                    AND rer2.created_at > rer.created_at
-  )
-  AND x.deleted_at IS NULL`,
+WHERE (%s) AND x.deleted_at IS NULL`,
 		sqlf.Join(conds, ") AND ("))
 }
 
@@ -248,18 +228,12 @@ func (s dbExtensions) list(ctx context.Context, conds, order []*sqlf.Query, limi
 	order = append(order, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
 SELECT x.id, x.uuid, x.publisher_user_id, x.publisher_org_id, x.name, x.created_at, x.updated_at,
-  `+extensionIDExpr+` AS non_canonical_extension_id, `+extensionPublisherNameExpr+` AS non_canonical_publisher_name,
-  (%s) AS non_canonical_is_work_in_progress
+  `+extensionIDExpr+` AS non_canonical_extension_id, `+extensionPublisherNameExpr+` AS non_canonical_publisher_name
 %s
-ORDER BY %s,
-  -- Always sort WIP extensions last.
-  (%s) ASC,
-  x.id ASC
+ORDER BY %s, x.id ASC
 %s`,
-		extensionIsWIPExpr,
 		s.listCountSQL(conds),
 		sqlf.Join(order, ","),
-		extensionIsWIPExpr,
 		limitOffset.SQL(),
 	)
 
@@ -273,7 +247,7 @@ ORDER BY %s,
 	for rows.Next() {
 		var t dbExtension
 		var publisherUserID, publisherOrgID sql.NullInt64
-		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &t.Publisher.NonCanonicalName, &t.NonCanonicalIsWorkInProgress); err != nil {
+		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &t.Publisher.NonCanonicalName); err != nil {
 			return nil, err
 		}
 		t.Publisher.UserID = int32(publisherUserID.Int64)
