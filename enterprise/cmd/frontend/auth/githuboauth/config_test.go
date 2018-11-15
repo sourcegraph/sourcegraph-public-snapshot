@@ -7,6 +7,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
@@ -50,18 +51,15 @@ func Test_parseConfig(t *testing.T) {
 					DisplayName:  "GitHub",
 					Type:         "github",
 					Url:          "https://github.com",
-				}: &provider{
-					config: oauth2.Config{
-						ClientID:     "my-client-id",
-						ClientSecret: "my-client-secret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://github.com/login/oauth/authorize",
-							TokenURL: "https://github.com/login/oauth/access_token",
-						},
-						Scopes: []string{"repo"},
+				}: provider("https://github.com/", oauth2.Config{
+					ClientID:     "my-client-id",
+					ClientSecret: "my-client-secret",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "https://github.com/login/oauth/authorize",
+						TokenURL: "https://github.com/login/oauth/access_token",
 					},
-					serviceID: "https://github.com/",
-				},
+					Scopes: []string{"repo"},
+				}),
 			},
 		},
 		{
@@ -92,36 +90,30 @@ func Test_parseConfig(t *testing.T) {
 					DisplayName:  "GitHub",
 					Type:         "github",
 					Url:          "https://github.com",
-				}: &provider{
-					config: oauth2.Config{
-						ClientID:     "my-client-id",
-						ClientSecret: "my-client-secret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://github.com/login/oauth/authorize",
-							TokenURL: "https://github.com/login/oauth/access_token",
-						},
-						Scopes: []string{"repo"},
+				}: provider("https://github.com/", oauth2.Config{
+					ClientID:     "my-client-id",
+					ClientSecret: "my-client-secret",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "https://github.com/login/oauth/authorize",
+						TokenURL: "https://github.com/login/oauth/access_token",
 					},
-					serviceID: "https://github.com/",
-				},
+					Scopes: []string{"repo"},
+				}),
 				schema.GitHubAuthProvider{
 					ClientID:     "my-client-id-2",
 					ClientSecret: "my-client-secret-2",
 					DisplayName:  "GitHub Enterprise",
 					Type:         "github",
 					Url:          "https://mycompany.com",
-				}: &provider{
-					config: oauth2.Config{
-						ClientID:     "my-client-id-2",
-						ClientSecret: "my-client-secret-2",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://mycompany.com/login/oauth/authorize",
-							TokenURL: "https://mycompany.com/login/oauth/access_token",
-						},
-						Scopes: []string{"repo"},
+				}: provider("https://mycompany.com/", oauth2.Config{
+					ClientID:     "my-client-id-2",
+					ClientSecret: "my-client-secret-2",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "https://mycompany.com/login/oauth/authorize",
+						TokenURL: "https://mycompany.com/login/oauth/access_token",
 					},
-					serviceID: "https://mycompany.com/",
-				},
+					Scopes: []string{"repo"},
+				}),
 			},
 		},
 	}
@@ -129,22 +121,22 @@ func Test_parseConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotProviders, gotProblems := parseConfig(tt.args.cfg)
 			for _, p := range gotProviders {
-				if p, ok := p.(*provider); ok {
-					p.login, p.callback = nil, nil
+				if p, ok := p.(*oauth.Provider); ok {
+					p.Login, p.Callback = nil, nil
+					p.ProviderOp.Login, p.ProviderOp.Callback = nil, nil
 				}
 			}
 			for k, p := range tt.wantProviders {
 				k := k
-				if q, ok := p.(*provider); ok {
-					q.sourceConfig = schema.AuthProviders{Github: &k}
+				if q, ok := p.(*oauth.Provider); ok {
+					q.SourceConfig = schema.AuthProviders{Github: &k}
 				}
 			}
 			if !reflect.DeepEqual(gotProviders, tt.wantProviders) {
 				dmp := diffmatchpatch.New()
 
-				// t.Errorf("parseConfig() gotProviders = %s, want %s", , spew.Sdump(tt.wantProviders))
 				t.Errorf("parseConfig() gotProviders != tt.wantProviders, diff:\n%s",
-					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(gotProviders), spew.Sdump(tt.wantProviders), false)),
+					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(tt.wantProviders), spew.Sdump(gotProviders), false)),
 				)
 			}
 			if !reflect.DeepEqual(gotProblems, tt.wantProblems) {
@@ -153,3 +145,25 @@ func Test_parseConfig(t *testing.T) {
 		})
 	}
 }
+
+func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
+	op := oauth.ProviderOp{
+		AuthPrefix:   authPrefix,
+		OAuth2Config: oauth2Config,
+		StateConfig:  getStateConfig(),
+		ServiceID:    serviceID,
+		ServiceType:  serviceType,
+	}
+	return &oauth.Provider{ProviderOp: op}
+}
+
+// 	config: oauth2.Config{
+// 	ClientID:     "my-client-id",
+// 	ClientSecret: "my-client-secret",
+// 	Endpoint: oauth2.Endpoint{
+// 		AuthURL:  "https://github.com/login/oauth/authorize",
+// 		TokenURL: "https://github.com/login/oauth/access_token",
+// 	},
+// 	Scopes: []string{"repo"},
+// },
+// serviceID: "https://github.com/",

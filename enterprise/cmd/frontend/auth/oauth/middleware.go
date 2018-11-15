@@ -10,7 +10,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func NewAuthHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
+func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	oauthFlowHandler := http.StripPrefix(authPrefix, NewOAuthFlowHandler(serviceType))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler

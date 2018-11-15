@@ -2,171 +2,103 @@ package githuboauth
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
-	"path"
+	"strconv"
+	"strings"
 
-	"github.com/dghubble/gologin"
 	"github.com/dghubble/gologin/github"
-	goauth2 "github.com/dghubble/gologin/oauth2"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-const serviceType = "github"
+const sessionKey = "githuboauth@0"
 
-func getProvider(id string) *provider {
-	p, ok := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: serviceType, ID: id}).(*provider)
-	if !ok {
-		return nil
+func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, problems []string) {
+	rawURL := p.Url
+	if rawURL == "" {
+		rawURL = "https://github.com/"
 	}
-	return p
-}
-
-type provider struct {
-	config       oauth2.Config
-	sourceConfig schema.AuthProviders
-	serviceID    string
-
-	login    http.Handler
-	callback http.Handler
-}
-
-var _ auth.Provider = (*provider)(nil)
-
-func (p *provider) ConfigID() auth.ProviderConfigID {
-	return auth.ProviderConfigID{
-		ID:   p.serviceID,
-		Type: serviceType,
-	}
-}
-
-func (p *provider) Config() schema.AuthProviders {
-	return p.sourceConfig
-}
-
-func (p *provider) CachedInfo() *auth.ProviderInfo {
-	displayName := p.serviceID
-	if p.sourceConfig.Github != nil && p.sourceConfig.Github.DisplayName != "" {
-		displayName = p.sourceConfig.Github.DisplayName
-	}
-	return &auth.ProviderInfo{
-		ServiceID:   p.serviceID,
-		ClientID:    p.config.ClientID,
-		DisplayName: displayName,
-		AuthenticationURL: (&url.URL{
-			Path:     path.Join(authPrefix, "login"),
-			RawQuery: (url.Values{"pc": []string{p.ConfigID().ID}}).Encode(),
-		}).String(),
-	}
-}
-
-func (p *provider) Refresh(ctx context.Context) error {
-	return nil
-}
-
-func getStateConfig() gologin.CookieConfig {
-	cfg := gologin.CookieConfig{
-		Name:     "github-state-cookie",
-		Path:     "/",
-		MaxAge:   120, // 120 seconds
-		HTTPOnly: true,
-	}
-	if conf.Get().TlsCert != "" {
-		cfg.Secure = true
-	}
-	return cfg
-}
-
-func newProvider(sourceConfig schema.AuthProviders, serviceID string, cfg oauth2.Config) *provider {
-	stateConfig := getStateConfig()
-	prov := &provider{
-		config:       cfg,
-		sourceConfig: sourceConfig,
-		serviceID:    serviceID,
-	}
-	prov.login = stateHandler(true, prov.ConfigID().ID, stateConfig, github.LoginHandler(&cfg, nil))
-	prov.callback = stateHandler(false, prov.ConfigID().ID, stateConfig, github.CallbackHandler(&cfg, http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) { issueSession(prov, w, r) },
-	), nil))
-
-	return prov
-}
-
-// stateHandler decodes the state from the gologin cookie and sets it in the context. It checked by
-// some downstream handler to ensure equality with the value of the state URL param.
-//
-// This is very similar to gologin's default StateHandler function, but we define our own, because
-// we encode the returnTo URL in the state. We could use the `redirect_uri` parameter to do this,
-// but doing so would require using Sourcegraph's external hostname and making sure it is consistent
-// with what is specified in the GitHub OAuth app config as the "callback URL."
-func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, success http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, req *http.Request) {
-		ctx := req.Context()
-		if isLogin {
-			// add Cookie with a random state + redirect
-			stateVal, err := loginState{
-				Redirect:   req.URL.Query().Get("redirect"),
-				CSRF:       randomState(),
-				ProviderID: providerID,
-			}.Encode()
-			if err != nil {
-				log15.Error("Could not encode OAuth state", "error", err)
-				http.Error(w, "Could not encode OAuth state.", http.StatusInternalServerError)
-				return
-			}
-			http.SetCookie(w, newCookie(config, stateVal))
-			ctx = goauth2.WithState(ctx, stateVal)
-		} else if cookie, err := req.Cookie(config.Name); err == nil { // not login and cookie exists
-			// add the cookie state to the ctx
-			ctx = goauth2.WithState(ctx, cookie.Value)
-		}
-		success.ServeHTTP(w, req.WithContext(ctx))
-	}
-	return http.HandlerFunc(fn)
-}
-
-type loginState struct {
-	// Redirect is the URL path to redirect to after login.
-	Redirect string
-
-	// ProviderID is the service ID of the provider that is handling the auth flow.
-	ProviderID string
-
-	// CSRF is the random string that ensures the encoded state is sufficiently random to be checked
-	// for CSRF purposes.
-	CSRF string
-}
-
-func (s loginState) Encode() (string, error) {
-	sb, err := json.Marshal(s)
+	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return "", err
+		problems = append(problems, fmt.Sprintf("Could not parse GitHub URL %q. You will not be able to login via this GitHub instance.", rawURL))
+		return nil, problems
 	}
-	return base64.RawURLEncoding.EncodeToString(sb), nil
+	baseURL := extsvc.NormalizeBaseURL(parsedURL).String()
+	oauth2Cfg := oauth2.Config{
+		ClientID:     p.ClientID,
+		ClientSecret: p.ClientSecret,
+		Scopes:       []string{"repo"},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  strings.TrimSuffix(baseURL, "/") + "/login/oauth/authorize",
+			TokenURL: strings.TrimSuffix(baseURL, "/") + "/login/oauth/access_token",
+		},
+	}
+	return oauth.NewProvider(oauth.ProviderOp{
+		AuthPrefix:   authPrefix,
+		OAuth2Config: oauth2Cfg,
+		SourceConfig: sourceCfg,
+		StateConfig:  getStateConfig(),
+		ServiceID:    baseURL,
+		ServiceType:  serviceType,
+		Login:        github.LoginHandler(&oauth2Cfg, nil),
+		Callback: github.CallbackHandler(&oauth2Cfg, oauth.SessionIssuer(sessionKey, serviceType, baseURL, p.ClientID, getOrCreateUser, func(w http.ResponseWriter) {
+			stateConfig := getStateConfig()
+			stateConfig.MaxAge = -1
+			http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+		}), nil),
+	}), nil
 }
 
-func DecodeState(encoded string) (*loginState, error) {
-	var s loginState
-	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
+func getOrCreateUser(ctx context.Context, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
+	ghUser, err := github.UserFromContext(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "Could not read GitHub user from callback request.", errors.Wrap(err, "could not read user from context")
 	}
-	if err := json.Unmarshal(decoded, &s); err != nil {
-		return nil, err
+
+	login, err := auth.NormalizeUsername(deref(ghUser.Login))
+	if err != nil {
+		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
-	return &s, nil
+
+	var data extsvc.ExternalAccountData
+	data.SetAccountData(ghUser)
+	data.SetAuthData(token)
+	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
+		Username:        login,
+		Email:           deref(ghUser.Email),
+		EmailIsVerified: deref(ghUser.Email) != "",
+		DisplayName:     deref(ghUser.Name),
+		AvatarURL:       deref(ghUser.AvatarURL),
+	}, extsvc.ExternalAccountSpec{
+		ServiceType: serviceType,
+		ServiceID:   serviceID,
+		ClientID:    clientID,
+		AccountID:   strconv.FormatInt(derefInt64(ghUser.ID), 10),
+	}, data)
+	if err != nil {
+		return nil, safeErrMsg, err
+	}
+	return actor.FromUser(userID), "", nil
 }
 
-// Returns a base64 encoded random 32 byte string.
-func randomState() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.RawURLEncoding.EncodeToString(b)
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func derefInt64(i *int64) int64 {
+	if i == nil {
+		return 0
+	}
+	return *i
 }
