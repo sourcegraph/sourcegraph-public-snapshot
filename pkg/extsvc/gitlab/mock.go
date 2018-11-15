@@ -9,3 +9,6 @@ var MockListProjects func(ctx context.Context, urlStr string) (proj []*Project, 
 
 // MockListUsers, if non-nil, will be called instead of Client.ListUsers
 var MockListUsers func(ctx context.Context, urlStr string) (users []*User, nextPageURL *string, err error)
+
+// MockGetUser, if non-nil, will be called instead of Client.GetUser
+var MockGetUser func(ctx context.Context, id string) (*User, error)
