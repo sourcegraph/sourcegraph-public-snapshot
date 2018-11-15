@@ -58,24 +58,8 @@ func CanonicalURL(next http.Handler) http.Handler {
 			return
 		}
 
-		var canonicalURLRedirect bool
-		if conf.ExperimentalFeatures != nil {
-			switch conf.ExperimentalFeatures.CanonicalURLRedirect {
-			case "enabled", "": // default enabled
-				canonicalURLRedirect = true
-			case "disabled":
-				// noop
-			default:
-				text := "Misconfigured experimentalFeatures.canonicalURLRedirect values in site configuration."
-				log15.Error(text, "invalidValue", conf.ExperimentalFeatures.CanonicalURLRedirect)
-				http.Error(w, text, http.StatusInternalServerError)
-				return
-			}
-		}
-
-		requireHostMatch := conf.ExperimentalFeatures != nil && canonicalURLRedirect
 		useXForwardedProto := httpToHTTPSRedirect == "load-balanced"
-		if reqURL := getRequestURL(r, useXForwardedProto); (requireHostMatch && reqURL.Host != externalURL.Host) || (requireSchemeMatch && !doesSchemeMatch(r, externalURL, useXForwardedProto)) {
+		if reqURL := getRequestURL(r, useXForwardedProto); reqURL.Host != externalURL.Host || (requireSchemeMatch && !doesSchemeMatch(r, externalURL, useXForwardedProto)) {
 			// Redirect.
 			dest := externalURL.ResolveReference(&url.URL{Path: reqURL.Path, RawQuery: reqURL.RawQuery, Fragment: reqURL.Fragment})
 			http.Redirect(w, r, dest.String(), http.StatusMovedPermanently)

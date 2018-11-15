@@ -141,11 +141,10 @@ type Discussions struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
-	Discussions          string `json:"discussions,omitempty"`
-	GithubAuth           bool   `json:"githubAuth,omitempty"`
-	JumpToDefOSSIndex    string `json:"jumpToDefOSSIndex,omitempty"`
-	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
+	Discussions       string `json:"discussions,omitempty"`
+	GithubAuth        bool   `json:"githubAuth,omitempty"`
+	JumpToDefOSSIndex string `json:"jumpToDefOSSIndex,omitempty"`
+	UpdateScheduler2  string `json:"updateScheduler2,omitempty"`
 }
 
 // ExtensionRepository description: The location of the version control repository for this extension.

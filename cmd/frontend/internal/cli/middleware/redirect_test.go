@@ -33,9 +33,8 @@ func TestCanonicalURL(t *testing.T) {
 	}
 
 	tests := []struct {
-		externalURL          string
-		httpToHttpsRedirect  string
-		canonicalURLRedirect string
+		externalURL         string
+		httpToHttpsRedirect string
 
 		url             string
 		xForwardedProto string
@@ -43,37 +42,22 @@ func TestCanonicalURL(t *testing.T) {
 		wantRedirect string
 	}{
 		{
-			externalURL:         "http://example.com",
-			httpToHttpsRedirect: "off",
-			url:                 "http://example.com/foo",
-			wantRedirect:        "",
-		},
-		{
 			externalURL:         "https://example.com",
 			httpToHttpsRedirect: "off",
-			url:                 "http://example.com/foo",
+			url:                 "http://other.example.com/foo",
+			wantRedirect:        "https://example.com/foo",
+		},
+		{
+			externalURL:         "http://example.com",
+			httpToHttpsRedirect: "off",
+			url:                 "https://other.example.com/foo",
+			wantRedirect:        "http://example.com/foo",
+		},
+		{
+			externalURL:         "http://example.com",
+			httpToHttpsRedirect: "off",
+			url:                 "http://example.com",
 			wantRedirect:        "",
-		},
-		{
-			externalURL:          "https://example.com",
-			httpToHttpsRedirect:  "off",
-			canonicalURLRedirect: "enabled",
-			url:                  "http://other.example.com/foo",
-			wantRedirect:         "https://example.com/foo",
-		},
-		{
-			externalURL:          "http://example.com",
-			httpToHttpsRedirect:  "off",
-			canonicalURLRedirect: "enabled",
-			url:                  "https://other.example.com/foo",
-			wantRedirect:         "http://example.com/foo",
-		},
-		{
-			externalURL:          "http://example.com",
-			httpToHttpsRedirect:  "off",
-			canonicalURLRedirect: "enabled",
-			url:                  "http://example.com",
-			wantRedirect:         "",
 		},
 		{
 			externalURL:         "https://example.com",
@@ -100,13 +84,6 @@ func TestCanonicalURL(t *testing.T) {
 			url:                 "http://example.com/foo",
 			xForwardedProto:     "https", // not trusted
 			wantRedirect:        "https://example.com/foo",
-		},
-		{
-			externalURL:          "https://example.com",
-			httpToHttpsRedirect:  "on",
-			canonicalURLRedirect: "enabled",
-			url:                  "http://other.example.com/foo",
-			wantRedirect:         "https://example.com/foo",
 		},
 		{
 			externalURL:         "https://example.com",
@@ -143,55 +120,17 @@ func TestCanonicalURL(t *testing.T) {
 			xForwardedProto:     "https",
 			wantRedirect:        "",
 		},
-
 		{
-			externalURL:          "https://example.com",
-			httpToHttpsRedirect:  "load-balanced",
-			canonicalURLRedirect: "enabled",
-			url:                  "http://example.com/foo",
-			xForwardedProto:      "http",
-			wantRedirect:         "https://example.com/foo",
-		},
-		{
-			externalURL:          "https://example.com",
-			httpToHttpsRedirect:  "load-balanced",
-			canonicalURLRedirect: "enabled",
-			url:                  "http://example.com/foo",
-			xForwardedProto:      "https",
-			wantRedirect:         "",
-		},
-		{
-			externalURL:          "https://example.com",
-			httpToHttpsRedirect:  "load-balanced",
-			canonicalURLRedirect: "enabled",
-			url:                  "http://other.example.com/foo",
-			xForwardedProto:      "https",
-			wantRedirect:         "https://example.com/foo",
-		},
-		{
-			externalURL:          "https://example.com",
-			httpToHttpsRedirect:  "load-balanced",
-			canonicalURLRedirect: "enabled",
-			url:                  "https://example.com/foo",
-			xForwardedProto:      "http",
-			wantRedirect:         "https://example.com/foo",
-		},
-		{
-			externalURL:          "https://example.com",
-			httpToHttpsRedirect:  "load-balanced",
-			canonicalURLRedirect: "enabled",
-			url:                  "https://example.com/foo",
-			xForwardedProto:      "https",
-			wantRedirect:         "",
+			externalURL:         "https://example.com",
+			httpToHttpsRedirect: "load-balanced",
+			url:                 "http://other.example.com/foo",
+			xForwardedProto:     "https",
+			wantRedirect:        "https://example.com/foo",
 		},
 	}
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			mock := &schema.SiteConfiguration{ExternalURL: test.externalURL, HttpToHttpsRedirect: test.httpToHttpsRedirect}
-			if test.canonicalURLRedirect != "" {
-				mock.ExperimentalFeatures = &schema.ExperimentalFeatures{CanonicalURLRedirect: test.canonicalURLRedirect}
-			}
-			conf.Mock(mock)
+			conf.Mock(&schema.SiteConfiguration{ExternalURL: test.externalURL, HttpToHttpsRedirect: test.httpToHttpsRedirect})
 			defer conf.Mock(nil)
 			req := httptest.NewRequest("GET", test.url, nil)
 			req.Header.Set("X-Forwarded-Proto", test.xForwardedProto)
@@ -227,21 +166,6 @@ func TestCanonicalURL(t *testing.T) {
 			t.Errorf("got response code %d, want %d", rr.Code, want)
 		}
 		if got, want := rr.Body.String(), "Misconfigured externalURL"; !strings.Contains(got, want) {
-			t.Errorf("got %q, want contains %q", got, want)
-		}
-	})
-
-	t.Run("experimentalFeatures.canonicalURLRedirect invalid value", func(t *testing.T) {
-		conf.Mock(&schema.SiteConfiguration{ExternalURL: "http://example.com", ExperimentalFeatures: &schema.ExperimentalFeatures{CanonicalURLRedirect: "invalid"}})
-		defer conf.Mock(nil)
-		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-		req := httptest.NewRequest("GET", "/", nil)
-		rr := httptest.NewRecorder()
-		h.ServeHTTP(rr, req)
-		if want := http.StatusInternalServerError; rr.Code != want {
-			t.Errorf("got response code %d, want %d", rr.Code, want)
-		}
-		if got, want := rr.Body.String(), "Misconfigured experimentalFeatures.canonicalURLRedirect"; !strings.Contains(got, want) {
 			t.Errorf("got %q, want contains %q", got, want)
 		}
 	})

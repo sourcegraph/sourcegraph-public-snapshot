@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The `siteID` site configuration option was removed because it is no longer needed. If you previously specified this in site configuration, a new, random site ID will be generated upon server startup. You can safely remove the existing `siteID` value from your site configuration after upgrading.
+- The `experimentalFeatures.canonicalURLRedirect` site config property is always enabled, and the feature flag to disable it was removed. It was initially enabled by default in 2.13.
 
 ### Removed
 

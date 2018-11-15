@@ -229,17 +229,6 @@ This property must be one of the following enum values:
 
 Default: `"disabled"`
 
-### canonicalURLRedirect (string, enum)
-
-Enables or disables redirecting to the canonical URL (underneath the `externalURL`) for incoming HTTP requests. Enabled by default.
-
-This property must be one of the following enum values:
-
-- `enabled`
-- `disabled`
-
-Default: `"enabled"`
-
 ### discussions (string, enum)
 
 Enables the code discussions experiment.
