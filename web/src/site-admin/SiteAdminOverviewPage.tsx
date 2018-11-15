@@ -156,9 +156,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 this.state.info.surveyResponses.totalCount
                             )}
                             {this.state.info.surveyResponses.totalCount >= 5 &&
-                                `${numberWithCommas(
+                                `, ${numberWithCommas(
                                     this.state.info.surveyResponses.averageScore
-                                )} average score (0–10)`}
+                                )} average in last 30 days (from 0–10)`}
                         </OverviewItem>
                     )}
                 </OverviewList>
