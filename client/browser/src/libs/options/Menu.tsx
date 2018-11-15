@@ -45,6 +45,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
                         <div className="form-check" key={key}>
                             <label className="form-check-label">
                                 <input
+                                    id={key}
                                     onClick={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
                                     className="form-check-input"
                                     type="checkbox"
