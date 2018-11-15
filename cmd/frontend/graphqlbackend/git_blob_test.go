@@ -1,6 +1,10 @@
 package graphqlbackend
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sourcegraph/sourcegraph/pkg/highlight"
+)
 
 func TestIsBinary(t *testing.T) {
 	tests := []struct {
@@ -62,7 +66,7 @@ func TestIsBinary(t *testing.T) {
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got := isBinary(tst.input)
+			got := highlight.IsBinary(tst.input)
 			if got != tst.want {
 				t.Fatalf("got %v want %v", got, tst.want)
 			}
