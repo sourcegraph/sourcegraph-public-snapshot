@@ -35,7 +35,7 @@ func (r *extensionDBResolver) Publisher(ctx context.Context) (graphqlbackend.Reg
 
 func (r *extensionDBResolver) Name() string { return r.v.Name }
 func (r *extensionDBResolver) Manifest(ctx context.Context) (graphqlbackend.ExtensionManifest, error) {
-	manifest, err := getExtensionManifestWithBundleURL(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
+	manifest, _, err := getExtensionManifestWithBundleURL(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +48,14 @@ func (r *extensionDBResolver) CreatedAt() *string {
 
 func (r *extensionDBResolver) UpdatedAt() *string {
 	return strptr(r.v.UpdatedAt.Format(time.RFC3339))
+}
+
+func (r *extensionDBResolver) PublishedAt(ctx context.Context) (*string, error) {
+	_, publishedAt, err := getExtensionManifestWithBundleURL(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
+	if err != nil {
+		return nil, err
+	}
+	return strptr(publishedAt.Format(time.RFC3339)), nil
 }
 
 func (r *extensionDBResolver) URL() string {

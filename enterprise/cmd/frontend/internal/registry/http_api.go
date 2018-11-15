@@ -58,7 +58,7 @@ var (
 )
 
 func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Extension, error) {
-	manifest, err := getExtensionManifestWithBundleURL(ctx, v.NonCanonicalExtensionID, v.ID, "release")
+	manifest, publishedAt, err := getExtensionManifestWithBundleURL(ctx, v.NonCanonicalExtensionID, v.ID, "release")
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +71,12 @@ func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Exte
 			Name: v.Publisher.NonCanonicalName,
 			URL:  baseURL + frontendregistry.PublisherExtensionsURL(v.Publisher.UserID != 0, v.Publisher.OrgID != 0, v.Publisher.NonCanonicalName),
 		},
-		Name:      v.Name,
-		Manifest:  manifest,
-		CreatedAt: v.CreatedAt,
-		UpdatedAt: v.UpdatedAt,
-		URL:       baseURL + frontendregistry.ExtensionURL(v.NonCanonicalExtensionID),
+		Name:        v.Name,
+		Manifest:    manifest,
+		CreatedAt:   v.CreatedAt,
+		UpdatedAt:   v.UpdatedAt,
+		PublishedAt: publishedAt,
+		URL:         baseURL + frontendregistry.ExtensionURL(v.NonCanonicalExtensionID),
 	}, nil
 }
 

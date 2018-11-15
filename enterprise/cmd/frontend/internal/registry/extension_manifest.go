@@ -8,6 +8,7 @@ import (
 	"path"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -24,18 +25,18 @@ func validateExtensionManifest(text string) error {
 
 // getExtensionManifestWithBundleURL returns the extension manifest as JSON. If there are no
 // releases, it returns a nil manifest. If the manifest has no "url" field itself, a "url" field
-// pointing to the extension's bundle is inserted.
-func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, registryExtensionID int32, releaseTag string) (*string, error) {
-	var manifest *string
+// pointing to the extension's bundle is inserted. It also returns the date that the release was
+// published.
+func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, registryExtensionID int32, releaseTag string) (manifest *string, publishedAt time.Time, err error) {
 	release, err := dbReleases{}.GetLatest(ctx, registryExtensionID, releaseTag, false)
 	if err != nil && !errcode.IsNotFound(err) {
-		return nil, err
+		return nil, time.Time{}, err
 	}
 	if release != nil {
 		// Add URL to bundle if necessary.
 		var o map[string]interface{}
 		if err := jsonc.Unmarshal(release.Manifest, &o); err != nil {
-			return nil, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", registryExtensionID, releaseTag, err)
+			return nil, time.Time{}, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", registryExtensionID, releaseTag, err)
 		}
 		if o == nil {
 			o = map[string]interface{}{}
@@ -45,20 +46,21 @@ func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, 
 			// Insert "url" field with link to bundle file on this site.
 			bundleURL, err := makeExtensionBundleURL(release.ID, release.CreatedAt.UnixNano(), extensionID)
 			if err != nil {
-				return nil, err
+				return nil, time.Time{}, err
 			}
 			o["url"] = bundleURL
 			b, err := json.MarshalIndent(o, "", "  ")
 			if err != nil {
-				return nil, err
+				return nil, time.Time{}, err
 			}
 			release.Manifest = string(b)
 		}
 
 		manifest = &release.Manifest
+		publishedAt = release.CreatedAt
 	}
 
-	return manifest, nil
+	return manifest, publishedAt, nil
 }
 
 var nonLettersDigits = regexp.MustCompile(`[^a-zA-Z0-9-]`)

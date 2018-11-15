@@ -67,6 +67,13 @@ func (r *registryExtensionRemoteResolver) UpdatedAt() *string {
 	return strptr(r.v.UpdatedAt.Format(time.RFC3339))
 }
 
+func (r *registryExtensionRemoteResolver) PublishedAt(context.Context) (*string, error) {
+	if r.v.IsSynthesizedLocalExtension {
+		return nil, nil
+	}
+	return strptr(r.v.PublishedAt.Format(time.RFC3339)), nil
+}
+
 func (r *registryExtensionRemoteResolver) URL() string {
 	return router.Extension(r.v.ExtensionID)
 }

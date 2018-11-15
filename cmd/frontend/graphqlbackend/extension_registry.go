@@ -98,6 +98,7 @@ type RegistryExtension interface {
 	Manifest(ctx context.Context) (ExtensionManifest, error)
 	CreatedAt() *string
 	UpdatedAt() *string
+	PublishedAt(context.Context) (*string, error)
 	URL() string
 	RemoteURL() *string
 	RegistryName() (string, error)

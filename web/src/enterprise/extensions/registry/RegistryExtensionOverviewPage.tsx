@@ -1,3 +1,4 @@
+import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
@@ -89,11 +90,19 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                             <dt className="border-top pt-2">Extension ID</dt>
                             <dd>{this.props.extension.id}</dd>
                             {this.props.extension.registryExtension &&
-                                this.props.extension.registryExtension.updatedAt && (
+                                (this.props.extension.registryExtension.updatedAt ||
+                                    this.props.extension.registryExtension.publishedAt) && (
                                     <>
                                         <dt className="border-top pt-2">Last updated</dt>
                                         <dd>
-                                            <Timestamp date={this.props.extension.registryExtension.updatedAt} />
+                                            <Timestamp
+                                                date={maxDate(
+                                                    [
+                                                        this.props.extension.registryExtension.updatedAt,
+                                                        this.props.extension.registryExtension.publishedAt,
+                                                    ].filter((v): v is string => !!v)
+                                                )}
+                                            />
                                         </dd>
                                     </>
                                 )}
