@@ -254,3 +254,35 @@ func (t sleepIfUncachedTransport) RoundTrip(req *http.Request) (*http.Response, 
 	}
 	return resp, err
 }
+
+// IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is
+// marked as a work-in-progress extension (by having a title that begins with "WIP:" or "[WIP]").
+//
+// NOTE: Keep this pattern in sync with WorkInProgressExtensionTitlePostgreSQLPattern.
+func IsWorkInProgressExtension(manifest *string) bool {
+	parsed := NewExtensionManifest(manifest)
+	if parsed == nil {
+		// Extensions with no manifest (== no releases published yet) are considered
+		// work-in-progress.
+		return true
+	}
+	title, err := parsed.Title()
+	if err != nil {
+		// An extension whose manifest fails to parse is problematic for other reasons (and an error
+		// will be displayed), but it isn't helpful to also consider it work-in-progress.
+		return false
+	}
+	if title == nil {
+		// An extension with no title just uses the extension ID as a title. This is not very useful
+		// to users, but it isn't helpful to consider it work-in-progress.
+		return false
+	}
+	return strings.HasPrefix(*title, "WIP:") || strings.HasPrefix(*title, "[WIP]")
+}
+
+// WorkInProgressExtensionTitlePostgreSQLPattern is the PostgreSQL "SIMILAR TO" pattern that matches
+// the extension manifest's "title" property. See
+// https://www.postgresql.org/docs/9.3/functions-matching.html.
+//
+// NOTE: Keep this pattern in sync with IsWorkInProgressExtension.
+const WorkInProgressExtensionTitlePostgreSQLPattern = `(\[WIP]|WIP:)%`

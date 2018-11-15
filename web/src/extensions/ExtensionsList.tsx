@@ -54,6 +54,8 @@ export const registryExtensionFragment = gql`
         remoteURL
         registryName
         isLocal
+        isWorkInProgress
+        viewerCanAdminister
     }
 `
 
@@ -66,7 +68,7 @@ const LOADING: 'loading' = 'loading'
 
 interface ExtensionsResult {
     /** The configured extensions. */
-    extensions: ConfiguredExtension[]
+    extensions: ConfiguredExtension<GQL.IRegistryExtension>[]
 
     /** An error message that should be displayed to the user (in addition to the configured extensions). */
     error: string | null
@@ -252,9 +254,17 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 from(
                     queryGraphQL(
                         gql`
-                            query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
+                            query RegistryExtensions(
+                                $query: String
+                                $prioritizeExtensionIDs: [String!]!
+                                $includeWIP: Boolean!
+                            ) {
                                 extensionRegistry {
-                                    extensions(query: $query, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
+                                    extensions(
+                                        query: $query
+                                        prioritizeExtensionIDs: $prioritizeExtensionIDs
+                                        includeWIP: $includeWIP
+                                    ) {
                                         nodes {
                                             ...RegistryExtensionFields
                                         }
@@ -267,6 +277,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         {
                             ...args,
                             prioritizeExtensionIDs: viewerExtensions.map(({ id }) => id),
+                            includeWIP: !!args.query,
                         } as GQL.IExtensionsOnExtensionRegistryArguments
                     )
                 ).pipe(
