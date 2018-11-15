@@ -128,7 +128,7 @@ func (q *Repo) String() string {
 // RepoSet is a list of repos to match. It is a Sourcegraph addition and only
 // used in the Rest interface for efficient checking of large repo lists.
 type RepoSet struct {
-	Set map[string]bool
+	Set map[string]struct{}
 }
 
 func (q *RepoSet) String() string {
@@ -150,9 +150,9 @@ func (q *RepoSet) String() string {
 }
 
 func NewRepoSet(repo ...string) *RepoSet {
-	s := &RepoSet{Set: make(map[string]bool)}
+	s := &RepoSet{Set: make(map[string]struct{})}
 	for _, r := range repo {
-		s.Set[r] = true
+		s.Set[r] = struct{}{}
 	}
 	return s
 }
@@ -513,7 +513,7 @@ func ExpandFileContent(q Q) Q {
 //
 //    listFn([]string{"github.com/foo/.*"}, []string{".*baz.*"})
 //     -> []string{"github.com/foo/bar"}
-func ExpandRepo(q Q, listFn func(include, exclude []string) (map[string]bool, error)) (Q, error) {
+func ExpandRepo(q Q, listFn func(include, exclude []string) (map[string]struct{}, error)) (Q, error) {
 	// We want nested ors/ands to be flattened
 	q = Simplify(q)
 

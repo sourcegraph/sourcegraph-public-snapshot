@@ -102,11 +102,11 @@ func TestMap(t *testing.T) {
 
 // createListFunc returns a listFn (see ExpandRepo docs) which returns a list
 // of repositories from repos.
-func createListFunc(repos []string) func([]string, []string) (map[string]bool, error) {
-	return func(inc, exc []string) (map[string]bool, error) {
-		set := map[string]bool{}
+func createListFunc(repos []string) func([]string, []string) (map[string]struct{}, error) {
+	return func(inc, exc []string) (map[string]struct{}, error) {
+		set := map[string]struct{}{}
 		for _, r := range repos {
-			set[r] = true
+			set[r] = struct{}{}
 		}
 		for r := range set {
 			for _, re := range inc {
@@ -159,7 +159,7 @@ func TestExpandRepo(t *testing.T) {
 }
 
 func TestExpandRepo_error(t *testing.T) {
-	list := func(inc, exc []string) (map[string]bool, error) {
+	list := func(inc, exc []string) (map[string]struct{}, error) {
 		return nil, errors.New("fail")
 	}
 	q, err := Parse("(foo repo:bar) or (baz repo:bam)")

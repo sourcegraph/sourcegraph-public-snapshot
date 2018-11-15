@@ -205,7 +205,8 @@ func RepoRevisionsQuery(q query.Q, repos []*types.Repo) ([]RepositoryRevisions, 
 			case *query.Repo:
 				return &query.Const{Value: re[a.Pattern].MatchString(string(r.Name))}
 			case *query.RepoSet:
-				return &query.Const{Value: a.Set[string(r.Name)]}
+				_, matches := a.Set[string(r.Name)]
+				return &query.Const{Value: matches}
 			}
 			return q
 		})
