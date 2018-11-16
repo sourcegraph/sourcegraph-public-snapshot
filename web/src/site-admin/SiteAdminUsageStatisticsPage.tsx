@@ -31,6 +31,40 @@ const chartGeneratorOptions: ChartOptions = {
 
 const CHART_ID_KEY = 'latest-usage-statistics-chart-id'
 
+interface UsageChartPageProps {
+    isLightTheme: boolean
+    stats: GQL.ISiteUsageStatistics
+    chartID: keyof ChartOptions
+    className?: string
+    header?: JSX.Element
+}
+
+export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
+    <div className={props.className}>
+        {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
+        <BarChart
+            showLabels={true}
+            showLegend={true}
+            width={500}
+            height={200}
+            isLightTheme={props.isLightTheme}
+            data={props.stats[props.chartID].map(p => ({
+                xLabel: format(
+                    Date.parse(p.startTime) + 1000 * 60 * 60 * 24,
+                    chartGeneratorOptions[props.chartID].dateFormat
+                ),
+                yValues: {
+                    Registered: p.registeredUserCount,
+                    Anonymous: p.anonymousUserCount,
+                },
+            }))}
+        />
+        <small className="site-admin-usage-statistics-page__tz-note">
+            <i>GMT/UTC time</i>
+        </small>
+    </div>
+)
+
 interface UserUsageStatisticsHeaderFooterProps {
     nodes: GQL.IUser[]
 }
@@ -252,37 +286,3 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         this.setState({ chartID: e.target.value as keyof ChartOptions })
     }
 }
-
-interface UsageChartPageProps {
-    isLightTheme: boolean
-    stats: GQL.ISiteUsageStatistics
-    chartID: keyof ChartOptions
-    className?: string
-    header?: JSX.Element
-}
-
-export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
-    <div className={props.className}>
-        {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
-        <BarChart
-            showLabels={true}
-            showLegend={true}
-            width={500}
-            height={200}
-            isLightTheme={props.isLightTheme}
-            data={props.stats[props.chartID].map(p => ({
-                xLabel: format(
-                    Date.parse(p.startTime) + 1000 * 60 * 60 * 24,
-                    chartGeneratorOptions[props.chartID].dateFormat
-                ),
-                yValues: {
-                    Registered: p.registeredUserCount,
-                    Anonymous: p.anonymousUserCount,
-                },
-            }))}
-        />
-        <small className="site-admin-usage-statistics-page__tz-note">
-            <i>GMT/UTC time</i>
-        </small>
-    </div>
-)
