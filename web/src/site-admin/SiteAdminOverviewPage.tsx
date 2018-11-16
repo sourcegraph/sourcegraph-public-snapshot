@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
+import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import CityIcon from 'mdi-react/CityIcon'
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import EyeIcon from 'mdi-react/EyeIcon'
@@ -64,121 +65,130 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                 {!this.state.info && <LoadingSpinner className="icon-inline" />}
                 <OverviewList>
                     {this.state.info && (
-                        <OverviewItem
-                            link="/explore"
-                            icon={EyeIcon}
-                            actions={
-                                <Link to="/explore" className="btn btn-primary btn-sm">
-                                    Explore
-                                </Link>
-                            }
-                        >
-                            Explore
-                        </OverviewItem>
+                        <>
+                            <OverviewItem
+                                link="/explore"
+                                icon={EyeIcon}
+                                actions={
+                                    <Link to="/explore" className="btn btn-primary btn-sm">
+                                        Explore
+                                    </Link>
+                                }
+                                title="Explore"
+                            />
+                            <OverviewItem
+                                link="/site-admin/repositories"
+                                icon={RepositoryIcon}
+                                actions={
+                                    <>
+                                        <Link to="/site-admin/configuration" className="btn btn-primary btn-sm">
+                                            <SettingsIcon className="icon-inline" /> Configure repositories
+                                        </Link>
+                                        <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
+                                            View all
+                                        </Link>
+                                    </>
+                                }
+                                title={`${numberWithCommas(this.state.info.repositories)} ${
+                                    this.state.info.repositories !== null
+                                        ? pluralize('repository', this.state.info.repositories, 'repositories')
+                                        : '?'
+                                }`}
+                            />
+                            <OverviewItem
+                                link="/site-admin/users"
+                                icon={UserIcon}
+                                actions={
+                                    <>
+                                        <Link to="/site-admin/users/new" className="btn btn-primary btn-sm">
+                                            <AddIcon className="icon-inline" /> Create user account
+                                        </Link>
+                                        <Link to="/site-admin/configuration" className="btn btn-secondary btn-sm">
+                                            <SettingsIcon className="icon-inline" /> Configure SSO
+                                        </Link>
+                                        <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
+                                            View all
+                                        </Link>
+                                    </>
+                                }
+                                title={`${numberWithCommas(this.state.info.users)} ${pluralize(
+                                    'user',
+                                    this.state.info.users
+                                )}`}
+                            />
+                            <OverviewItem
+                                link="/site-admin/organizations"
+                                icon={CityIcon}
+                                actions={
+                                    <>
+                                        <Link to="/organizations/new" className="btn btn-primary btn-sm">
+                                            <AddIcon className="icon-inline" /> Create organization
+                                        </Link>
+                                        <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
+                                            View all
+                                        </Link>
+                                    </>
+                                }
+                                title={`${numberWithCommas(this.state.info.orgs)} ${pluralize(
+                                    'organization',
+                                    this.state.info.orgs
+                                )}`}
+                            />
+                            <OverviewItem
+                                link="/site-admin/surveys"
+                                icon={EmoticonIcon}
+                                actions={
+                                    <>
+                                        <Link to="/site-admin/surveys" className="btn btn-secondary btn-sm">
+                                            View all
+                                        </Link>
+                                    </>
+                                }
+                                title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
+                                    'survey response',
+                                    this.state.info.surveyResponses.totalCount
+                                )} ${
+                                    this.state.info.surveyResponses.totalCount >= 5
+                                        ? `, ${numberWithCommas(
+                                              this.state.info.surveyResponses.averageScore
+                                          )} average in last 30 days (from 0–10)`
+                                        : ''
+                                }`}
+                            />
+                        </>
                     )}
-                    {this.state.info && (
+                    {this.state.stats && (
                         <OverviewItem
-                            link="/site-admin/repositories"
-                            icon={RepositoryIcon}
-                            actions={
-                                <>
-                                    <Link to="/site-admin/configuration" className="btn btn-primary btn-sm">
-                                        <SettingsIcon className="icon-inline" /> Configure repositories
-                                    </Link>
-                                    <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
-                                        View all
-                                    </Link>
-                                </>
-                            }
+                            icon={ChartLineIcon}
+                            title={`${this.state.stats.waus[1].userCount} ${pluralize(
+                                'active user',
+                                this.state.stats.waus[1].userCount
+                            )} last week`}
+                            defaultExpanded={true}
                         >
-                            {numberWithCommas(this.state.info.repositories)}&nbsp;
-                            {this.state.info.repositories !== null
-                                ? pluralize('repository', this.state.info.repositories, 'repositories')
-                                : '?'}
-                        </OverviewItem>
-                    )}
-                    {this.state.info && (
-                        <OverviewItem
-                            link="/site-admin/users"
-                            icon={UserIcon}
-                            actions={
-                                <>
-                                    <Link to="/site-admin/users/new" className="btn btn-primary btn-sm">
-                                        <AddIcon className="icon-inline" /> Create user account
-                                    </Link>
-                                    <Link to="/site-admin/configuration" className="btn btn-secondary btn-sm">
-                                        <SettingsIcon className="icon-inline" /> Configure SSO
-                                    </Link>
-                                    <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
-                                        View all
-                                    </Link>
-                                </>
-                            }
-                        >
-                            {numberWithCommas(this.state.info.users)}&nbsp;{pluralize('user', this.state.info.users)}
-                        </OverviewItem>
-                    )}
-                    {this.state.info && (
-                        <OverviewItem
-                            link="/site-admin/organizations"
-                            icon={CityIcon}
-                            actions={
-                                <>
-                                    <Link to="/organizations/new" className="btn btn-primary btn-sm">
-                                        <AddIcon className="icon-inline" /> Create organization
-                                    </Link>
-                                    <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
-                                        View all
-                                    </Link>
-                                </>
-                            }
-                        >
-                            {numberWithCommas(this.state.info.orgs)}&nbsp;{pluralize(
-                                'organization',
-                                this.state.info.orgs
+                            {this.state.error && (
+                                <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
                             )}
-                        </OverviewItem>
-                    )}
-                    {this.state.info && (
-                        <OverviewItem
-                            link="/site-admin/surveys"
-                            icon={EmoticonIcon}
-                            actions={
+                            {this.state.stats && (
                                 <>
-                                    <Link to="/site-admin/surveys" className="btn btn-secondary btn-sm">
-                                        View all
-                                    </Link>
+                                    <br />
+                                    <UsageChart
+                                        {...this.props}
+                                        stats={this.state.stats}
+                                        chartID="waus"
+                                        header={
+                                            <h3>
+                                                Weekly unique users (<Link to="/site-admin/usage-statistics">
+                                                    see more
+                                                </Link>)
+                                            </h3>
+                                        }
+                                    />
                                 </>
-                            }
-                        >
-                            {numberWithCommas(this.state.info.surveyResponses.totalCount)}&nbsp;{pluralize(
-                                'survey response',
-                                this.state.info.surveyResponses.totalCount
                             )}
-                            {this.state.info.surveyResponses.totalCount >= 5 &&
-                                `, ${numberWithCommas(
-                                    this.state.info.surveyResponses.averageScore
-                                )} average in last 30 days (from 0–10)`}
                         </OverviewItem>
                     )}
                 </OverviewList>
-                {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
-                {this.state.stats && (
-                    <>
-                        <br />
-                        <UsageChart
-                            {...this.props}
-                            stats={this.state.stats}
-                            chartID="waus"
-                            className="mt-5 mb-5"
-                            header={
-                                <h2>
-                                    Weekly unique users (<Link to="/site-admin/usage-statistics">see more</Link>)
-                                </h2>
-                            }
-                        />
-                    </>
-                )}
             </div>
         )
     }

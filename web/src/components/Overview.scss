@@ -23,6 +23,10 @@
             color: $color-text;
             display: flex;
             align-items: center;
+            cursor: pointer;
+        }
+        &-link:hover {
+            text-decoration: underline;
         }
         &-icon {
             margin-right: 0.5rem;
@@ -40,6 +44,9 @@
             align-items: center;
             white-space: pre;
         }
+    }
+    &__children {
+        width: 100%;
     }
 }
 
