@@ -24,7 +24,7 @@ if echo "${changed_files}" | grep -q '^CHANGELOG\.md$'; then
     exit 0
 fi
 
-if git log $BUILDKITE_PULL_REQUEST_BASE_BRANCH.. --pretty=format:%B | grep NOCHANGELOG; then
+if git log $BUILDKITE_PULL_REQUEST_BASE_BRANCH.. --pretty=format:%B | grep -q NOCHANGELOG; then
     set +x
     echo "Found NOCHANGELOG in commit message so no CHANGELOG.md entry is required"
     exit 0
