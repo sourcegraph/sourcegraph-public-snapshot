@@ -8,7 +8,7 @@ if [ -z "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" ]; then
     exit 0
 fi
 
-changed_files=$(git diff --name-only $BUILDKITE_PULL_REQUEST_BASE_BRANCH..)
+changed_files=$(git diff --name-only $BUILDKITE_PULL_REQUEST_BASE_BRANCH...)
 
 # If the changed files don't match any of these regular expressions
 # then no changelog entry is required.
