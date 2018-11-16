@@ -558,7 +558,8 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A root directory (of the {@link workspace}). This is typically the root directory of a repository.
+     * A workspace root is a directory that has been added to a workspace. A workspace can have zero or more roots.
+     * Often, each root is the root directory of a repository.
      */
     export interface WorkspaceRoot {
         /**
@@ -566,7 +567,7 @@ declare module 'sourcegraph' {
          *
          * @todo The format of this URI will be changed in the future. It must not be relied on.
          *
-         * @example git://github.com/sourcegraph/sourcegraph?sha#mydir/myfile.txt
+         * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
          */
         readonly uri: URI
     }
