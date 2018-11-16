@@ -105,7 +105,6 @@ func main() {
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "false"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Env("DISPLAY", ":99"),
 		bk.Cmd("Xvfb :99 &"),
