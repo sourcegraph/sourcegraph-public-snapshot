@@ -269,7 +269,7 @@ func (p *Provider) setCachedUserRepos(ctx context.Context, userAccount *extsvc.E
 	return nil
 }
 
-// getCachedPublicRepos accepts a user account and set of repos and returns a map from repo ID to
+// getCachedUserRepos accepts a user account and set of repos and returns a map from repo ID to
 // true/false indicating whether the user can access the repo. The returned map may be incomplete
 // (i.e., not every input repo may be represented in the key set) due to cache incompleteness.
 func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[string]bool, error) {
