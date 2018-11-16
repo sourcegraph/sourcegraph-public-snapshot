@@ -48,6 +48,7 @@ type AuthProviders struct {
 	Openidconnect *OpenIDConnectAuthProvider
 	HttpHeader    *HTTPHeaderAuthProvider
 	Github        *GitHubAuthProvider
+	Gitlab        *GitLabAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -66,6 +67,9 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	if v.Github != nil {
 		return json.Marshal(v.Github)
 	}
+	if v.Gitlab != nil {
+		return json.Marshal(v.Gitlab)
+	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
 func (v *AuthProviders) UnmarshalJSON(data []byte) error {
@@ -80,6 +84,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Builtin)
 	case "github":
 		return json.Unmarshal(data, &v.Github)
+	case "gitlab":
+		return json.Unmarshal(data, &v.Gitlab)
 	case "http-header":
 		return json.Unmarshal(data, &v.HttpHeader)
 	case "openidconnect":
@@ -87,7 +93,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
 // AuthnProvider description: Identifies the authentication provider to use to identify users to GitLab.
@@ -138,6 +144,7 @@ type ExperimentalFeatures struct {
 	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
 	Discussions          string `json:"discussions,omitempty"`
 	GithubAuth           bool   `json:"githubAuth,omitempty"`
+	GitlabAuth           bool   `json:"gitlabAuth,omitempty"`
 	JumpToDefOSSIndex    string `json:"jumpToDefOSSIndex,omitempty"`
 	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
 }
@@ -184,6 +191,15 @@ type GitHubConnection struct {
 type GitLabAuthorization struct {
 	AuthnProvider AuthnProvider `json:"authnProvider"`
 	Ttl           string        `json:"ttl,omitempty"`
+}
+
+// GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".
+type GitLabAuthProvider struct {
+	ClientID     string `json:"clientID"`
+	ClientSecret string `json:"clientSecret"`
+	DisplayName  string `json:"displayName,omitempty"`
+	Type         string `json:"type"`
+	Url          string `json:"url,omitempty"`
 }
 type GitLabConnection struct {
 	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
