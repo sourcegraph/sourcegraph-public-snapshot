@@ -7,6 +7,7 @@ import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
 import { Controller } from '../../../../../shared/src/client/controller'
+import { getModeFromPath } from '../../../../../shared/src/languages'
 import { Settings, SettingsSubject } from '../../../../../shared/src/settings'
 import {
     AbsoluteRepo,
@@ -21,7 +22,7 @@ import {
     ResolvedRevSpec,
     RevSpec,
 } from '../repo'
-import { canFetchForURL, DEFAULT_SOURCEGRAPH_URL, getModeFromPath, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { canFetchForURL, DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL } from '../util/url'
 import { normalizeAjaxError, NoSourcegraphURLError } from './errors'
