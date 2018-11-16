@@ -32,6 +32,52 @@ interface State {
     error?: Error
 }
 
+const fetchOverview: () => Observable<OverviewInfo> = () =>
+    queryGraphQL(gql`
+        query Overview {
+            repositories {
+                totalCount(precise: true)
+            }
+            users {
+                totalCount
+            }
+            organizations {
+                totalCount
+            }
+            surveyResponses {
+                totalCount
+                averageScore
+            }
+        }
+    `).pipe(
+        map(dataOrThrowErrors),
+        map(data => ({
+            repositories: data.repositories.totalCount,
+            users: data.users.totalCount,
+            orgs: data.organizations.totalCount,
+            surveyResponses: data.surveyResponses,
+        }))
+    )
+
+const fetchWeeklyActiveUsers: () => Observable<GQL.ISiteUsageStatistics> = () =>
+    queryGraphQL(gql`
+        query WAUs {
+            site {
+                usageStatistics {
+                    waus {
+                        userCount
+                        registeredUserCount
+                        anonymousUserCount
+                        startTime
+                    }
+                }
+            }
+        }
+    `).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site.usageStatistics)
+    )
+
 /**
  * A page displaying an overview of site admin information.
  */
@@ -201,49 +247,3 @@ interface OverviewInfo {
         averageScore: number
     }
 }
-
-const fetchOverview: () => Observable<OverviewInfo> = () =>
-    queryGraphQL(gql`
-        query Overview {
-            repositories {
-                totalCount(precise: true)
-            }
-            users {
-                totalCount
-            }
-            organizations {
-                totalCount
-            }
-            surveyResponses {
-                totalCount
-                averageScore
-            }
-        }
-    `).pipe(
-        map(dataOrThrowErrors),
-        map(data => ({
-            repositories: data.repositories.totalCount,
-            users: data.users.totalCount,
-            orgs: data.organizations.totalCount,
-            surveyResponses: data.surveyResponses,
-        }))
-    )
-
-const fetchWeeklyActiveUsers: () => Observable<GQL.ISiteUsageStatistics> = () =>
-    queryGraphQL(gql`
-        query WAUs {
-            site {
-                usageStatistics {
-                    waus {
-                        userCount
-                        registeredUserCount
-                        anonymousUserCount
-                        startTime
-                    }
-                }
-            }
-        }
-    `).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.site.usageStatistics)
-    )
