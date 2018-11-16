@@ -42,8 +42,7 @@ func main() {
 	// temporary for testing DO NOT MERGE
 	pipeline.AddStep(":white_check_mark:",
 		bk.Cmd("echo skipping"))
-	_, err := pipeline.WriteTo(os.Stdout)
-	if err != nil {
+	if _, err := pipeline.WriteTo(os.Stdout); err != nil {
 		panic(err)
 	}
 	return
