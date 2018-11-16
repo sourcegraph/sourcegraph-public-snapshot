@@ -5,9 +5,13 @@ branches do not necessarily reflect the changes that have gone into that branch.
 
 All notable changes to Sourcegraph are documented in this file.
 
-## Unreleased
+## 2.13.4
 
-### Added
+### Changed
+
+- The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled` (to avoid [#807](https://github.com/sourcegraph/sourcegraph/issues/807)).
+
+## 2.13.3
 
 ### Changed
 
@@ -19,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The **Explore** page was replaced with a **Repositories** search link in the top navigation bar.
 
-## 2.13.2 (unreleased)
+## 2.13.2
 
 - Fixed an issue where Sourcegraph would try to fetch more than the allowed number of repositories from AWS CodeCommit.
 

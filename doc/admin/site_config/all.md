@@ -236,14 +236,14 @@ Default: `"disabled"`
 
 ### canonicalURLRedirect (string, enum)
 
-Enables or disables redirecting to the canonical URL (underneath the "appURL") for incoming HTTP requests. Enabled by default.
+Enables or disables redirecting to the canonical URL (underneath the `appURL`) for incoming HTTP requests. Disabled by default.
 
 This property must be one of the following enum values:
 
 - `enabled`
 - `disabled`
 
-Default: `"enabled"`
+Default: `"disabled"`
 
 ### discussions (string, enum)
 
