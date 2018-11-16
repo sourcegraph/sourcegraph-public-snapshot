@@ -132,7 +132,6 @@ type Server struct {
 	cloneLimiter     *mutablelimiter.Limiter
 	cloneableLimiter *mutablelimiter.Limiter
 
-	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
 }
@@ -140,11 +139,6 @@ type Server struct {
 type locks struct {
 	once *sync.Once  // consolidates multiple waiting updates
 	mu   *sync.Mutex // prevents updates running in parallel
-}
-
-type updateRepoRequest struct {
-	repo api.RepoName
-	url  string // remote URL
 }
 
 // shortGitCommandTimeout returns the timeout for git commands that should not
@@ -200,7 +194,6 @@ var longGitCommandTimeout = time.Hour
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
-	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
@@ -232,7 +225,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
 	mux.HandleFunc("/repo", s.handleRepoInfo)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
-	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
 	mux.HandleFunc("/upload-pack", s.handleUploadPack)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
@@ -378,63 +370,6 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
-	}
-}
-
-// handleEnqueueRepoUpdate: This is the old implementation, which is being
-// deprecated.
-func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoUpdateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	var resp protocol.RepoUpdateResponse
-	req.Repo = protocol.NormalizeRepo(req.Repo)
-	dir := path.Join(s.ReposDir, string(req.Repo))
-	if !repoCloned(dir) && !s.skipCloneForTests {
-		// optimistically, we assume that our cloning attempt might
-		// succeed.
-		resp.CloneInProgress = true
-		go func() {
-			ctx, cancel1 := s.serverContext()
-			defer cancel1()
-			ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
-			defer cancel2()
-			_, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
-			if err != nil {
-				log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
-			}
-		}()
-	} else {
-		// Check the repo status before enqueuing
-		var statusErr error
-		lastFetched, err := repoLastFetched(dir)
-		if err != nil {
-			statusErr = err
-		}
-		lastChanged, err := repoLastChanged(dir)
-		if err != nil {
-			statusErr = err
-		}
-
-		// We always want to enqueue an update
-		updateQueue.Inc()
-		s.updateRepo <- updateRepoRequest{repo: req.Repo, url: req.URL}
-
-		if statusErr != nil {
-			log15.Error("failed to get status of repo", "repo", req.Repo, "error", statusErr)
-			http.Error(w, statusErr.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		resp.Cloned = true
-		resp.LastFetched = &lastFetched
-		resp.LastChanged = &lastChanged
-	}
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 }
 
@@ -1010,12 +945,6 @@ var (
 		Name:      "lsremote_queue",
 		Help:      "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
-	updateQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "update_queue",
-		Help:      "number of repos waiting to be updated (enqueue-repo-update)",
-	})
 	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "gitserver",
@@ -1029,33 +958,7 @@ func init() {
 	prometheus.MustRegister(execDuration)
 	prometheus.MustRegister(cloneQueue)
 	prometheus.MustRegister(lsRemoteQueue)
-	prometheus.MustRegister(updateQueue)
 	prometheus.MustRegister(repoClonedCounter)
-}
-
-func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
-	updateRepo := make(chan updateRepoRequest, 10)
-
-	go func() {
-		for req := range updateRepo {
-			updateQueue.Dec()
-
-			if !debounce(req.repo, 10*time.Second) {
-				continue
-			}
-			go func(req updateRepoRequest) {
-				// Create a new context with a new timeout (instead of passing one through updateRepoRequest)
-				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
-				ctx, cancel1 := s.serverContext()
-				defer cancel1()
-				ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
-				defer cancel2()
-				s.doRepoUpdate(ctx, req.repo, req.url)
-			}(req)
-		}
-	}()
-
-	return updateRepo
 }
 
 var headBranchPattern = regexp.MustCompile(`HEAD branch: (.+?)\n`)
