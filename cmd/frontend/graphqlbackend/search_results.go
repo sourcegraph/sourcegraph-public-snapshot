@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"path"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -145,16 +144,11 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 
 // searchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type searchResultsResolver struct {
-	results2 []*genericSearchResultResolver
-	results  []*searchResultResolver
+	results []*searchResultResolver
 	searchResultsCommon
 	alert            *searchAlert
 	start            time.Time // when the results started being computed
 	repoToMatchCount map[string]int
-}
-
-func (sr *searchResultsResolver) Results2() []*genericSearchResultResolver {
-	return sr.results2
 }
 
 func (sr *searchResultsResolver) Results() []*searchResultResolver {
@@ -704,7 +698,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
 		results    []*searchResultResolver
-		results2   []*genericSearchResultResolver
+		// results2   []*genericSearchResultResolver
 		results2Mu sync.Mutex
 		resultsMu  sync.Mutex
 		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
@@ -730,7 +724,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	searchedFileContentsOrPaths := false
 	fileIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEzLDlWMy41TDE4LjUsOU02LDJDNC44OSwyIDQsMi44OSA0LDRWMjBBMiwyIDAgMCwwIDYsMjJIMThBMiwyIDAgMCwwIDIwLDIwVjhMMTQsMkg2WiIgLz48L3N2Zz4="
-	commitIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4="
+	// commitIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4="
 	for _, resultType := range resultTypes {
 		resultType := resultType // shadow so it doesn't change in the goroutine
 		if _, seen := seenResultTypes[resultType]; seen {
@@ -757,10 +751,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					results = append(results, repoResults...)
 					resultsMu.Unlock()
 					results2Mu.Lock()
-					for _, repoMatch := range repoResults {
-						repoName := fmt.Sprintf("[%s](%s)", repoMatch.repo.Name(), repoMatch.repo.URL())
-						results2 = append(results2, &genericSearchResultResolver{icon: fileIcon, label: repoName, url: repoMatch.repo.URL()})
-					}
+					// for _, repoMatch := range repoResults {
+					// 	repoName := fmt.Sprintf("[%s](%s)", repoMatch.repo.Name(), repoMatch.repo.URL())
+					// 	// results2 = append(results2, &genericSearchResultResolver{icon: fileIcon, label: repoName, url: repoMatch.repo.URL()})
+					// }
 					results2Mu.Unlock()
 				}
 				if repoCommon != nil {
@@ -829,26 +823,25 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 						m.JLineMatches = r.JLineMatches
 					} else {
 						fileMatches[key] = r
-						resultsMu.Lock()
-						results = append(results, &searchResultResolver{fileMatch: r})
-						resultsMu.Unlock()
-
-						var matches []*genericSearchMatchResolver
-						language := strings.TrimPrefix(filepath.Ext(r.File().Name()), ".")
+						fileName := fmt.Sprintf("[%s](%s)", r.File().Name(), r.File().URL())
+						repoName := fmt.Sprintf("[%s](%s)", r.Repository().Name(), r.Repository().URL())
+						label := fmt.Sprintf("%s › %s", repoName, fileName)
+						var matches []*GenericSearchMatchResolver
 						for _, lm := range r.LineMatches() {
 							url := fmt.Sprintf("%s#L%d", r.File().URL(), lm.LineNumber()+1)
 							var highlights []*highlightedRange
 							for _, ol := range lm.OffsetAndLengths() {
 								highlights = append(highlights, &highlightedRange{line: lm.LineNumber(), character: ol[0], length: ol[1]})
 							}
-							matches = append(matches, &genericSearchMatchResolver{url: url, body: lm.Preview(), language: language, highlights: highlights})
+							matches = append(matches, &GenericSearchMatchResolver{url: url, body: lm.Preview(), highlights: highlights})
 						}
-						fileName := fmt.Sprintf("[%s](%s)", r.File().Name(), r.File().URL())
-						repoName := fmt.Sprintf("[%s](%s)", r.Repository().Name(), r.Repository().URL())
-						label := fmt.Sprintf("%s › %s", repoName, fileName)
-						results2Mu.Lock()
-						results2 = append(results2, &genericSearchResultResolver{icon: fileIcon, label: label, url: r.File().URL(), results: matches})
-						results2Mu.Unlock()
+						r.results = matches
+						r.icon = fileIcon
+						r.label = label
+						r.url = r.File().URL()
+						resultsMu.Lock()
+						results = append(results, &searchResultResolver{fileMatch: r})
+						resultsMu.Unlock()
 					}
 					fileMatchesMu.Unlock()
 				}
@@ -874,16 +867,18 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					resultsMu.Lock()
 					results = append(results, diffResults...)
 					resultsMu.Unlock()
-					results2Mu.Lock()
 
 					for _, diff := range diffResults {
 						message := diff.diff.Commit().Message()
 						message = strings.Split(message, "\n")[0]
-						label := fmt.Sprintf("[%s](%s)", message, diff.diff.Commit().URL())
-						results2 = append(results2, &genericSearchResultResolver{icon: commitIcon, label: label, url: diff.diff.Commit().URL(), results: []*genericSearchMatchResolver{&genericSearchMatchResolver{url: diff.diff.Commit().URL(), body: diff.diff.DiffPreview().Value(), language: "diff"}}})
+						// label := fmt.Sprintf("[%s](%s)", message, diff.diff.Commit().URL())
+						// Hard code the file name to file.diff in order to get syntax highlighting from Syntect.
+						// diffFile := "file.diff"
+						results2Mu.Lock()
+						// results2 = append(results2, &genericSearchResultResolver{icon: commitIcon, label: label, url: diff.diff.Commit().URL(), results: []*GenericSearchMatchResolver{&GenericSearchMatchResolver{url: diff.diff.Commit().URL(), path: &diffFile, body: diff.diff.DiffPreview().Value(), language: "diff"}}})
+						results2Mu.Unlock()
 					}
 
-					results2Mu.Unlock()
 				}
 				if diffCommon != nil {
 					commonMu.Lock()
@@ -908,17 +903,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					resultsMu.Lock()
 					results = append(results, commitResults...)
 					resultsMu.Unlock()
-					for _, commit := range commitResults {
-						message := commit.diff.Commit().Message()
-						title := strings.Split(message, "\n")[0]
-						label := fmt.Sprintf("[%s](%s)", title, commit.diff.Commit().URL())
-						results2 = append(results2, &genericSearchResultResolver{icon: commitIcon, label: label, url: commit.diff.Commit().URL(), results: []*genericSearchMatchResolver{&genericSearchMatchResolver{url: commit.diff.Commit().URL(), body: commit.diff.MessagePreview().Value(), language: "txt"}}})
-					}
-					// results2Mu.Lock()
 					// for _, commit := range commitResults {
-					// 	results2 = append(results2, &genericSearchResultResolver{label: commit.diff.Commit().Message(), url: commit.diff.Commit().URL(), body: commit.diff.MessagePreview().Value()})
+					// 	message := commit.diff.Commit().Message()
+					// 	title := strings.Split(message, "\n")[0]
+					// 	// label := fmt.Sprintf("[%s](%s)", title, commit.diff.Commit().URL())
+					// 	results2 = append(results2, &genericSearchResultResolver{icon: commitIcon, label: label, url: commit.diff.Commit().URL(), results: []*GenericSearchMatchResolver{&GenericSearchMatchResolver{url: commit.diff.Commit().URL(), body: commit.diff.MessagePreview().Value()}}})
 					// }
-					// results2Mu.Unlock()
 				}
 				if commitCommon != nil {
 					commonMu.Lock()
@@ -965,8 +955,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		start:               start,
 		searchResultsCommon: common,
 		results:             results,
-		results2:            results2,
-		alert:               alert,
+		// results2:            results2,
+		alert: alert,
 	}
 
 	return &resultsResolver, multiErr.ErrorOrNil()
@@ -985,7 +975,7 @@ type searchResultResolver struct {
 	repo      *repositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
-	issue     *issueSearchResultResolver  // diff or commit match
+	issue     *issueSearchResultResolver  // issue match
 }
 
 // getSearchResultURIs returns the repo name and file uri respectiveley
@@ -1027,10 +1017,6 @@ func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
 }
 func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return g.diff, g.diff != nil
-}
-
-func (g *searchResultResolver) ToIssueResult() (*issueSearchResultResolver, bool) {
-	return g.issue, g.issue != nil
 }
 
 func (g *searchResultResolver) resultCount() int32 {

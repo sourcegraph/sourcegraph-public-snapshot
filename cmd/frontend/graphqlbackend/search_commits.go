@@ -28,6 +28,11 @@ type commitSearchResultResolver struct {
 	sourceRefs     []*gitRefResolver
 	messagePreview *highlightedString
 	diffPreview    *highlightedString
+	icon           string
+	label          string
+	url            string
+	detail         *string
+	results        []*GenericSearchMatchResolver
 }
 
 func (r *commitSearchResultResolver) Commit() *gitCommitResolver         { return r.commit }
@@ -35,6 +40,24 @@ func (r *commitSearchResultResolver) Refs() []*gitRefResolver            { retur
 func (r *commitSearchResultResolver) SourceRefs() []*gitRefResolver      { return r.sourceRefs }
 func (r *commitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
+func (r *commitSearchResultResolver) Icon() string {
+	return r.icon
+}
+func (r *commitSearchResultResolver) Label() string {
+	return r.label
+}
+
+func (r *commitSearchResultResolver) URL() string {
+	return r.url
+}
+
+func (r *commitSearchResultResolver) Detail() *string {
+	return r.detail
+}
+
+func (r *commitSearchResultResolver) Results() []*GenericSearchMatchResolver {
+	return r.results
+}
 
 var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
@@ -226,7 +249,8 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	results = make([]*commitSearchResultResolver, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
-		results[i] = &commitSearchResultResolver{commit: toGitCommitResolver(repoResolver, &commit)}
+		commitResolver := toGitCommitResolver(repoResolver, &commit)
+		results[i] = &commitSearchResultResolver{commit: commitResolver}
 
 		addRefs := func(dst *[]*gitRefResolver, src []string) {
 			for _, ref := range src {
@@ -256,14 +280,48 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 			}
 		}
 
+		highlights := fromVCSHighlights(rawResult.DiffHighlights)
 		if rawResult.Diff != nil && op.diff {
 			results[i].diffPreview = &highlightedString{
 				value:      rawResult.Diff.Raw,
-				highlights: fromVCSHighlights(rawResult.DiffHighlights),
+				highlights: highlights,
 			}
 		}
+
+		results[i].label = createLabel(rawResult, commitResolver)
+		results[i].url = commitResolver.URL()
+		match := &GenericSearchMatchResolver{body: "```diff\n" + rawResult.Diff.Raw + "```", highlights: highlights, url: commitResolver.URL()}
+		matches := []*GenericSearchMatchResolver{match}
+		results[i].results = matches
 	}
+
 	return results, limitHit, timedOut, nil
+}
+
+func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) string {
+	message := commitSubject(rawResult.Commit.Message)
+	author := rawResult.Commit.Author.Name
+	repoName := displayRepoName(commitResolver.Repository().Name())
+	repoURL := commitResolver.Repository().URL()
+	url := commitResolver.URL()
+
+	return fmt.Sprintf("[%s](%s) [%s](%s)  [%s](%s)", repoName, repoURL, author, url, message, url)
+}
+
+func commitSubject(message string) string {
+	idx := strings.Index(message, "\n")
+	if idx != -1 {
+		return message[:idx]
+	}
+	return message
+}
+
+func displayRepoName(repoPath string) string {
+	parts := strings.Split(repoPath, "/")
+	if len(parts) >= 3 && strings.Index(parts[0], ".") != -1 {
+		parts = parts[1:] // remove hostname from repo path (reduce visual noise)
+	}
+	return strings.Join(parts, "/")
 }
 
 func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
