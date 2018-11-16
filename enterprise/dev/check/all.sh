@@ -5,7 +5,6 @@ cd $(dirname "${BASH_SOURCE[0]}")
 
 go version
 go env
-./gofmt.sh
 ./go-generate.sh
 ./go-lint.sh
 ./todo-security.sh
