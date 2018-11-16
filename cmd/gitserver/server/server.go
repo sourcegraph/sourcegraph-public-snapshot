@@ -132,7 +132,6 @@ type Server struct {
 	cloneLimiter     *mutablelimiter.Limiter
 	cloneableLimiter *mutablelimiter.Limiter
 
-	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
 }
@@ -200,7 +199,6 @@ var longGitCommandTimeout = time.Hour
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
-	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
@@ -952,12 +950,6 @@ var (
 		Name:      "lsremote_queue",
 		Help:      "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
-	updateQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "update_queue",
-		Help:      "number of repos waiting to be updated (enqueue-repo-update)",
-	})
 	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "gitserver",
@@ -971,33 +963,7 @@ func init() {
 	prometheus.MustRegister(execDuration)
 	prometheus.MustRegister(cloneQueue)
 	prometheus.MustRegister(lsRemoteQueue)
-	prometheus.MustRegister(updateQueue)
 	prometheus.MustRegister(repoClonedCounter)
-}
-
-func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
-	updateRepo := make(chan updateRepoRequest, 10)
-
-	go func() {
-		for req := range updateRepo {
-			updateQueue.Dec()
-
-			if !debounce(req.repo, 10*time.Second) {
-				continue
-			}
-			go func(req updateRepoRequest) {
-				// Create a new context with a new timeout (instead of passing one through updateRepoRequest)
-				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
-				ctx, cancel1 := s.serverContext()
-				defer cancel1()
-				ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
-				defer cancel2()
-				s.doRepoUpdate(ctx, req.repo, req.url)
-			}(req)
-		}
-	}()
-
-	return updateRepo
 }
 
 var headBranchPattern = regexp.MustCompile(`HEAD branch: (.+?)\n`)
