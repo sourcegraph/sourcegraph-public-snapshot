@@ -4,6 +4,8 @@ package main
 //docker:install git@edge
 
 import (
+	"time"
+	"crypto/tls"
 	"context"
 	"flag"
 	"fmt"
@@ -79,17 +81,38 @@ func run() error {
 	// PERF: Hide latency of fetching golang/go from the first typecheck
 	go server.FetchCommonDeps()
 
+	listen := func(addr string) (*net.Listener, error) {
+		listener, err := net.Listen("tcp", addr)
+		if err != nil {
+			log.Fatalf("Could not bind to address %s: %v", addr, err)
+			return nil, err
+		}
+
+		if os.Getenv("TLS_CERT") != "" && os.Getenv("TLS_KEY") != "" {
+			cert, err := tls.X509KeyPair([]byte(os.Getenv("TLS_CERT")), []byte(os.Getenv("TLS_KEY")))
+			if err != nil {
+				return nil, err
+			}
+
+			listener = tls.NewListener(listener, &tls.Config{
+				Certificates: []tls.Certificate{cert},
+			})
+		}
+
+		return &listener, nil
+	}
+
 	switch *mode {
 	case "tcp":
-		lis, err := net.Listen("tcp", *addr)
+		lis, err := listen(*addr)
 		if err != nil {
 			return err
 		}
-		defer lis.Close()
+		defer (*lis).Close()
 
 		log.Println("xlang-go: listening on", *addr)
 		for {
-			conn, err := lis.Accept()
+			conn, err := (*lis).Accept()
 			if err != nil {
 				return err
 			}
@@ -122,8 +145,20 @@ func run() error {
 			log.Printf("langserver-go: connection #%d closed\n", connectionID)
 		})
 
+
+		l, err := listen(*addr)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		server := &http.Server{
+			Handler:      mux,
+			ReadTimeout:  75 * time.Second,
+			WriteTimeout: 60 * time.Second,
+		}
 		log.Println("langserver-go: listening for WebSocket connections on", *addr)
-		err := http.ListenAndServe(*addr, mux)
+		err = server.Serve(*l)
 		log.Println(errors.Wrap(err, "HTTP server"))
 		return err
 
