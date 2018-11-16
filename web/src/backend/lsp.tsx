@@ -42,10 +42,6 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
         return !c.value
     })
 
-type ResponseMessages = any[]
-
-type ResponseResults = any[]
-
 export function sendLSPHTTPRequests(requests: any[], urlPathHint?: string): Observable<any> {
     if (!urlPathHint) {
         urlPathHint = requests[1] && requests[1].method
@@ -74,7 +70,7 @@ export function sendLSPHTTPRequests(requests: any[], urlPathHint?: string): Obse
     )
 }
 
-const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<ResponseResults> =>
+const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<any[]> =>
     sendLSPHTTPRequests(
         [
             {
@@ -92,13 +88,13 @@ const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<
         ].filter(m => m !== null),
         request ? request.method : 'initialize'
     ).pipe(
-        map((results: ResponseMessages) => {
+        map((results: any[]) => {
             for (const result of results) {
                 if (result && result.error) {
                     throw Object.assign(new Error(result.error.message), result.error, { responses: results })
                 }
             }
-            return results.map(result => result && result.result) as ResponseResults
+            return results.map(result => result && result.result) as any[]
         })
     )
 

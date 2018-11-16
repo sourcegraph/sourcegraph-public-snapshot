@@ -2,9 +2,10 @@ import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
 import { from, Observable, of, OperatorFunction, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
-import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { TextDocumentIdentifier } from '../../../../../shared/src/api/client/types/textDocument'
 import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
+import { Definition } from '../../../../../shared/src/api/protocol/plainTypes'
 import { Controller } from '../../../../../shared/src/client/controller'
 import { Settings, SettingsSubject } from '../../../../../shared/src/settings'
 import {
@@ -221,13 +222,13 @@ export function fetchJumpURL(
     return fetchDefinition(pos).pipe(
         map(def => {
             const defArray = Array.isArray(def) ? def : [def]
-            def = defArray[0]
-            if (!def) {
+            const firstDef = defArray[0]
+            if (!firstDef) {
                 return null
             }
 
-            const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
-            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            const uri = parseRepoURI(firstDef.uri) as AbsoluteRepoFilePosition
+            uri.position = { line: firstDef.range.start.line + 1, character: firstDef.range.start.character + 1 }
             return toAbsoluteBlobURL(uri)
         })
     )
