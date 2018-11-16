@@ -100,7 +100,7 @@ require (
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
-	github.com/sourcegraph/go-langserver v2.0.1-0.20181010102349-2d9d8f4a24da+incompatible
+	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18
 	github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd
 	github.com/sourcegraph/godockerize v0.0.0-20181102001209-f9c9d82c8d1c

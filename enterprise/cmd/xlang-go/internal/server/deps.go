@@ -101,13 +101,14 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI ls
 	}()
 
 	bctx := h.lang.BuildContext(ctx)
-	bpkg, err := langserver.ContainingPackage(bctx, h.FilePath(fileURI))
+	filename := h.FilePath(fileURI)
+	bpkg, err := langserver.ContainingPackage(bctx, filename, h.RootFSPath)
 	if err != nil && !isMultiplePackageError(err) {
 		return err
 	}
 
 	err = doDeps(bpkg, 0, dc, func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
-		return h.doFindPackage(ctx, bctx, path, srcDir, mode, dc)
+		return h.doFindPackage(ctx, bctx, path, srcDir, h.RootFSPath, mode, dc)
 	})
 	return err
 }
@@ -124,7 +125,7 @@ type findPkgValue struct {
 	err   error
 }
 
-func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Context, p, srcDir string, mode build.ImportMode) (*build.Package, error) {
+func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Context, p, srcDir, rootPath string, mode build.ImportMode) (*build.Package, error) {
 	// bctx.FindPackage and loader.Conf does not have caching, and due to
 	// vendor we need to repeat work. So what we do is normalise the
 	// srcDir w.r.t. potential vendoring. This makes the assumption that
@@ -184,7 +185,7 @@ func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Contex
 	h.findPkg[k] = v
 	h.findPkgMu.Unlock()
 
-	v.bp, v.err = h.findPackage(ctx, bctx, p, srcDir, mode)
+	v.bp, v.err = h.findPackage(ctx, bctx, p, srcDir, rootPath, mode)
 
 	close(v.ready)
 	return v.bp, v.err
@@ -192,8 +193,8 @@ func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Contex
 
 // findPackage is a langserver.FindPackageFunc which integrates with the build
 // server. It will fetch dependencies just in time.
-func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode) (*build.Package, error) {
-	return h.doFindPackage(ctx, bctx, path, srcDir, mode, newDepCache())
+func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, path, srcDir, rootPath string, mode build.ImportMode) (*build.Package, error) {
+	return h.doFindPackage(ctx, bctx, path, srcDir, rootPath, mode, newDepCache())
 }
 
 // isUnderCanonicalImportPath tells if the given path is under the given root import path.
@@ -201,8 +202,8 @@ func isUnderRootImportPath(rootImportPath, path string) bool {
 	return rootImportPath != "" && util.PathHasPrefix(path, rootImportPath)
 }
 
-func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode, dc *depCache) (*build.Package, error) {
-	bpkg, err := h.doFindPackage2(ctx, bctx, path, srcDir, mode, dc)
+func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, path, srcDir, rootPath string, mode build.ImportMode, dc *depCache) (*build.Package, error) {
+	bpkg, err := h.doFindPackage2(ctx, bctx, path, srcDir, rootPath, mode, dc)
 
 	// We couldn't find the package. If the package path is under the root when
 	// both strings are lowercase, that is a good indicator the user may have
@@ -221,7 +222,10 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 	return bpkg, err
 }
 
-func (h *BuildHandler) doFindPackage2(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode, dc *depCache) (*build.Package, error) {
+func (h *BuildHandler) doFindPackage2(ctx context.Context, bctx *build.Context, path, srcDir, rootPath string, mode build.ImportMode, dc *depCache) (*build.Package, error) {
+	// TODO actually use rootPath, which was introduced in https://github.com/sourcegraph/go-langserver/pull/321
+	// or not? @keegancsmith https://github.com/sourcegraph/go-langserver/pull/321#pullrequestreview-163306401
+
 	// If the package exists in the repo, or is vendored, or has
 	// already been fetched, this will succeed.
 	pkg, err := bctx.Import(path, srcDir, mode)
