@@ -29,7 +29,7 @@ func (h *BuildHandler) handleWorkspacePackages(ctx context.Context, conn jsonrpc
 	findPackage := h.FindPackage
 	var pkgs []*lspext.PackageInformation
 	for _, pkg := range tools.ListPkgsUnderDir(bctx, rootPath) {
-		bpkg, err := findPackage(ctx, bctx, pkg, rootPath, 0)
+		bpkg, err := findPackage(ctx, bctx, pkg, rootPath, rootPath, 0)
 		if err != nil && !isMultiplePackageError(err) {
 			log.Printf("skipping possible package %s: %s", pkg, err)
 			continue

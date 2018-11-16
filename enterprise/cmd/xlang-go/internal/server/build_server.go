@@ -149,7 +149,14 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 		log.Printf(">>> %s %s %s %s", h.init.OriginalRootURI, req.ID, req.Method, string(b))
 		defer func(t time.Time) {
-			log.Printf("<<< %s %s %s %dms", h.init.OriginalRootURI, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
+			resultJSON, err := json.Marshal(result)
+			var resultOrError string
+			if err == nil {
+				resultOrError = string(resultJSON)
+			} else {
+				resultOrError = err.Error()
+			}
+			log.Printf("<<< %s %s %s %dms %s", h.init.OriginalRootURI, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond), resultOrError)
 		}(time.Now())
 	}
 

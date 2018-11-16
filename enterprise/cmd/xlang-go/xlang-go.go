@@ -9,12 +9,17 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
+	wsjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -95,6 +100,32 @@ func run() error {
 				openGauge.Dec()
 			}()
 		}
+
+	case "websocket":
+		mux := http.NewServeMux()
+		upgrader := websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+
+		connectionCount := 0
+
+		mux.HandleFunc("/", func(w http.ResponseWriter, request *http.Request) {
+			connection, err := upgrader.Upgrade(w, request, nil)
+			if err != nil {
+				log.Println("error upgrading HTTP to WebSocket:", err)
+				http.Error(w, errors.Wrap(err, "could not upgrade to WebSocket").Error(), http.StatusBadRequest)
+				return
+			}
+			defer connection.Close()
+			connectionCount = connectionCount + 1
+			connectionID := connectionCount
+			log.Printf("langserver-go: received incoming connection #%d\n", connectionID)
+			<-jsonrpc2.NewConn(context.Background(), wsjsonrpc2.NewObjectStream(connection), server.NewHandler()).DisconnectNotify()
+			log.Printf("langserver-go: connection #%d closed\n", connectionID)
+		})
+
+		log.Println("langserver-go: listening for WebSocket connections on", *addr)
+		err := http.ListenAndServe(*addr, mux)
+		log.Println(errors.Wrap(err, "HTTP server"))
+		return err
 
 	default:
 		return fmt.Errorf("invalid mode %q", *mode)
