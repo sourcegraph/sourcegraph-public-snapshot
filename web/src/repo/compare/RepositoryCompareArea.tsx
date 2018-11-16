@@ -202,6 +202,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                                             extensionsOnVisibleTextDocumentsChange={
                                                 this.props.extensionsOnVisibleTextDocumentsChange
                                             }
+                                            extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                                         />
                                     )}
                                 />

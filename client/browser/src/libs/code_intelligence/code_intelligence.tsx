@@ -20,11 +20,12 @@ import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subs
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
 import { Disposable } from 'vscode-jsonrpc'
+import { Environment } from '../../../../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
-import { createJumpURLFetcher, createLSPFromExtensions, JumpURLLocation } from '../../shared/backend/lsp'
 import { lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/lsp'
+import { createJumpURLFetcher, createLSPFromExtensions, JumpURLLocation } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { AbsoluteRepoFile } from '../../shared/repo'
+import { AbsoluteRepo, AbsoluteRepoFile } from '../../shared/repo'
 import { eventLogger, getModeFromPath, sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
@@ -194,14 +195,14 @@ export interface FileInfo {
  */
 function initCodeIntelligence(
     codeHost: CodeHost,
-    documents: BehaviorSubject<TextDocumentItem[] | null>
+    environment: BehaviorSubject<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
 ): {
     hoverifier: Hoverifier
     controllers: Partial<Controllers>
 } {
     const { extensionsContextController, extensionsController }: Partial<Controllers> =
         useExtensions && codeHost.getCommandPaletteMount
-            ? initializeExtensions(codeHost.getCommandPaletteMount, documents)
+            ? initializeExtensions(codeHost.getCommandPaletteMount, environment)
             : {}
     const simpleProviderFns = extensionsController ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
 
@@ -324,18 +325,21 @@ export interface ResolvedCodeView extends CodeViewWithOutSelector {
 }
 
 function handleCodeHost(codeHost: CodeHost): Subscription {
-    const documentsSubject = new BehaviorSubject<TextDocumentItem[] | null>([])
+    const environmentSubject = new BehaviorSubject<Pick<Environment, 'roots' | 'visibleTextDocuments'>>({
+        roots: null,
+        visibleTextDocuments: null,
+    })
     const {
         hoverifier,
         controllers: { extensionsContextController, extensionsController },
-    } = initCodeIntelligence(codeHost, documentsSubject)
+    } = initCodeIntelligence(codeHost, environmentSubject)
 
     const subscriptions = new Subscription()
 
     subscriptions.add(hoverifier)
 
     // Keeps track of all documents on the page since calling this function (should be once per page).
-    let documents: TextDocumentItem[] = []
+    let visibleTextDocuments: TextDocumentItem[] = []
 
     subscriptions.add(
         of(document.body)
@@ -357,6 +361,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     getToolbarMount,
                     toolbarButtonProps,
                 }) => {
+                    const toRootURI = (ctx: AbsoluteRepo) => `git://${ctx.repoPath}?${ctx.commitID}`
                     const toURIWithPath = (ctx: AbsoluteRepoFile) =>
                         `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
 
@@ -388,30 +393,36 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                             baseContent = contents.baseContent
                         }
 
-                        documents = [
+                        visibleTextDocuments = [
                             // All the currently open documents
-                            ...documents,
+                            ...visibleTextDocuments,
                             // Either a normal file, or HEAD when codeView is a diff
                             {
                                 uri: toURIWithPath(info),
                                 languageId: getModeFromPath(info.filePath) || 'could not determine mode',
                                 text: content!,
                             },
-                            // When codeView is a diff, add BASE too
-                            ...(baseContent! && info.baseRepoPath && info.baseCommitID && info.baseFilePath
-                                ? [
-                                      {
-                                          uri: toURIWithPath({
-                                              repoPath: info.baseRepoPath,
-                                              commitID: info.baseCommitID,
-                                              filePath: info.baseFilePath,
-                                          }),
-                                          languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                          text: baseContent!,
-                                      },
-                                  ]
-                                : []),
                         ]
+                        const roots: Environment['roots'] = [{ uri: toRootURI(info) }]
+
+                        // When codeView is a diff, add BASE too.
+                        if (baseContent! && info.baseRepoPath && info.baseCommitID && info.baseFilePath) {
+                            visibleTextDocuments.push({
+                                uri: toURIWithPath({
+                                    repoPath: info.baseRepoPath,
+                                    commitID: info.baseCommitID,
+                                    filePath: info.baseFilePath,
+                                }),
+                                languageId: getModeFromPath(info.filePath) || 'could not determine mode',
+                                text: baseContent!,
+                            })
+                            roots.push({
+                                uri: toRootURI({
+                                    repoPath: info.baseRepoPath,
+                                    commitID: info.baseCommitID,
+                                }),
+                            })
+                        }
 
                         if (extensionsController && !info.baseCommitID) {
                             let oldDecorations: Disposable[] = []
@@ -438,7 +449,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                 })
                         }
 
-                        documentsSubject.next(documents)
+                        environmentSubject.next({ roots, visibleTextDocuments })
                     }
 
                     const resolveContext: ContextResolver = ({ part }) => ({

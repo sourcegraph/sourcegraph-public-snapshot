@@ -8,6 +8,7 @@ import { ExtConfiguration } from './api/configuration'
 import { ExtContext } from './api/context'
 import { ExtDocuments } from './api/documents'
 import { ExtLanguageFeatures } from './api/languageFeatures'
+import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
@@ -81,6 +82,9 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     const documents = new ExtDocuments(sync)
     handleRequests(connection, 'documents', documents)
 
+    const roots = new ExtRoots()
+    handleRequests(connection, 'roots', roots)
+
     const windows = new ExtWindows(proxy('windows'), proxy('codeEditor'), documents)
     handleRequests(connection, 'windows', windows)
 
@@ -130,6 +134,10 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
                 return documents.getAll()
             },
             onDidOpenTextDocument: documents.onDidOpenTextDocument,
+            get roots(): ReadonlyArray<sourcegraph.WorkspaceRoot> {
+                return roots.getAll()
+            },
+            onDidChangeRoots: roots.onDidChange,
         },
 
         configuration: {

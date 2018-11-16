@@ -558,6 +558,21 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * A workspace root is a directory that has been added to a workspace. A workspace can have zero or more roots.
+     * Often, each root is the root directory of a repository.
+     */
+    export interface WorkspaceRoot {
+        /**
+         * The URI of the root.
+         *
+         * @todo The format of this URI will be changed in the future. It must not be relied on.
+         *
+         * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
+         */
+        readonly uri: URI
+    }
+
+    /**
      * The logical workspace that the extension is running in, which may consist of multiple folders, projects, and
      * repositories.
      */
@@ -573,6 +588,20 @@ declare module 'sourcegraph' {
          * An event that is fired when a new text document is opened.
          */
         export const onDidOpenTextDocument: Subscribable<TextDocument>
+
+        /**
+         * The root directories of the workspace, if any.
+         *
+         * @example The repository that is currently being viewed is a root.
+         * @todo Currently only a single root is supported.
+         * @readonly
+         */
+        export const roots: ReadonlyArray<WorkspaceRoot>
+
+        /**
+         * An event that is fired when a workspace root is added or removed from the workspace.
+         */
+        export const onDidChangeRoots: Subscribable<void>
     }
 
     /**

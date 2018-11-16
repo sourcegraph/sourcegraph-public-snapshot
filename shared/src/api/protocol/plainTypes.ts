@@ -1,5 +1,10 @@
 import * as sourcegraph from 'sourcegraph'
 
+/** The plain properties of a {@link module:sourcegraph.WorkspaceRoot}, without methods and accessors. */
+export interface WorkspaceRoot {
+    uri: string
+}
+
 /** The plain properties of a {@link module:sourcegraph.Position}, without methods and accessors. */
 export interface Position extends Pick<sourcegraph.Position, 'line' | 'character'> {}
 

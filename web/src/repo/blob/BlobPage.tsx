@@ -283,6 +283,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             settingsCascade={this.props.settingsCascade}
                             extensions={this.props.extensions}
                             extensionsController={this.props.extensionsController}
+                            extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                             extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                             wrapCode={this.state.wrapCode}
                             renderMode={renderMode}

@@ -19,6 +19,7 @@ import { ClientConfiguration } from './api/configuration'
 import { ClientContext } from './api/context'
 import { ClientDocuments } from './api/documents'
 import { ClientLanguageFeatures } from './api/languageFeatures'
+import { ClientRoots } from './api/roots'
 import { Search } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
@@ -273,6 +274,15 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
         )
         subscription.add(new Search(client, this.registries.queryTransformer))
         subscription.add(new ClientCommands(client, this.registries.commands))
+        subscription.add(
+            new ClientRoots(
+                client,
+                this.environment.pipe(
+                    map(({ roots }) => roots),
+                    distinctUntilChanged()
+                )
+            )
+        )
     }
 
     public set trace(value: Trace) {

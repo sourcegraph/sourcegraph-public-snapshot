@@ -3,7 +3,6 @@ import { render } from 'react-dom'
 import { combineLatest, from, Observable } from 'rxjs'
 import { map, take } from 'rxjs/operators'
 import { Disposable } from 'vscode-languageserver'
-import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
@@ -20,6 +19,7 @@ import {
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'
+import { Environment } from '../../../../../shared/src/api/client/environment'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
@@ -80,19 +80,20 @@ export interface Controllers {
     extensionsController: ClientController<SettingsSubject, Settings>
 }
 
-function createControllers(documents: Observable<TextDocumentItem[] | null>): Controllers {
+function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
     const extensionsContextController = createExtensionsContextController(sourcegraphUrl)
     const extensionsController = createController(extensionsContextController!.context, createMessageTransports)
 
     combineLatest(
         extensionsContextController.viewerConfiguredExtensions,
         from(extensionsContextController.context.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
-        documents
-    ).subscribe(([extensions, configuration, visibleTextDocuments]) => {
+        environment
+    ).subscribe(([extensions, configuration, { roots, visibleTextDocuments }]) => {
         from(extensionsController.environment)
             .pipe(take(1))
             .subscribe(({ context }) => {
                 extensionsController.setEnvironment({
+                    roots,
                     extensions,
                     configuration,
                     visibleTextDocuments,
@@ -109,9 +110,9 @@ function createControllers(documents: Observable<TextDocumentItem[] | null>): Co
  */
 export function initializeExtensions(
     getCommandPaletteMount: MountGetter,
-    documents: Observable<TextDocumentItem[] | null>
+    environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
 ): Controllers {
-    const { extensionsContextController, extensionsController } = createControllers(documents)
+    const { extensionsContextController, extensionsController } = createControllers(environment)
     const history = H.createBrowserHistory()
 
     render(
