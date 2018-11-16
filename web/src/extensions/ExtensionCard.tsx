@@ -3,16 +3,18 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import { SettingsSubject } from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphqlschema'
 import { ExtensionManifest } from '../../../shared/src/schema/extension.schema'
 import { LinkOrSpan } from '../../../shared/src/ui/generic/LinkOrSpan'
 import { Settings } from '../schema/settings.schema'
 import { isErrorLike } from '../util/errors'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
+import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 import { ExtensionToggle } from './ExtensionToggle'
 
 interface Props<S extends SettingsSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
-    node: ConfiguredExtension
+    node: ConfiguredExtension<GQL.IRegistryExtension>
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void
 }
@@ -52,6 +54,12 @@ export class ExtensionCard<S extends SettingsSubject, C extends Settings> extend
                                     {manifest && manifest.title ? manifest.title : node.id}
                                 </h4>
                                 <div className="extension-card__body-text d-inline-block mt-1">
+                                    {node.registryExtension &&
+                                        node.registryExtension.isWorkInProgress && (
+                                            <WorkInProgressBadge
+                                                viewerCanAdminister={node.registryExtension.viewerCanAdminister}
+                                            />
+                                        )}
                                     {node.manifest ? (
                                         isErrorLike(node.manifest) ? (
                                             <span className="text-danger small" title={node.manifest.message}>
