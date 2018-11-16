@@ -1,17 +1,16 @@
 import { combineLatest, from, Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { HoverMerged } from '../../client/types/hover'
-import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { TextDocumentPositionParams } from '../../protocol'
 import { Hover } from '../../protocol/plainTypes'
-import { FeatureProviderRegistry } from './registry'
+import { DocumentFeatureProviderRegistry } from './registry'
 
 export type ProvideTextDocumentHoverSignature = (
     params: TextDocumentPositionParams
 ) => Observable<Hover | null | undefined>
 
 /** Provides hovers from all extensions. */
-export class TextDocumentHoverProviderRegistry extends FeatureProviderRegistry<
-    TextDocumentRegistrationOptions,
+export class TextDocumentHoverProviderRegistry extends DocumentFeatureProviderRegistry<
     ProvideTextDocumentHoverSignature
 > {
     /**
@@ -20,7 +19,7 @@ export class TextDocumentHoverProviderRegistry extends FeatureProviderRegistry<
      * the observable (the observable does not emit the error).
      */
     public getHover(params: TextDocumentPositionParams): Observable<HoverMerged | null> {
-        return getHover(this.providers, params)
+        return getHover(this.providersForDocument(params.textDocument), params)
     }
 }
 

@@ -1,7 +1,12 @@
 import * as assert from 'assert'
-import { Subscription } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
+import { TestScheduler } from 'rxjs/testing'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
-import { FeatureProviderRegistry as AbstractFeatureProviderRegistry } from './registry'
+import {
+    DocumentFeatureProviderRegistry as AbstractDocumentFeatureProviderRegistry,
+    Entry,
+    FeatureProviderRegistry as AbstractFeatureProviderRegistry,
+} from './registry'
 
 /** Useful test fixtures. */
 export const FIXTURE = {
@@ -16,6 +21,8 @@ export const FIXTURE = {
         } as TextDocumentRegistrationOptions,
     },
 }
+
+const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 
 class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocumentRegistrationOptions, {}> {
     /**
@@ -75,5 +82,56 @@ describe('FeatureProviderRegistry', () => {
 
         unregister2.unsubscribe()
         assert.deepStrictEqual(registry.providersSnapshot, [])
+    })
+})
+
+class DocumentFeatureProviderRegistry extends AbstractDocumentFeatureProviderRegistry<{ a: number }> {
+    constructor(entries?: Observable<Entry<TextDocumentRegistrationOptions, { a: number }>[]>) {
+        super()
+        if (entries) {
+            entries.subscribe(entries => this.entries.next(entries))
+        }
+    }
+}
+
+describe('DocumentFeatureProviderRegistry', () => {
+    describe('providersForDocument', () => {
+        it('is initially empty', () =>
+            scheduler().run(({ expectObservable }) =>
+                expectObservable(new DocumentFeatureProviderRegistry().providersForDocument({ uri: 'file:///a' })).toBe(
+                    'a',
+                    {
+                        a: [],
+                    }
+                )
+            ))
+
+        it('registers and unregisters a provider', () =>
+            scheduler().run(({ expectObservable, cold }) =>
+                expectObservable(
+                    new DocumentFeatureProviderRegistry(
+                        cold<Entry<TextDocumentRegistrationOptions, { a: number }>[]>('--b-c-|', {
+                            b: [
+                                {
+                                    registrationOptions: { documentSelector: [{ scheme: 'file' }] },
+                                    provider: { a: 1 },
+                                },
+                            ],
+                            c: [
+                                {
+                                    registrationOptions: { documentSelector: [{ scheme: 'xyz' }] },
+                                    provider: { a: 1 },
+                                },
+                            ],
+                            d: [],
+                        })
+                    ).providersForDocument({ uri: 'file:///a' })
+                ).toBe('x-b-c-', {
+                    x: [],
+                    b: [{ a: 1 }],
+                    c: [],
+                    d: [],
+                })
+            ))
     })
 })
