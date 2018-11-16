@@ -330,7 +330,7 @@ Referenced by:
  creator_user_id       | integer                  | not null
  release_version       | citext                   | 
  release_tag           | citext                   | not null
- manifest              | text                     | not null
+ manifest              | jsonb                    | not null
  bundle                | text                     | 
  created_at            | timestamp with time zone | not null default now()
  deleted_at            | timestamp with time zone | 

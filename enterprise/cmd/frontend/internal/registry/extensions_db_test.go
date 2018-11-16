@@ -302,7 +302,6 @@ func TestRegistryExtensions(t *testing.T) {
 		// The WIP extension should be excluded.
 		testList(t, dbExtensionsListOptions{ExcludeWIP: true, Query: "wiptest", LimitOffset: &db.LimitOffset{Limit: 3}}, []*dbExtension{xnonwip})
 	})
-
 }
 
 func asJSON(t *testing.T, v interface{}) string {
