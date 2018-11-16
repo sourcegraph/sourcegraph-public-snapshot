@@ -52,7 +52,9 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 	r.once.Do(func() {
 		args2 := r.args
 		if args2.First != nil {
-			*args2.First++ // so we can detect if there is a next page
+			tmp := *args2.First
+			tmp++ // so we can detect if there is a next page
+			args2.First = &tmp
 		}
 
 		var query string
@@ -63,7 +65,7 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 		// Query local registry extensions.
 		var local []graphqlbackend.RegistryExtension
 		if r.args.Local && ListLocalRegistryExtensions != nil {
-			local, r.err = ListLocalRegistryExtensions(ctx, r.args)
+			local, r.err = ListLocalRegistryExtensions(ctx, args2)
 			if r.err != nil {
 				return
 			}
