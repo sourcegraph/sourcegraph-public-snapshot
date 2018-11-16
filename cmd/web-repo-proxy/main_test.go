@@ -224,7 +224,8 @@ func TestEndToEnd(t *testing.T) {
 	context, cancel := context.WithCancel(context.Background())
 	server := exec.CommandContext(context, "./web-repo-proxy")
 	server.Env = append(os.Environ(),
-		"REPOSITORIES_ROOT="+repositoriesRoot)
+		"REPOSITORIES_ROOT="+repositoriesRoot,
+		"INSECURE_DEV=true")
 	err = server.Start()
 	if err != nil {
 		t.Errorf("Couldn't start repository server: %v", err)
@@ -234,8 +235,23 @@ func TestEndToEnd(t *testing.T) {
 	defer server.Wait()
 	defer cancel()
 
-	// Delay to let the server start listening.
-	time.Sleep(time.Second / 10)
+	// Wait for the server to wake up
+	const healthzAttemptsMax = 50
+	healthzAttempts := 0
+	for {
+		healthzResponse, err := http.Get("http://localhost:4014/healthz")
+		if err == nil && healthzResponse.StatusCode == http.StatusOK {
+			// The server is awake
+			break
+		}
+		healthzAttempts++
+		if healthzAttempts >= healthzAttemptsMax {
+			t.Errorf("Repository server didn't respond after %d attempts", healthzAttemptsMax)
+			return
+		}
+		// Wait for at most one second total.
+		time.Sleep(time.Second / healthzAttemptsMax)
+	}
 
 	// The server is running, send it a repository creation request.
 	request := strings.NewReader(`{

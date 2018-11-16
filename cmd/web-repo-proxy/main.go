@@ -29,7 +29,7 @@ var (
 
 	listenerPort = env.Get("LISTENER_PORT", "4014", "The network port to listen on")
 
-	maxRequestSize = 0x10000 // Repo creation requests must be at most 64KB.
+	maxRequestSize = 64 * 1024 // Repo creation requests must be at most 64KB.
 )
 
 const repositoryRequestPrefix = "/repository/"
@@ -46,18 +46,18 @@ func mustParseDuration(durationString string) time.Duration {
 type repository string
 
 // filePathForReponsitory returns the location of this repository on disk.
-func (r *repository) filePath() string {
-	return filepath.Join(repositoriesRoot, string(*r))
+func (r repository) filePath() string {
+	return filepath.Join(repositoriesRoot, string(r))
 }
 
 // urlPath returns the URL path to use when cloning this repository over http.
-func (r *repository) urlPath() string {
-	return repositoryRequestPrefix + string(*r)
+func (r repository) urlPath() string {
+	return repositoryRequestPrefix + string(r)
 }
 
 // goodUntil checks the repository's directory on disk and returns the time
 // it will expire, or an error if the repository couldn't be read.
-func (r *repository) goodUntil() (time.Time, error) {
+func (r repository) goodUntil() (time.Time, error) {
 	path := r.filePath()
 	info, err := os.Lstat(path)
 	if err != nil {
@@ -73,25 +73,24 @@ func createRandomKey() string {
 
 // createNewRepository creates a new repository with the given name and data.
 // Returns a repository string if successful, otherwise returns error.
-func createNewRepository(name string, data map[string]string) (*repository, error) {
+func createNewRepository(name string, data map[string]string) (repository, error) {
 	// Create a temporary directory to initialize with the repository data.
 	tempRoot, err := ioutil.TempDir("", "web-repo-proxy")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer func() {
-		// If there was an error, clean up what's left on disk.
-		if err != nil {
-			os.RemoveAll(tempRoot)
-		}
+		// Make sure we remove the temporary directory, in case there was an
+		// error before it was moved to its final location  (otherwise this is a
+		// no-op).
+		os.RemoveAll(tempRoot)
 	}()
 
 	// Write out the given data to the file system.
 	for filename, content := range data {
 		filePath := filepath.Join(tempRoot, filename)
-		err = ioutil.WriteFile(filePath, []byte(content), 0644)
-		if err != nil {
-			return nil, err
+		if err = ioutil.WriteFile(filePath, []byte(content), 0644); err != nil {
+			return "", err
 		}
 	}
 
@@ -106,9 +105,8 @@ func createNewRepository(name string, data map[string]string) (*repository, erro
 	for _, command := range gitCommands {
 		cmd := exec.Command("git", command...)
 		cmd.Dir = tempRoot
-		err = cmd.Run()
-		if err != nil {
-			return nil, err
+		if err = cmd.Run(); err != nil {
+			return "", err
 		}
 	}
 
@@ -117,13 +115,12 @@ func createNewRepository(name string, data map[string]string) (*repository, erro
 		// Retry up to 3 times to avoid ephemeral errors and name collisions.
 		repository := repository(name + "-" + createRandomKey())
 		repositoryRoot := repository.filePath()
-		err = os.Rename(tempRoot, repositoryRoot)
-		if err == nil {
-			return &repository, nil
+		if err = os.Rename(tempRoot, repositoryRoot); err == nil {
+			return repository, nil
 		}
 	}
 	// If we still failed after 3 tries, return the most recent error.
-	return nil, err
+	return "", err
 }
 
 // Check whether any repositories have expired, and delete them if so.
@@ -309,6 +306,11 @@ func main() {
 		// list-repositories is for testing, not production.
 		http.HandleFunc("/list-repositories", handleListRepositories())
 	}
+	// Awakeness endpoint for readiness checks / integration tests.
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+	})
 
 	host := ""
 	if env.InsecureDev {
