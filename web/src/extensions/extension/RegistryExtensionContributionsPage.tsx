@@ -19,7 +19,9 @@ interface ContributionGroup {
     rows: (React.ReactFragment | null)[][]
 }
 
-const ContributionsTable: React.SFC<{ contributionGroups: ContributionGroup[] }> = ({ contributionGroups }) => (
+const ContributionsTable: React.FunctionComponent<{ contributionGroups: ContributionGroup[] }> = ({
+    contributionGroups,
+}) => (
     <div>
         {contributionGroups.length === 0 && (
             <p>This extension doesn't define any settings or actions. No configuration is required to use it.</p>

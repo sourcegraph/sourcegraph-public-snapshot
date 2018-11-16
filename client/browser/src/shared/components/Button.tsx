@@ -12,7 +12,7 @@ export interface Props {
     label: string
 }
 
-export const Button: React.StatelessComponent<Props> = (props: Props) => (
+export const Button: React.FunctionComponent<Props> = (props: Props) => (
     <a
         href={props.url}
         aria-label={props.ariaLabel}

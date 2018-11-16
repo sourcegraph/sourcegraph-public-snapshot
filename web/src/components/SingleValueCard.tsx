@@ -4,7 +4,7 @@ import { LinkOrSpan } from '../../../shared/src/ui/generic/LinkOrSpan'
 /**
  * A card that displays a large single value.
  */
-export const SingleValueCard: React.SFC<{
+export const SingleValueCard: React.FunctionComponent<{
     title: string
     subTitle?: string
     value: string | number

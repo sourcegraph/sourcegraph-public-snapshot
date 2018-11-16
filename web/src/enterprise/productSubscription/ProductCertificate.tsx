@@ -23,7 +23,13 @@ interface Props {
  * In most cases, you should use a component that wraps this component and handles fetching the data to display.
  * Such components exist; check this component's TypeScript references.
  */
-export const ProductCertificate: React.SFC<Props> = ({ title, subtitle, detail, footer, className = '' }) => (
+export const ProductCertificate: React.FunctionComponent<Props> = ({
+    title,
+    subtitle,
+    detail,
+    footer,
+    className = '',
+}) => (
     <>
         <div className={`product-certificate card ${className || ''}`}>
             <div className="product-certificate__bg" />

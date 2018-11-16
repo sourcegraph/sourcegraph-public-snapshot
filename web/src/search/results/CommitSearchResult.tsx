@@ -34,7 +34,7 @@ interface Props {
     allExpanded?: boolean
 }
 
-export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props) => {
+export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props) => {
     const telemetryData: { [key: string]: any } = {
         preview_type: props.result.diffPreview ? 'diff' : 'message',
     }

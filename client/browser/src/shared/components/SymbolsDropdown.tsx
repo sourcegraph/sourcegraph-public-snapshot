@@ -57,7 +57,7 @@ function symbolToString(s: GQL.ISymbol | null): string {
     return s ? s.name : ''
 }
 
-export const SymbolsDropdown: React.StatelessComponent<SymbolsDropdownProps> = ({
+export const SymbolsDropdown: React.FunctionComponent<SymbolsDropdownProps> = ({
     symbolsOrError,
 
     onSymbolSelected,

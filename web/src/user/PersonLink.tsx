@@ -5,7 +5,7 @@ import * as GQL from '../../../shared/src/graphqlschema'
 /**
  * A person's name, with a link to their Sourcegraph user profile if an associated user is found.
  */
-export const PersonLink: React.SFC<{
+export const PersonLink: React.FunctionComponent<{
     displayName: string
     user?: GQL.IUser | null
     className?: string

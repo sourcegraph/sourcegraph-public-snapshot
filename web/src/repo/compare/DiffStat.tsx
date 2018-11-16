@@ -4,7 +4,7 @@ import { pluralize } from '../../util/strings'
 const NUM_SQUARES = 5
 
 /** Displays a diff stat (visual representation of added, changed, and deleted lines in a diff). */
-export const DiffStat: React.SFC<{
+export const DiffStat: React.FunctionComponent<{
     /** Number of additions (added lines). */
     added: number
 

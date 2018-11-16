@@ -8,7 +8,7 @@ import * as GQL from '../../../../shared/src/graphqlschema'
 import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { isDefined } from '../../util/types'
 
-const DiffBoundary: React.SFC<{
+const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
     oldRange: { startLine: number; lines?: number }
     newRange: { startLine: number; lines?: number }
@@ -36,7 +36,7 @@ const DiffBoundary: React.SFC<{
     </tr>
 )
 
-const DiffHunk: React.SFC<{
+const DiffHunk: React.FunctionComponent<{
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 

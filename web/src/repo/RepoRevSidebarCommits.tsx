@@ -17,7 +17,7 @@ interface CommitNodeProps {
     location: H.Location
 }
 
-const CommitNode: React.SFC<CommitNodeProps> = ({ node, repoName, location }) => (
+const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, repoName, location }) => (
     <li className="list-group-item p-0">
         <GitCommitNode
             compact={true}

@@ -71,7 +71,12 @@ interface GitRefPopoverNodeProps {
     location: H.Location
 }
 
-const GitRefPopoverNode: React.SFC<GitRefPopoverNodeProps> = ({ node, defaultBranch, currentRev, location }) => {
+const GitRefPopoverNode: React.FunctionComponent<GitRefPopoverNodeProps> = ({
+    node,
+    defaultBranch,
+    currentRev,
+    location,
+}) => {
     let isCurrent: boolean
     if (currentRev) {
         isCurrent = node.name === currentRev || node.abbrevName === currentRev
@@ -102,7 +107,7 @@ interface GitCommitNodeProps {
     location: H.Location
 }
 
-const GitCommitNode: React.SFC<GitCommitNodeProps> = ({ node, currentCommitID, location }) => {
+const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, currentCommitID, location }) => {
     const isCurrent = currentCommitID === (node.oid as string)
     return (
         <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">

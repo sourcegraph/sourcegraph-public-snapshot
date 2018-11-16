@@ -13,7 +13,7 @@ interface Props {
     onMouseDown: () => void
 }
 
-export const GitRefTag: React.SFC<Props> = ({ gitRef, onMouseDown }: Props) => {
+export const GitRefTag: React.FunctionComponent<Props> = ({ gitRef, onMouseDown }: Props) => {
     // TODO(sqs): make not github specific
     const githubRepoURL = gitRef.repository.name.startsWith('github.com/')
         ? `https://${gitRef.repository.name}`

@@ -34,7 +34,7 @@ interface SearchResultsInfoBarProps {
  * The info bar shown over the search results list that displays metadata
  * and a few actions like expand all and save query
  */
-export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBarProps> = props => (
+export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => (
     <div className="search-results-info-bar">
         {(props.results.timedout.length > 0 ||
             props.results.cloning.length > 0 ||

@@ -46,7 +46,7 @@ class Breadcrumb extends React.Component<Props, {}> {
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
  */
-export const FilePathBreadcrumb: React.SFC<
+export const FilePathBreadcrumb: React.FunctionComponent<
     RepoRev & {
         filePath: string
         isDir: boolean

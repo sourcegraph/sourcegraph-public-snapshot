@@ -3,7 +3,7 @@ import React from 'react'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import { SavedQueries } from '../SavedQueries'
 
-export const SavedSearchesExploreSection: React.SFC<{
+export const SavedSearchesExploreSection: React.FunctionComponent<{
     authenticatedUser: GQL.IUser | null
     location: H.Location
     isLightTheme: boolean

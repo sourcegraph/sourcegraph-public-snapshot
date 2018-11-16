@@ -2,7 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
-export const PasswordInput: React.SFC<
+export const PasswordInput: React.FunctionComponent<
     React.InputHTMLAttributes<HTMLInputElement> & { inputRef?: React.Ref<HTMLInputElement> }
 > = props => {
     const { inputRef, ...other } = props
@@ -19,7 +19,7 @@ export const PasswordInput: React.SFC<
     )
 }
 
-export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
+export const EmailInput: React.FunctionComponent<React.InputHTMLAttributes<HTMLInputElement>> = props => (
     <input
         name="email"
         {...props}
@@ -31,7 +31,7 @@ export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> 
     />
 )
 
-export const UsernameInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
+export const UsernameInput: React.FunctionComponent<React.InputHTMLAttributes<HTMLInputElement>> = props => (
     <input
         name="username"
         {...props}

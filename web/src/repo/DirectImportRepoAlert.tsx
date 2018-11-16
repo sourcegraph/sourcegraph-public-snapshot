@@ -2,7 +2,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
-export const DirectImportRepoAlert: React.StatelessComponent<{ className?: string }> = ({ className = '' }) => (
+export const DirectImportRepoAlert: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <>
         {!window.context.isClusterDeployment && (
             <div className={`alert alert-info ${className}`}>

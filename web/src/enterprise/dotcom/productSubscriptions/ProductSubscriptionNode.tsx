@@ -39,7 +39,7 @@ export const productSubscriptionFragment = gql`
     }
 `
 
-export const ProductSubscriptionNodeHeader: React.SFC<{ nodes: any }> = () => (
+export const ProductSubscriptionNodeHeader: React.FunctionComponent<{ nodes: any }> = () => (
     <thead>
         <tr>
             <th>ID</th>

@@ -17,7 +17,9 @@ export interface ExtensionsAreaHeaderActionButton extends ActionButtonDescriptor
 /**
  * Header for the extensions area.
  */
-export const ExtensionsAreaHeader: React.SFC<ExtensionsAreaHeaderProps> = (props: ExtensionsAreaHeaderProps) => (
+export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderProps> = (
+    props: ExtensionsAreaHeaderProps
+) => (
     <div className="">
         {props.isPrimaryHeader && (
             <div className="navbar navbar-expand">

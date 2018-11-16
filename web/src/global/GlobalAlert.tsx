@@ -10,7 +10,7 @@ import { Markdown } from '../components/Markdown'
 /**
  * A global alert that is shown at the top of the viewport.
  */
-export const GlobalAlert: React.SFC<{ alert: GQL.IAlert; className: string }> = ({
+export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className: string }> = ({
     alert,
     className: commonClassName,
 }) => {

@@ -12,7 +12,11 @@ interface Props {
 /**
  * Displays a summary of the site's true-up pricing status.
  */
-export const TrueUpStatusSummary: React.SFC<Props> = ({ actualUserCount, actualUserCountDate, license }) => (
+export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
+    actualUserCount,
+    actualUserCountDate,
+    license,
+}) => (
     <>
         <div className="true-up-status-summary mb-2 mt-4">
             <div className="true-up-status-summary__container">

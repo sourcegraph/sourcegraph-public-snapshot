@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import { ProductSubscriptionLabel } from '../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 
-export const ProductSubscriptionBilling: React.SFC<{
+export const ProductSubscriptionBilling: React.FunctionComponent<{
     productSubscription: GQL.IProductSubscription
 }> = ({ productSubscription }) => (
     <table className="table mb-0">

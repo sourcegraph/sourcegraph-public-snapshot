@@ -12,7 +12,7 @@ interface FileProps extends TreeLayerProps {
     linkRowClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-export const File: React.SFC<FileProps> = (props: FileProps) => (
+export const File: React.FunctionComponent<FileProps> = (props: FileProps) => (
     <tr key={props.entryInfo.path} className={props.className}>
         <td className="tree__cell">
             {props.entryInfo.submodule ? (

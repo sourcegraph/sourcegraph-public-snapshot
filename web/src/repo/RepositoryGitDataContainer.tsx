@@ -11,7 +11,7 @@ import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND, resolveRev } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 
-export const RepositoryCloningInProgressPage: React.SFC<{ repoName: string; progress?: string }> = ({
+export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName: string; progress?: string }> = ({
     repoName,
     progress,
 }) => (
@@ -25,7 +25,9 @@ export const RepositoryCloningInProgressPage: React.SFC<{ repoName: string; prog
     />
 )
 
-export const EmptyRepositoryPage: React.SFC = () => <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
+export const EmptyRepositoryPage: React.FunctionComponent = () => (
+    <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
+)
 
 interface Props {
     /** The repository. */

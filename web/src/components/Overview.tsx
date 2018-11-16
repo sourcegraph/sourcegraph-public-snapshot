@@ -4,14 +4,14 @@ import { Link } from 'react-router-dom'
 /**
  * A container for multiple OverviewItem components.
  */
-export const OverviewList: React.SFC<{ children: React.ReactNode | React.ReactNode[] }> = ({ children }) => (
-    <ul className="overview-list">{children}</ul>
-)
+export const OverviewList: React.FunctionComponent<{ children: React.ReactNode | React.ReactNode[] }> = ({
+    children,
+}) => <ul className="overview-list">{children}</ul>
 
 /**
  * A row item used for an overview page, with an icon, linked elements, and right-hand actions.
  */
-export const OverviewItem: React.SFC<{
+export const OverviewItem: React.FunctionComponent<{
     link?: string
     children: React.ReactNode | React.ReactNode[]
     actions?: React.ReactFragment

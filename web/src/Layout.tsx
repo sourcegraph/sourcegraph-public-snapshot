@@ -71,7 +71,7 @@ export interface LayoutProps
     children?: never
 }
 
-export const Layout: React.SFC<LayoutProps> = props => {
+export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
     const needsSiteInit = window.context.showOnboarding

@@ -23,7 +23,7 @@ const onSubmit = (fields: SavedQueryFields): Observable<void> =>
         fields.notifySlack
     ).pipe(map(() => undefined))
 
-export const SavedQueryCreateForm: React.StatelessComponent<Props> = props => (
+export const SavedQueryCreateForm: React.FunctionComponent<Props> = props => (
     <SavedQueryForm
         authenticatedUser={props.authenticatedUser}
         onDidCommit={props.onDidCreate}

@@ -27,6 +27,6 @@ const getExtensionLinkURL = (email: string): string => {
  * Embeds an iframe responsible for passing the current user and Sourcegraph URL to the browser
  * extension.
  */
-export const LinkExtension: React.SFC<Props> = props => (
+export const LinkExtension: React.FunctionComponent<Props> = props => (
     <iframe className="link-extension" src={getExtensionLinkURL(props.authenticatedUser.email)} />
 )

@@ -38,7 +38,7 @@ export const siteAdminProductSubscriptionFragment = gql`
     }
 `
 
-export const SiteAdminProductSubscriptionNodeHeader: React.SFC<{ nodes: any }> = () => (
+export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<{ nodes: any }> = () => (
     <thead>
         <tr>
             <th>ID</th>

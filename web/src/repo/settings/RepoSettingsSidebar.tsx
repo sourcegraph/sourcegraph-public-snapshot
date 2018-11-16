@@ -16,7 +16,7 @@ interface Props extends RouteComponentProps<any> {
 /**
  * Sidebar for repository settings pages.
  */
-export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
+export const RepoSettingsSidebar: React.FunctionComponent<Props> = (props: Props) =>
     props.repo ? (
         <div className={`repo-settings-sidebar ${props.className || ''}`}>
             <div className={SIDEBAR_CARD_CLASS}>

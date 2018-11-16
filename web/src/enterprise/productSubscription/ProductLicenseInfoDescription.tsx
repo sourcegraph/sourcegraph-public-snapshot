@@ -2,7 +2,7 @@ import React from 'react'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { formatUserCount } from './helpers'
 
-export const ProductLicenseInfoDescription: React.SFC<{
+export const ProductLicenseInfoDescription: React.FunctionComponent<{
     licenseInfo: GQL.IProductLicenseInfo
     className?: string
 }> = ({ licenseInfo, className = '' }) => (

@@ -43,7 +43,7 @@ interface RepositoryNodeProps {
     currentRepo?: GQL.ID
 }
 
-const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node, currentRepo }) => (
+const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, currentRepo }) => (
     <li key={node.id} className="connection-popover__node">
         <Link
             to={`/${node.name}`}

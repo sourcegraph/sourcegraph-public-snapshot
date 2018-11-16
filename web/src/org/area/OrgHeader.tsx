@@ -13,7 +13,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
 /**
  * Header for the organization area.
  */
-export const OrgHeader: React.SFC<Props> = (props: Props) => (
+export const OrgHeader: React.FunctionComponent<Props> = (props: Props) => (
     <div className={`org-header area-header ${props.className}`}>
         <div className={`${props.className}-inner`}>
             {props.org && (

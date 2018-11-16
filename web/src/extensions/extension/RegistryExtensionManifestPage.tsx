@@ -10,7 +10,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/Dynamica
 import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 
-export const ExtensionNoManifestAlert: React.SFC<{
+export const ExtensionNoManifestAlert: React.FunctionComponent<{
     extension: ConfiguredExtension
 }> = ({ extension }) => (
     <div className="alert alert-info">

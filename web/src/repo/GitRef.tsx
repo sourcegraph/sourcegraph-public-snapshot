@@ -22,7 +22,7 @@ interface GitRefNodeProps {
     children?: React.ReactNode
 }
 
-export const GitRefNode: React.SFC<GitRefNodeProps> = ({ node, url, rootIsLink, children }) => {
+export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url, rootIsLink, children }) => {
     const mostRecentSig =
         node.target.commit &&
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date

@@ -19,7 +19,7 @@ interface Props {
 
 const logClickOnText = () => eventLogger.log('RepositorySearchResultClicked')
 
-export const RepositorySearchResult: React.StatelessComponent<Props> = (props: Props) => (
+export const RepositorySearchResult: React.FunctionComponent<Props> = (props: Props) => (
     <ResultContainer
         titleClassName="repository-search-result__title"
         icon={RepositoryIcon}

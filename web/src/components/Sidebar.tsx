@@ -10,7 +10,7 @@ export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 /**
  * Item of `SideBarGroupItems`.
  */
-export const SidebarNavItem: React.SFC<{ to: string; exact?: boolean; className?: string }> = ({
+export const SidebarNavItem: React.FunctionComponent<{ to: string; exact?: boolean; className?: string }> = ({
     children,
     to,
     exact,
@@ -24,7 +24,7 @@ export const SidebarNavItem: React.SFC<{ to: string; exact?: boolean; className?
 /**
  * Header of a `SideBarGroup`
  */
-export const SidebarGroupHeader: React.SFC<{
+export const SidebarGroupHeader: React.FunctionComponent<{
     icon?: React.ComponentType<{ className?: string }>
     label: string
     children?: undefined
@@ -37,11 +37,13 @@ export const SidebarGroupHeader: React.SFC<{
 /**
  * A box of items in the side bar. Use `SideBarGroupHeader` and `SideBarGroupItems` as children.
  */
-export const SidebarGroup: React.SFC<{}> = ({ children }) => <div className={SIDEBAR_CARD_CLASS}>{children}</div>
+export const SidebarGroup: React.FunctionComponent<{}> = ({ children }) => (
+    <div className={SIDEBAR_CARD_CLASS}>{children}</div>
+)
 
 /**
  * Container for all `SideBarNavItem` in a `SideBarGroup`.
  */
-export const SidebarGroupItems: React.SFC<{}> = ({ children }) => (
+export const SidebarGroupItems: React.FunctionComponent<{}> = ({ children }) => (
     <div className="list-group list-group-flush">{children}</div>
 )

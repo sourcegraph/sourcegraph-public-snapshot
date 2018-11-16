@@ -22,7 +22,9 @@ export interface ExtensionAreaHeaderNavItem extends NavItemWithIconDescriptor<Ex
 /**
  * Header for the extension area.
  */
-export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: ExtensionAreaHeaderProps) => {
+export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderProps> = (
+    props: ExtensionAreaHeaderProps
+) => {
     const manifest: ExtensionManifest | undefined =
         props.extension.manifest && !isErrorLike(props.extension.manifest) ? props.extension.manifest : undefined
     let iconURL: URL | undefined

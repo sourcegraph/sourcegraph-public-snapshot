@@ -12,6 +12,6 @@ import * as React from 'react'
  *         }
  *     />
  */
-export const RepoHeaderBreadcrumbNavItem: React.SFC<{ children: React.ReactFragment }> = ({ children }) => (
-    <span className="repo-header-breadcrumb-nav-item">{children}</span>
-)
+export const RepoHeaderBreadcrumbNavItem: React.FunctionComponent<{ children: React.ReactFragment }> = ({
+    children,
+}) => <span className="repo-header-breadcrumb-nav-item">{children}</span>

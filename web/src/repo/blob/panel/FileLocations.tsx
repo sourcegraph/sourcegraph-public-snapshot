@@ -15,13 +15,16 @@ import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { propertyIsDefined } from '../../../util/types'
 import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
 
-export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
+export const FileLocationsError: React.FunctionComponent<{ pluralNoun: string; error: ErrorLike }> = ({
+    pluralNoun,
+    error,
+}) => (
     <div className="file-locations__error alert alert-danger m-2">
         <AlertCircleIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
     </div>
 )
 
-export const FileLocationsNotFound: React.SFC<{ pluralNoun: string }> = ({ pluralNoun }) => (
+export const FileLocationsNotFound: React.FunctionComponent<{ pluralNoun: string }> = ({ pluralNoun }) => (
     <div className="file-locations__not-found m-2">
         <MapSearchIcon className="icon-inline" /> No {pluralNoun} found
     </div>

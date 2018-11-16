@@ -7,7 +7,7 @@ import { ExpirationDate } from '../../productSubscription/ExpirationDate'
  * Displays a before/after comparison table of a change to the invoice item of a product
  * subscription.
  */
-export const ProductSubscriptionBeforeAfterInvoiceItem: React.SFC<{
+export const ProductSubscriptionBeforeAfterInvoiceItem: React.FunctionComponent<{
     beforeInvoiceItem: GQL.IProductSubscriptionInvoiceItem
     afterInvoiceItem: GQL.IProductSubscriptionInvoiceItem
     className?: string

@@ -3,7 +3,7 @@ import React from 'react'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from './helpers'
 
 /** Displays an expiration date (for product subscriptions or licenses). */
-export const ExpirationDate: React.SFC<{
+export const ExpirationDate: React.FunctionComponent<{
     /** The expiration date of a product subscription or license. */
     date: string | number
 

@@ -12,7 +12,9 @@ const onClickCTA = () => {
  * A global alert telling the site admin that they need to configure repositories
  * on this site.
  */
-export const NeedsRepositoryConfigurationAlert: React.SFC<{ className?: string }> = ({ className = '' }) => (
+export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ className?: string }> = ({
+    className = '',
+}) => (
     <DismissibleAlert
         partialStorageKey="needsRepositoryConfiguration"
         className={`alert alert-success alert-animated-bg d-flex align-items-center ${className}`}

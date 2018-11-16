@@ -6,7 +6,7 @@ import { Link, LinkProps } from 'react-router-dom'
  * absolute URL to <Link> will create an (almost certainly invalid) URL where the absolute URL is resolved to the
  * current URL, such as https://example.com/a/b/https://example.com/c/d.
  */
-export const RouterLinkOrAnchor: React.SFC<LinkProps> = props =>
+export const RouterLinkOrAnchor: React.FunctionComponent<LinkProps> = props =>
     typeof props.to === 'string' && /^https?:\/\//.test(props.to) ? (
         <a href={props.to} {...props} />
     ) : (

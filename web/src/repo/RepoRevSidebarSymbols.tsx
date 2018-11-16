@@ -24,7 +24,7 @@ interface SymbolNodeProps {
     location: H.Location
 }
 
-const SymbolNode: React.SFC<SymbolNodeProps> = ({ node, location }) => {
+const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }) => {
     const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
     return (
         <li className="repo-rev-sidebar-symbols-node">

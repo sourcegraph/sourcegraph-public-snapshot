@@ -3,7 +3,7 @@ import * as React from 'react'
 /**
  * OrgAvatar displays the avatar of an organization.
  */
-export const OrgAvatar: React.SFC<{
+export const OrgAvatar: React.FunctionComponent<{
     /** The organization's name. */
     org: string
 

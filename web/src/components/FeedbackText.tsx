@@ -6,7 +6,7 @@ interface Props {
     className?: string
 }
 
-export const FeedbackText: React.StatelessComponent<Props> = (props: Props) => (
+export const FeedbackText: React.FunctionComponent<Props> = (props: Props) => (
     <p className={`feedback-text ${props.className || ''}`}>
         {props.headerText || 'Questions/feedback?'} Contact us at{' '}
         <a href="https://twitter.com/srcgraph" target="_blank">
