@@ -105,6 +105,12 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			r.registryExtensions[len(local)+i] = &registryExtensionRemoteResolver{v: x}
 		}
 
+		// Sort WIP extensions last. (The local extensions list is already sorted in that way, but
+		// the remote extensions list isn't, so therefore the combined list isn't.)
+		sort.SliceStable(r.registryExtensions, func(i, j int) bool {
+			return !r.registryExtensions[i].IsWorkInProgress() && r.registryExtensions[j].IsWorkInProgress()
+		})
+
 		if r.args.PrioritizeExtensionIDs != nil && len(*r.args.PrioritizeExtensionIDs) > 0 {
 			// Sort prioritized extension IDs first.
 			set := makePrioritizeExtensionIDsSet(r.args)
@@ -114,12 +120,6 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 				return pi && !pj
 			})
 		}
-
-		// Sort WIP extensions last. (The local extensions list is already sorted in that way, but
-		// the remote extensions list isn't, so therefore the combined list isn't.)
-		sort.SliceStable(r.registryExtensions, func(i, j int) bool {
-			return !r.registryExtensions[i].IsWorkInProgress() && r.registryExtensions[j].IsWorkInProgress()
-		})
 	})
 	return r.registryExtensions, r.err
 }
