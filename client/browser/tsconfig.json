@@ -10,14 +10,6 @@
     "allowJs": true,
     "checkJs": true
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "config/**/*.js",
-    "config/**/*.ts",
-    "cypress/**/*.ts",
-    "scripts/**/*.ts",
-    "*.ts"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "config/**/*.js", "config/**/*.ts", "scripts/**/*.ts", "*.ts"],
   "exclude": ["./build/**/*", "./*.safariextension"]
 }

@@ -1,6 +1,7 @@
 import mermaid from 'mermaid'
 import * as React from 'react'
 import { render } from 'react-dom'
+import storage from '../../browser/storage'
 import { Alerts } from '../../shared/components/Alerts'
 import { ConfigureSourcegraphButton } from '../../shared/components/ConfigureSourcegraphButton'
 import { ContextualSourcegraphButton } from '../../shared/components/ContextualSourcegraphButton'
@@ -76,28 +77,36 @@ function injectServerBanner(): void {
  * The button is only rendered on a repo homepage after the "find file" button.
  */
 function injectOpenOnSourcegraphButton(): void {
-    const container = createOpenOnSourcegraphIfNotExists()
-    const pageheadActions = document.querySelector('.pagehead-actions')
-    if (!pageheadActions || !pageheadActions.children.length) {
-        return
-    }
-    pageheadActions.insertBefore(container, pageheadActions.children[0])
-    if (container) {
-        const { repoPath, rev } = parseURL()
-        if (repoPath) {
-            render(
-                <WithResolvedRev
-                    component={ContextualSourcegraphButton}
-                    repoPath={repoPath}
-                    rev={rev}
-                    defaultBranch={'HEAD'}
-                    notFoundComponent={ConfigureSourcegraphButton}
-                    requireAuthComponent={ServerAuthButton}
-                />,
-                container
-            )
+    storage.getSync(items => {
+        const container = createOpenOnSourcegraphIfNotExists()
+
+        console.log('items.featureFlags.useExtensions', items.featureFlags.useExtensions)
+        if (items.featureFlags.useExtensions) {
+            container.classList.add('use-extensions')
         }
-    }
+
+        const pageheadActions = document.querySelector('.pagehead-actions')
+        if (!pageheadActions || !pageheadActions.children.length) {
+            return
+        }
+        pageheadActions.insertBefore(container, pageheadActions.children[0])
+        if (container) {
+            const { repoPath, rev } = parseURL()
+            if (repoPath) {
+                render(
+                    <WithResolvedRev
+                        component={ContextualSourcegraphButton}
+                        repoPath={repoPath}
+                        rev={rev}
+                        defaultBranch={'HEAD'}
+                        notFoundComponent={ConfigureSourcegraphButton}
+                        requireAuthComponent={ServerAuthButton}
+                    />,
+                    container
+                )
+            }
+        }
+    })
 }
 
 function injectMermaid(): void {

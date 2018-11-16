@@ -208,6 +208,10 @@ storage.setSyncMigration(items => {
     featureFlags.simpleOptionsMenu = true
     newItems.featureFlags = featureFlags
 
+    if (typeof process.env.USE_EXTENSIONS !== 'undefined') {
+        newItems.featureFlags.useExtensions = process.env.USE_EXTENSIONS === 'true'
+    }
+
     return { newItems, keysToRemove }
 })
 

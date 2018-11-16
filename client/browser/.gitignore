@@ -26,7 +26,3 @@ npm-debug.log.*
 *.safariextension/**/*
 !*.safariextension/*.plist
 !*.safariextension/background.safari.html
-
-# Cypress testing. These will get downloaded as artifacts by buildkite.
-cypress/screenshots/
-cypress/vidoes/

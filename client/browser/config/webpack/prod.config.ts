@@ -29,6 +29,7 @@ export default {
                 'process.env': {
                     NODE_ENV: JSON.stringify('production'),
                     BUNDLE_UID: JSON.stringify(generateBundleUID()),
+                    USE_EXTENSIONS: JSON.stringify(process.env.USE_EXTENSIONS),
                 },
             }),
             new webpack.ProvidePlugin({
