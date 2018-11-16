@@ -22,8 +22,13 @@ import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators
 import { Disposable } from 'vscode-jsonrpc'
 import { Environment } from '../../../../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
-import { lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/lsp'
-import { createJumpURLFetcher, createLSPFromExtensions, JumpURLLocation } from '../../shared/backend/lsp'
+import {
+    createJumpURLFetcher,
+    createLSPFromExtensions,
+    JumpURLLocation,
+    lspViaAPIXlang,
+    toTextDocumentIdentifier,
+} from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../../shared/repo'
 import { eventLogger, getModeFromPath, sourcegraphUrl, useExtensions } from '../../shared/util/context'
