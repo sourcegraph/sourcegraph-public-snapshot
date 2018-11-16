@@ -188,7 +188,7 @@ type dbExtensionsListOptions struct {
 	*db.LimitOffset
 }
 
-var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR rer.manifest::json->>'title' SIMILAR TO %s`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
+var extensionIsWIPExpr = sqlf.Sprintf(`COALESCE(rer.manifest IS NULL OR rer.manifest::json->>'title' SIMILAR TO %s, true)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query
