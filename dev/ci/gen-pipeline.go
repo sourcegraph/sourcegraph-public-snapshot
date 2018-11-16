@@ -107,6 +107,8 @@ func main() {
 	pipeline.AddStep(":typescript:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "false"),
 		bk.Env("FORCE_COLOR", "1"),
+		bk.Env("DISPLAY", ":99"),
+		bk.Cmd("Xvfb :99 &"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run browserslist"),
@@ -132,6 +134,8 @@ func main() {
 	if os.Getenv("BUILDKITE_BRANCH") == "bext/release" {
 		pipeline.AddStep(":chrome:",
 			bk.Env("FORCE_COLOR", "1"),
+			bk.Env("DISPLAY", ":99"),
+			bk.Cmd("Xvfb :99 &"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("yarn -s run build"),
