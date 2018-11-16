@@ -127,14 +127,24 @@ func truncateDB(d *sql.DB) error {
 func initTest(nameSuffix string) error {
 	dbname := "sourcegraph-test-" + nameSuffix
 
-	out, err := exec.Command("dropdb", "--if-exists", dbname).CombinedOutput()
-	if err != nil {
-		return errors.Errorf("dropdb --if-exists failed: %v\n%s", err, string(out))
+	if os.Getenv("TEST_SKIP_DROP_DB_BEFORE_TESTS") == "" {
+		// When running the db-backcompat.sh tests, we need to *keep* the DB around because it has
+		// the new schema produced by the new version. If we dropped the DB here, then we'd recreate
+		// it at the OLD schema, which is not desirable because we need to run tests against the NEW
+		// schema. Thus db-backcompat.sh sets TEST_SKIP_DROP_DB_BEFORE_TESTS=true.
+		out, err := exec.Command("dropdb", "--if-exists", dbname).CombinedOutput()
+		if err != nil {
+			return errors.Errorf("dropdb --if-exists failed: %v\n%s", err, string(out))
+		}
 	}
 
-	out, err = exec.Command("createdb", dbname).CombinedOutput()
+	out, err := exec.Command("createdb", dbname).CombinedOutput()
 	if err != nil {
-		return errors.Errorf("createdb failed: %v\n%s", err, string(out))
+		if strings.Contains(string(out), "already exists") {
+			log.Printf("DB %s exists already (run `dropdb %s` to delete and force re-creation)", dbname, dbname)
+		} else {
+			return errors.Errorf("createdb failed: %v\n%s", err, string(out))
+		}
 	}
 
 	return dbconn.ConnectToDB("dbname=" + dbname)

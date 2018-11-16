@@ -67,7 +67,7 @@ function runTest() {
         set -ex
         # Test without cache, because schema change does not
         # necessarily mean Go source has changed.
-        SKIP_MIGRATION_TEST=true go test -count=1 -v $PACKAGES_WITH_DB_TEST
+        TEST_SKIP_DROP_DB_BEFORE_TESTS=true SKIP_MIGRATION_TEST=true go test -count=1 -v $PACKAGES_WITH_DB_TEST
         set +ex
 
         NOW_DB_SCHEMA=$(psql -t -d sourcegraph-test-db -c 'select version from schema_migrations' | xargs echo -n)
