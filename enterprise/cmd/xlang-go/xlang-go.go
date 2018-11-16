@@ -4,16 +4,17 @@ package main
 //docker:install git@edge
 
 import (
-	"github.com/pkg/errors"
-	"github.com/gorilla/websocket"
-	"net/http"
 	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
