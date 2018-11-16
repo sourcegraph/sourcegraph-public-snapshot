@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -42,15 +43,6 @@ func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Han
 	})
 }
 
-func getExactlyOneOAuthProvider() *Provider {
-	if ps := auth.Providers(); len(ps) == 1 && ps[0].Config().Github != nil { // TODO: check for Gitlab
-		if pps, ok := ps[0].(*Provider); ok {
-			return pps
-		}
-	}
-	return nil
-}
-
 func NewOAuthFlowHandler(serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -78,4 +70,34 @@ func NewOAuthFlowHandler(serviceType string) http.Handler {
 		p.Callback.ServeHTTP(w, req)
 	}))
 	return mux
+}
+
+func getExactlyOneOAuthProvider() *Provider {
+	ps := auth.Providers()
+	if len(ps) != 1 {
+		return nil
+	}
+	p, ok := ps[0].(*Provider)
+	if !ok {
+		return nil
+	}
+	if !IsOAuth(p.Config()) {
+		return nil
+	}
+	return p
+}
+
+var isOAuths []func(p schema.AuthProviders) bool
+
+func AddIsOAuth(f func(p schema.AuthProviders) bool) {
+	isOAuths = append(isOAuths, f)
+}
+
+func IsOAuth(p schema.AuthProviders) bool {
+	for _, f := range isOAuths {
+		if f(p) {
+			return true
+		}
+	}
+	return false
 }

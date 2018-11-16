@@ -1,4 +1,4 @@
-package githuboauth
+package gitlaboauth
 
 import (
 	"net/http"
@@ -8,11 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const authPrefix = auth.AuthURLPrefix + "/github"
+const authPrefix = auth.AuthURLPrefix + "/gitlab"
 
 func init() {
 	oauth.AddIsOAuth(func(p schema.AuthProviders) bool {
-		return p.Github != nil
+		return p.Gitlab != nil
 	})
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/githuboauth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/gitlaboauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/httpheader"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/saml"
@@ -25,6 +26,7 @@ func init() {
 		saml.Middleware,
 		httpheader.Middleware,
 		githuboauth.Middleware,
+		gitlaboauth.Middleware,
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)

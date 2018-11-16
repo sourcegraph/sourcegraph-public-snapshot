@@ -47,8 +47,11 @@ func (p *Provider) Config() schema.AuthProviders {
 
 func (p *Provider) CachedInfo() *auth.ProviderInfo {
 	displayName := p.ServiceID
-	if p.SourceConfig.Github != nil && p.SourceConfig.Github.DisplayName != "" {
+	switch {
+	case p.SourceConfig.Github != nil && p.SourceConfig.Github.DisplayName != "":
 		displayName = p.SourceConfig.Github.DisplayName
+	case p.SourceConfig.Gitlab != nil && p.SourceConfig.Gitlab.DisplayName != "":
+		displayName = p.SourceConfig.Gitlab.DisplayName
 	}
 	return &auth.ProviderInfo{
 		ServiceID:   p.ServiceID,
