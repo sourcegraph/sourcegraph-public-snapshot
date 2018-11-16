@@ -3050,8 +3050,11 @@ type RegistryExtension implements Node {
     manifest: ExtensionManifest
     # The date when this extension was created on the registry.
     createdAt: String
-    # The date when this extension was last updated on the registry.
+    # The date when this extension was last updated on the registry (including updates to its metadata only, not
+    # publishing new releases).
     updatedAt: String
+    # The date when a release of this extension was most recently published, or null if there are no releases.
+    publishedAt: String
     # The URL to the extension on this Sourcegraph site.
     url: String!
     # The URL to the extension on the extension registry where it lives (if this is a remote

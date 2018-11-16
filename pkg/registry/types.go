@@ -16,6 +16,7 @@ type Extension struct {
 	Manifest    *string   `json:"manifest"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
+	PublishedAt time.Time `json:"publishedAt"`
 	URL         string    `json:"url"`
 
 	// RegistryURL is the URL of the remote registry that this extension was retrieved from. It is

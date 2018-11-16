@@ -2,8 +2,8 @@ import formatDistance from 'date-fns/formatDistance'
 import * as React from 'react'
 
 interface Props {
-    /** The date string (RFC 3339). */
-    date: string
+    /** The date (if string, in RFC 3339 format). */
+    date: string | Date | number
 
     /** Omit the "about". */
     noAbout?: boolean
