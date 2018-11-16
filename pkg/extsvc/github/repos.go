@@ -89,7 +89,7 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 	}
 
 	key := ownerNameCacheKey(owner, name)
-	return c.cachedGetRepository(ctx, key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
+	return c.cachedGetRepository(ctx, "", key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
 		keys = append(keys, key)
 		repo, err = c.getRepositoryFromAPI(ctx, owner, name)
 		if repo != nil {
@@ -100,18 +100,19 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 }
 
 // GetRepositoryByNodeIDMock is set by tests to mock (*Client).GetRepositoryByNodeID.
-var GetRepositoryByNodeIDMock func(ctx context.Context, id string) (*Repository, error)
+var GetRepositoryByNodeIDMock func(ctx context.Context, token, id string) (*Repository, error)
 
-// GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID.
-func (c *Client) GetRepositoryByNodeID(ctx context.Context, id string) (*Repository, error) {
+// GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID using the specified user token.
+func (c *Client) GetRepositoryByNodeID(ctx context.Context, token, id string) (*Repository, error) {
 	if GetRepositoryByNodeIDMock != nil {
-		return GetRepositoryByNodeIDMock(ctx, id)
+		return GetRepositoryByNodeIDMock(ctx, token, id)
 	}
 
 	key := nodeIDCacheKey(id)
-	return c.cachedGetRepository(ctx, key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
+	// 🚨 SECURITY: must forward token here to ensure caching by token
+	return c.cachedGetRepository(ctx, token, key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
 		keys = append(keys, key)
-		repo, err = c.getRepositoryByNodeIDFromAPI(ctx, id)
+		repo, err = c.getRepositoryByNodeIDFromAPI(ctx, token, id)
 		if repo != nil {
 			keys = append(keys, nameWithOwnerCacheKey(repo.NameWithOwner)) // also cache under "owner/name"
 		}
@@ -120,8 +121,9 @@ func (c *Client) GetRepositoryByNodeID(ctx context.Context, id string) (*Reposit
 }
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
-	if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
+func (c *Client) cachedGetRepository(ctx context.Context, token, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
+	// 🚨 SECURITY: must forward token here to ensure caching by token
+	if cached := c.getRepositoryFromCache(ctx, token, key); cached != nil {
 		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
 		if cached.NotFound {
 			return nil, ErrNotFound
@@ -133,7 +135,8 @@ func (c *Client) cachedGetRepository(ctx context.Context, key string, getReposit
 	if IsNotFound(err) {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-		c.addRepositoryToCache(keys, &cachedRepo{NotFound: true})
+		// 🚨 SECURITY: must forward token here to ensure caching by token
+		c.addRepositoryToCache(token, keys, &cachedRepo{NotFound: true})
 		reposGitHubCacheCounter.WithLabelValues("notfound").Inc()
 	}
 	if err != nil {
@@ -141,7 +144,8 @@ func (c *Client) cachedGetRepository(ctx context.Context, key string, getReposit
 		return nil, err
 	}
 
-	c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
+	// 🚨 SECURITY: must forward token here to ensure caching by token
+	c.addRepositoryToCache(token, keys, &cachedRepo{Repository: *repo})
 	reposGitHubCacheCounter.WithLabelValues("miss").Inc()
 
 	return repo, nil
@@ -169,8 +173,9 @@ type cachedRepo struct {
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
-	b, ok := c.repoCache.Get(strings.ToLower(key))
+func (c *Client) getRepositoryFromCache(ctx context.Context, token, key string) *cachedRepo {
+	// 🚨 SECURITY: must forward token here to ensure caching by token
+	b, ok := c.cache(token).Get(strings.ToLower(key))
 	if !ok {
 		return nil
 	}
@@ -182,26 +187,35 @@ func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cached
 
 	return &cached
 }
+func firstNonEmpty(strs ...string) string {
+	for _, s := range strs {
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
 
 // addRepositoryToCache will cache the value for repo. The caller can provide multiple cache keys
 // for the multiple ways that this repository can be retrieved (e.g., both "owner/name" and the
 // GraphQL node ID).
-func (c *Client) addRepositoryToCache(keys []string, repo *cachedRepo) {
+func (c *Client) addRepositoryToCache(token string, keys []string, repo *cachedRepo) {
 	b, err := json.Marshal(repo)
 	if err != nil {
 		return
 	}
 	for _, key := range keys {
-		c.repoCache.Set(strings.ToLower(key), b)
+		c.cache(token).Set(strings.ToLower(key), b)
 	}
 }
 
 // addRepositoriesToCache will cache repositories that exist
 // under relevant cache keys.
-func (c *Client) addRepositoriesToCache(repos []*Repository) {
+func (c *Client) addRepositoriesToCache(token string, repos []*Repository) {
 	for _, repo := range repos {
 		keys := []string{nameWithOwnerCacheKey(repo.NameWithOwner), nodeIDCacheKey(repo.ID)} // cache under multiple
-		c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
+		// 🚨 SECURITY: must forward token here to ensure caching by token
+		c.addRepositoryToCache(token, keys, &cachedRepo{Repository: *repo})
 	}
 }
 
@@ -223,7 +237,7 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
 	// http://[sourcegraph-hostname]/github.com/foo/bar.
 	var result restRepository
-	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
+	if err := c.requestGet(ctx, "", fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
 		return nil, err
 	}
 	return convertRestRepo(result), nil
@@ -253,9 +267,9 @@ func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) (
 	var restRepos []restRepository
 	path := "v3/repositories"
 	if sinceRepoID > 0 {
-		path += "?since=" + strconv.FormatInt(sinceRepoID, 10)
+		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
 	}
-	if err := c.requestGet(ctx, path, &restRepos); err != nil {
+	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
 		return nil, err
 	}
 	var repos []*Repository
@@ -267,11 +281,11 @@ func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) (
 
 // getRepositoryByNodeIDFromAPI attempts to fetch a repository by GraphQL node ID from the GitHub
 // API without use of the redis cache.
-func (c *Client) getRepositoryByNodeIDFromAPI(ctx context.Context, id string) (*Repository, error) {
+func (c *Client) getRepositoryByNodeIDFromAPI(ctx context.Context, token, id string) (*Repository, error) {
 	var result struct {
 		Node *Repository `json:"node"`
 	}
-	if err := c.requestGraphQL(ctx, `
+	if err := c.requestGraphQL(ctx, token, `
 query Repository($id: ID!) {
 	node(id: $id) {
 		... on Repository {
@@ -295,29 +309,30 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	if err != nil {
 		return nil, err
 	}
-	c.addRepositoriesToCache(repos)
+	c.addRepositoriesToCache("", repos)
 	return repos, nil
 }
 
 // ListViewerRepositories lists GitHub repositories affiliated with the viewer
 // (the currently authenticated user). page is the page of results to
 // return. Pages are 1-indexed (so the first call should be for page 1).
-func (c *Client) ListViewerRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+func (c *Client) ListViewerRepositories(ctx context.Context, token string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	var restRepos []restRepository
 	var path string
 	if c.githubDotCom {
-		path = fmt.Sprintf("user/repos?sort=pushed&page=%d", page)
+		path = fmt.Sprintf("user/repos?sort=pushed&page=%d&per_page=100", page)
 	} else {
-		path = fmt.Sprintf("v3/user/repos?sort=pushed&page=%d", page)
+		path = fmt.Sprintf("v3/user/repos?sort=pushed&page=%d&per_page=100", page)
 	}
-	if err := c.requestGet(ctx, path, &restRepos); err != nil {
+	if err := c.requestGet(ctx, token, path, &restRepos); err != nil {
 		return nil, false, 1, err
 	}
 	repos = make([]*Repository, 0, len(restRepos))
 	for _, restRepo := range restRepos {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
-	c.addRepositoriesToCache(repos)
+	// 🚨 SECURITY: must forward token here to ensure caching by token
+	c.addRepositoriesToCache(token, repos)
 	return repos, len(repos) > 0, 1, nil
 }
 
@@ -339,7 +354,7 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		path = "v3/search/repositories?" + urlValues.Encode()
 	}
 	var response restSearchResponse
-	if err := c.requestGet(ctx, path, &response); err != nil {
+	if err := c.requestGet(ctx, "", path, &response); err != nil {
 		return nil, false, 1, err
 	}
 	if response.IncompleteResults {
@@ -349,6 +364,6 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 	for _, restRepo := range response.Items {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
-	c.addRepositoriesToCache(repos)
+	c.addRepositoriesToCache("", repos)
 	return repos, len(repos) > 0, 1, nil
 }

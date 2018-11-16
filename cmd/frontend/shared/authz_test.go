@@ -65,7 +65,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authorization: &schema.Authorization{
+						Authorization: &schema.GitLabAuthorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "okta-config-id",
 								Type:           "saml",
@@ -110,7 +110,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authorization: &schema.Authorization{
+						Authorization: &schema.GitLabAuthorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "onelogin-config-id",
 								GitlabProvider: "onelogin",
@@ -121,7 +121,7 @@ func Test_providersFromConfig(t *testing.T) {
 						Token: "asdf",
 					},
 					{
-						Authorization: &schema.Authorization{
+						Authorization: &schema.GitLabAuthorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "okta-config-id",
 								GitlabProvider: "okta",
@@ -160,7 +160,7 @@ func Test_providersFromConfig(t *testing.T) {
 			cfg: schema.SiteConfiguration{
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authorization: &schema.Authorization{
+						Authorization: &schema.GitLabAuthorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "onelogin-config-id",
 								GitlabProvider: "onelogin",
@@ -191,7 +191,7 @@ func Test_providersFromConfig(t *testing.T) {
 			cfg: schema.SiteConfiguration{
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authorization: &schema.Authorization{},
+						Authorization: &schema.GitLabAuthorization{},
 						Url:           "https://gitlab-0.mine",
 						Token:         "asdf",
 					},
@@ -238,7 +238,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 				Gitlab: []*schema.GitLabConnection{
 					{
-						Authorization: &schema.Authorization{
+						Authorization: &schema.GitLabAuthorization{
 							AuthnProvider: schema.AuthnProvider{
 								ConfigID:       "okta-config-id",
 								GitlabProvider: "okta",
@@ -263,7 +263,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expSeriousProblems: []string{"`authz.authnProvider.type` was not specified, which means GitLab users cannot be resolved."},
-			expWarnings:        []string{"Could not parse time duration \"invalid\", falling back to 3 hours."},
+			expWarnings:        []string{"Could not parse time duration \"invalid\", falling back to 3h0m0s."},
 		},
 	}
 

@@ -209,7 +209,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	canUseGraphQLAPI := conn.config.Token != "" // GraphQL API requires authentication
 	if canUseGraphQLAPI && args.ExternalRepo != nil && args.ExternalRepo.ServiceType == github.ServiceType {
 		// Look up by external repository spec.
-		ghrepo, err := conn.client.GetRepositoryByNodeID(ctx, args.ExternalRepo.ID)
+		ghrepo, err := conn.client.GetRepositoryByNodeID(ctx, "", args.ExternalRepo.ID)
 		if ghrepo != nil {
 			repo = ghrepoToRepoInfo(ghrepo, conn)
 		}
@@ -302,35 +302,19 @@ func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, er
 	baseURL = NormalizeBaseURL(baseURL)
 	originalHostname := baseURL.Hostname()
 
-	// GitHub.com's API is hosted on api.github.com.
-	apiURL := *baseURL
-	githubDotCom := false
-	if hostname := strings.ToLower(apiURL.Hostname()); hostname == "github.com" || hostname == "www.github.com" {
-		// GitHub.com
-		apiURL = url.URL{Scheme: "https", Host: "api.github.com", Path: "/"}
-		githubDotCom = true
-	} else {
-		// GitHub Enterprise
-		if apiURL.Path == "" || apiURL.Path == "/" {
-			apiURL = *apiURL.ResolveReference(&url.URL{Path: "/api"})
-		}
-	}
+	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	transport, err := cachedTransportWithCertTrusted(config.Certificate)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create a shared repository cache for client and searchClient, since they
-	// have independent rate limits but are querying the same underlying data.
-	repoCache := github.NewRepoCache(&apiURL, config.Token)
-
 	return &githubConnection{
 		config:           config,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		client:           github.NewClient(&apiURL, config.Token, transport, repoCache),
-		searchClient:     github.NewClient(&apiURL, config.Token, transport, repoCache),
+		client:           github.NewClient(apiURL, config.Token, transport),
+		searchClient:     github.NewClient(apiURL, config.Token, transport),
 		originalHostname: originalHostname,
 	}, nil
 }
@@ -418,7 +402,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
-					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, page)
+					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, "", page)
 					if err != nil {
 						log15.Error("Error listing viewer's affiliated GitHub repositories", "page", page, "error", err)
 						break

@@ -31,13 +31,24 @@ func TestSplitRepositoryNameWithOwner(t *testing.T) {
 type mockHTTPResponseBody struct {
 	count        int
 	responseBody string
+	status       int
+}
+
+func newMockHTTPResponseBody(responseBody string, status int) *mockHTTPResponseBody {
+	return &mockHTTPResponseBody{
+		responseBody: responseBody,
+	}
 }
 
 func (s *mockHTTPResponseBody) RoundTrip(req *http.Request) (*http.Response, error) {
 	s.count++
+	status := s.status
+	if status == 0 {
+		status = http.StatusOK
+	}
 	return &http.Response{
 		Request:    req,
-		StatusCode: http.StatusOK,
+		StatusCode: status,
 		Body:       ioutil.NopCloser(strings.NewReader(s.responseBody)),
 	}, nil
 }
@@ -57,10 +68,12 @@ func (s mockHTTPEmptyResponse) RoundTrip(req *http.Request) (*http.Response, err
 func newTestClient(t *testing.T) *Client {
 	rcache.SetupForTest(t)
 	return &Client{
-		apiURL:     &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
-		httpClient: &http.Client{},
-		RateLimit:  &ratelimit.Monitor{},
-		repoCache:  rcache.NewWithTTL("__test__gh_repo", 1000),
+		apiURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
+		httpClient:      &http.Client{},
+		RateLimit:       &ratelimit.Monitor{},
+		repoCache:       map[string]*rcache.Cache{},
+		repoCachePrefix: "__test__gh_repo",
+		repoCacheTTL:    1000,
 	}
 }
 
@@ -160,7 +173,7 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 		IsFork:        true,
 	}
 
-	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")
+	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +188,7 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 	}
 
 	// Test that repo is cached (and therefore NOT fetched) from client on second request.
-	repo, err = c.GetRepositoryByNodeID(context.Background(), "i")
+	repo, err = c.GetRepositoryByNodeID(context.Background(), "", "i")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +217,7 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 	c := newTestClient(t)
 	c.httpClient.Transport = &mock
 
-	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")
+	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
 	if !IsNotFound(err) {
 		t.Errorf("got err == %v, want IsNotFound(err) == true", err)
 	}
@@ -285,5 +298,66 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 	}
 	if !repoListsAreEqual(repos, wantRepos) {
 		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
+	}
+}
+
+// 🚨 SECURITY: test that cache entries are keyed by auth token
+func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
+	c := newTestClient(t)
+
+	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0" } } }`, http.StatusOK)
+	got, err := c.GetRepositoryByNodeID(context.Background(), "tok0", "id0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (&Repository{ID: "i0"}); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "SHOULD NOT BE SEEN" } } }`, http.StatusOK)
+	got, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (&Repository{ID: "i0"}); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0-tok1" } } }`, http.StatusOK)
+	got, err = c.GetRepositoryByNodeID(context.Background(), "tok1", "id0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (&Repository{ID: "i0-tok1"}); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	c.httpClient.Transport = newMockHTTPResponseBody(`{}`, http.StatusNotFound)
+	_, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id1")
+	if err != ErrNotFound {
+		t.Errorf("expected err %v, but got %v", ErrNotFound, err)
+	}
+
+	// "not found" should be cached
+	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1" } } }`, http.StatusOK)
+	_, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id1")
+	if err != ErrNotFound {
+		t.Errorf("expected err %v, but got %v", ErrNotFound, err)
+	}
+	// "not found" not cached with different auth token
+	got, err = c.GetRepositoryByNodeID(context.Background(), "tok1", "id1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (&Repository{ID: "id1"}); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+	// "not found" not cached with no auth token
+	got, err = c.GetRepositoryByNodeID(context.Background(), "", "id1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (&Repository{ID: "id1"}); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }

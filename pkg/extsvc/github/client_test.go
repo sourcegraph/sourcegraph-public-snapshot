@@ -68,7 +68,7 @@ func TestNewRepoCache_GitHubDotCom(t *testing.T) {
 	// (2) have a TTL of 10 minutes
 	key := sha256.Sum256([]byte(token + ":" + githubProxyURL.String()))
 	prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
-	got := NewRepoCache(url, token)
+	got := NewRepoCache(url, token, "", 0)
 	want := rcache.NewWithTTL(prefix, 600)
 	if *got != *want {
 		t.Errorf("TestNewRepoCache_GitHubDotCom: got %#v, want %#v", *got, *want)
@@ -84,7 +84,7 @@ func TestNewRepoCache_GitHubEnterprise(t *testing.T) {
 	// (2) have a TTL of 30 seconds
 	key := sha256.Sum256([]byte(token + ":" + url.String()))
 	prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
-	got := NewRepoCache(url, token)
+	got := NewRepoCache(url, token, "", 0)
 	want := rcache.NewWithTTL(prefix, 30)
 	if *got != *want {
 		t.Errorf("TestNewRepoCache_GitHubEnterprise: got %#v, want %#v", *got, *want)
