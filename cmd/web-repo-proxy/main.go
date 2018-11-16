@@ -171,7 +171,7 @@ type CreateRepositoryRequest struct {
 
 type CreateRepositoryResponse struct {
 	URLPath   string `json:"urlPath"`
-	GoodUntil int64  `json:"goodUntil"`
+	GoodUntil string `json:"goodUntil"`
 }
 
 // Given a Reader with a create-repository request, return the corresponding
@@ -227,7 +227,7 @@ func handleCreateRepository() http.HandlerFunc {
 		// Send successful response to client.
 		response := CreateRepositoryResponse{
 			URLPath:   repo.urlPath(),
-			GoodUntil: goodUntil.Unix(),
+			GoodUntil: goodUntil.Format(time.RFC3339),
 		}
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
