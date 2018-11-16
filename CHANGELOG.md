@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
+- Fixed another issue where Sourcegraph would try to fetch more than the allowed number of repositories from AWS CodeCommit.
 
 ### Removed
 
