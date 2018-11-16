@@ -4,7 +4,7 @@ import React from 'react'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import { LinkOrSpan } from '../../../../../shared/src/ui/generic/LinkOrSpan'
 
-export const ProductSubscriptionHistory: React.SFC<{
+export const ProductSubscriptionHistory: React.FunctionComponent<{
     productSubscription: Pick<GQL.IProductSubscription, 'events'>
 }> = ({ productSubscription }) =>
     productSubscription.events.length > 0 ? (

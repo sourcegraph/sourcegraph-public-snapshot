@@ -24,7 +24,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
  * Renders a layout of a sidebar and a content area to display pages related to
  * an organization's settings.
  */
-export const OrgAccountArea: React.SFC<Props> = props => {
+export const OrgAccountArea: React.FunctionComponent<Props> = props => {
     if (props.location.pathname === props.match.path) {
         return <Redirect to={`${props.match.path}/profile`} />
     }

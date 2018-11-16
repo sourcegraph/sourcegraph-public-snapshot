@@ -63,7 +63,7 @@ function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryT
     )
 }
 
-const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.IRepositoryTextSearchIndexedRef }> = ({
+const TextSearchIndexedRef: React.FunctionComponent<{ repo: GQL.IRepository; indexedRef: GQL.IRepositoryTextSearchIndexedRef }> = ({
     repo,
     indexedRef,
 }) => {

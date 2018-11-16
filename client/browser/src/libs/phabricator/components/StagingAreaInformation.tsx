@@ -10,7 +10,7 @@ export interface StagingAreaInformationProps {
     iconStyle?: React.CSSProperties
 }
 
-export const StagingAreaInformation: React.StatelessComponent<StagingAreaInformationProps> = (
+export const StagingAreaInformation: React.FunctionComponent<StagingAreaInformationProps> = (
     props: StagingAreaInformationProps
 ) => (
     <div style={{ display: 'inline-block' }}>

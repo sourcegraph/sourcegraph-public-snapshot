@@ -8,7 +8,7 @@ import {
 } from '../../../extensions/extension/extension'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
 
-export const RegistryPublisherFormGroup: React.SFC<{
+export const RegistryPublisherFormGroup: React.FunctionComponent<{
     className?: string
 
     /** The current publisher value. */
@@ -50,7 +50,7 @@ export const RegistryPublisherFormGroup: React.SFC<{
     </div>
 )
 
-export const RegistryExtensionNameFormGroup: React.SFC<{
+export const RegistryExtensionNameFormGroup: React.FunctionComponent<{
     className?: string
     value: string
     disabled?: boolean

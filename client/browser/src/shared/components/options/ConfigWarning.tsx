@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Alert } from 'reactstrap'
 
-export const ConfigWarning: React.SFC<{}> = () => (
+export const ConfigWarning: React.FunctionComponent<{}> = () => (
     <div className="options__alert">
         <Alert className="options__alert-warning">
             Warning: changing the below options may break your browser extension.{' '}

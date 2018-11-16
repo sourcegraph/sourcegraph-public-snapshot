@@ -14,7 +14,7 @@ interface Props {
     onDiscard: () => void
 }
 
-export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, onSave, onDiscard }) => {
+export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, disabled, saving, error, onSave, onDiscard }) => {
     const saveDiscardDisabled = saving || !dirty
     let saveDiscardTitle: string | undefined
     if (saving) {

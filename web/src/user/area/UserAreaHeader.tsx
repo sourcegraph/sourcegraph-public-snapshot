@@ -18,7 +18,7 @@ export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAre
 /**
  * Header for the user area.
  */
-export const UserAreaHeader: React.SFC<UserAreaHeaderProps> = (props: UserAreaHeaderProps) => (
+export const UserAreaHeader: React.FunctionComponent<UserAreaHeaderProps> = (props: UserAreaHeaderProps) => (
     <div className={`user-area-header area-header ${props.className}`}>
         <div className={`${props.className}-inner`}>
             {props.user && (

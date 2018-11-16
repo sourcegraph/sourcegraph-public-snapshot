@@ -98,7 +98,7 @@ interface SymbolIconProps {
 /**
  * Renders an Icon for a given symbol kind
  */
-export const SymbolIcon: React.StatelessComponent<SymbolIconProps> = ({ kind, className = '' }) => {
+export const SymbolIcon: React.FunctionComponent<SymbolIconProps> = ({ kind, className = '' }) => {
     const Icon = getSymbolIconComponent(kind)
     return (
         <Icon

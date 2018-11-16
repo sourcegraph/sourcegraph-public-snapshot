@@ -40,7 +40,7 @@ import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 
-const TreeEntry: React.SFC<{
+const TreeEntry: React.FunctionComponent<{
     isDir: boolean
     name: string
     parentPath: string

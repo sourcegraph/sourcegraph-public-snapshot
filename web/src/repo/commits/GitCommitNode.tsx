@@ -11,7 +11,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { pluralize } from '../../util/strings'
 
-const GitCommitNodeByline: React.SFC<{
+const GitCommitNodeByline: React.FunctionComponent<{
     author: GQL.ISignature
     committer: GQL.ISignature | null
     className: string

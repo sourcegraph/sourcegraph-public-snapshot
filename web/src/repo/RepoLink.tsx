@@ -15,7 +15,7 @@ interface Props {
     onClick?: React.MouseEventHandler<HTMLElement>
 }
 
-export const RepoLink: React.SFC<Props> = ({ repoPath, to, className, onClick }) => {
+export const RepoLink: React.FunctionComponent<Props> = ({ repoPath, to, className, onClick }) => {
     const [repoBase, repoName] = splitPath(displayRepoPath(repoPath))
     const children = (
         <>

@@ -14,7 +14,7 @@ const onClickChangelog = () => {
  * A global alert telling the site admin that an updated version of the Sourcegraph
  * Docker image is available.
  */
-export const UpdateAvailableAlert: React.SFC<{
+export const UpdateAvailableAlert: React.FunctionComponent<{
     updateVersionAvailable: string
     className?: string
 }> = ({ updateVersionAvailable, className = '' }) => (

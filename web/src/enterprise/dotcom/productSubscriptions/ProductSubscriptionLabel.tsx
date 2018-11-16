@@ -6,7 +6,7 @@ import { formatUserCount } from '../../productSubscription/helpers'
  * Displays a text label with the product name (e.g., "Sourcegraph Enterprise") and user count for the
  * subscription.
  */
-export const ProductSubscriptionLabel: React.SFC<{
+export const ProductSubscriptionLabel: React.FunctionComponent<{
     productSubscription: {
         invoiceItem?:
             | ({

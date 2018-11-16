@@ -1,7 +1,7 @@
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 
-export const BaseActionContainer: React.SFC<{
+export const BaseActionContainer: React.FunctionComponent<{
     title: React.ReactFragment
     description: React.ReactFragment
     action: React.ReactFragment

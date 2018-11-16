@@ -12,7 +12,7 @@ interface Props {
 /**
  * UserAvatar displays the avatar of a user.
  */
-export const UserAvatar: React.SFC<Props> = ({ size, user, className, ...otherProps }) => {
+export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, className, ...otherProps }) => {
     if (user && user.avatarURL) {
         let url = user.avatarURL
         try {

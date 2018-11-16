@@ -2,7 +2,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { HeroPage } from './HeroPage'
 
-export const ErrorNotSupportedPage: React.SFC = () => (
+export const ErrorNotSupportedPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="Not Found"

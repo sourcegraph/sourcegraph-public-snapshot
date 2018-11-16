@@ -15,7 +15,7 @@ interface DiscussionNodeProps {
     location: H.Location
 }
 
-const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
+const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, location }) => {
     const currentURL = location.pathname + location.search + location.hash
 
     // TODO(slimsag:discussions): future: Improve rendering of discussions when there is no inline URL

@@ -9,7 +9,7 @@ import React from 'react'
  * the right license generation private key), but it's not worth the complexity to make this alert
  * precise.
  */
-export const LicenseGenerationKeyWarning: React.SFC<{ className?: string }> = ({ className = '' }) =>
+export const LicenseGenerationKeyWarning: React.FunctionComponent<{ className?: string }> = ({ className = '' }) =>
     (window as any).context.debug ? (
         <div className={`alert alert-warning ${className}`}>
             License keys generated in dev mode are <strong>NOT VALID</strong>.{' '}

@@ -13,7 +13,7 @@ interface Props {
     onDidCancel: () => void
 }
 
-export const SavedQueryUpdateForm: React.StatelessComponent<Props> = props => (
+export const SavedQueryUpdateForm: React.FunctionComponent<Props> = props => (
     <SavedQueryForm
         authenticatedUser={props.authenticatedUser}
         defaultValues={{

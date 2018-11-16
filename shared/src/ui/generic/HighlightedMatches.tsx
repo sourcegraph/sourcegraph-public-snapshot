@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 /** Wraps matches of pattern in text with <strong>. */
-export const HighlightedMatches: React.SFC<{
+export const HighlightedMatches: React.FunctionComponent<{
     /* The text to display matches in. */
     text: string
 

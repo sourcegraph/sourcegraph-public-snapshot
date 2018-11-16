@@ -6,7 +6,7 @@ import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../pro
 /**
  * Displays an alert indicating the validity of a product license.
  */
-export const ProductLicenseValidity: React.SFC<{
+export const ProductLicenseValidity: React.FunctionComponent<{
     licenseInfo: GQL.IProductLicenseInfo
     primary: boolean
     className?: string

@@ -18,7 +18,7 @@ interface Props extends RouteComponentProps<{}> {
  * sign in to actually buy it). This friendlier behavior for unauthed viewers (compared to dumping them on a
  * sign-in page) is the reason why this component exists.
  */
-export const NewProductSubscriptionPageOrRedirectUser: React.SFC<Props> = props =>
+export const NewProductSubscriptionPageOrRedirectUser: React.FunctionComponent<Props> = props =>
     props.authenticatedUser ? (
         <RedirectToUserPage {...props} />
     ) : (

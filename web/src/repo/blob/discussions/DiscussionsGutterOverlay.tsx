@@ -18,7 +18,7 @@ interface DiscussionsGutterOverlayProps extends RepoFile {
 
 const onCreateDiscussionClick = () => eventLogger.log('CreateDiscussionClicked')
 
-export const DiscussionsGutterOverlay: React.StatelessComponent<DiscussionsGutterOverlayProps> = props => {
+export const DiscussionsGutterOverlay: React.FunctionComponent<DiscussionsGutterOverlayProps> = props => {
     const hash = new URLSearchParams(props.location.hash.slice('#'.length))
     const onDiscussionsNew = hash.get('tab') === 'discussions' && hash.get('createThread') === 'true'
     hash.delete('threadID')

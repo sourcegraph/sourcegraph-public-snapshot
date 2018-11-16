@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Alert } from 'reactstrap'
 
-export const TelemetryBanner: React.SFC<{}> = () => (
+export const TelemetryBanner: React.FunctionComponent<{}> = () => (
     <div className="options__alert">
         <Alert className="options__alert-warning">
             No private code, private repository names, personal data, or usage data is ever sent to Sourcegraph.com.

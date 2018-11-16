@@ -2,7 +2,7 @@ import React from 'react'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 
 /** Displays the price of a plan. */
-export const ProductPlanPrice: React.SFC<{
+export const ProductPlanPrice: React.FunctionComponent<{
     pricePerUserPerYear: GQL.IProductPlan['pricePerUserPerYear']
 }> = ({ pricePerUserPerYear }) => (
     <>

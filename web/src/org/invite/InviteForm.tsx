@@ -78,7 +78,7 @@ function addUserToOrganization(username: string, organization: GQL.ID): Observab
 
 const emailInvitesEnabled = window.context.emailEnabled
 
-const InvitedNotification: React.SFC<{
+const InvitedNotification: React.FunctionComponent<{
     className: string
     username: string
     sentInvitationEmail: boolean

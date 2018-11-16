@@ -5,7 +5,7 @@ interface Props {
     'data-tooltip'?: string
 }
 
-export const ChatIcon: React.SFC<Props> = props => (
+export const ChatIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
@@ -17,7 +17,7 @@ export const ChatIcon: React.SFC<Props> = props => (
     </svg>
 )
 
-export const CircleChevronLeftIcon: React.SFC<Props> = props => (
+export const CircleChevronLeftIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
@@ -29,7 +29,7 @@ export const CircleChevronLeftIcon: React.SFC<Props> = props => (
     </svg>
 )
 
-export const CircleChevronRightIcon: React.SFC<Props> = props => (
+export const CircleChevronRightIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
@@ -41,7 +41,7 @@ export const CircleChevronRightIcon: React.SFC<Props> = props => (
     </svg>
 )
 
-export const RepoQuestionIcon: React.SFC<Props> = props => (
+export const RepoQuestionIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
@@ -63,7 +63,7 @@ export const RepoQuestionIcon: React.SFC<Props> = props => (
     </svg>
 )
 
-export const FormatListBulletedIcon: React.SFC<Props> = props => (
+export const FormatListBulletedIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
@@ -78,7 +78,7 @@ export const FormatListBulletedIcon: React.SFC<Props> = props => (
     </svg>
 )
 
-export const PhabricatorIcon: React.SFC<Props> = props => (
+export const PhabricatorIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
@@ -114,7 +114,7 @@ export const PhabricatorIcon: React.SFC<Props> = props => (
     </svg>
 )
 
-export const RepositoryIcon: React.SFC<Props> = props => (
+export const RepositoryIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
@@ -138,7 +138,7 @@ export const RepositoryIcon: React.SFC<Props> = props => (
     </svg>
 )
 
-export const WrapDisabledIcon: React.SFC<Props> = props => (
+export const WrapDisabledIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}

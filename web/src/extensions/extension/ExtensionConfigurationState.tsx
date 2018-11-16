@@ -2,7 +2,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
 
 /** Displays the extension's configuration state (not added, added and enabled, added and disabled). */
-export const ExtensionConfigurationState: React.SFC<{
+export const ExtensionConfigurationState: React.FunctionComponent<{
     isAdded: boolean
     isEnabled: boolean
 

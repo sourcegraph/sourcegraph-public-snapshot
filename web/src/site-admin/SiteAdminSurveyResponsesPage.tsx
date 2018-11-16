@@ -33,7 +33,7 @@ function scoreToClassSuffix(score: number): string {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
 }
 
-const ScoreBadge: React.SFC<{ score: number }> = props => (
+const ScoreBadge: React.FunctionComponent<{ score: number }> = props => (
     <div
         className={`ml-4 badge badge-pill badge-${scoreToClassSuffix(props.score)}`}
         data-tooltip={`${props.score} out of 10`}
@@ -91,7 +91,7 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
     }
 }
 
-const UserSurveyResponsesHeader: React.SFC<{ nodes: GQL.IUser[] }> = () => (
+const UserSurveyResponsesHeader: React.FunctionComponent<{ nodes: GQL.IUser[] }> = () => (
     <thead>
         <tr>
             <th>User</th>

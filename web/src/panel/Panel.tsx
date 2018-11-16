@@ -181,7 +181,7 @@ function byPriority(a: { priority: number }, b: { priority: number }): number {
 }
 
 /** A wrapper around Panel that makes it resizable. */
-export const ResizablePanel: React.SFC<Props> = props =>
+export const ResizablePanel: React.FunctionComponent<Props> = props =>
     !!parseHash(props.location.hash).viewState ? (
         <Resizable
             className="panel--resizable"

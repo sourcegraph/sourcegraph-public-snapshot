@@ -33,7 +33,7 @@ export interface UserAccountSidebarProps extends UserAreaRouteContext, RouteComp
 }
 
 /** Sidebar for user account pages. */
-export const UserAccountSidebar: React.SFC<UserAccountSidebarProps> = props => {
+export const UserAccountSidebar: React.FunctionComponent<UserAccountSidebarProps> = props => {
     if (!props.authenticatedUser) {
         return null
     }

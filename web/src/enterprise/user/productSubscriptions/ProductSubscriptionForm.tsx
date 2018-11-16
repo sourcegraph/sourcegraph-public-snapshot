@@ -272,6 +272,6 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
     }
 }
 
-export const ProductSubscriptionForm: React.SFC<Props> = props => (
+export const ProductSubscriptionForm: React.FunctionComponent<Props> = props => (
     <StripeWrapper<Props> component={_ProductSubscriptionForm} {...props} />
 )

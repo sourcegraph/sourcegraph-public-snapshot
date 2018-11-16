@@ -6,7 +6,7 @@ import { Markdown } from '../../components/Markdown'
 import { isErrorLike } from '../../util/errors'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
-const PublishNewManifestAlert: React.SFC<{
+const PublishNewManifestAlert: React.FunctionComponent<{
     extension: ConfiguredExtension
     text: string
     buttonLabel: string
@@ -26,7 +26,7 @@ const PublishNewManifestAlert: React.SFC<{
     </div>
 )
 
-export const ExtensionREADME: React.SFC<{
+export const ExtensionREADME: React.FunctionComponent<{
     extension: ConfiguredExtension
 }> = ({ extension }) => {
     if (!extension.rawManifest) {

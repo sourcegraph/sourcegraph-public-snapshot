@@ -12,7 +12,7 @@ const onClickCTA = () => {
  * A global alert telling the site admin that they need to enable access to repositories
  * on this site.
  */
-export const NoRepositoriesEnabledAlert: React.SFC<{ className?: string }> = ({ className = '' }) => (
+export const NoRepositoriesEnabledAlert: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <DismissibleAlert
         partialStorageKey="noRepositoriesEnabled"
         className={`alert alert-success alert-animated-bg d-flex align-items-center ${className}`}

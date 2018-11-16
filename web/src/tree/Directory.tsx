@@ -19,7 +19,7 @@ interface TreeChildProps extends TreeLayerProps {
  * JSX to render a tree directory
  * @param props
  */
-export const Directory: React.SFC<TreeChildProps> = (props: TreeChildProps): JSX.Element => (
+export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeChildProps): JSX.Element => (
     <tr key={props.entryInfo.path} className={props.className} onClick={props.handleTreeClick}>
         <td className="tree__cell">
             <div

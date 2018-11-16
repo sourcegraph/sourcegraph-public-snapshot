@@ -29,7 +29,7 @@ interface RepositoryContributorNodeProps extends QuerySpec {
     repoPath: string
 }
 
-const RepositoryContributorNode: React.SFC<RepositoryContributorNodeProps> = ({
+const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
     node,
     repoPath,
     revisionRange,

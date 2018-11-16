@@ -16,7 +16,7 @@ interface ChildTreeLayerProps extends TreeRootProps {
 /**
  * Either a SingleChildTreeLayer or TreeLayer.
  */
-export const ChildTreeLayer: React.SFC<ChildTreeLayerProps> = (props: ChildTreeLayerProps) => {
+export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (props: ChildTreeLayerProps) => {
     const sharedProps = {
         location: props.location,
         history: props.history,

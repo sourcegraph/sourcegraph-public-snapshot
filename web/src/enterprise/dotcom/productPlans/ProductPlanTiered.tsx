@@ -2,7 +2,7 @@ import React from 'react'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 
 /** Displays the price of a tiered plan. */
-export const ProductPlanTiered: React.SFC<{
+export const ProductPlanTiered: React.FunctionComponent<{
     planTiers: GQL.IPlanTier[]
     tierMode: string
     minQuantity: number | null

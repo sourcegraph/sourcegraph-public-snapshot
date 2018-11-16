@@ -4,7 +4,7 @@ import { LinkOrSpan } from '../../../../../shared/src/ui/generic/LinkOrSpan'
 /**
  * An extension card shown in {@link ExtensionsExploreSection}.
  */
-export const ExtensionsExploreSectionExtensionCard: React.SFC<{
+export const ExtensionsExploreSectionExtensionCard: React.FunctionComponent<{
     title: string
     description?: string | React.ReactFragment
     url?: string

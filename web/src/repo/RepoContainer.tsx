@@ -33,7 +33,7 @@ import { RepositoryGitDataContainer } from './RepositoryGitDataContainer'
 import { RepoSettingsArea } from './settings/RepoSettingsArea'
 import { RepositoryStatsArea } from './stats/RepositoryStatsArea'
 
-const RepoPageNotFound: React.SFC = () => (
+const RepoPageNotFound: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
 )
 

@@ -4,6 +4,6 @@ interface Props {
     dangerousInnerHTML: string
 }
 
-export const Markdown: React.StatelessComponent<Props> = (props: Props) => (
+export const Markdown: React.FunctionComponent<Props> = (props: Props) => (
     <div className="markdown" dangerouslySetInnerHTML={{ __html: props.dangerousInnerHTML }} />
 )

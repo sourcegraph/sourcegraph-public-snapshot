@@ -95,7 +95,7 @@ interface SuggestionIconProps {
     className?: string
 }
 
-const SuggestionIcon: React.StatelessComponent<SuggestionIconProps> = ({ suggestion, ...passThru }) => {
+const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, ...passThru }) => {
     switch (suggestion.type) {
         case 'repo':
             return <RepositoryIcon {...passThru} />
