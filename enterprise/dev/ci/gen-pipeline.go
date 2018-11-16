@@ -44,9 +44,6 @@ func main() {
 	)
 
 	pipeline.AddStep(":white_check_mark:",
-		bk.Cmd("popd"),
-		bk.Cmd("./dev/check/all.sh"),
-		bk.Cmd("pushd enterprise"),
 		bk.Cmd("./dev/check/all.sh"),
 		bk.Cmd("popd"),
 	)
