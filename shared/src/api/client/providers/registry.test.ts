@@ -17,7 +17,24 @@ export const FIXTURE = {
     },
 }
 
-class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocumentRegistrationOptions, {}> {}
+class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocumentRegistrationOptions, {}> {
+    /**
+     * The current set of providers. Used by callers that do not need to react to providers being
+     * registered or unregistered.
+     *
+     * NOTE: You should usually use the providers property on this class, not providersSnapshot,
+     * even when you think you don't need live-updating results. Providers are registered
+     * asynchronously after the client connects (or reconnects) to the server. So, the providers
+     * list might be empty at the instant you need the results (because the client was just
+     * instantiated and is waiting on a network roundtrip before it registers providers, or because
+     * there was a temporary network error and the client is reestablishing the connection). By
+     * using the providers property, the consumer will get the results it (probably) expects when
+     * the client connects and registers the providers.
+     */
+    public get providersSnapshot(): {}[] {
+        return this.entries.value.map(({ provider }) => provider)
+    }
+}
 
 describe('FeatureProviderRegistry', () => {
     it('is initially empty', () => {
