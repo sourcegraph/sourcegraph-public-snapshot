@@ -13,7 +13,9 @@ interface Props extends ExtensionsEnvironmentProps, ExtensionsControllerProps {
 
 const SHOW_DEBUG = localStorage.getItem('debug') !== null
 
-const ExtensionLink: React.FunctionComponent<{ id: string }> = props => <Link to={`extensions/${props.id}`}>{props.id}</Link>
+const ExtensionLink: React.FunctionComponent<{ id: string }> = props => (
+    <Link to={`extensions/${props.id}`}>{props.id}</Link>
+)
 
 /**
  * A global debug toolbar shown in the bottom right of the window.

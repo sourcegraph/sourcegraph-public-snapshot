@@ -25,7 +25,9 @@ export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName
     />
 )
 
-export const EmptyRepositoryPage: React.FunctionComponent = () => <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
+export const EmptyRepositoryPage: React.FunctionComponent = () => (
+    <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
+)
 
 interface Props {
     /** The repository. */

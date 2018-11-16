@@ -15,7 +15,10 @@ import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { propertyIsDefined } from '../../../util/types'
 import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
 
-export const FileLocationsError: React.FunctionComponent<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
+export const FileLocationsError: React.FunctionComponent<{ pluralNoun: string; error: ErrorLike }> = ({
+    pluralNoun,
+    error,
+}) => (
     <div className="file-locations__error alert alert-danger m-2">
         <AlertCircleIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
     </div>

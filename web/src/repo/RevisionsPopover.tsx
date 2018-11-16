@@ -71,7 +71,12 @@ interface GitRefPopoverNodeProps {
     location: H.Location
 }
 
-const GitRefPopoverNode: React.FunctionComponent<GitRefPopoverNodeProps> = ({ node, defaultBranch, currentRev, location }) => {
+const GitRefPopoverNode: React.FunctionComponent<GitRefPopoverNodeProps> = ({
+    node,
+    defaultBranch,
+    currentRev,
+    location,
+}) => {
     let isCurrent: boolean
     if (currentRev) {
         isCurrent = node.name === currentRev || node.abbrevName === currentRev

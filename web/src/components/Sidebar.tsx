@@ -37,7 +37,9 @@ export const SidebarGroupHeader: React.FunctionComponent<{
 /**
  * A box of items in the side bar. Use `SideBarGroupHeader` and `SideBarGroupItems` as children.
  */
-export const SidebarGroup: React.FunctionComponent<{}> = ({ children }) => <div className={SIDEBAR_CARD_CLASS}>{children}</div>
+export const SidebarGroup: React.FunctionComponent<{}> = ({ children }) => (
+    <div className={SIDEBAR_CARD_CLASS}>{children}</div>
+)
 
 /**
  * Container for all `SideBarNavItem` in a `SideBarGroup`.
