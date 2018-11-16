@@ -70,6 +70,11 @@ type fileMatchResolver struct {
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
 	inputRev *string
+	icon     string
+	label    string
+	url      string
+	detail   *string
+	results  []*GenericSearchMatchResolver
 }
 
 func (fm *fileMatchResolver) Key() string {
@@ -106,6 +111,25 @@ func (fm *fileMatchResolver) LineMatches() []*lineMatch {
 
 func (fm *fileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
+}
+
+func (fm *fileMatchResolver) Icon() string {
+	return fm.icon
+}
+func (fm *fileMatchResolver) Label() string {
+	return fm.label
+}
+
+func (fm *fileMatchResolver) URL() string {
+	return fm.url
+}
+
+func (fm *fileMatchResolver) Detail() *string {
+	return fm.detail
+}
+
+func (fm *fileMatchResolver) Results() []*GenericSearchMatchResolver {
+	return fm.results
 }
 
 // LineMatch is the struct used by vscode to receive search results for a line

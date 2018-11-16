@@ -145,6 +145,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private makeTableHTML(): string {
+        console.log(this.state.blobLines!.slice(this.getFirstLine(), this.getLastLine() + 1).join(''))
         return (
             '<table>' + this.state.blobLines!.slice(this.getFirstLine(), this.getLastLine() + 1).join('') + '</table>'
         )
