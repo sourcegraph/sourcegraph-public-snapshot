@@ -4,9 +4,8 @@ package main
 //docker:install git@edge
 
 import (
-	"time"
-	"crypto/tls"
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
@@ -14,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
@@ -144,7 +144,6 @@ func run() error {
 			<-jsonrpc2.NewConn(context.Background(), wsjsonrpc2.NewObjectStream(connection), server.NewHandler()).DisconnectNotify()
 			log.Printf("langserver-go: connection #%d closed\n", connectionID)
 		})
-
 
 		l, err := listen(*addr)
 		if err != nil {
