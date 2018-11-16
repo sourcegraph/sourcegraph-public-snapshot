@@ -52,6 +52,7 @@ func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 			t.Run(fmt.Sprintf("%s: run %d", c.description, j), func(t *testing.T) {
 				c := c
 				ctx := context.Background()
+				githubMock.getRepositoryByNodeIDCount = 0
 
 				gotPerms, gotErr := provider.RepoPerms(ctx, c.userAccount, c.repos)
 				if gotErr != c.wantErr {
@@ -60,6 +61,10 @@ func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 					dmp := diffmatchpatch.New()
 					t.Errorf("expected perms did not equal actual, diff:\n%s",
 						dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(c.wantPerms), spew.Sdump(gotPerms), false)))
+				}
+
+				if j == 1 && githubMock.getRepositoryByNodeIDCount > 0 {
+					t.Errorf("expected entries to be fully cached")
 				}
 			})
 		}
@@ -220,6 +225,9 @@ type mockGitHub struct {
 
 	// PublicRepos is the set of repo IDs corresponding to public repos
 	PublicRepos map[string]struct{}
+
+	// getRepositoryByNodeIDCount tracks the number of times GetRepositoryByNodeID is called
+	getRepositoryByNodeIDCount int
 }
 
 func newMockGitHub(repos []*github.Repository, tokenRepos map[string][]string, publicRepos []string) *mockGitHub {
@@ -246,6 +254,7 @@ func newMockGitHub(repos []*github.Repository, tokenRepos map[string][]string, p
 }
 
 func (m *mockGitHub) GetRepositoryByNodeID(ctx context.Context, token, id string) (repo *github.Repository, err error) {
+	m.getRepositoryByNodeIDCount++
 	if _, isPublic := m.PublicRepos[id]; isPublic {
 		r, ok := m.Repos[id]
 		if !ok {
