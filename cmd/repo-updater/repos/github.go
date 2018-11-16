@@ -302,7 +302,6 @@ func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, er
 	baseURL = NormalizeBaseURL(baseURL)
 	originalHostname := baseURL.Hostname()
 
-	// GitHub.com's API is hosted on api.github.com.
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	transport, err := cachedTransportWithCertTrusted(config.Certificate)

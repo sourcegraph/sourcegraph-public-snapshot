@@ -237,7 +237,7 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
 	// http://[sourcegraph-hostname]/github.com/foo/bar.
 	var result restRepository
-	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
+	if err := c.requestGet(ctx, "", fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
 		return nil, err
 	}
 	return convertRestRepo(result), nil
@@ -269,7 +269,7 @@ func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) (
 	if sinceRepoID > 0 {
 		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
 	}
-	if err := c.requestGet(ctx, path, &restRepos); err != nil {
+	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
 		return nil, err
 	}
 	var repos []*Repository
@@ -324,7 +324,7 @@ func (c *Client) ListViewerRepositories(ctx context.Context, token string, page 
 	} else {
 		path = fmt.Sprintf("v3/user/repos?sort=pushed&page=%d&per_page=100", page)
 	}
-	if err := c.requestGetWithToken(ctx, token, path, &restRepos); err != nil {
+	if err := c.requestGet(ctx, token, path, &restRepos); err != nil {
 		return nil, false, 1, err
 	}
 	repos = make([]*Repository, 0, len(restRepos))
@@ -354,7 +354,7 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		path = "v3/search/repositories?" + urlValues.Encode()
 	}
 	var response restSearchResponse
-	if err := c.requestGet(ctx, path, &response); err != nil {
+	if err := c.requestGet(ctx, "", path, &response); err != nil {
 		return nil, false, 1, err
 	}
 	if response.IncompleteResults {

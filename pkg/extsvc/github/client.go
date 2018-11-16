@@ -39,22 +39,43 @@ var (
 	requestCounter = metrics.NewRequestCounter("github", "Total number of requests sent to the GitHub API.")
 )
 
-// Client is a GitHub API client.
+// Client is a caching GitHub API client.
+//
+// All instances use a map of rcache.Cache instances for caching (see the `repoCache` field). These
+// separate instances have consistent naming prefixes so that different instances will share the
+// same Redis cache entries (provided they were computed with the same API URL and access
+// token). The cache keys are agnostic of the http.RoundTripper transport.
 type Client struct {
-	apiURL       *url.URL // base URL of GitHub API; e.g., https://api.github.com
-	githubDotCom bool     // true if this client connects to github.com
+	// apiURL is the base URL of a GitHub API. It must point to the base URL of the GitHub API. This
+	// is https://api.github.com for GitHub.com and http[s]://[github-enterprise-hostname]/api for
+	// GitHub Enterprise.
+	apiURL *url.URL
 
-	defaultToken string       // a personal access token to authenticate requests, if set
-	httpClient   *http.Client // the HTTP client to use
+	// githubDotCom is true if this client connects to github.com.
+	githubDotCom bool
 
-	repoCachePrefix string
-	repoCacheTTL    time.Duration
+	// defaultToken is the personal access token used to authenticate requests if none is specified
+	// explicitly in a method call. May be empty, in which case the default behavior is to make
+	// unauthenticated requests.
+	defaultToken string
 
-	// repoCache is a map of caches keyed by auth token
+	// httpClient is the HTTP client used to make requests to the GitHub API.
+	httpClient *http.Client
+
+	// repoCache is a map of rcache.Cache instances keyed by auth token.
 	repoCache   map[string]*rcache.Cache
 	repoCacheMu sync.RWMutex
 
-	RateLimit *ratelimit.Monitor // the API rate limit monitor
+	// repoCachePrefix is the cache key prefix used when constructing a new rcache.Cache instance
+	// for repoCache. It should normally be left empty. It is only used in tests. Specifying a
+	// non-empty value will result in different Redis key values.
+	repoCachePrefix string
+
+	// repoCacheTTL is the TTL of cache entries.
+	repoCacheTTL time.Duration
+
+	// RateLimit is the API rate limit monitor.
+	RateLimit *ratelimit.Monitor
 }
 
 type githubAPIError struct {
@@ -82,9 +103,10 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	return apiURL
 }
 
-// NewRepoCache creates a new cache for GitHub repository metadata. The backing store is Redis and a
+// NewRepoCache creates a new cache for GitHub repository metadata. The backing store is Redis. A
 // checksum of the access token and API URL are used as a Redis key prefix to prevent collisions
-// with caches for different tokens and API URLs.
+// with caches for different tokens and API URLs. An optional keyPrefix may also be specified,
+// typically used in tests.
 func NewRepoCache(apiURL *url.URL, token string, keyPrefix string, cacheTTL time.Duration) *rcache.Cache {
 	if keyPrefix == "" {
 		keyPrefix = "gh_repo:"
@@ -103,17 +125,10 @@ func NewRepoCache(apiURL *url.URL, token string, keyPrefix string, cacheTTL time
 	return rcache.NewWithTTL(keyPrefix+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 }
 
-// NewClient creates a new GitHub API client with an optional default personal access token. If
-// non-empty, the access token will be used to authenticate requests that do not have an explicit
-// access token associated with them.
+// NewClient creates a new GitHub API client with an optional default personal access token.
 //
-// The API URL must point to the base URL of the GitHub API. This is https://api.github.com for
-// GitHub.com and http[s]://[github-enterprise-hostname]/api for GitHub Enterprise.
-// repoCache should be an existing repository cache created with
-// NewRepoCache, or nil to create a new one. Clients querying the same
-// host should use the same cache (see repos.githubConnection, which uses
-// multiple clients to track independent rate limits in the same host).
-func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Client {
+// apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
+func NewClient(apiURL *url.URL, defaultToken string, transport http.RoundTripper) *Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		transport = disabledTransport{}
@@ -135,7 +150,7 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Clie
 	return &Client{
 		apiURL:       apiURL,
 		githubDotCom: urlIsGitHubDotCom(apiURL),
-		defaultToken: token,
+		defaultToken: defaultToken,
 		httpClient:   &http.Client{Transport: transport},
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
 		repoCache:    map[string]*rcache.Cache{},
@@ -156,10 +171,13 @@ func (c *Client) cache(explicitToken string) *rcache.Cache {
 	c.repoCacheMu.RUnlock()
 
 	c.repoCacheMu.Lock()
+	// Recheck that the cache item exists once we acquire the write-lock in case it has been
+	// populated.
 	defer c.repoCacheMu.Unlock()
 	if cache, ok := c.repoCache[token]; ok {
 		return cache
 	}
+	// BUG?
 	c.repoCache[token] = NewRepoCache(c.apiURL, token, c.repoCachePrefix, c.repoCacheTTL)
 	return c.repoCache[token]
 }
@@ -206,18 +224,10 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
-func (c *Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
-	return c.requestGetWithToken(ctx, "", requestURI, result)
-}
-
-func (c *Client) requestGetWithToken(ctx context.Context, token, requestURI string, result interface{}) error {
+func (c *Client) requestGet(ctx context.Context, token, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return err
-	}
-
-	if token != "" {
-		req.Header.Set("Authorization", token)
 	}
 
 	// Include node_id (GraphQL ID) in response. See
