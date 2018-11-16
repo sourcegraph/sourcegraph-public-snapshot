@@ -40,6 +40,8 @@ func main() {
 		bk.Env("GO111MODULE", "on"))
 
 	// temporary for testing DO NOT MERGE
+	pipeline.AddStep(":white_check_mark:",
+		bk.Cmd("echo skipping"))
 	_, err := pipeline.WriteTo(os.Stdout)
 	if err != nil {
 		panic(err)
