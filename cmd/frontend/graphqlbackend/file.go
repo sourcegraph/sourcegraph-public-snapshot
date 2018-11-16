@@ -3,13 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"html/template"
-	"net/http"
 	"path"
-	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -62,18 +58,7 @@ func (r *gitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return isBinary([]byte(content)), nil
-}
-
-// isBinary is a helper to tell if the content of a file is binary or not.
-func isBinary(content []byte) bool {
-	// We first check if the file is valid UTF8, since we always consider that
-	// to be non-binary.
-	//
-	// Secondly, if the file is not valid UTF8, we check if the detected HTTP
-	// content type is text, which covers a whole slew of other non-UTF8 text
-	// encodings for us.
-	return !utf8.Valid(content) && !strings.HasPrefix(http.DetectContentType(content), "text/")
+	return highlight.IsBinary([]byte(content)), nil
 }
 
 type highlightedFileResolver struct {
@@ -88,25 +73,21 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	DisableTimeout bool
 	IsLightTheme   bool
 }) (*highlightedFileResolver, error) {
+	// Timeout for reading file via Git.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	code, err := git.ReadFile(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path)
+	content, err := git.ReadFile(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return nil, err
 	}
 
-	// Never pass binary files to the syntax highlighter.
-	if isBinary(code) {
-		return nil, errors.New("cannot render binary file")
-	}
-
-	// Highlight the code.
+	// Highlight the content.
 	var (
 		html   template.HTML
 		result = &highlightedFileResolver{}
 	)
-	html, result.aborted, err = highlight.Code(ctx, string(code), r.path, args.DisableTimeout, args.IsLightTheme)
+	html, result.aborted, err = highlight.Code(ctx, content, r.path, args.DisableTimeout, args.IsLightTheme)
 	if err != nil {
 		return nil, err
 	}
