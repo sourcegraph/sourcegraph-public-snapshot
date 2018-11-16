@@ -146,8 +146,12 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, arn string) (*Reposit
 	return fromRepoMetadata(result.RepositoryMetadata), nil
 }
 
+// We can only fetch the metadata in batches of 25 as documented here:
+// https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/codecommit/model/MaximumRepositoryNamesExceededException.html
+const MaxMetadataBatch = 25
+
 // ListRepositories calls the ListRepositories API method of AWS CodeCommit.
-func (c *Client) ListRepositories(ctx context.Context, maxCount int, nextToken string) (repos []*Repository, nextNextToken string, err error) {
+func (c *Client) ListRepositories(ctx context.Context, nextToken string) (repos []*Repository, nextNextToken string, err error) {
 	svc := codecommit.New(c.aws)
 
 	// List repositories.
@@ -170,31 +174,52 @@ func (c *Client) ListRepositories(ctx context.Context, maxCount int, nextToken s
 
 	// Batch get the repositories to get the metadata we need (the list result doesn't
 	// contain all the necessary repository metadata).
-	getInput := codecommit.BatchGetRepositoriesInput{RepositoryNames: make([]string, len(listResult.Repositories))}
-	for i, repo := range listResult.Repositories {
-		getInput.RepositoryNames[i] = *repo.RepositoryName
+	total := len(listResult.Repositories)
+	repos = make([]*Repository, 0, total)
+	for i := 0; i < total; i += MaxMetadataBatch {
+		j := i + MaxMetadataBatch
+		if j > total {
+			j = total
+		}
+
+		repositoryNames := make([]string, 0, MaxMetadataBatch)
+		for _, repo := range listResult.Repositories[i:j] {
+			repositoryNames = append(repositoryNames, *repo.RepositoryName)
+		}
+
+		rs, err := c.getRepositories(ctx, svc, repositoryNames)
+		if err != nil {
+			return nil, "", err
+		}
+		repos = append(repos, rs...)
 	}
+
+	return repos, nextNextToken, nil
+}
+
+func (c *Client) getRepositories(ctx context.Context, svc *codecommit.CodeCommit, repositoryNames []string) ([]*Repository, error) {
+	getInput := codecommit.BatchGetRepositoriesInput{RepositoryNames: repositoryNames}
 	getReq := svc.BatchGetRepositoriesRequest(&getInput)
 	getReq.SetContext(ctx)
 	getResult, err := getReq.Send()
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	// Ignore getResult.RepositoriesNotFound because it would only occur in the rare case
 	// of a repository being deleted right after our ListRepositories request, and in that
 	// case we wouldn't want to return an error.
-	repos = make([]*Repository, len(getResult.Repositories))
+	repos := make([]*Repository, len(getResult.Repositories))
 	for i, repo := range getResult.Repositories {
 		repos[i] = fromRepoMetadata(&repo)
 
 		key, err := c.repositoryCacheKey(*repo.Arn)
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
 		c.addRepositoryToCache(key, &cachedRepo{Repository: *repos[i]})
 	}
-	return repos, nextNextToken, nil
+	return repos, nil
 }
 
 func fromRepoMetadata(m *codecommit.RepositoryMetadata) *Repository {
