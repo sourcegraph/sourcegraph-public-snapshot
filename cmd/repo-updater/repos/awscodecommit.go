@@ -308,7 +308,7 @@ func makeSHA256(data []byte) []byte {
 }
 
 func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) <-chan *awscodecommit.Repository {
-	ch := make(chan *awscodecommit.Repository, 25)
+	ch := make(chan *awscodecommit.Repository, awscodecommit.MaxMetadataBatch)
 	go func() {
 		defer close(ch)
 		var nextToken string

@@ -146,6 +146,10 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, arn string) (*Reposit
 	return fromRepoMetadata(result.RepositoryMetadata), nil
 }
 
+// We can only fetch the metadata in batches of 25 as documented here:
+// https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/codecommit/model/MaximumRepositoryNamesExceededException.html
+const MaxMetadataBatch = 25
+
 // ListRepositories calls the ListRepositories API method of AWS CodeCommit.
 func (c *Client) ListRepositories(ctx context.Context, nextToken string) (repos []*Repository, nextNextToken string, err error) {
 	svc := codecommit.New(c.aws)
@@ -170,18 +174,15 @@ func (c *Client) ListRepositories(ctx context.Context, nextToken string) (repos 
 
 	// Batch get the repositories to get the metadata we need (the list result doesn't
 	// contain all the necessary repository metadata).
-	// We can only fetch the metadata in batches of 25 as documented here:
-	// https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/codecommit/model/MaximumRepositoryNamesExceededException.html
-	const maxBatch = 25
 	total := len(listResult.Repositories)
 	repos = make([]*Repository, 0, total)
-	for i := 0; i < total; i += maxBatch {
-		j := i + maxBatch
+	for i := 0; i < total; i += MaxMetadataBatch {
+		j := i + MaxMetadataBatch
 		if j > total {
 			j = total
 		}
 
-		repositoryNames := make([]string, 0, maxBatch)
+		repositoryNames := make([]string, 0, MaxMetadataBatch)
 		for _, repo := range listResult.Repositories[i:j] {
 			repositoryNames = append(repositoryNames, *repo.RepositoryName)
 		}
