@@ -39,6 +39,13 @@ func main() {
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"))
 
+	// temporary for testing DO NOT MERGE
+	_, err := pipeline.WriteTo(os.Stdout)
+	if err != nil {
+		panic(err)
+	}
+	return
+
 	pipeline.AddStep(":white_check_mark:",
 		bk.Cmd("./dev/check/all.sh"))
 
