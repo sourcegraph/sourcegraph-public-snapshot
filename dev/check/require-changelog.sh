@@ -2,13 +2,13 @@
 
 set -x
 
-if [ -z "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" ]; then
+if [ "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" != "master" ]; then
     set +x
-    echo "CHANGELOG.md entry not required since this isn't a pull request"
+    echo "CHANGELOG.md entry not required since this isn't a pull request into master"
     exit 0
 fi
 
-changed_files=$(git diff --name-only $BUILDKITE_PULL_REQUEST_BASE_BRANCH...)
+changed_files=$(git diff --name-only origin/master...)
 
 # If the changed files don't match any of these regular expressions
 # then no changelog entry is required.
