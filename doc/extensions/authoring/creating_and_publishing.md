@@ -50,7 +50,7 @@ To prevent other users from accidentally using unfinished and experimental exten
 
 For example, an extension whose title is `WIP: Python code examples` is considered to be a work-in-progress extension.
 
-On the extension registry, work-in-progress extensions are hidden from or demoted on the list of extensions, and they display a special WIP badge. To find a work-in-progress extension, a user can search for it by name or navigate to its URL directly.
+On the extension registry, work-in-progress extensions are listed last (after all non-WIP extensions). They also display a special WIP badge. To find a work-in-progress extension, a user can search for it by name or navigate to its URL directly.
 
 When your work-in-progress extension is ready for use, just remove `WIP:` or `[WIP]` from the title and publish a new release to remove the work-in-progress marker.
 

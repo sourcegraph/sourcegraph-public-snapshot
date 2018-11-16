@@ -254,16 +254,12 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 from(
                     queryGraphQL(
                         gql`
-                            query RegistryExtensions(
-                                $query: String
-                                $prioritizeExtensionIDs: [String!]!
-                                $includeWIP: Boolean!
-                            ) {
+                            query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
                                 extensionRegistry {
                                     extensions(
                                         query: $query
                                         prioritizeExtensionIDs: $prioritizeExtensionIDs
-                                        includeWIP: $includeWIP
+                                        includeWIP: true
                                     ) {
                                         nodes {
                                             ...RegistryExtensionFields
@@ -277,7 +273,6 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         {
                             ...args,
                             prioritizeExtensionIDs: viewerExtensions.map(({ id }) => id),
-                            includeWIP: !!args.query,
                         } as GQL.IExtensionsOnExtensionRegistryArguments
                     )
                 ).pipe(
