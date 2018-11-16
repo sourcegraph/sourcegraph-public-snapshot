@@ -379,7 +379,10 @@ function setDefaultBrowserAction(): void {
 
 storage
     .observeSync('featureFlags')
-    .pipe(map(({ simpleOptionsMenu }) => simpleOptionsMenu), distinctUntilChanged())
+    .pipe(
+        map(({ simpleOptionsMenu }) => simpleOptionsMenu),
+        distinctUntilChanged()
+    )
     .subscribe(async useSimpleOptionsMenu => {
         if (useSimpleOptionsMenu) {
             browserAction.onClicked(noop)
