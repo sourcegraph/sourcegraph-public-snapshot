@@ -1,7 +1,7 @@
 import * as path from 'path'
 import puppeteer from 'puppeteer'
 
-const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'build/chrome')
+const chromeExtensionPath = path.resolve(__dirname, '..', '..', 'build/chrome')
 
 async function getTokenWithSelector(
     page: puppeteer.Page,
@@ -48,19 +48,21 @@ describe('Sourcegraph Chrome extension', () => {
     before(async function(): Promise<void> {
         this.timeout(90 * 1000)
 
-        let args: string[] = [
+        const args: string[] = [
             `--disable-extensions-except=${chromeExtensionPath}`,
             `--load-extension=${chromeExtensionPath}`,
         ]
 
-        if (process.getuid() === 0) {
-            // TODO don't run as root in CI
-            console.warn('Running as root, disabling sandbox')
-            args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
-        }
+        //
+        // if (process.getuid() === 0) {
+        // // TODO don't run as root in CI
+        // console.warn('Running as root, disabling sandbox')
+        // args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
+        // }
 
         browser = await puppeteer.launch({
             headless: false,
+            // args: [`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`],
             args,
         })
     })
