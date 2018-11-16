@@ -5,7 +5,6 @@ import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import CityIcon from 'mdi-react/CityIcon'
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import EyeIcon from 'mdi-react/EyeIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
@@ -20,7 +19,6 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { numberWithCommas, pluralize } from '../util/strings'
-import { fetchSiteUsageStatistics } from './backend'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 
 interface Props {
@@ -47,7 +45,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
 
         this.subscriptions.add(fetchOverview().subscribe(info => this.setState({ info })))
         this.subscriptions.add(
-            fetchSiteUsageStatistics().subscribe(stats => this.setState({ stats }), error => this.setState({ error }))
+            fetchWeeklyActiveUsers().subscribe(stats => this.setState({ stats }), error => this.setState({ error }))
         )
     }
 
@@ -204,8 +202,8 @@ interface OverviewInfo {
     }
 }
 
-function fetchOverview(): Observable<OverviewInfo> {
-    return queryGraphQL(gql`
+const fetchOverview: () => Observable<OverviewInfo> = () =>
+    queryGraphQL(gql`
         query Overview {
             repositories {
                 totalCount(precise: true)
@@ -230,4 +228,22 @@ function fetchOverview(): Observable<OverviewInfo> {
             surveyResponses: data.surveyResponses,
         }))
     )
-}
+
+const fetchWeeklyActiveUsers: () => Observable<GQL.ISiteUsageStatistics> = () =>
+    queryGraphQL(gql`
+        query WAUs {
+            site {
+                usageStatistics {
+                    waus {
+                        userCount
+                        registeredUserCount
+                        anonymousUserCount
+                        startTime
+                    }
+                }
+            }
+        }
+    `).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site.usageStatistics)
+    )
