@@ -63,6 +63,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
             buttonDisabled = true
             info = <DirectImportRepoAlert className="action-container__alert" />
         } else if (this.props.repo.mirrorInfo.cloned) {
+            const updateSchedule = this.props.repo.mirrorInfo.updateSchedule
             title = (
                 <>
                     <div>
@@ -73,11 +74,10 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                             'unknown'
                         )}{' '}
                     </div>
-                    {this.props.repo.mirrorInfo.updateSchedule && (
+                    {updateSchedule && (
                         <div>
-                            Next scheduled update <Timestamp date={this.props.repo.mirrorInfo.updateSchedule.due} />{' '}
-                            (position {this.props.repo.mirrorInfo.updateSchedule.index + 1} out of{' '}
-                            {this.props.repo.mirrorInfo.updateSchedule.total} in the schedule)
+                            Next scheduled update <Timestamp date={updateSchedule.due} /> (position{' '}
+                            {updateSchedule.index + 1} out of {updateSchedule.total} in the schedule)
                         </div>
                     )}
                     {this.props.repo.mirrorInfo.updateQueue &&
@@ -89,8 +89,12 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                         )}
                 </>
             )
-            description =
-                'This repository is automatically updated from its remote repository periodically and when accessed by a user.'
+            if (window.context.updateScheduler2Enabled && !updateSchedule) {
+                description = 'This repository is automatically updated when accessed by a user.'
+            } else {
+                description =
+                    'This repository is automatically updated from its remote repository periodically and when accessed by a user.'
+            }
             buttonLabel = 'Refresh now'
         } else {
             title = 'Clone this repository'

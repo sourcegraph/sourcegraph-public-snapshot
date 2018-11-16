@@ -108,6 +108,9 @@ interface SourcegraphContext {
         isBuiltin: boolean
         authenticationURL?: string
     }[]
+
+    /** Whether the new update scheduler is enabled */
+    updateScheduler2Enabled: boolean
 }
 
 // We cannot use resolveJsonModule because of https://github.com/Microsoft/TypeScript/issues/25755
