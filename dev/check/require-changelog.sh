@@ -8,6 +8,8 @@ if [ "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" != "master" ]; then
     exit 0
 fi
 
+git fetch origin master
+
 changed_files=$(git diff --name-only origin/master...)
 
 # If the changed files don't match any of these regular expressions
@@ -24,7 +26,7 @@ if echo "${changed_files}" | grep -q '^CHANGELOG\.md$'; then
     exit 0
 fi
 
-if git log $BUILDKITE_PULL_REQUEST_BASE_BRANCH.. --pretty=format:%B | grep -q NOCHANGELOG; then
+if git log origin/master... --pretty=format:%B | grep -q NOCHANGELOG; then
     set +x
     echo "Found NOCHANGELOG in commit message so no CHANGELOG.md entry is required"
     exit 0
