@@ -141,11 +141,6 @@ type locks struct {
 	mu   *sync.Mutex // prevents updates running in parallel
 }
 
-type updateRepoRequest struct {
-	repo api.RepoName
-	url  string // remote URL
-}
-
 // shortGitCommandTimeout returns the timeout for git commands that should not
 // take a long time. Some commands such as "git archive" are allowed more time
 // than "git rev-parse", so this will return an appropriate timeout given the
