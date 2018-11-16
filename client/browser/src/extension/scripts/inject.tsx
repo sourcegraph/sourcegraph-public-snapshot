@@ -98,7 +98,13 @@ function injectApplication(): void {
         }
 
         if (isGitHub || isGitHubEnterprise || isPhabricator || isGitlab || isBitbucket) {
-            if (isGitHub || isGitHubEnterprise || isGitlab || isBitbucket || (await featureFlags.isEnabled('newInject'))) {
+            if (
+                isGitHub ||
+                isGitHubEnterprise ||
+                isGitlab ||
+                isBitbucket ||
+                (await featureFlags.isEnabled('newInject'))
+            ) {
                 const subscriptions = await injectCodeIntelligence()
                 window.addEventListener('unload', () => subscriptions.unsubscribe())
             }
