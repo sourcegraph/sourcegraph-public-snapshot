@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The repository settings mirroring page now shows when a repo is next scheduled for an update (requires experiment `"updateScheduler2": "enabled"`).
 - Configured repositories are periodically scheduled for updates using a new algorithm. You can disable the new algorithm with the following site configuration: `"experimentalFeatures": { "updateScheduler2": "disabled" }`. If you do so, please file a public issue to describe why you needed to disable it.
 - When using HTTP header authentication, [`stripUsernameHeaderPrefix`](https://docs.sourcegraph.com/admin/auth/#username-header-prefixes) field lets an admin specify a prefix to strip from the HTTP auth header when converting the header value to a username.
+- Sourcegraph extensions whose title begins with `WIP:` or `[WIP]` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/creating_and_publishing#work-in-progress-wip-extensions) and are indicated as such to avoid users accidentally using them.
 
 ### Changed
 

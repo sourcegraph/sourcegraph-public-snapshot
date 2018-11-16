@@ -3,10 +3,12 @@ package registry
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
@@ -38,6 +40,8 @@ func (err releaseNotFoundError) Error() string {
 	return fmt.Sprintf("registry extension release not found: %v", err.args)
 }
 
+var errInvalidJSONInManifest = errors.New("invalid syntax in extension manifest JSON")
+
 // Create creates a new release of an extension in the extension registry. The release.ID and
 // release.CreatedAt fields are ignored (they are populated automatically by the database).
 func (dbReleases) Create(ctx context.Context, release *dbRelease) (id int64, err error) {
@@ -53,6 +57,11 @@ RETURNING id
 `,
 		release.RegistryExtensionID, release.CreatorUserID, release.ReleaseVersion, release.ReleaseTag, release.Manifest, release.Bundle, release.SourceMap,
 	).Scan(&id); err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Message == "invalid input syntax for type json" {
+				return 0, errInvalidJSONInManifest
+			}
+		}
 		return 0, err
 	}
 	return id, nil

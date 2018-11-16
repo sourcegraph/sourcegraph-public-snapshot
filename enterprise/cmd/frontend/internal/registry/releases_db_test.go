@@ -55,7 +55,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			RegistryExtensionID: extensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
-			Manifest:            "m",
+			Manifest:            `{"m": true}`,
 			Bundle:              strptr("b"),
 			SourceMap:           strptr("sm"),
 		}
@@ -102,7 +102,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			RegistryExtensionID: extensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
-			Manifest:            "m2",
+			Manifest:            `{"m2": true}`,
 			Bundle:              strptr("b2"),
 			SourceMap:           strptr("sm2"),
 		}
@@ -122,12 +122,26 @@ func TestRegistryExtensionReleases(t *testing.T) {
 		}
 	})
 
+	t.Run("Create fails on invalid JSON", func(t *testing.T) {
+		_, err := dbReleases{}.Create(ctx, &dbRelease{
+			RegistryExtensionID: extensionID,
+			CreatorUserID:       user.ID,
+			ReleaseTag:          "release",
+			Manifest:            `{title/`, // weird bad JSON (any invalid JSON suffices for this test)
+			Bundle:              strptr(""),
+			SourceMap:           strptr(""),
+		})
+		if want := errInvalidJSONInManifest; err != want {
+			t.Fatalf("got error %v, want %v", err, want)
+		}
+	})
+
 	t.Run("Release without bundle", func(t *testing.T) {
 		input := dbRelease{
 			RegistryExtensionID: extensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
-			Manifest:            "m3",
+			Manifest:            `{"m3": true}`,
 			Bundle:              nil,
 			SourceMap:           nil,
 		}
