@@ -29,6 +29,6 @@ export abstract class FeatureProviderRegistry<O, P> {
 
     /** All providers, emitted whenever the set of registered providers changed. */
     public readonly providers: Observable<P[]> = this.entries.pipe(
-        map(providers => providers.map(({ provider }) => provider))
+        map(entries => entries.map(({ provider }) => provider))
     )
 }
