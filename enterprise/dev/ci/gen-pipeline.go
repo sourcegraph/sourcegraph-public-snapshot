@@ -43,14 +43,6 @@ func main() {
 		bk.Cmd("pushd enterprise"),
 	)
 
-	pipeline.AddStep(":white_check_mark:",
-		bk.Cmd("popd"),
-		bk.Cmd("./dev/check/all.sh"),
-		bk.Cmd("pushd enterprise"),
-		bk.Cmd("./dev/check/all.sh"),
-		bk.Cmd("popd"),
-	)
-
 	pipeline.AddStep(":webpack:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),

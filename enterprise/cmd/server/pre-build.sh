@@ -3,5 +3,5 @@
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 set -ex
 
-./dev/generate.sh
+cp ../cmd/server/dockerfile.go cmd/server/
 ./cmd/frontend/pre-build.sh
