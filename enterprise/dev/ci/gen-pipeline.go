@@ -90,21 +90,22 @@ func main() {
 		}
 
 		if app != "server" || taggedRelease {
-			cmds = append(cmds) // bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
-
+			cmds = append(cmds,
+				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
+			)
 		}
 
 		if app == "server" && releaseBranch {
 			cmds = append(cmds,
 				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", image, version, image, branch)),
-				// bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, branch)),
+				bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, branch)),
 			)
 		}
 
 		if insiders {
 			cmds = append(cmds,
 				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, version, image)),
-				// bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
+				bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
 			)
 		}
 		pipeline.AddStep(":docker:", cmds...)
@@ -177,7 +178,7 @@ func main() {
 	}
 
 	switch {
-	case true || taggedRelease:
+	case taggedRelease:
 		allDockerImages := []string{
 			"frontend",
 			"github-proxy",
