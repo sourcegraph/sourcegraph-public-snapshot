@@ -34,17 +34,18 @@ type Provider_RepoPerms_call struct {
 
 func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 	githubMock := newMockGitHub([]*github.Repository{
-		{ID: "u0/private"},
+		{ID: "u0/private", IsPrivate: true},
 		{ID: "u0/public"},
-		{ID: "u1/private"},
+		{ID: "u1/private", IsPrivate: true},
 		{ID: "u1/public"},
-		{ID: "u99/private"},
+		{ID: "u99/private", IsPrivate: true},
 		{ID: "u99/public"},
 	}, map[string][]string{
 		"t0": []string{"u0/private", "u0/public"},
 		"t1": []string{"u1/private", "u1/public"},
-	}, []string{"u0/public", "u1/public", "u99/public"})
+	})
 	github.GetRepositoryByNodeIDMock = githubMock.GetRepositoryByNodeID
+	defer func() { github.GetRepositoryByNodeIDMock = nil }()
 
 	provider := NewProvider(p.githubURL, "base-token", p.cacheTTL, make(authz.MockCache))
 	for j := 0; j < 2; j++ { // run twice for cache coherency
@@ -230,7 +231,7 @@ type mockGitHub struct {
 	getRepositoryByNodeIDCount int
 }
 
-func newMockGitHub(repos []*github.Repository, tokenRepos map[string][]string, publicRepos []string) *mockGitHub {
+func newMockGitHub(repos []*github.Repository, tokenRepos map[string][]string) *mockGitHub {
 	rp := make(map[string]*github.Repository)
 	for _, r := range repos {
 		rp[r.ID] = r
@@ -243,8 +244,10 @@ func newMockGitHub(repos []*github.Repository, tokenRepos map[string][]string, p
 		}
 	}
 	pr := make(map[string]struct{})
-	for _, r := range publicRepos {
-		pr[r] = struct{}{}
+	for _, r := range repos {
+		if !r.IsPrivate {
+			pr[r.ID] = struct{}{}
+		}
 	}
 	return &mockGitHub{
 		Repos:       rp,
