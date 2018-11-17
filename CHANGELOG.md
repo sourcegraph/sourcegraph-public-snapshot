@@ -12,6 +12,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled` (to avoid [#807](https://github.com/sourcegraph/sourcegraph/issues/807)).
 
 ## 2.13.3
+
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
 - Fixed another issue where Sourcegraph would try to fetch more than the allowed number of repositories from AWS CodeCommit.
 
