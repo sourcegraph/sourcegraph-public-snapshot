@@ -724,7 +724,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	searchedFileContentsOrPaths := false
 	fileIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEzLDlWMy41TDE4LjUsOU02LDJDNC44OSwyIDQsMi44OSA0LDRWMjBBMiwyIDAgMCwwIDYsMjJIMThBMiwyIDAgMCwwIDIwLDIwVjhMMTQsMkg2WiIgLz48L3N2Zz4="
-	// commitIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4="
 	for _, resultType := range resultTypes {
 		resultType := resultType // shadow so it doesn't change in the goroutine
 		if _, seen := seenResultTypes[resultType]; seen {
@@ -867,18 +866,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					resultsMu.Lock()
 					results = append(results, diffResults...)
 					resultsMu.Unlock()
-
-					for _, diff := range diffResults {
-						message := diff.diff.Commit().Message()
-						message = strings.Split(message, "\n")[0]
-						// label := fmt.Sprintf("[%s](%s)", message, diff.diff.Commit().URL())
-						// Hard code the file name to file.diff in order to get syntax highlighting from Syntect.
-						// diffFile := "file.diff"
-						results2Mu.Lock()
-						// results2 = append(results2, &genericSearchResultResolver{icon: commitIcon, label: label, url: diff.diff.Commit().URL(), results: []*GenericSearchMatchResolver{&GenericSearchMatchResolver{url: diff.diff.Commit().URL(), path: &diffFile, body: diff.diff.DiffPreview().Value(), language: "diff"}}})
-						results2Mu.Unlock()
-					}
-
 				}
 				if diffCommon != nil {
 					commonMu.Lock()
@@ -903,12 +890,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					resultsMu.Lock()
 					results = append(results, commitResults...)
 					resultsMu.Unlock()
-					// for _, commit := range commitResults {
-					// 	message := commit.diff.Commit().Message()
-					// 	title := strings.Split(message, "\n")[0]
-					// 	// label := fmt.Sprintf("[%s](%s)", title, commit.diff.Commit().URL())
-					// 	results2 = append(results2, &genericSearchResultResolver{icon: commitIcon, label: label, url: commit.diff.Commit().URL(), results: []*GenericSearchMatchResolver{&GenericSearchMatchResolver{url: commit.diff.Commit().URL(), body: commit.diff.MessagePreview().Value()}}})
-					// }
 				}
 				if commitCommon != nil {
 					commonMu.Lock()

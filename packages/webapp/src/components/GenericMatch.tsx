@@ -1,13 +1,13 @@
+import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
+import marked from 'marked'
 import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
-import { Subject, Subscription, from, of } from 'rxjs'
+import { Subject } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { highlightNode } from '../util/dom'
 import { ResultContainer } from './ResultContainer'
-import { renderMarkdown } from '../discussions/backend'
-import { map, switchMap } from 'rxjs/operators'
 
 interface Props {
     result: GQL.GenericSearchResult
@@ -29,27 +29,12 @@ interface HighlightRange {
     highlightLength: number
 }
 
-interface State {
-    HTMLLabel: React.ReactFragment
-}
-export class GenericMatch extends React.Component<Props, State> {
+export class GenericMatch extends React.Component<Props> {
     constructor(props: Props) {
         super(props)
-        this.state = { HTMLLabel: '' }
     }
 
-    private subscriptions = new Subscription()
-    private propsChanges = new Subject<Props>()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.propsChanges
-                .pipe(switchMap(props => renderMarkdown(props.result.label).pipe(str => str)))
-                .subscribe(str => this.setState({ HTMLLabel: <div dangerouslySetInnerHTML={{ __html: str }} /> }))
-        )
-
-        this.propsChanges.next(this.props)
-    }
+    private renderTitle = () => <div dangerouslySetInnerHTML={{ __html: marked(this.props.result.label) }} />
 
     private renderBody = () => (
         <>
@@ -78,7 +63,7 @@ export class GenericMatch extends React.Component<Props, State> {
             <ResultContainer
                 stringIcon={this.props.result.icon}
                 icon={FileIcon}
-                title={this.state.HTMLLabel}
+                title={this.renderTitle()}
                 expandedChildren={this.renderBody()}
                 collapsedChildren={this.renderBody()}
             />
@@ -94,16 +79,9 @@ interface CodeExcerptProps {
     isLightTheme: boolean
 }
 
-interface CodeExcerptState {
-    HTMLBody: string
-}
-
-class GenCodeExcerpt extends React.Component<CodeExcerptProps, CodeExcerptState> {
+class GenCodeExcerpt extends React.Component<CodeExcerptProps> {
     private visibilitySensorOffset = { bottom: -500 }
     private visibilityChanges = new Subject<boolean>()
-
-    private subscriptions = new Subscription()
-    private propsChanges = new Subject<CodeExcerptProps>()
 
     public constructor(props: CodeExcerptProps) {
         super(props)
@@ -112,29 +90,17 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps, CodeExcerptState>
 
     private tableContainerElement: HTMLElement | null = null
 
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.propsChanges
-                .pipe(switchMap(props => renderMarkdown(props.body).pipe(str => str)))
-                .subscribe(str => this.setState({ HTMLBody: str }))
-        )
-
-        this.propsChanges.next(this.props)
-    }
-
     public componentDidUpdate(prevProps: CodeExcerptProps): void {
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             if (visibleRows.length > 0) {
-                for (const highlight of this.props.highlightRanges) {
+                for (const h of this.props.highlightRanges) {
                     // If we add context lines we must select the right line
                     const code = visibleRows[0].lastChild as HTMLTableDataCellElement
-                    highlightNode(code, highlight.character, highlight.highlightLength)
+                    highlightNode(code, h.character, h.highlightLength)
                 }
             }
         }
-
-        // this.propsChanges.next(this.props)
     }
 
     private onChangeVisibility = (isVisible: boolean): void => {
@@ -149,13 +115,14 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps, CodeExcerptState>
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             if (visibleRows.length > 0) {
-                for (const highlight of this.props.highlightRanges) {
+                for (const h of this.props.highlightRanges) {
                     // If we add context lines we must select the right line
                     const code = visibleRows[0].lastChild as HTMLTableDataCellElement
-                    highlightNode(code, highlight.character, highlight.highlightLength)
+                    highlightNode(code, h.character, h.highlightLength)
                 }
             }
         }
+
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
@@ -163,14 +130,12 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps, CodeExcerptState>
                 offset={this.visibilitySensorOffset}
             >
                 <Link key={this.props.url} to={this.props.url} className="file-match__item">
-                    <code>
-                        <div
-                            ref={this.setTableContainerElement}
-                            dangerouslySetInnerHTML={{
-                                __html: this.state.HTMLBody,
-                            }}
-                        />
-                    </code>
+                    <div
+                        ref={this.setTableContainerElement}
+                        dangerouslySetInnerHTML={{
+                            __html: marked(this.props.body, highlightfn),
+                        }}
+                    />
                 </Link>
             </VisibilitySensor>
         )
@@ -183,3 +148,5 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps, CodeExcerptState>
         return '<table><tr><td>' + this.props.body + '</td></tr></table>'
     }
 }
+
+const highlightfn = { highlight: (code: string) => highlightAuto(code).value }
