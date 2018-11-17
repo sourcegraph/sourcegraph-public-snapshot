@@ -27,13 +27,24 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
-- Fixed another issue where Sourcegraph would try to fetch more than the allowed number of repositories from AWS CodeCommit.
 
 ### Removed
 
 - The `siteID` site configuration option was removed because it is no longer needed. If you previously specified this in site configuration, a new, random site ID will be generated upon server startup. You can safely remove the existing `siteID` value from your site configuration after upgrading.
 
 ### Removed
+
+## 2.13.5
+
+### Fixed
+
+- Fixed another issue where Sourcegraph would try to fetch more than the allowed number of repositories from AWS CodeCommit.
+
+## 2.13.4
+
+### Changed
+
+- The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled` (to avoid [#807](https://github.com/sourcegraph/sourcegraph/issues/807)).
 
 ## 2.13.3
 
