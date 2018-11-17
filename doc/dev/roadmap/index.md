@@ -18,7 +18,6 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
 - [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
 - [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
-- [LDAP and Active Directory user authentication](https://github.com/sourcegraph/sourcegraph/issues/963)
 - [GitHub user authentication](https://github.com/sourcegraph/sourcegraph/issues/964)
 - [Go language support via extension](https://github.com/sourcegraph/sourcegraph/issues/958)
 - [JavaScript/TypeScript language support via extension](https://github.com/sourcegraph/sourcegraph/issues/960)
@@ -46,6 +45,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 <!-- TODO: Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] [@ijsnow][ijsnow]
 Ruby language support | | Code intelligence, sourcegraph-ruby | T.B.D.
 Browser authorization flow for clients
+- [LDAP and Active Directory user authentication](https://github.com/sourcegraph/sourcegraph/issues/963)
 Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
 Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow] -->
 
