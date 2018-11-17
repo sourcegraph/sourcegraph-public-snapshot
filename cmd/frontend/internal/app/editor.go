@@ -14,36 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func editorBranch(ctx context.Context, repoName api.RepoName, branchName string) (string, error) {
-	if branchName == "HEAD" {
-		return "", nil // Detached head state
-	}
-	repo, err := backend.Repos.GetByName(ctx, repoName)
-	if err != nil {
-		// We weren't able to fetch the repo. This means it either doesn't
-		// exist (unlikely) or that the user is not logged in (most likely). In
-		// this case, the best user experience is to send them to the branch
-		// they asked for. The front-end will inform them if the branch does
-		// not exist.
-		return "@" + branchName, nil
-	}
-	// If we are on the default branch we want to return a clean URL without a
-	// branch. If we fail its best to return the full URL and allow the
-	// front-end to inform them of anything that is wrong.
-	defaultBranchCommitID, err := backend.Repos.ResolveRev(ctx, repo, "")
-	if err != nil {
-		return "@" + branchName, nil
-	}
-	branchCommitID, err := backend.Repos.ResolveRev(ctx, repo, branchName)
-	if err != nil {
-		return "@" + branchName, nil
-	}
-	if defaultBranchCommitID != branchCommitID {
-		return "", nil // default branch, so make a clean URL without a branch.
-	}
-	return "@" + branchName, nil
-}
-
 func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// Required query parameters:
 	q := r.URL.Query()
@@ -58,6 +28,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// search requests):
 	remoteURL := q.Get("remote_url") // Git repository remote URL.
 	branch := q.Get("branch")        // Git branch name.
+	revision := q.Get("revision")    // Git revision.
 	file := q.Get("file")            // File relative to repository root.
 
 	// search query parameters. Only present if it is a search request.
@@ -107,12 +78,13 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 		fmt.Fprintf(w, "Git remote URL %q not supported", remoteURL)
 		return nil
 	}
-	branch, err := editorBranch(r.Context(), repoName, branch)
+
+	ref, err := editorRef(r.Context(), repoName, branch, revision)
 	if err != nil {
 		return err
 	}
 
-	u := &url.URL{Path: path.Join("/", string(repoName)+branch, "/-/blob/", file)}
+	u := &url.URL{Path: path.Join("/", string(repoName)+ref, "/-/blob/", file)}
 	q = u.Query()
 	q.Add("utm_source", editor+"-"+version)
 	if utmProductName != "" {
@@ -147,4 +119,42 @@ func guessRepoNameFromRemoteURL(urlStr string) api.RepoName {
 		return api.RepoName(u.Hostname() + u.Path)
 	}
 	return ""
+}
+
+func editorRef(ctx context.Context, repoName api.RepoName, branchName string, revision string) (string, error) {
+	if revision != "" {
+		return "@" + revision, nil
+	}
+
+	return editorBranch(ctx, repoName, branchName)
+}
+
+func editorBranch(ctx context.Context, repoName api.RepoName, branchName string) (string, error) {
+	if branchName == "HEAD" {
+		return "", nil // Detached head state
+	}
+	repo, err := backend.Repos.GetByName(ctx, repoName)
+	if err != nil {
+		// We weren't able to fetch the repo. This means it either doesn't
+		// exist (unlikely) or that the user is not logged in (most likely). In
+		// this case, the best user experience is to send them to the branch
+		// they asked for. The front-end will inform them if the branch does
+		// not exist.
+		return "@" + branchName, nil
+	}
+	// If we are on the default branch we want to return a clean URL without a
+	// branch. If we fail its best to return the full URL and allow the
+	// front-end to inform them of anything that is wrong.
+	defaultBranchCommitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+	if err != nil {
+		return "@" + branchName, nil
+	}
+	branchCommitID, err := backend.Repos.ResolveRev(ctx, repo, branchName)
+	if err != nil {
+		return "@" + branchName, nil
+	}
+	if defaultBranchCommitID != branchCommitID {
+		return "", nil // default branch, so make a clean URL without a branch.
+	}
+	return "@" + branchName, nil
 }

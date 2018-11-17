@@ -3,6 +3,7 @@ package app
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -20,6 +21,30 @@ func TestGuessRepoNameFromRemoteURL(t *testing.T) {
 	}
 	for input, want := range tests {
 		got := guessRepoNameFromRemoteURL(input)
+		if got != want {
+			t.Errorf("%s: got %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestEditorRef(t *testing.T) {
+	ctx := testContext()
+	repoName := api.RepoName("myRepo")
+
+	db.Mocks.Repos.MockGetByName(t, repoName, 1)
+
+	type BranchAndRevision struct {
+		branchName string
+		revision   string
+	}
+	tests := map[BranchAndRevision]string{
+		BranchAndRevision{"", "sha1"}:       "@sha1",
+		BranchAndRevision{"branch", ""}:     "@branch",
+		BranchAndRevision{"branch", "sha2"}: "@sha2",
+	}
+	for input, want := range tests {
+		got, _ := editorRef(ctx, repoName, input.branchName, input.revision)
+
 		if got != want {
 			t.Errorf("%s: got %q, want %q", input, got, want)
 		}
