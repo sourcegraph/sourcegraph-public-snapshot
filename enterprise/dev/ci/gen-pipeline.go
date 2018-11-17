@@ -40,6 +40,7 @@ func main() {
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Cmd("source $NVM_DIR/nvm.sh && nvm use 10.13.0"),
 		bk.Cmd("pushd enterprise"),
 	)
 

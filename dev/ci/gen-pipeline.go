@@ -37,7 +37,9 @@ func main() {
 	pipeline := &bk.Pipeline{}
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
-		bk.Env("GO111MODULE", "on"))
+		bk.Env("GO111MODULE", "on"),
+		bk.Cmd("source $NVM_DIR/nvm.sh && nvm use 10.13.0"),
+	)
 
 	pipeline.AddStep(":white_check_mark:",
 		bk.Cmd("./dev/check/all.sh"))
