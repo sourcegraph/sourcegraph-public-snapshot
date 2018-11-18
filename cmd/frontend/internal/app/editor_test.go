@@ -12,7 +12,7 @@ func TestGuessRepoNameFromRemoteURL(t *testing.T) {
 		mapping string
 	}
 	tests := map[URLAndMapping]api.RepoName{
-		URLAndMapping{"github.com:a/b", "{}"}:                                 "github.com/a/b",
+		URLAndMapping{"github.com:a/b", "broken_json}"}:                       "github.com/a/b",
 		URLAndMapping{"github.com:a/b.git", "{}"}:                             "github.com/a/b",
 		URLAndMapping{"git@github.com:a/b", "{}"}:                             "github.com/a/b",
 		URLAndMapping{"git@github.com:a/b.git", "{}"}:                         "github.com/a/b",
