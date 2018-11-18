@@ -1,9 +1,8 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
-import { from, Observable, of, OperatorFunction, throwError, throwError as error } from 'rxjs'
+import { from, Observable, of, OperatorFunction, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
-import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
 import { Controller } from '../../../../../shared/src/client/controller'
@@ -12,7 +11,6 @@ import {
     AbsoluteRepo,
     AbsoluteRepoFile,
     AbsoluteRepoFilePosition,
-    AbsoluteRepoLanguageFile,
     FileSpec,
     makeRepoURI,
     parseRepoURI,
@@ -265,71 +263,14 @@ export function createJumpURLFetcher(
         )
 }
 
-const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<ServerCapabilities | undefined> => {
-    // Check if mode is known to not be supported
-    const mode = getModeFromPath(pos.filePath)
-    if (!mode || unsupportedModes.has(mode)) {
-        return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
-    }
-    const url = repoUrlCache[pos.repoPath] || sourcegraphUrl
-    if (!url) {
-        throw new Error('Error fetching server capabilities. No URL found.')
-    }
-    if (!canFetchForURL(url)) {
-        return of(undefined)
-    }
-    return request(
-        url,
-        'initialize',
-        [
-            {
-                id: 0,
-                method: 'initialize',
-                params: {
-                    rootUri: `git://${pos.repoPath}?${pos.commitID}`,
-                    initializationOptions: { mode },
-                },
-            },
-            { id: 1, method: 'shutdown' },
-            { method: 'exit' },
-        ].filter(m => m !== null)
-    ).pipe(
-        tap(response => {
-            if (response.status === 0) {
-                throw Object.assign(new Error('Ajax status 0'), response)
-            }
-        }),
-        catchError<AjaxResponse, never>(err => {
-            normalizeAjaxError(err)
-            throw err
-        }),
-        map(({ response }) => response),
-        map(results => {
-            for (const result of results) {
-                if (result && result.error) {
-                    if (result.error.code === EMODENOTFOUND) {
-                        unsupportedModes.add(mode)
-                    }
-                    throw Object.assign(new Error(result.error.message), result.error)
-                }
-            }
-
-            return results.map((result: any) => result && result.result)
-        }),
-        map(results => (results[0] as InitializeResult).capabilities)
-    )
-}
-
 export interface SimpleProviderFns {
     fetchHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
     fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Definition>
-    fetchServerCapabilities: (pos: AbsoluteRepoLanguageFile) => Observable<ServerCapabilities | undefined>
 }
 
 export const lspViaAPIXlang: SimpleProviderFns = {
     fetchHover,
     fetchDefinition,
-    fetchServerCapabilities,
 }
 
 export const toTextDocumentIdentifier = (pos: AbsoluteRepoFile): TextDocumentIdentifier => ({
@@ -357,5 +298,4 @@ export const createLSPFromExtensions = (
         from(
             extensionsController.registries.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))
         ) as Observable<Definition>,
-    fetchServerCapabilities,
 })

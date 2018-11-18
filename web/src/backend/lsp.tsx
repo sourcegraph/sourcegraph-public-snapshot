@@ -7,7 +7,6 @@ import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { MarkupContent } from 'vscode-languageserver-types'
-import { InitializeResult } from 'vscode-languageserver/lib/main'
 import { Location } from '../../../shared/src/api/protocol/plainTypes'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { normalizeAjaxError } from '../util/errors'
@@ -43,9 +42,9 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
         return !c.value
     })
 
-type ResponseMessages = { 0: { result: InitializeResult } } & any[]
+type ResponseMessages = any[]
 
-type ResponseResults = { 0: InitializeResult } & any[]
+type ResponseResults = any[]
 
 export function sendLSPHTTPRequests(requests: any[], urlPathHint?: string): Observable<any> {
     if (!urlPathHint) {
