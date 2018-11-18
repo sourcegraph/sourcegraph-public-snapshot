@@ -6,7 +6,6 @@ import {
 import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { MarkupContent } from 'vscode-languageserver-types'
 import { Location } from '../../../shared/src/api/protocol/plainTypes'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { normalizeAjaxError } from '../util/errors'
@@ -33,9 +32,6 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
     !hover.contents ||
     (Array.isArray(hover.contents) && hover.contents.length === 0) ||
     hover.contents.every(c => {
-        if (MarkupContent.is(c)) {
-            return !c.value
-        }
         if (typeof c === 'string') {
             return !c
         }

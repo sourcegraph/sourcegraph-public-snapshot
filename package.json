@@ -219,7 +219,6 @@
     "ts-key-enum": "^2.0.0",
     "tslib": "^1.9.3",
     "uuid": "^3.2.1",
-    "vscode-languageserver-types": "^3.12.0",
     "webext-domain-permission-toggle": "^0.0.2",
     "whatwg-url": "^7.0.0"
   }

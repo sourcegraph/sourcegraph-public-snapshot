@@ -6,7 +6,10 @@ export interface WorkspaceRoot {
 }
 
 /** The plain properties of a {@link module:sourcegraph.Position}, without methods and accessors. */
-export interface Position extends Pick<sourcegraph.Position, 'line' | 'character'> {}
+export interface Position extends Pick<sourcegraph.Position, 'line' | 'character'> {
+    line: number
+    character: number
+}
 
 /** The plain properties of a {@link module:sourcegraph.Range}, without methods and accessors. */
 export interface Range {

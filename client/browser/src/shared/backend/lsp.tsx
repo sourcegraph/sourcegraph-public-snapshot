@@ -228,7 +228,9 @@ export function fetchJumpURL(
             }
 
             const uri = parseRepoURI(firstDef.uri) as AbsoluteRepoFilePosition
-            uri.position = { line: firstDef.range.start.line + 1, character: firstDef.range.start.character + 1 }
+            if (firstDef.range) {
+                uri.position = { line: firstDef.range.start.line + 1, character: firstDef.range.start.character + 1 }
+            }
             return toAbsoluteBlobURL(uri)
         })
     )
@@ -254,10 +256,12 @@ export function createJumpURLFetcher(
                     commitID: uri.commitID!, // LSP proxy always includes a commitID in the URI.
                     rev: uri.repoPath === repoPath && uri.commitID === commitID ? rest.rev : uri.rev!, // If the commitID is the same, keep the rev.
                     filePath: uri.filePath!, // There's never going to be a definition without a file.
-                    position: {
-                        line: def.range.start.line + 1,
-                        character: def.range.start.character + 1,
-                    },
+                    position: def.range
+                        ? {
+                              line: def.range.start.line + 1,
+                              character: def.range.start.character + 1,
+                          }
+                        : { line: 0, character: 0 },
                     part,
                 })
             })

@@ -17,7 +17,6 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { MarkupContent } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
 import * as GQL from '../../../../../shared/src/graphqlschema'
@@ -360,8 +359,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
 
 function renderHoverContents(contents: HoverMerged['contents'][0]): React.ReactFragment {
     const value = typeof contents === 'string' ? contents : contents.value
-    const language =
-        typeof contents === 'string' ? 'markdown' : MarkupContent.is(contents) ? contents.kind : contents.language
+    const language = typeof contents === 'string' ? 'markdown' : 'kind' in contents ? contents.kind : contents.language
     try {
         if (language === 'markdown') {
             return (
