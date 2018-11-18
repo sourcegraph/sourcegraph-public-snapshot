@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Site and user usage statistics are now visible to all users. Previously only site admins (and users, for their own usage statistics) could view this information. The information consists of aggregate counts of actions such as searches, page views, etc.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
 - The `appURL` site configuration option was renamed to `externalURL`.
+- The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled`.
 
 ### Fixed
 
