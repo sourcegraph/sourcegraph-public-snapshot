@@ -78,6 +78,9 @@ func (r *extensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, er
 	if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAnOrgMember || err == backend.ErrNotAuthenticated {
 		return false, nil
 	}
+	if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+		return false, nil
+	}
 	return err == nil, err
 }
 
