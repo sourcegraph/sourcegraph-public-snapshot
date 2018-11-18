@@ -144,16 +144,25 @@ func guessRepoNameFromRemoteURL(urlStr string, remoteHostMapping string) api.Rep
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
 	urlStr = strings.TrimSuffix(urlStr, ".git")
-
 	u, _ := url.Parse(urlStr)
-	if u != nil {
-		var mapping map[string]string
-		json.Unmarshal([]byte(remoteHostMapping), &mapping)
-		mappedHost, mappingExists := mapping[u.Hostname()]
-		if mappingExists == true {
-			return api.RepoName(mappedHost + u.Path)
-		}
-		return api.RepoName(u.Hostname() + u.Path)
+	if u == nil {
+		return ""
 	}
-	return ""
+
+	hostname := getMappedHostname(u.Hostname(), remoteHostMapping)
+	return api.RepoName(hostname + u.Path)
+}
+
+// If there's a mapping for hostname in remoteHostMapping, returns that mapping. Otherwise, returns the given hostname.
+func getMappedHostname(hostname string, remoteHostMapping string) string {
+	var mapping map[string]string
+	err := json.Unmarshal([]byte(remoteHostMapping), &mapping)
+	if err == nil {
+		mappedHost, mappingExists := mapping[hostname]
+		if mappingExists == true {
+			return mappedHost
+		}
+	}
+
+	return hostname
 }
