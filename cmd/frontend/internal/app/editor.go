@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -98,8 +99,8 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// TODO(sqs): This used to hit gitserver, which would be more accurate in case of nonstandard clone URLs.
 	// It now generates the guessed repo name statically, which means in some cases it won't work, but it
 	// is worth the increase in simplicity (plus there is an error message for users). In the future we can
-	// let users specify a custom mapping to the Sourcegraph repo in their local Git repo.
-	repoName := guessRepoNameFromRemoteURL(remoteURL)
+	// let users specify a custom mapping to the Sourcegraph repo in their local Git repo (instead of having them pass it here).
+	repoName := guessRepoNameFromRemoteURL(remoteURL, q.Get("remote_host_mapping"))
 	if repoName == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
@@ -136,7 +137,9 @@ var gitProtocolRegExp = regexp.MustCompile("^(git|(git+)?(https?|ssh))://")
 
 // guessRepoNameFromRemoteURL return a guess at the repo name for the given remote URL. For example, given
 // "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
-func guessRepoNameFromRemoteURL(urlStr string) api.RepoName {
+// remoteHostMapping is an optional JSON string parameter that maps a hostname to any other path. For example,
+// if {"github.com": "/github"} is passed, we'll return "/github/foo/bar" for the previous example.
+func guessRepoNameFromRemoteURL(urlStr string, remoteHostMapping string) api.RepoName {
 	if !gitProtocolRegExp.MatchString(urlStr) {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
@@ -144,6 +147,12 @@ func guessRepoNameFromRemoteURL(urlStr string) api.RepoName {
 
 	u, _ := url.Parse(urlStr)
 	if u != nil {
+		var mapping map[string]string
+		json.Unmarshal([]byte(remoteHostMapping), &mapping)
+		mappedHost, mappingExists := mapping[u.Hostname()]
+		if mappingExists == true {
+			return api.RepoName(mappedHost + u.Path)
+		}
 		return api.RepoName(u.Hostname() + u.Path)
 	}
 	return ""
