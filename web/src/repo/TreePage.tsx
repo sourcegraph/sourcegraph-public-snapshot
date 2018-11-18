@@ -263,40 +263,38 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     <SearchButton />
                                 </Form>
                             </section>
-                            {!isDiscussionsEnabled(this.props.settingsCascade) &&
-                                this.state.treeOrError.directories.length > 0 && (
-                                    <section className="tree-page__section">
-                                        <h3 className="tree-page__section-header">Directories</h3>
-                                        <div className="tree-page__entries tree-page__entries-directories">
-                                            {this.state.treeOrError.directories.map((e, i) => (
-                                                <TreeEntry
-                                                    key={i}
-                                                    isDir={true}
-                                                    name={e.name}
-                                                    parentPath={this.props.filePath}
-                                                    url={e.url}
-                                                />
-                                            ))}
-                                        </div>
-                                    </section>
-                                )}
-                            {!isDiscussionsEnabled(this.props.settingsCascade) &&
-                                this.state.treeOrError.files.length > 0 && (
-                                    <section className="tree-page__section">
-                                        <h3 className="tree-page__section-header">Files</h3>
-                                        <div className="tree-page__entries tree-page__entries-files">
-                                            {this.state.treeOrError.files.map((e, i) => (
-                                                <TreeEntry
-                                                    key={i}
-                                                    isDir={false}
-                                                    name={e.name}
-                                                    parentPath={this.props.filePath}
-                                                    url={e.url}
-                                                />
-                                            ))}
-                                        </div>
-                                    </section>
-                                )}
+                            {this.state.treeOrError.directories.length > 0 && (
+                                <section className="tree-page__section">
+                                    <h3 className="tree-page__section-header">Directories</h3>
+                                    <div className="tree-page__entries tree-page__entries-directories">
+                                        {this.state.treeOrError.directories.map((e, i) => (
+                                            <TreeEntry
+                                                key={i}
+                                                isDir={true}
+                                                name={e.name}
+                                                parentPath={this.props.filePath}
+                                                url={e.url}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+                            {this.state.treeOrError.files.length > 0 && (
+                                <section className="tree-page__section">
+                                    <h3 className="tree-page__section-header">Files</h3>
+                                    <div className="tree-page__entries tree-page__entries-files">
+                                        {this.state.treeOrError.files.map((e, i) => (
+                                            <TreeEntry
+                                                key={i}
+                                                isDir={false}
+                                                name={e.name}
+                                                parentPath={this.props.filePath}
+                                                url={e.url}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
                             {isDiscussionsEnabled(this.props.settingsCascade) && (
                                 <div className="tree-page__section mt-2 tree-page__section--discussions">
                                     <h3 className="tree-page__section-header">Discussions</h3>
