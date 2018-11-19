@@ -11,14 +11,14 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (p1, _token) => {
-            assert.strictEqual(p1, 'foo')
+            assert.deepStrictEqual(p1, ['foo'])
             return p1
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, 'foo'), 'foo')
+        assert.deepStrictEqual(await client.sendRequest(method, ['foo']), ['foo'])
     })
 
     it('handle single request with async result', async () => {
@@ -27,14 +27,14 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (p1, _token) => {
-            assert.strictEqual(p1, 'foo')
+            assert.deepStrictEqual(p1, ['foo'])
             return Promise.resolve(p1)
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, 'foo'), 'foo')
+        assert.deepStrictEqual(await client.sendRequest(method, ['foo']), ['foo'])
     })
 
     it('handle multiple requests', async () => {
@@ -48,11 +48,11 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         client.listen()
         const promises: Promise<string>[] = []
-        promises.push(client.sendRequest(method, 'foo'))
-        promises.push(client.sendRequest(method, 'bar'))
+        promises.push(client.sendRequest(method, ['foo']))
+        promises.push(client.sendRequest(method, ['bar']))
 
         const values = await Promise.all(promises)
-        assert.deepStrictEqual(values, ['foo', 'bar'])
+        assert.deepStrictEqual(values, [['foo'], ['bar']])
     })
 
     it('unhandled request', async () => {
@@ -65,7 +65,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         client.listen()
         await assert.rejects(
-            () => client.sendRequest(method, 'foo'),
+            () => client.sendRequest(method, ['foo']),
             (error: ResponseError<any>) => error.code === ErrorCodes.MethodNotFound
         )
     })
@@ -83,7 +83,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         client.listen()
         await assert.rejects(
-            () => client.sendRequest(method, 'foo'),
+            () => client.sendRequest(method, ['foo']),
             (error: ResponseError<any>) =>
                 error.code === ErrorCodes.InternalError &&
                 error.message === 'test' &&
@@ -103,7 +103,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         client.listen()
         await assert.rejects(
-            () => client.sendRequest(method, 'foo'),
+            () => client.sendRequest(method, ['foo']),
             (error: ResponseError<any>) =>
                 error.code === ErrorCodes.InternalError &&
                 error.message === 'test' &&
@@ -112,36 +112,36 @@ describe('Connection', () => {
         )
     })
 
-    it('receives undefined request param as null', async () => {
+    it('receives undefined request params as null', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(method, param => {
-            assert.strictEqual(param, null)
+        server.onRequest(method, params => {
+            assert.strictEqual(params, null)
             return ''
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        await client.sendRequest(method, undefined)
+        await client.sendRequest(method)
     })
 
-    it('receives undefined notification param as null', async () => {
+    it('receives undefined notification params as null', async () => {
         const method = 'testNotification'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onNotification(method, param => {
-            assert.strictEqual(param, null)
+        server.onNotification(method, params => {
+            assert.strictEqual(params, null)
             return ''
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        client.sendNotification(method, undefined)
+        client.sendNotification(method)
     })
 
     it('receives null as null', async () => {
@@ -149,15 +149,15 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(method, param => {
-            assert.strictEqual(param, null)
+        server.onRequest(method, params => {
+            assert.deepStrictEqual(params, [null])
             return null
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, null), null)
+        assert.strictEqual(await client.sendRequest(method, [null]), null)
     })
 
     it('receives 0 as 0', async () => {
@@ -165,15 +165,15 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(method, param => {
-            assert.strictEqual(param, 0)
+        server.onRequest(method, params => {
+            assert.deepStrictEqual(params, [0])
             return 0
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, 0), 0)
+        assert.strictEqual(await client.sendRequest(method, [0]), 0)
     })
 
     const testNotification = 'testNotification'
@@ -181,15 +181,15 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onNotification(testNotification, param => {
-            assert.strictEqual(param.value, true)
+        server.onNotification(testNotification, params => {
+            assert.deepStrictEqual(params, [{ value: true }])
             done()
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        client.sendNotification(testNotification, { value: true })
+        client.sendNotification(testNotification, [{ value: true }])
     })
 
     it('unhandled notification event', done => {
@@ -198,13 +198,14 @@ describe('Connection', () => {
         const server = createConnection(serverTransports)
         server.onUnhandledNotification(message => {
             assert.strictEqual(message.method, testNotification)
+            assert.deepStrictEqual(message.params, [{ value: true }])
             done()
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        client.sendNotification(testNotification, { value: true })
+        client.sendNotification(testNotification, [{ value: true }])
     })
 
     it('unsubscribes connection', async () => {
@@ -220,7 +221,7 @@ describe('Connection', () => {
         server.listen()
 
         client.listen()
-        await assert.rejects(() => client.sendRequest(method, ''))
+        await assert.rejects(() => client.sendRequest(method, ['']))
     })
 
     it('unsubscribed connection throws', () => {
@@ -357,9 +358,8 @@ describe('Connection', () => {
         server.listen()
 
         const client = createConnection(clientTransports)
-        const token = new CancellationTokenSource().token
         client.listen()
-        client.sendNotification('test', [10, 20, 30], token)
+        client.sendNotification('test', [10, 20, 30])
     })
 
     it('star request handler', async () => {
@@ -391,9 +391,8 @@ describe('Connection', () => {
         server.listen()
 
         const client = createConnection(clientTransports)
-        const token = new CancellationTokenSource().token
         client.listen()
-        client.sendNotification('test', [10, 20, 30], token)
+        client.sendNotification('test', [10, 20, 30])
     })
 
     it('cancellation token is undefined', async () => {

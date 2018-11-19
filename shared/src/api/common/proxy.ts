@@ -40,7 +40,7 @@ export function handleRequests(connection: Connection, prefix: string, handler: 
     for (const name of Object.getOwnPropertyNames(proto)) {
         const value = proto[name]
         if (name[0] === '$' && typeof value === 'function') {
-            connection.onRequest(`${prefix}/${name}`, (...args: any[]) => value.apply(handler, args[0]))
+            connection.onRequest(`${prefix}/${name}`, (args: any[]) => value.apply(handler, args))
         }
     }
 }

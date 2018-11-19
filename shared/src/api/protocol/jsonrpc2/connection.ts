@@ -76,12 +76,12 @@ export class ConnectionError extends Error {
 type MessageQueue = LinkedMap<string, Message>
 
 export interface Connection extends Unsubscribable {
-    sendRequest<R>(method: string, ...params: any[]): Promise<R>
+    sendRequest<R>(method: string, params?: any[], token?: CancellationToken): Promise<R>
 
     onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void
     onRequest(handler: StarRequestHandler): void
 
-    sendNotification(method: string, ...params: any[]): void
+    sendNotification(method: string, params?: any[]): void
 
     onNotification(method: string, handler: GenericNotificationHandler): void
     onNotification(handler: StarNotificationHandler): void
@@ -547,7 +547,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
     }
 
     const connection: Connection = {
-        sendNotification: (method: string, params: any): void => {
+        sendNotification: (method: string, params?: any[]): void => {
             throwIfClosedOrUnsubscribed()
             const notificationMessage: NotificationMessage = {
                 jsonrpc: version,
@@ -565,7 +565,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 notificationHandlers[type] = { type: undefined, handler }
             }
         },
-        sendRequest: <R>(method: string, params: any, token?: CancellationToken) => {
+        sendRequest: <R>(method: string, params?: any[], token?: CancellationToken) => {
             throwIfClosedOrUnsubscribed()
             throwIfNotListening()
             token = CancellationToken.is(token) ? token : undefined
@@ -600,7 +600,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             })
             if (token) {
                 token.onCancellationRequested(() => {
-                    connection.sendNotification(CancelNotification.type, { id })
+                    connection.sendNotification(CancelNotification.type, [{ id }])
                 })
             }
             return result
