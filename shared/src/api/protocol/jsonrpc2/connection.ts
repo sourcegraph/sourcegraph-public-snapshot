@@ -454,30 +454,30 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
             }
         } else {
             const key = String(responseMessage.id)
-            const responsePromise = responseObservables[key]
-            if (responsePromise) {
+            const responseObservable = responseObservables[key]
+            if (responseObservable) {
                 tracer.responseReceived(
                     responseMessage,
-                    responsePromise.request || responsePromise.method,
-                    responsePromise.timerStart
+                    responseObservable.request || responseObservable.method,
+                    responseObservable.timerStart
                 )
                 try {
                     if (responseMessage.error) {
                         const error = responseMessage.error
-                        responsePromise.observer.error(new ResponseError(error.code, error.message, error.data))
+                        responseObservable.observer.error(new ResponseError(error.code, error.message, error.data))
                     } else if (responseMessage.result !== undefined) {
-                        responsePromise.observer.next(responseMessage.result)
+                        responseObservable.observer.next(responseMessage.result)
                     }
                     if (responseMessage.complete) {
-                        responsePromise.observer.complete()
+                        responseObservable.observer.complete()
                     }
                 } catch (error) {
                     if (error.message) {
                         logger.error(
-                            `Response handler '${responsePromise.method}' failed with message: ${error.message}`
+                            `Response handler '${responseObservable.method}' failed with message: ${error.message}`
                         )
                     } else {
-                        logger.error(`Response handler '${responsePromise.method}' failed unexpectedly.`)
+                        logger.error(`Response handler '${responseObservable.method}' failed unexpectedly.`)
                     }
                 } finally {
                     if (responseMessage.complete) {

@@ -674,10 +674,16 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A provider result represents the values that a provider, such as the {@link HoverProvider},
-     * may return.
+     * A provider result represents the values that a provider, such as the {@link HoverProvider}, may return. The
+     * result may be a single value, a Promise that resolves to a single value, or a Subscribable that emits zero
+     * or more values.
      */
-    export type ProviderResult<T> = T | undefined | null | Promise<T | undefined | null>
+    export type ProviderResult<T> =
+        | T
+        | undefined
+        | null
+        | Promise<T | undefined | null>
+        | Subscribable<T | undefined | null>
 
     /** The kinds of markup that can be used. */
     export const enum MarkupKind {
