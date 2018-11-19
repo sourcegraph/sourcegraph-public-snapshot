@@ -132,12 +132,9 @@ func main() {
 	pipeline.AddWait()
 
 	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download 'web/coverage/coverage-final.json' . || true"), // ignore error when no report exists
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
-		bk.Cmd("buildkite-agent artifact download 'packages/extensions-client-common/coverage/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
-		bk.Cmd("buildkite-agent artifact download 'coverage.txt' coverage.txt || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage.txt"))
+		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
+		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
 
 	// addDockerImageStep adds a build step for a given app.
 	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
