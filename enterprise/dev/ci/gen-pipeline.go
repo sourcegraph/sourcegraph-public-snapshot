@@ -105,7 +105,7 @@ func main() {
 
 	pipeline.AddStep(":go:",
 		bk.Cmd("go generate ./..."),
-		bk.Cmd("go install -tags dist ./cmd/..."),
+		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
 	)
 
 	pipeline.AddStep(":go:",
