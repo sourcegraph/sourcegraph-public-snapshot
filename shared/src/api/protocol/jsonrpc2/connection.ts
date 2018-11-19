@@ -1,5 +1,4 @@
 import { Observable, Observer, Subject, Unsubscribable } from 'rxjs'
-import { ConnectionStrategy } from './connectionStrategy'
 import { Emitter, Event } from './events'
 import { LinkedMap } from './linkedMap'
 import {
@@ -9,6 +8,7 @@ import {
     isResponseMessage,
     Message,
     NotificationMessage,
+    RequestID,
     RequestMessage,
     ResponseError,
     ResponseMessage,
@@ -102,15 +102,11 @@ export interface MessageTransports {
     writer: MessageWriter
 }
 
-export function createConnection(
-    transports: MessageTransports,
-    logger?: Logger,
-    strategy?: ConnectionStrategy
-): Connection {
+export function createConnection(transports: MessageTransports, logger?: Logger): Connection {
     if (!logger) {
         logger = NullLogger
     }
-    return _createConnection(transports, logger, strategy)
+    return _createConnection(transports, logger)
 }
 
 interface ResponseObserver {
@@ -144,18 +140,9 @@ interface NotificationHandlerElement {
     handler: GenericNotificationHandler
 }
 
-interface AbortParams {
-    /**
-     * The request ID to abort.
-     */
-    id: number | string
-}
+const ABORT_REQUEST_METHOD = '$/abortRequest'
 
-namespace AbortNotification {
-    export const type = '$/abortRequest'
-}
-
-function _createConnection(transports: MessageTransports, logger: Logger, strategy?: ConnectionStrategy): Connection {
+function _createConnection(transports: MessageTransports, logger: Logger): Connection {
     let sequenceNumber = 0
     let notificationSquenceNumber = 0
     let unknownResponseSquenceNumber = 0
@@ -205,10 +192,6 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         } else {
             queue.set(createNotificationQueueKey(), message)
         }
-    }
-
-    function abortUndispatched(_message: Message): ResponseMessage | undefined {
-        return undefined
     }
 
     function isListening(): boolean {
@@ -280,21 +263,19 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         try {
             // We have received an abort signal. Check if the message is still in the queue and abort it if allowed
             // to do so.
-            if (isNotificationMessage(message) && message.method === AbortNotification.type) {
-                const key = createRequestQueueKey((message.params as AbortParams).id)
+            if (isNotificationMessage(message) && message.method === ABORT_REQUEST_METHOD) {
+                const key = createRequestQueueKey(message.params[0])
                 const toAbort = messageQueue.get(key)
                 if (isRequestMessage(toAbort)) {
-                    const response =
-                        strategy && strategy.abortUndispatched
-                            ? strategy.abortUndispatched(toAbort, abortUndispatched)
-                            : abortUndispatched(toAbort)
-                    if (response && (response.error !== undefined || response.result !== undefined)) {
-                        messageQueue.delete(key)
-                        response.id = toAbort.id
-                        tracer.responseAborted(response, toAbort, message)
-                        transports.writer.write(response)
-                        return
+                    messageQueue.delete(key)
+                    const response: ResponseMessage = {
+                        jsonrpc: '2.0',
+                        id: toAbort.id,
+                        error: { code: ErrorCodes.RequestAborted, message: 'request aborted' },
                     }
+                    tracer.responseAborted(response, toAbort, message)
+                    transports.writer.write(response)
+                    return
                 }
             }
             addMessageToQueue(messageQueue, message)
@@ -484,9 +465,9 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             return
         }
         let notificationHandler: GenericNotificationHandler | undefined
-        if (message.method === AbortNotification.type) {
-            notificationHandler = (params: AbortParams) => {
-                const id = params.id
+        if (message.method === ABORT_REQUEST_METHOD) {
+            notificationHandler = (params: [RequestID]) => {
+                const id = params[0]
                 const abortController = requestAbortControllers[String(id)]
                 if (abortController) {
                     abortController.abort()
@@ -604,7 +585,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         }
 
         if (signal) {
-            signal.addEventListener('abort', () => sendNotification(AbortNotification.type, [{ id }]))
+            signal.addEventListener('abort', () => sendNotification(ABORT_REQUEST_METHOD, [id]))
         }
 
         return observer

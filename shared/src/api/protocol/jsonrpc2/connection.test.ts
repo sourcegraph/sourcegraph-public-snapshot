@@ -1,5 +1,6 @@
 import { AbortController } from 'abort-controller'
 import assert from 'assert'
+import { createBarrier } from '../../integration-test/helpers.test'
 import { createConnection } from './connection'
 import { createMessagePipe, createMessageTransports } from './helpers.test'
 import { ErrorCodes, ResponseError } from './messages'
@@ -38,6 +39,32 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         client.listen()
         assert.deepStrictEqual(await client.sendRequest(method, ['foo']), ['foo'])
+    })
+
+    it('abort undispatched request', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+        const b1 = createBarrier()
+        const b2 = createBarrier()
+
+        const server = createConnection(serverTransports)
+        server.onRequest('block', async () => {
+            b2.done()
+            await b1.wait
+        })
+        server.onRequest('undispatched', () => {
+            throw new Error('handler should not be called')
+        })
+        server.listen()
+
+        const client = createConnection(clientTransports)
+        client.listen()
+        client.sendRequest('block').catch(null)
+        await b2.wait
+        const abortController = new AbortController()
+        const result = client.sendRequest('undispatched', ['foo'], abortController.signal)
+        abortController.abort()
+        b1.done()
+        await assert.rejects(result, (error: ResponseError<any>) => error.code === ErrorCodes.RequestAborted)
     })
 
     it('handle multiple requests', async () => {

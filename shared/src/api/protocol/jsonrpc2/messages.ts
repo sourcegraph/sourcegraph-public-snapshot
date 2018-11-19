@@ -6,13 +6,18 @@ export interface Message {
 }
 
 /**
+ * The request ID.
+ */
+export type RequestID = number | string
+
+/**
  * Request message
  */
 export interface RequestMessage extends Message {
     /**
-     * The request id.
+     * The request ID.
      */
-    id: number | string
+    id: RequestID
 
     /**
      * The method to be invoked.
@@ -43,6 +48,7 @@ export namespace ErrorCodes {
     // Defined by this library.
     export const MessageWriteError = 1
     export const MessageReadError = 2
+    export const RequestAborted = -32800
 }
 
 interface ResponseErrorLiteral<D> {
