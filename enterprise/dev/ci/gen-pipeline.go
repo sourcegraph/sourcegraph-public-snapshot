@@ -50,6 +50,7 @@ func main() {
 		bk.Env("GO111MODULE", "on"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
+		bk.Env("ENTERPRISE", "1"),
 	)
 
 	pipeline.AddStep(":white_check_mark:",
