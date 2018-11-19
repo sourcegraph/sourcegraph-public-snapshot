@@ -74,3 +74,10 @@ export function tryCatchPromise<T>(f: () => T | Promise<T>): Promise<T> {
         return Promise.reject(err)
     }
 }
+
+/**
+ * Reports whether value is a Promise.
+ */
+export function isPromise(value: any): value is Promise<any> {
+    return typeof value.then === 'function'
+}

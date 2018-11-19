@@ -1,5 +1,6 @@
 import { toPromise } from 'abortable-rx'
 import { from, isObservable, Observable, Observer, Subject, Unsubscribable } from 'rxjs'
+import { isPromise } from '../../util'
 import { Emitter, Event } from './events'
 import { LinkedMap } from './linkedMap'
 import {
@@ -695,10 +696,6 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
     }
 
     return connection
-}
-
-function isPromise(value: any): value is Promise<any> {
-    return typeof value.then === 'function'
 }
 
 /** Support browser and node environments without needing a transpiler. */
