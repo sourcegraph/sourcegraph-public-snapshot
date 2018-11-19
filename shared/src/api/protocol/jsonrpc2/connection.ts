@@ -1,4 +1,4 @@
-import { Unsubscribable } from 'rxjs'
+import { Observable, Observer, Subject, Unsubscribable } from 'rxjs'
 import { CancelNotification, CancelParams } from './cancel'
 import { CancellationToken, CancellationTokenSource } from './cancel'
 import { ConnectionStrategy } from './connectionStrategy'
@@ -111,7 +111,7 @@ export function createConnection(
     return _createConnection(transports, logger, strategy)
 }
 
-interface ResponsePromise {
+interface ResponseObserver {
     /** The request's method. */
     method: string
 
@@ -121,8 +121,8 @@ interface ResponsePromise {
     /** The timestamp when the request was received. */
     timerStart: number
 
-    resolve: (response: any) => void
-    reject: (error: any) => void
+    /** The observable containing the result value(s) and state. */
+    observer: Observer<any>
 }
 
 enum ConnectionState {
@@ -155,7 +155,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
 
     let timer = false
     let messageQueue: MessageQueue = new LinkedMap<string, Message>()
-    let responsePromises: { [name: string]: ResponsePromise } = Object.create(null)
+    let responseObservables: { [name: string]: ResponseObserver } = Object.create(null)
     let requestTokens: { [id: string]: CancellationTokenSource } = Object.create(null)
 
     let trace: Trace = Trace.Off
@@ -432,20 +432,21 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             }
         } else {
             const key = String(responseMessage.id)
-            const responsePromise = responsePromises[key]
+            const responsePromise = responseObservables[key]
             if (responsePromise) {
                 tracer.responseReceived(
                     responseMessage,
                     responsePromise.request || responsePromise.method,
                     responsePromise.timerStart
                 )
-                delete responsePromises[key]
+                delete responseObservables[key]
                 try {
                     if (responseMessage.error) {
                         const error = responseMessage.error
-                        responsePromise.reject(new ResponseError(error.code, error.message, error.data))
+                        responsePromise.observer.error(new ResponseError(error.code, error.message, error.data))
                     } else if (responseMessage.result !== undefined) {
-                        responsePromise.resolve(responseMessage.result)
+                        responsePromise.observer.next(responseMessage.result)
+                        responsePromise.observer.complete()
                     } else {
                         throw new Error('Should never happen.')
                     }
@@ -518,9 +519,11 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         const responseMessage: ResponseMessage = message as ResponseMessage
         if (typeof responseMessage.id === 'string' || typeof responseMessage.id === 'number') {
             const key = String(responseMessage.id)
-            const responseHandler = responsePromises[key]
+            const responseHandler = responseObservables[key]
             if (responseHandler) {
-                responseHandler.reject(new Error('The received response has neither a result nor an error property.'))
+                responseHandler.observer.error(
+                    new Error('The received response has neither a result nor an error property.')
+                )
             }
         }
     }
@@ -557,36 +560,35 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         transports.writer.write(notificationMessage)
     }
 
-    const requestHelper = <R>(method: string, params?: any[], token?: CancellationToken): Promise<R> => {
+    const requestHelper = <R>(method: string, params?: any[], token?: CancellationToken): Observable<R> => {
         const id = sequenceNumber++
-        const result = new Promise<R>((resolve, reject) => {
-            const requestMessage: RequestMessage = {
-                jsonrpc: version,
-                id,
-                method,
-                params,
-            }
-            let responsePromise: ResponsePromise | null = {
-                method,
-                request: trace === Trace.Verbose ? requestMessage : undefined,
-                timerStart: Date.now(),
-                resolve,
-                reject,
-            }
-            tracer.requestSent(requestMessage)
-            try {
-                transports.writer.write(requestMessage)
-            } catch (e) {
-                // Writing the message failed. So we need to reject the promise.
-                responsePromise.reject(
-                    new ResponseError<void>(ErrorCodes.MessageWriteError, e.message ? e.message : 'Unknown reason')
-                )
-                responsePromise = null
-            }
-            if (responsePromise) {
-                responsePromises[String(id)] = responsePromise
-            }
-        })
+        const observer = new Subject<R>()
+
+        const requestMessage: RequestMessage = {
+            jsonrpc: version,
+            id,
+            method,
+            params,
+        }
+        let responseObserver: ResponseObserver | null = {
+            method,
+            request: trace === Trace.Verbose ? requestMessage : undefined,
+            timerStart: Date.now(),
+            observer,
+        }
+        tracer.requestSent(requestMessage)
+        try {
+            transports.writer.write(requestMessage)
+        } catch (e) {
+            // Writing the message failed. So we need to reject the promise.
+            responseObserver.observer.error(
+                new ResponseError<void>(ErrorCodes.MessageWriteError, e.message ? e.message : 'Unknown reason')
+            )
+            responseObserver = null
+        }
+        if (responseObserver) {
+            responseObservables[String(id)] = responseObserver
+        }
 
         if (CancellationToken.is(token)) {
             token.onCancellationRequested(() => {
@@ -594,7 +596,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             })
         }
 
-        return result
+        return observer
     }
 
     const connection: Connection = {
@@ -610,7 +612,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         sendRequest: <R>(method: string, params?: any[], token?: CancellationToken): Promise<R> => {
             throwIfClosedOrUnsubscribed()
             throwIfNotListening()
-            return requestHelper<R>(method, params, token)
+            return requestHelper<R>(method, params, token).toPromise()
         },
         onRequest: <R, E>(type: string | StarRequestHandler, handler?: GenericRequestHandler<R, E>): void => {
             throwIfClosedOrUnsubscribed()
@@ -639,17 +641,17 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             }
             state = ConnectionState.Unsubscribed
             unsubscribeEmitter.fire(undefined)
-            for (const key of Object.keys(responsePromises)) {
-                responsePromises[key].reject(
+            for (const key of Object.keys(responseObservables)) {
+                responseObservables[key].observer.error(
                     new ConnectionError(
                         ConnectionErrors.Unsubscribed,
                         `The underlying JSON-RPC connection got unsubscribed while responding to this ${
-                            responsePromises[key].method
+                            responseObservables[key].method
                         } request.`
                     )
                 )
             }
-            responsePromises = Object.create(null)
+            responseObservables = Object.create(null)
             requestTokens = Object.create(null)
             messageQueue = new LinkedMap<string, Message>()
             transports.writer.unsubscribe()
