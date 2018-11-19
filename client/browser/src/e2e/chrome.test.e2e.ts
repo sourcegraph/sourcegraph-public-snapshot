@@ -1,7 +1,11 @@
+import { mkdirp } from 'fs-extra'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
 
 const chromeExtensionPath = path.resolve(__dirname, '..', '..', 'build/chrome')
+
+const repoRoot = path.resolve(__dirname, '..', '..', '..', '..')
+const screenshotDirectory = path.resolve(__dirname, '..', '..', '..', 'puppeteer')
 
 async function getTokenWithSelector(
     page: puppeteer.Page,
@@ -75,6 +79,26 @@ describe('Sourcegraph Chrome extension', () => {
     beforeEach('Open page', async () => {
         page = await browser.newPage()
         await authenticate(page)
+    })
+
+    afterEach('Close page', async function(): Promise<void> {
+        if (page) {
+            if (this.currentTest && this.currentTest.state === 'failed') {
+                await mkdirp(screenshotDirectory)
+                const filePath = path.join(
+                    screenshotDirectory,
+                    this.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
+                )
+                await page.screenshot({ path: filePath })
+                if (process.env.CI) {
+                    // Print image with ANSI escape code for Buildkite
+                    // https://buildkite.com/docs/builds/images-in-log-output
+                    const relativePath = path.relative(repoRoot, filePath)
+                    console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
+                }
+            }
+            await page.close()
+        }
     })
 
     const repoBaseURL = 'https://github.com/gorilla/mux'

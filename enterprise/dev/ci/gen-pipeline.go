@@ -213,7 +213,7 @@ func main() {
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("yarn -s run build"),
 			bk.Cmd("yarn -s run test:ci"),
-			bk.Cmd("yarn -s run test:e2e"),
+			bk.Cmd("yarn -s run test:e2e --retries 5"),
 			bk.Cmd("popd"),
 		)
 
@@ -229,7 +229,7 @@ func main() {
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
 			bk.Cmd("yarn -s run test:ci"),
-			bk.Cmd("yarn -s run test:e2e"),
+			bk.Cmd("yarn -s run test:e2e --retries 5"),
 			bk.Cmd("popd"),
 		)
 
