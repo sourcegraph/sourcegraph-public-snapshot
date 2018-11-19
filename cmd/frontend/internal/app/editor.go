@@ -14,8 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func editorBranch(ctx context.Context, repoName api.RepoName, branchName string) (string, error) {
-	if branchName == "HEAD" {
+func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
+	if beExplicit {
+		return "@" + rev, nil
+	}
+	if rev == "HEAD" {
 		return "", nil // Detached head state
 	}
 	repo, err := backend.Repos.GetByName(ctx, repoName)
@@ -25,23 +28,23 @@ func editorBranch(ctx context.Context, repoName api.RepoName, branchName string)
 		// this case, the best user experience is to send them to the branch
 		// they asked for. The front-end will inform them if the branch does
 		// not exist.
-		return "@" + branchName, nil
+		return "@" + rev, nil
 	}
 	// If we are on the default branch we want to return a clean URL without a
 	// branch. If we fail its best to return the full URL and allow the
 	// front-end to inform them of anything that is wrong.
 	defaultBranchCommitID, err := backend.Repos.ResolveRev(ctx, repo, "")
 	if err != nil {
-		return "@" + branchName, nil
+		return "@" + rev, nil
 	}
-	branchCommitID, err := backend.Repos.ResolveRev(ctx, repo, branchName)
+	branchCommitID, err := backend.Repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
-		return "@" + branchName, nil
+		return "@" + rev, nil
 	}
-	if defaultBranchCommitID != branchCommitID {
+	if defaultBranchCommitID == branchCommitID {
 		return "", nil // default branch, so make a clean URL without a branch.
 	}
-	return "@" + branchName, nil
+	return "@" + rev, nil
 }
 
 func serveEditor(w http.ResponseWriter, r *http.Request) error {
@@ -58,6 +61,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// search requests):
 	remoteURL := q.Get("remote_url") // Git repository remote URL.
 	branch := q.Get("branch")        // Git branch name.
+	revision := q.Get("revision")    // Git revision.
 	file := q.Get("file")            // File relative to repository root.
 
 	// search query parameters. Only present if it is a search request.
@@ -108,12 +112,17 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 		fmt.Fprintf(w, "Git remote URL %q not supported", remoteURL)
 		return nil
 	}
-	branch, err := editorBranch(r.Context(), repoName, branch)
+
+	inputRev, beExplicit := revision, true
+	if inputRev == "" {
+		inputRev, beExplicit = branch, false
+	}
+	rev, err := editorRev(r.Context(), repoName, inputRev, beExplicit)
 	if err != nil {
 		return err
 	}
 
-	u := &url.URL{Path: path.Join("/", string(repoName)+branch, "/-/blob/", file)}
+	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", file)}
 	q = u.Query()
 	q.Add("utm_source", editor+"-"+version)
 	if utmProductName != "" {
