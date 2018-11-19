@@ -72,6 +72,13 @@ func main() {
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn run graphql-lint"))
 
+	pipeline.AddStep(":typescript:",
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd client/browser"),
+		bk.Cmd("yarn -s run browserslist"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("popd"))
+
 	pipeline.AddStep(":webpack:",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd web"),
@@ -90,13 +97,6 @@ func main() {
 
 	pipeline.AddStep(":typescript:",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("yarn -s run build"),
-		bk.Cmd("popd"))
-
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd web"),
 		bk.Cmd("yarn -s run cover"),
 		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
@@ -111,23 +111,23 @@ func main() {
 		bk.Cmd("popd"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
-	pipeline.AddStep(":docker:",
-		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
-
 	// TODO(sqs): reenable the DB backcompat test
 	//
 	// pipeline.AddStep(":postgres:",
 	// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
 	pipeline.AddStep(":go:",
+		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+		bk.ArtifactPaths("coverage.txt"))
+
+	pipeline.AddStep(":go:",
 		bk.Cmd("go generate ./..."),
 		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
 	)
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
-		bk.ArtifactPaths("coverage.txt"))
+	pipeline.AddStep(":docker:",
+		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 
 	pipeline.AddWait()
 
