@@ -3,8 +3,8 @@ package db
 import (
 	"context"
 
+	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 type PkgsProvider interface {

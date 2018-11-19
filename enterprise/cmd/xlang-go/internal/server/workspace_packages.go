@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/tools"
+	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // workspacePackagesTimeout is the timeout used for workspace/xpackages

@@ -8,10 +8,10 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 func TestGlobalDeps_TotalRefsExpansion(t *testing.T) {

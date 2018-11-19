@@ -25,10 +25,9 @@ import (
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
+	lspext "github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // Debug if true will cause extra logging information to be printed
@@ -360,7 +359,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// server will expect `dir:net/http` as any real/valid Go project will
 		// have package paths align with the directory structure.
 		if req.Method == "workspace/symbol" && strings.HasPrefix(string(h.init.OriginalRootURI), "git://github.com/golang/go") {
-			var wsparams lsext.WorkspaceSymbolParams
+			var wsparams lspext.WorkspaceSymbolParams
 			if err := json.Unmarshal(*req.Params, &wsparams); err != nil {
 				return nil, err
 			}
@@ -386,7 +385,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if req.Method == "workspace/xreferences" {
 			// Parse the parameters and if a dirs hint is present, rewrite the
 			// URIs.
-			var p lsext.WorkspaceReferencesParams
+			var p lspext.WorkspaceReferencesParams
 			if err := json.Unmarshal(*req.Params, &p); err != nil {
 				return nil, err
 			}

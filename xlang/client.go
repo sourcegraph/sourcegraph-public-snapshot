@@ -17,10 +17,10 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // DefaultAddr returns the TCP address (host:port) of the default LSP proxy service.

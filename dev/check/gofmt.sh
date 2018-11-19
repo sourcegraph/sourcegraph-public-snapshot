@@ -3,7 +3,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 # Check if all code is gofmt'd
 
-DIFF=`find . \( -path ./vendor -o -path ./vendored \) -prune -o -name '*.go' -exec gofmt -d {} +`;
+DIFF=`find . \( -path ./vendor -o -path ./vendored \) -prune -o -name '*.go' -exec gofmt -w -d {} +`;
 if [ -z "$DIFF" ]; then
 	echo "Success: gofmt check passed.";
     exit 0;

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	xlang_lspext "github.com/sourcegraph/go-lsp/lspext"
 	vcsurl "github.com/sourcegraph/go-vcsurl"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -20,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/xlang"
-	xlang_lspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // xclient is an LSP client that transparently wraps xlang.Client,

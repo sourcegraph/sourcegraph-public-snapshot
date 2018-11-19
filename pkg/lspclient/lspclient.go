@@ -14,9 +14,9 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 var (
