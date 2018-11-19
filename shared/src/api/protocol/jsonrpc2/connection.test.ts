@@ -21,6 +21,22 @@ describe('Connection', () => {
         assert.strictEqual(await client.sendRequest(method, 'foo'), 'foo')
     })
 
+    it('handle single request with async result', async () => {
+        const method = 'test/handleSingleRequest'
+        const [serverTransports, clientTransports] = createMessageTransports()
+
+        const server = createConnection(serverTransports)
+        server.onRequest(method, (p1, _token) => {
+            assert.strictEqual(p1, 'foo')
+            return Promise.resolve(p1)
+        })
+        server.listen()
+
+        const client = createConnection(clientTransports)
+        client.listen()
+        assert.strictEqual(await client.sendRequest(method, 'foo'), 'foo')
+    })
+
     it('handle multiple requests', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
