@@ -1,4 +1,5 @@
 import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
+import 'highlight.js/styles/github.css'
 import marked from 'marked'
 import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'
@@ -133,20 +134,34 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps> {
                     <div
                         ref={this.setTableContainerElement}
                         dangerouslySetInnerHTML={{
-                            __html: marked(this.props.body, highlightfn),
+                            __html: marked(this.props.body, this.highlightfn),
                         }}
                     />
                 </Link>
             </VisibilitySensor>
         )
     }
+
+    private getLanguage = () => {
+        const matches = /(?:```)([^\s]+)\s/.exec(this.props.body)
+        if (!matches) {
+            return null
+        }
+        return matches[1]
+    }
+
     private setTableContainerElement = (ref: HTMLElement | null) => {
         this.tableContainerElement = ref
+    }
+
+    private highlightfn = {
+        highlight: (code: string, language: string) => {
+            const lang = this.getLanguage()
+            return lang ? highlight(lang, code, true).value : highlightAuto(code)
+        },
     }
 
     private makeTableHTML(): string {
         return '<table><tr><td>' + this.props.body + '</td></tr></table>'
     }
 }
-
-const highlightfn = { highlight: (code: string) => highlightAuto(code).value }
