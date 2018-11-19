@@ -1,5 +1,5 @@
 import { toPromise } from 'abortable-rx'
-import { Observable, Observer, Subject, Unsubscribable } from 'rxjs'
+import { from, isObservable, Observable, Observer, Subject, Unsubscribable } from 'rxjs'
 import { Emitter, Event } from './events'
 import { LinkedMap } from './linkedMap'
 import {
@@ -68,7 +68,13 @@ export class ConnectionError extends Error {
 
 type MessageQueue = LinkedMap<string, Message>
 
-type HandlerResult<R, E> = R | ResponseError<E> | Promise<R> | Promise<ResponseError<E>> | Promise<R | ResponseError<E>>
+type HandlerResult<R, E> =
+    | R
+    | ResponseError<E>
+    | Promise<R>
+    | Promise<ResponseError<E>>
+    | Promise<R | ResponseError<E>>
+    | Observable<R>
 
 type StarRequestHandler = (method: string, params?: any, signal?: AbortSignal) => HandlerResult<any, any>
 
@@ -80,6 +86,7 @@ type GenericNotificationHandler = (params: any) => void
 
 export interface Connection extends Unsubscribable {
     sendRequest<R>(method: string, params?: any[], signal?: AbortSignal): Promise<R>
+    observeRequest<R>(method: string, params?: any[]): Observable<R>
 
     onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void
     onRequest(handler: StarRequestHandler): void
@@ -348,18 +355,20 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                     ? requestHandler(params, abortController.signal)
                     : starRequestHandler!(requestMessage.method, params, abortController.signal)
 
-                const promise = handlerResult as Promise<any | ResponseError<any>>
                 if (!handlerResult) {
                     delete requestAbortControllers[signalKey]
                     replySuccess(handlerResult)
-                } else if (promise.then) {
-                    promise.then(
-                        (resultOrError): any | ResponseError<any> => {
-                            delete requestAbortControllers[signalKey]
-                            reply(resultOrError)
+                } else if (isPromise(handlerResult) || isObservable(handlerResult)) {
+                    let resultOrError: any | ResponseError<any>
+                    const onComplete = () => {
+                        delete requestAbortControllers[signalKey]
+                    }
+                    from(handlerResult).subscribe(
+                        value => {
+                            resultOrError = value
                         },
                         error => {
-                            delete requestAbortControllers[signalKey]
+                            onComplete()
                             if (error instanceof ResponseError) {
                                 replyError(error as ResponseError<any>)
                             } else if (error && typeof error.message === 'string') {
@@ -379,6 +388,10 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                                     )
                                 )
                             }
+                        },
+                        () => {
+                            onComplete()
+                            reply(resultOrError)
                         }
                     )
                 } else {
@@ -611,6 +624,11 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
             throwIfNotListening()
             return toPromise(requestHelper<R>(method, params), signal)
         },
+        observeRequest: <R>(method: string, params?: any[]): Observable<R> => {
+            throwIfClosedOrUnsubscribed()
+            throwIfNotListening()
+            return requestHelper<R>(method, params)
+        },
         onRequest: <R, E>(type: string | StarRequestHandler, handler?: GenericRequestHandler<R, E>): void => {
             throwIfClosedOrUnsubscribed()
 
@@ -664,6 +682,10 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
     }
 
     return connection
+}
+
+function isPromise(value: any): value is Promise<any> {
+    return typeof value.then === 'function'
 }
 
 /** Support browser and node environments without needing a transpiler. */

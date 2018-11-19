@@ -1,6 +1,8 @@
 import { AbortController } from 'abort-controller'
 import assert from 'assert'
 import { AbortError } from 'p-retry'
+import { of } from 'rxjs'
+import { delay } from 'rxjs/operators'
 import { createBarrier } from '../../integration-test/helpers.test'
 import { createConnection } from './connection'
 import { createMessagePipe, createMessageTransports } from './helpers.test'
@@ -90,6 +92,31 @@ describe('Connection', () => {
         assert.strictEqual(await client.sendRequest('ping'), 'pong') // waits until the 'm' message starts to be handled
         abortController.abort()
         await assert.rejects(result, (err: AbortError) => err.name === 'AbortError')
+    })
+
+    it('send request with single observable emission', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+
+        const server = createConnection(serverTransports)
+        server.onRequest('m', (params: [number]) => of(params[0] + 1).pipe(delay(0)))
+        server.listen()
+
+        const client = createConnection(clientTransports)
+        client.listen()
+        assert.strictEqual(await client.sendRequest<number>('m', [1]), 2)
+    })
+
+    it('observe request with single observable emission', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+
+        const server = createConnection(serverTransports)
+        server.onRequest('m', (params: [number]) => of(params[0] + 1))
+        server.listen()
+
+        const client = createConnection(clientTransports)
+        client.listen()
+        const result = client.observeRequest<number>('m', [1])
+        assert.deepStrictEqual(await result.toPromise(), 2)
     })
 
     it('handle multiple requests', async () => {
