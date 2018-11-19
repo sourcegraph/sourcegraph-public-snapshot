@@ -546,17 +546,59 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         }
     }
 
-    const connection: Connection = {
-        sendNotification: (method: string, params?: any[]): void => {
-            throwIfClosedOrUnsubscribed()
-            const notificationMessage: NotificationMessage = {
+    const sendNotification = (method: string, params?: any[]): void => {
+        throwIfClosedOrUnsubscribed()
+        const notificationMessage: NotificationMessage = {
+            jsonrpc: version,
+            method,
+            params,
+        }
+        tracer.notificationSent(notificationMessage)
+        transports.writer.write(notificationMessage)
+    }
+
+    const requestHelper = <R>(method: string, params?: any[], token?: CancellationToken): Promise<R> => {
+        const id = sequenceNumber++
+        const result = new Promise<R>((resolve, reject) => {
+            const requestMessage: RequestMessage = {
                 jsonrpc: version,
+                id,
                 method,
                 params,
             }
-            tracer.notificationSent(notificationMessage)
-            transports.writer.write(notificationMessage)
-        },
+            let responsePromise: ResponsePromise | null = {
+                method,
+                request: trace === Trace.Verbose ? requestMessage : undefined,
+                timerStart: Date.now(),
+                resolve,
+                reject,
+            }
+            tracer.requestSent(requestMessage)
+            try {
+                transports.writer.write(requestMessage)
+            } catch (e) {
+                // Writing the message failed. So we need to reject the promise.
+                responsePromise.reject(
+                    new ResponseError<void>(ErrorCodes.MessageWriteError, e.message ? e.message : 'Unknown reason')
+                )
+                responsePromise = null
+            }
+            if (responsePromise) {
+                responsePromises[String(id)] = responsePromise
+            }
+        })
+
+        if (CancellationToken.is(token)) {
+            token.onCancellationRequested(() => {
+                sendNotification(CancelNotification.type, [{ id }])
+            })
+        }
+
+        return result
+    }
+
+    const connection: Connection = {
+        sendNotification,
         onNotification: (type: string | StarNotificationHandler, handler?: GenericNotificationHandler): void => {
             throwIfClosedOrUnsubscribed()
             if (typeof type === 'function') {
@@ -565,45 +607,10 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 notificationHandlers[type] = { type: undefined, handler }
             }
         },
-        sendRequest: <R>(method: string, params?: any[], token?: CancellationToken) => {
+        sendRequest: <R>(method: string, params?: any[], token?: CancellationToken): Promise<R> => {
             throwIfClosedOrUnsubscribed()
             throwIfNotListening()
-            token = CancellationToken.is(token) ? token : undefined
-            const id = sequenceNumber++
-            const result = new Promise<R>((resolve, reject) => {
-                const requestMessage: RequestMessage = {
-                    jsonrpc: version,
-                    id,
-                    method,
-                    params,
-                }
-                let responsePromise: ResponsePromise | null = {
-                    method,
-                    request: trace === Trace.Verbose ? requestMessage : undefined,
-                    timerStart: Date.now(),
-                    resolve,
-                    reject,
-                }
-                tracer.requestSent(requestMessage)
-                try {
-                    transports.writer.write(requestMessage)
-                } catch (e) {
-                    // Writing the message failed. So we need to reject the promise.
-                    responsePromise.reject(
-                        new ResponseError<void>(ErrorCodes.MessageWriteError, e.message ? e.message : 'Unknown reason')
-                    )
-                    responsePromise = null
-                }
-                if (responsePromise) {
-                    responsePromises[String(id)] = responsePromise
-                }
-            })
-            if (token) {
-                token.onCancellationRequested(() => {
-                    connection.sendNotification(CancelNotification.type, [{ id }])
-                })
-            }
-            return result
+            return requestHelper<R>(method, params, token)
         },
         onRequest: <R, E>(type: string | StarRequestHandler, handler?: GenericRequestHandler<R, E>): void => {
             throwIfClosedOrUnsubscribed()
