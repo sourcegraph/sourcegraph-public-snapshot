@@ -78,7 +78,6 @@ interface RepoRevContainerState extends ParsedRepoRev {
 export class RepoContainer extends React.Component<RepoContainerProps, RepoRevContainerState> {
     private routeMatchChanges = new Subject<{ repoRevAndRest: string }>()
     private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
-    private repositoryAdds = new Subject<void>()
     private revResolves = new Subject<ResolvedRev | ErrorLike | undefined>()
     private subscriptions = new Subscription()
 
@@ -108,13 +107,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             distinctUntilChanged()
         )
         this.subscriptions.add(
-            merge(
-                repositoryChanges,
-                this.repositoryAdds.pipe(
-                    withLatestFrom(repositoryChanges),
-                    map(([, repoPath]) => repoPath)
-                )
-            )
+            repositoryChanges
                 .pipe(
                     tap(() => this.setState({ repoOrError: undefined })),
                     switchMap(repoPath =>
@@ -218,7 +211,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             repoID={null}
                             error={this.state.repoOrError}
                             viewerCanAdminister={viewerCanAdminister}
-                            onDidAddRepository={this.onDidAddRepository}
                         />
                     )
                 default:
@@ -395,7 +387,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     private onDidUpdateRepository = (update: Partial<GQL.IRepository>) => this.repositoryUpdates.next(update)
-    private onDidAddRepository = () => this.repositoryAdds.next()
 
     private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
         this.setState({ externalLinks })
