@@ -5,8 +5,9 @@ import { MarkupContent } from 'sourcegraph'
 import { MarkedString } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, parseBrowserRepoURL } from '.'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { getModeFromPath } from '../../../../../shared/src/languages'
 import { makeCloseIcon, makeSourcegraphIcon } from '../components/Icons'
-import { getModeFromPath, sourcegraphUrl } from '../util/context'
+import { sourcegraphUrl } from '../util/context'
 import { toAbsoluteBlobURL } from '../util/url'
 
 registerLanguage('go', require('highlight.js/lib/languages/go'))

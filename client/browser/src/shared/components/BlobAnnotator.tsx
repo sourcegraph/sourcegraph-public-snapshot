@@ -3,6 +3,7 @@ import * as React from 'react'
 import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
 
+import { getPathExtension } from '../../../../../shared/src/languages'
 import * as github from '../../libs/github/util'
 import { fetchJumpURL, isEmptyHover, lspViaAPIXlang, SimpleProviderFns } from '../backend/lsp'
 import {
@@ -24,7 +25,7 @@ import {
     TooltipData,
     updateTooltip,
 } from '../repo/tooltips'
-import { eventLogger, getPathExtension } from '../util/context'
+import { eventLogger } from '../util/context'
 import { parseHash } from '../util/url'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 

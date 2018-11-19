@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { getPathExtension } from '.'
+import { getPathExtension } from './languages'
 
 describe('util/index', () => {
     describe('getPathExtension', () => {

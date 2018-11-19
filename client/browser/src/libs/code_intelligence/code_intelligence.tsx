@@ -22,6 +22,7 @@ import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators
 import { Disposable } from 'vscode-jsonrpc'
 import { Environment } from '../../../../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
+import { getModeFromPath } from '../../../../../shared/src/languages'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
@@ -31,7 +32,7 @@ import {
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../../shared/repo'
-import { eventLogger, getModeFromPath, sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
