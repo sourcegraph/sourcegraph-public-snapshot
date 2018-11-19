@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -96,11 +95,12 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 
 	// Determine the repo name and branch.
 	//
-	// TODO(sqs): This used to hit gitserver, which would be more accurate in case of nonstandard clone URLs.
-	// It now generates the guessed repo name statically, which means in some cases it won't work, but it
-	// is worth the increase in simplicity (plus there is an error message for users). In the future we can
-	// let users specify a custom mapping to the Sourcegraph repo in their local Git repo (instead of having them pass it here).
-	repoName := guessRepoNameFromRemoteURL(remoteURL, q.Get("remote_host_mapping"))
+	// TODO(sqs): This used to hit gitserver, which would be more accurate in case of nonstandard
+	// clone URLs.  It now generates the guessed repo name statically, which means in some cases it
+	// won't work, but it is worth the increase in simplicity (plus there is an error message for
+	// users). In the future we can let users specify a custom mapping to the Sourcegraph repo in
+	// their local Git repo (instead of having them pass it here).
+	repoName := guessRepoNameFromRemoteURL(remoteURL, q.Get("pattern"))
 	if repoName == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
@@ -135,11 +135,20 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 // gitProtocolRegExp is a regular expression that matches any URL that looks like it has a git protocol
 var gitProtocolRegExp = regexp.MustCompile("^(git|(git+)?(https?|ssh))://")
 
-// guessRepoNameFromRemoteURL return a guess at the repo name for the given remote URL. For example, given
-// "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
-// remoteHostMapping is an optional JSON string parameter that maps a hostname to any other path. For example,
-// if {"github.com": "/github"} is passed, we'll return "/github/foo/bar" for the previous example.
-func guessRepoNameFromRemoteURL(urlStr string, remoteHostMapping string) api.RepoName {
+// guessRepoNameFromRemoteURL return a guess at the repo name for the given remote URL.
+//
+// It first normalizes the remote URL (ensuring a scheme exists, stripping any "git@" username in
+// the host, stripping any trailing ".git" from the path, etc.). It then returns the repo name as
+// templatized by the pattern specified, which references the hostname and path of the normalized
+// URL. The default pattern is "{hostname}/{path}".
+//
+// For example, given "https://github.com/foo/bar.git" and an empty pattern, it returns
+// "github.com/foo/bar". Given the same remote URL and pattern "{path}", it returns "foo/bar".
+func guessRepoNameFromRemoteURL(urlStr string, pattern string) api.RepoName {
+	if pattern == "" {
+		pattern = "{hostname}/{path}"
+	}
+
 	if !gitProtocolRegExp.MatchString(urlStr) {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
@@ -149,20 +158,8 @@ func guessRepoNameFromRemoteURL(urlStr string, remoteHostMapping string) api.Rep
 		return ""
 	}
 
-	hostname := getMappedHostname(u.Hostname(), remoteHostMapping)
-	return api.RepoName(hostname + u.Path)
-}
-
-// If there's a mapping for hostname in remoteHostMapping, returns that mapping. Otherwise, returns the given hostname.
-func getMappedHostname(hostname string, remoteHostMapping string) string {
-	var mapping map[string]string
-	err := json.Unmarshal([]byte(remoteHostMapping), &mapping)
-	if err == nil {
-		mappedHost, mappingExists := mapping[hostname]
-		if mappingExists == true {
-			return mappedHost
-		}
-	}
-
-	return hostname
+	return api.RepoName(strings.NewReplacer(
+		"{hostname}", u.Hostname(),
+		"{path}", strings.TrimPrefix(u.Path, "/"),
+	).Replace(pattern))
 }
