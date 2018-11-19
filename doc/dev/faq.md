@@ -8,7 +8,6 @@ See [CONTRIBUTING.md](https://github.com/sourcegraph/sourcegraph/blob/master/CON
 
 ## What license is Sourcegraph released under?
 
-
 Sourcegraph OSS is released under the [Apache 2 license](https://github.com/sourcegraph/sourcegraph/blob/master/LICENSE.apache). Sourcegraph OSS comprises all files in this repository except those in the `enterprise/` and `src/enterprise/` directories.
 
 All files in the `enterprise/` and `src/enterprise/` directories are subject to the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/master/LICENSE).
