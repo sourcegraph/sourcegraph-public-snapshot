@@ -67,6 +67,30 @@ describe('Connection', () => {
         await assert.rejects(result, (error: ResponseError<any>) => error.code === ErrorCodes.RequestAborted)
     })
 
+    it('abort request currently being handled', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+
+        const server = createConnection(serverTransports)
+        server.onRequest('m', (_params, signal) => {
+            if (!signal) {
+                throw new Error('!signal')
+            }
+            return new Promise<number>(resolve => {
+                signal.addEventListener('abort', () => resolve(123))
+            })
+        })
+        server.onRequest('ping', () => 'pong')
+        server.listen()
+
+        const client = createConnection(clientTransports)
+        client.listen()
+        const abortController = new AbortController()
+        const result = client.sendRequest('m', undefined, abortController.signal)
+        assert.strictEqual(await client.sendRequest('ping'), 'pong') // waits until the 'm' message starts to be handled
+        abortController.abort()
+        assert.strictEqual(await result, 123)
+    })
+
     it('handle multiple requests', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
