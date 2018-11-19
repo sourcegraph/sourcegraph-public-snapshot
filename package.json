@@ -98,6 +98,7 @@
     "@types/uuid": "3.4.4",
     "@types/webpack": "4.4.17",
     "@types/webpack-dev-server": "3.1.1",
+    "abort-controller": "^1.0.2",
     "autoprefixer": "^9.0.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.0",

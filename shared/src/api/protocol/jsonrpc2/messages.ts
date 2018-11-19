@@ -40,9 +40,6 @@ export namespace ErrorCodes {
     export const ServerNotInitialized = -32002
     export const UnknownErrorCode = -32001
 
-    // Defined by the protocol.
-    export const RequestCancelled = -32800
-
     // Defined by this library.
     export const MessageWriteError = 1
     export const MessageReadError = 2

@@ -1,16 +1,19 @@
+import { AbortController } from 'abort-controller'
 import assert from 'assert'
-import { CancellationTokenSource } from './cancel'
 import { createConnection } from './connection'
 import { createMessagePipe, createMessageTransports } from './helpers.test'
 import { ErrorCodes, ResponseError } from './messages'
 
 describe('Connection', () => {
+    // Polyfill
+    ;(global as any).AbortController = AbortController
+
     it('handle single request', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(method, (p1, _token) => {
+        server.onRequest(method, (p1, _signal) => {
             assert.deepStrictEqual(p1, ['foo'])
             return p1
         })
@@ -26,7 +29,7 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(method, (p1, _token) => {
+        server.onRequest(method, (p1, _signal) => {
             assert.deepStrictEqual(p1, ['foo'])
             return Promise.resolve(p1)
         })
@@ -42,7 +45,7 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(method, (p1, _token) => p1)
+        server.onRequest(method, (p1, _signal) => p1)
         server.listen()
 
         const client = createConnection(clientTransports)
@@ -278,21 +281,21 @@ describe('Connection', () => {
         assert.strictEqual(await client.sendRequest(method, [10, 20, 30]), 60)
     })
 
-    it('params in request/response with token', async () => {
+    it('params in request/response with signal', async () => {
         const method = 'add'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(method, (params: number[], _token) => {
+        server.onRequest(method, (params: number[], _signal) => {
             assert.deepStrictEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
 
         const client = createConnection(clientTransports)
-        const token = new CancellationTokenSource().token
+        const signal = new AbortController().signal
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, [10, 20, 30], token), 60)
+        assert.strictEqual(await client.sendRequest(method, [10, 20, 30], signal), 60)
     })
 
     it('1 param as array in request', async () => {
@@ -310,9 +313,9 @@ describe('Connection', () => {
         server.listen()
 
         const client = createConnection(clientTransports)
-        const token = new CancellationTokenSource().token
+        const signal = new AbortController().signal
         client.listen()
-        assert.strictEqual(await client.sendRequest(type, [10, 20, 30], token), 60)
+        assert.strictEqual(await client.sendRequest(type, [10, 20, 30], signal), 60)
     })
 
     it('1 param as array in notification', done => {
@@ -335,23 +338,23 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest('test', (params: number[], _token) => {
+        server.onRequest('test', (params: number[], _signal) => {
             assert.deepStrictEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
 
         const client = createConnection(clientTransports)
-        const token = new CancellationTokenSource().token
+        const signal = new AbortController().signal
         client.listen()
-        assert.strictEqual(await client.sendRequest('test', [10, 20, 30], token), 60)
+        assert.strictEqual(await client.sendRequest('test', [10, 20, 30], signal), 60)
     })
 
     it('untyped notification', done => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onNotification('test', (params: number[], _token) => {
+        server.onNotification('test', (params: number[], _signal) => {
             assert.deepStrictEqual(params, [10, 20, 30])
             done()
         })
@@ -366,7 +369,7 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest((method: string, params: number[], _token) => {
+        server.onRequest((method: string, params: number[], _signal) => {
             assert.strictEqual(method, 'test')
             assert.deepStrictEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
@@ -374,16 +377,16 @@ describe('Connection', () => {
         server.listen()
 
         const client = createConnection(clientTransports)
-        const token = new CancellationTokenSource().token
+        const signal = new AbortController().signal
         client.listen()
-        assert.strictEqual(await client.sendRequest('test', [10, 20, 30], token), 60)
+        assert.strictEqual(await client.sendRequest('test', [10, 20, 30], signal), 60)
     })
 
     it('star notification handler', done => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onNotification((method: string, params: number[], _token) => {
+        server.onNotification((method: string, params: number[], _signal) => {
             assert.strictEqual(method, 'test')
             assert.deepStrictEqual(params, [10, 20, 30])
             done()
@@ -395,12 +398,12 @@ describe('Connection', () => {
         client.sendNotification('test', [10, 20, 30])
     })
 
-    it('cancellation token is undefined', async () => {
+    it('abort signal is undefined', async () => {
         const type = 'add'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(type, (params: number[], _token) => {
+        server.onRequest(type, (params: number[], _signal) => {
             assert.deepStrictEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
@@ -416,7 +419,7 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(type, (params, _token) => 123)
+        server.onRequest(type, (params, _signal) => 123)
         server.listen()
 
         const client = createConnection(clientTransports)
