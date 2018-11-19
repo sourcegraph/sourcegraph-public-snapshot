@@ -1,4 +1,6 @@
 import assert from 'assert'
+import { Observable } from 'rxjs'
+import { bufferCount } from 'rxjs/operators'
 import { createConnection } from '../protocol/jsonrpc2/connection'
 import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 import { createProxy, handleRequests } from './proxy'
@@ -35,5 +37,25 @@ describe('Proxy', () => {
         it('with variadic arguments ', async () => assert.strictEqual(await proxy.$d(...[2, 3, 4]), 9))
         it('to functions returning a rejected promise', async () => assert.rejects(() => proxy.$e()))
         it('to functions throwing an error', async () => assert.rejects(() => proxy.$f()))
+    })
+
+    it('proxies Observables', async () => {
+        const proxy = createTestProxy({
+            $observe: (...args: number[]) =>
+                new Observable<number>(observer => {
+                    for (const arg of args) {
+                        observer.next(arg + 1)
+                    }
+                    observer.complete()
+                }),
+        })
+
+        assert.deepStrictEqual(
+            await proxy
+                .$observe(1, 2, 3, 4)
+                .pipe(bufferCount(4))
+                .toPromise(),
+            [2, 3, 4, 5]
+        )
     })
 })

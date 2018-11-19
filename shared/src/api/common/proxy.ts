@@ -19,7 +19,12 @@ export function createProxy(connection: Connection, prefix: string): any {
     return new Proxy(Object.create(null), {
         get: (target: any, name: string) => {
             if (!target[name] && name[0] === '$') {
-                target[name] = (...args: any[]) => connection.sendRequest(`${prefix}/${name}`, args)
+                const method = `${prefix}/${name}`
+                if (name.startsWith('$observe')) {
+                    target[name] = (...args: any[]) => connection.observeRequest(method, args)
+                } else {
+                    target[name] = (...args: any[]) => connection.sendRequest(method, args)
+                }
             }
             return target[name]
         },
