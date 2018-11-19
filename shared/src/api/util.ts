@@ -1,3 +1,5 @@
+import { Subscribable } from 'sourcegraph'
+
 /**
  * This file contains (simplified) implementations of Lodash functions. We use these instead of depending on Lodash
  * because depending on it (1) either results in a significantly larger bundle size, if tree-shaking is not enabled
@@ -80,4 +82,11 @@ export function tryCatchPromise<T>(f: () => T | Promise<T>): Promise<T> {
  */
 export function isPromise(value: any): value is Promise<any> {
     return typeof value.then === 'function'
+}
+
+/**
+ * Reports whether value is a {@link sourcegraph.Subscribable}.
+ */
+export function isSubscribable(value: any): value is Subscribable<any> {
+    return typeof value.subscribe === 'function'
 }
