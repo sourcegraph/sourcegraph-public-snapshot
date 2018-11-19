@@ -150,6 +150,7 @@ func main() {
 		}
 
 		cmds := []bk.StepOpt{
+			bk.Cmd("pushd enterprise"),
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
 		}
 
