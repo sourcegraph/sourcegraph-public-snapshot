@@ -76,7 +76,6 @@ export class ConnectionError extends Error {
 type MessageQueue = LinkedMap<string, Message>
 
 export interface Connection extends Unsubscribable {
-    sendRequest<R>(method: string, params?: any): Promise<R>
     sendRequest<R>(method: string, ...params: any[]): Promise<R>
 
     onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void
