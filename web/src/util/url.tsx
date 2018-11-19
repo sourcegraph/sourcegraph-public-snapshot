@@ -1,4 +1,4 @@
-import { Range } from 'vscode-languageserver-types'
+import { Range } from '../../../shared/src/api/protocol/plainTypes'
 import { AbsoluteRepoFile, PositionSpec, RangeSpec, RenderModeSpec, RepoFile, ViewStateSpec } from '../repo'
 
 function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {

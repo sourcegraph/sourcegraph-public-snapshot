@@ -16,10 +16,9 @@ import { toPrettyBlobURL } from '@sourcegraph/codeintellify/lib/url'
 import * as H from 'history'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subscription } from 'rxjs'
+import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
-import { Disposable } from 'vscode-jsonrpc'
 import { Environment } from '../../../../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
 import { getModeFromPath } from '../../../../../shared/src/languages'
@@ -431,13 +430,13 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         }
 
                         if (extensionsController && !info.baseCommitID) {
-                            let oldDecorations: Disposable[] = []
+                            let oldDecorations: Unsubscribable[] = []
 
                             extensionsController.registries.textDocumentDecoration
                                 .getDecorations(toTextDocumentIdentifier(info))
                                 .subscribe(decorations => {
                                     for (const old of oldDecorations) {
-                                        old.dispose()
+                                        old.unsubscribe()
                                     }
                                     oldDecorations = []
                                     for (const decoration of decorations || []) {

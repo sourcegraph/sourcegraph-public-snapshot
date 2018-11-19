@@ -1,13 +1,6 @@
-import {
-    ReferenceInformation,
-    SymbolLocationInformation,
-    WorkspaceReferenceParams,
-} from 'javascript-typescript-langserver/lib/request-type'
 import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { MarkupContent } from 'vscode-languageserver-types'
-import { InitializeResult } from 'vscode-languageserver/lib/main'
 import { Location } from '../../../shared/src/api/protocol/plainTypes'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { normalizeAjaxError } from '../util/errors'
@@ -34,18 +27,11 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
     !hover.contents ||
     (Array.isArray(hover.contents) && hover.contents.length === 0) ||
     hover.contents.every(c => {
-        if (MarkupContent.is(c)) {
-            return !c.value
-        }
         if (typeof c === 'string') {
             return !c
         }
         return !c.value
     })
-
-type ResponseMessages = { 0: { result: InitializeResult } } & any[]
-
-type ResponseResults = { 0: InitializeResult } & any[]
 
 export function sendLSPHTTPRequests(requests: any[], urlPathHint?: string): Observable<any> {
     if (!urlPathHint) {
@@ -75,7 +61,7 @@ export function sendLSPHTTPRequests(requests: any[], urlPathHint?: string): Obse
     )
 }
 
-const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<ResponseResults> =>
+const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<any[]> =>
     sendLSPHTTPRequests(
         [
             {
@@ -93,13 +79,13 @@ const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<
         ].filter(m => m !== null),
         request ? request.method : 'initialize'
     ).pipe(
-        map((results: ResponseMessages) => {
+        map((results: any[]) => {
             for (const result of results) {
                 if (result && result.error) {
                     throw Object.assign(new Error(result.error.message), result.error, { responses: results })
                 }
             }
-            return results.map(result => result && result.result) as ResponseResults
+            return results.map(result => result && result.result) as any[]
         })
     )
 
@@ -110,6 +96,64 @@ const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<
  */
 const sendLSPRequest: (ctx: LSPSelector, request?: LSPRequest) => Observable<any> = (ctx, request) =>
     httpSendLSPRequest(ctx, request).pipe(map(results => results[request ? 1 : 0]))
+
+/**
+ * @todo Remove after migration to new extension-based cross-repository references implementation.
+ */
+export interface SymbolLocationInformation {
+    /**
+     * The location where the symbol is defined, if any
+     */
+    location?: Location
+    /**
+     * Metadata about the symbol that can be used to identify or locate its definition.
+     */
+    symbol: SymbolDescriptor
+}
+
+/**
+ * Represents information about a programming construct that can be used to identify and locate the
+ * construct's symbol. The identification does not have to be unique, but it should be as unique as
+ * possible. It is up to the language server to define the schema of this object.
+ *
+ * In contrast to `SymbolInformation`, `SymbolDescriptor` includes more concrete, language-specific,
+ * metadata about the symbol.
+ *
+ * @todo Remove after migration to new extension-based cross-repository references implementation.
+ */
+export interface SymbolDescriptor {
+    /**
+     * The kind of the symbol as a ts.ScriptElementKind
+     */
+    kind: string
+    /**
+     * The name of the symbol as returned from TS
+     */
+    name: string
+    /**
+     * The kind of the symbol the symbol is contained in, as a ts.ScriptElementKind.
+     * Is an empty string if the symbol has no container.
+     */
+    containerKind: string
+    /**
+     * The name of the symbol the symbol is contained in, as returned from TS.
+     * Is an empty string if the symbol has no container.
+     */
+    containerName: string
+    /**
+     * The file path of the file where the symbol is defined in, relative to the workspace rootPath.
+     */
+    filePath: string
+    /**
+     * A PackageDescriptor describing the package this symbol belongs to.
+     * Is `undefined` if the symbol does not belong to a package.
+     */
+    package?: {
+        name: string
+        version?: string
+        repoURL?: string
+    }
+}
 
 /** Callers should use features.getXdefinition instead. */
 export const fetchXdefinition = memoizeObservable(
@@ -133,12 +177,44 @@ export interface LSPReferencesParams {
     includeDeclaration?: boolean
 }
 
+interface WorkspaceReferenceParams {
+    /**
+     * Metadata about the symbol that is being searched for.
+     */
+    query: Partial<SymbolDescriptor>
+    /**
+     * Hints provides optional hints about where the language server should look in order to find
+     * the symbol (this is an optimization). It is up to the language server to define the schema of
+     * this object.
+     */
+    hints?: {
+        dependeePackageName?: string
+    }
+}
+
 export interface XReferenceOptions extends WorkspaceReferenceParams {
     /**
      * This is not in the spec, but Go and possibly others support it
      * https://github.com/sourcegraph/go-langserver/blob/885ad3639de0e1e6c230db5395ea0f682534b458/pkg/lspext/lspext.go#L32
      */
     limit: number
+}
+
+/**
+ * Represents information about a reference to programming constructs like variables, classes,
+ * interfaces, etc.
+ *
+ * @todo Remove after migration to new extension-based cross-repository references implementation.
+ */
+interface ReferenceInformation {
+    /**
+     * The location in the workspace where the `symbol` is referenced.
+     */
+    reference: Location
+    /**
+     * Metadata about the symbol that can be used to identify or locate its definition.
+     */
+    symbol: SymbolDescriptor
 }
 
 /** Callers should use features.getXreferences instead. */

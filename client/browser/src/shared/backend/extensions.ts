@@ -4,10 +4,9 @@ import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
 import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
-import { combineLatest, from, Observable, Subject, Subscribable, throwError } from 'rxjs'
+import { combineLatest, from, Observable, Subject, Subscribable, throwError, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take, tap } from 'rxjs/operators'
 import uuid from 'uuid'
-import { Disposable } from 'vscode-languageserver'
 import { MessageTransports } from '../../../../../shared/src/api/protocol/jsonrpc2/connection'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { UpdateExtensionSettingsArgs } from '../../../../../shared/src/context'
@@ -68,10 +67,10 @@ export function createMessageTransports(
     })
 }
 
-const mergeDisposables = (...disposables: Disposable[]): Disposable => ({
-    dispose: () => {
-        for (const disposable of disposables) {
-            disposable.dispose()
+const combineUnsubscribables = (...unsubscribables: Unsubscribable[]): Unsubscribable => ({
+    unsubscribe: () => {
+        for (const unsubscribable of unsubscribables) {
+            unsubscribable.unsubscribe()
         }
     },
 })
@@ -83,8 +82,8 @@ export const applyDecoration = ({
 }: {
     fileElement: HTMLElement
     decoration: TextDocumentDecoration
-}): Disposable => {
-    const disposables: Disposable[] = []
+}): Unsubscribable => {
+    const unsubscribables: Unsubscribable[] = []
     const ghLineNumber = decoration.range.start.line + 1
     const lineNumberElements: NodeListOf<HTMLElement> = fileElement.querySelectorAll(
         `td[data-line-number="${ghLineNumber}"]`
@@ -105,8 +104,8 @@ export const applyDecoration = ({
     }
     if (decoration.backgroundColor) {
         lineElement.style.backgroundColor = decoration.backgroundColor
-        disposables.push({
-            dispose: () => {
+        unsubscribables.push({
+            unsubscribe: () => {
                 lineElement.style.backgroundColor = null
             },
         })
@@ -124,13 +123,13 @@ export const applyDecoration = ({
         after.textContent = decoration.after.contentText || null
         const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
         lineElement.appendChild(annotation)
-        disposables.push({
-            dispose: () => {
+        unsubscribables.push({
+            unsubscribe: () => {
                 annotation.remove()
             },
         })
     }
-    return mergeDisposables(...disposables)
+    return combineUnsubscribables(...unsubscribables)
 }
 
 const storageSettingsCascade: Observable<SettingsCascade<SettingsSubject, Settings>> = storage

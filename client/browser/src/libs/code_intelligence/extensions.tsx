@@ -1,8 +1,7 @@
 import * as React from 'react'
 import { render } from 'react-dom'
-import { combineLatest, from, Observable } from 'rxjs'
+import { combineLatest, from, Observable, Unsubscribable } from 'rxjs'
 import { map, take } from 'rxjs/operators'
-import { Disposable } from 'vscode-languageserver'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
@@ -136,10 +135,10 @@ export function initializeExtensions(
     return { extensionsContextController, extensionsController }
 }
 
-const mergeDisposables = (...disposables: Disposable[]): Disposable => ({
-    dispose: () => {
-        for (const disposable of disposables) {
-            disposable.dispose()
+const combineUnsubscribables = (...unsubscribables: Unsubscribable[]): Unsubscribable => ({
+    unsubscribe: () => {
+        for (const unsubscribable of unsubscribables) {
+            unsubscribable.unsubscribe()
         }
     },
 })
@@ -158,8 +157,8 @@ export const applyDecoration = (
         codeView: HTMLElement
         decoration: TextDocumentDecoration
     }
-): Disposable => {
-    const disposables: Disposable[] = []
+): Unsubscribable => {
+    const unsubscribables: Unsubscribable[] = []
 
     const lineNumber = decoration.range.start.line + 1
     const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
@@ -170,8 +169,8 @@ export const applyDecoration = (
     const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
     if (style.backgroundColor) {
         codeElement.style.backgroundColor = style.backgroundColor
-        disposables.push({
-            dispose: () => {
+        unsubscribables.push({
+            unsubscribe: () => {
                 codeElement.style.backgroundColor = null
             },
         })
@@ -205,11 +204,11 @@ export const applyDecoration = (
         annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
         codeElement.appendChild(annotation)
 
-        disposables.push({
-            dispose: () => {
+        unsubscribables.push({
+            unsubscribe: () => {
                 annotation.remove()
             },
         })
     }
-    return mergeDisposables(...disposables)
+    return combineUnsubscribables(...unsubscribables)
 }

@@ -1,5 +1,4 @@
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
-import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { flatten } from 'lodash'
 import { forkJoin, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -13,6 +12,7 @@ import {
     LSPReferencesParams,
     LSPSelector,
     LSPTextDocumentPositionParams,
+    SymbolLocationInformation,
     XReferenceOptions,
 } from './lsp'
 
