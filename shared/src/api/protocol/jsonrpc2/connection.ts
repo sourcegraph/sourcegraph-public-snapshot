@@ -1,3 +1,4 @@
+import { toPromise } from 'abortable-rx'
 import { Observable, Observer, Subject, Unsubscribable } from 'rxjs'
 import { Emitter, Event } from './events'
 import { LinkedMap } from './linkedMap'
@@ -118,6 +119,9 @@ interface ResponseObserver {
 
     /** The timestamp when the request was received. */
     timerStart: number
+
+    /** Whether the request was aborted by the client. */
+    aborted: boolean
 
     /** The observable containing the result value(s) and state. */
     observer: Observer<any>
@@ -554,41 +558,42 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
         transports.writer.write(notificationMessage)
     }
 
-    const requestHelper = <R>(method: string, params?: any[], signal?: AbortSignal): Observable<R> => {
+    /**
+     * @returns a hot observable with the result of sending the request
+     */
+    const requestHelper = <R>(method: string, params?: any[]): Observable<R> => {
         const id = sequenceNumber++
-        const observer = new Subject<R>()
-
         const requestMessage: RequestMessage = {
             jsonrpc: version,
             id,
             method,
             params,
         }
-        let responseObserver: ResponseObserver | null = {
+        const subject = new Subject<R>()
+        const responseObserver: ResponseObserver = {
             method,
             request: trace === Trace.Verbose ? requestMessage : undefined,
             timerStart: Date.now(),
-            observer,
+            aborted: false,
+            observer: subject,
         }
         tracer.requestSent(requestMessage)
         try {
             transports.writer.write(requestMessage)
+            responseObservables[String(id)] = responseObserver
         } catch (e) {
-            // Writing the message failed. So we need to reject the promise.
             responseObserver.observer.error(
                 new ResponseError<void>(ErrorCodes.MessageWriteError, e.message ? e.message : 'Unknown reason')
             )
-            responseObserver = null
         }
-        if (responseObserver) {
-            responseObservables[String(id)] = responseObserver
-        }
-
-        if (signal) {
-            signal.addEventListener('abort', () => sendNotification(ABORT_REQUEST_METHOD, [id]))
-        }
-
-        return observer
+        return new Observable(observer => {
+            subject.subscribe(observer).add(() => {
+                if (responseObserver && !responseObserver.aborted) {
+                    responseObserver.aborted = true
+                    sendNotification(ABORT_REQUEST_METHOD, [id])
+                }
+            })
+        })
     }
 
     const connection: Connection = {
@@ -604,7 +609,7 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
         sendRequest: <R>(method: string, params?: any[], signal?: AbortSignal): Promise<R> => {
             throwIfClosedOrUnsubscribed()
             throwIfNotListening()
-            return requestHelper<R>(method, params, signal).toPromise()
+            return toPromise(requestHelper<R>(method, params), signal)
         },
         onRequest: <R, E>(type: string | StarRequestHandler, handler?: GenericRequestHandler<R, E>): void => {
             throwIfClosedOrUnsubscribed()

@@ -2240,6 +2240,13 @@ abort-controller@^1.0.2:
   dependencies:
     event-target-shim "^3.0.0"
 
+abortable-rx@^1.0.9:
+  version "1.0.9"
+  resolved "https://registry.npmjs.org/abortable-rx/-/abortable-rx-1.0.9.tgz#0e05f4ab6b1eff8e4da9665020c5b226feb5803f"
+  integrity sha512-+lowxyuebPf07jOYk2zlna6TYXq97JyKUSZQPv+XpPMlvJd/U+vRdD/fcjbLxRAzn9UShn0yg22nr6z05+3/1g==
+  dependencies:
+    rxjs "^6.0.0"
+
 accepts@~1.3.4, accepts@~1.3.5:
   version "1.3.5"
   resolved "https://registry.npmjs.org/accepts/-/accepts-1.3.5.tgz#eb777df6011723a3b14e8a72c0805c8e86746bd2"
@@ -12607,7 +12614,7 @@ rxjs@^5.5.2:
   dependencies:
     symbol-observable "1.0.1"
 
-rxjs@^6.3.2, rxjs@^6.3.3:
+rxjs@^6.0.0, rxjs@^6.3.2, rxjs@^6.3.3:
   version "6.3.3"
   resolved "https://registry.npmjs.org/rxjs/-/rxjs-6.3.3.tgz#3c6a7fa420e844a81390fb1158a9ec614f4bad55"
   integrity sha512-JTWmoY9tWCs7zvIk/CvRjhjGaOd+OVBM987mxFo+OW66cGpdKjZcpmc74ES1sB//7Kl/PAe8+wEakuhG4pcgOw==

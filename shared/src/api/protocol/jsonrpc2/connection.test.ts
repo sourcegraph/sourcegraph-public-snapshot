@@ -1,5 +1,6 @@
 import { AbortController } from 'abort-controller'
 import assert from 'assert'
+import { AbortError } from 'p-retry'
 import { createBarrier } from '../../integration-test/helpers.test'
 import { createConnection } from './connection'
 import { createMessagePipe, createMessageTransports } from './helpers.test'
@@ -64,7 +65,7 @@ describe('Connection', () => {
         const result = client.sendRequest('undispatched', ['foo'], abortController.signal)
         abortController.abort()
         b1.done()
-        await assert.rejects(result, (error: ResponseError<any>) => error.code === ErrorCodes.RequestAborted)
+        await assert.rejects(result, (err: AbortError) => err.name === 'AbortError')
     })
 
     it('abort request currently being handled', async () => {
@@ -88,7 +89,7 @@ describe('Connection', () => {
         const result = client.sendRequest('m', undefined, abortController.signal)
         assert.strictEqual(await client.sendRequest('ping'), 'pong') // waits until the 'm' message starts to be handled
         abortController.abort()
-        assert.strictEqual(await result, 123)
+        await assert.rejects(result, (err: AbortError) => err.name === 'AbortError')
     })
 
     it('handle multiple requests', async () => {
