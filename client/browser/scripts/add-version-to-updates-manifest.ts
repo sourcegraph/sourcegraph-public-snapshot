@@ -17,14 +17,14 @@ function addVersionToManifest(): void {
         process.exit(1)
     }
 
-    const extManifest = JSON.parse(fs.readFileSync( extManifestPath, 'utf8'))
+    const extManifest = JSON.parse(fs.readFileSync(extManifestPath, 'utf8'))
     const updatesManifest = JSON.parse(fs.readFileSync(updatesManifestPath, 'utf8'))
 
     const version = extManifest.version as string
 
-    (updatesManifest.addons['sourcegraph-for-firefox@sourcegraph.com'].updates as Update[]).push({
+    ;(updatesManifest.addons['sourcegraph-for-firefox@sourcegraph.com'].updates as Update[]).push({
         version,
-        update_link: updateLink
+        update_link: updateLink,
     })
 
     fs.writeFileSync(updatesManifestPath, JSON.stringify(updatesManifest, null, 4), 'utf8')
