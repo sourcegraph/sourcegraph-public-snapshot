@@ -1,9 +1,12 @@
 package app
 
 import (
+	"context"
+	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -27,26 +30,48 @@ func TestGuessRepoNameFromRemoteURL(t *testing.T) {
 	}
 }
 
-func TestEditorRef(t *testing.T) {
-	ctx := testContext()
+func TestEditorRev(t *testing.T) {
 	repoName := api.RepoName("myRepo")
-
-	db.Mocks.Repos.MockGetByName(t, repoName, 1)
-
-	type BranchAndRevision struct {
-		branchName string
-		revision   string
+	backend.Mocks.Repos.ResolveRev = func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		if rev == "branch" {
+			return api.CommitID(strings.Repeat("b", 40)), nil
+		}
+		if rev == "" || rev == "defaultBranch" {
+			return api.CommitID(strings.Repeat("d", 40)), nil
+		}
+		if len(rev) == 40 {
+			return api.CommitID(rev), nil
+		}
+		t.Fatalf("unexpected RepoRev request rev: %q", rev)
+		return "", nil
 	}
-	tests := map[BranchAndRevision]string{
-		BranchAndRevision{"", "sha1"}:       "@sha1",
-		BranchAndRevision{"branch", ""}:     "@branch",
-		BranchAndRevision{"branch", "sha2"}: "@sha2",
+	backend.Mocks.Repos.GetByName = func(v0 context.Context, name api.RepoName) (*types.Repo, error) {
+		return &types.Repo{
+			ID:   api.RepoID(1),
+			Name: name,
+		}, nil
 	}
-	for input, want := range tests {
-		got, _ := editorRef(ctx, repoName, input.branchName, input.revision)
+	ctx := context.Background()
 
-		if got != want {
-			t.Errorf("%s: got %q, want %q", input, got, want)
+	cases := []struct {
+		inputRev     string
+		expEditorRev string
+		beExplicit   bool
+	}{
+		{strings.Repeat("a", 40), "@" + strings.Repeat("a", 40), false},
+		{"branch", "@branch", false},
+		{"", "", false},
+		{"defaultBranch", "", false},
+		{strings.Repeat("d", 40), "", false},                           // default revision
+		{strings.Repeat("d", 40), "@" + strings.Repeat("d", 40), true}, // default revision, explicit
+	}
+	for _, c := range cases {
+		got, err := editorRev(ctx, repoName, c.inputRev, c.beExplicit)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != c.expEditorRev {
+			t.Errorf("On input rev %q: got %q, want %q", c.inputRev, got, c.expEditorRev)
 		}
 	}
 }
