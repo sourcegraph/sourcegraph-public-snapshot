@@ -1,3 +1,5 @@
+// gen-pipeline.go generates a Buildkite YAML file that tests the entire
+// Sourcegraph application and writes it to stdout.
 package main
 
 import (
@@ -20,6 +22,13 @@ func init() {
 func main() {
 	pipeline := &bk.Pipeline{}
 
+	defer func() {
+		_, err := pipeline.WriteTo(os.Stdout)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	version := os.Getenv("BUILDKITE_TAG")
 	taggedRelease := true // true if this is a semver tagged release
@@ -39,19 +48,107 @@ func main() {
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Cmd("pushd enterprise"),
 	)
+
+	pipeline.AddStep(":white_check_mark:",
+		bk.Cmd("./dev/check/all.sh"))
+
+	pipeline.AddStep(":lipstick:",
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn -s run prettier"))
+
+	pipeline.AddStep(":typescript:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // for speed
+		bk.Env("FORCE_COLOR", "1"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn -s run all:tslint"))
+
+	pipeline.AddStep(":stylelint:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+		bk.Env("FORCE_COLOR", "1"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn -s run all:stylelint"),
+		bk.Cmd("yarn run all:typecheck"))
+
+	pipeline.AddStep(":graphql:",
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn run graphql-lint"))
 
 	pipeline.AddStep(":webpack:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd ../web"),
+		bk.Cmd("pushd web"),
+		bk.Cmd("yarn -s run browserslist"),
+		bk.Cmd("NODE_ENV=production yarn -s run build --color"),
+		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
+		bk.Cmd("popd"))
+
+	pipeline.AddStep(":webpack: :moneybag:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+		bk.Env("FORCE_COLOR", "1"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd web"),
 		bk.Cmd("yarn -s run browserslist"),
 		bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
 		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
 		bk.Cmd("popd"))
+
+	pipeline.AddStep(":docker:",
+		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+
+	// TODO(sqs): reenable the DB backcompat test
+	//
+	// pipeline.AddStep(":postgres:",
+	// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+
+	pipeline.AddStep(":go:",
+		bk.Cmd("go generate ./..."),
+		bk.Cmd("go install -tags dist ./cmd/..."),
+	)
+
+	pipeline.AddStep(":go:",
+		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+		bk.ArtifactPaths("coverage.txt"))
+
+	pipeline.AddStep(":typescript:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+		bk.Env("FORCE_COLOR", "1"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd web"),
+		bk.Cmd("yarn -s run cover"),
+		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
+		bk.Cmd("popd"),
+		bk.ArtifactPaths("web/coverage/coverage-final.json"))
+
+	pipeline.AddStep(":typescript:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+		bk.Env("FORCE_COLOR", "1"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd shared"),
+		bk.Cmd("yarn -s run cover"),
+		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
+		bk.Cmd("popd"),
+		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
+
+	pipeline.AddStep(":typescript:",
+		bk.Env("FORCE_COLOR", "1"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd client/browser"),
+		bk.Cmd("yarn -s run browserslist"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("popd"))
+
+	pipeline.AddWait()
+
+	pipeline.AddStep(":codecov:",
+		bk.Cmd("buildkite-agent artifact download 'web/coverage/coverage-final.json' . || true"), // ignore error when no report exists
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
+		bk.Cmd("buildkite-agent artifact download 'packages/extensions-client-common/coverage/coverage-final.json' . || true"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
+		bk.Cmd("buildkite-agent artifact download 'coverage.txt' coverage.txt || true"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage.txt"))
 
 	// addDockerImageStep adds a build step for a given app.
 	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
@@ -111,35 +208,31 @@ func main() {
 		pipeline.AddStep(":docker:", cmds...)
 	}
 
-	pipeline.AddStep(":go:", bk.Cmd("go install ./cmd/..."))
-	pipeline.AddStep(":go:",
-		bk.Cmd("pushd .."),
-		bk.Cmd("go generate ./cmd/..."),
-		bk.Cmd("popd"),
-		bk.Cmd("go generate ./cmd/..."),
-		bk.Cmd("go install -tags dist ./cmd/..."),
-	)
-
 	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
 		version = version + "_patch"
 		addDockerImageStep(branch[27:], false)
-		_, err := pipeline.WriteTo(os.Stdout)
-		if err != nil {
-			panic(err)
-		}
 		return
 	}
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
-		bk.ArtifactPaths("coverage.txt"))
+	if branch == "bext/release" {
+		pipeline.AddStep(":chrome:",
+			bk.Env("FORCE_COLOR", "1"),
+			bk.Env("DISPLAY", ":99"),
+			bk.Cmd("Xvfb :99 &"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd client/browser"),
+			bk.Cmd("yarn -s run build"),
+			bk.Cmd("yarn -s run test:ci"),
+			bk.Cmd("yarn -s run test:e2e"),
+			bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
+			bk.Cmd("yarn -s run test:ci"),
+			bk.Cmd("yarn -s run test:e2e"),
+			bk.Cmd("yarn -s run release"),
+			bk.Cmd("popd"))
+		return
+	}
 
 	pipeline.AddWait()
-
-	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
-		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
 
 	fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
 		return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
@@ -224,10 +317,5 @@ func main() {
 		if branch != "docker-images/server" && branch != "docker-images/frontend" {
 			addDeploySteps()
 		}
-	}
-
-	_, err := pipeline.WriteTo(os.Stdout)
-	if err != nil {
-		panic(err)
 	}
 }
