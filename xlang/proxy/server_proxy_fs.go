@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/ctxvfs"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/go-lsp/lspext"
 )
 
 // simulateFSLatency simulates latency to test likely performance when

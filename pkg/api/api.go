@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-lsp/lspext"
-	xlang_lspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // RepoID is the unique identifier for a repository.
@@ -136,7 +135,7 @@ type PackageInfo struct {
 	// NOTE: This field is only set when listing packages directly from the language
 	// server. It may not be set when retrieving persisted package information; in that
 	// case, you need to separately query for the dependencies.
-	Dependencies []xlang_lspext.DependencyReference
+	Dependencies []lspext.DependencyReference
 }
 
 // ListPackagesOp specifies a Pkgs.ListPackages operation
