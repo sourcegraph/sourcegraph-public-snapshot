@@ -96,7 +96,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// It now generates the guessed repo URI statically, which means in some cases it won't work, but it
 	// is worth the increase in simplicity (plus there is an error message for users). In the future we can
 	// let users specify a custom mapping to the Sourcegraph repo in their local Git repo.
-	repoURI := guessRepoURIFromRemoteURL(remoteURL)
+	repoURI := guessRepoURIFromRemoteURL(remoteURL, q.Get("pattern"))
 	if repoURI == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
@@ -131,17 +131,31 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 // gitProtocolRegExp is a regular expression that matches any URL that looks like it has a git protocol
 var gitProtocolRegExp = regexp.MustCompile("^(git|(git+)?(https?|ssh))://")
 
-// guessRepoURIFromRemoteURL return a guess at the repo URI for the given remote URL. For example, given
-// "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
-func guessRepoURIFromRemoteURL(urlStr string) api.RepoURI {
+// guessRepoURIFromRemoteURL return a guess at the repo name for the given remote URL.
+//
+// It first normalizes the remote URL (ensuring a scheme exists, stripping any "git@" username in
+// the host, stripping any trailing ".git" from the path, etc.). It then returns the repo name as
+// templatized by the pattern specified, which references the hostname and path of the normalized
+// URL. The default pattern is "{hostname}/{path}".
+//
+// For example, given "https://github.com/foo/bar.git" and an empty pattern, it returns
+// "github.com/foo/bar". Given the same remote URL and pattern "{path}", it returns "foo/bar".
+func guessRepoURIFromRemoteURL(urlStr string, pattern string) api.RepoURI {
+	if pattern == "" {
+		pattern = "{hostname}/{path}"
+	}
+
 	if !gitProtocolRegExp.MatchString(urlStr) {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
 	urlStr = strings.TrimSuffix(urlStr, ".git")
-
 	u, _ := url.Parse(urlStr)
-	if u != nil {
-		return api.RepoURI(u.Hostname() + u.Path)
+	if u == nil {
+		return ""
 	}
-	return ""
+
+	return api.RepoURI(strings.NewReplacer(
+		"{hostname}", u.Hostname(),
+		"{path}", strings.TrimPrefix(u.Path, "/"),
+	).Replace(pattern))
 }
