@@ -44,9 +44,11 @@ export interface ExtConfigurationAPI<C> {
  * @template C - The configuration schema.
  */
 export class ExtConfiguration<C extends SettingsCascade<any>> implements ExtConfigurationAPI<C> {
-    private data = new BehaviorSubject<Readonly<C> | null>(null)
+    private data: BehaviorSubject<Readonly<C>>
 
-    constructor(private proxy: ClientConfigurationAPI) {}
+    constructor(private proxy: ClientConfigurationAPI, initialData: Readonly<C>) {
+        this.data = new BehaviorSubject<Readonly<C>>(initialData)
+    }
 
     public $acceptConfigurationData(data: Readonly<C>): Promise<void> {
         this.data.next(Object.freeze(data))
@@ -54,13 +56,7 @@ export class ExtConfiguration<C extends SettingsCascade<any>> implements ExtConf
     }
 
     public get(): sourcegraph.Configuration<C> {
-        const data = this.data.value
-        if (data === null) {
-            throw new Error(
-                'Configuration is not yet available. `sourcegraph.configuration.get` is not usable until after the extension `activate` function is finished executing. This is a known issue and will be fixed before the beta release of Sourcegraph extensions. In the meantime, work around this limitation by deferring calls to `get`.'
-            )
-        }
-        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, data.final))
+        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, this.data.value.final))
     }
 
     public subscribe(next: () => void): sourcegraph.Unsubscribable {

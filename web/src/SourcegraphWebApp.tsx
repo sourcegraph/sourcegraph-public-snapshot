@@ -118,8 +118,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     'clientApplication.isSourcegraph': true,
                 },
             },
-            extensionsController: createExtensionsController(extensions.context, extension =>
-                Promise.resolve(createMessageTransports(extension))
+            extensionsController: createExtensionsController(extensions.context, (extension, settingsCascade) =>
+                Promise.resolve(createMessageTransports(extension, settingsCascade))
             ),
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             isMainPage: false,

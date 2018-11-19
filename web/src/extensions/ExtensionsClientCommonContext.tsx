@@ -5,6 +5,7 @@ import { concat, Observable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take, withLatestFrom } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
 import { InitData } from '../../../shared/src/api/extension/extensionHost'
+import { SettingsCascade } from '../../../shared/src/api/protocol'
 import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
 import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/client/controller'
@@ -118,7 +119,10 @@ export function updateHighestPrecedenceExtensionSettings(args: {
     )
 }
 
-export function createMessageTransports(extension: Pick<ConfiguredExtension, 'id' | 'manifest'>): MessageTransports {
+export function createMessageTransports(
+    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
+    settingsCascade: SettingsCascade<any>
+): MessageTransports {
     if (!extension.manifest) {
         throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no manifest found`)
     }
@@ -135,6 +139,7 @@ export function createMessageTransports(extension: Pick<ConfiguredExtension, 'id
                 bundleURL: extension.manifest.url,
                 sourcegraphURL: window.context.externalURL,
                 clientApplication: 'sourcegraph',
+                settingsCascade,
             }
             worker.postMessage(initData)
             return createWebWorkerMessageTransports(worker)
