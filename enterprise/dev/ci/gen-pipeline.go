@@ -90,6 +90,13 @@ func main() {
 
 	pipeline.AddStep(":typescript:",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd client/browser"),
+		bk.Cmd("yarn -s run browserslist"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("popd"))
+
+	pipeline.AddStep(":typescript:",
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd web"),
 		bk.Cmd("yarn -s run cover"),
 		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
@@ -103,13 +110,6 @@ func main() {
 		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
 		bk.Cmd("popd"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
-
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("yarn -s run build"),
-		bk.Cmd("popd"))
 
 	pipeline.AddStep(":docker:",
 		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
