@@ -112,6 +112,11 @@ export interface ResponseMessage extends Message {
      * The error object in case a request fails.
      */
     error?: ResponseErrorLiteral<any>
+
+    /**
+     * Whether the request is completed (no more values will be emitted).
+     */
+    complete?: boolean
 }
 
 /**
@@ -156,7 +161,7 @@ export function isResponseMessage(message: Message | undefined): message is Resp
     const candidate = message as ResponseMessage
     return (
         candidate &&
-        (candidate.result !== void 0 || !!candidate.error) &&
+        (candidate.result !== void 0 || !!candidate.error || !!candidate.complete) &&
         (typeof candidate.id === 'string' || typeof candidate.id === 'number' || candidate.id === null)
     )
 }

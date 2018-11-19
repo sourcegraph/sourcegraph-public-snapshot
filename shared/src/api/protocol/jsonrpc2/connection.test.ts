@@ -1,8 +1,8 @@
 import { AbortController } from 'abort-controller'
 import assert from 'assert'
 import { AbortError } from 'p-retry'
-import { of } from 'rxjs'
-import { delay } from 'rxjs/operators'
+import { Observable, of } from 'rxjs'
+import { bufferCount, delay } from 'rxjs/operators'
 import { createBarrier } from '../../integration-test/helpers.test'
 import { createConnection } from './connection'
 import { createMessagePipe, createMessageTransports } from './helpers.test'
@@ -117,6 +117,32 @@ describe('Connection', () => {
         client.listen()
         const result = client.observeRequest<number>('m', [1])
         assert.deepStrictEqual(await result.toPromise(), 2)
+    })
+
+    it('observe request with multiple observable emissions', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+        const server = createConnection(serverTransports)
+        server.onRequest(
+            'm',
+            (params: number[]) =>
+                new Observable<number>(observer => {
+                    for (const v of params) {
+                        observer.next(v + 1)
+                    }
+                    observer.complete()
+                })
+        )
+        server.listen()
+
+        const client = createConnection(clientTransports)
+        client.listen()
+        assert.deepStrictEqual(
+            await client
+                .observeRequest<number>('m', [1, 2, 3, 4])
+                .pipe(bufferCount(4))
+                .toPromise(),
+            [2, 3, 4, 5]
+        )
     })
 
     it('handle multiple requests', async () => {
@@ -498,7 +524,7 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onRequest(type, (params, _signal) => 123)
+        server.onRequest(type, _signal => 123)
         server.listen()
 
         const client = createConnection(clientTransports)

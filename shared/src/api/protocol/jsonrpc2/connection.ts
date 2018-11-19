@@ -199,7 +199,8 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
         if (isRequestMessage(message)) {
             queue.set(createRequestQueueKey(message.id), message)
         } else if (isResponseMessage(message)) {
-            queue.set(createResponseQueueKey(message.id), message)
+            const key = createResponseQueueKey(message.id) + Math.random() // TODO(sqs)
+            queue.set(key, message)
         } else {
             queue.set(createNotificationQueueKey(), message)
         }
@@ -304,10 +305,11 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
 
         const startTime = Date.now()
 
-        function reply(resultOrError: any | ResponseError<any>): void {
+        function reply(resultOrError: any | ResponseError<any>, complete: boolean): void {
             const message: ResponseMessage = {
                 jsonrpc: version,
                 id: requestMessage.id,
+                complete,
             }
             if (resultOrError instanceof ResponseError) {
                 message.error = (resultOrError as ResponseError<any>).toJSON()
@@ -322,6 +324,7 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                 jsonrpc: version,
                 id: requestMessage.id,
                 error: error.toJSON(),
+                complete: true,
             }
             tracer.responseSent(message, requestMessage, startTime)
             transports.writer.write(message)
@@ -336,6 +339,16 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                 jsonrpc: version,
                 id: requestMessage.id,
                 result,
+                complete: true,
+            }
+            tracer.responseSent(message, requestMessage, startTime)
+            transports.writer.write(message)
+        }
+        function replyComplete(): void {
+            const message: ResponseMessage = {
+                jsonrpc: version,
+                id: requestMessage.id,
+                complete: true,
             }
             tracer.responseSent(message, requestMessage, startTime)
             transports.writer.write(message)
@@ -359,14 +372,11 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                     delete requestAbortControllers[signalKey]
                     replySuccess(handlerResult)
                 } else if (isPromise(handlerResult) || isObservable(handlerResult)) {
-                    let resultOrError: any | ResponseError<any>
                     const onComplete = () => {
                         delete requestAbortControllers[signalKey]
                     }
                     from(handlerResult).subscribe(
-                        value => {
-                            resultOrError = value
-                        },
+                        value => reply(value, false),
                         error => {
                             onComplete()
                             if (error instanceof ResponseError) {
@@ -391,17 +401,17 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                         },
                         () => {
                             onComplete()
-                            reply(resultOrError)
+                            replyComplete()
                         }
                     )
                 } else {
                     delete requestAbortControllers[signalKey]
-                    reply(handlerResult)
+                    reply(handlerResult, true)
                 }
             } catch (error) {
                 delete requestAbortControllers[signalKey]
                 if (error instanceof ResponseError) {
-                    reply(error as ResponseError<any>)
+                    reply(error as ResponseError<any>, true)
                 } else if (error && typeof error.message === 'string') {
                     replyError(
                         new ResponseError<void>(ErrorCodes.InternalError, error.message, {
@@ -450,16 +460,15 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                     responsePromise.request || responsePromise.method,
                     responsePromise.timerStart
                 )
-                delete responseObservables[key]
                 try {
                     if (responseMessage.error) {
                         const error = responseMessage.error
                         responsePromise.observer.error(new ResponseError(error.code, error.message, error.data))
                     } else if (responseMessage.result !== undefined) {
                         responsePromise.observer.next(responseMessage.result)
+                    }
+                    if (responseMessage.complete) {
                         responsePromise.observer.complete()
-                    } else {
-                        throw new Error('Should never happen.')
                     }
                 } catch (error) {
                     if (error.message) {
@@ -468,6 +477,10 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                         )
                     } else {
                         logger.error(`Response handler '${responsePromise.method}' failed unexpectedly.`)
+                    }
+                } finally {
+                    if (responseMessage.complete) {
+                        delete responseObservables[key]
                     }
                 }
             } else {
