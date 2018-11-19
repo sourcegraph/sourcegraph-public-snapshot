@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,9 +23,7 @@ import (
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 )
 
 var update = flag.Bool("update", false, "update golden files on disk")
@@ -537,14 +534,6 @@ func (v testRequests) Less(i, j int) bool {
 		panic(err)
 	}
 	return string(ii) < string(jj)
-}
-
-func useMapFS(m map[string]string) func() {
-	orig := proxy.NewRemoteRepoVFS
-	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (proxy.FileSystem, error) {
-		return mapFS(m), nil
-	}
-	return func() { proxy.NewRemoteRepoVFS = orig }
 }
 
 // mapFS lets us easily instantiate a VFS with a map[string]string
