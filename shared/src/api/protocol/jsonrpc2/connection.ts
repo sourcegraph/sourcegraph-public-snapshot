@@ -3,12 +3,6 @@ import { CancelNotification, CancelParams } from './cancel'
 import { CancellationToken, CancellationTokenSource } from './cancel'
 import { ConnectionStrategy } from './connectionStrategy'
 import { Emitter, Event } from './events'
-import {
-    GenericNotificationHandler,
-    GenericRequestHandler,
-    StarNotificationHandler,
-    StarRequestHandler,
-} from './handlers'
 import { LinkedMap } from './linkedMap'
 import {
     ErrorCodes,
@@ -74,6 +68,16 @@ export class ConnectionError extends Error {
 }
 
 type MessageQueue = LinkedMap<string, Message>
+
+type HandlerResult<R, E> = R | ResponseError<E> | Promise<R> | Promise<ResponseError<E>> | Promise<R | ResponseError<E>>
+
+type StarRequestHandler = (method: string, ...params: any[]) => HandlerResult<any, any>
+
+type GenericRequestHandler<R, E> = (...params: any[]) => HandlerResult<R, E>
+
+type StarNotificationHandler = (method: string, ...params: any[]) => void
+
+type GenericNotificationHandler = (...params: any[]) => void
 
 export interface Connection extends Unsubscribable {
     sendRequest<R>(method: string, params?: any[], token?: CancellationToken): Promise<R>
