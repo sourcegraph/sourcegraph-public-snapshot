@@ -381,7 +381,7 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onNotification('test', (params: number[], _signal) => {
+        server.onNotification('test', (params: number[]) => {
             assert.deepStrictEqual(params, [10, 20, 30])
             done()
         })
@@ -413,7 +413,7 @@ describe('Connection', () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
-        server.onNotification((method: string, params: number[], _signal) => {
+        server.onNotification((method: string, params: number[]) => {
             assert.strictEqual(method, 'test')
             assert.deepStrictEqual(params, [10, 20, 30])
             done()

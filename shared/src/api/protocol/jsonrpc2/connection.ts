@@ -69,13 +69,13 @@ type MessageQueue = LinkedMap<string, Message>
 
 type HandlerResult<R, E> = R | ResponseError<E> | Promise<R> | Promise<ResponseError<E>> | Promise<R | ResponseError<E>>
 
-type StarRequestHandler = (method: string, ...params: any[]) => HandlerResult<any, any>
+type StarRequestHandler = (method: string, params?: any, signal?: AbortSignal) => HandlerResult<any, any>
 
-type GenericRequestHandler<R, E> = (...params: any[]) => HandlerResult<R, E>
+type GenericRequestHandler<R, E> = (params?: any, signal?: AbortSignal) => HandlerResult<R, E>
 
-type StarNotificationHandler = (method: string, ...params: any[]) => void
+type StarNotificationHandler = (method: string, params?: any) => void
 
-type GenericNotificationHandler = (...params: any[]) => void
+type GenericNotificationHandler = (params: any) => void
 
 export interface Connection extends Unsubscribable {
     sendRequest<R>(method: string, params?: any[], signal?: AbortSignal): Promise<R>
