@@ -1,4 +1,7 @@
-import { Unsubscribable } from 'sourcegraph'
+import { from, isObservable, Observable, of, Subscribable as RxJSSubscribable } from 'rxjs'
+import { map } from 'rxjs/operators'
+import { Subscribable, Unsubscribable } from 'sourcegraph'
+import { isPromise, isSubscribable } from '../../util'
 
 /**
  * Manages a set of providers and associates a unique ID with each.
@@ -71,4 +74,26 @@ export class ProviderMap<B> {
             this.map.clear()
         }
     }
+}
+
+/**
+ * Returns an Observable that emits the provider result.
+ */
+export function toProviderResultObservable<T, R>(
+    result: Promise<T | undefined | null | Subscribable<T | undefined | null>>,
+    mapFunc: (value: T | undefined | null) => R | undefined | null
+): Observable<R | undefined | null> {
+    return new Observable<R | undefined | null>(observer => {
+        result
+            .then(result => {
+                let observable: Observable<R | undefined | null>
+                if (result && (isPromise(result) || isObservable(result) || isSubscribable(result))) {
+                    observable = from(result as Promise<any> | RxJSSubscribable<any>).pipe(map(mapFunc))
+                } else {
+                    observable = of(mapFunc(result))
+                }
+                observable.subscribe(observer)
+            })
+            .catch(err => observer.error(err))
+    })
 }

@@ -1,14 +1,7 @@
-import { Unsubscribable } from 'rxjs'
-import { CancelNotification, CancelParams } from './cancel'
-import { CancellationToken, CancellationTokenSource } from './cancel'
-import { ConnectionStrategy } from './connectionStrategy'
+import { toPromise } from 'abortable-rx'
+import { from, isObservable, Observable, Observer, Subject, Unsubscribable } from 'rxjs'
+import { isPromise } from '../../util'
 import { Emitter, Event } from './events'
-import {
-    GenericNotificationHandler,
-    GenericRequestHandler,
-    StarNotificationHandler,
-    StarRequestHandler,
-} from './handlers'
 import { LinkedMap } from './linkedMap'
 import {
     ErrorCodes,
@@ -17,6 +10,7 @@ import {
     isResponseMessage,
     Message,
     NotificationMessage,
+    RequestID,
     RequestMessage,
     ResponseError,
     ResponseMessage,
@@ -75,14 +69,30 @@ export class ConnectionError extends Error {
 
 type MessageQueue = LinkedMap<string, Message>
 
+type HandlerResult<R, E> =
+    | R
+    | ResponseError<E>
+    | Promise<R>
+    | Promise<ResponseError<E>>
+    | Promise<R | ResponseError<E>>
+    | Observable<R>
+
+type StarRequestHandler = (method: string, params?: any, signal?: AbortSignal) => HandlerResult<any, any>
+
+type GenericRequestHandler<R, E> = (params?: any, signal?: AbortSignal) => HandlerResult<R, E>
+
+type StarNotificationHandler = (method: string, params?: any) => void
+
+type GenericNotificationHandler = (params: any) => void
+
 export interface Connection extends Unsubscribable {
-    sendRequest<R>(method: string, params?: any): Promise<R>
-    sendRequest<R>(method: string, ...params: any[]): Promise<R>
+    sendRequest<R>(method: string, params?: any[], signal?: AbortSignal): Promise<R>
+    observeRequest<R>(method: string, params?: any[]): Observable<R>
 
     onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void
     onRequest(handler: StarRequestHandler): void
 
-    sendNotification(method: string, ...params: any[]): void
+    sendNotification(method: string, params?: any[]): void
 
     onNotification(method: string, handler: GenericNotificationHandler): void
     onNotification(handler: StarNotificationHandler): void
@@ -101,18 +111,14 @@ export interface MessageTransports {
     writer: MessageWriter
 }
 
-export function createConnection(
-    transports: MessageTransports,
-    logger?: Logger,
-    strategy?: ConnectionStrategy
-): Connection {
+export function createConnection(transports: MessageTransports, logger?: Logger): Connection {
     if (!logger) {
         logger = NullLogger
     }
-    return _createConnection(transports, logger, strategy)
+    return _createConnection(transports, logger)
 }
 
-interface ResponsePromise {
+interface ResponseObserver {
     /** The request's method. */
     method: string
 
@@ -122,8 +128,11 @@ interface ResponsePromise {
     /** The timestamp when the request was received. */
     timerStart: number
 
-    resolve: (response: any) => void
-    reject: (error: any) => void
+    /** Whether the request was aborted by the client. */
+    aborted: boolean
+
+    /** The observable containing the result value(s) and state. */
+    observer: Observer<any>
 }
 
 enum ConnectionState {
@@ -143,7 +152,9 @@ interface NotificationHandlerElement {
     handler: GenericNotificationHandler
 }
 
-function _createConnection(transports: MessageTransports, logger: Logger, strategy?: ConnectionStrategy): Connection {
+const ABORT_REQUEST_METHOD = '$/abortRequest'
+
+function _createConnection(transports: MessageTransports, logger: Logger): Connection {
     let sequenceNumber = 0
     let notificationSquenceNumber = 0
     let unknownResponseSquenceNumber = 0
@@ -156,8 +167,8 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
 
     let timer = false
     let messageQueue: MessageQueue = new LinkedMap<string, Message>()
-    let responsePromises: { [name: string]: ResponsePromise } = Object.create(null)
-    let requestTokens: { [id: string]: CancellationTokenSource } = Object.create(null)
+    let responseObservables: { [name: string]: ResponseObserver } = Object.create(null)
+    let requestAbortControllers: { [id: string]: AbortController } = Object.create(null)
 
     let trace: Trace = Trace.Off
     let tracer: Tracer = noopTracer
@@ -189,14 +200,11 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         if (isRequestMessage(message)) {
             queue.set(createRequestQueueKey(message.id), message)
         } else if (isResponseMessage(message)) {
-            queue.set(createResponseQueueKey(message.id), message)
+            const key = createResponseQueueKey(message.id) + Math.random() // TODO(sqs)
+            queue.set(key, message)
         } else {
             queue.set(createNotificationQueueKey(), message)
         }
-    }
-
-    function cancelUndispatched(_message: Message): ResponseMessage | undefined {
-        return undefined
     }
 
     function isListening(): boolean {
@@ -266,23 +274,21 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
 
     const callback: DataCallback = message => {
         try {
-            // We have received a cancellation message. Check if the message is still in the queue and cancel it if
-            // allowed to do so.
-            if (isNotificationMessage(message) && message.method === CancelNotification.type) {
-                const key = createRequestQueueKey((message.params as CancelParams).id)
-                const toCancel = messageQueue.get(key)
-                if (isRequestMessage(toCancel)) {
-                    const response =
-                        strategy && strategy.cancelUndispatched
-                            ? strategy.cancelUndispatched(toCancel, cancelUndispatched)
-                            : cancelUndispatched(toCancel)
-                    if (response && (response.error !== undefined || response.result !== undefined)) {
-                        messageQueue.delete(key)
-                        response.id = toCancel.id
-                        tracer.responseCanceled(response, toCancel, message)
-                        transports.writer.write(response)
-                        return
+            // We have received an abort signal. Check if the message is still in the queue and abort it if allowed
+            // to do so.
+            if (isNotificationMessage(message) && message.method === ABORT_REQUEST_METHOD) {
+                const key = createRequestQueueKey(message.params[0])
+                const toAbort = messageQueue.get(key)
+                if (isRequestMessage(toAbort)) {
+                    messageQueue.delete(key)
+                    const response: ResponseMessage = {
+                        jsonrpc: '2.0',
+                        id: toAbort.id,
+                        error: { code: ErrorCodes.RequestAborted, message: 'request aborted' },
                     }
+                    tracer.responseAborted(response, toAbort, message)
+                    transports.writer.write(response)
+                    return
                 }
             }
             addMessageToQueue(messageQueue, message)
@@ -300,10 +306,11 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
 
         const startTime = Date.now()
 
-        function reply(resultOrError: any | ResponseError<any>): void {
+        function reply(resultOrError: any | ResponseError<any>, complete: boolean): void {
             const message: ResponseMessage = {
                 jsonrpc: version,
                 id: requestMessage.id,
+                complete,
             }
             if (resultOrError instanceof ResponseError) {
                 message.error = (resultOrError as ResponseError<any>).toJSON()
@@ -318,6 +325,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 jsonrpc: version,
                 id: requestMessage.id,
                 error: error.toJSON(),
+                complete: true,
             }
             tracer.responseSent(message, requestMessage, startTime)
             transports.writer.write(message)
@@ -332,6 +340,16 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 jsonrpc: version,
                 id: requestMessage.id,
                 result,
+                complete: true,
+            }
+            tracer.responseSent(message, requestMessage, startTime)
+            transports.writer.write(message)
+        }
+        function replyComplete(): void {
+            const message: ResponseMessage = {
+                jsonrpc: version,
+                id: requestMessage.id,
+                complete: true,
             }
             tracer.responseSent(message, requestMessage, startTime)
             transports.writer.write(message)
@@ -342,27 +360,26 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         const element = requestHandlers[requestMessage.method]
         const requestHandler: GenericRequestHandler<any, any> | undefined = element && element.handler
         if (requestHandler || starRequestHandler) {
-            const cancellationSource = new CancellationTokenSource()
-            const tokenKey = String(requestMessage.id)
-            requestTokens[tokenKey] = cancellationSource
+            const abortController = new AbortController()
+            const signalKey = String(requestMessage.id)
+            requestAbortControllers[signalKey] = abortController
             try {
                 const params = requestMessage.params !== undefined ? requestMessage.params : null
                 const handlerResult = requestHandler
-                    ? requestHandler(params, cancellationSource.token)
-                    : starRequestHandler!(requestMessage.method, params, cancellationSource.token)
+                    ? requestHandler(params, abortController.signal)
+                    : starRequestHandler!(requestMessage.method, params, abortController.signal)
 
-                const promise = handlerResult as Promise<any | ResponseError<any>>
                 if (!handlerResult) {
-                    delete requestTokens[tokenKey]
+                    delete requestAbortControllers[signalKey]
                     replySuccess(handlerResult)
-                } else if (promise.then) {
-                    promise.then(
-                        (resultOrError): any | ResponseError<any> => {
-                            delete requestTokens[tokenKey]
-                            reply(resultOrError)
-                        },
+                } else if (isPromise(handlerResult) || isObservable(handlerResult)) {
+                    const onComplete = () => {
+                        delete requestAbortControllers[signalKey]
+                    }
+                    from(handlerResult).subscribe(
+                        value => reply(value, false),
                         error => {
-                            delete requestTokens[tokenKey]
+                            onComplete()
                             if (error instanceof ResponseError) {
                                 replyError(error as ResponseError<any>)
                             } else if (error && typeof error.message === 'string') {
@@ -382,16 +399,20 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                                     )
                                 )
                             }
+                        },
+                        () => {
+                            onComplete()
+                            replyComplete()
                         }
                     )
                 } else {
-                    delete requestTokens[tokenKey]
-                    reply(handlerResult)
+                    delete requestAbortControllers[signalKey]
+                    reply(handlerResult, true)
                 }
             } catch (error) {
-                delete requestTokens[tokenKey]
+                delete requestAbortControllers[signalKey]
                 if (error instanceof ResponseError) {
-                    reply(error as ResponseError<any>)
+                    reply(error as ResponseError<any>, true)
                 } else if (error && typeof error.message === 'string') {
                     replyError(
                         new ResponseError<void>(ErrorCodes.InternalError, error.message, {
@@ -433,30 +454,34 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             }
         } else {
             const key = String(responseMessage.id)
-            const responsePromise = responsePromises[key]
-            if (responsePromise) {
+            const responseObservable = responseObservables[key]
+            if (responseObservable) {
                 tracer.responseReceived(
                     responseMessage,
-                    responsePromise.request || responsePromise.method,
-                    responsePromise.timerStart
+                    responseObservable.request || responseObservable.method,
+                    responseObservable.timerStart
                 )
-                delete responsePromises[key]
                 try {
                     if (responseMessage.error) {
                         const error = responseMessage.error
-                        responsePromise.reject(new ResponseError(error.code, error.message, error.data))
+                        responseObservable.observer.error(new ResponseError(error.code, error.message, error.data))
                     } else if (responseMessage.result !== undefined) {
-                        responsePromise.resolve(responseMessage.result)
-                    } else {
-                        throw new Error('Should never happen.')
+                        responseObservable.observer.next(responseMessage.result)
+                    }
+                    if (responseMessage.complete) {
+                        responseObservable.observer.complete()
                     }
                 } catch (error) {
                     if (error.message) {
                         logger.error(
-                            `Response handler '${responsePromise.method}' failed with message: ${error.message}`
+                            `Response handler '${responseObservable.method}' failed with message: ${error.message}`
                         )
                     } else {
-                        logger.error(`Response handler '${responsePromise.method}' failed unexpectedly.`)
+                        logger.error(`Response handler '${responseObservable.method}' failed unexpectedly.`)
+                    }
+                } finally {
+                    if (responseMessage.complete) {
+                        delete responseObservables[key]
                     }
                 }
             } else {
@@ -471,12 +496,12 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             return
         }
         let notificationHandler: GenericNotificationHandler | undefined
-        if (message.method === CancelNotification.type) {
-            notificationHandler = (params: CancelParams) => {
-                const id = params.id
-                const source = requestTokens[String(id)]
-                if (source) {
-                    source.cancel()
+        if (message.method === ABORT_REQUEST_METHOD) {
+            notificationHandler = (params: [RequestID]) => {
+                const id = params[0]
+                const abortController = requestAbortControllers[String(id)]
+                if (abortController) {
+                    abortController.abort()
                 }
             }
         } else {
@@ -519,9 +544,11 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         const responseMessage: ResponseMessage = message as ResponseMessage
         if (typeof responseMessage.id === 'string' || typeof responseMessage.id === 'number') {
             const key = String(responseMessage.id)
-            const responseHandler = responsePromises[key]
+            const responseHandler = responseObservables[key]
             if (responseHandler) {
-                responseHandler.reject(new Error('The received response has neither a result nor an error property.'))
+                responseHandler.observer.error(
+                    new Error('The received response has neither a result nor an error property.')
+                )
             }
         }
     }
@@ -547,17 +574,57 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         }
     }
 
+    const sendNotification = (method: string, params?: any[]): void => {
+        throwIfClosedOrUnsubscribed()
+        const notificationMessage: NotificationMessage = {
+            jsonrpc: version,
+            method,
+            params,
+        }
+        tracer.notificationSent(notificationMessage)
+        transports.writer.write(notificationMessage)
+    }
+
+    /**
+     * @returns a hot observable with the result of sending the request
+     */
+    const requestHelper = <R>(method: string, params?: any[]): Observable<R> => {
+        const id = sequenceNumber++
+        const requestMessage: RequestMessage = {
+            jsonrpc: version,
+            id,
+            method,
+            params,
+        }
+        const subject = new Subject<R>()
+        const responseObserver: ResponseObserver = {
+            method,
+            request: trace === Trace.Verbose ? requestMessage : undefined,
+            timerStart: Date.now(),
+            aborted: false,
+            observer: subject,
+        }
+        tracer.requestSent(requestMessage)
+        try {
+            transports.writer.write(requestMessage)
+            responseObservables[String(id)] = responseObserver
+        } catch (e) {
+            responseObserver.observer.error(
+                new ResponseError<void>(ErrorCodes.MessageWriteError, e.message ? e.message : 'Unknown reason')
+            )
+        }
+        return new Observable(observer => {
+            subject.subscribe(observer).add(() => {
+                if (responseObserver && !responseObserver.aborted) {
+                    responseObserver.aborted = true
+                    sendNotification(ABORT_REQUEST_METHOD, [id])
+                }
+            })
+        })
+    }
+
     const connection: Connection = {
-        sendNotification: (method: string, params: any): void => {
-            throwIfClosedOrUnsubscribed()
-            const notificationMessage: NotificationMessage = {
-                jsonrpc: version,
-                method,
-                params,
-            }
-            tracer.notificationSent(notificationMessage)
-            transports.writer.write(notificationMessage)
-        },
+        sendNotification,
         onNotification: (type: string | StarNotificationHandler, handler?: GenericNotificationHandler): void => {
             throwIfClosedOrUnsubscribed()
             if (typeof type === 'function') {
@@ -566,45 +633,15 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 notificationHandlers[type] = { type: undefined, handler }
             }
         },
-        sendRequest: <R>(method: string, params: any, token?: CancellationToken) => {
+        sendRequest: <R>(method: string, params?: any[], signal?: AbortSignal): Promise<R> => {
             throwIfClosedOrUnsubscribed()
             throwIfNotListening()
-            token = CancellationToken.is(token) ? token : undefined
-            const id = sequenceNumber++
-            const result = new Promise<R>((resolve, reject) => {
-                const requestMessage: RequestMessage = {
-                    jsonrpc: version,
-                    id,
-                    method,
-                    params,
-                }
-                let responsePromise: ResponsePromise | null = {
-                    method,
-                    request: trace === Trace.Verbose ? requestMessage : undefined,
-                    timerStart: Date.now(),
-                    resolve,
-                    reject,
-                }
-                tracer.requestSent(requestMessage)
-                try {
-                    transports.writer.write(requestMessage)
-                } catch (e) {
-                    // Writing the message failed. So we need to reject the promise.
-                    responsePromise.reject(
-                        new ResponseError<void>(ErrorCodes.MessageWriteError, e.message ? e.message : 'Unknown reason')
-                    )
-                    responsePromise = null
-                }
-                if (responsePromise) {
-                    responsePromises[String(id)] = responsePromise
-                }
-            })
-            if (token) {
-                token.onCancellationRequested(() => {
-                    connection.sendNotification(CancelNotification.type, { id })
-                })
-            }
-            return result
+            return toPromise(requestHelper<R>(method, params), signal)
+        },
+        observeRequest: <R>(method: string, params?: any[]): Observable<R> => {
+            throwIfClosedOrUnsubscribed()
+            throwIfNotListening()
+            return requestHelper<R>(method, params)
         },
         onRequest: <R, E>(type: string | StarRequestHandler, handler?: GenericRequestHandler<R, E>): void => {
             throwIfClosedOrUnsubscribed()
@@ -633,18 +670,18 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             }
             state = ConnectionState.Unsubscribed
             unsubscribeEmitter.fire(undefined)
-            for (const key of Object.keys(responsePromises)) {
-                responsePromises[key].reject(
+            for (const key of Object.keys(responseObservables)) {
+                responseObservables[key].observer.error(
                     new ConnectionError(
                         ConnectionErrors.Unsubscribed,
                         `The underlying JSON-RPC connection got unsubscribed while responding to this ${
-                            responsePromises[key].method
+                            responseObservables[key].method
                         } request.`
                     )
                 )
             }
-            responsePromises = Object.create(null)
-            requestTokens = Object.create(null)
+            responseObservables = Object.create(null)
+            requestAbortControllers = Object.create(null)
             messageQueue = new LinkedMap<string, Message>()
             transports.writer.unsubscribe()
             transports.reader.unsubscribe()

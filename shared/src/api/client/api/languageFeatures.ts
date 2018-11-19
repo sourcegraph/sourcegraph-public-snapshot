@@ -62,7 +62,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
             this.hoverRegistry.registerProvider(
                 { documentSelector: selector },
                 (params: TextDocumentPositionParams): Observable<Hover | null | undefined> =>
-                    from(this.proxy.$provideHover(id, params.textDocument.uri, params.position))
+                    from(this.proxy.$observeHover(id, params.textDocument.uri, params.position))
             )
         )
     }
@@ -73,7 +73,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
             this.definitionRegistry.registerProvider(
                 { documentSelector: selector },
                 (params: TextDocumentPositionParams): Observable<Definition> =>
-                    from(this.proxy.$provideDefinition(id, params.textDocument.uri, params.position)).pipe(
+                    from(this.proxy.$observeDefinition(id, params.textDocument.uri, params.position)).pipe(
                         map(result => result || [])
                     )
             )
@@ -86,7 +86,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
             this.typeDefinitionRegistry.registerProvider(
                 { documentSelector: selector },
                 (params: TextDocumentPositionParams): Observable<Definition> =>
-                    from(this.proxy.$provideTypeDefinition(id, params.textDocument.uri, params.position)).pipe(
+                    from(this.proxy.$observeTypeDefinition(id, params.textDocument.uri, params.position)).pipe(
                         map(result => result || [])
                     )
             )
@@ -99,7 +99,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
             this.implementationRegistry.registerProvider(
                 { documentSelector: selector },
                 (params: TextDocumentPositionParams): Observable<Definition> =>
-                    from(this.proxy.$provideImplementation(id, params.textDocument.uri, params.position)).pipe(
+                    from(this.proxy.$observeImplementation(id, params.textDocument.uri, params.position)).pipe(
                         map(result => result || [])
                     )
             )
@@ -113,7 +113,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
                 { documentSelector: selector },
                 (params: ReferenceParams): Observable<Location[]> =>
                     from(
-                        this.proxy.$provideReferences(id, params.textDocument.uri, params.position, params.context)
+                        this.proxy.$observeReferences(id, params.textDocument.uri, params.position, params.context)
                     ).pipe(map(result => result || []))
             )
         )

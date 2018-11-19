@@ -2233,6 +2233,20 @@ abbrev@1, abbrev@~1.1.1:
   resolved "https://registry.npmjs.org/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
   integrity sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==
 
+abort-controller@^1.0.2:
+  version "1.0.2"
+  resolved "http://registry.npmjs.org/abort-controller/-/abort-controller-1.0.2.tgz#d326cbea17af071f5313b1eca3f4f3df4eb54431"
+  integrity sha512-GhTbj5xmglMhDWt5dbtSliHSYgUv1qOVaUA24jYuCdMBAjgXqSzWXVxAhZGPDWWi04lPbV5JKycNmfRPtre/Ng==
+  dependencies:
+    event-target-shim "^3.0.0"
+
+abortable-rx@^1.0.9:
+  version "1.0.9"
+  resolved "https://registry.npmjs.org/abortable-rx/-/abortable-rx-1.0.9.tgz#0e05f4ab6b1eff8e4da9665020c5b226feb5803f"
+  integrity sha512-+lowxyuebPf07jOYk2zlna6TYXq97JyKUSZQPv+XpPMlvJd/U+vRdD/fcjbLxRAzn9UShn0yg22nr6z05+3/1g==
+  dependencies:
+    rxjs "^6.0.0"
+
 accepts@~1.3.4, accepts@~1.3.5:
   version "1.3.5"
   resolved "https://registry.npmjs.org/accepts/-/accepts-1.3.5.tgz#eb777df6011723a3b14e8a72c0805c8e86746bd2"
@@ -6131,6 +6145,11 @@ event-emitter@^0.3.5:
   dependencies:
     d "1"
     es5-ext "~0.10.14"
+
+event-target-shim@^3.0.0:
+  version "3.0.2"
+  resolved "https://registry.npmjs.org/event-target-shim/-/event-target-shim-3.0.2.tgz#af25bb55a97c670bbeba985c82647fb64d892153"
+  integrity sha512-HK5GhnEAkm7fLy249GtF7DIuYmjLm85Ft6ssj7DhVl8Tx/z9+v0W6aiIVUdT4AXWGYy5Fc+s6gqBI49Bf0LejQ==
 
 eventemitter3@^3.0.0:
   version "3.1.0"
@@ -12595,7 +12614,7 @@ rxjs@^5.5.2:
   dependencies:
     symbol-observable "1.0.1"
 
-rxjs@^6.3.2, rxjs@^6.3.3:
+rxjs@^6.0.0, rxjs@^6.3.2, rxjs@^6.3.3:
   version "6.3.3"
   resolved "https://registry.npmjs.org/rxjs/-/rxjs-6.3.3.tgz#3c6a7fa420e844a81390fb1158a9ec614f4bad55"
   integrity sha512-JTWmoY9tWCs7zvIk/CvRjhjGaOd+OVBM987mxFo+OW66cGpdKjZcpmc74ES1sB//7Kl/PAe8+wEakuhG4pcgOw==
