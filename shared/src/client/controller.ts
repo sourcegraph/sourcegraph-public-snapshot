@@ -1,5 +1,5 @@
 import { from, Subject, Unsubscribable } from 'rxjs'
-import { filter, map, mergeMap } from 'rxjs/operators'
+import { filter, first, map, mergeMap } from 'rxjs/operators'
 import { Controller as BaseController, ExtensionConnectionKey } from '../api/client/controller'
 import { Environment } from '../api/client/environment'
 import { ExecuteCommandParams } from '../api/client/providers/command'
@@ -120,11 +120,22 @@ declare global {
  */
 export function createController<S extends SettingsSubject, C extends Settings>(
     context: Context<S, C>,
-    createMessageTransports: (extension: ConfiguredExtension) => Promise<MessageTransports>
+    createMessageTransports: (
+        extension: ConfiguredExtension,
+        settingsCascade: SettingsCascade<S, C>
+    ) => Promise<MessageTransports>
 ): Controller<S, C> {
-    const controller = new Controller<S, C>({
+    const controller: Controller<S, C> = new Controller<S, C>({
         clientOptions: (_key: ExtensionConnectionKey, extension: ConfiguredExtension) => ({
-            createMessageTransports: () => createMessageTransports(extension),
+            createMessageTransports: async () => {
+                const settingsCascade = await controller.environment
+                    .pipe(
+                        first(),
+                        map(({ configuration }) => configuration)
+                    )
+                    .toPromise()
+                return createMessageTransports(extension, settingsCascade)
+            },
         }),
         environmentFilter,
     })

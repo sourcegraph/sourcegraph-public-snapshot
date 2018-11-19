@@ -46,7 +46,8 @@ const createPlatformMessageTransports = (connectionInfo: ExtensionConnectionInfo
     })
 
 export function createMessageTransports(
-    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>
+    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
+    settingsCascade: SettingsCascade<any>
 ): Promise<MessageTransports> {
     if (!extension.manifest) {
         throw new Error(`unable to connect to extension ${JSON.stringify(extension.id)}: no manifest found`)
@@ -61,6 +62,7 @@ export function createMessageTransports(
     return createPlatformMessageTransports({
         extensionID: extension.id,
         jsBundleURL: extension.manifest.url,
+        settingsCascade,
     }).catch(err => {
         console.error('Error connecting to', extension.id + ':', err)
         throw err

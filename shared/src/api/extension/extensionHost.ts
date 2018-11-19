@@ -1,6 +1,7 @@
 import { Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { createProxy, handleRequests } from '../common/proxy'
+import { SettingsCascade } from '../protocol'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../protocol/jsonrpc2/transports/webWorker'
 import { ExtCommands } from './api/commands'
@@ -45,6 +46,12 @@ export interface InitData {
 
     /** @see {@link module:sourcegraph.internal.clientApplication} */
     clientApplication: 'sourcegraph' | 'other'
+
+    /**
+     * The settings cascade at the time of extension host initialization. It must be provided because extensions
+     * expect that the settings are synchronously available when their `activate` method is called.
+     */
+    settingsCascade: SettingsCascade<any>
 }
 
 /**
@@ -91,7 +98,7 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     const views = new ExtViews(proxy('views'))
     handleRequests(connection, 'views', views)
 
-    const configuration = new ExtConfiguration<any>(proxy('configuration'))
+    const configuration = new ExtConfiguration<any>(proxy('configuration'), initData.settingsCascade)
     handleRequests(connection, 'configuration', configuration)
 
     const languageFeatures = new ExtLanguageFeatures(proxy('languageFeatures'), documents)

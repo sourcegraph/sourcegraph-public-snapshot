@@ -46,7 +46,14 @@ export async function integrationTestContext(): Promise<
     clientController.configurationUpdates.subscribe(({ resolve }) => resolve(Promise.resolve()))
 
     const extensionHost = createExtensionHost(
-        { bundleURL: '', sourcegraphURL: 'https://example.com', clientApplication: 'sourcegraph' },
+        {
+            bundleURL: '',
+            sourcegraphURL: 'https://example.com',
+            clientApplication: 'sourcegraph',
+            settingsCascade: {
+                final: { a: 1 },
+            },
+        },
         serverTransports
     )
 

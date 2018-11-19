@@ -657,10 +657,6 @@ declare module 'sourcegraph' {
         /**
          * Returns the full configuration object.
          *
-         * @todo This function throws an error if it is called synchronously in the extension's `activate`
-         *       function. This will be fixed before beta. See the test "Configuration (integration) / is usable in
-         *       synchronous activation functions".
-         *
          * @template C The configuration schema.
          * @return The full configuration object.
          */

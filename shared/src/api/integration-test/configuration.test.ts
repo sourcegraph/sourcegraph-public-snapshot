@@ -6,12 +6,9 @@ import { collectSubscribableValues, integrationTestContext } from './helpers.tes
 
 describe('Configuration (integration)', () => {
     it('is usable in synchronous activation functions', async () => {
-        // Test that extensions can access configuration synchronously in their `activate` functions.
         const { extensionHost } = await integrationTestContext()
         assert.doesNotThrow(() => extensionHost.configuration.subscribe(() => void 0))
-        // TODO(sqs): Make the `get` function usable synchronously so this test passes.
-        //
-        // assert.doesNotThrow(() => extensionHost.configuration.get())
+        assert.doesNotThrow(() => extensionHost.configuration.get())
     })
 
     describe('Configuration#get', () => {

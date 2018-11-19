@@ -1,7 +1,9 @@
+import { InitData } from '../../../shared/src/api/extension/extensionHost'
+
 /**
  * The information necessary to connect to a Sourcegraph extension.
  */
-export interface ExtensionConnectionInfo {
+export interface ExtensionConnectionInfo extends Pick<InitData, 'settingsCascade'> {
     extensionID: string
     jsBundleURL: string
 }
