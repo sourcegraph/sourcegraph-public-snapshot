@@ -5,18 +5,21 @@ import { Connection } from '../protocol/jsonrpc2/connection'
  */
 export function createProxyAndHandleRequests(prefix: string, connection: Connection, handler: any): any {
     handleRequests(connection, prefix, handler)
-    return createProxy((name, ...args: any[]) => connection.sendRequest(`${prefix}/${name}`, ...args))
+    return createProxy(connection, prefix)
 }
 
 /**
- * Creates a Proxy that translates method calls (whose name begins with "$") on the returned object to invocations
- * of the {@link call} function with the method name and arguments of the original call.
+ * Creates a Proxy that translates method calls (whose name begins with "$") on the returned object to messages
+ * named `${prefix}/${name}` on the connection.
+ *
+ * @param connection - The connection to send messages on when proxy methods are called.
+ * @param prefix - The name prefix for connection methods.
  */
-export function createProxy(call: (name: string, args: any[]) => any): any {
+export function createProxy(connection: Connection, prefix: string): any {
     return new Proxy(Object.create(null), {
         get: (target: any, name: string) => {
             if (!target[name] && name[0] === '$') {
-                target[name] = (...args: any[]) => call(name, args)
+                target[name] = (...args: any[]) => connection.sendRequest(`${prefix}/${name}`, args)
             }
             return target[name]
         },
@@ -25,14 +28,15 @@ export function createProxy(call: (name: string, args: any[]) => any): any {
 
 /**
  * Forwards all requests received on the connection to the corresponding method on the handler object. The
- * connection method `${prefix}/${name}` corresponds to the `${name}` method on the handler object. names.
+ * connection method `${prefix}/${name}` corresponds to the `${name}` method on the handler object.
  *
  * @param handler - An instance of a class whose methods should be called when the connection receives
- *                  corresponding requests.
+ *                  corresponding requests, or an object created with Object.create(null) (or otherwise with a null
+ *                  prototype) whose properties contain functions to be called.
  */
 export function handleRequests(connection: Connection, prefix: string, handler: any): void {
     // A class instance's methods are own, non-enumerable properties of its prototype.
-    const proto = Object.getPrototypeOf(handler)
+    const proto = Object.getPrototypeOf(handler) || handler
     for (const name of Object.getOwnPropertyNames(proto)) {
         const value = proto[name]
         if (name[0] === '$' && typeof value === 'function') {
