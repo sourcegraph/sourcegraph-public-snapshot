@@ -698,8 +698,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
 		results    []*searchResultResolver
-		// results2   []*genericSearchResultResolver
-		results2Mu sync.Mutex
 		resultsMu  sync.Mutex
 		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
 		commonMu   sync.Mutex
@@ -749,12 +747,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					resultsMu.Lock()
 					results = append(results, repoResults...)
 					resultsMu.Unlock()
-					results2Mu.Lock()
-					// for _, repoMatch := range repoResults {
-					// 	repoName := fmt.Sprintf("[%s](%s)", repoMatch.repo.Name(), repoMatch.repo.URL())
-					// 	// results2 = append(results2, &genericSearchResultResolver{icon: fileIcon, label: repoName, url: repoMatch.repo.URL()})
-					// }
-					results2Mu.Unlock()
 				}
 				if repoCommon != nil {
 					commonMu.Lock()
@@ -936,8 +928,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		start:               start,
 		searchResultsCommon: common,
 		results:             results,
-		// results2:            results2,
-		alert: alert,
+		alert:               alert,
 	}
 
 	return &resultsResolver, multiErr.ErrorOrNil()
