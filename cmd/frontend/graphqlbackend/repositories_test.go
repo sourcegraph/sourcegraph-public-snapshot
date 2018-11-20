@@ -44,31 +44,3 @@ func TestRepositories(t *testing.T) {
 		},
 	})
 }
-
-func TestAddRepository(t *testing.T) {
-	resetMocks()
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	backend.Mocks.Repos.Add = func(name api.RepoName) error { return nil }
-	db.Mocks.Repos.MockGetByName(t, "my/repo", 123)
-	gqltesting.RunTests(t, []*gqltesting.Test{
-		{
-			Schema: GraphQLSchema,
-			Query: `
-				mutation {
-					addRepository(name: "my/repo") {
-					    id
-					}
-				}
-			`,
-			ExpectedResult: `
-				{
-					"addRepository": {
-						"id": "UmVwb3NpdG9yeToxMjM="
-					}
-				}
-			`,
-		},
-	})
-}
