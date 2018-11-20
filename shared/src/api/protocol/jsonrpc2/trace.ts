@@ -93,11 +93,7 @@ export class BrowserConsoleTracer implements Tracer {
             typeof request === 'string' ? request : request.method
         )
         ;(console.groupCollapsed as any)(...prefix)
-        if (message.error) {
-            console.log('Error:', message.error)
-        } else {
-            console.log('Result:', message.result)
-        }
+        console.log('Response:', message)
         console.log('Request:', request)
         console.log('Duration: %d msec', Date.now() - startTime)
         console.groupEnd()
@@ -121,11 +117,7 @@ export class BrowserConsoleTracer implements Tracer {
             console.log(...prefix, message.error || message.result)
         } else {
             ;(console.groupCollapsed as any)(...prefix)
-            if (message.error) {
-                console.log('Error:', message.error)
-            } else {
-                console.log('Result:', message.result)
-            }
+            console.log('Response:', message)
             console.log('Request:', request)
             console.log('Duration: %d msec', Date.now() - startTime)
             console.groupEnd()
