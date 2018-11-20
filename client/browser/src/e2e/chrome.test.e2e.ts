@@ -93,6 +93,7 @@ describe('Sourcegraph Chrome extension', () => {
             }
             try {
                 await page.close()
+                console.log('page closed')
             } catch (e) {
                 console.log('caught page close', e)
             }
