@@ -7,8 +7,8 @@ import { Link } from 'react-router-dom'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import { debounceTime } from 'rxjs/operators'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { eventLogger } from '../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
 const defaultQuery = `# Type queries here, with completion, validation, and hovers.
 #

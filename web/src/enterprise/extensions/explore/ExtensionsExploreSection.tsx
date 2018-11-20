@@ -3,10 +3,10 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
 import { gql } from '../../../../../shared/src/graphql'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import { queryGraphQL } from '../../../backend/graphql'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { ExtensionsExploreSectionExtensionCard } from './ExtensionsExploreSectionExtensionCard'
 
 interface Props {}

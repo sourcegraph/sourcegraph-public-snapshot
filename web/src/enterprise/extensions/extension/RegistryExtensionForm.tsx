@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import {
     EXTENSION_NAME_MAX_LENGTH,
@@ -6,7 +7,6 @@ import {
     publisherName,
     RegistryPublisher,
 } from '../../../extensions/extension/extension'
-import { ErrorLike, isErrorLike } from '../../../util/errors'
 
 export const RegistryPublisherFormGroup: React.FunctionComponent<{
     className?: string

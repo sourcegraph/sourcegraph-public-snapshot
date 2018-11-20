@@ -12,6 +12,7 @@ import { WorkspaceRoot } from '../../shared/src/api/protocol/plainTypes'
 import { Notifications } from '../../shared/src/app/notifications/Notifications'
 import { createController as createExtensionsController } from '../../shared/src/client/controller'
 import { viewerConfiguredExtensions } from '../../shared/src/controller'
+import { isErrorLike } from '../../shared/src/errors'
 import { ConfiguredExtension } from '../../shared/src/extensions/extension'
 import * as GQL from '../../shared/src/graphqlschema'
 import { ConfiguredSubject, SettingsCascadeOrError } from '../../shared/src/settings'
@@ -45,7 +46,6 @@ import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import { isErrorLike } from './util/errors'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>

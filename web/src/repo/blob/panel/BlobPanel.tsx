@@ -19,6 +19,7 @@ import {
 } from 'rxjs/operators'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import {
     getDefinition,
@@ -37,7 +38,6 @@ import {
 } from '../../../extensions/ExtensionsClientCommonContext'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 import { parseHash } from '../../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'

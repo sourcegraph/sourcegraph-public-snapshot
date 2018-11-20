@@ -14,6 +14,7 @@ import {
     ExtensionsContextProps as GenericExtensionsContextProps,
     UpdateExtensionSettingsArgs,
 } from '../../../shared/src/context'
+import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
@@ -29,7 +30,6 @@ import { Tooltip } from '../components/tooltip/Tooltip'
 import { editSettings } from '../configuration/backend'
 import { settingsCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshSettings } from '../user/settings/backend'
-import { ErrorLike, isErrorLike } from '../util/errors'
 
 export interface ExtensionsControllerProps extends GenericExtensionsControllerProps {}
 

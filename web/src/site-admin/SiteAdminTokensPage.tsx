@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { createAggregateError } from '../../../shared/src/errors'
 import { gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { queryGraphQL } from '../backend/graphql'
@@ -16,7 +17,6 @@ import {
 } from '../settings/tokens/AccessTokenNode'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
-import { createAggregateError } from '../util/errors'
 
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser

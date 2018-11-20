@@ -2,10 +2,10 @@ import format from 'date-fns/format'
 import React from 'react'
 import { Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { BarChart } from '../../components/d3/BarChart'
 import { fetchSiteUsageStatistics } from '../../site-admin/backend'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 
 interface Props {
     isLightTheme: boolean

@@ -8,10 +8,10 @@ import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, tak
 import { isError } from 'util'
 import { parseRepoURI } from '../..'
 import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
+import { asError } from '../../../../../shared/src/errors'
+import { ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
 import { FileMatch, IFileMatch, ILineMatch } from '../../../components/FileMatch'
 import { VirtualList } from '../../../components/VirtualList'
-import { asError } from '../../../util/errors'
-import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { propertyIsDefined } from '../../../util/types'
 import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
 
