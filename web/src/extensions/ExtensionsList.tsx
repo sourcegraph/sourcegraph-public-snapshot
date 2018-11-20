@@ -19,6 +19,7 @@ import { SettingsSubject } from '../../../shared/src/settings'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
+import { toConfiguredExtensions } from './extension/extension'
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
@@ -288,7 +289,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 )
             ),
             map(({ registryExtensions, error }) => ({
-                extensions: this.props.extensions.withConfiguration(registryExtensions),
+                extensions: toConfiguredExtensions(registryExtensions),
                 error,
             }))
         )

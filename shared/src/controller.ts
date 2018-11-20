@@ -3,9 +3,7 @@ import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { Context } from './context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
 import { ConfiguredExtension } from './extensions/extension'
-import { gql, graphQLContent, GraphQLDocument } from './graphql'
-import * as GQL from './graphqlschema'
-import { ExtensionManifest } from './schema/extension.schema'
+import { gql, graphQLContent } from './graphql'
 import { Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
 import { parseJSONCOrError } from './util'
 
@@ -37,37 +35,6 @@ export class Controller<S extends SettingsSubject, C extends Settings> {
         filter((extensions): extensions is ConfiguredExtension[] | ErrorLike => extensions !== Controller.LOADING),
         switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions]))
     )
-
-    public forExtensionID(
-        extensionID: string,
-        registryExtensionFragment: GraphQLDocument | string
-    ): Observable<ConfiguredExtension> {
-        return from(
-            this.context.queryGraphQL(
-                gql`
-                    query RegistryExtension($extensionID: String!) {
-                        extensionRegistry {
-                            extension(extensionID: $extensionID) {
-                                ...RegistryExtensionFields
-                            }
-                        }
-                    }
-                    ${registryExtensionFragment}
-                `[graphQLContent],
-                { extensionID },
-                false
-            )
-        )
-            .pipe(
-                map(({ data, errors }) => {
-                    if (!data || !data.extensionRegistry || !data.extensionRegistry.extension) {
-                        throw createAggregateError(errors)
-                    }
-                    return data.extensionRegistry.extension
-                })
-            )
-            .pipe(map(registryExtension => this.withConfiguration([registryExtension])[0]))
-    }
 
     public withRegistryMetadata(
         cascade: SettingsCascadeOrError<SettingsSubject, Settings>
@@ -142,23 +109,5 @@ export class Controller<S extends SettingsSubject, C extends Settings> {
                 return configuredExtensions
             })
         )
-    }
-
-    public withConfiguration(
-        registryExtensions: GQL.IRegistryExtension[]
-    ): ConfiguredExtension<GQL.IRegistryExtension>[] {
-        const configuredExtensions: ConfiguredExtension<GQL.IRegistryExtension>[] = []
-        for (const registryExtension of registryExtensions) {
-            configuredExtensions.push({
-                id: registryExtension.extensionID,
-                manifest: registryExtension.manifest
-                    ? parseJSONCOrError<ExtensionManifest>(registryExtension.manifest.raw)
-                    : null,
-                rawManifest:
-                    (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,
-                registryExtension,
-            })
-        }
-        return configuredExtensions
     }
 }
