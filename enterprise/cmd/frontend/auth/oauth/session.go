@@ -44,7 +44,7 @@ func SessionIssuer(
 			return
 		}
 
-		var expiryDuration time.Duration = 0
+		expiryDuration := time.Duration(0)
 		if token.Expiry != (time.Time{}) {
 			expiryDuration = time.Until(token.Expiry)
 		}
