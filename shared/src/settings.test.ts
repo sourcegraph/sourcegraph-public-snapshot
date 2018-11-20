@@ -7,6 +7,7 @@ import {
     merge,
     mergeSettings,
     Settings,
+    SettingsCascade,
     SettingsSubject,
     SubjectSettingsContents,
 } from './settings'
@@ -18,7 +19,7 @@ const FIXTURE_ORG: SettingsSubject & SubjectSettingsContents = {
     id: 'a',
     settingsURL: 'u',
     viewerCanAdminister: true,
-    latestSettings: { contents: '{"a":1}' },
+    latestSettings: { id: 1, contents: '{"a":1}' },
 }
 
 const FIXTURE_USER: SettingsSubject & SubjectSettingsContents = {
@@ -28,13 +29,13 @@ const FIXTURE_USER: SettingsSubject & SubjectSettingsContents = {
     id: 'b',
     settingsURL: 'u',
     viewerCanAdminister: true,
-    latestSettings: { contents: '{"b":2}' },
+    latestSettings: { id: 2, contents: '{"b":2}' },
 }
 
 const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContents = {
     ...FIXTURE_USER,
     id: 'c',
-    latestSettings: { contents: '.' },
+    latestSettings: { id: 3, contents: '.' },
 }
 
 const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([
@@ -48,9 +49,12 @@ describe('gqlToCascade', () => {
                 subjects: [FIXTURE_ORG, FIXTURE_USER],
             }),
             {
-                subjects: [{ subject: FIXTURE_ORG, settings: { a: 1 } }, { subject: FIXTURE_USER, settings: { b: 2 } }],
+                subjects: [
+                    { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                    { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+                ],
                 final: { a: 1, b: 2 },
-            }
+            } as SettingsCascade
         ))
     it('preserves errors', () => {
         const value = gqlToCascade({

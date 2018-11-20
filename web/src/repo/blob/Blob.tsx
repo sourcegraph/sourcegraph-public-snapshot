@@ -16,6 +16,7 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLa
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/providers/decoration'
 import { TextDocumentDecoration } from '../../../../shared/src/api/protocol/plainTypes'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
@@ -26,7 +27,6 @@ import {
     SettingsCascadeProps,
 } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'

@@ -5,9 +5,11 @@ import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { AbsoluteRepoFile, makeRepoURI, ParsedRepoURI } from '..'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { ModeSpec } from '../../backend/features'
-import { gql, queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
@@ -18,7 +20,6 @@ import {
     SettingsCascadeProps,
 } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -284,7 +285,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             rev={this.props.rev}
                             mode={this.props.mode}
                             settingsCascade={this.props.settingsCascade}
-                            extensions={this.props.extensions}
+                            extensionsContext={this.props.extensionsContext}
                             extensionsController={this.props.extensionsController}
                             extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                             extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
@@ -314,7 +315,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     repoID={this.props.repoID}
                     repoPath={this.props.repoPath}
                     commitID={this.props.commitID}
-                    extensions={this.props.extensions}
+                    extensionsContext={this.props.extensionsContext}
                     extensionsController={this.props.extensionsController}
                     position={
                         lprToRange(parseHash(this.props.location.hash))

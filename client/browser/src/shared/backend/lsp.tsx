@@ -8,7 +8,6 @@ import { TextDocumentPositionParams } from '../../../../../shared/src/api/protoc
 import { Definition } from '../../../../../shared/src/api/protocol/plainTypes'
 import { Controller } from '../../../../../shared/src/client/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
-import { Settings, SettingsSubject } from '../../../../../shared/src/settings'
 import {
     AbsoluteRepo,
     AbsoluteRepoFile,
@@ -291,9 +290,7 @@ const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocume
     },
 })
 
-export const createLSPFromExtensions = (
-    extensionsController: Controller<SettingsSubject, Settings>
-): SimpleProviderFns => ({
+export const createLSPFromExtensions = (extensionsController: Controller): SimpleProviderFns => ({
     // Use from() to suppress rxjs type incompatibilities between different minor versions of rxjs in
     // node_modules/.
     fetchHover: pos =>

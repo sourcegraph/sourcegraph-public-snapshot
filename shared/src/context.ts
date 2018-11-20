@@ -1,45 +1,39 @@
 import { Subscribable } from 'rxjs'
-import { ConfigurationUpdateParams } from './api/protocol'
-import { Controller } from './controller'
-import { QueryResult } from './graphql'
+import { GraphQLResult } from './graphql'
 import * as GQL from './graphqlschema'
-import { ID, Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
-
-export type UpdateExtensionSettingsArgs =
-    | { edit?: ConfigurationUpdateParams }
-    | {
-          extensionID: string
-          // TODO: unclean api, allows 4 states (2 bools), but only 3 are valid (none/disabled/enabled)
-          enabled?: boolean
-          remove?: boolean
-      }
+import { SettingsCascadeOrError } from './settings'
+import { UpdateExtensionSettingsArgs } from './settings/edit'
 
 /**
  * Description of the context in which extensions-client-common is running, and platform-specific hooks.
  */
-export interface Context<S extends SettingsSubject, C extends Settings> {
+export interface Context {
     /**
      * An observable that emits whenever the settings cascade changes (including when any individual subject's
      * settings change).
      */
-    readonly settingsCascade: Subscribable<SettingsCascadeOrError<S, C>>
+    readonly settingsCascade: Subscribable<SettingsCascadeOrError>
 
-    updateExtensionSettings(subject: ID, args: UpdateExtensionSettingsArgs): Subscribable<void>
+    /**
+     * Update the settings for the subject.
+     */
+    updateSettings(subject: GQL.ID, args: UpdateExtensionSettingsArgs): Promise<void>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.
      *
+     * @template R The GraphQL result type
      * @param request The GraphQL request (query or mutation)
      * @param variables An object whose properties are GraphQL query name-value variable pairs
      * @param mightContainPrivateInfo 🚨 SECURITY: Whether or not sending the GraphQL request to Sourcegraph.com
      * could leak private information such as repository names.
      * @return Observable that emits the result or an error if the HTTP request failed
      */
-    queryGraphQL(
+    queryGraphQL<R extends GQL.IQuery | GQL.IMutation>(
         request: string,
         variables?: { [name: string]: any },
         mightContainPrivateInfo?: boolean
-    ): Subscribable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry'>>>
+    ): Subscribable<GraphQLResult<R>>
 
     /**
      * Sends a batch of LSP requests to the Sourcegraph LSP gateway API and returns the result.
@@ -52,26 +46,14 @@ export interface Context<S extends SettingsSubject, C extends Settings> {
     queryLSP(requests: object[]): Subscribable<object[]>
 
     /**
-     * React components for icons. They are expected to size themselves appropriately with the surrounding DOM flow
-     * content.
-     */
-    readonly icons: Record<
-        'Menu' | 'CaretDown',
-        React.ComponentType<{
-            className: 'icon-inline' | string
-            onClick?: () => void
-        }>
-    >
-
-    /**
      * Forces the currently displayed tooltip, if any, to update its contents.
      */
     forceUpdateTooltip(): void
 }
 
 /**
- * React partial props for components needing the extensions controller.
+ * React partial props for components needing the extensions context.
  */
-export interface ExtensionsProps<S extends SettingsSubject, C extends Settings> {
-    extensions: Controller<S, C>
+export interface ExtensionsContextProps {
+    extensionsContext: Context
 }

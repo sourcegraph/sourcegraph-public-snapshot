@@ -13,16 +13,17 @@ import { RouteComponentProps } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { getHover, getJumpURL } from '../../backend/features'
-import { gql, queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL } from '../../backend/graphql'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { PageTitle } from '../../components/PageTitle'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { propertyIsDefined } from '../../util/types'
 import { GitCommitNode } from '../commits/GitCommitNode'
@@ -242,7 +243,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                         commitID: this.state.commitOrError.oid,
                                     },
                                     lineNumbers: true,
-                                    extensions: this.props.extensions,
+                                    extensionsContext: this.props.extensionsContext,
                                     location: this.props.location,
                                     history: this.props.history,
                                     hoverifier: this.hoverifier,

@@ -12,17 +12,13 @@ import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
 import { ExtensionManifest } from '../schema/extension.schema'
-import { Settings, SettingsCascade, SettingsSubject } from '../settings'
+import { SettingsCascade } from '../settings'
 import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
-import { log } from './log'
 
 /**
  * Extends the {@link BaseController} class to add functionality that is useful to this package's consumers.
  */
-export class Controller<S extends SettingsSubject, C extends Settings> extends BaseController<
-    ConfiguredExtension,
-    SettingsCascade<S, C>
-> {
+export class Controller extends BaseController<ConfiguredExtension, SettingsCascade> {
     /**
      * Global notification messages that should be displayed to the user, from the following sources:
      *
@@ -51,12 +47,12 @@ export class Controller<S extends SettingsSubject, C extends Settings> extends B
  * React props or state containing the controller. There should be only a single controller for the whole
  * application.
  */
-export interface ControllerProps<S extends SettingsSubject, C extends Settings> {
+export interface ControllerProps {
     /**
      * The controller, which is used to communicate with the extensions and manages extensions based on the
      * environment.
      */
-    extensionsController: Controller<S, C>
+    extensionsController: Controller
 }
 
 /**
@@ -65,9 +61,9 @@ export interface ControllerProps<S extends SettingsSubject, C extends Settings> 
  *
  * @template CC settings cascade type
  */
-function environmentFilter<S extends SettingsSubject, CC extends SettingsCascade<S>>(
-    nextEnvironment: Environment<ConfiguredExtension, CC>
-): Environment<ConfiguredExtension, CC> {
+function environmentFilter(
+    nextEnvironment: Environment<ConfiguredExtension, SettingsCascade>
+): Environment<ConfiguredExtension, SettingsCascade> {
     return {
         ...nextEnvironment,
         extensions:
@@ -118,14 +114,14 @@ declare global {
  * It receives state updates via calls to the setEnvironment method from React components. It provides results to
  * React components via its registries and the showMessages, etc., observables.
  */
-export function createController<S extends SettingsSubject, C extends Settings>(
-    context: Context<S, C>,
+export function createController(
+    context: Context,
     createMessageTransports: (
         extension: ConfiguredExtension,
-        settingsCascade: SettingsCascade<S, C>
+        settingsCascade: SettingsCascade
     ) => Promise<MessageTransports>
-): Controller<S, C> {
-    const controller: Controller<S, C> = new Controller<S, C>({
+): Controller {
+    const controller: Controller = new Controller({
         clientOptions: (_key: ExtensionConnectionKey, extension: ConfiguredExtension) => ({
             createMessageTransports: async () => {
                 const settingsCascade = await controller.environment
@@ -218,9 +214,7 @@ export function createController<S extends SettingsSubject, C extends Settings>(
  * {@link module:sourcegraph.module/protocol/contribution.ActionContribution#command} for
  * documentation.
  */
-function registerExtensionContributions<S extends SettingsSubject, C extends Settings>(
-    controller: Controller<S, C>
-): Unsubscribable {
+function registerExtensionContributions(controller: Controller): Unsubscribable {
     const contributions = controller.environment.pipe(
         map(({ extensions }) => extensions),
         filter((extensions): extensions is ConfiguredExtension[] => !!extensions),
@@ -235,4 +229,28 @@ function registerExtensionContributions<S extends SettingsSubject, C extends Set
     return controller.registries.contribution.registerContributions({
         contributions,
     })
+}
+
+/** Prints a nicely formatted console log or error message. */
+function log(level: 'info' | 'error', subject: string, message: any, other?: { [name: string]: any }): void {
+    let f: typeof console.log
+    let color: string
+    let backgroundColor: string
+    if (level === 'info') {
+        f = console.log
+        color = '#000'
+        backgroundColor = '#eee'
+    } else {
+        f = console.error
+        color = 'white'
+        backgroundColor = 'red'
+    }
+    f(
+        '%c EXT %s %c',
+        `font-weight:bold;background-color:${backgroundColor};color:${color}`,
+        subject,
+        'font-weight:normal;background-color:unset',
+        message,
+        other || ''
+    )
 }

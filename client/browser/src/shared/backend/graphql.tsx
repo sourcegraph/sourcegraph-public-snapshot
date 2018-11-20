@@ -1,22 +1,13 @@
 import { Observable, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { QueryResult } from '../../../../../shared/src/graphql'
-import { IQuery } from '../../../../../shared/src/graphqlschema'
+import { GraphQLResult } from '../../../../../shared/src/graphql'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import { removeAccessToken } from '../auth/access_token'
 import { DEFAULT_SOURCEGRAPH_URL, isPrivateRepository, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { RequestContext } from './context'
 import { AuthRequiredError, createAuthRequiredError, PrivateRepoPublicSourcegraphComError } from './errors'
 import { getHeaders } from './headers'
-
-/**
- * Interface for the response result of a GraphQL mutation
- */
-export interface MutationResult {
-    data?: GQL.IMutation
-    errors?: GQL.IGraphQLResponseError[]
-}
 
 export interface GraphQLRequestArgs {
     ctx: RequestContext
@@ -44,7 +35,7 @@ export interface GraphQLRequestArgs {
  * @param options configuration options for the request
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
+export function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
     ctx,
     request,
     variables = {},
@@ -171,9 +162,9 @@ function shouldResponseTriggerRetryOrError(response: any): boolean {
 /**
  * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`
  */
-export const queryGraphQL = (args: GraphQLRequestArgs) => requestGraphQL<QueryResult<IQuery>>(args)
+export const queryGraphQL = (args: GraphQLRequestArgs) => requestGraphQL<GraphQLResult<GQL.IQuery>>(args)
 
 /**
  * Does a GraphQL mutation to the Sourcegraph GraphQL API running under `/.api/graphql`
  */
-export const mutateGraphQL = (args: GraphQLRequestArgs) => requestGraphQL<MutationResult>(args)
+export const mutateGraphQL = (args: GraphQLRequestArgs) => requestGraphQL<GraphQLResult<GQL.IMutation>>(args)

@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
@@ -5,20 +6,10 @@ import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExtensionConnection } from '../api/client/controller'
 import { BrowserConsoleTracer, Trace } from '../api/protocol/jsonrpc2/trace'
 import { ControllerProps } from '../client/controller'
-import { Settings, SettingsSubject } from '../settings'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { Toggle } from '../ui/generic/Toggle'
 
-interface Props<S extends SettingsSubject, C extends Settings> extends ControllerProps<S, C> {
-    caretIcon: React.ComponentType<{
-        className: 'icon-inline' | string
-        onClick?: () => void
-    }>
-
-    loaderIcon: React.ComponentType<{
-        className: 'icon-inline' | string
-        onClick?: () => void
-    }>
+interface Props extends ControllerProps {
     link: React.ComponentType<{ id: string }>
 }
 
@@ -30,15 +21,12 @@ interface State {
     trace?: boolean
 }
 
-export class ExtensionStatus<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>,
-    State
-> {
+export class ExtensionStatus extends React.PureComponent<Props, State> {
     public static TRACE_STORAGE_KEY = 'traceExtensions'
 
     public state: State = { trace: localStorage.getItem(ExtensionStatus.TRACE_STORAGE_KEY) !== null }
 
-    private componentUpdates = new Subject<Props<S, C>>()
+    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -88,7 +76,7 @@ export class ExtensionStatus<S extends SettingsSubject, C extends Settings> exte
                     )
                 ) : (
                     <span className="card-body">
-                        <this.props.loaderIcon className="icon-inline" /> Loading extensions...
+                        <LoadingSpinner className="icon-inline" /> Loading extensions...
                     </span>
                 )}
                 <div className="card-body border-top d-flex justify-content-end align-items-center">
@@ -135,13 +123,10 @@ export class ExtensionStatus<S extends SettingsSubject, C extends Settings> exte
 }
 
 /** A button that toggles the visibility of the ExtensionStatus element in a popover. */
-export class ExtensionStatusPopover<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C> & { location: H.Location }
-> {
+export class ExtensionStatusPopover extends React.PureComponent<Props & { location: H.Location }> {
     public render(): JSX.Element | null {
         return (
             <PopoverButton
-                caretIcon={this.props.caretIcon}
                 placement="auto-end"
                 hideOnChange={this.props.location}
                 popoverElement={<ExtensionStatus {...this.props} />}

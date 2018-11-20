@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs'
 import { map, mergeMap, take } from 'rxjs/operators'
+import { dataOrThrowErrors, gql, GraphQLDocument, GraphQLResult } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
-import { dataOrThrowErrors, gql, GraphQLDocument, GraphQLResult, mutateGraphQL } from '../backend/graphql'
+import { mutateGraphQL } from '../backend/graphql'
 import { settingsCascade } from '../settings/configuration'
 import { refreshSettings } from '../user/settings/backend'
 
@@ -22,26 +23,6 @@ export function overwriteSettings(subject: GQL.ID, lastID: number | null, conten
             }
         `,
         { subject, lastID, contents }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(() => undefined)
-    )
-}
-
-export function editSettings(subject: GQL.ID, lastID: number | null, edit: GQL.ISettingsEdit): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation EditSettings($subject: ID!, $lastID: Int, $edit: SettingsEdit!) {
-                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                    editSettings(edit: $edit) {
-                        empty {
-                            alwaysNil
-                        }
-                    }
-                }
-            }
-        `,
-        { subject, lastID, edit }
     ).pipe(
         map(dataOrThrowErrors),
         map(() => undefined)

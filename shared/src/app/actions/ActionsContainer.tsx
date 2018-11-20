@@ -2,12 +2,11 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from '../../api/client/types/textDocument'
-import { Settings, SettingsSubject } from '../../settings'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
 import { getContributedActionItems } from './contributions'
 
-interface ActionsContainerProps<S extends SettingsSubject, C extends Settings> extends ActionsProps<S, C> {
+interface ActionsContainerProps extends ActionsProps {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
@@ -24,10 +23,7 @@ interface ActionsContainerProps<S extends SettingsSubject, C extends Settings> e
 interface ActionsContainerState extends ActionsState {}
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
-export class ActionsContainer<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    ActionsContainerProps<S, C>,
-    ActionsContainerState
-> {
+export class ActionsContainer extends React.PureComponent<ActionsContainerProps, ActionsContainerState> {
     public state: ActionsState = {}
 
     private scopeChanges = new Subject<TextDocumentItem | undefined>()
@@ -44,7 +40,7 @@ export class ActionsContainer<S extends SettingsSubject, C extends Settings> ext
         this.scopeChanges.next(this.props.scope)
     }
 
-    public componentDidUpdate(prevProps: ActionsContainerProps<S, C>): void {
+    public componentDidUpdate(prevProps: ActionsContainerProps): void {
         if (prevProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
         }
@@ -75,7 +71,7 @@ export class ActionsContainer<S extends SettingsSubject, C extends Settings> ext
                     key={i}
                     {...item}
                     extensionsController={this.props.extensionsController}
-                    extensions={this.props.extensions}
+                    extensionsContext={this.props.extensionsContext}
                     location={this.props.location}
                 />
             ))}

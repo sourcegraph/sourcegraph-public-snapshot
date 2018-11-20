@@ -7,6 +7,7 @@ import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom }
 import { parseBrowserRepoURL } from '.'
 import { makeRepoURI, ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import { WorkspaceRoot } from '../../../shared/src/api/protocol/plainTypes'
+import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
@@ -18,7 +19,6 @@ import {
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { refreshSettings } from '../user/settings/backend'
-import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError, ResolvedRev } from './backend'
 import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
@@ -234,7 +234,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
             settingsCascade: this.props.settingsCascade,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
             extensionsOnRootsChange: this.props.extensionsOnRootsChange,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,
@@ -252,7 +252,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     rev={this.state.rev}
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
-                    extensions={this.props.extensions}
+                    extensionsContext={this.props.extensionsContext}
                     extensionsController={this.props.extensionsController}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
                     location={this.props.location}

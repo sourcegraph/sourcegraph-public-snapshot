@@ -2,7 +2,6 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from '../../api/client/types/textDocument'
-import { Settings, SettingsSubject } from '../../settings'
 import { ActionItem } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
 import { getContributedActionItems } from './contributions'
@@ -11,10 +10,7 @@ import { getContributedActionItems } from './contributions'
  * Renders the actions as a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul
  * class="nav"> or <ul class="navbar-nav">.
  */
-export class ActionsNavItems<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    ActionsProps<S, C>,
-    ActionsState
-> {
+export class ActionsNavItems extends React.PureComponent<ActionsProps, ActionsState> {
     public state: ActionsState = {}
 
     private scopeChanges = new Subject<TextDocumentItem | undefined>()
@@ -31,7 +27,7 @@ export class ActionsNavItems<S extends SettingsSubject, C extends Settings> exte
         this.scopeChanges.next(this.props.scope)
     }
 
-    public componentDidUpdate(prevProps: ActionsProps<S, C>): void {
+    public componentDidUpdate(prevProps: ActionsProps): void {
         if (prevProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
         }
@@ -55,7 +51,7 @@ export class ActionsNavItems<S extends SettingsSubject, C extends Settings> exte
                             {...item}
                             variant="actionItem"
                             extensionsController={this.props.extensionsController}
-                            extensions={this.props.extensions}
+                            extensionsContext={this.props.extensionsContext}
                             className={this.props.actionItemClass}
                             location={this.props.location}
                         />

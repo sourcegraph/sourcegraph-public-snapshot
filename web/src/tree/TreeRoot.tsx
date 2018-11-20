@@ -13,10 +13,10 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { AbsoluteRepo } from '../repo'
 import { fetchTreeEntries } from '../repo/backend'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeNode } from './Tree'
 import { treePadding } from './util'

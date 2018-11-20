@@ -6,9 +6,8 @@ import { ExecuteCommandParams } from '../../api/client/providers/command'
 import { ActionContribution } from '../../api/protocol'
 import { urlForOpenPanel } from '../../client/clientCommands'
 import { ControllerProps } from '../../client/controller'
-import { ExtensionsProps } from '../../context'
+import { ExtensionsContextProps } from '../../context'
 import { asError, ErrorLike } from '../../errors'
-import { Settings, SettingsSubject } from '../../settings'
 import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
@@ -39,10 +38,7 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-interface Props<S extends SettingsSubject, C extends Settings>
-    extends ActionItemProps,
-        ControllerProps<S, C>,
-        ExtensionsProps<S, C> {
+interface Props extends ActionItemProps, ControllerProps, ExtensionsContextProps {
     location: H.Location
 }
 
@@ -53,7 +49,7 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ActionItem<S extends SettingsSubject, C extends Settings> extends React.PureComponent<Props<S, C>, State> {
+export class ActionItem extends React.PureComponent<Props, State> {
     public state: State = { actionOrError: null }
 
     private commandExecutions = new Subject<ExecuteCommandParams>()
@@ -81,12 +77,12 @@ export class ActionItem<S extends SettingsSubject, C extends Settings> extends R
         )
     }
 
-    public componentDidUpdate(prevProps: Props<S, C>, prevState: State): void {
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
         // If the tooltip changes while it's visible, we need to force-update it to show the new value.
         const prevTooltip = prevProps.action.actionItem && prevProps.action.actionItem.description
         const tooltip = this.props.action.actionItem && this.props.action.actionItem.description
         if (prevTooltip !== tooltip) {
-            this.props.extensions.context.forceUpdateTooltip()
+            this.props.extensionsContext.forceUpdateTooltip()
         }
     }
 

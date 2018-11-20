@@ -14,8 +14,10 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { ActionItem } from '../../../shared/src/app/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/app/actions/ActionsContainer'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
+import { gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
@@ -32,7 +34,6 @@ import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger } from '../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { memoizeObservable } from '../util/memoize'
 import { basename } from '../util/path'
@@ -323,7 +324,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                                 {...item}
                                                 className="btn btn-secondary mr-1 mb-1"
                                                 extensionsController={this.props.extensionsController}
-                                                extensions={this.props.extensions}
+                                                extensionsContext={this.props.extensionsContext}
                                                 location={this.props.location}
                                             />
                                         ))}
@@ -331,7 +332,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 )}
                                 empty={null}
                                 extensionsController={this.props.extensionsController}
-                                extensions={this.props.extensions}
+                                extensionsContext={this.props.extensionsContext}
                                 location={this.props.location}
                             />
                             <div className="tree-page__section">

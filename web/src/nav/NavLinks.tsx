@@ -57,7 +57,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 <ActionsNavItems
                     menu={ContributableMenu.GlobalNav}
                     extensionsController={this.props.extensionsController}
-                    extensions={this.props.extensions}
+                    extensionsContext={this.props.extensionsContext}
                     location={this.props.location}
                 />
                 <li className="nav-item">
@@ -96,7 +96,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 <CommandListPopoverButton
                     menu={ContributableMenu.CommandPalette}
                     extensionsController={this.props.extensionsController}
-                    extensions={this.props.extensions}
+                    extensionsContext={this.props.extensionsContext}
                     toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
                     location={this.props.location}
                 />

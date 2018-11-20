@@ -205,7 +205,7 @@ function initCodeIntelligence(
     hoverifier: Hoverifier
     controllers: Partial<Controllers>
 } {
-    const { extensionsContextController, extensionsController }: Partial<Controllers> =
+    const { extensionsContext, extensionsController }: Partial<Controllers> =
         useExtensions && codeHost.getCommandPaletteMount
             ? initializeExtensions(codeHost.getCommandPaletteMount, environment)
             : {}
@@ -317,7 +317,7 @@ function initCodeIntelligence(
 
     render(<HoverOverlayContainer />, overlayMount)
 
-    return { hoverifier, controllers: { extensionsContextController, extensionsController } }
+    return { hoverifier, controllers: { extensionsContext, extensionsController } }
 }
 
 /**
@@ -336,7 +336,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
     })
     const {
         hoverifier,
-        controllers: { extensionsContextController, extensionsController },
+        controllers: { extensionsContext, extensionsController },
     } = initCodeIntelligence(codeHost, environmentSubject)
 
     const subscriptions = new Subscription()
@@ -484,7 +484,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     render(
                         <CodeViewToolbar
                             {...info}
-                            extensions={extensionsContextController}
+                            extensionsContext={extensionsContext}
                             extensionsController={extensionsController}
                             buttonProps={
                                 toolbarButtonProps || {

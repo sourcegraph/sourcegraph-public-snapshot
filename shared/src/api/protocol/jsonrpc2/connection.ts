@@ -129,7 +129,7 @@ interface ResponseObserver {
     timerStart: number
 
     /** Whether the request was aborted by the client. */
-    aborted: boolean
+    complete: boolean
 
     /** The observable containing the result value(s) and state. */
     observer: Observer<any>
@@ -469,6 +469,7 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                         responseObservable.observer.next(responseMessage.result)
                     }
                     if (responseMessage.complete) {
+                        responseObservable.complete = true
                         responseObservable.observer.complete()
                     }
                 } catch (error) {
@@ -601,7 +602,7 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
             method,
             request: trace === Trace.Verbose ? requestMessage : undefined,
             timerStart: Date.now(),
-            aborted: false,
+            complete: false,
             observer: subject,
         }
         tracer.requestSent(requestMessage)
@@ -615,8 +616,12 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
         }
         return new Observable(observer => {
             subject.subscribe(observer).add(() => {
-                if (responseObserver && !responseObserver.aborted) {
-                    responseObserver.aborted = true
+                if (
+                    !isUnsubscribed() &&
+                    responseObserver &&
+                    !responseObserver.complete &&
+                    !responseObserver.observer.closed
+                ) {
                     sendNotification(ABORT_REQUEST_METHOD, [id])
                 }
             })

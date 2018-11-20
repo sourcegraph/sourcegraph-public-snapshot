@@ -2,12 +2,13 @@ import { isEqual } from 'lodash'
 import { Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs/operators'
 import { SearchOptions } from '.'
+import { asError, createAggregateError, ErrorLike } from '../../../shared/src/errors'
+import { gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { queryGraphQL } from '../backend/graphql'
 import { mutateSettingsGraphQL } from '../configuration/backend'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { viewerSettings } from '../settings/configuration'
-import { asError, createAggregateError, ErrorLike } from '../util/errors'
 
 export function search(
     options: SearchOptions,

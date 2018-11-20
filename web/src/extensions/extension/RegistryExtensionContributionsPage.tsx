@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
 import { ExtensionManifest } from '../../../../shared/src/schema/extension.schema'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 

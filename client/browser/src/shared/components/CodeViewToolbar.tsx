@@ -4,9 +4,9 @@ import { Subscription } from 'rxjs'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ActionsNavItems } from '../../../../../shared/src/app/actions/ActionsNavItems'
 import { ControllerProps } from '../../../../../shared/src/client/controller'
-import { ExtensionsProps } from '../../../../../shared/src/context'
+import { ExtensionsContextProps } from '../../../../../shared/src/context'
 import { ISite, IUser } from '../../../../../shared/src/graphqlschema'
-import { Settings, SettingsCascadeProps, SettingsSubject } from '../../../../../shared/src/settings'
+import { SettingsCascadeProps } from '../../../../../shared/src/settings'
 import { FileInfo } from '../../libs/code_intelligence'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
@@ -18,10 +18,7 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps
-    extends Partial<ExtensionsProps<SettingsSubject, Settings>>,
-        Partial<ControllerProps<SettingsSubject, Settings>>,
-        FileInfo {
+interface CodeViewToolbarProps extends Partial<ExtensionsContextProps>, Partial<ControllerProps>, FileInfo {
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps: ButtonProps
@@ -33,7 +30,7 @@ interface CodeViewToolbarProps
     location: H.Location
 }
 
-interface CodeViewToolbarState extends SettingsCascadeProps<SettingsSubject, Settings> {
+interface CodeViewToolbarState extends SettingsCascadeProps {
     site?: ISite
     currentUser?: IUser
 }
@@ -46,9 +43,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        if (this.props.extensions) {
+        if (this.props.extensionsContext) {
             this.subscriptions.add(
-                this.props.extensions.context.settingsCascade.subscribe(
+                this.props.extensionsContext.settingsCascade.subscribe(
                     settingsCascade => this.setState({ settingsCascade }),
                     err => console.error(err)
                 )
@@ -68,13 +65,13 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 className="code-view-toolbar"
                 style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}
             >
-                <ul className={`nav ${this.props.extensions ? 'pr-1' : ''}`}>
+                <ul className={`nav ${this.props.extensionsContext ? 'pr-1' : ''}`}>
                     {this.props.extensionsController &&
-                        this.props.extensions && (
+                        this.props.extensionsContext && (
                             <ActionsNavItems
                                 menu={ContributableMenu.EditorTitle}
                                 extensionsController={this.props.extensionsController}
-                                extensions={this.props.extensions}
+                                extensionsContext={this.props.extensionsContext}
                                 listClass="BtnGroup"
                                 actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
                                 location={this.props.location}

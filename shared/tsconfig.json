@@ -5,5 +5,6 @@
     "sourceRoot": "src",
     "typeRoots": ["../node_modules/@types", "src/types"]
   },
-  "include": ["**/*"]
+  "include": ["**/*"],
+  "exclude": ["../node_modules"]
 }

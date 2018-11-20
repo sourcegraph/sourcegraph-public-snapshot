@@ -4,10 +4,11 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../../shared/src/errors'
+import { gql } from '../../../../../../shared/src/graphql'
 import * as GQL from '../../../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL } from '../../../../backend/graphql'
+import { mutateGraphQL } from '../../../../backend/graphql'
 import { Form } from '../../../../components/Form'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../util/errors'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 
 interface Props {

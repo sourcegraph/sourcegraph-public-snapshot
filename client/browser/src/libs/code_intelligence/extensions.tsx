@@ -7,14 +7,7 @@ import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/p
 import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
 import { Notifications } from '../../../../../shared/src/app/notifications/Notifications'
 import { Controller as ClientController, createController } from '../../../../../shared/src/client/controller'
-import { Controller } from '../../../../../shared/src/controller'
-import {
-    ConfiguredSubject,
-    Settings,
-    SettingsCascade,
-    SettingsCascadeOrError,
-    SettingsSubject,
-} from '../../../../../shared/src/settings'
+import { ConfiguredSubject, SettingsCascade, SettingsCascadeOrError } from '../../../../../shared/src/settings'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'
@@ -23,8 +16,10 @@ import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
 } from '../../../../../shared/src/api/client/providers/decoration'
+import { Context } from '../../../../../shared/src/context'
+import { viewerConfiguredExtensions } from '../../../../../shared/src/controller'
 import { isErrorLike } from '../../shared/backend/errors'
-import { createExtensionsContextController, createMessageTransports } from '../../shared/backend/extensions'
+import { createExtensionsContext, createMessageTransports } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { sourcegraphUrl } from '../../shared/util/context'
@@ -33,10 +28,8 @@ import { MountGetter } from './code_intelligence'
 
 // This is rather specific to extensions-client-common
 // and could be moved to that package in the future.
-export function logThenDropConfigurationErrors(
-    cascadeOrError: SettingsCascadeOrError<SettingsSubject, Settings>
-): SettingsCascade<SettingsSubject, Settings> {
-    const EMPTY_CASCADE: SettingsCascade<SettingsSubject, Settings> = {
+export function logThenDropConfigurationErrors(cascadeOrError: SettingsCascadeOrError): SettingsCascade {
+    const EMPTY_CASCADE: SettingsCascade = {
         subjects: [],
         final: {},
     }
@@ -58,7 +51,7 @@ export function logThenDropConfigurationErrors(
     }
     return {
         subjects: cascadeOrError.subjects.filter(
-            (subject): subject is ConfiguredSubject<SettingsSubject, Settings> => {
+            (subject): subject is ConfiguredSubject => {
                 if (!subject) {
                     console.error('invalid configuration: no settings subjects available')
                     return false
@@ -75,17 +68,17 @@ export function logThenDropConfigurationErrors(
 }
 
 export interface Controllers {
-    extensionsContextController: Controller<SettingsSubject, Settings>
-    extensionsController: ClientController<SettingsSubject, Settings>
+    extensionsContext: Context
+    extensionsController: ClientController
 }
 
 function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
-    const extensionsContextController = createExtensionsContextController(sourcegraphUrl)
-    const extensionsController = createController(extensionsContextController!.context, createMessageTransports)
+    const extensionsContext = createExtensionsContext(sourcegraphUrl)
+    const extensionsController = createController(extensionsContext, createMessageTransports)
 
     combineLatest(
-        extensionsContextController.viewerConfiguredExtensions,
-        from(extensionsContextController.context.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
+        viewerConfiguredExtensions(extensionsContext),
+        from(extensionsContext.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
         environment
     ).subscribe(([extensions, configuration, { roots, visibleTextDocuments }]) => {
         from(extensionsController.environment)
@@ -101,7 +94,7 @@ function createControllers(environment: Observable<Pick<Environment, 'roots' | '
             })
     })
 
-    return { extensionsContextController, extensionsController }
+    return { extensionsContext, extensionsController }
 }
 
 /**
@@ -111,7 +104,7 @@ export function initializeExtensions(
     getCommandPaletteMount: MountGetter,
     environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
 ): Controllers {
-    const { extensionsContextController, extensionsController } = createControllers(environment)
+    const { extensionsContext, extensionsController } = createControllers(environment)
     const history = H.createBrowserHistory()
 
     render(
@@ -119,7 +112,7 @@ export function initializeExtensions(
             <CommandListPopoverButton
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
-                extensions={extensionsContextController}
+                extensionsContext={extensionsContext}
                 location={history.location}
             />
             <Notifications extensionsController={extensionsController} />
@@ -132,7 +125,7 @@ export function initializeExtensions(
         getGlobalDebugMount()
     )
 
-    return { extensionsContextController, extensionsController }
+    return { extensionsContext, extensionsController }
 }
 
 const combineUnsubscribables = (...unsubscribables: Unsubscribable[]): Unsubscribable => ({

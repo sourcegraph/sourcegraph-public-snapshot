@@ -1,10 +1,10 @@
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { isErrorLike } from '../../../../shared/src/errors'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extension.schema'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { isErrorLike } from '../../util/errors'
 import { isExtensionAdded } from '../ExtensionsClientCommonContext'
 import { ExtensionToggle } from '../ExtensionToggle'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
@@ -89,7 +89,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         settingsCascade={props.settingsCascade}
                                         onUpdate={props.onDidUpdateExtension}
                                         addClassName="btn-primary"
-                                        extensions={props.extensions}
+                                        extensionsContext={props.extensionsContext}
                                     />
                                 </div>
                             )}
