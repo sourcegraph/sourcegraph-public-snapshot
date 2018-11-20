@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
