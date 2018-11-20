@@ -301,8 +301,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 ])
             })
         )
-        // Clear the Sourcegraph extensions environment's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.extensionsOnVisibleTextDocumentsChange(null))
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined

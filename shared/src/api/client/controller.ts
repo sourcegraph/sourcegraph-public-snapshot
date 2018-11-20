@@ -136,23 +136,26 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
         }
         this.inSetEnvironment = true
 
-        if (this.options.environmentFilter) {
-            nextEnvironment = this.options.environmentFilter(nextEnvironment)
-        }
+        try {
+            if (this.options.environmentFilter) {
+                nextEnvironment = this.options.environmentFilter(nextEnvironment)
+            }
 
-        // External consumers don't see context, and their setEnvironment args lack context.
-        if (nextEnvironment.context === EMPTY_CONTEXT) {
-            nextEnvironment = { ...nextEnvironment, context: this._environment.value.context }
-        }
+            // External consumers don't see context, and their setEnvironment args lack context.
+            if (nextEnvironment.context === EMPTY_CONTEXT) {
+                nextEnvironment = { ...nextEnvironment, context: this._environment.value.context }
+            }
 
-        if (isEqual(this._environment.value, nextEnvironment)) {
+            if (isEqual(this._environment.value, nextEnvironment)) {
+                this.inSetEnvironment = false
+                return // no change
+            }
+
+            this._environment.next(nextEnvironment)
+            this.onEnvironmentChange()
+        } finally {
             this.inSetEnvironment = false
-            return // no change
         }
-
-        this._environment.next(nextEnvironment)
-        this.onEnvironmentChange()
-        this.inSetEnvironment = false
     }
 
     private onEnvironmentChange(): void {
@@ -176,7 +179,16 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
         }
         // Remove clients that are no longer in use.
         for (const unusedClient of unusedClients) {
-            unusedClient.subscription.unsubscribe()
+            try {
+                if (!unusedClient.subscription.closed) {
+                    setTimeout(() => unusedClient.subscription.unsubscribe())
+                }
+            } catch (err) {
+                // TODO(sqs): ignore these errors for now
+                if (err.name !== 'UnsubscriptionError') {
+                    throw err
+                }
+            }
         }
         // Create new clients.
         for (const key of newClients) {

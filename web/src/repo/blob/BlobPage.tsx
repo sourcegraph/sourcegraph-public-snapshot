@@ -161,6 +161,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 .subscribe(blobOrError => this.setState({ blobOrError }), err => console.error(err))
         )
 
+        // Clear the Sourcegraph extensions environment's component when the blob is no longer shown.
+        this.subscriptions.add(() => this.props.extensionsOnVisibleTextDocumentsChange(null))
+
         this.propsUpdates.next(this.props)
     }
 
