@@ -49,7 +49,7 @@ describe('Sourcegraph Chrome extension', () => {
 
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
-    before(async function(): Promise<void> {
+    before('Open Browser', async function(): Promise<void> {
         this.timeout(90 * 1000)
 
         let args: string[] = [
@@ -100,7 +100,8 @@ describe('Sourcegraph Chrome extension', () => {
         }
     })
 
-    after(async () => {
+    after('Close browser', async () => {
+        console.log('in after hook')
         try {
             if (browser) {
                 await browser.close()
