@@ -5,6 +5,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"time"
 )
 
 type codehosts struct{}
@@ -16,6 +17,15 @@ type CodehostsListOptions struct {
 
 func (o CodehostsListOptions) sqlConditions() []*sqlf.Query {
 	return []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+}
+
+func (c *codehosts) Create(ctx context.Context, codehost *types.Codehost) error {
+	codehost.CreatedAt = time.Now()
+	codehost.UpdatedAt = codehost.CreatedAt
+	return dbconn.Global.QueryRowContext(
+		ctx,
+		"INSERT INTO codehosts(kind, display_name, config, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
+		codehost.Kind, codehost.DisplayName, codehost.Config, codehost.CreatedAt, codehost.UpdatedAt).Scan(&codehost.ID)
 }
 
 // List returns all codehost connections.

@@ -41,6 +41,8 @@ type Mutation {
     updateOrganization(id: ID!, displayName: String): Org!
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
+    # Adds a connection to a codehost.
+    addCodehost(kind: CodehostKind!, displayName: String!, config: String!): Codehost!
     # Adds a repository on a code host that is already present in the site configuration. The name (which may
     # consist of one or more path components) of the repository must be recognized by an already configured code
     # host, or else Sourcegraph won't know how to clone it.

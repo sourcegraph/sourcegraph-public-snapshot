@@ -10,6 +10,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
+func (r *schemaResolver) AddCodehost(ctx context.Context, args *struct {
+	Kind        string
+	DisplayName string
+	Config      string
+}) (*codehostResolver, error) {
+	// 🚨 SECURITY: Only site admins may add codehosts.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	codehost := &types.Codehost{
+		Kind:        args.Kind,
+		DisplayName: args.DisplayName,
+		Config:      args.Config,
+	}
+	err := db.Codehosts.Create(ctx, codehost)
+	return &codehostResolver{codehost: codehost}, err
+}
+
 func (r *schemaResolver) Codehosts(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*codehostConnectionResolver, error) {
