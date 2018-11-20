@@ -65,7 +65,6 @@ describe('Sourcegraph Chrome extension', () => {
 
         browser = await puppeteer.launch({
             headless: false,
-            // args: [`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`],
             args,
         })
     })
