@@ -246,6 +246,7 @@ func main() {
 			bk.ConcurrencyGroup("deploy"),
 			bk.Concurrency(1),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Cmd("yarn cache clean puppeteer"), // ensure it's downloaded even if the package was cached w/o downloading
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd web"),
 			bk.Cmd("yarn -s run test-e2e-sgdev --retries 5"),
