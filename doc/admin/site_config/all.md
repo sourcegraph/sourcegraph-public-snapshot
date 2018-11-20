@@ -607,13 +607,13 @@ The authentication providers to use for identifying and signing in users.
 
 The elements of the array must be of the following types:
 
-####[BuiltinAuthProvider](all.md#builtinauthprovider-object)
+#### [BuiltinAuthProvider](all.md#builtinauthprovider-object)
 
-####[SAMLAuthProvider](all.md#samlauthprovider-object)
+#### [SAMLAuthProvider](all.md#samlauthprovider-object)
 
-####[OpenIDConnectAuthProvider](all.md#openidconnectauthprovider-object)
+#### [OpenIDConnectAuthProvider](all.md#openidconnectauthprovider-object)
 
-####[HTTPHeaderAuthProvider](all.md#httpheaderauthprovider-object)
+#### [HTTPHeaderAuthProvider](all.md#httpheaderauthprovider-object)
 
 <br/>
 
