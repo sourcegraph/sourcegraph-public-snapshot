@@ -70,12 +70,6 @@ describe('Sourcegraph Chrome extension', () => {
         })
     })
 
-    after(async () => {
-        if (browser) {
-            await browser.close()
-        }
-    })
-
     beforeEach('Open page', async () => {
         page = await browser.newPage()
         await authenticate(page)
@@ -98,6 +92,12 @@ describe('Sourcegraph Chrome extension', () => {
                 }
             }
             await page.close()
+        }
+    })
+
+    after(async () => {
+        if (browser) {
+            await browser.close()
         }
     })
 
