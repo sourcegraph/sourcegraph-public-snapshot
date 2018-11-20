@@ -84,7 +84,7 @@ function toSubject(props: Props): ContextSubject {
         mode: props.mode,
         line: parsedHash.line || 1,
         character: parsedHash.character || 1,
-        extensions: props.extensions,
+        extensionsContext: props.extensionsContext,
     }
 }
 
@@ -98,7 +98,7 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
         a.mode === b.mode &&
         a.line === b.line &&
         a.character === b.character &&
-        isEqual(a.extensions, b.extensions)
+        isEqual(a.extensionsContext, b.extensionsContext)
     )
 }
 
@@ -142,7 +142,10 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         type PartialStateUpdate = Pick<State, 'hoverOrError'>
                         const result = getHover(
                             {
-                                ...(subject as Pick<typeof subject, Exclude<keyof typeof subject, 'extensions'>>),
+                                ...(subject as Pick<
+                                    typeof subject,
+                                    Exclude<keyof typeof subject, 'extensionsContext'>
+                                >),
                                 position,
                             },
                             { extensionsController: this.props.extensionsController }

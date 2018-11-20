@@ -89,7 +89,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         settingsCascade={props.settingsCascade}
                                         onUpdate={props.onDidUpdateExtension}
                                         addClassName="btn-primary"
-                                        extensions={props.extensions}
+                                        extensionsContext={props.extensionsContext}
                                     />
                                 </div>
                             )}

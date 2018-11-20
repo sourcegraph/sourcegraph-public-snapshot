@@ -2,12 +2,12 @@ import H from 'history'
 import { TextDocumentItem } from '../../api/client/types/textDocument'
 import { ContributableMenu, Contributions } from '../../api/protocol'
 import { ControllerProps } from '../../client/controller'
-import { ExtensionsProps } from '../../context'
+import { ExtensionsContextProps } from '../../context'
 import { Settings, SettingsSubject } from '../../settings'
 
 export interface ActionsProps<S extends SettingsSubject, C extends Settings>
     extends ControllerProps<S, C>,
-        ExtensionsProps<S, C> {
+        ExtensionsContextProps<S, C> {
     menu: ContributableMenu
     scope?: TextDocumentItem
     actionItemClass?: string

@@ -7,33 +7,34 @@ import { gql, graphQLContent } from './graphql'
 import { Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
 import { parseJSONCOrError } from './util'
 
-/**
- * A controller that exposes functionality for a settings cascade and querying extensions from the remote registry.
- */
-export class Controller<S extends SettingsSubject, C extends Settings> {
-    public static readonly LOADING: 'loading' = 'loading'
+const LOADING: 'loading' = 'loading'
 
-    constructor(public readonly context: Context<S, C>) {}
+export function viewerConfiguredExtensions({
+    settingsCascade,
+    queryGraphQL,
+}: Pick<Context<SettingsSubject, Settings>, 'settingsCascade' | 'queryGraphQL'>): Observable<ConfiguredExtension[]> {
+    return viewerConfiguredExtensionsOrLoading({ settingsCascade, queryGraphQL }).pipe(
+        filter((extensions): extensions is ConfiguredExtension[] | ErrorLike => extensions !== LOADING),
+        switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions]))
+    )
+}
 
-    private readonly viewerConfiguredExtensionsOrLoading: Observable<
-        typeof Controller.LOADING | ConfiguredExtension[] | ErrorLike
-    > = from(this.context.settingsCascade).pipe(
+function viewerConfiguredExtensionsOrLoading({
+    settingsCascade,
+    queryGraphQL,
+}: Pick<Context<SettingsSubject, Settings>, 'settingsCascade' | 'queryGraphQL'>): Observable<
+    typeof LOADING | ConfiguredExtension[] | ErrorLike
+> {
+    return from(settingsCascade).pipe(
         switchMap(
             cascade =>
                 isErrorLike(cascade.final)
                     ? [cascade.final]
-                    : queryConfiguredExtensions(this.context, cascade).pipe(
+                    : queryConfiguredExtensions({ queryGraphQL }, cascade).pipe(
                           catchError(error => [asError(error) as ErrorLike]),
-                          startWith(Controller.LOADING)
+                          startWith(LOADING)
                       )
         )
-    )
-
-    public readonly viewerConfiguredExtensions: Observable<
-        ConfiguredExtension[]
-    > = this.viewerConfiguredExtensionsOrLoading.pipe(
-        filter((extensions): extensions is ConfiguredExtension[] | ErrorLike => extensions !== Controller.LOADING),
-        switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions]))
     )
 }
 

@@ -6,7 +6,7 @@ import { ExecuteCommandParams } from '../../api/client/providers/command'
 import { ActionContribution } from '../../api/protocol'
 import { urlForOpenPanel } from '../../client/clientCommands'
 import { ControllerProps } from '../../client/controller'
-import { ExtensionsProps } from '../../context'
+import { ExtensionsContextProps } from '../../context'
 import { asError, ErrorLike } from '../../errors'
 import { Settings, SettingsSubject } from '../../settings'
 import { LinkOrButton } from '../../ui/generic/LinkOrButton'
@@ -42,7 +42,7 @@ export interface ActionItemProps {
 interface Props<S extends SettingsSubject, C extends Settings>
     extends ActionItemProps,
         ControllerProps<S, C>,
-        ExtensionsProps<S, C> {
+        ExtensionsContextProps<S, C> {
     location: H.Location
 }
 
@@ -86,7 +86,7 @@ export class ActionItem<S extends SettingsSubject, C extends Settings> extends R
         const prevTooltip = prevProps.action.actionItem && prevProps.action.actionItem.description
         const tooltip = this.props.action.actionItem && this.props.action.actionItem.description
         if (prevTooltip !== tooltip) {
-            this.props.extensions.context.forceUpdateTooltip()
+            this.props.extensionsContext.forceUpdateTooltip()
         }
     }
 

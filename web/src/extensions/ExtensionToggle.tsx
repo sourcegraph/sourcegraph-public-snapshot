@@ -63,7 +63,7 @@ export class ExtensionToggle<S extends SettingsSubject, C extends Settings> exte
                         }
 
                         return from(
-                            this.props.extensions.context.updateExtensionSettings(highestPrecedenceSubject.subject.id, {
+                            this.props.extensionsContext.updateExtensionSettings(highestPrecedenceSubject.subject.id, {
                                 extensionID: this.props.extension.id,
                                 enabled,
                             })

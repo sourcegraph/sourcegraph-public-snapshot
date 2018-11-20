@@ -7,14 +7,16 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { ContributableMenu, Contributions } from '../api/protocol'
 import { ControllerProps } from '../client/controller'
-import { ExtensionsProps } from '../context'
+import { ExtensionsContextProps } from '../context'
 import { Settings, SettingsSubject } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { ActionItem, ActionItemProps } from './actions/ActionItem'
 import { getContributedActionItems } from './actions/contributions'
 
-interface Props<S extends SettingsSubject, C extends Settings> extends ControllerProps<S, C>, ExtensionsProps<S, C> {
+interface Props<S extends SettingsSubject, C extends Settings>
+    extends ControllerProps<S, C>,
+        ExtensionsContextProps<S, C> {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
@@ -152,7 +154,7 @@ export class CommandList<S extends SettingsSubject, C extends Settings> extends 
                             }
                             onRun={this.onActionRun}
                             extensionsController={this.props.extensionsController}
-                            extensions={this.props.extensions}
+                            extensionsContext={this.props.extensionsContext}
                             location={this.props.location}
                         />
                     ))
@@ -264,14 +266,14 @@ export class CommandListPopoverButton<S extends SettingsSubject, C extends Setti
     public render(): JSX.Element | null {
         return (
             <PopoverButton
-                caretIcon={this.props.extensions.context.icons.CaretDown}
+                caretIcon={this.props.extensionsContext.icons.CaretDown}
                 popoverClassName="rounded"
                 placement="auto-end"
                 toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 hideOnChange={this.state.hideOnChange}
                 popoverElement={<CommandList {...this.props} onSelect={this.dismissPopover} />}
             >
-                <this.props.extensions.context.icons.Menu className="icon-inline" />
+                <this.props.extensionsContext.icons.Menu className="icon-inline" />
             </PopoverButton>
         )
     }

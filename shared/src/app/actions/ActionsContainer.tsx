@@ -75,7 +75,7 @@ export class ActionsContainer<S extends SettingsSubject, C extends Settings> ext
                     key={i}
                     {...item}
                     extensionsController={this.props.extensionsController}
-                    extensions={this.props.extensions}
+                    extensionsContext={this.props.extensionsContext}
                     location={this.props.location}
                 />
             ))}

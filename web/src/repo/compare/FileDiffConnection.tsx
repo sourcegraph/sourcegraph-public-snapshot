@@ -15,7 +15,7 @@ class FilteredFileDiffConnection extends FilteredConnection<
         | 'head'
         | 'lineNumbers'
         | 'className'
-        | 'extensions'
+        | 'extensionsContext'
         | 'location'
         | 'history'
         | 'hoverifier'

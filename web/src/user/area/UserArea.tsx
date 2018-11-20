@@ -175,7 +175,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             authenticatedUser: this.props.authenticatedUser,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
             isLightTheme: this.props.isLightTheme,
             userAccountAreaRoutes: this.props.userAccountAreaRoutes,
             userAccountSideBarItems: this.props.userAccountSideBarItems,

@@ -7,7 +7,6 @@ import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/p
 import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
 import { Notifications } from '../../../../../shared/src/app/notifications/Notifications'
 import { Controller as ClientController, createController } from '../../../../../shared/src/client/controller'
-import { Controller } from '../../../../../shared/src/controller'
 import {
     ConfiguredSubject,
     Settings,
@@ -23,8 +22,10 @@ import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
 } from '../../../../../shared/src/api/client/providers/decoration'
+import { Context } from '../../../../../shared/src/context'
+import { viewerConfiguredExtensions } from '../../../../../shared/src/controller'
 import { isErrorLike } from '../../shared/backend/errors'
-import { createExtensionsContextController, createMessageTransports } from '../../shared/backend/extensions'
+import { createExtensionsContext, createMessageTransports } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { sourcegraphUrl } from '../../shared/util/context'
@@ -75,17 +76,17 @@ export function logThenDropConfigurationErrors(
 }
 
 export interface Controllers {
-    extensionsContextController: Controller<SettingsSubject, Settings>
+    extensionsContext: Context<SettingsSubject, Settings>
     extensionsController: ClientController<SettingsSubject, Settings>
 }
 
 function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
-    const extensionsContextController = createExtensionsContextController(sourcegraphUrl)
-    const extensionsController = createController(extensionsContextController!.context, createMessageTransports)
+    const extensionsContext = createExtensionsContext(sourcegraphUrl)
+    const extensionsController = createController(extensionsContext, createMessageTransports)
 
     combineLatest(
-        extensionsContextController.viewerConfiguredExtensions,
-        from(extensionsContextController.context.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
+        viewerConfiguredExtensions(extensionsContext),
+        from(extensionsContext.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
         environment
     ).subscribe(([extensions, configuration, { roots, visibleTextDocuments }]) => {
         from(extensionsController.environment)
@@ -101,7 +102,7 @@ function createControllers(environment: Observable<Pick<Environment, 'roots' | '
             })
     })
 
-    return { extensionsContextController, extensionsController }
+    return { extensionsContext, extensionsController }
 }
 
 /**
@@ -111,7 +112,7 @@ export function initializeExtensions(
     getCommandPaletteMount: MountGetter,
     environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
 ): Controllers {
-    const { extensionsContextController, extensionsController } = createControllers(environment)
+    const { extensionsContext, extensionsController } = createControllers(environment)
     const history = H.createBrowserHistory()
 
     render(
@@ -119,7 +120,7 @@ export function initializeExtensions(
             <CommandListPopoverButton
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
-                extensions={extensionsContextController}
+                extensionsContext={extensionsContext}
                 location={history.location}
             />
             <Notifications extensionsController={extensionsController} />
@@ -132,7 +133,7 @@ export function initializeExtensions(
         getGlobalDebugMount()
     )
 
-    return { extensionsContextController, extensionsController }
+    return { extensionsContext, extensionsController }
 }
 
 const combineUnsubscribables = (...unsubscribables: Unsubscribable[]): Unsubscribable => ({

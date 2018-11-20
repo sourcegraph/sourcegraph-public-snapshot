@@ -97,7 +97,7 @@ export class ExtensionCard<S extends SettingsSubject, C extends Settings> extend
                                         settingsCascade={this.props.settingsCascade}
                                         onUpdate={props.onDidUpdate}
                                         className="btn-sm btn-secondary"
-                                        extensions={this.props.extensions}
+                                        extensionsContext={this.props.extensionsContext}
                                     />
                                 ) : (
                                     <li className="nav-item">

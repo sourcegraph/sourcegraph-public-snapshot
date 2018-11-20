@@ -323,7 +323,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                                 {...item}
                                                 className="btn btn-secondary mr-1 mb-1"
                                                 extensionsController={this.props.extensionsController}
-                                                extensions={this.props.extensions}
+                                                extensionsContext={this.props.extensionsContext}
                                                 location={this.props.location}
                                             />
                                         ))}
@@ -331,7 +331,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 )}
                                 empty={null}
                                 extensionsController={this.props.extensionsController}
-                                extensions={this.props.extensions}
+                                extensionsContext={this.props.extensionsContext}
                                 location={this.props.location}
                             />
                             <div className="tree-page__section">

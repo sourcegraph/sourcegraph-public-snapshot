@@ -112,7 +112,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
 
         // Changes to the global extensions settings.
         const globalExtensionsSettingsChanges = this.componentUpdates.pipe(
-            map(({ extensions }) => extensions),
+            map(({ extensionsContext }) => extensionsContext),
             distinctUntilChanged()
         )
 
@@ -176,7 +176,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
             onDidUpdateExtension: this.onDidUpdateExtension,
             settingsCascade: this.props.settingsCascade,
             extension: this.state.extensionOrError,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
             isLightTheme: this.props.isLightTheme,
         }
 

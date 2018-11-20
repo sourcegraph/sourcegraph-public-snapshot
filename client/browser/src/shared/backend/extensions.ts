@@ -9,8 +9,7 @@ import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take,
 import uuid from 'uuid'
 import { MessageTransports } from '../../../../../shared/src/api/protocol/jsonrpc2/connection'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
-import { UpdateExtensionSettingsArgs } from '../../../../../shared/src/context'
-import { Controller as ExtensionsContextController } from '../../../../../shared/src/controller'
+import { Context as ExtensionsContext, UpdateExtensionSettingsArgs } from '../../../../../shared/src/context'
 import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
 import { gql, graphQLContent, QueryResult } from '../../../../../shared/src/graphql'
 import * as GQL from '../../../../../shared/src/graphqlschema'
@@ -280,13 +279,11 @@ export const settingsCascade: Observable<SettingsCascadeOrError<SettingsSubject,
     distinctUntilChanged((a, b) => isEqual(a, b))
 )
 
-export function createExtensionsContextController(
-    sourcegraphUrl: string
-): ExtensionsContextController<SettingsSubject, Settings> {
+export function createExtensionsContext(sourcegraphUrl: string): ExtensionsContext<SettingsSubject, Settings> {
     const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
     sourcegraphLanguageServerURL.pathname = '.api/xlang'
 
-    return new ExtensionsContextController<SettingsSubject, Settings>({
+    return {
         settingsCascade,
         updateExtensionSettings,
         queryGraphQL: (request, variables, requestMightContainPrivateInfo) =>
@@ -316,7 +313,7 @@ export function createExtensionsContextController(
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
-    })
+    }
 }
 
 // TODO(sqs): copied from sourcegraph/sourcegraph temporarily

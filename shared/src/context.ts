@@ -1,6 +1,5 @@
 import { Subscribable } from 'rxjs'
 import { ConfigurationUpdateParams } from './api/protocol'
-import { Controller } from './controller'
 import { QueryResult } from './graphql'
 import * as GQL from './graphqlschema'
 import { ID, Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
@@ -70,8 +69,8 @@ export interface Context<S extends SettingsSubject, C extends Settings> {
 }
 
 /**
- * React partial props for components needing the extensions controller.
+ * React partial props for components needing the extensions context.
  */
-export interface ExtensionsProps<S extends SettingsSubject, C extends Settings> {
-    extensions: Controller<S, C>
+export interface ExtensionsContextProps<S extends SettingsSubject, C extends Settings> {
+    extensionsContext: Context<S, C>
 }

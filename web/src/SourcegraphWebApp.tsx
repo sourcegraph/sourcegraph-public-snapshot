@@ -11,6 +11,7 @@ import { TextDocumentItem } from '../../shared/src/api/client/types/textDocument
 import { WorkspaceRoot } from '../../shared/src/api/protocol/plainTypes'
 import { Notifications } from '../../shared/src/app/notifications/Notifications'
 import { createController as createExtensionsController } from '../../shared/src/client/controller'
+import { viewerConfiguredExtensions } from '../../shared/src/controller'
 import { ConfiguredExtension } from '../../shared/src/extensions/extension'
 import * as GQL from '../../shared/src/graphqlschema'
 import { ConfiguredSubject, Settings, SettingsCascadeOrError, SettingsSubject } from '../../shared/src/settings'
@@ -30,7 +31,7 @@ import {
     ExtensionsProps,
     SettingsCascadeProps,
 } from './extensions/ExtensionsClientCommonContext'
-import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
+import { createExtensionsContext } from './extensions/ExtensionsClientCommonContext'
 import { KeybindingsProps } from './keybindings'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
@@ -106,19 +107,19 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminis
 export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     constructor(props: SourcegraphWebAppProps) {
         super(props)
-        const extensions = createExtensionsContextController()
+        const extensionsContext = createExtensionsContext()
         this.state = {
             isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
             navbarSearchQuery: '',
             settingsCascade: { subjects: null, final: null },
-            extensions,
+            extensionsContext,
             extensionsEnvironment: {
                 ...EXTENSIONS_EMPTY_ENVIRONMENT,
                 context: {
                     'clientApplication.isSourcegraph': true,
                 },
             },
-            extensionsController: createExtensionsController(extensions.context, (extension, settingsCascade) =>
+            extensionsController: createExtensionsController(extensionsContext, (extension, settingsCascade) =>
                 Promise.resolve(createMessageTransports(extension, settingsCascade))
             ),
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
@@ -141,7 +142,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         this.subscriptions.add(
             combineLatest(
-                from(this.state.extensions.context.settingsCascade).pipe(startWith(null)),
+                from(this.state.extensionsContext.settingsCascade).pipe(startWith(null)),
                 authenticatedUser.pipe(startWith(null))
             ).subscribe(([cascade, authenticatedUser]) => {
                 this.setState(() => {
@@ -165,7 +166,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.subscriptions.add(this.state.extensionsController)
 
         this.subscriptions.add(
-            this.state.extensions.context.settingsCascade.subscribe(
+            this.state.extensionsContext.settingsCascade.subscribe(
                 v => this.onSettingsCascadeChange(v),
                 err => console.error(err)
             )
@@ -175,7 +176,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         //
         // TODO(sqs): handle loading and errors
         this.subscriptions.add(
-            this.state.extensions.viewerConfiguredExtensions.subscribe(
+            viewerConfiguredExtensions(this.state.extensionsContext).subscribe(
                 extensions => this.onViewerConfiguredExtensionsChange(extensions),
                 err => console.error(err)
             )
@@ -259,7 +260,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 navbarSearchQuery={this.state.navbarSearchQuery}
                                 onNavbarQueryChange={this.onNavbarQueryChange}
                                 // Extensions
-                                extensions={this.state.extensions}
+                                extensionsContext={this.state.extensionsContext}
                                 extensionsEnvironment={this.state.extensionsEnvironment}
                                 extensionsOnRootsChange={this.extensionsOnRootsChange}
                                 extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}

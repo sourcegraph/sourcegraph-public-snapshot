@@ -9,8 +9,11 @@ import { SettingsCascade } from '../../../shared/src/api/protocol'
 import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
 import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/client/controller'
-import { ExtensionsProps as GenericExtensionsProps, UpdateExtensionSettingsArgs } from '../../../shared/src/context'
-import { Controller as ExtensionsContextController } from '../../../shared/src/controller'
+import {
+    Context as ExtensionsContext,
+    ExtensionsContextProps as GenericExtensionsContextProps,
+    UpdateExtensionSettingsArgs,
+} from '../../../shared/src/context'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { QueryResult } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
@@ -33,10 +36,10 @@ export interface ExtensionsControllerProps extends GenericExtensionsControllerPr
 
 export interface SettingsCascadeProps extends GenericSettingsCascadeProps<SettingsSubject, Settings> {}
 
-export interface ExtensionsProps extends GenericExtensionsProps<SettingsSubject, Settings> {}
+export interface ExtensionsProps extends GenericExtensionsContextProps<SettingsSubject, Settings> {}
 
-export function createExtensionsContextController(): ExtensionsContextController<SettingsSubject, Settings> {
-    return new ExtensionsContextController<SettingsSubject, Settings>({
+export function createExtensionsContext(): ExtensionsContext<SettingsSubject, Settings> {
+    return {
         settingsCascade: settingsCascade.pipe(
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))
@@ -55,7 +58,7 @@ export function createExtensionsContextController(): ExtensionsContextController
             Menu: MenuIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
         },
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-    })
+    }
 }
 
 function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsArgs): Observable<void> {

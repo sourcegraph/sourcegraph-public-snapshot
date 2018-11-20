@@ -153,7 +153,7 @@ export class OrgArea extends React.Component<Props> {
             authenticatedUser: this.props.authenticatedUser,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

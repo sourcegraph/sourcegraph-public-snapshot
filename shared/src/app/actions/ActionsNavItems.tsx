@@ -55,7 +55,7 @@ export class ActionsNavItems<S extends SettingsSubject, C extends Settings> exte
                             {...item}
                             variant="actionItem"
                             extensionsController={this.props.extensionsController}
-                            extensions={this.props.extensions}
+                            extensionsContext={this.props.extensionsContext}
                             className={this.props.actionItemClass}
                             location={this.props.location}
                         />

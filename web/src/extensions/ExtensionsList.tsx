@@ -13,6 +13,7 @@ import {
     takeUntil,
     withLatestFrom,
 } from 'rxjs/operators'
+import { viewerConfiguredExtensions } from '../../../shared/src/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { SettingsSubject } from '../../../shared/src/settings'
@@ -230,7 +231,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                         node={e}
                                         onDidUpdate={this.onDidUpdateExtension}
                                         settingsCascade={this.props.settingsCascade}
-                                        extensions={this.props.extensions}
+                                        extensionsContext={this.props.extensionsContext}
                                     />
                                 ))}
                             </div>
@@ -246,7 +247,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     private onQueryChange: React.FormEventHandler<HTMLInputElement> = e => this.queryChanges.next(e.currentTarget.value)
 
     private queryRegistryExtensions = (args: { query?: string }): Observable<ExtensionsResult> =>
-        this.props.extensions.viewerConfiguredExtensions.pipe(
+        viewerConfiguredExtensions(this.props.extensionsContext).pipe(
             // Avoid refreshing (and changing order) when the user merely interacts with an extension (e.g.,
             // toggling its enablement), to reduce UI jitter.
             take(1),

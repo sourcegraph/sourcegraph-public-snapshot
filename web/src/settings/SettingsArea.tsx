@@ -137,7 +137,7 @@ export class SettingsArea extends React.Component<Props, State> {
             authenticatedUser: this.props.authenticatedUser,
             onUpdate: this.onUpdate,
             isLightTheme: this.props.isLightTheme,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
         }
 
         return (
@@ -161,7 +161,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private onUpdate = () => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
-        return queryConfiguredExtensions(this.props.extensions.context, gqlToCascade(cascade)).pipe(
+        return queryConfiguredExtensions(this.props.extensionsContext, gqlToCascade(cascade)).pipe(
             map(configuredExtensions => ({
                 $id: 'settings.schema.json',
                 allOf: [
