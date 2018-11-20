@@ -1,8 +1,9 @@
 import { Observable } from 'rxjs'
 import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { authRequired } from '../../auth'
-import { gql, queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL } from '../../backend/graphql'
 import { settingsCascade } from '../../settings/configuration'
 import { createAggregateError } from '../../util/errors'
 

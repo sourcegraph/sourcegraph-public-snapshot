@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { queryGraphQL } from '../backend/graphql'
 import { createAggregateError } from '../util/errors'
 
 /**

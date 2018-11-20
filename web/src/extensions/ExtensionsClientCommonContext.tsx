@@ -15,7 +15,7 @@ import {
     UpdateExtensionSettingsArgs,
 } from '../../../shared/src/context'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
-import { QueryResult } from '../../../shared/src/graphql'
+import { gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
 import {
     gqlToCascade,
@@ -23,7 +23,7 @@ import {
     SettingsCascadeProps as GenericSettingsCascadeProps,
 } from '../../../shared/src/settings'
 import { authenticatedUser } from '../auth'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { queryGraphQL } from '../backend/graphql'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { editSettings } from '../configuration/backend'
@@ -50,7 +50,7 @@ export function createExtensionsContext(): ExtensionsContext {
                     ${request}
                 `,
                 variables
-            ) as Observable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry' | 'repository'>>>,
+            ),
         queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
             CaretDown: MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>,

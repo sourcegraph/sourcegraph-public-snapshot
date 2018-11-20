@@ -1,8 +1,9 @@
 import { concat, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
+import { gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { refreshAuthenticatedUser } from '../auth'
-import { gql, mutateGraphQL } from '../backend/graphql'
+import { mutateGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
 

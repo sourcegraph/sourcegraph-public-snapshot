@@ -1,6 +1,6 @@
 import { Subscribable } from 'rxjs'
 import { ConfigurationUpdateParams } from './api/protocol'
-import { QueryResult } from './graphql'
+import { GraphQLResult } from './graphql'
 import * as GQL from './graphqlschema'
 import { ID, SettingsCascadeOrError } from './settings'
 
@@ -38,7 +38,7 @@ export interface Context {
         request: string,
         variables?: { [name: string]: any },
         mightContainPrivateInfo?: boolean
-    ): Subscribable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry'>>>
+    ): Subscribable<GraphQLResult<GQL.IQuery>>
 
     /**
      * Sends a batch of LSP requests to the Sourcegraph LSP gateway API and returns the result.

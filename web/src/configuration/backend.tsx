@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs'
 import { map, mergeMap, take } from 'rxjs/operators'
+import { dataOrThrowErrors, gql, GraphQLDocument, GraphQLResult } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
-import { dataOrThrowErrors, gql, GraphQLDocument, GraphQLResult, mutateGraphQL } from '../backend/graphql'
+import { mutateGraphQL } from '../backend/graphql'
 import { settingsCascade } from '../settings/configuration'
 import { refreshSettings } from '../user/settings/backend'
 

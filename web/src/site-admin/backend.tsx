@@ -1,13 +1,8 @@
 import { Observable, Subject } from 'rxjs'
 import { map, mergeMap, startWith, tap } from 'rxjs/operators'
+import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
-import {
-    createInvalidGraphQLMutationResponseError,
-    dataOrThrowErrors,
-    gql,
-    mutateGraphQL,
-    queryGraphQL,
-} from '../backend/graphql'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { resetAllMemoizationCaches } from '../util/memoize'
 
 /**

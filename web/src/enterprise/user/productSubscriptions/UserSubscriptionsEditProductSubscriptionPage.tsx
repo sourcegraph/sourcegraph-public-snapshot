@@ -15,8 +15,9 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
+import { gql } from '../../../../../shared/src/graphql'
 import * as GQL from '../../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
+import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../util/errors'

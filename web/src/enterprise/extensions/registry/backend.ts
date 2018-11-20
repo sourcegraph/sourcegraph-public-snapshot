@@ -1,9 +1,10 @@
 import { Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
+import { gql } from '../../../../../shared/src/graphql'
 import { RegistryPublisher } from '../../../../../shared/src/graphqlschema'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import { queryGraphQL } from '../../../backend/graphql'
-import { gql, mutateGraphQL } from '../../../backend/graphql'
+import { mutateGraphQL } from '../../../backend/graphql'
 import { createAggregateError } from '../../../util/errors'
 
 export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Observable<boolean> {
