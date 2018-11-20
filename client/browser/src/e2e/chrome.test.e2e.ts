@@ -101,8 +101,13 @@ describe('Sourcegraph Chrome extension', () => {
 
     after('Close browser', async () => {
         console.log('in after hook')
+        for (const page of await browser.pages()) {
+            await page.close()
+        }
         try {
+            console.log('closing')
             if (browser) {
+                console.log('closing!')
                 await browser.close()
             }
             process.exit(0)
