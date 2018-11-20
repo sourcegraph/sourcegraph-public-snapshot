@@ -14,7 +14,7 @@ export type RegistryPublisher = (
     extensionIDPrefix?: string
 }
 
-/** Returns the extension ID prefix (excluding the ".") for a registry extension's publisher. */
+/** Returns the extension ID prefix (excluding the trailing "/") for a registry extension's publisher. */
 export function extensionIDPrefix(p: RegistryPublisher): string {
     return `${p.extensionIDPrefix ? `${p.extensionIDPrefix}/` : ''}${publisherName(p)}`
 }
