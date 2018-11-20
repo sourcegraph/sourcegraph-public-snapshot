@@ -1,4 +1,4 @@
-# Publish a Sourcegraph extension
+# Publishing a Sourcegraph extension
 
 Publishing a Sourcegraph extension is fast and easy, building (compiling and bundling) one or more TypeScript files into a single JavaScript file.
 
@@ -46,7 +46,7 @@ To set this up:
 
 1. Make a change inside `src`, then save. Your code will be re-bundled and a reload of the browser window will load your changes.
 
-### When you ready for publishing
+### When you are ready for publishing
 
 You've written the code, you've tested your extension and you're ready to publish:
 
