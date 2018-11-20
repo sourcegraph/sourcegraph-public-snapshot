@@ -215,7 +215,7 @@ func main() {
 			bk.Cmd("yarn -s run test:ci"),
 			bk.Cmd("yarn -s run test:e2e --retries 5"),
 			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png")),
+			bk.ArtifactPaths("./puppeteer/*.png"),
 		)
 
 		// Run e2e tests with extensions enabled
@@ -232,7 +232,7 @@ func main() {
 			bk.Cmd("yarn -s run test:ci"),
 			bk.Cmd("yarn -s run test:e2e --retries 5"),
 			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png")),
+			bk.ArtifactPaths("./puppeteer/*.png"),
 		)
 
 		pipeline.AddWait()
