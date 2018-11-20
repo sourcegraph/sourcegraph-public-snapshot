@@ -5,6 +5,7 @@ import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import CityIcon from 'mdi-react/CityIcon'
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import EyeIcon from 'mdi-react/EyeIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
@@ -129,7 +130,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                             <SettingsIcon className="icon-inline" /> Configure repositories
                                         </Link>
                                         <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
-                                            View all
+                                            <OpenInNewIcon className="icon-inline" /> View all
                                         </Link>
                                     </>
                                 }
@@ -151,7 +152,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                             <SettingsIcon className="icon-inline" /> Configure SSO
                                         </Link>
                                         <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
-                                            View all
+                                            <OpenInNewIcon className="icon-inline" /> View all
                                         </Link>
                                     </>
                                 }
@@ -169,7 +170,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                             <AddIcon className="icon-inline" /> Create organization
                                         </Link>
                                         <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
-                                            View all
+                                            <OpenInNewIcon className="icon-inline" /> View all
                                         </Link>
                                     </>
                                 }
@@ -182,11 +183,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 link="/site-admin/surveys"
                                 icon={EmoticonIcon}
                                 actions={
-                                    <>
-                                        <Link to="/site-admin/surveys" className="btn btn-secondary btn-sm">
-                                            View all
-                                        </Link>
-                                    </>
+                                    <Link to="/site-admin/surveys" className="btn btn-secondary btn-sm">
+                                        <OpenInNewIcon className="icon-inline" /> View all
+                                    </Link>
                                 }
                                 title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
                                     'survey response',
@@ -214,21 +213,25 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
                             )}
                             {this.state.stats && (
-                                <>
-                                    <br />
-                                    <UsageChart
-                                        {...this.props}
-                                        stats={this.state.stats}
-                                        chartID="waus"
-                                        header={
+                                <UsageChart
+                                    {...this.props}
+                                    stats={this.state.stats}
+                                    chartID="waus"
+                                    showLegend={false}
+                                    header={
+                                        <div className="site-admin-overview-page__detail-header">
+                                            <h2>Weekly unique users</h2>
                                             <h3>
-                                                Weekly unique users (<Link to="/site-admin/usage-statistics">
-                                                    see more
-                                                </Link>)
+                                                <Link
+                                                    to="/site-admin/usage-statistics"
+                                                    className="btn btn-secondary btn-sm"
+                                                >
+                                                    <OpenInNewIcon className="icon-inline" /> View all usage statistics
+                                                </Link>
                                             </h3>
-                                        }
-                                    />
-                                </>
+                                        </div>
+                                    }
+                                />
                             )}
                         </OverviewItem>
                     )}

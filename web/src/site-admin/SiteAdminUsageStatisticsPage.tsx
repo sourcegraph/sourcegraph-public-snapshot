@@ -37,6 +37,7 @@ interface UsageChartPageProps {
     chartID: keyof ChartOptions
     className?: string
     header?: JSX.Element
+    showLegend?: boolean
 }
 
 export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
@@ -44,7 +45,7 @@ export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: 
         {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
         <BarChart
             showLabels={true}
-            showLegend={true}
+            showLegend={props.showLegend === undefined ? true : props.showLegend}
             width={500}
             height={200}
             isLightTheme={props.isLightTheme}

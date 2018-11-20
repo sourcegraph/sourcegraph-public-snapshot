@@ -10,10 +10,24 @@ export const OverviewList: React.FunctionComponent<{ children: React.ReactNode |
 
 export interface Props {
     link?: string
+
+    /**
+     * Content in the overview item's always-visible, single-line title bar.
+     */
     title: string
+
+    /**
+     * Optional children that appear below the item's title bar that can be expanded/collapsed.
+     * If present, a "View more" button that expands or collapses the children will be added to the item's actions.
+     */
     children?: React.ReactNode | React.ReactNode[]
+
     actions?: React.ReactFragment
     icon?: React.ComponentType<{ className?: string }>
+
+    /**
+     * Whether the item's children are expanded and visible by default.
+     */
     defaultExpanded?: boolean
 }
 
@@ -44,7 +58,7 @@ export class OverviewItem extends React.Component<Props, State> {
             actions = (
                 <>
                     <button className="btn btn-secondary btn-sm" onClick={this.toggleExpand}>
-                        View more
+                        {this.state.expanded ? 'Hide' : 'View more'}
                     </button>
                     {actions && actions}
                 </>
@@ -62,7 +76,9 @@ export class OverviewItem extends React.Component<Props, State> {
                 <div className="overview-item__header">{e}</div>
                 {actions && <div className="overview-item__actions">{actions}</div>}
                 {this.props.children &&
-                    this.state.expanded && <div className="overview-item__children">{this.props.children}</div>}
+                    this.state.expanded && (
+                        <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
+                    )}
             </div>
         )
     }
