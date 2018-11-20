@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/dghubble/gologin"
 	"github.com/pkg/errors"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
@@ -32,15 +32,15 @@ func parseProvider(callbackURL string, p *schema.GitLabAuthProvider, sourceCfg s
 		problems = append(problems, fmt.Sprintf("Could not parse GitLab URL %q. You will not be able to login via this GitLab instance.", rawURL))
 		return nil, problems
 	}
-	baseURL := extsvc.NormalizeBaseURL(parsedURL).String()
+	codeHost := gitlab.NewCodeHost(parsedURL)
 	oauth2Cfg := oauth2.Config{
 		RedirectURL:  callbackURL,
 		ClientID:     p.ClientID,
 		ClientSecret: p.ClientSecret,
 		Scopes:       []string{"api", "read_user"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  strings.TrimSuffix(baseURL, "/") + "/oauth/authorize",
-			TokenURL: strings.TrimSuffix(baseURL, "/") + "/oauth/token",
+			AuthURL:  codeHost.BaseURL().ResolveReference(&url.URL{Path: "/oauth/authorize"}).String(),
+			TokenURL: codeHost.BaseURL().ResolveReference(&url.URL{Path: "/oauth/token"}).String(),
 		},
 	}
 	return oauth.NewProvider(oauth.ProviderOp{
@@ -48,18 +48,21 @@ func parseProvider(callbackURL string, p *schema.GitLabAuthProvider, sourceCfg s
 		OAuth2Config: oauth2Cfg,
 		SourceConfig: sourceCfg,
 		StateConfig:  getStateConfig(),
-		ServiceID:    baseURL,
-		ServiceType:  serviceType,
+		ServiceID:    codeHost.ServiceID(),
+		ServiceType:  codeHost.ServiceType(),
 		Login:        LoginHandler(&oauth2Cfg, nil),
-		Callback: CallbackHandler(&oauth2Cfg, oauth.SessionIssuer(sessionKey, serviceType, baseURL, p.ClientID, getOrCreateUser, func(w http.ResponseWriter) {
-			stateConfig := getStateConfig()
-			stateConfig.MaxAge = -1
-			http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
-		}), nil),
+		Callback: CallbackHandler(&oauth2Cfg, oauth.SessionIssuer(
+			sessionKey, codeHost.ServiceType(), codeHost.ServiceID(), p.ClientID, getOrCreateUser,
+			func(w http.ResponseWriter) {
+				stateConfig := getStateConfig()
+				stateConfig.MaxAge = -1
+				http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+			},
+		), nil),
 	}), nil
 }
 
-func getOrCreateUser(ctx context.Context, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, serviceType, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
 	gUser, err := UserFromContext(ctx)
 	if err != nil {
 		return nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
@@ -72,6 +75,7 @@ func getOrCreateUser(ctx context.Context, serviceID, clientID string, token *oau
 
 	var data extsvc.ExternalAccountData
 	data.SetAccountData(gUser)
+	data.SetAuthData(token)
 
 	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
 		Username:        login,

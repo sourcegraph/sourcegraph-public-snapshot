@@ -57,7 +57,7 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 	}), nil
 }
 
-func getOrCreateUser(ctx context.Context, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, serviceType, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
 	if err != nil {
 		return nil, "Could not read GitHub user from callback request.", errors.Wrap(err, "could not read user from context")

@@ -24,7 +24,7 @@ type sessionData struct {
 
 func SessionIssuer(
 	sessionKey, serviceType, serviceID, clientID string,
-	getOrCreateUser func(ctx context.Context, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error),
+	getOrCreateUser func(ctx context.Context, serviceType, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error),
 	deleteStateCookie func(w http.ResponseWriter),
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,7 @@ func SessionIssuer(
 			return
 		}
 
-		actr, safeErrMsg, err := getOrCreateUser(ctx, serviceID, clientID, token)
+		actr, safeErrMsg, err := getOrCreateUser(ctx, serviceType, serviceID, clientID, token)
 		if err != nil {
 			log15.Error("OAuth failed: error looking up or creating user from OAuth token.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)

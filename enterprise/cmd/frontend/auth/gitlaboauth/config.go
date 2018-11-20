@@ -13,8 +13,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-const serviceType = "gitlab"
-
 var (
 	ffIsEnabled bool
 )

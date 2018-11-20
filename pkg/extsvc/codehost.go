@@ -10,6 +10,7 @@ import (
 type CodeHost interface {
 	ServiceID() string
 	ServiceType() string
+	BaseURL() *url.URL
 }
 
 func IsHostOf(c CodeHost, repo *api.ExternalRepoSpec) bool {
