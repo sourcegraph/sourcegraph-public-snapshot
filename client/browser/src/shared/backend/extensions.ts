@@ -235,6 +235,7 @@ export const gqlSettingsCascade: Observable<Pick<GQL.ISettingsCascade, 'subjects
             `[graphQLContent],
             url,
             requestMightContainPrivateInfo: false,
+            retry: false,
         }).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.viewerConfiguration) {

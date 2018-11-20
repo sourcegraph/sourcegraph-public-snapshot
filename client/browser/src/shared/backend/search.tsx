@@ -184,6 +184,7 @@ export const fetchSuggestions = (options: SearchOptions, first: number) =>
             // The browser extension API only takes 5 suggestions
             first,
         },
+        retry: false,
     }).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.search || !data.search.suggestions) {
@@ -253,6 +254,7 @@ export const fetchSymbols = (options: SearchOptions): Observable<GQL.ISymbol[]> 
         variables: {
             query: options.query,
         },
+        retry: false,
     }).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results || !data.search.results.results) {
