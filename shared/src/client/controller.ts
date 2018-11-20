@@ -14,7 +14,6 @@ import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension
 import { ExtensionManifest } from '../schema/extension.schema'
 import { SettingsCascade } from '../settings'
 import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
-import { log } from './log'
 
 /**
  * Extends the {@link BaseController} class to add functionality that is useful to this package's consumers.
@@ -230,4 +229,28 @@ function registerExtensionContributions(controller: Controller): Unsubscribable 
     return controller.registries.contribution.registerContributions({
         contributions,
     })
+}
+
+/** Prints a nicely formatted console log or error message. */
+function log(level: 'info' | 'error', subject: string, message: any, other?: { [name: string]: any }): void {
+    let f: typeof console.log
+    let color: string
+    let backgroundColor: string
+    if (level === 'info') {
+        f = console.log
+        color = '#000'
+        backgroundColor = '#eee'
+    } else {
+        f = console.error
+        color = 'white'
+        backgroundColor = 'red'
+    }
+    f(
+        '%c EXT %s %c',
+        `font-weight:bold;background-color:${backgroundColor};color:${color}`,
+        subject,
+        'font-weight:normal;background-color:unset',
+        message,
+        other || ''
+    )
 }
