@@ -20,6 +20,8 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [Search](search.md)
   - [Federation](federation.md)
   - [Pings](pings.md)
+  - [Usage statistics](../user/usage_statistics.md)
+  - [User feedback surveys](../user/user_surveys.md)
 - Integrations:
   - [GitHub and GitHub Enterprise](../integration/github.md)
   - [GitLab](../integration/gitlab.md)
