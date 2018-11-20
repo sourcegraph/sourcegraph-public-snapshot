@@ -187,12 +187,6 @@ type GitHubConnection struct {
 	Url                         string               `json:"url"`
 }
 
-// GitLabAuthorization description: If non-null, enforces GitLab repository permissions. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
-type GitLabAuthorization struct {
-	AuthnProvider AuthnProvider `json:"authnProvider"`
-	Ttl           string        `json:"ttl,omitempty"`
-}
-
 // GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".
 type GitLabAuthProvider struct {
 	ClientID     string `json:"clientID"`
@@ -200,6 +194,12 @@ type GitLabAuthProvider struct {
 	DisplayName  string `json:"displayName,omitempty"`
 	Type         string `json:"type"`
 	Url          string `json:"url,omitempty"`
+}
+
+// GitLabAuthorization description: If non-null, enforces GitLab repository permissions. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
+type GitLabAuthorization struct {
+	AuthnProvider AuthnProvider `json:"authnProvider"`
+	Ttl           string        `json:"ttl,omitempty"`
 }
 type GitLabConnection struct {
 	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
