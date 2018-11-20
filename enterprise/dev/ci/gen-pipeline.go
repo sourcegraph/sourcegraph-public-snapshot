@@ -218,6 +218,8 @@ func main() {
 			bk.ArtifactPaths("./puppeteer/*.png"),
 		)
 
+		pipeline.AddWait()
+
 		// Run e2e tests with extensions enabled
 		//
 		// TODO: Remove this step when extensions are enabled by default
