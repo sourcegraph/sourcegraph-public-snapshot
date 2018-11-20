@@ -1,6 +1,4 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import { ExtensionStatusPopover } from '../../../../../shared/src/app/ExtensionStatus'
 import { Controller as ClientController } from '../../../../../shared/src/client/controller'
@@ -31,10 +29,6 @@ export const GlobalDebug: React.FunctionComponent<Props> = props =>
                     <ShortcutProvider>
                         <ExtensionStatusPopover
                             location={props.location}
-                            loaderIcon={
-                                LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>
-                            }
-                            caretIcon={MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>}
                             extensionsController={props.extensionsController}
                             link={ExtensionLink}
                         />

@@ -1,6 +1,7 @@
 import { ShortcutProps } from '@slimsag/react-shortcuts'
 import H from 'history'
 import { isArray, sortBy, uniq } from 'lodash-es'
+import MenuIcon from 'mdi-react/MenuIcon'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
@@ -260,14 +261,13 @@ export class CommandListPopoverButton extends React.PureComponent<
     public render(): JSX.Element | null {
         return (
             <PopoverButton
-                caretIcon={this.props.extensionsContext.icons.CaretDown}
                 popoverClassName="rounded"
                 placement="auto-end"
                 toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 hideOnChange={this.state.hideOnChange}
                 popoverElement={<CommandList {...this.props} onSelect={this.dismissPopover} />}
             >
-                <this.props.extensionsContext.icons.Menu className="icon-inline" />
+                <MenuIcon className="icon-inline" />
             </PopoverButton>
         )
     }

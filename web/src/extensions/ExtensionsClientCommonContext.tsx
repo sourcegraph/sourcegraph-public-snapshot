@@ -1,6 +1,4 @@
 import { isEqual } from 'lodash'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
 import { concat, Observable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take, withLatestFrom } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
@@ -52,10 +50,6 @@ export function createExtensionsContext(): ExtensionsContext {
                 variables
             ),
         queryLSP: requests => sendLSPHTTPRequests(requests),
-        icons: {
-            CaretDown: MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Menu: MenuIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-        },
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
     }
 }

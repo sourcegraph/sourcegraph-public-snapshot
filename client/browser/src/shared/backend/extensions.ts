@@ -2,8 +2,6 @@ import * as JSONC from '@sqs/jsonc-parser'
 import { applyEdits } from '@sqs/jsonc-parser'
 import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
-import MenuDown from 'mdi-react/MenuDownIcon'
-import Menu from 'mdi-react/MenuIcon'
 import { combineLatest, from, Observable, Subject, throwError, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take, tap } from 'rxjs/operators'
 import uuid from 'uuid'
@@ -299,10 +297,6 @@ export function createExtensionsContext(sourcegraphUrl: string): ExtensionsConte
                   throwError(
                       'The queryLSP command is unavailable because the current repository does not exist on the Sourcegraph instance.'
                   ),
-        icons: {
-            CaretDown: MenuDown as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Menu: Menu as React.ComponentType<{ className: string; onClick?: () => void }>,
-        },
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },

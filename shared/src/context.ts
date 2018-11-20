@@ -51,18 +51,6 @@ export interface Context {
     queryLSP(requests: object[]): Subscribable<object[]>
 
     /**
-     * React components for icons. They are expected to size themselves appropriately with the surrounding DOM flow
-     * content.
-     */
-    readonly icons: Record<
-        'Menu' | 'CaretDown',
-        React.ComponentType<{
-            className: 'icon-inline' | string
-            onClick?: () => void
-        }>
-    >
-
-    /**
      * Forces the currently displayed tooltip, if any, to update its contents.
      */
     forceUpdateTooltip(): void
