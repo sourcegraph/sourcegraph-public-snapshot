@@ -52,90 +52,90 @@ func main() {
 		bk.Env("FORCE_COLOR", "1"),
 	)
 
-	pipeline.AddStep(":white_check_mark:",
-		bk.Cmd("./dev/check/all.sh"))
+	// pipeline.AddStep(":white_check_mark:",
+	// 	bk.Cmd("./dev/check/all.sh"))
 
-	pipeline.AddStep(":lipstick:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run prettier"))
+	// pipeline.AddStep(":lipstick:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("yarn -s run prettier"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run all:tslint"))
+	// pipeline.AddStep(":typescript:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("yarn -s run all:tslint"))
 
-	pipeline.AddStep(":stylelint:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run all:stylelint"),
-		bk.Cmd("yarn run all:typecheck"))
+	// pipeline.AddStep(":stylelint:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("yarn -s run all:stylelint"),
+	// 	bk.Cmd("yarn run all:typecheck"))
 
-	pipeline.AddStep(":graphql:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn run graphql-lint"))
+	// pipeline.AddStep(":graphql:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("yarn run graphql-lint"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("yarn -s run build"),
-		bk.Cmd("popd"))
+	// pipeline.AddStep(":typescript:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd client/browser"),
+	// 	bk.Cmd("yarn -s run browserslist"),
+	// 	bk.Cmd("yarn -s run build"),
+	// 	bk.Cmd("popd"))
 
-	pipeline.AddStep(":webpack:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("NODE_ENV=production yarn -s run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-		bk.Cmd("popd"))
+	// pipeline.AddStep(":webpack:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd web"),
+	// 	bk.Cmd("yarn -s run browserslist"),
+	// 	bk.Cmd("NODE_ENV=production yarn -s run build --color"),
+	// 	bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
+	// 	bk.Cmd("popd"))
 
-	pipeline.AddStep(":webpack: :moneybag:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-		bk.Cmd("popd"))
+	// pipeline.AddStep(":webpack: :moneybag:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd web"),
+	// 	bk.Cmd("yarn -s run browserslist"),
+	// 	bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
+	// 	bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
+	// 	bk.Cmd("popd"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run cover"),
-		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-		bk.Cmd("popd"),
-		bk.ArtifactPaths("web/coverage/coverage-final.json"))
+	// pipeline.AddStep(":typescript:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd web"),
+	// 	bk.Cmd("yarn -s run cover"),
+	// 	bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
+	// 	bk.Cmd("popd"),
+	// 	bk.ArtifactPaths("web/coverage/coverage-final.json"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd shared"),
-		bk.Cmd("yarn -s run cover"),
-		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-		bk.Cmd("popd"),
-		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
+	// pipeline.AddStep(":typescript:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd shared"),
+	// 	bk.Cmd("yarn -s run cover"),
+	// 	bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
+	// 	bk.Cmd("popd"),
+	// 	bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
-	// TODO(sqs): reenable the DB backcompat test
-	//
-	// pipeline.AddStep(":postgres:",
-	// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+	// // TODO(sqs): reenable the DB backcompat test
+	// //
+	// // pipeline.AddStep(":postgres:",
+	// // 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go generate ./..."),
-		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
-		bk.ArtifactPaths("coverage.txt"))
+	// pipeline.AddStep(":go:",
+	// 	bk.Cmd("go generate ./..."),
+	// 	bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+	// 	bk.ArtifactPaths("coverage.txt"))
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go generate ./..."),
-		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
-	)
+	// pipeline.AddStep(":go:",
+	// 	bk.Cmd("go generate ./..."),
+	// 	bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
+	// )
 
-	pipeline.AddStep(":docker:",
-		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+	// pipeline.AddStep(":docker:",
+	// 	bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+	// 	bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 
-	pipeline.AddWait()
+	// pipeline.AddWait()
 
-	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
-		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
+	// pipeline.AddStep(":codecov:",
+	// 	bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
+	// 	bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
+	// 	bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
 
 	// addDockerImageStep adds a build step for a given app.
 	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
