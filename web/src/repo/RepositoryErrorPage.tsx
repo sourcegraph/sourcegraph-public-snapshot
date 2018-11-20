@@ -208,7 +208,8 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                         {this.state.canAddOrError === true && (
                                             <>
                                                 As a site admin, you can add this repository to Sourcegraph to allow
-                                                users to search and view it by updating your site configuration.
+                                                users to search and view it by{' '}
+                                                <a href="/help/admin">configuring an integration with your code host</a>.
                                             </>
                                         )}
                                     </div>
