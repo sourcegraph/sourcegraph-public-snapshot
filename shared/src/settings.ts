@@ -3,8 +3,6 @@ import { createAggregateError, ErrorLike, isErrorLike } from './errors'
 import * as GQL from './graphqlschema'
 import { parseJSONCOrError } from './util'
 
-export type ID = string
-
 export interface IClient {
     __typename: 'Client'
     displayName: string
@@ -88,6 +86,9 @@ export interface ConfiguredSubject {
 
     /** The subject's settings. */
     settings: Settings
+
+    /** The sequential ID number of the settings, used to ensure that edits are applied to the correct version. */
+    lastID: number | null
 }
 
 /**
@@ -107,6 +108,7 @@ export interface ConfiguredSubjectOrError
 /** A minimal subset of a GraphQL SettingsSubject type that includes only the single contents value. */
 export interface SubjectSettingsContents {
     latestSettings: {
+        id: number
         contents: string
     } | null
 }
@@ -125,7 +127,8 @@ export function gqlToCascade({
     const allSettingsErrors: ErrorLike[] = []
     for (const subject of subjects) {
         const settings = subject.latestSettings && parseJSONCOrError<Settings>(subject.latestSettings.contents)
-        cascade.subjects.push({ subject, settings })
+        const lastID = subject.latestSettings ? subject.latestSettings.id : null
+        cascade.subjects.push({ subject, settings, lastID })
 
         if (isErrorLike(settings)) {
             allSettingsErrors.push(settings)

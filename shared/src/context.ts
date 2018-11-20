@@ -1,17 +1,8 @@
 import { Subscribable } from 'rxjs'
-import { ConfigurationUpdateParams } from './api/protocol'
 import { GraphQLResult } from './graphql'
 import * as GQL from './graphqlschema'
-import { ID, SettingsCascadeOrError } from './settings'
-
-export type UpdateExtensionSettingsArgs =
-    | { edit?: ConfigurationUpdateParams }
-    | {
-          extensionID: string
-          // TODO: unclean api, allows 4 states (2 bools), but only 3 are valid (none/disabled/enabled)
-          enabled?: boolean
-          remove?: boolean
-      }
+import { SettingsCascadeOrError } from './settings'
+import { UpdateExtensionSettingsArgs } from './settings/edit'
 
 /**
  * Description of the context in which extensions-client-common is running, and platform-specific hooks.
@@ -23,22 +14,26 @@ export interface Context {
      */
     readonly settingsCascade: Subscribable<SettingsCascadeOrError>
 
-    updateExtensionSettings(subject: ID, args: UpdateExtensionSettingsArgs): Subscribable<void>
+    /**
+     * Update the settings for the subject.
+     */
+    updateSettings(subject: GQL.ID, args: UpdateExtensionSettingsArgs): Promise<void>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.
      *
+     * @template R The GraphQL result type
      * @param request The GraphQL request (query or mutation)
      * @param variables An object whose properties are GraphQL query name-value variable pairs
      * @param mightContainPrivateInfo 🚨 SECURITY: Whether or not sending the GraphQL request to Sourcegraph.com
      * could leak private information such as repository names.
      * @return Observable that emits the result or an error if the HTTP request failed
      */
-    queryGraphQL(
+    queryGraphQL<R extends GQL.IQuery | GQL.IMutation>(
         request: string,
         variables?: { [name: string]: any },
         mightContainPrivateInfo?: boolean
-    ): Subscribable<GraphQLResult<GQL.IQuery>>
+    ): Subscribable<GraphQLResult<R>>
 
     /**
      * Sends a batch of LSP requests to the Sourcegraph LSP gateway API and returns the result.

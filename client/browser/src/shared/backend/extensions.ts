@@ -2,12 +2,12 @@ import * as JSONC from '@sqs/jsonc-parser'
 import { applyEdits } from '@sqs/jsonc-parser'
 import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
-import { combineLatest, from, Observable, Subject, throwError, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take, tap } from 'rxjs/operators'
+import { combineLatest, Observable, Subject, throwError, Unsubscribable } from 'rxjs'
+import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take } from 'rxjs/operators'
 import uuid from 'uuid'
 import { MessageTransports } from '../../../../../shared/src/api/protocol/jsonrpc2/connection'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
-import { Context as ExtensionsContext, UpdateExtensionSettingsArgs } from '../../../../../shared/src/context'
+import { Context as ExtensionsContext } from '../../../../../shared/src/context'
 import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
 import { gql, graphQLContent } from '../../../../../shared/src/graphql'
 import * as GQL from '../../../../../shared/src/graphqlschema'
@@ -18,12 +18,13 @@ import {
     SettingsCascadeOrError,
     SettingsSubject,
 } from '../../../../../shared/src/settings'
+import { mutateSettings, UpdateExtensionSettingsArgs, updateSettings } from '../../../../../shared/src/settings/edit'
 import storage, { StorageItems } from '../../browser/storage'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
 import { canFetchForURL } from '../util/context'
 import { getContext } from './context'
 import { createAggregateError, isErrorLike } from './errors'
-import { mutateGraphQL, queryGraphQL } from './graphql'
+import { queryGraphQL, requestGraphQL } from './graphql'
 import { sendLSPHTTPRequests } from './lsp'
 import { createPortMessageTransports } from './PortMessageTransports'
 
@@ -143,6 +144,7 @@ const storageSettingsCascade: Observable<SettingsCascade> = storage.observeSync(
                     displayName: 'Client',
                 } as SettingsSubject,
                 settings: clientSettings,
+                lastID: null,
             },
         ],
         final: clientSettings || {},
@@ -275,14 +277,22 @@ export function createExtensionsContext(sourcegraphUrl: string): ExtensionsConte
     const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
     sourcegraphLanguageServerURL.pathname = '.api/xlang'
 
-    return {
+    const context: ExtensionsContext = {
         settingsCascade,
-        updateExtensionSettings,
+        updateSettings: async (subject, args) => {
+            await updateSettings(
+                context,
+                subject,
+                args,
+                subject === 'Client' ? () => editClientSettings(args) : mutateSettings
+            )
+            settingsCascadeRefreshes.next()
+        },
         queryGraphQL: (request, variables, requestMightContainPrivateInfo) =>
             storage.observeSync('sourcegraphURL').pipe(
                 take(1),
                 mergeMap(url =>
-                    queryGraphQL({
+                    requestGraphQL({
                         ctx: getContext({ repoKey: '', isRepoSpecific: false }),
                         request,
                         variables,
@@ -301,107 +311,38 @@ export function createExtensionsContext(sourcegraphUrl: string): ExtensionsConte
             // TODO(sqs): implement tooltips on the browser extension
         },
     }
+    return context
 }
 
-// TODO(sqs): copied from sourcegraph/sourcegraph temporarily
-function updateUserSettings(subject: string, args: UpdateExtensionSettingsArgs): Observable<void> {
-    return gqlSettingsCascade.pipe(
-        take(1),
-        switchMap(gqlSettingsCascade => {
-            const subjectSettings = gqlSettingsCascade.subjects.find(s => s.id === subject)
-            if (!subjectSettings) {
-                throw new Error(`no settings subject: ${subject}`)
-            }
-            const lastID = subjectSettings.latestSettings ? subjectSettings.latestSettings.id : null
+function editClientSettings(args: UpdateExtensionSettingsArgs): Promise<void> {
+    return new Promise<StorageItems>(resolve => storage.getSync(storageItems => resolve(storageItems))).then(
+        storageItems => {
+            let clientSettings = storageItems.clientSettings
 
-            let edit: GQL.ISettingsEdit
+            const format = { tabSize: 2, insertSpaces: true, eol: '\n' }
+
             if ('edit' in args && args.edit) {
-                edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
+                clientSettings = applyEdits(
+                    clientSettings,
+                    // TODO(chris): remove `.slice()` (which guards against
+                    // mutation) once
+                    // https://github.com/Microsoft/node-jsonc-parser/pull/12
+                    // is merged in.
+                    setProperty(clientSettings, args.edit.path.slice(), args.edit.value, format)
+                )
             } else if ('extensionID' in args) {
-                edit = {
-                    keyPath: toGQLKeyPath(['extensions', args.extensionID]),
-                    value: typeof args.enabled === 'boolean' ? args.enabled : null,
-                }
-            } else {
-                throw new Error('no edit')
-            }
-
-            return editSettings(subject, lastID, edit)
-        })
-    )
-}
-
-// TODO(sqs): copied from sourcegraph/sourcegraph temporarily
-//
-// NOTE: uses configurationMutation and editConfiguration for backcompat
-function editSettings(subject: GQL.ID, lastID: number | null, edit: GQL.IConfigurationEdit): Observable<void> {
-    return mutateGraphQL({
-        ctx: getContext({ repoKey: '', isRepoSpecific: false }),
-        request: `
-            mutation EditConfiguration($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
-                    editConfiguration(edit: $edit) {
-                        empty {
-                            alwaysNil
-                        }
-                    }
-                }
-            }
-        `,
-        variables: { subject, lastID, edit },
-    }).pipe(
-        map(({ errors }) => {
-            if (errors && errors.length > 0) {
-                throw createAggregateError(errors)
-            }
-        }),
-        map(() => undefined),
-        tap(() => settingsCascadeRefreshes.next())
-    )
-}
-
-// TODO(sqs): copied from sourcegraph/sourcegraph temporarily
-function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
-    return keyPath.map(v => (typeof v === 'string' ? { property: v } : { index: v }))
-}
-
-const updateClientSettings = (subjectID: 'Client', args: UpdateExtensionSettingsArgs): Observable<void> =>
-    from(
-        new Promise<StorageItems>(resolve => storage.getSync(storageItems => resolve(storageItems))).then(
-            storageItems => {
-                let clientSettings = storageItems.clientSettings
-
-                const format = { tabSize: 2, insertSpaces: true, eol: '\n' }
-
-                if ('edit' in args && args.edit) {
-                    clientSettings = applyEdits(
-                        clientSettings,
-                        // TODO(chris): remove `.slice()` (which guards against
-                        // mutation) once
-                        // https://github.com/Microsoft/node-jsonc-parser/pull/12
-                        // is merged in.
-                        setProperty(clientSettings, args.edit.path.slice(), args.edit.value, format)
-                    )
-                } else if ('extensionID' in args) {
-                    clientSettings = applyEdits(
-                        clientSettings,
-                        typeof args.enabled === 'boolean'
-                            ? setProperty(clientSettings, ['extensions', args.extensionID], args.enabled, format)
-                            : removeProperty(clientSettings, ['extensions', args.extensionID], format)
-                    )
-                }
-                return new Promise<undefined>(resolve =>
-                    storage.setSync({ clientSettings }, () => {
-                        resolve(undefined)
-                    })
+                clientSettings = applyEdits(
+                    clientSettings,
+                    typeof args.enabled === 'boolean'
+                        ? setProperty(clientSettings, ['extensions', args.extensionID], args.enabled, format)
+                        : removeProperty(clientSettings, ['extensions', args.extensionID], format)
                 )
             }
-        )
+            return new Promise<undefined>(resolve =>
+                storage.setSync({ clientSettings }, () => {
+                    resolve(undefined)
+                })
+            )
+        }
     )
-
-export const updateExtensionSettings = (subjectID: string, args: UpdateExtensionSettingsArgs): Observable<void> => {
-    if (subjectID === 'Client') {
-        return updateClientSettings(subjectID, args)
-    }
-    return updateUserSettings(subjectID, args)
 }

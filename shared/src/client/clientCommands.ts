@@ -14,7 +14,7 @@ import { SettingsCascade } from '../settings'
  * documentation.
  */
 export function registerBuiltinClientCommands<E extends Extension>(
-    context: Pick<Context, 'settingsCascade' | 'updateExtensionSettings' | 'queryGraphQL' | 'queryLSP'>,
+    context: Pick<Context, 'settingsCascade' | 'updateSettings' | 'queryGraphQL' | 'queryLSP'>,
     controller: Controller<E, SettingsCascade>
 ): Unsubscribable {
     const subscription = new Subscription()
@@ -112,7 +112,7 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
  * Applies an edit to the settings of the highest-precedence subject.
  */
 export function updateConfiguration(
-    context: Pick<Context, 'settingsCascade' | 'updateExtensionSettings'>,
+    context: Pick<Context, 'settingsCascade' | 'updateSettings'>,
     params: ConfigurationUpdateParams
 ): Promise<void> {
     // TODO(sqs): Allow extensions to specify which subject's settings to update
@@ -132,7 +132,7 @@ export function updateConfiguration(
                     )
                 }
                 const subject = x.subjects[x.subjects.length - 1].subject
-                return context.updateExtensionSettings(subject.id, { edit: params })
+                return context.updateSettings(subject.id, { edit: params })
             })
         )
         .toPromise()

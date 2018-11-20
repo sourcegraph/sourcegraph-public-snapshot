@@ -5,7 +5,7 @@ import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, map, mapTo, switchMap, tap } from 'rxjs/operators'
+import { catchError, concatMap, map, tap } from 'rxjs/operators'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
 import { gql } from '../../../../../shared/src/graphql'
 import * as GQL from '../../../../../shared/src/graphqlschema'
@@ -15,7 +15,6 @@ import { Form } from '../../../components/Form'
 import { ModalPage } from '../../../components/ModalPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { RegistryPublisher, toExtensionID } from '../../../extensions/extension/extension'
-import { updateHighestPrecedenceExtensionSettings } from '../../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../extension/RegistryExtensionForm'
 import { queryViewerRegistryPublishers } from './backend'
@@ -50,14 +49,6 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
             return data.extensionRegistry.createExtension
         })
     )
-}
-
-/**
- * It is convenient and less confusing for users if newly created extensions are added to their user settings. That
- * means that they are immediately usable.
- */
-function configureNewExtensionAsDisabled(extensionID: string): Observable<void> {
-    return updateHighestPrecedenceExtensionSettings({ extensionID, enabled: true }) as Observable<any>
 }
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {
@@ -108,11 +99,6 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             concat(
                                 [{ creationOrError: 'loading' }],
                                 createExtension(this.state.publisher!, this.state.name).pipe(
-                                    switchMap(result =>
-                                        configureNewExtensionAsDisabled(result.extension.extensionID).pipe(
-                                            mapTo(result)
-                                        )
-                                    ),
                                     tap(result => {
                                         // Go to the page for the newly created extension.
                                         this.props.history.push(result.extension.url)

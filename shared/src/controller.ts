@@ -4,6 +4,7 @@ import { Context } from './context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
 import { ConfiguredExtension, toConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent } from './graphql'
+import * as GQL from './graphqlschema'
 import { SettingsCascadeOrError } from './settings'
 
 const LOADING: 'loading' = 'loading'
@@ -47,7 +48,7 @@ export function queryConfiguredExtensions(
     }
     const extensionIDs = Object.keys(cascade.final.extensions)
     return from(
-        queryGraphQL(
+        queryGraphQL<GQL.IQuery>(
             gql`
                 query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                     extensionRegistry {

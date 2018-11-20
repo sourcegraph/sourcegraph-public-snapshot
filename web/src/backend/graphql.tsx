@@ -12,7 +12,10 @@ import * as GQL from '../../../shared/src/graphqlschema'
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-function requestGraphQL(request: GraphQLDocument, variables: any = {}): Observable<GQL.IGraphQLResponseRoot> {
+export function requestGraphQL<R extends GQL.IGraphQLResponseRoot>(
+    request: GraphQLDocument,
+    variables: any = {}
+): Observable<R> {
     const nameMatch = request[graphQLContent].match(/^\s*(?:query|mutation)\s+(\w+)/)
     return ajax({
         method: 'POST',

@@ -1,6 +1,5 @@
 import { isEqual } from 'lodash'
-import { concat, Observable } from 'rxjs'
-import { distinctUntilChanged, map, switchMap, take, withLatestFrom } from 'rxjs/operators'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
 import { InitData } from '../../../shared/src/api/extension/extensionHost'
 import { SettingsCascade } from '../../../shared/src/api/protocol'
@@ -10,23 +9,20 @@ import { ControllerProps as GenericExtensionsControllerProps } from '../../../sh
 import {
     Context as ExtensionsContext,
     ExtensionsContextProps as GenericExtensionsContextProps,
-    UpdateExtensionSettingsArgs,
 } from '../../../shared/src/context'
 import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { gql } from '../../../shared/src/graphql'
-import * as GQL from '../../../shared/src/graphqlschema'
 import {
     gqlToCascade,
     Settings,
     SettingsCascadeProps as GenericSettingsCascadeProps,
 } from '../../../shared/src/settings'
-import { authenticatedUser } from '../auth'
-import { queryGraphQL } from '../backend/graphql'
+import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
+import { requestGraphQL } from '../backend/graphql'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
-import { editSettings } from '../configuration/backend'
-import { settingsCascade, toGQLKeyPath } from '../settings/configuration'
+import { settingsCascade } from '../settings/configuration'
 import { refreshSettings } from '../user/settings/backend'
 
 export interface ExtensionsControllerProps extends GenericExtensionsControllerProps {}
@@ -36,55 +32,23 @@ export interface SettingsCascadeProps extends GenericSettingsCascadeProps {}
 export interface ExtensionsProps extends GenericExtensionsContextProps {}
 
 export function createExtensionsContext(): ExtensionsContext {
-    return {
+    const context: ExtensionsContext = {
         settingsCascade: settingsCascade.pipe(
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
-        updateExtensionSettings: (subject, args) => updateExtensionSettings(subject, args),
-        queryGraphQL: (request, variables) =>
-            queryGraphQL(
-                gql`
-                    ${request}
-                `,
-                variables
-            ),
-        queryLSP: requests => sendLSPHTTPRequests(requests),
-        forceUpdateTooltip: () => Tooltip.forceUpdate(),
-    }
-}
-
-function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsArgs): Observable<void> {
-    return settingsCascade.pipe(
-        take(1),
-        withLatestFrom(authenticatedUser),
-        switchMap(([settingsCascade, authenticatedUser]) => {
-            const subjectSettings = settingsCascade.subjects.find(s => s.id === subject)
-            if (!subjectSettings) {
-                throw new Error(`no settings subject: ${subject}`)
-            }
-            const lastID = subjectSettings.latestSettings ? subjectSettings.latestSettings.id : null
-
-            let edit: GQL.ISettingsEdit
-            let editDescription: string
-            if ('edit' in args && args.edit) {
-                edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
-                editDescription = `update user setting ` + '`' + args.edit.path + '`'
-            } else if ('extensionID' in args) {
-                edit = {
-                    keyPath: toGQLKeyPath(['extensions', args.extensionID]),
-                    value: typeof args.enabled === 'boolean' ? args.enabled : null,
+        updateSettings: async (subject, args) => {
+            if (!window.context.isAuthenticatedUser) {
+                let editDescription = 'edit settings' // default description
+                if ('edit' in args && args.edit) {
+                    editDescription = `update user setting ` + '`' + args.edit.path + '`'
+                } else if ('extensionID' in args) {
+                    editDescription =
+                        `${typeof args.enabled === 'boolean' ? 'enable' : 'disable'} extension ` +
+                        '`' +
+                        args.extensionID +
+                        '`'
                 }
-                editDescription =
-                    `${typeof args.enabled === 'boolean' ? 'enable' : 'disable'} extension ` +
-                    '`' +
-                    args.extensionID +
-                    '`'
-            } else {
-                throw new Error('no edit')
-            }
-
-            if (!authenticatedUser) {
                 const u = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
@@ -94,25 +58,23 @@ function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsA
                         }**](${`${u.href.replace(/\/$/, '')}/sign-in`})`
                 )
             }
-
-            return editSettings(subject, lastID, edit)
-        }),
-        switchMap(() => concat(refreshSettings(), [void 0]))
-    )
-}
-
-export function updateHighestPrecedenceExtensionSettings(args: {
-    extensionID: string
-    enabled?: boolean
-}): Observable<void> {
-    return settingsCascade.pipe(
-        take(1),
-        switchMap(settingsCascade => {
-            // Only support configuring extension settings in user settings with this action.
-            const subject = settingsCascade.subjects[settingsCascade.subjects.length - 1]
-            return updateExtensionSettings(subject.id, args)
-        })
-    )
+            try {
+                await updateSettings(context, subject, args, mutateSettings)
+            } finally {
+                await refreshSettings().toPromise()
+            }
+        },
+        queryGraphQL: (request, variables) =>
+            requestGraphQL(
+                gql`
+                    ${request}
+                `,
+                variables
+            ),
+        queryLSP: requests => sendLSPHTTPRequests(requests),
+        forceUpdateTooltip: () => Tooltip.forceUpdate(),
+    }
+    return context
 }
 
 export function createMessageTransports(

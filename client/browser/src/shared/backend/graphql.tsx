@@ -35,7 +35,7 @@ export interface GraphQLRequestArgs {
  * @param options configuration options for the request
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
+export function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
     ctx,
     request,
     variables = {},
