@@ -2,10 +2,9 @@ import { from, Observable, of, throwError } from 'rxjs'
 import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { Context } from './context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
-import { ConfiguredExtension } from './extensions/extension'
+import { ConfiguredExtension, toConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent } from './graphql'
 import { SettingsCascadeOrError } from './settings'
-import { parseJSONCOrError } from './util'
 
 const LOADING: 'loading' = 'loading'
 
@@ -96,16 +95,11 @@ export function queryConfiguredExtensions(
             const configuredExtensions: ConfiguredExtension[] = []
             for (const extensionID of extensionIDs) {
                 const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
-                configuredExtensions.push({
-                    id: extensionID,
-                    manifest:
-                        registryExtension && registryExtension.manifest
-                            ? parseJSONCOrError(registryExtension.manifest.raw)
-                            : null,
-                    rawManifest:
-                        (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,
-                    registryExtension,
-                })
+                configuredExtensions.push(
+                    registryExtension
+                        ? toConfiguredExtension(registryExtension)
+                        : { id: extensionID, manifest: null, rawManifest: null, registryExtension: undefined }
+                )
             }
             return configuredExtensions
         })

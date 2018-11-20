@@ -6,7 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { createAggregateError } from '../../../../shared/src/errors'
-import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
+import { ConfiguredExtension, toConfiguredExtensions } from '../../../../shared/src/extensions/extension'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
@@ -14,7 +14,6 @@ import { ExtensionsProps, SettingsCascadeProps } from '../../extensions/Extensio
 import { RouteDescriptor } from '../../util/contributions'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
-import { toConfiguredExtensions } from './extension'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
 
 export const registryExtensionFragment = gql`

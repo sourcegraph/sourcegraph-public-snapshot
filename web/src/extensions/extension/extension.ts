@@ -1,7 +1,4 @@
-import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
 import * as GQL from '../../../../shared/src/graphqlschema'
-import { ExtensionManifest } from '../../../../shared/src/schema/extension.schema'
-import { parseJSONCOrError } from '../../../../shared/src/util'
 
 /** Pattern for valid extension names. */
 export const EXTENSION_NAME_VALID_PATTERN = '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[_.-](?=[a-zA-Z0-9]))*$'
@@ -34,21 +31,4 @@ export function publisherName(p: RegistryPublisher): string {
 /** Returns the extension ID (in "publisher/name" format). */
 export function toExtensionID(publisher: string | RegistryPublisher, name: string): string {
     return `${typeof publisher === 'string' ? publisher : extensionIDPrefix(publisher)}/${name}`
-}
-
-export function toConfiguredExtensions(
-    registryExtensions: GQL.IRegistryExtension[]
-): ConfiguredExtension<GQL.IRegistryExtension>[] {
-    const configuredExtensions: ConfiguredExtension<GQL.IRegistryExtension>[] = []
-    for (const registryExtension of registryExtensions) {
-        configuredExtensions.push({
-            id: registryExtension.extensionID,
-            manifest: registryExtension.manifest
-                ? parseJSONCOrError<ExtensionManifest>(registryExtension.manifest.raw)
-                : null,
-            rawManifest: (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,
-            registryExtension,
-        })
-    }
-    return configuredExtensions
 }
