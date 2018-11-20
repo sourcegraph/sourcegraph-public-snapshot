@@ -8,6 +8,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
+	githubcodehost "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
@@ -152,7 +153,7 @@ func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
 		OAuth2Config: oauth2Config,
 		StateConfig:  getStateConfig(),
 		ServiceID:    serviceID,
-		ServiceType:  serviceType,
+		ServiceType:  githubcodehost.ServiceType,
 	}
 	return &oauth.Provider{ProviderOp: op}
 }

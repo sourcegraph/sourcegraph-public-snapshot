@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/pkg/errors"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	githubcodehost "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
@@ -31,14 +31,14 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 		problems = append(problems, fmt.Sprintf("Could not parse GitHub URL %q. You will not be able to login via this GitHub instance.", rawURL))
 		return nil, problems
 	}
-	baseURL := extsvc.NormalizeBaseURL(parsedURL).String()
+	codeHost := githubcodehost.NewCodeHost(parsedURL)
 	oauth2Cfg := oauth2.Config{
 		ClientID:     p.ClientID,
 		ClientSecret: p.ClientSecret,
 		Scopes:       []string{"repo"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  strings.TrimSuffix(baseURL, "/") + "/login/oauth/authorize",
-			TokenURL: strings.TrimSuffix(baseURL, "/") + "/login/oauth/access_token",
+			AuthURL:  codeHost.BaseURL().ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
+			TokenURL: codeHost.BaseURL().ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
 		},
 	}
 	return oauth.NewProvider(oauth.ProviderOp{
@@ -46,14 +46,16 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 		OAuth2Config: oauth2Cfg,
 		SourceConfig: sourceCfg,
 		StateConfig:  getStateConfig(),
-		ServiceID:    baseURL,
-		ServiceType:  serviceType,
+		ServiceID:    codeHost.ServiceID(),
+		ServiceType:  codeHost.ServiceType(),
 		Login:        github.LoginHandler(&oauth2Cfg, nil),
-		Callback: github.CallbackHandler(&oauth2Cfg, oauth.SessionIssuer(sessionKey, serviceType, baseURL, p.ClientID, getOrCreateUser, func(w http.ResponseWriter) {
-			stateConfig := getStateConfig()
-			stateConfig.MaxAge = -1
-			http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
-		}), nil),
+		Callback: github.CallbackHandler(&oauth2Cfg, oauth.SessionIssuer(
+			sessionKey, codeHost.ServiceType(), codeHost.ServiceID(), p.ClientID, getOrCreateUser,
+			func(w http.ResponseWriter) {
+				stateConfig := getStateConfig()
+				stateConfig.MaxAge = -1
+				http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+			}), nil),
 	}), nil
 }
 
