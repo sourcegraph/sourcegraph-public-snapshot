@@ -6,6 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import settingsSchemaJSON from '../../../schema/settings.schema.json'
+import { queryConfiguredExtensions } from '../../../shared/src/controller'
 import { ISettingsCascade } from '../../../shared/src/graphqlschema'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { gqlToCascade } from '../../../shared/src/settings'
@@ -160,7 +161,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private onUpdate = () => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
-        return this.props.extensions.withRegistryMetadata(gqlToCascade(cascade)).pipe(
+        return queryConfiguredExtensions(this.props.extensions.context, gqlToCascade(cascade)).pipe(
             map(configuredExtensions => ({
                 $id: 'settings.schema.json',
                 allOf: [

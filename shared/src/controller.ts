@@ -22,7 +22,7 @@ export class Controller<S extends SettingsSubject, C extends Settings> {
             cascade =>
                 isErrorLike(cascade.final)
                     ? [cascade.final]
-                    : this.withRegistryMetadata(cascade).pipe(
+                    : queryConfiguredExtensions(this.context, cascade).pipe(
                           catchError(error => [asError(error) as ErrorLike]),
                           startWith(Controller.LOADING)
                       )
@@ -35,79 +35,80 @@ export class Controller<S extends SettingsSubject, C extends Settings> {
         filter((extensions): extensions is ConfiguredExtension[] | ErrorLike => extensions !== Controller.LOADING),
         switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions]))
     )
+}
 
-    public withRegistryMetadata(
-        cascade: SettingsCascadeOrError<SettingsSubject, Settings>
-    ): Observable<ConfiguredExtension[]> {
-        if (isErrorLike(cascade.final)) {
-            return throwError(cascade.final)
-        }
-        if (!cascade.final || !cascade.final.extensions) {
-            return of([])
-        }
-        const extensionIDs = Object.keys(cascade.final.extensions)
-        return from(
-            this.context.queryGraphQL(
-                gql`
-                    query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
-                        extensionRegistry {
-                            extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
-                                nodes {
-                                    id
-                                    extensionID
-                                    url
-                                    manifest {
-                                        raw
-                                    }
-                                    viewerCanAdminister
+export function queryConfiguredExtensions(
+    { queryGraphQL }: Pick<Context<any, any>, 'queryGraphQL'>,
+    cascade: SettingsCascadeOrError<SettingsSubject, Settings>
+): Observable<ConfiguredExtension[]> {
+    if (isErrorLike(cascade.final)) {
+        return throwError(cascade.final)
+    }
+    if (!cascade.final || !cascade.final.extensions) {
+        return of([])
+    }
+    const extensionIDs = Object.keys(cascade.final.extensions)
+    return from(
+        queryGraphQL(
+            gql`
+                query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
+                    extensionRegistry {
+                        extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
+                            nodes {
+                                id
+                                extensionID
+                                url
+                                manifest {
+                                    raw
                                 }
+                                viewerCanAdminister
                             }
                         }
                     }
-                `[graphQLContent],
-                {
-                    first: extensionIDs.length,
-                    prioritizeExtensionIDs: extensionIDs,
-                },
-                false
-            )
-        ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.extensionRegistry ||
-                    !data.extensionRegistry.extensions ||
-                    !data.extensionRegistry.extensions.nodes
-                ) {
-                    throw createAggregateError(errors)
                 }
-                return data.extensionRegistry.extensions.nodes.map(
-                    ({ id, extensionID, url, manifest, viewerCanAdminister }) => ({
-                        id,
-                        extensionID,
-                        url,
-                        manifest: manifest ? { raw: manifest.raw } : null,
-                        viewerCanAdminister,
-                    })
-                )
-            }),
-            map(registryExtensions => {
-                const configuredExtensions: ConfiguredExtension[] = []
-                for (const extensionID of extensionIDs) {
-                    const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
-                    configuredExtensions.push({
-                        id: extensionID,
-                        manifest:
-                            registryExtension && registryExtension.manifest
-                                ? parseJSONCOrError(registryExtension.manifest.raw)
-                                : null,
-                        rawManifest:
-                            (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,
-                        registryExtension,
-                    })
-                }
-                return configuredExtensions
-            })
+            `[graphQLContent],
+            {
+                first: extensionIDs.length,
+                prioritizeExtensionIDs: extensionIDs,
+            },
+            false
         )
-    }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (
+                !data ||
+                !data.extensionRegistry ||
+                !data.extensionRegistry.extensions ||
+                !data.extensionRegistry.extensions.nodes
+            ) {
+                throw createAggregateError(errors)
+            }
+            return data.extensionRegistry.extensions.nodes.map(
+                ({ id, extensionID, url, manifest, viewerCanAdminister }) => ({
+                    id,
+                    extensionID,
+                    url,
+                    manifest: manifest ? { raw: manifest.raw } : null,
+                    viewerCanAdminister,
+                })
+            )
+        }),
+        map(registryExtensions => {
+            const configuredExtensions: ConfiguredExtension[] = []
+            for (const extensionID of extensionIDs) {
+                const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
+                configuredExtensions.push({
+                    id: extensionID,
+                    manifest:
+                        registryExtension && registryExtension.manifest
+                            ? parseJSONCOrError(registryExtension.manifest.raw)
+                            : null,
+                    rawManifest:
+                        (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,
+                    registryExtension,
+                })
+            }
+            return configuredExtensions
+        })
+    )
 }
