@@ -111,7 +111,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     }
 
     private getQueryFromProps(props: Pick<Props, 'location'>): string {
-        const params = new URLSearchParams(location.search)
+        const params = new URLSearchParams(props.location.search)
         return params.get(ExtensionsList.URL_QUERY_PARAM) || ''
     }
 
