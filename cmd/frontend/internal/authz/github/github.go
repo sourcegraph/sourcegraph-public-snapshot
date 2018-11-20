@@ -53,13 +53,12 @@ func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mi
 // RepoPerms implements the authz.Provider interface.
 //
 // It computes permissions by keeping track of two classes of info:
-// * Whether a given repository is public
 // * Whether a given user can access a given repository
+// * Whether a given repository is public
 //
-// For each repo in the input set, it first checks if it is public. If not, it checks if the given
-// user has access to it. It caches both the "is repo public" and "user can access this repo" values
-// in Redis. If missing from the cache, it makes a GitHub API request to determine the value. It
-// makes a separate API request for each repo (this can later be optimized if necessary).
+// For each repo in the input set, we look first to see if the above information is cached in Redis.
+// If not, then the info is computed by querying the GitHub API. A separate query is issued for each
+// repository (and for each user for the explicit case).
 func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
 	remaining, _ := p.Repos(ctx, repos)
 	remainingPublic := remaining
