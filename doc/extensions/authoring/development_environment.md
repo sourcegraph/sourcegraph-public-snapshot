@@ -4,7 +4,7 @@
 Purpose: To provide a source of truth for setting up a development environment for extensions. This can then be linked to from reference documentation and tutorials.
 -->
 
-Sourcegraph extensions are written in TypeScript and are distributed as a single bundled JavaScript file that runs on the client. Let's install and configure the software required.
+Sourcegraph extensions are (usually) written in TypeScript and are distributed as a single bundled JavaScript file that runs on the client. Let's install and configure the software required.
 
 ## Node.js
 
@@ -22,6 +22,9 @@ Bring your extension's features for code viewed on GitHub, GitLab and other code
 
 ### Enabling Sourcegraph extensions outside a Sourcegraph instance
 
-As Sourcegraph extensions are in alpha, you must manually enable them in the browser extension settings by clicking on the Sourcegraph icon to the right of the address bar, then click the gear (⚙️) icon and tick the **Use extensions** checkbox.
+As Sourcegraph extensions are in alpha, you must manually enable them in the browser extension:
+- Click the Sourcegraph icon to the right of the address bar
+- Click the gear ⚙️ icon
+- Check the **Use extensions** checkbox
 
 <img src="img/enable-sourcegraph-extensions.png" width="400" />

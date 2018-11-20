@@ -2,11 +2,24 @@
 
 First [set up your development environment](development_environment.md) so you're ready for creating and publishing.
 
-## Create an extension
+## What is a Sourcegraph extension?
 
-Creating an extension uses the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension). It requires no installation and will create all files necessary for development, building, and publishing.
+A Sourcegraph extension is a single JavaScript file that has an exported `activate` function. It is called by the extension runtime if the extension's [activation](activation.md) conditions are satisfied.
 
-Create a directory for your extension, then use the extension creator:
+```javascript
+// my-extension.js
+export function activate() {
+  console.log('my-extension activated');
+}
+```
+
+A tool such as Parcel would then bundle this code for module loading, putting the exported file into a `dist` directory. Add a `package.json` for dependencies, configuration and, metadata, and you're ready for publishing.
+
+There's no magic so you can use any build tools, so long as they meet these requirements.
+
+## Creating an extension the easy way
+
+The easiest way to get an extension to a publish-ready state is to use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension):
 
 ```shell
 mkdir my-extension
@@ -14,7 +27,7 @@ cd my-extension
 npm init @sourcegraph/extension
 ```
 
-Follow the prompts. When complete, you'll have the following files:
+Follow the prompts, and when complete, you'll have the following files:
 
 ```shell
 ├── README.md
@@ -31,9 +44,11 @@ Follow the prompts. When complete, you'll have the following files:
 
 ### The src directory and activate function
 
-The extension runtime knows how to "activate" your extension by looking for an `activate` function such as in `src/my-extension.ts`. See the [activation documentation](activation.md) to learn how to control the activation of your extension.
+A `src` directory was created, containing a TypeScript file with an exported `activate` function.
 
-For code layout, a simple extension only needs a single `.ts` file. For larger projects, create multiples files in the `src` directory and these will be bundled into a single file when built for publishing
+For simplicity, the extension will always activate. See the [activation documentation](activation.md) to configure the activation of your extension.
+
+For code layout, a single TypeScript/JavaScript file is usually all that's needed. For larger projects, create multiples files in the `src` directory, and Parcel will bundle them into a single JavaScript file.
 
 ### README.md
 
@@ -41,10 +56,10 @@ The `README.md` is the content for your extension page in the [extensions regist
 
 ### package.json
 
-The `package.json` defines extension configuration and commands required for development and publishing. 
+The `package.json` defines extension configuration and commands required for development and publishing.
 
 <!--TODO: Ryan: If you're creating your first extension, leave the `package.json` as is or see the [extension configuration documentation](extension_configuration.md).-->
 
 ### tslint.json and tsconfig.json
 
-These are configuration files for linting and Typescript compilation and will suffice for most extensions.
+These are configuration files for linting and Typescript compilation and will be sufficient for most extensions.

@@ -44,15 +44,17 @@ To set this up:
 
 1. In another terminal window, run `src extensions publish -url http://localhost:1234/my-extension.js` (`my-extension.js` being the bundled JavaScript file in your `dist` directory. This works for you because the browser will load your extension from http://localhost:1234/my-extension.js.
 
-1. Make a change inside `src`, then save. Your code will be re-bundled and a reload of the browser window will load your changes.
+1. Make a change inside `src`, then save. Your code will be re-bundled and a reload of the browser window will cause your changes to be loaded.
 
 ### When you are ready for publishing
 
-You've written the code, you've tested your extension and you're ready to publish:
+You've written the code, you've tested your extension and now you're ready to publish but first, we need to remove the WIP extension:
 
-1. First, delete the development/WIP version by going to its extension detail page, click the **Manage** tab, then click the **Delete extension** button.
+1. Open the WIP extension detail page
+- Click the **Manage** tab
+- Click the **Delete extension** button
 
-1. Bump the version number in `package.json`, and remove the WIP prefixes from the name and the title, then publish:
+Now publish the extension:
 
 ```
 run src extensions publish`

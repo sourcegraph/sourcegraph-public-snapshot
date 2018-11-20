@@ -15,7 +15,7 @@ Follow the instructions for [setting up your development environment](../authori
 
 ## Create the extension
 
-We'll use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension) to get started:
+Use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension) to get started:
 
 ```shell
 mkdir hello-world-extension
@@ -35,7 +35,7 @@ Publish the extension by running:
 src ext publish
 ```
 
-Now that the extension is published, let's use it.
+Now that the extension is published let's use it.
 
 ## Use the extension
 
@@ -43,8 +43,8 @@ Open the URL found in the output from the publish command. This is the extension
 
 Toggle the slider to enable the extension for your account. Now you can:
 
-- Visit any code file on Sourcegraph (such as [this file](https://sourcegraph.com/github.com/ReactiveX/rxjs/-/blob/src/internal/observable/SubscribeOnObservable.ts)) and hover over code to see the "Hello, world! 🎉🎉🎉" message.
-- Visit any code file on GitHub (such as [this file](https://github.com/ReactiveX/rxjs/blob/HEAD/src/internal/observable/SubscribeOnObservable.ts)) and hover over code to see it say the same.
+- Visit any code file on Sourcegraph (such as [this file](https://sourcegraph.com/github.com/ReactiveX/rxjs/-/blob/src/internal/observable/SubscribeOnObservable.ts)) and hover over the code to see the "Hello, world! 🎉🎉🎉" message.
+- Visit any code file on GitHub (such as [this file](https://github.com/ReactiveX/rxjs/blob/HEAD/src/internal/observable/SubscribeOnObservable.ts)) and hover over the code to see it say the same.
 
 ## Next steps
 
