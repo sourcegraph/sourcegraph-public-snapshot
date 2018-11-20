@@ -99,7 +99,7 @@ describe('Sourcegraph Chrome extension', () => {
         if (browser) {
             await browser.close()
         }
-        console.log('closed browser')
+        process.exit(0)
     })
 
     const repoBaseURL = 'https://github.com/gorilla/mux'
