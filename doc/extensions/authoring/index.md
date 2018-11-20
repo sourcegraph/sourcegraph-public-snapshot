@@ -13,7 +13,7 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 - [Publishing a Sourcegraph extension](publishing.md)
 - [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html)
 - [Sourcegraph extension activation](activation.md)
-- [Configuring a Sourcegraph extension](configuration.md)
+<!-- - [Configuring a Sourcegraph extension](configuration.md) -->
 - [Sample extensions (`sourcegraph-extension-samples`)](https://github.com/sourcegraph/sourcegraph-extension-samples)
 - [Cookbook (sample code)](cookbook.md)
 
