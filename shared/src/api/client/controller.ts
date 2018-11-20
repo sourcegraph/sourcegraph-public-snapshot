@@ -179,16 +179,7 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
         }
         // Remove clients that are no longer in use.
         for (const unusedClient of unusedClients) {
-            try {
-                if (!unusedClient.subscription.closed) {
-                    setTimeout(() => unusedClient.subscription.unsubscribe())
-                }
-            } catch (err) {
-                // TODO(sqs): ignore these errors for now
-                if (err.name !== 'UnsubscriptionError') {
-                    throw err
-                }
-            }
+            unusedClient.subscription.unsubscribe()
         }
         // Create new clients.
         for (const key of newClients) {

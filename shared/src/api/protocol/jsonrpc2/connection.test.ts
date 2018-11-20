@@ -316,7 +316,7 @@ describe('Connection', () => {
         client.sendNotification(testNotification, [{ value: true }])
     })
 
-    it('unsubscribes connection', async () => {
+    it('unsubscribes client connection', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
