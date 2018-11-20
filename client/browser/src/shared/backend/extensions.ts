@@ -16,7 +16,6 @@ import * as GQL from '../../../../../shared/src/graphqlschema'
 import {
     gqlToCascade,
     mergeSettings,
-    Settings,
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
@@ -46,7 +45,7 @@ const createPlatformMessageTransports = (connectionInfo: ExtensionConnectionInfo
 
 export function createMessageTransports(
     extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
-    settingsCascade: SettingsCascade<any>
+    settingsCascade: SettingsCascade
 ): Promise<MessageTransports> {
     if (!extension.manifest) {
         throw new Error(`unable to connect to extension ${JSON.stringify(extension.id)}: no manifest found`)
@@ -133,31 +132,26 @@ export const applyDecoration = ({
     return combineUnsubscribables(...unsubscribables)
 }
 
-const storageSettingsCascade: Observable<SettingsCascade<SettingsSubject, Settings>> = storage
-    .observeSync('clientSettings')
-    .pipe(
-        map(clientSettingsString => JSONC.parse(clientSettingsString || '')),
-        map(clientSettings => ({
-            subjects: [
-                {
-                    subject: {
-                        id: 'Client',
-                        settingsURL: 'N/A',
-                        viewerCanAdminister: true,
-                        __typename: 'Client',
-                        displayName: 'Client',
-                    } as SettingsSubject,
-                    settings: clientSettings,
-                },
-            ],
-            final: clientSettings || {},
-        }))
-    )
+const storageSettingsCascade: Observable<SettingsCascade> = storage.observeSync('clientSettings').pipe(
+    map(clientSettingsString => JSONC.parse(clientSettingsString || '')),
+    map(clientSettings => ({
+        subjects: [
+            {
+                subject: {
+                    id: 'Client',
+                    settingsURL: 'N/A',
+                    viewerCanAdminister: true,
+                    __typename: 'Client',
+                    displayName: 'Client',
+                } as SettingsSubject,
+                settings: clientSettings,
+            },
+        ],
+        final: clientSettings || {},
+    }))
+)
 
-const mergeCascades = (
-    cascadeOrError: SettingsCascadeOrError<SettingsSubject, Settings>,
-    cascade: SettingsCascade<SettingsSubject, Settings>
-): SettingsCascadeOrError<SettingsSubject, Settings> => ({
+const mergeCascades = (cascadeOrError: SettingsCascadeOrError, cascade: SettingsCascade): SettingsCascadeOrError => ({
     subjects:
         cascadeOrError.subjects === null
             ? cascade.subjects
@@ -264,7 +258,7 @@ const EMPTY_CONFIGURATION_CASCADE: SettingsCascade = { subjects: [], final: {} }
  *   browser extension.
  * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify the UX).
  */
-export const settingsCascade: Observable<SettingsCascadeOrError<SettingsSubject, Settings>> = combineLatest(
+export const settingsCascade: Observable<SettingsCascadeOrError> = combineLatest(
     gqlSettingsCascade,
     storageSettingsCascade
 ).pipe(
@@ -279,7 +273,7 @@ export const settingsCascade: Observable<SettingsCascadeOrError<SettingsSubject,
     distinctUntilChanged((a, b) => isEqual(a, b))
 )
 
-export function createExtensionsContext(sourcegraphUrl: string): ExtensionsContext<SettingsSubject, Settings> {
+export function createExtensionsContext(sourcegraphUrl: string): ExtensionsContext {
     const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
     sourcegraphLanguageServerURL.pathname = '.api/xlang'
 

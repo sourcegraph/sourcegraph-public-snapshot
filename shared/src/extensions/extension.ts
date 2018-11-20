@@ -7,12 +7,10 @@ import { Settings } from '../settings'
 /**
  * Describes a configured extension.
  *
- * @template S the settings subject type
- * @template C the type of the extension's settings (overlaid on the base settings JSON Schema-derived type)
- * @template RX the registry extension type
+ * @template X the registry extension type
  */
 export interface ConfiguredExtension<
-    RX extends Pick<GQL.IRegistryExtension, 'id' | 'url' | 'viewerCanAdminister'> = Pick<
+    X extends Pick<GQL.IRegistryExtension, 'id' | 'url' | 'viewerCanAdminister'> = Pick<
         GQL.IRegistryExtension,
         'id' | 'url' | 'viewerCanAdminister'
     >
@@ -24,7 +22,7 @@ export interface ConfiguredExtension<
     rawManifest: string | null
 
     /** The corresponding extension on the registry, if any. */
-    registryExtension?: RX
+    registryExtension?: X
 }
 
 /** Reports whether the given extension is enabled in the settings. */

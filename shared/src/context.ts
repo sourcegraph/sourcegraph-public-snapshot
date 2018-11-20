@@ -2,7 +2,7 @@ import { Subscribable } from 'rxjs'
 import { ConfigurationUpdateParams } from './api/protocol'
 import { QueryResult } from './graphql'
 import * as GQL from './graphqlschema'
-import { ID, Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
+import { ID, SettingsCascadeOrError } from './settings'
 
 export type UpdateExtensionSettingsArgs =
     | { edit?: ConfigurationUpdateParams }
@@ -16,12 +16,12 @@ export type UpdateExtensionSettingsArgs =
 /**
  * Description of the context in which extensions-client-common is running, and platform-specific hooks.
  */
-export interface Context<S extends SettingsSubject, C extends Settings> {
+export interface Context {
     /**
      * An observable that emits whenever the settings cascade changes (including when any individual subject's
      * settings change).
      */
-    readonly settingsCascade: Subscribable<SettingsCascadeOrError<S, C>>
+    readonly settingsCascade: Subscribable<SettingsCascadeOrError>
 
     updateExtensionSettings(subject: ID, args: UpdateExtensionSettingsArgs): Subscribable<void>
 
@@ -71,6 +71,6 @@ export interface Context<S extends SettingsSubject, C extends Settings> {
 /**
  * React partial props for components needing the extensions context.
  */
-export interface ExtensionsContextProps<S extends SettingsSubject, C extends Settings> {
-    extensionsContext: Context<S, C>
+export interface ExtensionsContextProps {
+    extensionsContext: Context
 }

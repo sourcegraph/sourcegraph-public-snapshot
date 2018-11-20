@@ -3,11 +3,8 @@ import { TextDocumentItem } from '../../api/client/types/textDocument'
 import { ContributableMenu, Contributions } from '../../api/protocol'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsContextProps } from '../../context'
-import { Settings, SettingsSubject } from '../../settings'
 
-export interface ActionsProps<S extends SettingsSubject, C extends Settings>
-    extends ControllerProps<S, C>,
-        ExtensionsContextProps<S, C> {
+export interface ActionsProps extends ControllerProps, ExtensionsContextProps {
     menu: ContributableMenu
     scope?: TextDocumentItem
     actionItemClass?: string

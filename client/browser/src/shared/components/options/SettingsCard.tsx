@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Alert, Card, CardBody, CardHeader, CardLink, CardText, Col, Row } from 'reactstrap'
 import { Subscription } from 'rxjs'
 import * as GQL from '../../../../../../shared/src/graphqlschema'
-import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../../../../shared/src/settings'
+import { SettingsCascadeOrError } from '../../../../../../shared/src/settings'
 import { isErrorLike } from '../../backend/errors'
 import { settingsCascade } from '../../backend/extensions'
 import { sourcegraphUrl } from '../../util/context'
@@ -13,7 +13,7 @@ interface Props {
 }
 
 interface State {
-    settingsCascadeOrError?: SettingsCascadeOrError<SettingsSubject, Settings>
+    settingsCascadeOrError?: SettingsCascadeOrError
 }
 
 export class SettingsCard extends React.Component<Props, State> {

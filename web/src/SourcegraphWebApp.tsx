@@ -14,7 +14,7 @@ import { createController as createExtensionsController } from '../../shared/src
 import { viewerConfiguredExtensions } from '../../shared/src/controller'
 import { ConfiguredExtension } from '../../shared/src/extensions/extension'
 import * as GQL from '../../shared/src/graphqlschema'
-import { ConfiguredSubject, Settings, SettingsCascadeOrError, SettingsSubject } from '../../shared/src/settings'
+import { ConfiguredSubject, SettingsCascadeOrError } from '../../shared/src/settings'
 import { authenticatedUser } from './auth'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
@@ -292,7 +292,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.setState({ navbarSearchQuery })
     }
 
-    private onSettingsCascadeChange(settingsCascade: SettingsCascadeOrError<SettingsSubject, Settings>): void {
+    private onSettingsCascadeChange(settingsCascade: SettingsCascadeOrError): void {
         this.setState(
             prevState => {
                 const update: Pick<SourcegraphWebAppState, 'settingsCascade' | 'extensionsEnvironment'> = {
@@ -313,7 +313,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         ...prevState.extensionsEnvironment,
                         configuration: {
                             subjects: settingsCascade.subjects.filter(
-                                (subject): subject is ConfiguredSubject<SettingsSubject, Settings> =>
+                                (subject): subject is ConfiguredSubject =>
                                     subject.settings !== null && !isErrorLike(subject.settings)
                             ),
                             final: settingsCascade.final,

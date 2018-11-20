@@ -3,7 +3,6 @@ import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
 import { Controller as ClientController } from '../../../../../shared/src/client/controller'
 import { Context as ExtensionsContext } from '../../../../../shared/src/context'
-import { Settings, SettingsSubject } from '../../../../../shared/src/settings'
 
 import * as React from 'react'
 import { render } from 'react-dom'
@@ -49,8 +48,8 @@ export function injectExtensionsGlobalComponents(
         extensionsController,
         extensionsContext,
     }: {
-        extensionsController: ClientController<SettingsSubject, Settings>
-        extensionsContext: ExtensionsContext<SettingsSubject, Settings>
+        extensionsController: ClientController
+        extensionsContext: ExtensionsContext
     },
     location: H.Location
 ): void {

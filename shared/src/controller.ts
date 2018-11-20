@@ -4,7 +4,7 @@ import { Context } from './context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
 import { ConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent } from './graphql'
-import { Settings, SettingsCascadeOrError, SettingsSubject } from './settings'
+import { SettingsCascadeOrError } from './settings'
 import { parseJSONCOrError } from './util'
 
 const LOADING: 'loading' = 'loading'
@@ -12,7 +12,7 @@ const LOADING: 'loading' = 'loading'
 export function viewerConfiguredExtensions({
     settingsCascade,
     queryGraphQL,
-}: Pick<Context<SettingsSubject, Settings>, 'settingsCascade' | 'queryGraphQL'>): Observable<ConfiguredExtension[]> {
+}: Pick<Context, 'settingsCascade' | 'queryGraphQL'>): Observable<ConfiguredExtension[]> {
     return viewerConfiguredExtensionsOrLoading({ settingsCascade, queryGraphQL }).pipe(
         filter((extensions): extensions is ConfiguredExtension[] | ErrorLike => extensions !== LOADING),
         switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions]))
@@ -22,9 +22,7 @@ export function viewerConfiguredExtensions({
 function viewerConfiguredExtensionsOrLoading({
     settingsCascade,
     queryGraphQL,
-}: Pick<Context<SettingsSubject, Settings>, 'settingsCascade' | 'queryGraphQL'>): Observable<
-    typeof LOADING | ConfiguredExtension[] | ErrorLike
-> {
+}: Pick<Context, 'settingsCascade' | 'queryGraphQL'>): Observable<typeof LOADING | ConfiguredExtension[] | ErrorLike> {
     return from(settingsCascade).pipe(
         switchMap(
             cascade =>
@@ -39,8 +37,8 @@ function viewerConfiguredExtensionsOrLoading({
 }
 
 export function queryConfiguredExtensions(
-    { queryGraphQL }: Pick<Context<any, any>, 'queryGraphQL'>,
-    cascade: SettingsCascadeOrError<SettingsSubject, Settings>
+    { queryGraphQL }: Pick<Context, 'queryGraphQL'>,
+    cascade: SettingsCascadeOrError
 ): Observable<ConfiguredExtension[]> {
     if (isErrorLike(cascade.final)) {
         return throwError(cascade.final)

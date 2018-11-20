@@ -15,7 +15,7 @@ import { ActionsNavItems } from '../../../../../shared/src/app/actions/ActionsNa
 import { ControllerProps } from '../../../../../shared/src/client/controller'
 import { ExtensionsContextProps } from '../../../../../shared/src/context'
 import { ISite, IUser } from '../../../../../shared/src/graphqlschema'
-import { Settings, SettingsCascadeProps, SettingsSubject } from '../../../../../shared/src/settings'
+import { SettingsCascadeProps } from '../../../../../shared/src/settings'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
@@ -26,9 +26,7 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps
-    extends Partial<ExtensionsContextProps<SettingsSubject, Settings>>,
-        Partial<ControllerProps<SettingsSubject, Settings>> {
+interface CodeViewToolbarProps extends Partial<ExtensionsContextProps>, Partial<ControllerProps> {
     repoPath: string
     filePath: string
 
@@ -48,7 +46,7 @@ interface CodeViewToolbarProps
     location: H.Location
 }
 
-interface CodeViewToolbarState extends SettingsCascadeProps<SettingsSubject, Settings> {
+interface CodeViewToolbarState extends SettingsCascadeProps {
     site?: ISite
     currentUser?: IUser
 }

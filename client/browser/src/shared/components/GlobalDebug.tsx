@@ -4,13 +4,12 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import { ExtensionStatusPopover } from '../../../../../shared/src/app/ExtensionStatus'
 import { Controller as ClientController } from '../../../../../shared/src/client/controller'
-import { Settings, SettingsSubject } from '../../../../../shared/src/settings'
 import { sourcegraphUrl } from '../util/context'
 import { ShortcutProvider } from './ShortcutProvider'
 
 interface Props {
     location: H.Location
-    extensionsController: ClientController<SettingsSubject, Settings>
+    extensionsController: ClientController
 }
 
 const SHOW_DEBUG = localStorage.getItem('debug') !== null

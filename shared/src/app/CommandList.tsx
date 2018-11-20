@@ -8,15 +8,12 @@ import { Key } from 'ts-key-enum'
 import { ContributableMenu, Contributions } from '../api/protocol'
 import { ControllerProps } from '../client/controller'
 import { ExtensionsContextProps } from '../context'
-import { Settings, SettingsSubject } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { ActionItem, ActionItemProps } from './actions/ActionItem'
 import { getContributedActionItems } from './actions/contributions'
 
-interface Props<S extends SettingsSubject, C extends Settings>
-    extends ControllerProps<S, C>,
-        ExtensionsContextProps<S, C> {
+interface Props extends ControllerProps, ExtensionsContextProps {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
@@ -38,10 +35,7 @@ interface State {
 }
 
 /** Displays a list of commands contributed by extensions for a specific menu. */
-export class CommandList<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>,
-    State
-> {
+export class CommandList extends React.PureComponent<Props, State> {
     // Persist recent actions in localStorage. Be robust to serialization errors.
     private static RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
     private static readRecentActions(): string[] | null {
@@ -78,8 +72,8 @@ export class CommandList<S extends SettingsSubject, C extends Settings> extends 
 
     private subscriptions = new Subscription()
 
-    private selectedItem: ActionItem<S, C> | null = null
-    private setSelectedItem = (e: ActionItem<S, C> | null) => (this.selectedItem = e)
+    private selectedItem: ActionItem | null = null
+    private setSelectedItem = (e: ActionItem | null) => (this.selectedItem = e)
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -89,7 +83,7 @@ export class CommandList<S extends SettingsSubject, C extends Settings> extends 
         )
     }
 
-    public componentDidUpdate(_prevProps: Props<S, C>, prevState: State): void {
+    public componentDidUpdate(_prevProps: Props, prevState: State): void {
         if (this.state.recentActions !== prevState.recentActions) {
             CommandList.writeRecentActions(this.state.recentActions)
         }
@@ -255,8 +249,8 @@ export function filterAndRankItems(
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
 }
 
-export class CommandListPopoverButton<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C> & {
+export class CommandListPopoverButton extends React.PureComponent<
+    Props & {
         toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
     },
     { hideOnChange?: any }

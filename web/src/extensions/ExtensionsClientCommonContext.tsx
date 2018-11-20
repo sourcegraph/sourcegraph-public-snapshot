@@ -21,7 +21,6 @@ import {
     gqlToCascade,
     Settings,
     SettingsCascadeProps as GenericSettingsCascadeProps,
-    SettingsSubject,
 } from '../../../shared/src/settings'
 import { authenticatedUser } from '../auth'
 import { gql, queryGraphQL } from '../backend/graphql'
@@ -32,13 +31,13 @@ import { settingsCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshSettings } from '../user/settings/backend'
 import { ErrorLike, isErrorLike } from '../util/errors'
 
-export interface ExtensionsControllerProps extends GenericExtensionsControllerProps<SettingsSubject, Settings> {}
+export interface ExtensionsControllerProps extends GenericExtensionsControllerProps {}
 
-export interface SettingsCascadeProps extends GenericSettingsCascadeProps<SettingsSubject, Settings> {}
+export interface SettingsCascadeProps extends GenericSettingsCascadeProps {}
 
-export interface ExtensionsProps extends GenericExtensionsContextProps<SettingsSubject, Settings> {}
+export interface ExtensionsProps extends GenericExtensionsContextProps {}
 
-export function createExtensionsContext(): ExtensionsContext<SettingsSubject, Settings> {
+export function createExtensionsContext(): ExtensionsContext {
     return {
         settingsCascade: settingsCascade.pipe(
             map(gqlToCascade),

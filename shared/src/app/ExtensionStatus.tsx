@@ -5,11 +5,10 @@ import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExtensionConnection } from '../api/client/controller'
 import { BrowserConsoleTracer, Trace } from '../api/protocol/jsonrpc2/trace'
 import { ControllerProps } from '../client/controller'
-import { Settings, SettingsSubject } from '../settings'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { Toggle } from '../ui/generic/Toggle'
 
-interface Props<S extends SettingsSubject, C extends Settings> extends ControllerProps<S, C> {
+interface Props extends ControllerProps {
     caretIcon: React.ComponentType<{
         className: 'icon-inline' | string
         onClick?: () => void
@@ -30,15 +29,12 @@ interface State {
     trace?: boolean
 }
 
-export class ExtensionStatus<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>,
-    State
-> {
+export class ExtensionStatus extends React.PureComponent<Props, State> {
     public static TRACE_STORAGE_KEY = 'traceExtensions'
 
     public state: State = { trace: localStorage.getItem(ExtensionStatus.TRACE_STORAGE_KEY) !== null }
 
-    private componentUpdates = new Subject<Props<S, C>>()
+    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -135,9 +131,7 @@ export class ExtensionStatus<S extends SettingsSubject, C extends Settings> exte
 }
 
 /** A button that toggles the visibility of the ExtensionStatus element in a popover. */
-export class ExtensionStatusPopover<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C> & { location: H.Location }
-> {
+export class ExtensionStatusPopover extends React.PureComponent<Props & { location: H.Location }> {
     public render(): JSX.Element | null {
         return (
             <PopoverButton

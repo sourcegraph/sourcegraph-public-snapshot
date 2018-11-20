@@ -23,7 +23,7 @@ export interface ConfigurationUpdateParams {
  * user settings override global settings. Then there would be two subjects, one for global settings and one for
  * the user.
  *
- * @template S the settings type
+ * @template C the settings type
  */
 export interface SettingsCascade<C = any> {
     /** The final settings, merged from all subjects in the cascade. */

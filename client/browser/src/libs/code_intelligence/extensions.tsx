@@ -7,13 +7,7 @@ import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/p
 import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
 import { Notifications } from '../../../../../shared/src/app/notifications/Notifications'
 import { Controller as ClientController, createController } from '../../../../../shared/src/client/controller'
-import {
-    ConfiguredSubject,
-    Settings,
-    SettingsCascade,
-    SettingsCascadeOrError,
-    SettingsSubject,
-} from '../../../../../shared/src/settings'
+import { ConfiguredSubject, SettingsCascade, SettingsCascadeOrError } from '../../../../../shared/src/settings'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'
@@ -34,10 +28,8 @@ import { MountGetter } from './code_intelligence'
 
 // This is rather specific to extensions-client-common
 // and could be moved to that package in the future.
-export function logThenDropConfigurationErrors(
-    cascadeOrError: SettingsCascadeOrError<SettingsSubject, Settings>
-): SettingsCascade<SettingsSubject, Settings> {
-    const EMPTY_CASCADE: SettingsCascade<SettingsSubject, Settings> = {
+export function logThenDropConfigurationErrors(cascadeOrError: SettingsCascadeOrError): SettingsCascade {
+    const EMPTY_CASCADE: SettingsCascade = {
         subjects: [],
         final: {},
     }
@@ -59,7 +51,7 @@ export function logThenDropConfigurationErrors(
     }
     return {
         subjects: cascadeOrError.subjects.filter(
-            (subject): subject is ConfiguredSubject<SettingsSubject, Settings> => {
+            (subject): subject is ConfiguredSubject => {
                 if (!subject) {
                     console.error('invalid configuration: no settings subjects available')
                     return false
@@ -76,8 +68,8 @@ export function logThenDropConfigurationErrors(
 }
 
 export interface Controllers {
-    extensionsContext: Context<SettingsSubject, Settings>
-    extensionsController: ClientController<SettingsSubject, Settings>
+    extensionsContext: Context
+    extensionsController: ClientController
 }
 
 function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
