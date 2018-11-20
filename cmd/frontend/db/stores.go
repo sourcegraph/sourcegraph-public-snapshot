@@ -2,6 +2,7 @@ package db
 
 var (
 	AccessTokens              = &accessTokens{}
+	Codehosts                 = &codehosts{}
 	DiscussionThreads         = &discussionThreads{}
 	DiscussionComments        = &discussionComments{}
 	DiscussionMailReplyTokens = &discussionMailReplyTokens{}

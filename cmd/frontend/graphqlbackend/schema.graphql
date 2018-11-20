@@ -633,6 +633,11 @@ type Query {
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
+    # Lists all configured codehosts.
+    codehosts(
+        # Returns the first n repositories from the list.
+        first: Int
+    ): CodehostConnection!
     # List all repositories.
     repositories(
         # Returns the first n repositories from the list.
@@ -1003,6 +1008,40 @@ type RefLocation {
     endLineNumber: Int!
     # The ending column.
     endColumn: Int!
+}
+
+# A list of codehosts.
+type CodehostConnection {
+    # A list of codehosts.
+    nodes: [Codehost!]!
+
+    # The total number of code hosts in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A specific kind of codehost.
+enum CodehostKind {
+    AWSCODECOMMIT
+    BITBUCKETSERVER
+    GITHUB
+    GITLAB
+    GITOLITE
+    PHABRICATOR
+}
+
+# A configured connection to a codehost.
+type Codehost {
+    # The codehost's unique ID.
+    id: ID!
+    # The kind of codehost.
+    kind: CodehostKind!
+    # The display name of the codehost.
+    displayName: String!
+    # The JSON configuration of the codehost.
+    config: String!
 }
 
 # A list of repositories.
