@@ -150,6 +150,17 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.global_state"
+```
+   Column    |  Type   |       Modifiers        
+-------------+---------+------------------------
+ site_id     | uuid    | not null
+ initialized | boolean | not null default false
+Indexes:
+    "global_state_pkey" PRIMARY KEY, btree (site_id)
+
+```
+
 # Table "public.names"
 ```
  Column  |  Type   | Modifiers 
@@ -464,17 +475,6 @@ Foreign-key constraints:
  created_at         | timestamp with time zone | 
  user_id            | integer                  | 
  author_user_id     | integer                  | 
-
-```
-
-# Table "public.site_config"
-```
-   Column    |  Type   |       Modifiers        
--------------+---------+------------------------
- site_id     | uuid    | not null
- initialized | boolean | not null default false
-Indexes:
-    "site_config_pkey" PRIMARY KEY, btree (site_id)
 
 ```
 

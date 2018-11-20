@@ -178,7 +178,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	// creation and site initialization operations occur atomically (to guarantee to the legitimate
 	// site admin that if they successfully initialize the server, then no attacker's account could
 	// have been created as a site admin).
-	alreadyInitialized, err := (&siteConfig{}).ensureInitialized(ctx, tx)
+	alreadyInitialized, err := (&globalState{}).ensureInitialized(ctx, tx)
 	if err != nil {
 		return nil, err
 	}

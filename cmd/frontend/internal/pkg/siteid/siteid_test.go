@@ -44,8 +44,8 @@ func TestGet(t *testing.T) {
 
 	t.Run("from DB", func(t *testing.T) {
 		defer reset()
-		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
-			return &types.SiteConfig{SiteID: "a"}, nil
+		db.Mocks.GlobalState.Get = func(ctx context.Context) (*types.GlobalState, error) {
+			return &types.GlobalState{SiteID: "a"}, nil
 		}
 
 		if err := tryInit(); err != nil {
@@ -61,11 +61,11 @@ func TestGet(t *testing.T) {
 
 	t.Run("panics if DB unavailable", func(t *testing.T) {
 		defer reset()
-		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
+		db.Mocks.GlobalState.Get = func(ctx context.Context) (*types.GlobalState, error) {
 			return nil, errors.New("x")
 		}
 
-		want := fmt.Errorf("panic: [Error initializing site configuration: x]")
+		want := fmt.Errorf("panic: [Error initializing global state: x]")
 		if err := tryInit(); fmt.Sprint(err) != fmt.Sprint(want) {
 			t.Errorf("got error %q, want %q", err, want)
 		}
@@ -97,8 +97,8 @@ func TestGet(t *testing.T) {
 		defer reset()
 		os.Setenv("TRACKING_APP_ID", "a")
 		defer os.Unsetenv("TRACKING_APP_ID")
-		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
-			return &types.SiteConfig{SiteID: "b"}, nil
+		db.Mocks.GlobalState.Get = func(ctx context.Context) (*types.GlobalState, error) {
+			return &types.GlobalState{SiteID: "b"}, nil
 		}
 
 		if err := tryInit(); err != nil {
