@@ -1,3 +1,5 @@
+set -e
+
 # Setup
 yarn build
 rm -rf build/web-ext
