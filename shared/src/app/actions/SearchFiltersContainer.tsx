@@ -2,17 +2,16 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from '../../api/client/types/textDocument'
+import { SearchFilters } from '../../api/protocol'
 import { Settings, SettingsSubject } from '../../settings'
-import { ActionItem, ActionItemProps } from './ActionItem'
-import { ActionsProps, ContributionsState } from './actions'
-import { getContributedActionItems } from './contributions'
+import { ContributionsState, SearchFiltersProps } from './actions'
 
-interface ActionsContainerProps extends ActionsProps {
+interface SearchFiltersContainerProps<S extends SettingsSubject, C extends Settings> extends SearchFiltersProps<S, C> {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
      */
-    render?: (items: ActionItemProps[]) => React.ReactElement<any>
+    render: (items: SearchFilters[]) => React.ReactElement<any>
 
     /**
      * If set, it is rendered when there are no contributed items for this menu. Use null to render nothing when
@@ -21,12 +20,12 @@ interface ActionsContainerProps extends ActionsProps {
     empty?: React.ReactElement<any> | null
 }
 
-interface ActionsContainerState extends ContributionsState {}
+interface SearchFiltersContainerState extends ContributionsState {}
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
-export class ActionsContainer<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    ActionsContainerProps<S, C>,
-    ActionsContainerState
+export class SearchFiltersContainer<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
+    SearchFiltersContainerProps<S, C>,
+    SearchFiltersContainerState
 > {
     public state: ContributionsState = {}
 
@@ -44,7 +43,7 @@ export class ActionsContainer<S extends SettingsSubject, C extends Settings> ext
         this.scopeChanges.next(this.props.scope)
     }
 
-    public componentDidUpdate(prevProps: ActionsContainerProps): void {
+    public componentDidUpdate(prevProps: SearchFiltersContainerProps<S, C>): void {
         if (prevProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
         }
@@ -59,26 +58,6 @@ export class ActionsContainer<S extends SettingsSubject, C extends Settings> ext
             return null // loading
         }
 
-        const items = getContributedActionItems(this.state.contributions, this.props.menu)
-        if (this.props.empty !== undefined && items.length === 0) {
-            return this.props.empty
-        }
-
-        const render = this.props.render || this.defaultRenderItems
-        return render(items)
+        return this.props.render(this.state.contributions.searchFilters || [])
     }
-
-    private defaultRenderItems = (items: ActionItemProps[]): JSX.Element | null => (
-        <>
-            {items.map((item, i) => (
-                <ActionItem
-                    key={i}
-                    {...item}
-                    extensionsController={this.props.extensionsController}
-                    extensionsContext={this.props.extensionsContext}
-                    location={this.props.location}
-                />
-            ))}
-        </>
-    )
 }

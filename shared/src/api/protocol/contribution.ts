@@ -14,6 +14,9 @@ export interface Contributions {
 
     /** Menu items contributed by the extension. */
     menus?: MenuContributions
+
+    /** Search Filters contributed by the extension */
+    searchFilters?: SearchFilters[]
 }
 
 /**
@@ -202,9 +205,6 @@ export enum ContributableMenu {
     /** A directory page (including for the root directory of a repository). */
     DirectoryPage = 'directory/page',
 
-    /** The filters bar for the search results page */
-    FiltersBar = 'filters/bar',
-
     /** The help menu in the application. */
     Help = 'help',
 }
@@ -244,6 +244,11 @@ export interface MenuItemContribution {
      * group sorting last. The client must not display the group value.
      */
     group?: string
+}
+
+export interface SearchFilters {
+    name: string
+    value: string
 }
 
 /** The containers to which an extension can contribute views. */

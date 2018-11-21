@@ -4,6 +4,7 @@ import * as React from 'react'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery, SearchOptions } from '..'
+import { SearchFiltersContainer } from '../../../../shared/src/app/actions/SearchFiltersContainer'
 import { isErrorLike } from '../../../../shared/src/errors'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
@@ -148,26 +149,19 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         const searchOptions = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
         const extensionFilters = (
-            <ActionsContainer
-                menu={ContributableMenu.FiltersBar}
+            <SearchFiltersContainer
                 // tslint:disable-next-line:jsx-no-lambda
                 render={items => (
                     <>
                         {items
-                            .filter(
-                                item =>
-                                    item.action.title &&
-                                    item.action.commandArguments &&
-                                    item.action.commandArguments.length === 1 &&
-                                    typeof item.action.commandArguments![0] === 'string'
-                            )
+                            .filter(item => item.name && item.value)
                             .map((item, i) => (
                                 <FilterChip
                                     query={this.props.navbarSearchQuery}
                                     onFilterChosen={this.onDynamicFilterClicked}
-                                    key={item.action.title}
-                                    value={item.action.commandArguments![0].toString()}
-                                    name={item.action.title}
+                                    key={item.name}
+                                    value={item.value}
+                                    name={item.name}
                                 />
                             ))}
                     </>
@@ -175,7 +169,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 empty={null}
                 extensionsController={this.props.extensionsController}
                 extensions={this.props.extensions}
-                location={this.props.location}
             />
         )
         return (
