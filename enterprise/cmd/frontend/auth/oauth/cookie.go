@@ -1,4 +1,4 @@
-package githuboauth
+package oauth
 
 import (
 	"net/http"
@@ -16,7 +16,7 @@ This code is copied from https://sourcegraph.com/github.com/dghubble/gologin/-/b
 //
 // The MaxAge field is used to determine whether an Expires field should be
 // added for Internet Explorer compatability and what its value should be.
-func newCookie(config gologin.CookieConfig, value string) *http.Cookie {
+func NewCookie(config gologin.CookieConfig, value string) *http.Cookie {
 	cookie := &http.Cookie{
 		Name:     config.Name,
 		Value:    value,

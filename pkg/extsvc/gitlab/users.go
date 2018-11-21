@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/peterhellberg/link"
@@ -9,8 +10,9 @@ import (
 
 type User struct {
 	ID         int32      `json:"id"`
-	Username   string     `json:"username"`
 	Name       string     `json:"name"`
+	Username   string     `json:"username"`
+	Email      string     `json:"email"`
 	State      string     `json:"state"`
 	AvatarURL  string     `json:"avatar_url"`
 	WebURL     string     `json:"web_url"`
@@ -42,4 +44,27 @@ func (c *Client) ListUsers(ctx context.Context, urlStr string) (users []*User, n
 	}
 
 	return users, nextPageURL, nil
+}
+
+func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
+	if MockGetUser != nil {
+		return MockGetUser(ctx, id)
+	}
+
+	var urlStr string
+	if id == "" {
+		urlStr = "user"
+	} else {
+		urlStr = fmt.Sprintf("users/%s", id)
+	}
+
+	var usr User
+	req, err := http.NewRequest("GET", urlStr, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := c.do(ctx, req, &usr); err != nil {
+		return nil, err
+	}
+	return &usr, nil
 }

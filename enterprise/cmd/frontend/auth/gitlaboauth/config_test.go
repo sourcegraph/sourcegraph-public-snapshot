@@ -1,4 +1,4 @@
-package githuboauth
+package gitlaboauth
 
 import (
 	"reflect"
@@ -8,7 +8,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	githubcodehost "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
@@ -24,96 +24,101 @@ func Test_parseConfig(t *testing.T) {
 	tests := []struct {
 		name          string
 		args          args
-		wantProviders map[schema.GitHubAuthProvider]auth.Provider
+		wantProviders map[schema.GitLabAuthProvider]auth.Provider
 		wantProblems  []string
 	}{
 		{
 			name:          "No configs",
 			args:          args{cfg: &schema.SiteConfiguration{}},
-			wantProviders: map[schema.GitHubAuthProvider]auth.Provider{},
+			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{},
 		},
 		{
-			name: "1 GitHub.com config",
+			name: "1 GitLab.com config",
 			args: args{cfg: &schema.SiteConfiguration{
+				ExternalURL: "https://sourcegraph.example.com",
 				AuthProviders: []schema.AuthProviders{{
-					Github: &schema.GitHubAuthProvider{
+					Gitlab: &schema.GitLabAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitHub",
-						Type:         "github",
-						Url:          "https://github.com",
+						DisplayName:  "GitLab",
+						Type:         "gitlab",
+						Url:          "https://gitlab.com",
 					},
 				}},
 			}},
-			wantProviders: map[schema.GitHubAuthProvider]auth.Provider{
-				schema.GitHubAuthProvider{
+			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{
+				schema.GitLabAuthProvider{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
-					DisplayName:  "GitHub",
-					Type:         "github",
-					Url:          "https://github.com",
-				}: provider("https://github.com/", oauth2.Config{
+					DisplayName:  "GitLab",
+					Type:         "gitlab",
+					Url:          "https://gitlab.com",
+				}: provider("https://gitlab.com/", oauth2.Config{
+					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					Endpoint: oauth2.Endpoint{
-						AuthURL:  "https://github.com/login/oauth/authorize",
-						TokenURL: "https://github.com/login/oauth/access_token",
+						AuthURL:  "https://gitlab.com/oauth/authorize",
+						TokenURL: "https://gitlab.com/oauth/token",
 					},
-					Scopes: []string{"repo"},
+					Scopes: []string{"api", "read_user"},
 				}),
 			},
 		},
 		{
-			name: "2 GitHub configs",
+			name: "2 GitLab configs",
 			args: args{cfg: &schema.SiteConfiguration{
+				ExternalURL: "https://sourcegraph.example.com",
 				AuthProviders: []schema.AuthProviders{{
-					Github: &schema.GitHubAuthProvider{
+					Gitlab: &schema.GitLabAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitHub",
-						Type:         "github",
-						Url:          "https://github.com",
+						DisplayName:  "GitLab",
+						Type:         "gitlab",
+						Url:          "https://gitlab.com",
 					},
 				}, {
-					Github: &schema.GitHubAuthProvider{
+					Gitlab: &schema.GitLabAuthProvider{
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
-						DisplayName:  "GitHub Enterprise",
-						Type:         "github",
+						DisplayName:  "GitLab Enterprise",
+						Type:         "gitlab",
 						Url:          "https://mycompany.com",
 					},
 				}},
 			}},
-			wantProviders: map[schema.GitHubAuthProvider]auth.Provider{
-				schema.GitHubAuthProvider{
+			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{
+				schema.GitLabAuthProvider{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
-					DisplayName:  "GitHub",
-					Type:         "github",
-					Url:          "https://github.com",
-				}: provider("https://github.com/", oauth2.Config{
+					DisplayName:  "GitLab",
+					Type:         "gitlab",
+					Url:          "https://gitlab.com",
+				}: provider("https://gitlab.com/", oauth2.Config{
+					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					Endpoint: oauth2.Endpoint{
-						AuthURL:  "https://github.com/login/oauth/authorize",
-						TokenURL: "https://github.com/login/oauth/access_token",
+						AuthURL:  "https://gitlab.com/oauth/authorize",
+						TokenURL: "https://gitlab.com/oauth/token",
 					},
-					Scopes: []string{"repo"},
+					Scopes: []string{"api", "read_user"},
 				}),
-				schema.GitHubAuthProvider{
+				schema.GitLabAuthProvider{
 					ClientID:     "my-client-id-2",
 					ClientSecret: "my-client-secret-2",
-					DisplayName:  "GitHub Enterprise",
-					Type:         "github",
+					DisplayName:  "GitLab Enterprise",
+					Type:         "gitlab",
 					Url:          "https://mycompany.com",
 				}: provider("https://mycompany.com/", oauth2.Config{
+					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
 					ClientID:     "my-client-id-2",
 					ClientSecret: "my-client-secret-2",
 					Endpoint: oauth2.Endpoint{
-						AuthURL:  "https://mycompany.com/login/oauth/authorize",
-						TokenURL: "https://mycompany.com/login/oauth/access_token",
+						AuthURL:  "https://mycompany.com/oauth/authorize",
+						TokenURL: "https://mycompany.com/oauth/token",
 					},
-					Scopes: []string{"repo"},
+					Scopes: []string{"api", "read_user"},
 				}),
 			},
 		},
@@ -130,7 +135,7 @@ func Test_parseConfig(t *testing.T) {
 			for k, p := range tt.wantProviders {
 				k := k
 				if q, ok := p.(*oauth.Provider); ok {
-					q.SourceConfig = schema.AuthProviders{Github: &k}
+					q.SourceConfig = schema.AuthProviders{Gitlab: &k}
 				}
 			}
 			if !reflect.DeepEqual(gotProviders, tt.wantProviders) {
@@ -153,7 +158,7 @@ func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
 		OAuth2Config: oauth2Config,
 		StateConfig:  getStateConfig(),
 		ServiceID:    serviceID,
-		ServiceType:  githubcodehost.ServiceType,
+		ServiceType:  gitlab.ServiceType,
 	}
 	return &oauth.Provider{ProviderOp: op}
 }
