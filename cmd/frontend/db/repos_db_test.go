@@ -291,7 +291,9 @@ func TestRepos_List_indexedRevision(t *testing.T) {
 			panic(err)
 		}
 		if repo.IndexedRevision != nil {
-			Repos.UpdateIndexedRevision(ctx, gotRepo.ID, *repo.IndexedRevision)
+			if err := Repos.UpdateIndexedRevision(ctx, gotRepo.ID, *repo.IndexedRevision); err != nil {
+				panic(err)
+			}
 		}
 	}
 	tests := []struct {
