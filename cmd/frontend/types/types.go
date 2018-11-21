@@ -42,7 +42,8 @@ type Repo struct {
 	FreezeIndexedRevision bool
 }
 
-type Codehost struct {
+// ExternalService is a connection to an external service.
+type ExternalService struct {
 	ID          int64
 	Kind        string
 	DisplayName string

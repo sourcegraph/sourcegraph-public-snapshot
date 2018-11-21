@@ -3,10 +3,9 @@ package db
 import (
 	"context"
 	"database/sql"
-	"log"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
-
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
@@ -32,7 +31,7 @@ func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err
 	finish := func(tx *sql.Tx) {
 		if err != nil {
 			if err2 := tx.Rollback(); err2 != nil {
-				log.Println("Transaction Rollback failed:", err2)
+				err = multierror.Append(err, err2)
 			}
 			return
 		}
