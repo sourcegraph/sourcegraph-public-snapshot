@@ -109,6 +109,7 @@ describe('Sourcegraph Chrome extension', () => {
             if (browser) {
                 console.log('closing!')
                 await browser.close()
+                console.log('closed!')
             }
             process.exit(0)
         } catch (e) {
