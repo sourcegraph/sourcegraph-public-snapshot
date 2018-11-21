@@ -105,12 +105,12 @@ describe('Sourcegraph Chrome extension', () => {
         for (const p of await browser.pages()) {
             await p.close()
         }
-        for (const target of await browser.targets()) {
-            const p = await target.page()
-            if (p) {
-                await p.close()
-            }
-        }
+        // for (const target of await browser.targets()) {
+        //     const p = await target.page()
+        //     if (p) {
+        //         await p.close()
+        //     }
+        // }
 
         console.log((await browser.targets()).length)
         try {
@@ -119,6 +119,7 @@ describe('Sourcegraph Chrome extension', () => {
                 console.log('closing!')
                 await browser.close()
                 console.log('closed!')
+                return
             }
         } catch (e) {
             console.log('caught browser close', e)
