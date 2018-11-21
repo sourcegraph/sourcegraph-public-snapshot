@@ -2,10 +2,6 @@
   "extends": ["@sourcegraph/tslint-config"],
   "linterOptions": { "exclude": ["**/*.json"] },
   "rules": {
-    "rxjs-no-wholesale": false,
-    "rxjs-no-deep-operators": {
-      "severity": "error"
-    },
     "deprecation": {
       "severity": "warning"
     },

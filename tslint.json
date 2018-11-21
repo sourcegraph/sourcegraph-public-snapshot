@@ -1,10 +1,6 @@
 {
   "extends": ["@sourcegraph/tslint-config"],
   "rules": {
-    "rxjs-no-wholesale": false,
-    "rxjs-no-deep-operators": {
-      "severity": "error"
-    },
     "await-promise": false,
     "import-blacklist": [true, "highlight.js"],
     "jsx-ban-elements": [
