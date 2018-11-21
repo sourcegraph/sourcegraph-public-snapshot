@@ -26,6 +26,7 @@ To enable GitLab permissions, set the `authorization` field in the GitLab site c
    editor](../../admin/site_config/index.md).
 1. Add an `authorization` field to that object and fill in the fields. The site config will contain a
    snippet like the following:
+   
    ```
    {
      "auth.providers": [
