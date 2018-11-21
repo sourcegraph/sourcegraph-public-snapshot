@@ -220,6 +220,11 @@ function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[])
         },
         repository: {
             name: p.repoPath,
+            // This is the only usage of toRepoURL, and it is arguably simpler than getting the value from the
+            // GraphQL API. We will be removing these old-style git: URIs eventually, so it's not worth fixing this
+            // deprecated usage.
+            //
+            // tslint:disable-next-line deprecation
             url: toRepoURL(p.repoPath),
         },
         limitHit: false,
