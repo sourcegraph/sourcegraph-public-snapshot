@@ -83,7 +83,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if _, err := SiteConfig.Get(ctx); err != nil {
+	if _, err := GlobalState.Get(ctx); err != nil {
 		t.Fatal(err)
 	}
 

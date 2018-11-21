@@ -13,7 +13,7 @@ var (
 	Settings                  = &settings{}
 	Users                     = &users{}
 	UserEmails                = &userEmails{}
-	SiteConfig                = &siteConfig{}
+	GlobalState               = &globalState{}
 	CertCache                 = &certCache{}
 
 	SurveyResponses = &surveyResponses{}
