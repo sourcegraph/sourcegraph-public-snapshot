@@ -3,6 +3,11 @@ import * as GQL from '../graphql/schema'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
 
+/**
+ * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
+ * such as the browser extension). This subject doesn't exist in the GraphQL API, but the related types that are
+ * also used as settings subjects {@link GQL.IUser}, {@link GQL.IOrg}, and {@link GQL.ISite} do.
+ */
 export interface IClient {
     __typename: 'Client'
     displayName: string
@@ -46,6 +51,9 @@ export interface SettingsCascade {
      */
     subjects: ConfiguredSubject[]
 
+    /**
+     * The final settings (merged in order of precedence from the settings for each subject in the cascade).
+     */
     final: Settings
 }
 
