@@ -21,7 +21,7 @@ export function refreshAuthenticatedUser(): Observable<never> {
             currentUser {
                 __typename
                 id
-                sourcegraphID
+                databaseID
                 username
                 avatarURL
                 email

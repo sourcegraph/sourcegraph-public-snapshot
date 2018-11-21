@@ -57,7 +57,8 @@ func UnmarshalUserID(id graphql.ID) (userID int32, err error) {
 	return
 }
 
-func (r *UserResolver) SourcegraphID() int32 { return r.user.ID }
+// DatabaseID returns the numeric ID for the user in the database.
+func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
 
 // Email returns the user's oldest email, if one exists.
 // DEPRECATED: use Emails instead.

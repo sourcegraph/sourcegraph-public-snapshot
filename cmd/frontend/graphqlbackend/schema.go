@@ -2013,8 +2013,6 @@ type User implements Node & SettingsSubject {
     id: ID!
     # The user's username.
     username: String!
-    # The unique numeric ID for the user.
-    sourcegraphID: Int! @deprecated(reason: "use id instead")
     # The user's primary email address.
     #
     # Only the user and site admins can access this field.
@@ -2094,6 +2092,10 @@ type User implements Node & SettingsSubject {
     #
     # FOR INTERNAL USE ONLY.
     urlForSiteAdminBilling: String
+    # The unique numeric ID for the user.
+    #
+    # FOR INTERNAL USE ONLY.
+    databaseID: Int!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
