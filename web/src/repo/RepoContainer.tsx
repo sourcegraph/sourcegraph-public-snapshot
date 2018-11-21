@@ -234,7 +234,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
             settingsCascade: this.props.settingsCascade,
-            extensionsContext: this.props.extensionsContext,
+            platformContext: this.props.platformContext,
             extensionsOnRootsChange: this.props.extensionsOnRootsChange,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,
@@ -252,7 +252,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     rev={this.state.rev}
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     extensionsController={this.props.extensionsController}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
                     location={this.props.location}

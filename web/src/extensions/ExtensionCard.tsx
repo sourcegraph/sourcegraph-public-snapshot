@@ -96,7 +96,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
                                         settingsCascade={this.props.settingsCascade}
                                         onUpdate={props.onDidUpdate}
                                         className="btn-sm btn-secondary"
-                                        extensionsContext={this.props.extensionsContext}
+                                        platformContext={this.props.platformContext}
                                     />
                                 ) : (
                                     <li className="nav-item">

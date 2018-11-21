@@ -52,7 +52,7 @@ export const SiteAdminArea = withAuthenticatedUser(
 
             const context: SiteAdminAreaRouteContext = {
                 authenticatedUser: this.props.authenticatedUser,
-                extensionsContext: this.props.extensionsContext,
+                platformContext: this.props.platformContext,
                 isLightTheme: this.props.isLightTheme,
                 site: { __typename: 'Site' as 'Site', id: window.context.siteGQLID },
                 overviewComponents: this.props.overviewComponents,

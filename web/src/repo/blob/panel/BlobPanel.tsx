@@ -83,7 +83,7 @@ function toSubject(props: Props): ContextSubject {
         mode: props.mode,
         line: parsedHash.line || 1,
         character: parsedHash.character || 1,
-        extensionsContext: props.extensionsContext,
+        platformContext: props.platformContext,
     }
 }
 
@@ -97,7 +97,7 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
         a.mode === b.mode &&
         a.line === b.line &&
         a.character === b.character &&
-        isEqual(a.extensionsContext, b.extensionsContext)
+        isEqual(a.platformContext, b.platformContext)
     )
 }
 
@@ -143,7 +143,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                             {
                                 ...(subject as Pick<
                                     typeof subject,
-                                    Exclude<keyof typeof subject, 'extensionsContext'>
+                                    Exclude<keyof typeof subject, 'platformContext'>
                                 >),
                                 position,
                             },

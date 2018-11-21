@@ -120,7 +120,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
                         head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
                         lineNumbers: true,
-                        extensionsContext: this.props.extensionsContext,
+                        platformContext: this.props.platformContext,
                         location: this.props.location,
                         history: this.props.history,
                         hoverifier: this.props.hoverifier,

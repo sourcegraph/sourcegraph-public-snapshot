@@ -5,13 +5,13 @@ import { InitData } from '../../../shared/src/api/extension/extensionHost'
 import { SettingsCascade } from '../../../shared/src/api/protocol'
 import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
-import {
-    Context as ExtensionsContext,
-    ExtensionsContextProps as GenericExtensionsContextProps,
-} from '../../../shared/src/context'
 import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { gql } from '../../../shared/src/graphql/graphql'
+import {
+    PlatformContext,
+    PlatformContextProps as GenericPlatformContextProps,
+} from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import {
     gqlToCascade,
@@ -29,10 +29,10 @@ export interface ExtensionsControllerProps extends GenericExtensionsControllerPr
 
 export interface SettingsCascadeProps extends GenericSettingsCascadeProps {}
 
-export interface ExtensionsProps extends GenericExtensionsContextProps {}
+export interface ExtensionsProps extends GenericPlatformContextProps {}
 
-export function createExtensionsContext(): ExtensionsContext {
-    const context: ExtensionsContext = {
+export function createPlatformContext(): PlatformContext {
+    const context: PlatformContext = {
         settingsCascade: settingsCascade.pipe(
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))

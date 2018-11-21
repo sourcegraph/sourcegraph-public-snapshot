@@ -285,7 +285,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             rev={this.props.rev}
                             mode={this.props.mode}
                             settingsCascade={this.props.settingsCascade}
-                            extensionsContext={this.props.extensionsContext}
+                            platformContext={this.props.platformContext}
                             extensionsController={this.props.extensionsController}
                             extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                             extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
@@ -315,7 +315,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     repoID={this.props.repoID}
                     repoPath={this.props.repoPath}
                     commitID={this.props.commitID}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     extensionsController={this.props.extensionsController}
                     position={
                         lprToRange(parseHash(this.props.location.hash))

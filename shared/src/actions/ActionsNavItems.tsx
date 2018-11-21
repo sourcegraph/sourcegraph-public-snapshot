@@ -51,7 +51,7 @@ export class ActionsNavItems extends React.PureComponent<ActionsProps, ActionsSt
                             {...item}
                             variant="actionItem"
                             extensionsController={this.props.extensionsController}
-                            extensionsContext={this.props.extensionsContext}
+                            platformContext={this.props.platformContext}
                             className={this.props.actionItemClass}
                             location={this.props.location}
                         />

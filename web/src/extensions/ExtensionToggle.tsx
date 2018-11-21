@@ -62,7 +62,7 @@ export class ExtensionToggle extends React.PureComponent<Props> {
                         }
 
                         return from(
-                            this.props.extensionsContext.updateSettings(highestPrecedenceSubject.subject.id, {
+                            this.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
                                 extensionID: this.props.extension.id,
                                 enabled,
                             })

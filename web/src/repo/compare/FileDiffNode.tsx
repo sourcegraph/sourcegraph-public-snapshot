@@ -101,7 +101,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             }}
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
-                            extensionsContext={this.props.extensionsContext}
+                            platformContext={this.props.platformContext}
                             history={this.props.history}
                             location={this.props.location}
                             hoverifier={this.props.hoverifier}

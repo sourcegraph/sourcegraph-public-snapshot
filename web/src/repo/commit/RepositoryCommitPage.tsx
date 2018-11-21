@@ -243,7 +243,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                         commitID: this.state.commitOrError.oid,
                                     },
                                     lineNumbers: true,
-                                    extensionsContext: this.props.extensionsContext,
+                                    platformContext: this.props.platformContext,
                                     location: this.props.location,
                                     history: this.props.history,
                                     hoverifier: this.hoverifier,

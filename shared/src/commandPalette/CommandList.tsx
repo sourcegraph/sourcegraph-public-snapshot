@@ -10,11 +10,11 @@ import { ActionItem, ActionItemProps } from '../actions/ActionItem'
 import { ContributableMenu, Contributions } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { PopoverButton } from '../components/PopoverButton'
-import { ExtensionsContextProps } from '../context'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ControllerProps } from '../extensions/controller'
+import { PlatformContextProps } from '../platform/context'
 
-interface Props extends ControllerProps, ExtensionsContextProps {
+interface Props extends ControllerProps, PlatformContextProps {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
@@ -149,7 +149,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                             }
                             onRun={this.onActionRun}
                             extensionsController={this.props.extensionsController}
-                            extensionsContext={this.props.extensionsContext}
+                            platformContext={this.props.platformContext}
                             location={this.props.location}
                         />
                     ))

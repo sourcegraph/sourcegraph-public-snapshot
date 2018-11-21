@@ -231,7 +231,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                         node={e}
                                         onDidUpdate={this.onDidUpdateExtension}
                                         settingsCascade={this.props.settingsCascade}
-                                        extensionsContext={this.props.extensionsContext}
+                                        platformContext={this.props.platformContext}
                                     />
                                 ))}
                             </div>
@@ -247,7 +247,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     private onQueryChange: React.FormEventHandler<HTMLInputElement> = e => this.queryChanges.next(e.currentTarget.value)
 
     private queryRegistryExtensions = (args: { query?: string }): Observable<ExtensionsResult> =>
-        viewerConfiguredExtensions(this.props.extensionsContext).pipe(
+        viewerConfiguredExtensions(this.props.platformContext).pipe(
             // Avoid refreshing (and changing order) when the user merely interacts with an extension (e.g.,
             // toggling its enablement), to reduce UI jitter.
             take(1),

@@ -6,8 +6,8 @@ import { ExecuteCommandParams } from '../api/client/providers/command'
 import { ActionContribution } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
-import { ExtensionsContextProps } from '../context'
 import { ControllerProps } from '../extensions/controller'
+import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike } from '../util/errors'
 
 export interface ActionItemProps {
@@ -38,7 +38,7 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-interface Props extends ActionItemProps, ControllerProps, ExtensionsContextProps {
+interface Props extends ActionItemProps, ControllerProps, PlatformContextProps {
     location: H.Location
 }
 
@@ -82,7 +82,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
         const prevTooltip = prevProps.action.actionItem && prevProps.action.actionItem.description
         const tooltip = this.props.action.actionItem && this.props.action.actionItem.description
         if (prevTooltip !== tooltip) {
-            this.props.extensionsContext.forceUpdateTooltip()
+            this.props.platformContext.forceUpdateTooltip()
         }
     }
 

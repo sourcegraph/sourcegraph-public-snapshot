@@ -1,13 +1,16 @@
 import { Subscribable } from 'rxjs'
-import { GraphQLResult } from './graphql/graphql'
-import * as GQL from './graphql/schema'
-import { UpdateExtensionSettingsArgs } from './settings/edit'
-import { SettingsCascadeOrError } from './settings/settings'
+import { GraphQLResult } from '../graphql/graphql'
+import * as GQL from '../graphql/schema'
+import { UpdateExtensionSettingsArgs } from '../settings/edit'
+import { SettingsCascadeOrError } from '../settings/settings'
 
 /**
- * Description of the context in which extensions-client-common is running, and platform-specific hooks.
+ * Platform-specific data and methods shared by multiple Sourcegraph components.
+ *
+ * Whenever shared code (in shared/) needs to perform an action or retrieve data that requires different
+ * implementations depending on the platform, the shared code should use this value's fields.
  */
-export interface Context {
+export interface PlatformContext {
     /**
      * An observable that emits whenever the settings cascade changes (including when any individual subject's
      * settings change).
@@ -52,8 +55,8 @@ export interface Context {
 }
 
 /**
- * React partial props for components needing the extensions context.
+ * React partial props for components needing the {@link PlatformContext}.
  */
-export interface ExtensionsContextProps {
-    extensionsContext: Context
+export interface PlatformContextProps {
+    platformContext: PlatformContext
 }

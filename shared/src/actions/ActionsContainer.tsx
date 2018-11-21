@@ -71,7 +71,7 @@ export class ActionsContainer extends React.PureComponent<ActionsContainerProps,
                     key={i}
                     {...item}
                     extensionsController={this.props.extensionsController}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     location={this.props.location}
                 />
             ))}

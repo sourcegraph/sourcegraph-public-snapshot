@@ -77,7 +77,7 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
         const context: ExtensionsAreaRouteContext = {
             authenticatedUser: this.props.authenticatedUser,
             settingsCascade: this.props.settingsCascade,
-            extensionsContext: this.props.extensionsContext,
+            platformContext: this.props.platformContext,
             subject: this.props.viewerSubject,
             extensionAreaRoutes: this.props.extensionAreaRoutes,
             extensionAreaHeaderNavItems: this.props.extensionAreaHeaderNavItems,

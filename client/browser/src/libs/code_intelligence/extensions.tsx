@@ -16,10 +16,10 @@ import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
 } from '../../../../../shared/src/api/client/providers/decoration'
-import { Context } from '../../../../../shared/src/context'
 import { viewerConfiguredExtensions } from '../../../../../shared/src/extensions/helpers'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../shared/backend/errors'
-import { createExtensionsContext, createMessageTransports } from '../../shared/backend/extensions'
+import { createMessageTransports, createPlatformContext } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { sourcegraphUrl } from '../../shared/util/context'
@@ -68,17 +68,17 @@ export function logThenDropConfigurationErrors(cascadeOrError: SettingsCascadeOr
 }
 
 export interface Controllers {
-    extensionsContext: Context
+    platformContext: PlatformContext
     extensionsController: ClientController
 }
 
 function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
-    const extensionsContext = createExtensionsContext(sourcegraphUrl)
-    const extensionsController = createController(extensionsContext, createMessageTransports)
+    const platformContext = createPlatformContext(sourcegraphUrl)
+    const extensionsController = createController(platformContext, createMessageTransports)
 
     combineLatest(
-        viewerConfiguredExtensions(extensionsContext),
-        from(extensionsContext.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
+        viewerConfiguredExtensions(platformContext),
+        from(platformContext.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
         environment
     ).subscribe(([extensions, configuration, { roots, visibleTextDocuments }]) => {
         from(extensionsController.environment)
@@ -94,7 +94,7 @@ function createControllers(environment: Observable<Pick<Environment, 'roots' | '
             })
     })
 
-    return { extensionsContext, extensionsController }
+    return { platformContext, extensionsController }
 }
 
 /**
@@ -104,7 +104,7 @@ export function initializeExtensions(
     getCommandPaletteMount: MountGetter,
     environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
 ): Controllers {
-    const { extensionsContext, extensionsController } = createControllers(environment)
+    const { platformContext, extensionsController } = createControllers(environment)
     const history = H.createBrowserHistory()
 
     render(
@@ -112,7 +112,7 @@ export function initializeExtensions(
             <CommandListPopoverButton
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
-                extensionsContext={extensionsContext}
+                platformContext={platformContext}
                 location={history.location}
             />
             <Notifications extensionsController={extensionsController} />
@@ -125,7 +125,7 @@ export function initializeExtensions(
         getGlobalDebugMount()
     )
 
-    return { extensionsContext, extensionsController }
+    return { platformContext, extensionsController }
 }
 
 const combineUnsubscribables = (...unsubscribables: Unsubscribable[]): Unsubscribable => ({

@@ -7,8 +7,8 @@ import { Contributions, MessageType } from '../api/protocol'
 import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
 import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands, updateConfiguration } from '../commands/commands'
-import { Context } from '../context'
 import { Notification } from '../notifications/notification'
+import { PlatformContext } from '../platform/context'
 import { ExtensionManifest } from '../schema/extension.schema'
 import { SettingsCascade } from '../settings/settings'
 import { asError, isErrorLike } from '../util/errors'
@@ -115,7 +115,7 @@ declare global {
  * React components via its registries and the showMessages, etc., observables.
  */
 export function createController(
-    context: Context,
+    context: PlatformContext,
     createMessageTransports: (
         extension: ConfiguredExtension,
         settingsCascade: SettingsCascade

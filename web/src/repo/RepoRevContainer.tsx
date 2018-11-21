@@ -193,7 +193,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         }
 
         const context: RepoRevContainerContext = {
-            extensionsContext: this.props.extensionsContext,
+            platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
             extensionsOnRootsChange: this.props.extensionsOnRootsChange,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,

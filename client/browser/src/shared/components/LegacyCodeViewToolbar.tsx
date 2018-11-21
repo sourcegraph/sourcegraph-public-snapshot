@@ -12,9 +12,9 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { ExtensionsContextProps } from '../../../../../shared/src/context'
 import { ControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
@@ -26,7 +26,7 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps extends Partial<ExtensionsContextProps>, Partial<ControllerProps> {
+interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<ControllerProps> {
     repoPath: string
     filePath: string
 
@@ -59,9 +59,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        if (this.props.extensionsContext) {
+        if (this.props.platformContext) {
             this.subscriptions.add(
-                this.props.extensionsContext.settingsCascade.subscribe(
+                this.props.platformContext.settingsCascade.subscribe(
                     settingsCascade => this.setState({ settingsCascade }),
                     err => console.error(err)
                 )
@@ -78,14 +78,14 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     public render(): JSX.Element | null {
         return (
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
-                <ul className={`nav ${this.props.extensionsContext ? 'pr-1' : ''}`}>
+                <ul className={`nav ${this.props.platformContext ? 'pr-1' : ''}`}>
                     {this.props.extensionsController &&
-                        this.props.extensionsContext && (
+                        this.props.platformContext && (
                             <div className="BtnGroup">
                                 <ActionsNavItems
                                     menu={ContributableMenu.EditorTitle}
                                     extensionsController={this.props.extensionsController}
-                                    extensionsContext={this.props.extensionsContext}
+                                    platformContext={this.props.platformContext}
                                     listClass="BtnGroup"
                                     actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
                                     location={this.props.location}

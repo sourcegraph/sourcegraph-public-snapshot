@@ -239,7 +239,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     <ActionsNavItems
                         menu={ContributableMenu.EditorTitle}
                         extensionsController={this.props.extensionsController}
-                        extensionsContext={this.props.extensionsContext}
+                        platformContext={this.props.platformContext}
                         location={this.props.location}
                     />
                     {this.props.actionButtons.map(

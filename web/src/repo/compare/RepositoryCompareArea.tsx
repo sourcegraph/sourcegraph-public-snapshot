@@ -167,7 +167,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
             base: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.base },
             head: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.head },
             routePrefix: this.props.match.url,
-            extensionsContext: this.props.extensionsContext,
+            platformContext: this.props.platformContext,
         }
 
         return (

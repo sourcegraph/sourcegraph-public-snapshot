@@ -4,7 +4,7 @@ import { switchMap, take } from 'rxjs/operators'
 import { Controller } from '../api/client/controller'
 import { Extension } from '../api/client/extension'
 import { ActionContributionClientCommandUpdateConfiguration, ConfigurationUpdateParams } from '../api/protocol'
-import { Context } from '../context'
+import { PlatformContext } from '../platform/context'
 import { SettingsCascade } from '../settings/settings'
 import { isErrorLike } from '../util/errors'
 
@@ -14,7 +14,7 @@ import { isErrorLike } from '../util/errors'
  * documentation.
  */
 export function registerBuiltinClientCommands<E extends Extension>(
-    context: Pick<Context, 'settingsCascade' | 'updateSettings' | 'queryGraphQL' | 'queryLSP'>,
+    context: Pick<PlatformContext, 'settingsCascade' | 'updateSettings' | 'queryGraphQL' | 'queryLSP'>,
     controller: Controller<E, SettingsCascade>
 ): Unsubscribable {
     const subscription = new Subscription()
@@ -112,7 +112,7 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
  * Applies an edit to the settings of the highest-precedence subject.
  */
 export function updateConfiguration(
-    context: Pick<Context, 'settingsCascade' | 'updateSettings'>,
+    context: Pick<PlatformContext, 'settingsCascade' | 'updateSettings'>,
     params: ConfigurationUpdateParams
 ): Promise<void> {
     // TODO(sqs): Allow extensions to specify which subject's settings to update

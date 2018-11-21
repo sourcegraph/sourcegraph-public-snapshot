@@ -7,10 +7,10 @@ import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take 
 import uuid from 'uuid'
 import { MessageTransports } from '../../../../../shared/src/api/protocol/jsonrpc2/connection'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
-import { Context as ExtensionsContext } from '../../../../../shared/src/context'
 import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
 import { gql, graphQLContent } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { mutateSettings, UpdateExtensionSettingsArgs, updateSettings } from '../../../../../shared/src/settings/edit'
 import {
     gqlToCascade,
@@ -279,11 +279,11 @@ export const settingsCascade: Observable<SettingsCascadeOrError> = combineLatest
     distinctUntilChanged((a, b) => isEqual(a, b))
 )
 
-export function createExtensionsContext(sourcegraphUrl: string): ExtensionsContext {
+export function createPlatformContext(sourcegraphUrl: string): PlatformContext {
     const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
     sourcegraphLanguageServerURL.pathname = '.api/xlang'
 
-    const context: ExtensionsContext = {
+    const context: PlatformContext = {
         settingsCascade,
         updateSettings: async (subject, args) => {
             await updateSettings(
