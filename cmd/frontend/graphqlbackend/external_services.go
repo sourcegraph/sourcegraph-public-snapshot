@@ -12,29 +12,33 @@ import (
 )
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
-	Kind        string
-	DisplayName string
-	Config      string
+	Input *struct {
+		Kind        string
+		DisplayName string
+		Config      string
+	}
 }) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: Only site admins may add external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	externalService := &types.ExternalService{
-		Kind:        args.Kind,
-		DisplayName: args.DisplayName,
-		Config:      args.Config,
+		Kind:        args.Input.Kind,
+		DisplayName: args.Input.DisplayName,
+		Config:      args.Input.Config,
 	}
 	err := db.ExternalServices.Create(ctx, externalService)
 	return &externalServiceResolver{externalService: externalService}, err
 }
 
 func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
-	ID          graphql.ID
-	DisplayName *string
-	Config      *string
+	Input *struct {
+		ID          graphql.ID
+		DisplayName *string
+		Config      *string
+	}
 }) (*externalServiceResolver, error) {
-	externalServiceID, err := unmarshalExternalServiceID(args.ID)
+	externalServiceID, err := unmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +49,8 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	}
 
 	update := &db.ExternalServiceUpdate{
-		DisplayName: args.DisplayName,
-		Config:      args.Config,
+		DisplayName: args.Input.DisplayName,
+		Config:      args.Input.Config,
 	}
 	if err := db.ExternalServices.Update(ctx, externalServiceID, update); err != nil {
 		return nil, err
