@@ -14,7 +14,7 @@ import { ConfiguredExtension } from '../../shared/src/extensions/extension'
 import { viewerConfiguredExtensions } from '../../shared/src/extensions/helpers'
 import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
-import { ConfiguredSubject, SettingsCascadeOrError } from '../../shared/src/settings/settings'
+import { ConfiguredSubject, isSettingsValid, SettingsCascadeOrError } from '../../shared/src/settings/settings'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { FeedbackText } from './components/FeedbackText'
@@ -299,16 +299,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     settingsCascade,
                     extensionsEnvironment: prevState.extensionsEnvironment,
                 }
-                if (
-                    settingsCascade.subjects !== null &&
-                    !isErrorLike(settingsCascade.subjects) &&
-                    settingsCascade.final !== null &&
-                    !isErrorLike(settingsCascade.final)
-                ) {
+                if (isSettingsValid(settingsCascade)) {
                     // Only update Sourcegraph extensions environment configuration if the configuration was
                     // successfully parsed.
-                    //
-                    // TODO(sqs): Think through how this error should be handled.
                     update.extensionsEnvironment = {
                         ...prevState.extensionsEnvironment,
                         configuration: {

@@ -113,37 +113,36 @@ export interface SubjectSettingsContents {
     } | null
 }
 
-/** Converts a GraphQL SettingsCascade value to a value of this library's SettingsCascade type. */
+/**
+ * Converts a GraphQL SettingsCascade value to a SettingsCascadeOrError value.
+ *
+ * @param subjects A list of settings subjects in the settings cascade. If empty, an error is thrown.
+ */
 export function gqlToCascade({
     subjects,
 }: {
     subjects: (SettingsSubject & SubjectSettingsContents)[]
 }): SettingsCascadeOrError {
-    const cascade: SettingsCascadeOrError & { subjects: ConfiguredSubjectOrError[] } = {
-        subjects: [],
-        final: null,
-    }
+    const configuredSubjects: ConfiguredSubjectOrError[] = []
     const allSettings: Settings[] = []
     const allSettingsErrors: ErrorLike[] = []
     for (const subject of subjects) {
         const settings = subject.latestSettings && parseJSONCOrError<Settings>(subject.latestSettings.contents)
         const lastID = subject.latestSettings ? subject.latestSettings.id : null
-        cascade.subjects.push({ subject, settings, lastID })
-
+        configuredSubjects.push({ subject, settings, lastID })
         if (isErrorLike(settings)) {
             allSettingsErrors.push(settings)
         } else if (settings !== null) {
             allSettings.push(settings)
         }
     }
-
-    if (allSettingsErrors.length > 0) {
-        cascade.final = createAggregateError(allSettingsErrors)
-    } else {
-        cascade.final = mergeSettings<Settings>(allSettings)
+    return {
+        subjects: configuredSubjects,
+        final:
+            allSettingsErrors.length > 0
+                ? createAggregateError(allSettingsErrors)
+                : mergeSettings<Settings>(allSettings),
     }
-
-    return cascade
 }
 
 /**
@@ -189,6 +188,25 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
             base[key] = add[key]
         }
     }
+}
+
+/**
+ * Reports whether the settings cascade is valid (i.e., is non-empty and doesn't have any errors).
+ *
+ * @todo Display the errors to the user in another component.
+ *
+ * @template S the settings type
+ */
+export function isSettingsValid<S extends Settings>(
+    settingsCascade: SettingsCascadeOrError<S>
+): settingsCascade is SettingsCascade<S> {
+    return (
+        settingsCascade.subjects !== null &&
+        !isErrorLike(settingsCascade.subjects) &&
+        settingsCascade.subjects.every(subject => !isErrorLike(subject.settings)) &&
+        settingsCascade.final !== null &&
+        !isErrorLike(settingsCascade.final)
+    )
 }
 
 /**

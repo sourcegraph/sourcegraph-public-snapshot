@@ -1,13 +1,12 @@
 import * as React from 'react'
 import { render } from 'react-dom'
 import { combineLatest, from, Observable, Unsubscribable } from 'rxjs'
-import { map, take } from 'rxjs/operators'
+import { filter, take } from 'rxjs/operators'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
 import { Controller as ClientController, createController } from '../../../../../shared/src/extensions/controller'
 import { Notifications } from '../../../../../shared/src/notifications/Notifications'
-import { ConfiguredSubject, SettingsCascade, SettingsCascadeOrError } from '../../../../../shared/src/settings/settings'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'
@@ -18,54 +17,13 @@ import {
 } from '../../../../../shared/src/api/client/providers/decoration'
 import { viewerConfiguredExtensions } from '../../../../../shared/src/extensions/helpers'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { isErrorLike } from '../../shared/backend/errors'
+import { isSettingsValid } from '../../../../../shared/src/settings/settings'
 import { createMessageTransports, createPlatformContext } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { sourcegraphUrl } from '../../shared/util/context'
 import { getGlobalDebugMount } from '../github/extensions'
 import { MountGetter } from './code_intelligence'
-
-// This is rather specific to extensions-client-common
-// and could be moved to that package in the future.
-export function logThenDropConfigurationErrors(cascadeOrError: SettingsCascadeOrError): SettingsCascade {
-    const EMPTY_CASCADE: SettingsCascade = {
-        subjects: [],
-        final: {},
-    }
-    if (!cascadeOrError.subjects) {
-        console.error('invalid configuration: no settings subjects available')
-        return EMPTY_CASCADE
-    }
-    if (!cascadeOrError.final) {
-        console.error('invalid configuration: no final settings available')
-        return EMPTY_CASCADE
-    }
-    if (isErrorLike(cascadeOrError.subjects)) {
-        console.error(`invalid configuration: error in settings subjects: ${cascadeOrError.subjects.message}`)
-        return EMPTY_CASCADE
-    }
-    if (isErrorLike(cascadeOrError.final)) {
-        console.error(`invalid configuration: error in final configuration: ${cascadeOrError.final.message}`)
-        return EMPTY_CASCADE
-    }
-    return {
-        subjects: cascadeOrError.subjects.filter(
-            (subject): subject is ConfiguredSubject => {
-                if (!subject) {
-                    console.error('invalid configuration: no settings subjects available')
-                    return false
-                }
-                if (isErrorLike(subject)) {
-                    console.error(`invalid configuration: error in settings subjects: ${subject.message}`)
-                    return false
-                }
-                return true
-            }
-        ),
-        final: cascadeOrError.final,
-    }
-}
 
 export interface Controllers {
     platformContext: PlatformContext
@@ -78,7 +36,7 @@ function createControllers(environment: Observable<Pick<Environment, 'roots' | '
 
     combineLatest(
         viewerConfiguredExtensions(platformContext),
-        from(platformContext.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
+        from(platformContext.settingsCascade).pipe(filter(isSettingsValid)),
         environment
     ).subscribe(([extensions, configuration, { roots, visibleTextDocuments }]) => {
         from(extensionsController.environment)
