@@ -13,9 +13,9 @@ import {
     takeUntil,
     withLatestFrom,
 } from 'rxjs/operators'
-import { viewerConfiguredExtensions } from '../../../shared/src/controller'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { ConfiguredExtension, toConfiguredExtensions } from '../../../shared/src/extensions/extension'
+import { viewerConfiguredExtensions } from '../../../shared/src/extensions/helpers'
 import { gql } from '../../../shared/src/graphql'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { SettingsSubject } from '../../../shared/src/settings'

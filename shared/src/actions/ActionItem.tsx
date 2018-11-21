@@ -4,11 +4,11 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ExecuteCommandParams } from '../api/client/providers/command'
 import { ActionContribution } from '../api/protocol'
-import { urlForOpenPanel } from '../client/clientCommands'
-import { ControllerProps } from '../client/controller'
+import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsContextProps } from '../context'
 import { asError, ErrorLike } from '../errors'
+import { ControllerProps } from '../extensions/controller'
 
 export interface ActionItemProps {
     /**

@@ -6,14 +6,14 @@ import { ExecuteCommandParams } from '../api/client/providers/command'
 import { Contributions, MessageType } from '../api/protocol'
 import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
 import { BrowserConsoleTracer, Trace } from '../api/protocol/jsonrpc2/trace'
+import { registerBuiltinClientCommands, updateConfiguration } from '../commands/commands'
 import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
-import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
-import { ExtensionStatus } from '../extensions/ExtensionStatus'
 import { Notification } from '../notifications/notification'
 import { ExtensionManifest } from '../schema/extension.schema'
 import { SettingsCascade } from '../settings'
-import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
+import { ConfiguredExtension, isExtensionEnabled } from './extension'
+import { ExtensionStatus } from './ExtensionStatus'
 
 /**
  * Extends the {@link BaseController} class to add functionality that is useful to this package's consumers.

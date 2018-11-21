@@ -8,11 +8,11 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { ActionItem, ActionItemProps } from '../actions/ActionItem'
 import { ContributableMenu, Contributions } from '../api/protocol'
-import { ControllerProps } from '../client/controller'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { PopoverButton } from '../components/PopoverButton'
 import { ExtensionsContextProps } from '../context'
 import { getContributedActionItems } from '../contributions/contributions'
+import { ControllerProps } from '../extensions/controller'
 
 interface Props extends ControllerProps, ExtensionsContextProps {
     /** The menu whose commands to display. */

@@ -5,12 +5,12 @@ import { InitData } from '../../../shared/src/api/extension/extensionHost'
 import { SettingsCascade } from '../../../shared/src/api/protocol'
 import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
-import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/client/controller'
 import {
     Context as ExtensionsContext,
     ExtensionsContextProps as GenericExtensionsContextProps,
 } from '../../../shared/src/context'
 import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
+import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { gql } from '../../../shared/src/graphql'
 import {
