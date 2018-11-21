@@ -4,7 +4,6 @@ import { Controller as BaseController, ExtensionConnectionKey } from '../api/cli
 import { Environment } from '../api/client/environment'
 import { ExecuteCommandParams } from '../api/client/providers/command'
 import { Contributions, MessageType } from '../api/protocol'
-import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
 import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands, updateConfiguration } from '../commands/commands'
 import { Notification } from '../notifications/notification'
@@ -114,13 +113,7 @@ declare global {
  * It receives state updates via calls to the setEnvironment method from React components. It provides results to
  * React components via its registries and the showMessages, etc., observables.
  */
-export function createController(
-    context: PlatformContext,
-    createMessageTransports: (
-        extension: ConfiguredExtension,
-        settingsCascade: SettingsCascade
-    ) => Promise<MessageTransports>
-): Controller {
+export function createController(context: PlatformContext): Controller {
     const controller: Controller = new Controller({
         clientOptions: (_key: ExtensionConnectionKey, extension: ConfiguredExtension) => ({
             createMessageTransports: async () => {
@@ -130,7 +123,7 @@ export function createController(
                         map(({ configuration }) => configuration)
                     )
                     .toPromise()
-                return createMessageTransports(extension, settingsCascade)
+                return context.createMessageTransports(extension, settingsCascade)
             },
         }),
         environmentFilter,

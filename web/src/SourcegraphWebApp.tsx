@@ -27,7 +27,6 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import {
-    createMessageTransports,
     ExtensionsControllerProps,
     ExtensionsProps,
     SettingsCascadeProps,
@@ -119,9 +118,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     'clientApplication.isSourcegraph': true,
                 },
             },
-            extensionsController: createExtensionsController(platformContext, (extension, settingsCascade) =>
-                Promise.resolve(createMessageTransports(extension, settingsCascade))
-            ),
+            extensionsController: createExtensionsController(platformContext),
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             isMainPage: false,
         }

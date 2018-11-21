@@ -1,8 +1,10 @@
 import { Subscribable } from 'rxjs'
+import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
+import { ConfiguredExtension } from '../extensions/extension'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { UpdateExtensionSettingsArgs } from '../settings/edit'
-import { SettingsCascadeOrError } from '../settings/settings'
+import { SettingsCascade, SettingsCascadeOrError } from '../settings/settings'
 
 /**
  * Platform-specific data and methods shared by multiple Sourcegraph components.
@@ -52,6 +54,14 @@ export interface PlatformContext {
      * Forces the currently displayed tooltip, if any, to update its contents.
      */
     forceUpdateTooltip(): void
+
+    /**
+     * Spawns (e.g., in a Web Worker) and opens a communication channel to an extension.
+     */
+    createMessageTransports: (
+        extension: ConfiguredExtension,
+        settingsCascade: SettingsCascade
+    ) => Promise<MessageTransports>
 }
 
 /**

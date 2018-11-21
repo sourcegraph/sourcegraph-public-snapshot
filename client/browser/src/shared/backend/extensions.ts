@@ -42,7 +42,7 @@ const createPlatformMessageTransports = (connectionInfo: ExtensionConnectionInfo
         })
     })
 
-export function createMessageTransports(
+function createMessageTransports(
     extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
     settingsCascade: SettingsCascade
 ): Promise<MessageTransports> {
@@ -316,6 +316,7 @@ export function createPlatformContext(sourcegraphUrl: string): PlatformContext {
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
+        createMessageTransports,
     }
     return context
 }

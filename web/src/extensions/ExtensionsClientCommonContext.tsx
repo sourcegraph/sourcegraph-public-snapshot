@@ -73,11 +73,13 @@ export function createPlatformContext(): PlatformContext {
             ),
         queryLSP: requests => sendLSPHTTPRequests(requests),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
+        createMessageTransports: (extension, settingsCascade) =>
+            Promise.resolve(createMessageTransports(extension, settingsCascade)),
     }
     return context
 }
 
-export function createMessageTransports(
+function createMessageTransports(
     extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
     settingsCascade: SettingsCascade<any>
 ): MessageTransports {

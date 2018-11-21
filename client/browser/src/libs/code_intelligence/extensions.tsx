@@ -18,7 +18,7 @@ import {
 import { viewerConfiguredExtensions } from '../../../../../shared/src/extensions/helpers'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { isSettingsValid } from '../../../../../shared/src/settings/settings'
-import { createMessageTransports, createPlatformContext } from '../../shared/backend/extensions'
+import { createPlatformContext } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { sourcegraphUrl } from '../../shared/util/context'
@@ -32,7 +32,7 @@ export interface Controllers {
 
 function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
     const platformContext = createPlatformContext(sourcegraphUrl)
-    const extensionsController = createController(platformContext, createMessageTransports)
+    const extensionsController = createController(platformContext)
 
     combineLatest(
         viewerConfiguredExtensions(platformContext),
