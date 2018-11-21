@@ -71,7 +71,7 @@ func (c *client) call(ctx context.Context, serviceMethod string, args interface{
 	case <-time.After(100 * time.Millisecond):
 	}
 
-	cl, gen, err = c.getRPCClient(ctx, gen)
+	cl, _, err = c.getRPCClient(ctx, gen)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (c *client) getRPCClient(ctx context.Context, gen int) (*rpc.Client, int, e
 	}
 	var timeout time.Duration
 	if deadline, ok := ctx.Deadline(); ok {
-		timeout = deadline.Sub(time.Now())
+		timeout = time.Until(deadline)
 	}
 	cl, err := rpc.DialHTTPPathTimeout("tcp", c.addr, c.path, timeout)
 	if err != nil {
