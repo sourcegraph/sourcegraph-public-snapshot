@@ -14,7 +14,13 @@ export function highlightNode(node: HTMLElement, start: number, length: number):
     if (length > node.textContent!.length - start) {
         return
     }
-
+    // We want to treat text nodes as a
+    if (node.nodeType === Node.TEXT_NODE && node.textContent !== null) {
+        const sp = document.createElement('span')
+        sp.innerHTML = node.textContent
+        node.parentNode!.replaceChild(sp, node)
+        node = sp
+    }
     node.classList.add('annotated-selection-match')
     highlightNodeHelper(node, 0, start, length)
 }
