@@ -36,7 +36,8 @@
   },
   "applications": {
     "gecko": {
-      "id": "firefox-extension@sourcegraph.com"
+      "id": "sourcegraph-for-firefox@sourcegraph.com",
+      "update_url": "https://storage.googleapis.com/sourcegraph-for-firefox/updates.json"
     }
   },
   "dev": {
