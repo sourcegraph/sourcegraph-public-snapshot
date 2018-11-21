@@ -18,10 +18,9 @@ import {
 import { viewerConfiguredExtensions } from '../../../../../shared/src/extensions/helpers'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { isSettingsValid } from '../../../../../shared/src/settings/settings'
-import { createPlatformContext } from '../../shared/backend/extensions'
+import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
-import { sourcegraphUrl } from '../../shared/util/context'
 import { getGlobalDebugMount } from '../github/extensions'
 import { MountGetter } from './code_intelligence'
 
@@ -31,7 +30,7 @@ export interface Controllers {
 }
 
 function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
-    const platformContext = createPlatformContext(sourcegraphUrl)
+    const platformContext = createPlatformContext()
     const extensionsController = createController(platformContext)
 
     combineLatest(
