@@ -97,11 +97,17 @@ func NewProvider(op ProviderOp) *Provider {
 func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, success http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
+		csrf, err := randomState()
+		if err != nil {
+			log15.Error("Failed to generated random state", "error", err)
+			http.Error(w, "Failed to generate random state", http.StatusInternalServerError)
+			return
+		}
 		if isLogin {
 			// add Cookie with a random state + redirect
 			stateVal, err := LoginState{
 				Redirect:   req.URL.Query().Get("redirect"),
-				CSRF:       randomState(),
+				CSRF:       csrf,
 				ProviderID: providerID,
 			}.Encode()
 			if err != nil {
@@ -153,8 +159,11 @@ func DecodeState(encoded string) (*LoginState, error) {
 }
 
 // Returns a base64 encoded random 32 byte string.
-func randomState() string {
+func randomState() (string, error) {
 	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.RawURLEncoding.EncodeToString(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
