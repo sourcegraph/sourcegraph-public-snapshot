@@ -11,6 +11,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
 - Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`.
+- Authentication via GitLab is now supported. To enable, add an item to the `auth.providers` list with `type: "gitlab"`.
 - GitHub repository permissions are supported if authentication via GitHub is enabled. See the
   documentation for the `authorization` field of the `GitHubConnection` configuration.
 - The repository settings mirroring page now shows when a repo is next scheduled for an update (requires experiment `"updateScheduler2": "enabled"`).

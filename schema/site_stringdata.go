@@ -97,6 +97,11 @@ const SiteSchemaJSON = `{
           "description":
             "Enables GitHub instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitHub instance to the ` + "`" + `auth.providers` + "`" + ` field.",
           "type": "boolean"
+        },
+        "gitlabAuth": {
+          "description":
+            "Enables GitLab instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitLab instance to the ` + "`" + `auth.providers` + "`" + ` field.",
+          "type": "boolean"
         }
       }
     },
@@ -373,7 +378,8 @@ const SiteSchemaJSON = `{
           { "$ref": "#/definitions/SAMLAuthProvider" },
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
-          { "$ref": "#/definitions/GitHubAuthProvider" }
+          { "$ref": "#/definitions/GitHubAuthProvider" },
+          { "$ref": "#/definitions/GitLabAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -1145,6 +1151,35 @@ const SiteSchemaJSON = `{
           "type": "string",
           "description":
             "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
+      }
+    },
+    "GitLabAuthProvider": {
+      "description":
+        "Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have ` + "`" + `api` + "`" + ` and ` + "`" + `read_user` + "`" + ` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/gitlab/callback\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gitlab"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
+          "default": "https://gitlab.com/"
+        },
+        "clientID": {
+          "type": "string",
+          "description":
+            "The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description":
+            "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
         },
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
       }
