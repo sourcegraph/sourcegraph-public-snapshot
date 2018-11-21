@@ -22,3 +22,4 @@ testdata
 .github/*
 doc/
 shared/src/types/abort-controller/index.d.ts
+client/browser/src/extension/*.json
