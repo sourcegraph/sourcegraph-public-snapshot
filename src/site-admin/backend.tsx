@@ -152,7 +152,7 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                             updatedAt
                         }
                     }
-                    totalCount(precise: true)
+                    totalCount(precise: false)
                     pageInfo {
                         hasNextPage
                     }
