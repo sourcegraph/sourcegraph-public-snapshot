@@ -231,6 +231,10 @@ export const gqlSettingsCascade: Observable<Pick<GQL.ISettingsCascade, 'subjects
             retry: false,
         }).pipe(
             map(({ data, errors }) => {
+                // Suppress deprecation warnings because our use of these deprecated fields is intentional (see
+                // tsdoc comment).
+                //
+                // tslint:disable deprecation
                 if (!data || !data.viewerConfiguration) {
                     throw createAggregateError(errors)
                 }
@@ -245,6 +249,7 @@ export const gqlSettingsCascade: Observable<Pick<GQL.ISettingsCascade, 'subjects
                     subjects: data.viewerConfiguration.subjects,
                     final: data.viewerConfiguration.merged.contents,
                 }
+                // tslint:enable deprecation
             })
         )
     )
