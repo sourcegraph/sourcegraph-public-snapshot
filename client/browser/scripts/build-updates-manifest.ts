@@ -1,35 +1,38 @@
-// import * as fs from 'fs'
-// import * as path from 'path'
+import * as fs from 'fs'
+import * as path from 'path'
 
-// const updatesManifestPath = path.resolve(__dirname, '..', 'src/extension/updates.manifest.json')
+const updatesManifestPath = path.resolve(__dirname, '..', 'src/extension/updates.manifest.json')
 
-// interface Update {
-//     version: string
-//     update_link: string
-// }
+interface Update {
+    version: string
+    update_link: string
+}
 
-// function addVersionToManifest(links: string[]): void {
-//     const updatesManifest = JSON.parse(fs.readFileSync(updatesManifestPath, 'utf8'))
+function addVersionsToManifest(links: string[]): void {
+    const updatesManifest = JSON.parse(fs.readFileSync(updatesManifestPath, 'utf8'))
 
-//     for (const link of links) {
-//         // `link` looks like .../sourcegraph-for-firefox/sourcegraph_for_firefox-18.11.17.46-an+fx.xpi
-//         const match = link.match(/_firefox-(.*?)-/)
-//         if (!match) {
-//             throw new Error(`could not get version from ${link}`)
-//         }
+    const updates: Update[] = []
 
-//         const version = match[1]
-//         ;(updatesManifest.addons['sourcegraph-for-firefox@sourcegraph.com'].updates as Update[]).push({
-//             version,
-//             update_link: link,
-//         })
-//     }
+    for (const link of links) {
+        // `link` looks like .../sourcegraph-for-firefox/sourcegraph_for_firefox-18.11.17.46-an+fx.xpi
+        const match = link.match(/_firefox-(.*?)-/)
+        if (!match) {
+            throw new Error(`could not get version from ${link}`)
+        }
 
-//     fs.writeFileSync(updatesManifestPath, JSON.stringify(updatesManifest, null, 4), 'utf8')
-// }
+        const version = match[1]
 
-const links = process.argv.slice(2).filter(l => !l.match(/latext.xpi$/) && !l.match(/updates.json$/))
+        updates.push({
+            version,
+            update_link: link,
+        })
+    }
 
-// addVersionToManifest(links)
+    ;(updatesManifest.addons['sourcegraph-for-firefox@sourcegraph.com'].updates as Update[]) = updates
 
-console.log(links)
+    fs.writeFileSync(updatesManifestPath, JSON.stringify(updatesManifest, null, 4), 'utf8')
+}
+
+const links = process.argv.slice(2).filter(l => !l.match(/latest.xpi$/) && !l.match(/updates.json$/))
+
+addVersionsToManifest(links)
