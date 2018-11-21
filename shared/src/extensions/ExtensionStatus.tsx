@@ -6,8 +6,8 @@ import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExtensionConnection } from '../api/client/controller'
 import { BrowserConsoleTracer, Trace } from '../api/protocol/jsonrpc2/trace'
 import { ControllerProps } from '../client/controller'
-import { PopoverButton } from '../ui/generic/PopoverButton'
-import { Toggle } from '../ui/generic/Toggle'
+import { PopoverButton } from '../components/PopoverButton'
+import { Toggle } from '../components/Toggle'
 
 interface Props extends ControllerProps {
     link: React.ComponentType<{ id: string }>

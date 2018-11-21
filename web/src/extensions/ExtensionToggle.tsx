@@ -2,10 +2,10 @@ import { last } from 'lodash'
 import * as React from 'react'
 import { EMPTY, from, Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+import { Toggle } from '../../../shared/src/components/Toggle'
 import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import { SettingsCascade, SettingsCascadeOrError } from '../../../shared/src/settings'
-import { Toggle } from '../../../shared/src/ui/generic/Toggle'
 import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
 interface Props extends SettingsCascadeProps, ExtensionsProps {

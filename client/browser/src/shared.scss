@@ -1,9 +1,9 @@
-@import '../../../shared/src/ui/generic/PopoverButton.css';
-@import '../../../shared/src/ui/generic/Toggle.css';
-@import '../../../shared/src/app/CommandList';
-@import '../../../shared/src/app/ExtensionStatus';
-@import '../../../shared/src/app/notifications/Notifications';
-@import '../../../shared/src/app/notifications/NotificationItem';
+@import '../../../shared/src/commandPalette/CommandList';
+@import '../../../shared/src/components/PopoverButton.css';
+@import '../../../shared/src/components/Toggle.css';
+@import '../../../shared/src/extensions/ExtensionStatus';
+@import '../../../shared/src/notifications/NotificationItem';
+@import '../../../shared/src/notifications/Notifications';
 
 $body-color-light: #2b3750;
 $body-color-dark: #f2f4f8;

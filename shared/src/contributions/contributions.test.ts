@@ -1,6 +1,6 @@
 import assert from 'assert'
-import { ContributableMenu } from '../../api/protocol'
-import { ActionItemProps } from './ActionItem'
+import { ActionItemProps } from '../actions/ActionItem'
+import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from './contributions'
 
 describe('getContributedActionItems', () => {

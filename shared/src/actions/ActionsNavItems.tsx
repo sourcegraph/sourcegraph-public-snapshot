@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { TextDocumentItem } from '../../api/client/types/textDocument'
+import { TextDocumentItem } from '../api/client/types/textDocument'
+import { getContributedActionItems } from '../contributions/contributions'
 import { ActionItem } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
-import { getContributedActionItems } from './contributions'
 
 /**
  * Renders the actions as a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul
