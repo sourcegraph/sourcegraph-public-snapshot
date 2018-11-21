@@ -10,7 +10,7 @@ export function insertAfter(el: HTMLElement, referenceNode: Node): void {
 }
 
 export function isMouseEventWithModifierKey(e: MouseEvent): boolean {
-    return e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.which === 2
+    return e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button === 1
 }
 
 /**
