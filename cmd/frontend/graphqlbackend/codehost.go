@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"fmt"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -11,12 +12,20 @@ type codehostResolver struct {
 	codehost *types.Codehost
 }
 
-func marshalCodehostID(id int64) graphql.ID { return relay.MarshalID("Codehost", id) }
+const codehostIDKind = "Codehost"
 
-// func unmarshalCodehostID(id graphql.ID) (codehostID int64, err error) {
-// 	err = relay.UnmarshalSpec(id, &codehostID)
-// 	return
-// }
+func marshalCodehostID(id int64) graphql.ID {
+	return relay.MarshalID(codehostIDKind, id)
+}
+
+func unmarshalCodehostID(id graphql.ID) (codehostID int64, err error) {
+	if kind := relay.UnmarshalKind(id); kind != codehostIDKind {
+		err = fmt.Errorf("expected graphql ID to have kind %q; got %q", codehostIDKind, kind)
+		return
+	}
+	err = relay.UnmarshalSpec(id, &codehostID)
+	return
+}
 
 func (r *codehostResolver) ID() graphql.ID {
 	return marshalCodehostID(r.codehost.ID)

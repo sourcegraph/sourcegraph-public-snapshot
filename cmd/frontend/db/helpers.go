@@ -29,6 +29,16 @@ func (o *LimitOffset) SQL() *sqlf.Query {
 // Transaction calls f within a transaction, rolling back if any error is
 // returned by the function.
 func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err error) {
+	finish := func(tx *sql.Tx) {
+		if err != nil {
+			if err2 := tx.Rollback(); err2 != nil {
+				log.Println("Transaction Rollback failed:", err2)
+			}
+			return
+		}
+		err = tx.Commit()
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Transaction")
 	defer func() {
 		if err != nil {
@@ -42,15 +52,6 @@ func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			if err2 := tx.Rollback(); err2 != nil {
-				log.Println("Transaction Rollback failed:", err2)
-			}
-		}
-	}()
-	if err := f(tx); err != nil {
-		return err
-	}
-	return tx.Commit()
+	defer finish(tx)
+	return f(tx)
 }

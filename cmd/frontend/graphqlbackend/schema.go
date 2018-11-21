@@ -41,8 +41,10 @@ type Mutation {
     updateOrganization(id: ID!, displayName: String): Org!
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
-    # Adds a connection to a codehost.
+    # Adds a codehost.
     addCodehost(kind: CodehostKind!, displayName: String!, config: String!): Codehost!
+    # Updates a codehost
+    updateCodehost(id: ID!, displayName: String, config: String): Codehost!
     # Adds a repository on a code host that is already present in the site configuration. The name (which may
     # consist of one or more path components) of the repository must be recognized by an already configured code
     # host, or else Sourcegraph won't know how to clone it.
@@ -628,7 +630,7 @@ type Query {
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
-    # Lists all configured codehosts.
+    # Lists all codehosts.
     codehosts(
         # Returns the first n repositories from the list.
         first: Int
@@ -1037,6 +1039,10 @@ type Codehost {
     displayName: String!
     # The JSON configuration of the codehost.
     config: String!
+    # When the codehost was created.
+    createdAt: String!
+    # When the codehost was last updated.
+    updatedAt: String!
 }
 
 # A list of repositories.

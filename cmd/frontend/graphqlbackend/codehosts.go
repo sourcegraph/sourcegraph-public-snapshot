@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"sync"
 
+	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -26,6 +27,36 @@ func (r *schemaResolver) AddCodehost(ctx context.Context, args *struct {
 	}
 	err := db.Codehosts.Create(ctx, codehost)
 	return &codehostResolver{codehost: codehost}, err
+}
+
+func (*schemaResolver) UpdateCodehost(ctx context.Context, args *struct {
+	ID          graphql.ID
+	DisplayName *string
+	Config      *string
+}) (*codehostResolver, error) {
+	codehostID, err := unmarshalCodehostID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins are allowed to update the user.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	update := &db.CodehostUpdate{
+		DisplayName: args.DisplayName,
+		Config:      args.Config,
+	}
+	if err := db.Codehosts.Update(ctx, codehostID, update); err != nil {
+		return nil, err
+	}
+
+	codehost, err := db.Codehosts.GetByID(ctx, codehostID)
+	if err != nil {
+		return nil, err
+	}
+	return &codehostResolver{codehost: codehost}, nil
 }
 
 func (r *schemaResolver) Codehosts(ctx context.Context, args *struct {
