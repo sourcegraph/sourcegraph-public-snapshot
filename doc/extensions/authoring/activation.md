@@ -7,6 +7,8 @@ There are 2 types of activation events:
 - `["*"]`: always activate
 - `["onLanguage:typescript"]`: activate for files of a language (multiple languages supported)
 
-For simplicity, the extension creator sets `activationEvents` to `["*"]` but adjust this if your extension is language specific.
+For simplicity, the extension creator sets `activationEvents` to `["*"]`, but adjust this if your extension is language specific.
 
-See the [list of languages](https://github.com/github/linguist/blob/master/lib/linguist/languages.yml), using the value for the `codemirror_mode` key.
+## Determining the correct language value
+
+Search this [list of languages](https://github.com/github/linguist/blob/master/lib/linguist/languages.yml), finding the value assigned to the `codemirror_mode` key for that language.

@@ -13,7 +13,7 @@ export function activate() {
 }
 ```
 
-A tool such as Parcel would then bundle this code for module loading, putting the exported file into a `dist` directory. Add a `package.json` for dependencies, configuration and, metadata, and you're ready for publishing.
+A build tool such as Parcel bundles this code for module loading, putting the exported file into a `dist` directory. A `package.json` is required for dependencies, configuration and metadata, and the extension is now ready for publishing.
 
 There's no magic so you can use any build tools, so long as they meet these requirements.
 
@@ -40,9 +40,9 @@ Follow the prompts, and when complete, you'll have the following files:
 └── tslint.json
 ```
 
-## Extension files
+### Description of generated files
 
-### The src directory and activate function
+#### The src directory and activate function
 
 A `src` directory was created, containing a TypeScript file with an exported `activate` function.
 
@@ -50,16 +50,16 @@ For simplicity, the extension will always activate. See the [activation document
 
 For code layout, a single TypeScript/JavaScript file is usually all that's needed. For larger projects, create multiples files in the `src` directory, and Parcel will bundle them into a single JavaScript file.
 
-### README.md
+#### README.md
 
 The `README.md` is the content for your extension page in the [extensions registry](https://sourcegraph.com/extensions). See the [Codecov extension](https://sourcegraph.com/extensions/sourcegraph/codecov) for a great example.
 
-### package.json
+#### package.json
 
 The `package.json` defines extension configuration and commands required for development and publishing.
 
 <!--TODO: Ryan: If you're creating your first extension, leave the `package.json` as is or see the [extension configuration documentation](extension_configuration.md).-->
 
-### tslint.json and tsconfig.json
+#### tslint.json and tsconfig.json
 
-These are configuration files for linting and Typescript compilation and will be sufficient for most extensions.
+These are configuration files for linting and TypeScript compilation and will be sufficient for most extensions.

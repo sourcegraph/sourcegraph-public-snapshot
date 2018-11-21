@@ -23,8 +23,9 @@ Bring your extension's features for code viewed on GitHub, GitLab and other code
 ### Enabling Sourcegraph extensions outside a Sourcegraph instance
 
 As Sourcegraph extensions are in alpha, you must manually enable them in the browser extension:
-- Click the Sourcegraph icon to the right of the address bar
-- Click the gear ⚙️ icon
-- Check the **Use extensions** checkbox
+
+1. Click the Sourcegraph icon to the right of the address bar.
+1. Click the gear ⚙️ icon.
+1. Check the **Use extensions** checkbox.
 
 <img src="img/enable-sourcegraph-extensions.png" width="400" />

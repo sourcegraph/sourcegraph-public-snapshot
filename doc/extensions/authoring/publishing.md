@@ -13,7 +13,7 @@ Now publish your extension by running:
 src extensions publish
 ```
 
-Your extension has been built and sent to Sourcegraph. The output will has a link to the extension's detail page where you can enable it to start using it.
+Your extension has been built and sent to Sourcegraph. The output will have a link to the extension's detail page where you can enable it to start using it.
 
 > Any user can publish to the Sourcegraph.com extension registry, and all Sourcegraph instances can use extensions from Sourcegraph.com. To publish extensions *privately* so that they're only visible on your instance, use a [private extension registry](../../admin/extensions/index.md).
 
