@@ -3,7 +3,7 @@
 package main
 
 import (
-	_ "github.com/golangci/golangci-lint"
+	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/zoekt/cmd/zoekt-archive-index"
 	_ "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
 	_ "github.com/google/zoekt/cmd/zoekt-webserver"
