@@ -2232,6 +2232,9 @@ type OrganizationMembershipConnection {
 type UserEmail {
     # The email address.
     email: String!
+    # Whether the email address is the user's primary email address. Currently this is defined as the earliest
+    # email address associated with the user, preferring verified emails to unverified emails.
+    isPrimary: Boolean!
     # Whether the email address has been verified by the user.
     verified: Boolean!
     # Whether the email address is pending verification.

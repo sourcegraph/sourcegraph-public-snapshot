@@ -35,7 +35,16 @@ type userEmailResolver struct {
 	user      *UserResolver
 }
 
-func (r *userEmailResolver) Email() string  { return r.userEmail.Email }
+func (r *userEmailResolver) Email() string { return r.userEmail.Email }
+
+func (r *userEmailResolver) IsPrimary(ctx context.Context) (bool, error) {
+	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, r.user.user.ID)
+	if err != nil {
+		return false, err
+	}
+	return email == r.userEmail.Email, nil
+}
+
 func (r *userEmailResolver) Verified() bool { return r.userEmail.VerifiedAt != nil }
 func (r *userEmailResolver) VerificationPending() bool {
 	return !r.Verified() && conf.EmailVerificationRequired()
