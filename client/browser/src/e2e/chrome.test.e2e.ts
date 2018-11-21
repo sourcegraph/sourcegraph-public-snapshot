@@ -104,6 +104,7 @@ describe('Sourcegraph Chrome extension', () => {
         for (const page of await browser.pages()) {
             await page.close()
         }
+        console.log((await browser.targets()).length)
         try {
             console.log('closing')
             if (browser) {
@@ -111,7 +112,6 @@ describe('Sourcegraph Chrome extension', () => {
                 await browser.close()
                 console.log('closed!')
             }
-            process.exit(0)
         } catch (e) {
             console.log('caught browser close', e)
         }
