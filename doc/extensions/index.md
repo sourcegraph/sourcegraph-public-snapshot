@@ -68,14 +68,11 @@ To enable/disable an extension for all organization members, add it to the `exte
 
 ## Authoring
 
-Ready to create your own extension?
+Ready to create your own extension? See the [Extension authoring documentation](authoring/index.md).
 
-- [Extension authoring documentation](authoring/index.md)
-  - [**How to create and publish your own Sourcegraph extension**](authoring/creating_and_publishing.md)
-- [Sourcegraph API reference (`sourcegraph.d.ts`)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/packages/sourcegraph-extension-api/src/sourcegraph.d.ts)
-- For inspiration:
-  - Check out the source code for existing extensions on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (on their detail page, click **Repository** in their sidebar)
-  - [Issues labeled `extension-request`](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request)
+For inspiration:
+- Check out the source code for existing extensions on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (on their detail page, click **Repository** in their sidebar)
+- [Issues labeled `extension-request`](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request)
 
 ## Administration
 
