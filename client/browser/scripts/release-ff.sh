@@ -1,6 +1,7 @@
 set -e
 
 # Setup
+yarn global add web-ext
 yarn build
 rm -rf build/web-ext
 mkdir -p build/web-ext
