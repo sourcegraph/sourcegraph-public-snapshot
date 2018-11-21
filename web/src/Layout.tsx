@@ -2,7 +2,6 @@ import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../../shared/src/graphql/schema'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
-import { LinkExtension } from './extension/Link'
 import { ExtensionsDocumentsProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
@@ -112,9 +111,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                     ].join(' ')}
                                 >
                                     {route.render({ ...props, ...routeComponentProps })}
-                                    {!!props.authenticatedUser && (
-                                        <LinkExtension authenticatedUser={props.authenticatedUser} />
-                                    )}
                                 </div>
                             )}
                         />

@@ -5,7 +5,6 @@ import '../../config/polyfill'
 import { without } from 'lodash'
 import { noop } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { distinctUntilChanged, map } from 'rxjs/operators'
 import DPT from 'webext-domain-permission-toggle'
 import ExtensionHostWorker from 'worker-loader?inline!./extensionHost.worker'
 import { InitData } from '../../../../../shared/src/api/extension/extensionHost'
@@ -20,7 +19,6 @@ import initializeCli from '../../libs/cli'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl, sourcegraphUrl } from '../../shared/util/context'
-import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
@@ -93,7 +91,7 @@ storage.getManaged(items => {
 
 storage.onChanged((changes, areaName) => {
     if (areaName === 'managed') {
-        storage.getSync(items => {
+        storage.getSync(() => {
             if (changes.enterpriseUrls && changes.enterpriseUrls.newValue) {
                 handleManagedPermissionRequest(changes.enterpriseUrls.newValue)
             }
@@ -205,7 +203,6 @@ storage.setSyncMigration(items => {
         }
     }
 
-    featureFlags.simpleOptionsMenu = true
     newItems.featureFlags = featureFlags
 
     if (typeof process.env.USE_EXTENSIONS !== 'undefined') {
@@ -258,11 +255,11 @@ runtime.onMessage((message, _, cb) => {
         // We should only need to do this on safari
         case 'insertCSS':
             const details = message.payload as { file: string; origin: string }
-            storage.getSyncItem('serverUrls', ({ serverUrls }) =>
+            storage.getSyncItem('sourcegraphURL', ({ sourcegraphURL }) =>
                 tabs.insertCSS(0, {
                     ...details,
                     whitelist: details.origin ? [details.origin] : [],
-                    blacklist: serverUrls || [],
+                    blacklist: [sourcegraphURL],
                 })
             )
             return
@@ -364,36 +361,11 @@ function handleManagedPermissionRequest(managedUrls: string[]): void {
 
 function setDefaultBrowserAction(): void {
     browserAction.setBadgeText({ text: '' })
-
-    featureFlags
-        .isEnabled('simpleOptionsMenu')
-        .then(async enabled => {
-            if (enabled) {
-                await browserAction.setPopup({ popup: 'options.html?popup=true' })
-            }
-        })
-        .catch(err => {
-            console.log('unable to get feature flag')
-        })
+    browserAction.setPopup({ popup: 'options.html?popup=true' }).catch(err => console.error(err))
 }
 
-storage
-    .observeSync('featureFlags')
-    .pipe(
-        map(({ simpleOptionsMenu }) => simpleOptionsMenu),
-        distinctUntilChanged()
-    )
-    .subscribe(async useSimpleOptionsMenu => {
-        if (useSimpleOptionsMenu) {
-            browserAction.onClicked(noop)
-            setDefaultBrowserAction()
-        } else {
-            await browserAction.setPopup({ popup: '' })
-            browserAction.onClicked(async () => {
-                runtime.openOptionsPage()
-            })
-        }
-    })
+browserAction.onClicked(noop)
+setDefaultBrowserAction()
 
 /**
  * Fetches JavaScript from a URL and runs it in a web worker.

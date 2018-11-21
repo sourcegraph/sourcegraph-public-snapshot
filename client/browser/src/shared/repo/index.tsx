@@ -11,7 +11,7 @@ import { parseHash } from '../util/url'
  *   - a character position in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5
  *   - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
  */
-export type RepoURI = string
+type RepoURI = string
 
 export interface RepoSpec {
     /**
@@ -48,7 +48,7 @@ export interface PositionSpec {
     position: Position
 }
 
-export interface RangeSpec {
+interface RangeSpec {
     /**
      * a range in the blob
      */
@@ -74,35 +74,14 @@ export interface ParsedRepoURI
         Partial<RangeSpec> {}
 
 /**
- * A repo
- */
-export interface Repo extends RepoSpec, Partial<RevSpec> {}
-
-/**
  * A repo resolved to an exact commit
  */
 export interface AbsoluteRepo extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec {}
 
 /**
- * A file in a repo
- */
-export interface RepoFile extends RepoSpec, Partial<RevSpec>, Partial<ResolvedRevSpec>, FileSpec {}
-
-/**
  * A file at an exact commit
  */
 export interface AbsoluteRepoFile extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec, FileSpec {}
-
-/**
- * A position in file
- */
-export interface RepoFilePosition
-    extends RepoSpec,
-        Partial<RevSpec>,
-        Partial<ResolvedRevSpec>,
-        FileSpec,
-        PositionSpec,
-        Partial<ReferencesModeSpec> {}
 
 /**
  * A position in file at an exact commit
@@ -115,12 +94,12 @@ export interface AbsoluteRepoFilePosition
         PositionSpec,
         Partial<ReferencesModeSpec> {}
 
-export interface DiffRepoSpec {
+interface DiffRepoSpec {
     baseRepoPath: string
     headRepoPath: string
 }
 
-export interface DiffRevSpec {
+interface DiffRevSpec {
     baseRev: string
     headRev: string
 }
@@ -130,23 +109,7 @@ export interface DiffResolvedRevSpec {
     headCommitID: string
 }
 
-export type BlobViewState = 'references' | 'references:external' | 'impl'
-
-export interface ViewStateSpec {
-    /**
-     * The view state (for the blob panel).
-     */
-    viewState: BlobViewState
-}
-
 export interface DiffRepoRev extends DiffRepoSpec, DiffRevSpec {}
-
-export interface TooltipData {
-    loading?: boolean
-    title?: string
-    doc?: string
-    j2dUrl?: OpenInSourcegraphProps
-}
 
 export interface OpenInSourcegraphProps {
     repoPath: string
@@ -298,11 +261,4 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     uri += parsed.position ? positionStr(parsed.position) : ''
     uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
     return uri
-}
-
-/**
- * A file at an exact commit of a known programming language
- */
-export interface AbsoluteRepoLanguageFile extends AbsoluteRepoFile {
-    language: string
 }
