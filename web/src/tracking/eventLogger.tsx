@@ -45,7 +45,7 @@ class EventLogger {
      * Set user-level properties in all external tracking services
      */
     public updateUser(user: GQL.IUser): void {
-        this.setUserIds(user.sourcegraphID, user.username)
+        this.setUserIds(user.databaseID, user.username)
         if (user.email) {
             this.setUserEmail(user.email)
         }
@@ -53,15 +53,15 @@ class EventLogger {
 
     /**
      * Set user ID in Telligent tracker script.
-     * @param uniqueSourcegraphId Unique Sourcegraph user ID (corresponds to User.ID from backend)
+     * @param uniqueUserDatabaseId Unique Sourcegraph user database ID (corresponds to databaseID from GraphQL)
      * @param username Human-readable user identifier, not guaranteed to always stay the same
      */
-    public setUserIds(uniqueSourcegraphId: number | null, username: string | null): void {
+    public setUserIds(uniqueUserDatabaseId: number | null, username: string | null): void {
         if (username) {
             telligent.setUserProperty('username', username)
         }
-        if (uniqueSourcegraphId) {
-            telligent.setUserProperty('user_id', uniqueSourcegraphId)
+        if (uniqueUserDatabaseId) {
+            telligent.setUserProperty('user_id', uniqueUserDatabaseId)
         }
     }
 

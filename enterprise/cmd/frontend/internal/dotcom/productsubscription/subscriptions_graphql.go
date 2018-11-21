@@ -182,7 +182,7 @@ func (ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx contex
 	if err != nil {
 		return nil, err
 	}
-	id, err := dbSubscriptions{}.Create(ctx, user.SourcegraphID())
+	id, err := dbSubscriptions{}.Create(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 
 	// 🚨 SECURITY: Users may only create paid product subscriptions for themselves. Site admins may
 	// create them for any user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, user.SourcegraphID()); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, user.DatabaseID()); err != nil {
 		return nil, err
 	}
 
@@ -249,14 +249,14 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 
 	// Create the subscription in our database first, before processing payment. If payment fails,
 	// users can retry payment on the already created subscription.
-	subID, err := dbSubscriptions{}.Create(ctx, user.SourcegraphID())
+	subID, err := dbSubscriptions{}.Create(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the billing customer for the current user, and update it to use the payment source
 	// provided to us.
-	custID, err := billing.GetOrAssignUserCustomerID(ctx, user.SourcegraphID())
+	custID, err := billing.GetOrAssignUserCustomerID(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
@@ -453,14 +453,14 @@ func (ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.Con
 			return nil, err
 		}
 	} else {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, accountUser.SourcegraphID()); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, accountUser.DatabaseID()); err != nil {
 			return nil, err
 		}
 	}
 
 	var opt dbSubscriptionsListOptions
 	if accountUser != nil {
-		opt.UserID = accountUser.SourcegraphID()
+		opt.UserID = accountUser.DatabaseID()
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &productSubscriptionConnection{opt: opt}, nil

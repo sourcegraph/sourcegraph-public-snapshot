@@ -191,7 +191,7 @@ func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	}
 
 	// Add the current user as the first member of the new org.
-	_, err = db.OrgMembers.Create(ctx, newOrg.ID, currentUser.SourcegraphID())
+	_, err = db.OrgMembers.Create(ctx, newOrg.ID, currentUser.user.ID)
 	if err != nil {
 		return nil, err
 	}
