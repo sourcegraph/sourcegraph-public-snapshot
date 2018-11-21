@@ -149,7 +149,7 @@ export interface SearchOptions {
     query: string
 }
 
-export const fetchSuggestions = (options: SearchOptions, first: number) =>
+const fetchSuggestions = (options: SearchOptions, first: number) =>
     queryGraphQL({
         ctx: getContext({ repoKey: '', isRepoSpecific: false }),
         request: `

@@ -11,7 +11,6 @@ import { OptionsContainer, OptionsContainerProps } from '../../libs/options/Opti
 import { getAccessToken, setAccessToken } from '../../shared/auth/access_token'
 import { createAccessToken, fetchAccessTokenIDs } from '../../shared/backend/auth'
 import { fetchCurrentUser, fetchSite } from '../../shared/backend/server'
-import { OptionsDashboard } from '../../shared/components/options/OptionsDashboard'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -88,13 +87,7 @@ const inject = async () => {
     injectDOM.className = 'options'
     document.body.appendChild(injectDOM)
 
-    if (await featureFlags.isEnabled('simpleOptionsMenu')) {
-        render(<Options />, injectDOM)
-    } else {
-        storage.getSync(() => {
-            render(<OptionsDashboard />, injectDOM)
-        })
-    }
+    render(<Options />, injectDOM)
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

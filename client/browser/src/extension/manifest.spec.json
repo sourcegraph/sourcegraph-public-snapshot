@@ -19,7 +19,7 @@
     "128": "img/icon-128.png"
   },
   "background": {
-    "scripts": ["js/background.bundle.js", "js/link.bundle.js"]
+    "scripts": ["js/background.bundle.js"]
   },
   "options_ui": {
     "page": "options.html",
@@ -30,7 +30,7 @@
   },
   "optional_permissions": ["tabs", "http://*/*", "https://*/*"],
   "content_security_policy": "script-src 'self' blob:; object-src 'self'",
-  "web_accessible_resources": ["img/*", "js/link.bundle.js", "link.html", "css/style.bundle.css"],
+  "web_accessible_resources": ["img/*",  "css/style.bundle.css"],
   "omnibox": {
     "keyword": "src"
   },

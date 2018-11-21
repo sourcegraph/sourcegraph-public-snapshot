@@ -1,5 +1,5 @@
 import { Position } from '../../../../../shared/src/api/protocol/plainTypes'
-import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, Repo, RepoFile, ResolvedRevSpec } from '../repo'
+import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec } from '../repo'
 import { repoUrlCache, sourcegraphUrl } from './context'
 
 type Modal = 'references'
@@ -44,30 +44,6 @@ function toReferencesHash(group: 'local' | 'external' | undefined): string {
     return group ? (group === 'local' ? '$references' : '$references:external') : ''
 }
 
-export function toRepoURL(ctx: Repo & Partial<ResolvedRevSpec>): string {
-    const url = repoUrlCache[ctx.repoPath] || sourcegraphUrl
-    const rev = ctx.commitID || ctx.rev || ''
-    return `${url}/${ctx.repoPath}${rev ? '@' + rev : ''}`
-}
-
-export function toPrettyRepoURL(ctx: Repo): string {
-    const url = repoUrlCache[ctx.repoPath] || sourcegraphUrl
-    return `${url}/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}`
-}
-
-export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
-    const url = repoUrlCache[ctx.repoPath] || sourcegraphUrl
-    const rev = ctx.commitID || ctx.rev || ''
-    return `${url}/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}`
-}
-
-export function toPrettyBlobURL(ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
-    const url = repoUrlCache[ctx.repoPath] || sourcegraphUrl
-    return `${url}/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toPositionHash(
-        ctx.position
-    )}${toReferencesHash(ctx.referencesMode)}`
-}
-
 export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
     const url = repoUrlCache[ctx.repoPath] || sourcegraphUrl
@@ -75,17 +51,6 @@ export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> 
     return `${url}/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(
         ctx.position
     )}${toReferencesHash(ctx.referencesMode)}`
-}
-
-/**
- * Correctly handle use of meta/ctrl/alt keys during onClick events that open new pages
- */
-export function openFromJS(path: string, event?: MouseEvent): void {
-    if (event && (event.metaKey || event.altKey || event.ctrlKey)) {
-        window.open(path, '_blank')
-    } else {
-        window.location.href = path
-    }
 }
 
 /**

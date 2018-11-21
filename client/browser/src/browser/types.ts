@@ -12,25 +12,12 @@ export interface PhabricatorMapping {
  */
 export interface FeatureFlags {
     /**
-     * Use the simpler options menu.
-     *
-     * @duration temporary - will be on by default after testing.
-     */
-    simpleOptionsMenu: boolean
-    /**
      * Whether or not to render [Mermaid](https://mermaidjs.github.io/) graphs
      * in markdown files viewed on GitHub.
      *
      * @duration permanent
      */
     renderMermaidGraphsEnabled: boolean
-    /**
-     * Open files from the fuzzy file finder omnibar tool (src :f <file_name>)
-     * on Sourcegraph or the codehost.
-     *
-     * @duration permanent
-     */
-    openFileOnSourcegraph: boolean
     /**
      * Whether or not to use the new inject method for code intelligence.
      *
@@ -50,30 +37,13 @@ export interface FeatureFlags {
      * @duration temporary - needs feedback from users.
      */
     inlineSymbolSearchEnabled: boolean
-    /**
-     * Whether or not to execute a search on Sourcegraph when a search is
-     * executed on the code host.
-     *
-     * @duration permanent
-     */
-    executeSearchEnabled: boolean
-    /**
-     * Display the Sourcegraph file tree in the code host when viewing a repository.
-     *
-     * @duration permanent
-     */
-    repositoryFileTreeEnabled: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
-    simpleOptionsMenu: true,
     newInject: false,
     renderMermaidGraphsEnabled: false,
     useExtensions: false,
-    openFileOnSourcegraph: true,
     inlineSymbolSearchEnabled: true,
-    executeSearchEnabled: false,
-    repositoryFileTreeEnabled: true,
 }
 
 export interface AccessToken {
@@ -96,12 +66,8 @@ export interface StorageItems {
      */
     accessTokens: AccessTokens
 
-    gitHubEnterpriseURL: string
-    phabricatorURL: string
     identity: string
-    serverUrls: string[]
     enterpriseUrls: string[]
-    serverUserId: string
     hasSeenServerModal: boolean
     repoLocations: RepoLocations
     phabricatorMappings: PhabricatorMapping[]
@@ -129,12 +95,8 @@ export const defaultStorageItems: StorageItems = {
     sourcegraphURL: 'https://sourcegraph.com',
     accessTokens: {},
 
-    serverUrls: ['https://sourcegraph.com'],
-    gitHubEnterpriseURL: '',
-    phabricatorURL: '',
     identity: '',
     enterpriseUrls: [],
-    serverUserId: '',
     hasSeenServerModal: false,
     repoLocations: {},
     phabricatorMappings: [],
