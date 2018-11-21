@@ -33,20 +33,21 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
     }
 
     public render(): JSX.Element | null {
-        let statusFragment: React.ReactFragment
+        let verifiedFragment: React.ReactFragment
         if (this.props.node.verified) {
-            statusFragment = <span className="badge badge-success">Verified</span>
+            verifiedFragment = <span className="badge badge-success">Verified</span>
         } else if (this.props.node.verificationPending) {
-            statusFragment = <span className="badge badge-info">Verification pending</span>
+            verifiedFragment = <span className="badge badge-info">Verification pending</span>
         } else {
-            statusFragment = <span className="badge badge-secondary">Not verified</span>
+            verifiedFragment = <span className="badge badge-secondary">Not verified</span>
         }
 
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <strong>{this.props.node.email}</strong> &nbsp;{statusFragment}
+                        <strong>{this.props.node.email}</strong> &nbsp;{verifiedFragment}&nbsp;
+                        {this.props.node.isPrimary && <span className="badge badge-primary">Primary</span>}
                     </div>
                     <div>
                         <button
@@ -213,6 +214,7 @@ export class UserAccountEmailsPage extends React.Component<Props, State> {
                         ... on User {
                             emails {
                                 email
+                                isPrimary
                                 verified
                                 verificationPending
                                 viewerCanManuallyVerify

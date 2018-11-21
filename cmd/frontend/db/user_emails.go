@@ -51,13 +51,14 @@ func (*userEmails) GetInitialSiteAdminEmail(ctx context.Context) (email string, 
 	return email, nil
 }
 
-// GetPrimaryEmail gets the oldest email associated with the user.
+// GetPrimaryEmail gets the oldest email associated with the user, preferring a verified email to an
+// unverified email.
 func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
 	if Mocks.UserEmails.GetPrimaryEmail != nil {
 		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY created_at ASC, email ASC LIMIT 1",
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY (verified_at IS NOT NULL) DESC, created_at ASC, email ASC LIMIT 1",
 		id,
 	).Scan(&email, &verified); err != nil {
 		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("id %d", id)}}
