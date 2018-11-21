@@ -12,7 +12,7 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { ControllerProps } from '../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
@@ -26,7 +26,7 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<ControllerProps> {
+interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<ExtensionsControllerProps> {
     repoPath: string
     filePath: string
 

@@ -5,15 +5,16 @@ import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsSubject } from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ExtensionManifest } from '../../../shared/src/schema/extension.schema'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
-import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 import { ExtensionToggle } from './ExtensionToggle'
 
-interface Props extends SettingsCascadeProps, ExtensionsProps {
+interface Props extends SettingsCascadeProps, PlatformContextProps {
     node: ConfiguredExtension<GQL.IRegistryExtension>
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void

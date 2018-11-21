@@ -6,7 +6,7 @@ import { ExecuteCommandParams } from '../api/client/providers/command'
 import { ActionContribution } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
-import { ControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike } from '../util/errors'
 
@@ -38,7 +38,7 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-interface Props extends ActionItemProps, ControllerProps, PlatformContextProps {
+interface Props extends ActionItemProps, ExtensionsControllerProps, PlatformContextProps {
     location: H.Location
 }
 

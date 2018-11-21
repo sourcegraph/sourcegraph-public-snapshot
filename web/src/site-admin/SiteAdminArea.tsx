@@ -2,9 +2,9 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { HeroPage } from '../components/HeroPage'
-import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { RouteDescriptor } from '../util/contributions'
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
@@ -20,7 +20,7 @@ const NotSiteAdminPage: React.ComponentType<{}> = () => (
     <HeroPage icon={MapSearchIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
-export interface SiteAdminAreaRouteContext extends ExtensionsProps {
+export interface SiteAdminAreaRouteContext extends PlatformContextProps {
     site: Pick<GQL.ISite, '__typename' | 'id'>
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
@@ -31,7 +31,7 @@ export interface SiteAdminAreaRouteContext extends ExtensionsProps {
 
 export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
 
-interface SiteAdminAreaProps extends RouteComponentProps<{}>, ExtensionsProps {
+interface SiteAdminAreaProps extends RouteComponentProps<{}>, PlatformContextProps {
     routes: ReadonlyArray<SiteAdminAreaRoute>
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: ReadonlyArray<React.ComponentType>

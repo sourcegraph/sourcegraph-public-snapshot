@@ -8,11 +8,12 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { ConfiguredExtension, toConfiguredExtensions } from '../../../../shared/src/extensions/extension'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsProps, SettingsCascadeProps } from '../../extensions/ExtensionsClientCommonContext'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
@@ -73,7 +74,7 @@ interface ExtensionAreaState {
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface ExtensionAreaRouteContext extends SettingsCascadeProps, ExtensionsProps {
+export interface ExtensionAreaRouteContext extends SettingsCascadeProps, PlatformContextProps {
     /** The extension registry area main URL. */
     url: string
 

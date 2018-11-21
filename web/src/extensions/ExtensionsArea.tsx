@@ -3,12 +3,13 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { HeroPage } from '../components/HeroPage'
 import { RouteDescriptor } from '../util/contributions'
 import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
-import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -17,7 +18,7 @@ export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRoute
 /**
  * Properties passed to all page components in the extensions area.
  */
-export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, ExtensionsProps {
+export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, PlatformContextProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -31,7 +32,7 @@ export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, Extens
 interface ExtensionsAreaProps
     extends RouteComponentProps<{ extensionID: string }>,
         SettingsCascadeProps,
-        ExtensionsProps {
+        PlatformContextProps {
     routes: ReadonlyArray<ExtensionsAreaRoute>
 
     /**

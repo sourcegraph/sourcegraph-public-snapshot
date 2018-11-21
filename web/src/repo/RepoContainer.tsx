@@ -7,15 +7,13 @@ import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom }
 import { parseBrowserRepoURL } from '.'
 import { makeRepoURI, ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import { WorkspaceRoot } from '../../../shared/src/api/protocol/plainTypes'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { refreshSettings } from '../user/settings/backend'
@@ -40,7 +38,7 @@ const RepoPageNotFound: React.FunctionComponent = () => (
 export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         SettingsCascadeProps,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>

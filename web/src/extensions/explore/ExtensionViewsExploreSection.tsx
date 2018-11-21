@@ -5,9 +5,9 @@ import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
 import { PanelView } from '../../../../shared/src/api/protocol/plainTypes'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { Markdown } from '../../components/Markdown'
 import { createLinkClickHandler } from '../../util/linkClickHandler'
-import { ExtensionsControllerProps } from '../ExtensionsClientCommonContext'
 
 interface Props extends ExtensionsControllerProps {
     history: H.History

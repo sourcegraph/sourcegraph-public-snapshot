@@ -7,9 +7,9 @@ import { ExtensionConnection } from '../api/client/controller'
 import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { PopoverButton } from '../components/PopoverButton'
 import { Toggle } from '../components/Toggle'
-import { ControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from '../extensions/controller'
 
-interface Props extends ControllerProps {
+interface Props extends ExtensionsControllerProps {
     link: React.ComponentType<{ id: string }>
 }
 

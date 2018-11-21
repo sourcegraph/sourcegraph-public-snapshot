@@ -14,13 +14,14 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { propertyIsDefined } from '../../util/types'
 import { escapeRevspecForURL } from '../../util/url'
@@ -41,7 +42,7 @@ const NotFoundPage = () => (
 interface Props
     extends RouteComponentProps<{ spec: string }>,
         RepoHeaderContributionsLifecycleProps,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsControllerProps,
         ExtensionsDocumentsProps {
     repo: GQL.IRepository
@@ -54,7 +55,7 @@ interface State extends HoverState {
 /**
  * Properties passed to all page components in the repository compare area.
  */
-export interface RepositoryCompareAreaPageProps extends ExtensionsProps {
+export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     /** The repository being compared. */
     repo: GQL.IRepository
 

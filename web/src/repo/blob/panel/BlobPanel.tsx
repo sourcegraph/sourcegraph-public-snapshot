@@ -18,7 +18,10 @@ import {
 } from 'rxjs/operators'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import {
     getDefinition,
@@ -30,11 +33,6 @@ import {
 } from '../../../backend/features'
 import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../../../extensions/ExtensionsClientCommonContext'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
@@ -52,7 +50,7 @@ interface Props
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsControllerProps {
     location: H.Location
     history: H.History
@@ -64,7 +62,7 @@ interface Props
 }
 
 /** The subject (what the contextual information refers to). */
-interface ContextSubject extends ModeSpec, ExtensionsProps {
+interface ContextSubject extends ModeSpec, PlatformContextProps {
     repoPath: string
     commitID: string
     filePath: string
@@ -130,38 +128,41 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             subjectChanges
                 .pipe(
-                    switchMap((subject: AbsoluteRepoFile & ModeSpec & ExtensionsProps & { position?: Position }) => {
-                        const { position } = subject
-                        if (
-                            !position ||
-                            position.character === 0 /* 1-indexed, so this means only line (not position) is selected */
-                        ) {
-                            return [{ hoverOrError: undefined }]
+                    switchMap(
+                        (subject: AbsoluteRepoFile & ModeSpec & PlatformContextProps & { position?: Position }) => {
+                            const { position } = subject
+                            if (
+                                !position ||
+                                position.character ===
+                                    0 /* 1-indexed, so this means only line (not position) is selected */
+                            ) {
+                                return [{ hoverOrError: undefined }]
+                            }
+                            type PartialStateUpdate = Pick<State, 'hoverOrError'>
+                            const result = getHover(
+                                {
+                                    ...(subject as Pick<
+                                        typeof subject,
+                                        Exclude<keyof typeof subject, 'platformContext'>
+                                    >),
+                                    position,
+                                },
+                                { extensionsController: this.props.extensionsController }
+                            ).pipe(
+                                catchError(error => [asError(error)]),
+                                map(c => ({ hoverOrError: c } as PartialStateUpdate))
+                            )
+                            return merge(
+                                result,
+                                of({ hoverOrError: LOADING }).pipe(
+                                    delay(150),
+                                    takeUntil(result)
+                                ) // delay loading spinner to reduce jitter
+                            ).pipe(
+                                startWith<PartialStateUpdate>({ hoverOrError: undefined }) // clear old data immediately)
+                            )
                         }
-                        type PartialStateUpdate = Pick<State, 'hoverOrError'>
-                        const result = getHover(
-                            {
-                                ...(subject as Pick<
-                                    typeof subject,
-                                    Exclude<keyof typeof subject, 'platformContext'>
-                                >),
-                                position,
-                            },
-                            { extensionsController: this.props.extensionsController }
-                        ).pipe(
-                            catchError(error => [asError(error)]),
-                            map(c => ({ hoverOrError: c } as PartialStateUpdate))
-                        )
-                        return merge(
-                            result,
-                            of({ hoverOrError: LOADING }).pipe(
-                                delay(150),
-                                takeUntil(result)
-                            ) // delay loading spinner to reduce jitter
-                        ).pipe(
-                            startWith<PartialStateUpdate>({ hoverOrError: undefined }) // clear old data immediately)
-                        )
-                    })
+                    )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )

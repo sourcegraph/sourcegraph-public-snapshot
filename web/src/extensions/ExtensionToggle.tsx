@@ -4,12 +4,12 @@ import { EMPTY, from, Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { Toggle } from '../../../shared/src/components/Toggle'
 import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
-import { SettingsCascade, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascade, SettingsCascadeOrError, SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { isExtensionAdded } from './extension/extension'
-import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
-interface Props extends SettingsCascadeProps, ExtensionsProps {
+interface Props extends SettingsCascadeProps, PlatformContextProps {
     /** The extension that this element is for. */
     extension: ConfiguredExtension
 

@@ -17,12 +17,12 @@ import { ConfiguredExtension, toConfiguredExtensions } from '../../../shared/src
 import { viewerConfiguredExtensions } from '../../../shared/src/extensions/helpers'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { SettingsSubject } from '../../../shared/src/settings/settings'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
 import { ExtensionCard } from './ExtensionCard'
-import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -61,7 +61,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-interface Props extends SettingsCascadeProps, ExtensionsProps, RouteComponentProps<{}> {
+interface Props extends SettingsCascadeProps, PlatformContextProps, RouteComponentProps<{}> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     emptyElement?: React.ReactFragment
 }

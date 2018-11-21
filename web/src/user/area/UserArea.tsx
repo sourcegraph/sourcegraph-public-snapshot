@@ -7,10 +7,10 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAccountAreaRoute } from '../account/UserAccountArea'
 import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
@@ -61,7 +61,7 @@ const NotFoundPage = () => (
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
 
-interface UserAreaProps extends RouteComponentProps<{ username: string }>, ExtensionsProps {
+interface UserAreaProps extends RouteComponentProps<{ username: string }>, PlatformContextProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
     userAccountSideBarItems: UserAccountSidebarItems
@@ -87,7 +87,7 @@ interface UserAreaState {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaRouteContext extends ExtensionsProps {
+export interface UserAreaRouteContext extends PlatformContextProps {
     /** The extension registry area main URL. */
     url: string
 

@@ -46,7 +46,7 @@ export class Controller extends BaseController<ConfiguredExtension, SettingsCasc
  * React props or state containing the controller. There should be only a single controller for the whole
  * application.
  */
-export interface ControllerProps {
+export interface ExtensionsControllerProps {
     /**
      * The controller, which is used to communicate with the extensions and manages extensions based on the
      * environment.

@@ -1,17 +1,15 @@
 import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionsDocumentsProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from './extensions/ExtensionsClientCommonContext'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { KeybindingsProps } from './keybindings'
@@ -31,7 +29,7 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 export interface LayoutProps
     extends RouteComponentProps<any>,
         SettingsCascadeProps,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
         ExtensionsDocumentsProps,

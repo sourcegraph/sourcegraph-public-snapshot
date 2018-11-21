@@ -9,12 +9,21 @@ import { startWith } from 'rxjs/operators'
 import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from '../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../shared/src/api/client/types/textDocument'
 import { WorkspaceRoot } from '../../shared/src/api/protocol/plainTypes'
-import { createController as createExtensionsController } from '../../shared/src/extensions/controller'
+import {
+    createController as createExtensionsController,
+    ExtensionsControllerProps,
+} from '../../shared/src/extensions/controller'
 import { ConfiguredExtension } from '../../shared/src/extensions/extension'
 import { viewerConfiguredExtensions } from '../../shared/src/extensions/helpers'
 import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
-import { ConfiguredSubject, isSettingsValid, SettingsCascadeOrError } from '../../shared/src/settings/settings'
+import { PlatformContextProps } from '../../shared/src/platform/context'
+import {
+    ConfiguredSubject,
+    isSettingsValid,
+    SettingsCascadeOrError,
+    SettingsCascadeProps,
+} from '../../shared/src/settings/settings'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { FeedbackText } from './components/FeedbackText'
@@ -26,11 +35,6 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from './extensions/ExtensionsClientCommonContext'
 import { createPlatformContext } from './extensions/ExtensionsClientCommonContext'
 import { KeybindingsProps } from './keybindings'
 import { Layout, LayoutProps } from './Layout'
@@ -66,7 +70,7 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
 
 interface SourcegraphWebAppState
     extends SettingsCascadeProps,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps {
     error?: Error

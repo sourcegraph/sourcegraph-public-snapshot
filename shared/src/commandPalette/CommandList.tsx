@@ -11,10 +11,10 @@ import { ContributableMenu, Contributions } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { PopoverButton } from '../components/PopoverButton'
 import { getContributedActionItems } from '../contributions/contributions'
-import { ControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 
-interface Props extends ControllerProps, PlatformContextProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 

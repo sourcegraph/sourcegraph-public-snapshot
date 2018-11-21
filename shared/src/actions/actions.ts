@@ -1,10 +1,10 @@
 import H from 'history'
 import { TextDocumentItem } from '../api/client/types/textDocument'
 import { ContributableMenu, Contributions } from '../api/protocol'
-import { ControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 
-export interface ActionsProps extends ControllerProps, PlatformContextProps {
+export interface ActionsProps extends ExtensionsControllerProps, PlatformContextProps {
     menu: ContributableMenu
     scope?: TextDocumentItem
     actionItemClass?: string
