@@ -1,7 +1,7 @@
 /**
  * Returns true if `val` { is } not `null` or `undefined`
  */
-export const isDefined = <T>(val: T): val is NonNullable<T> => val !== undefined && val !== null
+const isDefined = <T>(val: T): val is NonNullable<T> => val !== undefined && val !== null
 
 /**
  * Returns a function that returns `true` if the given `key` of the object is not `null` or `undefined`.

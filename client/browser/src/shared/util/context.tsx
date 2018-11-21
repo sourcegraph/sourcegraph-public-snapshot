@@ -43,14 +43,6 @@ export function isSourcegraphDotCom(url: string = sourcegraphUrl): boolean {
     return url === DEFAULT_SOURCEGRAPH_URL
 }
 
-export function checkIsOnlySourcegraphDotCom(handler: (res: boolean) => void): void {
-    if (window.SG_ENV === 'EXTENSION') {
-        storage.getSync(items => handler(isSourcegraphDotCom(items.sourcegraphURL)))
-    } else {
-        handler(false)
-    }
-}
-
 export function setRenderMermaidGraphsEnabled(enabled: boolean): void {
     renderMermaidGraphsEnabled = enabled
 }
@@ -61,19 +53,6 @@ export function setInlineSymbolSearchEnabled(enabled: boolean): void {
 
 export function setUseExtensions(value: boolean): void {
     useExtensions = value
-}
-
-/**
- * modeToHighlightJsName gets the highlight.js name of the language given a
- * mode.
- */
-export function modeToHighlightJsName(mode: string): string {
-    switch (mode) {
-        case 'html':
-            return 'xml'
-        default:
-            return mode
-    }
 }
 
 export function getPlatformName():
@@ -96,24 +75,8 @@ export function getExtensionVersionSync(): string {
     return runtime.getExtensionVersionSync()
 }
 
-export function getExtensionVersion(): Promise<string> {
-    return runtime.getExtensionVersion()
-}
-
 export function isFirefoxExtension(): boolean {
     return window.navigator.userAgent.indexOf('Firefox') !== -1
-}
-
-export function isE2ETest(): boolean {
-    return process.env.NODE_ENV === 'test'
-}
-
-/**
- * This method created a unique username based on the platform and domain the user is visiting.
- * Examples: sg_dev_phabricator:matt
- */
-export function getDomainUsername(domain: string, username: string): string {
-    return `${domain}:${username}`
 }
 
 /**
