@@ -8,6 +8,7 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { Subject } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { highlightNode } from '../util/dom'
+import { DecoratedTextLines } from './DecoratedTextLines'
 import { ResultContainer } from './ResultContainer'
 
 interface Props {
@@ -27,7 +28,7 @@ interface HighlightRange {
     /**
      * The number of characters to highlight
      */
-    highlightLength: number
+    length: number
 }
 
 export class GenericMatch extends React.Component<Props> {
@@ -42,7 +43,7 @@ export class GenericMatch extends React.Component<Props> {
             {this.props.result.results!.map(item => {
                 const highlightRanges: HighlightRange[] = []
                 item.highlights.map(i =>
-                    highlightRanges.push({ line: i.line, character: i.character, highlightLength: i.length })
+                    highlightRanges.push({ line: i.line, character: i.character, length: i.length })
                 )
 
                 return (
@@ -98,28 +99,51 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps> {
                 for (const h of this.props.highlightRanges) {
                     // If we add context lines we must select the right line
                     const code = visibleRows[0].lastChild as HTMLTableDataCellElement
-                    highlightNode(code, h.character, h.highlightLength)
+                    highlightNode(code, h.character, h.length)
                 }
             }
         }
+    }
+
+    private bodyIsCode(): boolean {
+        return this.props.body.startsWith('```') && this.props.body.endsWith('```')
     }
 
     private onChangeVisibility = (isVisible: boolean): void => {
         this.visibilityChanges.next(isVisible)
     }
 
-    // private getFirstLine(): number {
-    //     return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - 1)
-    // }
-
     public render(): JSX.Element {
         if (this.tableContainerElement) {
-            const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
+            // Our results are always wrapped in a code element.
+            const visibleRows = this.tableContainerElement.querySelectorAll('code')
+            // for commits
+            // const visibleRows = this.tableContainerElement.querySelectorAll('p')
+            // For code elements, content is wrapped in <pre> and <code> tags, if not, we wrap a content with a <div>.
+            // const visibleRows = this.tableContainerElement.firstChild!.childNodes
+            // console.log(visibleRows)
             if (visibleRows.length > 0) {
+                // console.log(
+                //     'vis',
+                //     Array.from(visibleRows[0].childNodes).filter((node: ChildNode) => node.nodeValue !== '\n')
+                // )
                 for (const h of this.props.highlightRanges) {
-                    // If we add context lines we must select the right line
-                    const code = visibleRows[0].lastChild as HTMLTableDataCellElement
-                    highlightNode(code, h.character, h.highlightLength)
+                    // console.log(h)
+                    // for diffs
+                    const visRows = Array.from(visibleRows[0].childNodes).filter(
+                        (node: ChildNode) => node.nodeValue !== '\n'
+                    )
+                    // for commits
+                    // console.log('visibleROWS', visRows)
+                    // const visRows = visibleRows[h.line - 1]
+                    // console.log('FIRST ITEM IN VISIBLEROWS', visRows)
+                    // console.log(visRows[h.line - 1])
+                    const code = visRows[h.line - 1]
+                    // const byLines = code.split('\n')
+                    // const code = visibleRows[h.line - 1].lastChild as HTMLTableDataCellElement
+                    if (code) {
+                        highlightNode(code as HTMLElement, h.character, h.length)
+                    }
                 }
             }
         }
@@ -131,12 +155,25 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps> {
                 offset={this.visibilitySensorOffset}
             >
                 <Link key={this.props.url} to={this.props.url} className="file-match__item">
-                    <div
-                        ref={this.setTableContainerElement}
-                        dangerouslySetInnerHTML={{
-                            __html: marked(this.props.body, this.highlightfn),
-                        }}
-                    />
+                    {this.bodyIsCode() ? (
+                        <div
+                            ref={this.setTableContainerElement}
+                            dangerouslySetInnerHTML={{
+                                // Heuristic: replace 4 spaces with tabs, otherwise character counts get thrown off.
+                                // Marked does not preserve tabs, so we get wrong spacing for results where white-space
+                                // is actually spaces. TODO @attfarhan: we could read the language of the code block.
+                                // or the file that the diff result comes from to optimize this.
+                                __html: marked(this.props.body, this.highlightfn).replace(/\s{4}/g, '\t'),
+                            }}
+                        />
+                    ) : (
+                        <div
+                            ref={this.setTableContainerElement}
+                            dangerouslySetInnerHTML={{
+                                __html: '<code>' + splitLines(this.props.body) + '</code>',
+                            }}
+                        />
+                    )}
                 </Link>
             </VisibilitySensor>
         )
@@ -155,13 +192,25 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps> {
     }
 
     private highlightfn = {
-        highlight: (code: string, language: string) => {
+        sanitize: true,
+        highlight: (code: string) => {
             const lang = this.getLanguage()
-            return lang ? highlight(lang, code, true).value : highlightAuto(code)
+            return lang ? highlight(lang, code, true).value : highlightAuto(code).value
         },
     }
+}
 
-    private makeTableHTML(): string {
-        return '<table><tr><td>' + this.props.body + '</td></tr></table>'
+// Split lines separates markdown text lines into individual elements so that we can treat each
+// line individually for match highlighting.
+function splitLines(body: string): string {
+    console.log('body', body)
+    const split = body.split('\n')
+    console.log('split', split)
+    let htmlAsString = ''
+    for (const s of split) {
+        const sp = `<span>${s}\n</span>`
+        htmlAsString += sp
     }
+    console.log('HTML AS STRING', htmlAsString)
+    return htmlAsString
 }
