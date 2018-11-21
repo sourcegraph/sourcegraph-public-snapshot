@@ -90,39 +90,14 @@ describe('Sourcegraph Chrome extension', () => {
                     console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
                 }
             }
-            try {
-                await page.close()
-                console.log('page closed')
-            } catch (e) {
-                console.log('caught page close', e)
-            }
+
+            await page.close()
         }
     })
 
     after('Close browser', async () => {
-        console.log('in after hook')
-
-        for (const p of await browser.pages()) {
-            await p.close()
-        }
-        // for (const target of await browser.targets()) {
-        //     const p = await target.page()
-        //     if (p) {
-        //         await p.close()
-        //     }
-        // }
-
-        console.log((await browser.targets()).length)
-        try {
-            console.log('closing')
-            if (browser) {
-                console.log('closing!')
-                await browser.close()
-                console.log('closed!')
-                return
-            }
-        } catch (e) {
-            console.log('caught browser close', e)
+        if (browser) {
+            await browser.close()
         }
     })
 
