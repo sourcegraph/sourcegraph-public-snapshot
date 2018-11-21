@@ -1,0 +1,35 @@
+// import * as fs from 'fs'
+// import * as path from 'path'
+
+// const updatesManifestPath = path.resolve(__dirname, '..', 'src/extension/updates.manifest.json')
+
+// interface Update {
+//     version: string
+//     update_link: string
+// }
+
+// function addVersionToManifest(links: string[]): void {
+//     const updatesManifest = JSON.parse(fs.readFileSync(updatesManifestPath, 'utf8'))
+
+//     for (const link of links) {
+//         // `link` looks like .../sourcegraph-for-firefox/sourcegraph_for_firefox-18.11.17.46-an+fx.xpi
+//         const match = link.match(/_firefox-(.*?)-/)
+//         if (!match) {
+//             throw new Error(`could not get version from ${link}`)
+//         }
+
+//         const version = match[1]
+//         ;(updatesManifest.addons['sourcegraph-for-firefox@sourcegraph.com'].updates as Update[]).push({
+//             version,
+//             update_link: link,
+//         })
+//     }
+
+//     fs.writeFileSync(updatesManifestPath, JSON.stringify(updatesManifest, null, 4), 'utf8')
+// }
+
+const links = process.argv.slice(2).filter(l => !l.match(/latext.xpi$/) && !l.match(/updates.json$/))
+
+// addVersionToManifest(links)
+
+console.log(links)
