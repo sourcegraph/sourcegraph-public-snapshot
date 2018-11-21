@@ -4,12 +4,13 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { createAggregateError } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createAggregateError } from '../../util/errors'
 
 interface AuthProviderNodeProps {
     /** The auth provider to display in this item. */

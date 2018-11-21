@@ -15,13 +15,13 @@ import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphqlschema'
+import { getModeFromPath } from '../../../../shared/src/languages'
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
-import { getModeFromPath } from '../../util'
 import { propertyIsDefined } from '../../util/types'
 import { escapeRevspecForURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -167,7 +167,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
             base: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.base },
             head: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.head },
             routePrefix: this.props.match.url,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
         }
 
         return (

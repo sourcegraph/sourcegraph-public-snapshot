@@ -54,7 +54,7 @@ type DependencyReferencesOptions struct {
 	Limit int // e.g. 20
 }
 
-type SiteConfig struct {
+type GlobalState struct {
 	SiteID      string
 	Initialized bool // whether the initial site admin account has been created
 }

@@ -1,8 +1,8 @@
 import { combineLatest, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
-import { FeatureProviderRegistry } from './registry'
+import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
 /**
@@ -14,18 +14,21 @@ export type ProvideTextDocumentLocationSignature<
     L extends Location = Location
 > = (params: P) => Observable<L | L[] | null>
 
-/** Provides location results from all extensions for definition, implementation, and type definition requests. */
+/**
+ * Provides location results from matching registered providers for definition, implementation, and type definition
+ * requests.
+ */
 export class TextDocumentLocationProviderRegistry<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
     L extends Location = Location
-> extends FeatureProviderRegistry<TextDocumentRegistrationOptions, ProvideTextDocumentLocationSignature<P, L>> {
+> extends DocumentFeatureProviderRegistry<ProvideTextDocumentLocationSignature<P, L>> {
     public getLocation(params: P): Observable<L | L[] | null> {
-        return getLocation<P, L>(this.providers, params)
+        return getLocation<P, L>(this.providersForDocument(params.textDocument), params)
     }
 }
 
 /**
- * Returns an observable that emits all providers' location results whenever any of the last-emitted set of
+ * Returns an observable that emits the providers' location results whenever any of the last-emitted set of
  * providers emits hovers.
  *
  * Most callers should use the TextDocumentLocationProviderRegistry class, which uses the registered providers.
@@ -63,16 +66,16 @@ export function getLocations<
 }
 
 /**
- * Provides reference results from all extensions.
+ * Provides reference results from all providers.
  *
  * Reference results are always an array or null, unlike results from other location providers (e.g., from
  * textDocument/definition), which can be a single item, an array, or null.
  */
 export class TextDocumentReferencesProviderRegistry extends TextDocumentLocationProviderRegistry<ReferenceParams> {
-    /** Gets reference locations from all extensions. */
+    /** Gets reference locations from all matching providers. */
     public getLocation(params: ReferenceParams): Observable<Location[] | null> {
         // References are always an array (unlike other locations, which can be returned as L | L[] |
         // null).
-        return getLocations(this.providers, params)
+        return getLocations(this.providersForDocument(params.textDocument), params)
     }
 }

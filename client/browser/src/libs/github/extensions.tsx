@@ -2,8 +2,7 @@ import * as H from 'history'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
 import { Controller as ClientController } from '../../../../../shared/src/client/controller'
-import { Controller } from '../../../../../shared/src/controller'
-import { Settings, SettingsSubject } from '../../../../../shared/src/settings'
+import { Context as ExtensionsContext } from '../../../../../shared/src/context'
 
 import * as React from 'react'
 import { render } from 'react-dom'
@@ -47,10 +46,10 @@ export function getGlobalDebugMount(): HTMLElement {
 export function injectExtensionsGlobalComponents(
     {
         extensionsController,
-        extensionsContextController,
+        extensionsContext,
     }: {
-        extensionsController: ClientController<SettingsSubject, Settings>
-        extensionsContextController: Controller<SettingsSubject, Settings>
+        extensionsController: ClientController
+        extensionsContext: ExtensionsContext
     },
     location: H.Location
 ): void {
@@ -59,7 +58,7 @@ export function injectExtensionsGlobalComponents(
             <CommandListPopoverButton
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
-                extensions={extensionsContextController}
+                extensionsContext={extensionsContext}
                 location={location}
             />
         </ShortcutProvider>,

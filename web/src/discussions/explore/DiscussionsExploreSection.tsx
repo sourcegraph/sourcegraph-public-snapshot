@@ -4,10 +4,11 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { LinkOrSpan } from '../../../../shared/src/ui/generic/LinkOrSpan'
-import { gql, queryGraphQL } from '../../backend/graphql'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { queryGraphQL } from '../../backend/graphql'
 import { ChatIcon } from '../../util/icons'
 
 interface Props {}

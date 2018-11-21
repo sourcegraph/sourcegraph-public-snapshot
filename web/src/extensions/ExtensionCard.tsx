@@ -1,26 +1,25 @@
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { isErrorLike } from '../../../shared/src/errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import { SettingsSubject } from '../../../shared/src/graphqlschema'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { ExtensionManifest } from '../../../shared/src/schema/extension.schema'
 import { LinkOrSpan } from '../../../shared/src/ui/generic/LinkOrSpan'
-import { Settings } from '../schema/settings.schema'
-import { isErrorLike } from '../util/errors'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 import { ExtensionToggle } from './ExtensionToggle'
 
-interface Props<S extends SettingsSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
+interface Props extends SettingsCascadeProps, ExtensionsProps {
     node: ConfiguredExtension<GQL.IRegistryExtension>
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void
 }
 
 /** Displays an extension as a card. */
-export class ExtensionCard<S extends SettingsSubject, C extends Settings> extends React.PureComponent<Props<S, C>> {
+export class ExtensionCard extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         const { node, ...props } = this.props
         const manifest: ExtensionManifest | undefined =
@@ -97,7 +96,7 @@ export class ExtensionCard<S extends SettingsSubject, C extends Settings> extend
                                         settingsCascade={this.props.settingsCascade}
                                         onUpdate={props.onDidUpdate}
                                         className="btn-sm btn-secondary"
-                                        extensions={this.props.extensions}
+                                        extensionsContext={this.props.extensionsContext}
                                     />
                                 ) : (
                                     <li className="nav-item">

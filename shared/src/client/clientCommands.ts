@@ -6,16 +6,16 @@ import { Extension } from '../api/client/extension'
 import { ActionContributionClientCommandUpdateConfiguration, ConfigurationUpdateParams } from '../api/protocol'
 import { Context } from '../context'
 import { isErrorLike } from '../errors'
-import { Settings, SettingsCascade, SettingsSubject } from '../settings'
+import { SettingsCascade } from '../settings'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See
  * {@link module:sourcegraph.module/protocol/contribution.ActionContribution#command} for
  * documentation.
  */
-export function registerBuiltinClientCommands<S extends SettingsSubject, C extends Settings, E extends Extension>(
-    context: Pick<Context<S, C>, 'settingsCascade' | 'updateExtensionSettings' | 'queryGraphQL' | 'queryLSP'>,
-    controller: Controller<E, SettingsCascade<S, C>>
+export function registerBuiltinClientCommands<E extends Extension>(
+    context: Pick<Context, 'settingsCascade' | 'updateSettings' | 'queryGraphQL' | 'queryLSP'>,
+    controller: Controller<E, SettingsCascade>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -111,8 +111,8 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
 /**
  * Applies an edit to the settings of the highest-precedence subject.
  */
-export function updateConfiguration<S extends SettingsSubject, C extends Settings>(
-    context: Pick<Context<S, C>, 'settingsCascade' | 'updateExtensionSettings'>,
+export function updateConfiguration(
+    context: Pick<Context, 'settingsCascade' | 'updateSettings'>,
     params: ConfigurationUpdateParams
 ): Promise<void> {
     // TODO(sqs): Allow extensions to specify which subject's settings to update
@@ -132,7 +132,7 @@ export function updateConfiguration<S extends SettingsSubject, C extends Setting
                     )
                 }
                 const subject = x.subjects[x.subjects.length - 1].subject
-                return context.updateExtensionSettings(subject.id, { edit: params })
+                return context.updateSettings(subject.id, { edit: params })
             })
         )
         .toPromise()

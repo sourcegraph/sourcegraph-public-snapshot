@@ -1,7 +1,7 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { map } from 'rxjs/operators'
-import { Position } from 'vscode-languageserver-types'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
+import { Position } from '../../../../../shared/src/api/protocol/plainTypes'
 import storage from '../../browser/storage'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeView } from '../code_intelligence'

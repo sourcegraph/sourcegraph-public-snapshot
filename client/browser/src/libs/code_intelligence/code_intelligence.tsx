@@ -16,12 +16,12 @@ import { toPrettyBlobURL } from '@sourcegraph/codeintellify/lib/url'
 import * as H from 'history'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subscription } from 'rxjs'
+import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
-import { Disposable } from 'vscode-jsonrpc'
 import { Environment } from '../../../../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
+import { getModeFromPath } from '../../../../../shared/src/languages'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
@@ -31,7 +31,7 @@ import {
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../../shared/repo'
-import { eventLogger, getModeFromPath, sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
@@ -205,7 +205,7 @@ function initCodeIntelligence(
     hoverifier: Hoverifier
     controllers: Partial<Controllers>
 } {
-    const { extensionsContextController, extensionsController }: Partial<Controllers> =
+    const { extensionsContext, extensionsController }: Partial<Controllers> =
         useExtensions && codeHost.getCommandPaletteMount
             ? initializeExtensions(codeHost.getCommandPaletteMount, environment)
             : {}
@@ -317,7 +317,7 @@ function initCodeIntelligence(
 
     render(<HoverOverlayContainer />, overlayMount)
 
-    return { hoverifier, controllers: { extensionsContextController, extensionsController } }
+    return { hoverifier, controllers: { extensionsContext, extensionsController } }
 }
 
 /**
@@ -336,7 +336,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
     })
     const {
         hoverifier,
-        controllers: { extensionsContextController, extensionsController },
+        controllers: { extensionsContext, extensionsController },
     } = initCodeIntelligence(codeHost, environmentSubject)
 
     const subscriptions = new Subscription()
@@ -430,13 +430,13 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         }
 
                         if (extensionsController && !info.baseCommitID) {
-                            let oldDecorations: Disposable[] = []
+                            let oldDecorations: Unsubscribable[] = []
 
                             extensionsController.registries.textDocumentDecoration
                                 .getDecorations(toTextDocumentIdentifier(info))
                                 .subscribe(decorations => {
                                     for (const old of oldDecorations) {
-                                        old.dispose()
+                                        old.unsubscribe()
                                     }
                                     oldDecorations = []
                                     for (const decoration of decorations || []) {
@@ -484,7 +484,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     render(
                         <CodeViewToolbar
                             {...info}
-                            extensions={extensionsContextController}
+                            extensionsContext={extensionsContext}
                             extensionsController={extensionsController}
                             buttonProps={
                                 toolbarButtonProps || {

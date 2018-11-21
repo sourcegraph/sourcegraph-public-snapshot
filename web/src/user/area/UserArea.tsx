@@ -5,12 +5,13 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { RouteDescriptor } from '../../util/contributions'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { UserAccountAreaRoute } from '../account/UserAccountArea'
 import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
@@ -175,7 +176,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             authenticatedUser: this.props.authenticatedUser,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
             isLightTheme: this.props.isLightTheme,
             userAccountAreaRoutes: this.props.userAccountAreaRoutes,
             userAccountSideBarItems: this.props.userAccountSideBarItems,

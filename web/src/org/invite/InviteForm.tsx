@@ -7,13 +7,14 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
+import { createAggregateError } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL } from '../../backend/graphql'
+import { mutateGraphQL } from '../../backend/graphql'
 import { CopyableText } from '../../components/CopyableText'
 import { DismissibleAlert } from '../../components/DismissibleAlert'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createAggregateError } from '../../util/errors'
 
 function inviteUserToOrganization(
     username: string,

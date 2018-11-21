@@ -42,7 +42,7 @@ export class RegistryArea extends React.Component<Props> {
     public render(): JSX.Element | null {
         const transferProps: RegistryAreaPageProps = {
             authenticatedUser: this.props.authenticatedUser,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
         }
 
         return (

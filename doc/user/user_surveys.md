@@ -8,6 +8,23 @@ On this page, admins can view individual satisfaction scores (from 0–10) and i
 
 Survey responses are also always sent to Sourcegraph.com.
 
+## Restart feedback survey
+
+By default, users are only presented with the feedback survey once. Site admins may restart the feedback survey for all users (regardless of whether they have already responded). To restart the feedback survey, use the [site configuration's `htmlBodyBottom` property](../admin/site_config/all#htmlbodybottom-string):
+
+```json
+{
+  ...,
+  "htmlBodyBottom": "if (localStorage.getItem('reset-survey-000') === null) { localStorage.removeItem('has-dismissed-survey-toast'); localStorage.setItem('days-active-count', 3); localStorage.setItem('reset-survey-000', true); }",
+  ...
+}
+```
+
+This is a temporary solution that injects a JavaScript code snippet that resets the "has dismissed survey" flag for each user. Users will be prompted for feedback in the same way the next time they view a repository, directory, or file page.
+
+To restart the feedback survey for a second (or subsequent) time, change both instances of `-000` to `-001` (or `-002`, etc.). Follow and participate in [issue #666](https://github.com/sourcegraph/sourcegraph/issues/666) if you need a more complete solution.
+
+
 ## See also 
 
 - [Usage statistics](usage_statistics.md)

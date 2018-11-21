@@ -5,13 +5,14 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { OrgAccountArea } from '../account/OrgAccountArea'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
@@ -153,7 +154,7 @@ export class OrgArea extends React.Component<Props> {
             authenticatedUser: this.props.authenticatedUser,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

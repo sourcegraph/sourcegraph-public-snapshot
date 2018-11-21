@@ -6,6 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-type MockSiteConfig struct {
-	Get func(ctx context.Context) (*types.SiteConfig, error)
+type MockGlobalState struct {
+	Get func(ctx context.Context) (*types.GlobalState, error)
 }

@@ -21,3 +21,4 @@ ts-node-*
 testdata
 .github/*
 doc/
+shared/src/types/abort-controller/index.d.ts

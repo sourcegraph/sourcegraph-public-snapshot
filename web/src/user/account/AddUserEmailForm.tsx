@@ -2,11 +2,12 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
+import { createAggregateError, ErrorLike } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL } from '../../backend/graphql'
+import { mutateGraphQL } from '../../backend/graphql'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createAggregateError, ErrorLike } from '../../util/errors'
 
 interface Props {
     /** The GraphQL ID of the user with whom the new emails are associated. */

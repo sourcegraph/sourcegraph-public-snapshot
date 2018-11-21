@@ -4,12 +4,12 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, concat, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
+import { asError } from '../../../../../shared/src/errors'
 import { Form } from '../../../components/Form'
 import { Markdown } from '../../../components/Markdown'
 import { Spacer, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../../../components/Tabs'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { asError } from '../../../util/errors'
 import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
 
 /**

@@ -1,4 +1,4 @@
-import { Position } from 'vscode-languageserver-types'
+import { Position } from '../../../../../shared/src/api/protocol/plainTypes'
 import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, Repo, RepoFile, ResolvedRevSpec } from '../repo'
 import { repoUrlCache, sourcegraphUrl } from './context'
 

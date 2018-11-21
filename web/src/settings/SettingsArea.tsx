@@ -6,13 +6,15 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import settingsSchemaJSON from '../../../schema/settings.schema.json'
+import { queryConfiguredExtensions } from '../../../shared/src/controller'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
+import { gql } from '../../../shared/src/graphql'
 import { ISettingsCascade } from '../../../shared/src/graphqlschema'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { gqlToCascade } from '../../../shared/src/settings'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
-import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { SettingsPage } from './SettingsPage'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -136,7 +138,7 @@ export class SettingsArea extends React.Component<Props, State> {
             authenticatedUser: this.props.authenticatedUser,
             onUpdate: this.onUpdate,
             isLightTheme: this.props.isLightTheme,
-            extensions: this.props.extensions,
+            extensionsContext: this.props.extensionsContext,
         }
 
         return (
@@ -160,7 +162,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private onUpdate = () => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
-        return this.props.extensions.withRegistryMetadata(gqlToCascade(cascade)).pipe(
+        return queryConfiguredExtensions(this.props.extensionsContext, gqlToCascade(cascade)).pipe(
             map(configuredExtensions => ({
                 $id: 'settings.schema.json',
                 allOf: [

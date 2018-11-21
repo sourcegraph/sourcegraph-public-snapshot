@@ -4,13 +4,13 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { ActionsNavItems } from '../../../shared/src/app/actions/ActionsNavItems'
+import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { ActionItem } from '../components/ActionItem'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { ActionButtonDescriptor } from '../util/contributions'
-import { ErrorLike, isErrorLike } from '../util/errors'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
 
@@ -239,7 +239,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     <ActionsNavItems
                         menu={ContributableMenu.EditorTitle}
                         extensionsController={this.props.extensionsController}
-                        extensions={this.props.extensions}
+                        extensionsContext={this.props.extensionsContext}
                         location={this.props.location}
                     />
                     {this.props.actionButtons.map(

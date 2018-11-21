@@ -2,11 +2,11 @@ import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import * as _ from 'lodash'
 import marked from 'marked'
 import { MarkupContent } from 'sourcegraph'
-import { MarkedString } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, parseBrowserRepoURL } from '.'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { getModeFromPath } from '../../../../../shared/src/languages'
 import { makeCloseIcon, makeSourcegraphIcon } from '../components/Icons'
-import { getModeFromPath, sourcegraphUrl } from '../util/context'
+import { sourcegraphUrl } from '../util/context'
 import { toAbsoluteBlobURL } from '../util/url'
 
 registerLanguage('go', require('highlight.js/lib/languages/go'))
@@ -221,6 +221,12 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         if (!data.contents) {
             return
         }
+        type MarkedString =
+            | string
+            | {
+                  language: string
+                  value: string
+              }
         const contentsArray: (MarkupContent | MarkedString)[] = Array.isArray(data.contents)
             ? data.contents
             : ([data.contents] as (MarkupContent | MarkedString)[])

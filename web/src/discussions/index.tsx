@@ -1,9 +1,9 @@
 import { isExtensionEnabled } from '../../../shared/src/extensions/extension'
-import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../shared/src/settings'
+import { SettingsCascadeOrError } from '../../../shared/src/settings'
 
 /**
  * Tells whether or not the code discussions extensions is enabled or not.
  */
-export function isDiscussionsEnabled(settingsCascade: SettingsCascadeOrError<SettingsSubject, Settings>): boolean {
+export function isDiscussionsEnabled(settingsCascade: SettingsCascadeOrError): boolean {
     return isExtensionEnabled(settingsCascade.final, 'sourcegraph/code-discussions')
 }

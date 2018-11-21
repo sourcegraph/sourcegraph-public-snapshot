@@ -11,11 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-type siteConfig struct{}
+type globalState struct{}
 
-func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
-	if Mocks.SiteConfig.Get != nil {
-		return Mocks.SiteConfig.Get(ctx)
+func (o *globalState) Get(ctx context.Context) (*types.GlobalState, error) {
+	if Mocks.GlobalState.Get != nil {
+		return Mocks.GlobalState.Get(ctx)
 	}
 
 	configuration, err := o.getConfiguration(ctx)
@@ -30,7 +30,7 @@ func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 }
 
 func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT initialized FROM site_config LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, `SELECT initialized FROM global_state LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
@@ -49,7 +49,7 @@ func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 // privileges (even if all other users are deleted). This reduces the risk of (1) a site admin
 // accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 // admin and (2) a bug in user account creation code letting attackers create site admin accounts.
-func (o *siteConfig) ensureInitialized(ctx context.Context, dbh interface {
+func (o *globalState) ensureInitialized(ctx context.Context, dbh interface {
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }) (alreadyInitialized bool, err error) {
@@ -59,27 +59,27 @@ func (o *siteConfig) ensureInitialized(ctx context.Context, dbh interface {
 
 	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
 	// would see this initialized value as false and then set it to true below.
-	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM site_config FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM global_state FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		return false, err
 	}
 
 	if !alreadyInitialized {
-		_, err = dbh.ExecContext(ctx, "UPDATE site_config SET initialized=true")
+		_, err = dbh.ExecContext(ctx, "UPDATE global_state SET initialized=true")
 	}
 
 	return alreadyInitialized, err
 }
 
-func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, error) {
-	configuration := &types.SiteConfig{}
-	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM site_config LIMIT 1").Scan(
+func (o *globalState) getConfiguration(ctx context.Context) (*types.GlobalState, error) {
+	configuration := &types.GlobalState{}
+	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM global_state LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.Initialized,
 	)
 	return configuration, err
 }
 
-func (o *siteConfig) tryInsertNew(ctx context.Context, dbh interface {
+func (o *globalState) tryInsertNew(ctx context.Context, dbh interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }) error {
 	siteID, err := uuid.NewRandom()
@@ -92,13 +92,13 @@ func (o *siteConfig) tryInsertNew(ctx context.Context, dbh interface {
 	// If any users exist, then set the site as initialized so that the init screen doesn't show
 	// up. (It would not let the visitor initialize the site anyway, because other users exist.) The
 	// most likely reason the instance would get into this state (uninitialized but has users) is
-	// because previously site config had a siteID and now we ignore that (or someone ran `DELETE
-	// FROM site_config;` in the PostgreSQL database). In either case, it's safe to generate a new
+	// because previously global state had a siteID and now we ignore that (or someone ran `DELETE
+	// FROM global_state;` in the PostgreSQL database). In either case, it's safe to generate a new
 	// site ID and set the site as initialized.
-	_, err = dbh.ExecContext(ctx, "INSERT INTO site_config(site_id, initialized) values($1, EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL))", siteID)
+	_, err = dbh.ExecContext(ctx, "INSERT INTO global_state(site_id, initialized) values($1, EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL))", siteID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Constraint == "site_config_pkey" {
+			if pqErr.Constraint == "global_state_pkey" {
 				// The row we were trying to insert already exists.
 				// Don't treat this as an error.
 				err = nil

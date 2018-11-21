@@ -1,6 +1,7 @@
 import { Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { createProxy, handleRequests } from '../common/proxy'
+import { SettingsCascade } from '../protocol'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../protocol/jsonrpc2/transports/webWorker'
 import { ExtCommands } from './api/commands'
@@ -45,6 +46,12 @@ export interface InitData {
 
     /** @see {@link module:sourcegraph.internal.clientApplication} */
     clientApplication: 'sourcegraph' | 'other'
+
+    /**
+     * The settings cascade at the time of extension host initialization. It must be provided because extensions
+     * expect that the settings are synchronously available when their `activate` method is called.
+     */
+    settingsCascade: SettingsCascade<any>
 }
 
 /**
@@ -74,9 +81,7 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     const sync = () => connection.sendRequest<void>('ping')
     connection.onRequest('ping', () => 'pong')
 
-    const proxy = (prefix: string) => createProxy((name, args) => connection.sendRequest(`${prefix}/${name}`, args))
-
-    const context = new ExtContext(proxy('context'))
+    const context = new ExtContext(createProxy(connection, 'context'))
     handleRequests(connection, 'context', context)
 
     const documents = new ExtDocuments(sync)
@@ -85,22 +90,22 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     const roots = new ExtRoots()
     handleRequests(connection, 'roots', roots)
 
-    const windows = new ExtWindows(proxy('windows'), proxy('codeEditor'), documents)
+    const windows = new ExtWindows(createProxy(connection, 'windows'), createProxy(connection, 'codeEditor'), documents)
     handleRequests(connection, 'windows', windows)
 
-    const views = new ExtViews(proxy('views'))
+    const views = new ExtViews(createProxy(connection, 'views'))
     handleRequests(connection, 'views', views)
 
-    const configuration = new ExtConfiguration<any>(proxy('configuration'))
+    const configuration = new ExtConfiguration<any>(createProxy(connection, 'configuration'), initData.settingsCascade)
     handleRequests(connection, 'configuration', configuration)
 
-    const languageFeatures = new ExtLanguageFeatures(proxy('languageFeatures'), documents)
+    const languageFeatures = new ExtLanguageFeatures(createProxy(connection, 'languageFeatures'), documents)
     handleRequests(connection, 'languageFeatures', languageFeatures)
 
-    const search = new ExtSearch(proxy('search'))
+    const search = new ExtSearch(createProxy(connection, 'search'))
     handleRequests(connection, 'search', search)
 
-    const commands = new ExtCommands(proxy('commands'))
+    const commands = new ExtCommands(createProxy(connection, 'commands'))
     handleRequests(connection, 'commands', commands)
 
     return {

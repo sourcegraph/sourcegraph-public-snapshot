@@ -1,11 +1,10 @@
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ControllerProps } from '../../client/controller'
-import { Settings, SettingsSubject } from '../../settings'
 import { Notification } from './notification'
 import { NotificationItem } from './NotificationItem'
 
-interface Props<S extends SettingsSubject, C extends Settings> extends ControllerProps<S, C> {}
+interface Props extends ControllerProps {}
 
 interface State {
     notifications: Notification[]
@@ -14,10 +13,7 @@ interface State {
 /**
  * A notifications center that displays global, non-modal messages.
  */
-export class Notifications<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>,
-    State
-> {
+export class Notifications extends React.PureComponent<Props, State> {
     /**
      * The maximum number of notifications at a time. Older notifications are truncated when the length exceeds
      * this number.

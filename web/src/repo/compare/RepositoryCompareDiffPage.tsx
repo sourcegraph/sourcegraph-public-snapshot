@@ -3,11 +3,12 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { createAggregateError } from '../../../../shared/src/errors'
+import { gql } from '../../../../shared/src/graphql'
 import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL } from '../../backend/graphql'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
-import { createAggregateError } from '../../util/errors'
 import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -119,7 +120,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
                         head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
                         lineNumbers: true,
-                        extensions: this.props.extensions,
+                        extensionsContext: this.props.extensionsContext,
                         location: this.props.location,
                         history: this.props.history,
                         hoverifier: this.props.hoverifier,

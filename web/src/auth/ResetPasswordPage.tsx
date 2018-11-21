@@ -3,12 +3,12 @@ import { upperFirst } from 'lodash'
 import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { PasswordInput } from './SignInSignUpCommon'
 
 interface ResetPasswordInitFormState {

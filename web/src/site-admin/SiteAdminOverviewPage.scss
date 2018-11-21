@@ -2,4 +2,10 @@
     &__active {
         color: green;
     }
+
+    &__detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 }

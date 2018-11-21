@@ -159,6 +159,7 @@ export const listAllSearchResults = memoizeAsync(
                 }
             }`,
             variables: ctx,
+            retry: false,
         })
             .toPromise()
             .then(result => {
@@ -189,6 +190,7 @@ export const fetchBlobContentLines = memoizeObservable(
                 }
             }`,
             variables: trimRepoPath(ctx),
+            retry: false,
         }).pipe(
             map(({ data, errors }) => {
                 if (

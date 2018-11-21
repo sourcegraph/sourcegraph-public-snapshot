@@ -53,6 +53,7 @@ export const fetchAccessTokenIDs = memoizeObservable(
             `,
             variables: { userID, scopes: ['user:all'], note: `sourcegraph-${getPlatformName()}` },
             useAccessToken: false,
+            retry: false,
         }).pipe(
             map(({ data, errors }) => {
                 if (

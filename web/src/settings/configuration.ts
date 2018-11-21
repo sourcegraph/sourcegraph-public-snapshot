@@ -1,9 +1,9 @@
 import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser'
 import { Observable, ReplaySubject } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { createAggregateError } from '../../../shared/src/errors'
 import * as GQL from '../../../shared/src/graphqlschema'
 import { Settings } from '../schema/settings.schema'
-import { createAggregateError } from '../util/errors'
 
 /**
  * Represents the settings from various subjects from GraphQL (user, orgs, and global).

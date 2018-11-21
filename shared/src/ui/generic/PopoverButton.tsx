@@ -1,11 +1,10 @@
 import { Shortcut, ShortcutProps } from '@slimsag/react-shortcuts'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import Popover, { PopoverProps } from 'reactstrap/lib/Popover'
 import { LinkOrSpan } from './LinkOrSpan'
 
 interface Props {
-    caretIcon: React.ComponentType<{ className: string; onClick?: () => void }>
-
     /**
      * An additional class name to set on the root element.
      */
@@ -98,14 +97,13 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                     onClick={this.props.link ? this.onClickLink : this.toggleVisibility}
                 >
                     {this.props.children}{' '}
-                    {!this.props.link && <this.props.caretIcon className="icon-inline popover-button2__icon" />}
+                    {!this.props.link && <MenuDownIcon className="icon-inline popover-button2__icon" />}
                 </LinkOrSpan>
                 {this.props.link ? (
                     <div className="popover-button2__anchor">
-                        <this.props.caretIcon
-                            className="icon-inline popover-button2__icon popover-button2__icon--outside"
-                            onClick={this.toggleVisibility}
-                        />
+                        <div onClick={this.toggleVisibility}>
+                            <MenuDownIcon className="icon-inline popover-button2__icon popover-button2__icon--outside" />
+                        </div>
                         {popoverAnchor}
                     </div>
                 ) : (

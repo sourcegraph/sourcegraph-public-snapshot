@@ -2,14 +2,13 @@ import { last } from 'lodash'
 import * as React from 'react'
 import { EMPTY, from, Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
-import { SettingsCascade, SettingsCascadeOrError, SettingsSubject } from '../../../shared/src/settings'
+import { SettingsCascade, SettingsCascadeOrError } from '../../../shared/src/settings'
 import { Toggle } from '../../../shared/src/ui/generic/Toggle'
-import { Settings } from '../schema/settings.schema'
-import { ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
-interface Props<S extends SettingsSubject, C extends Settings> extends SettingsCascadeProps, ExtensionsProps {
+interface Props extends SettingsCascadeProps, ExtensionsProps {
     /** The extension that this element is for. */
     extension: ConfiguredExtension
 
@@ -28,7 +27,7 @@ interface Props<S extends SettingsSubject, C extends Settings> extends SettingsC
 /**
  * Displays a toggle button for an extension.
  */
-export class ExtensionToggle<S extends SettingsSubject, C extends Settings> extends React.PureComponent<Props<S, C>> {
+export class ExtensionToggle extends React.PureComponent<Props> {
     private toggles = new Subject<boolean>()
     private subscriptions = new Subscription()
 
@@ -63,7 +62,7 @@ export class ExtensionToggle<S extends SettingsSubject, C extends Settings> exte
                         }
 
                         return from(
-                            this.props.extensions.context.updateExtensionSettings(highestPrecedenceSubject.subject.id, {
+                            this.props.extensionsContext.updateSettings(highestPrecedenceSubject.subject.id, {
                                 extensionID: this.props.extension.id,
                                 enabled,
                             })
@@ -121,7 +120,7 @@ function confirmAddExtension(extensionID: string, extensionManifest?: Configured
 }
 
 /** Converts a SettingsCascadeOrError to a SettingsCascade, returning the first error it finds. */
-function extractErrors(c: SettingsCascadeOrError<SettingsSubject, Settings>): SettingsCascade | ErrorLike {
+function extractErrors(c: SettingsCascadeOrError): SettingsCascade | ErrorLike {
     if (c.subjects === null || isErrorLike(c.subjects)) {
         return new Error('Subjects was ' + c.subjects)
     } else if (c.final === null || isErrorLike(c.final)) {

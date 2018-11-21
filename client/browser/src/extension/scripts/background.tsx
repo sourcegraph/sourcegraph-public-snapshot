@@ -398,9 +398,12 @@ storage
 /**
  * Fetches JavaScript from a URL and runs it in a web worker.
  */
-function spawnWebWorkerFromURL(url: string): Promise<Worker> {
+function spawnWebWorkerFromURL({
+    jsBundleURL,
+    settingsCascade,
+}: Pick<ExtensionConnectionInfo, 'jsBundleURL' | 'settingsCascade'>): Promise<Worker> {
     return ajax({
-        url,
+        url: jsBundleURL,
         crossDomain: true,
         responseType: 'blob',
     })
@@ -418,6 +421,7 @@ function spawnWebWorkerFromURL(url: string): Promise<Worker> {
                     bundleURL: blobURL,
                     sourcegraphURL: sourcegraphUrl,
                     clientApplication: 'other',
+                    settingsCascade,
                 }
                 worker.postMessage(initData)
                 return worker
@@ -453,7 +457,7 @@ const spawnAndConnect = ({
     connectionInfo: ExtensionConnectionInfo
     port: chrome.runtime.Port
 }): Promise<void> =>
-    spawnWebWorkerFromURL(connectionInfo.jsBundleURL).then(worker => {
+    spawnWebWorkerFromURL(connectionInfo).then(worker => {
         connectPortAndWorker(port, worker)
     })
 

@@ -112,12 +112,15 @@ export class WithResolvedRev extends React.Component<WithResolvedRevProps, WithR
             return <this.props.requireAuthComponent {...this.props} error={this.state.requireAuthError} />
         }
 
+        if (this.props.cloningComponent && this.state.cloneInProgress) {
+            return <this.props.cloningComponent {...this.props} />
+        } else if (this.state.cloneInProgress) {
+            return null
+        }
         if (this.props.notFoundComponent && this.state.notFound) {
             return <this.props.notFoundComponent {...this.props} />
         }
-        if (this.props.cloningComponent && this.state.cloneInProgress) {
-            return <this.props.cloningComponent {...this.props} />
-        }
+
         if (this.props.repoPath && !this.state.commitID) {
             // commit not yet resolved but required if repoPath prop is provided;
             // render empty until commit resolved

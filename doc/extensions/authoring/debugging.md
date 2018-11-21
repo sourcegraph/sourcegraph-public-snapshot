@@ -1,4 +1,4 @@
-# Debugging extensions
+# Debugging a Sourcegraph extension
 
 You can use your browser's devtools to debug Sourcegraph extensions running on a Sourcegraph instance (including Sourcegraph.com). Most browsers ship with an advanced JavaScript debugger, so this is a great way to find the cause of bugs in your extension.
 

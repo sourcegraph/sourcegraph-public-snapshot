@@ -17,9 +17,9 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { MarkupContent } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
 import * as GQL from '../../../../../shared/src/graphqlschema'
 import {
     getDefinition,
@@ -38,7 +38,6 @@ import {
 } from '../../../extensions/ExtensionsClientCommonContext'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 import { parseHash } from '../../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
@@ -85,7 +84,7 @@ function toSubject(props: Props): ContextSubject {
         mode: props.mode,
         line: parsedHash.line || 1,
         character: parsedHash.character || 1,
-        extensions: props.extensions,
+        extensionsContext: props.extensionsContext,
     }
 }
 
@@ -99,7 +98,7 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
         a.mode === b.mode &&
         a.line === b.line &&
         a.character === b.character &&
-        isEqual(a.extensions, b.extensions)
+        isEqual(a.extensionsContext, b.extensionsContext)
     )
 }
 
@@ -143,7 +142,10 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         type PartialStateUpdate = Pick<State, 'hoverOrError'>
                         const result = getHover(
                             {
-                                ...(subject as Pick<typeof subject, Exclude<keyof typeof subject, 'extensions'>>),
+                                ...(subject as Pick<
+                                    typeof subject,
+                                    Exclude<keyof typeof subject, 'extensionsContext'>
+                                >),
                                 position,
                             },
                             { extensionsController: this.props.extensionsController }
@@ -360,8 +362,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
 
 function renderHoverContents(contents: HoverMerged['contents'][0]): React.ReactFragment {
     const value = typeof contents === 'string' ? contents : contents.value
-    const language =
-        typeof contents === 'string' ? 'markdown' : MarkupContent.is(contents) ? contents.kind : contents.language
+    const language = typeof contents === 'string' ? 'markdown' : 'kind' in contents ? contents.kind : contents.language
     try {
         if (language === 'markdown') {
             return (

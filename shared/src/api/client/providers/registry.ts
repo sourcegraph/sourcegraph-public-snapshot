@@ -1,5 +1,8 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { getModeFromPath } from '../../../languages'
+import { TextDocumentRegistrationOptions } from '../../protocol'
+import { match, TextDocumentIdentifier } from '../types/textDocument'
 
 /** A registry entry for a registered provider. */
 export interface Entry<O, P> {
@@ -29,23 +32,37 @@ export abstract class FeatureProviderRegistry<O, P> {
 
     /** All providers, emitted whenever the set of registered providers changed. */
     public readonly providers: Observable<P[]> = this.entries.pipe(
-        map(providers => providers.map(({ provider }) => provider))
+        map(entries => entries.map(({ provider }) => provider))
     )
+}
 
+/**
+ * A registry for providers that provide features within a document. Use this class instead of
+ * {@link FeatureProviderRegistry} when all calls to the provider are scoped to a document.
+ *
+ * For example, hovers are scoped to a document (i.e., the document URI is one of the required arguments passed to
+ * the hover provider), so this class is used for the hover provider registry.
+ */
+export abstract class DocumentFeatureProviderRegistry<P> extends FeatureProviderRegistry<
+    TextDocumentRegistrationOptions,
+    P
+> {
     /**
-     * The current set of providers. Used by callers that do not need to react to providers being
-     * registered or unregistered.
-     *
-     * NOTE: You should usually use the providers property on this class, not providersSnapshot,
-     * even when you think you don't need live-updating results. Providers are registered
-     * asynchronously after the client connects (or reconnects) to the server. So, the providers
-     * list might be empty at the instant you need the results (because the client was just
-     * instantiated and is waiting on a network roundtrip before it registers providers, or because
-     * there was a temporary network error and the client is reestablishing the connection). By
-     * using the providers property, the consumer will get the results it (probably) expects when
-     * the client connects and registers the providers.
+     * Returns an observable of the set if registered providers that apply to the document. The observable emits
+     * initially and whenever the set changes (due to a provider being registered or unregistered).
      */
-    public get providersSnapshot(): P[] {
-        return this.entries.value.map(({ provider }) => provider)
+    public providersForDocument(document: TextDocumentIdentifier): Observable<P[]> {
+        return this.entries.pipe(
+            map(entries =>
+                entries
+                    .filter(({ registrationOptions }) =>
+                        match(registrationOptions.documentSelector, {
+                            uri: document.uri,
+                            languageId: getModeFromPath(document.uri),
+                        })
+                    )
+                    .map(({ provider }) => provider)
+            )
+        )
     }
 }

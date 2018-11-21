@@ -4,10 +4,10 @@ import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { Position, Range } from 'vscode-languageserver-types'
+import { Position, Range } from '../../../../shared/src/api/protocol/plainTypes'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
 import * as GQL from '../../../../shared/src/graphqlschema'
 import { ActionItem } from '../../components/ActionItem'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { PhabricatorIcon } from '../../util/icons' // TODO: Switch mdi icon
 import { fetchFileExternalLinks } from '../backend'
 

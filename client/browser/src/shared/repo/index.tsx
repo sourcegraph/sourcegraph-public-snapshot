@@ -1,4 +1,4 @@
-import { Position, Range } from 'vscode-languageserver-types'
+import { Position, Range } from '../../../../../shared/src/api/protocol/plainTypes'
 import { sourcegraphUrl } from '../util/context'
 import { parseHash } from '../util/url'
 
