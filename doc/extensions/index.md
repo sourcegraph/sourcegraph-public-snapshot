@@ -68,7 +68,7 @@ To enable/disable an extension for all organization members, add it to the `exte
 
 ## Authoring
 
-Ready to create your own extension? See the [Extension authoring documentation](authoring/index.md).
+Ready to create your own extension? See the [extension authoring documentation](authoring/index.md).
 
 For inspiration:
 - Check out the source code for existing extensions on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (on their detail page, click **Repository** in their sidebar)
