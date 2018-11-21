@@ -14,7 +14,7 @@ function addVersionsToManifest(links: string[]): void {
     const updates: Update[] = []
 
     for (const link of links) {
-        // `link` looks like .../sourcegraph-for-firefox/sourcegraph_for_firefox-18.11.17.46-an+fx.xpi
+        // `link` looks like gs://sourcegraph-for-firefox/sourcegraph_for_firefox-18.11.17.46-an+fx.xpi
         const match = link.match(/_firefox-(.*?)-/)
         if (!match) {
             throw new Error(`could not get version from ${link}`)
@@ -24,7 +24,7 @@ function addVersionsToManifest(links: string[]): void {
 
         updates.push({
             version,
-            update_link: link,
+            update_link: link.replace(/^gs:\/\//, 'https://storage.googleapis.com/'),
         })
     }
 
