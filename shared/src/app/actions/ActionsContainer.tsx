@@ -2,7 +2,6 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from '../../api/client/types/textDocument'
-import { Settings, SettingsSubject } from '../../settings'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps, ContributionsState } from './actions'
 import { getContributedActionItems } from './contributions'
@@ -24,10 +23,7 @@ interface ActionsContainerProps extends ActionsProps {
 interface ActionsContainerState extends ContributionsState {}
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
-export class ActionsContainer<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    ActionsContainerProps<S, C>,
-    ActionsContainerState
-> {
+export class ActionsContainer extends React.PureComponent<ActionsContainerProps, ActionsContainerState> {
     public state: ContributionsState = {}
 
     private scopeChanges = new Subject<TextDocumentItem | undefined>()

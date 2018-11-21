@@ -2,7 +2,6 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from '../../api/client/types/textDocument'
-import { Settings, SettingsSubject } from '../../settings'
 import { ActionItem } from './ActionItem'
 import { ActionsProps, ContributionsState } from './actions'
 import { getContributedActionItems } from './contributions'
@@ -11,10 +10,7 @@ import { getContributedActionItems } from './contributions'
  * Renders the actions as a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul
  * class="nav"> or <ul class="navbar-nav">.
  */
-export class ActionsNavItems<S extends SettingsSubject, C extends Settings> extends React.PureComponent<
-    ActionsProps<S, C>,
-    ContributionsState
-> {
+export class ActionsNavItems extends React.PureComponent<ActionsProps, ContributionsState> {
     public state: ContributionsState = {}
 
     private scopeChanges = new Subject<TextDocumentItem | undefined>()
