@@ -10,9 +10,13 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
   </a>
 </p>
 
-![Sourcegraph browser extension](img/BrowserExtension.gif)
+<p>
+  <a target="_blank" href="https://storage.googleapis.com/sourcegraph-for-firefox/latest.xpi" style="display:flex;align-items:center">
+  <img src="img/firefox.svg" width="24" height="24" style="margin-right:5px" /> <strong>Install Sourcegraph for Firefox</strong>
+  </a>
+</p>
 
-Sourcegraph for Firefox is temporarily unavailable on Mozilla's Firefox Add-ons site. See [issue #744](https://github.com/sourcegraph/sourcegraph/issues/744#issuecomment-436163831) for a workaround and updates.
+![Sourcegraph browser extension](img/BrowserExtension.gif)
 
 ## Features
 
