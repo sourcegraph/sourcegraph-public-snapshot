@@ -2,7 +2,7 @@ import format from 'date-fns/format'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
 import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 
 export const ProductSubscriptionHistory: React.FunctionComponent<{
     productSubscription: Pick<GQL.IProductSubscription, 'events'>

@@ -18,8 +18,8 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../../shared/src/errors'
-import { gql } from '../../../../../../shared/src/graphql'
-import * as GQL from '../../../../../../shared/src/graphqlschema'
+import { gql } from '../../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'

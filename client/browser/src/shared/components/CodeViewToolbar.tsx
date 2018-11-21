@@ -5,7 +5,7 @@ import { ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavIte
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsContextProps } from '../../../../../shared/src/context'
 import { ControllerProps } from '../../../../../shared/src/extensions/controller'
-import { ISite, IUser } from '../../../../../shared/src/graphqlschema'
+import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings'
 import { FileInfo } from '../../libs/code_intelligence'
 import { SimpleProviderFns } from '../backend/lsp'

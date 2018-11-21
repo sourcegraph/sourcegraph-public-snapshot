@@ -1,5 +1,5 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 
 /** Displays the price of a plan. */
 export const ProductPlanPrice: React.FunctionComponent<{

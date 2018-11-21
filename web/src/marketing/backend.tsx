@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { SurveyResponse } from './SurveyPage'
 

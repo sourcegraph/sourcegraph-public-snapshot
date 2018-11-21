@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import * as GQL from '../../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
 import * as permissions from '../../../browser/permissions'
 import storage from '../../../browser/storage'
 import { StorageItems } from '../../../browser/types'

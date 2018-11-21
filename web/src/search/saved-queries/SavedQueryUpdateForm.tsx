@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Observable } from 'rxjs'
 import { concat, mergeMap } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { refreshSettings } from '../../user/settings/backend'
 import { createSavedQuery, deleteSavedQuery, updateSavedQuery } from '../backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'

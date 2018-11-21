@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { SignUpArgs, SignUpForm } from '../auth/SignUpPage'
 import { eventLogger } from '../tracking/eventLogger'
 

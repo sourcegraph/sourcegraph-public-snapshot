@@ -1,6 +1,6 @@
 import { cloneDeep, isFunction, isPlainObject } from 'lodash-es'
 import { createAggregateError, ErrorLike, isErrorLike } from './errors'
-import * as GQL from './graphqlschema'
+import * as GQL from './graphql/schema'
 import { parseJSONCOrError } from './util'
 
 export interface IClient {

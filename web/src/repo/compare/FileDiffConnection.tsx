@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { TextDocumentItem } from '../../../../shared/src/api/client/types/textDocument'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/errors'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { Connection, FilteredConnection } from '../../components/FilteredConnection'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'

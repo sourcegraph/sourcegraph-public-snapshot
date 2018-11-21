@@ -6,7 +6,7 @@ import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Position, Range } from '../../../../shared/src/api/protocol/plainTypes'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { ActionItem } from '../../components/ActionItem'
 import { PhabricatorIcon } from '../../util/icons' // TODO: Switch mdi icon
 import { fetchFileExternalLinks } from '../backend'

@@ -1,6 +1,6 @@
 import CheckmarkCircleIcon from 'mdi-react/CheckCircleIcon'
 import * as React from 'react'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { AccessTokenScopes } from '../../auth/accessToken'
 import { CopyableText } from '../../components/CopyableText'
 

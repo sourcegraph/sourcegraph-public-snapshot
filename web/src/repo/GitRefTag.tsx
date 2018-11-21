@@ -2,7 +2,7 @@ import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import React from 'react'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 
 interface Props {
     gitRef: GQL.IGitRef

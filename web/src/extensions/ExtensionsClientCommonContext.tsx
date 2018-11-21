@@ -12,7 +12,7 @@ import {
 import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
-import { gql } from '../../../shared/src/graphql'
+import { gql } from '../../../shared/src/graphql/graphql'
 import {
     gqlToCascade,
     Settings,

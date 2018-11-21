@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

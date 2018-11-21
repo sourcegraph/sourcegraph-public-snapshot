@@ -1,6 +1,6 @@
 import { Subscribable } from 'rxjs'
-import { GraphQLResult } from './graphql'
-import * as GQL from './graphqlschema'
+import { GraphQLResult } from './graphql/graphql'
+import * as GQL from './graphql/schema'
 import { SettingsCascadeOrError } from './settings'
 import { UpdateExtensionSettingsArgs } from './settings/edit'
 

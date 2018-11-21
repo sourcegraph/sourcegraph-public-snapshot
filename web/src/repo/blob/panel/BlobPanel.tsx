@@ -20,7 +20,7 @@ import {
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import {
     getDefinition,
     getHover,

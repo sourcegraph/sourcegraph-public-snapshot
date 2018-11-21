@@ -6,7 +6,7 @@ import { noop, Observable, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import sinon from 'sinon'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { AccessToken } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from './OptionsContainer'
 

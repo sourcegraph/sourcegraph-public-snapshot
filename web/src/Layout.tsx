@@ -1,6 +1,6 @@
 import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
-import * as GQL from '../../shared/src/graphqlschema'
+import * as GQL from '../../shared/src/graphql/schema'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { LinkExtension } from './extension/Link'
 import { ExtensionsDocumentsProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'

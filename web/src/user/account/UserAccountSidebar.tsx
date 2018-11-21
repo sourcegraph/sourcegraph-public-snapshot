@@ -3,7 +3,7 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import LogoutIcon from 'mdi-react/LogoutIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import {
     SIDEBAR_BUTTON_CLASS,
     SidebarGroup,

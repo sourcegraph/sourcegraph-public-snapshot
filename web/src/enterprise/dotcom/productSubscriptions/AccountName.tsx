@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { userURL } from '../../../user'
 
 /**

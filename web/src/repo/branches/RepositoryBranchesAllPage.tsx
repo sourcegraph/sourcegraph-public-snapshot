@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

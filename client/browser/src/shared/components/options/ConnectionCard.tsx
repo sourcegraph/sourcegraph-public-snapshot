@@ -17,7 +17,7 @@ import {
 } from 'reactstrap'
 import { of, Subscription } from 'rxjs'
 import { filter, map, switchMap, tap } from 'rxjs/operators'
-import * as GQL from '../../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
 import * as permissions from '../../../browser/permissions'
 import storage from '../../../browser/storage'
 import { StorageItems } from '../../../browser/types'

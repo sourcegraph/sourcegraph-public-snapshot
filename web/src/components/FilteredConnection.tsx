@@ -19,7 +19,7 @@ import {
     tap,
 } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { pluralize } from '../util/strings'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'

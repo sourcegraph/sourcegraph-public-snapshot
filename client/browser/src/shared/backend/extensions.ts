@@ -9,8 +9,8 @@ import { MessageTransports } from '../../../../../shared/src/api/protocol/jsonrp
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { Context as ExtensionsContext } from '../../../../../shared/src/context'
 import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
-import { gql, graphQLContent } from '../../../../../shared/src/graphql'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import { gql, graphQLContent } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import {
     gqlToCascade,
     mergeSettings,

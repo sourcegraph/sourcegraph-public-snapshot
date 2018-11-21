@@ -2,8 +2,8 @@ import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map } from 'rxjs/operators'
 import { normalizeAjaxError } from '../../../shared/src/errors'
-import { graphQLContent, GraphQLDocument, GraphQLResult } from '../../../shared/src/graphql'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { graphQLContent, GraphQLDocument, GraphQLResult } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
 
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`

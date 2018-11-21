@@ -16,7 +16,7 @@ import {
 } from 'rxjs/operators'
 import getCaretCoordinates from 'textarea-caret'
 import { Key } from 'ts-key-enum'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { getContext } from '../backend/context'
 import { asError, ErrorLike, isErrorLike } from '../backend/errors'
 import { fetchSymbols } from '../backend/search'

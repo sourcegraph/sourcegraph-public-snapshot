@@ -3,7 +3,7 @@ import React from 'react'
 import { Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { BarChart } from '../../components/d3/BarChart'
 import { fetchSiteUsageStatistics } from '../../site-admin/backend'
 

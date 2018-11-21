@@ -1,6 +1,6 @@
 import { Extension } from '../api/client/extension'
 import { ErrorLike, isErrorLike } from '../errors'
-import * as GQL from '../graphqlschema'
+import * as GQL from '../graphql/schema'
 import { ExtensionManifest } from '../schema/extension.schema'
 import { Settings } from '../settings'
 import { parseJSONCOrError } from '../util'

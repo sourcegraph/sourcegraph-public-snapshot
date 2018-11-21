@@ -13,7 +13,7 @@ import {
     takeUntil,
 } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { AbsoluteRepo } from '../repo'
 import { fetchTreeEntries } from '../repo/backend'
 import { ChildTreeLayer } from './ChildTreeLayer'

@@ -1,6 +1,6 @@
 import Downshift, { StateChangeOptions } from 'downshift'
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../backend/errors'
 import { SymbolIcon } from './symbols/SymbolIcon'
 import { LOADING, ManagedDownShiftState, SymbolFetchResult } from './SymbolsDropdownContainer'

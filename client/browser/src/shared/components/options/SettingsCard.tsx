@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Alert, Card, CardBody, CardHeader, CardLink, CardText, Col, Row } from 'reactstrap'
 import { Subscription } from 'rxjs'
-import * as GQL from '../../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../../../../shared/src/settings'
 import { isErrorLike } from '../../backend/errors'
 import { settingsCascade } from '../../backend/extensions'
