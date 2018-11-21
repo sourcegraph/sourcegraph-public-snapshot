@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { ControllerProps } from '../../client/controller'
+import { ControllerProps } from '../extensions/controller'
 import { Notification } from './notification'
 import { NotificationItem } from './NotificationItem'
 

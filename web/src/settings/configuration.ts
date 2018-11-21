@@ -1,8 +1,8 @@
 import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser'
 import { Observable, ReplaySubject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { createAggregateError } from '../../../shared/src/errors'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
 
 /**

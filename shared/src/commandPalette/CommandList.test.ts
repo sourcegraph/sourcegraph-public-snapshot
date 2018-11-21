@@ -1,6 +1,6 @@
 import assert from 'assert'
-import { filterAndRankItems } from '../CommandList'
-import { ActionItemProps } from './ActionItem'
+import { ActionItemProps } from '../actions/ActionItem'
+import { filterAndRankItems } from './CommandList'
 
 describe('filterAndRankItems', () => {
     function actionIDs(items: ActionItemProps[]): string[] {

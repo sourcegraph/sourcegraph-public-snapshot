@@ -2,10 +2,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { of, Subject, Subscription } from 'rxjs'
-import { catchError, concat, delay, distinctUntilChanged, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
+import { concat, of, Subject, Subscription } from 'rxjs'
+import { catchError, delay, distinctUntilChanged, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '..'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -57,10 +57,12 @@ export class OrgAccountProfilePage extends React.PureComponent<Props, State> {
                         updateOrganization(this.props.org.id, this.state.displayName).pipe(
                             tap(() => this.props.onOrganizationUpdate()),
                             mergeMap(() =>
-                                // Reset email, reenable submit button, flash "updated" text
-                                of<Partial<State>>({ loading: false, updated: true })
+                                concat(
+                                    // Reset email, reenable submit button, flash "updated" text
+                                    of<Partial<State>>({ loading: false, updated: true }),
                                     // Hide "updated" text again after 1s
-                                    .pipe(concat(of<Partial<State>>({ updated: false }).pipe(delay(1000))))
+                                    of<Partial<State>>({ updated: false }).pipe(delay(1000))
+                                )
                             ),
                             catchError((error: Error) => [{ error: error.message, loading: false }]),
                             // Disable button while loading

@@ -13,9 +13,9 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../../shared/src/errors'
-import { gql } from '../../../../../../shared/src/graphql'
-import * as GQL from '../../../../../../shared/src/graphqlschema'
+import { gql } from '../../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../../backend/graphql'
 
 interface Props {

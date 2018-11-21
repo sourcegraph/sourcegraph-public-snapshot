@@ -1,10 +1,9 @@
 import { DownshiftState, StateChangeOptions } from 'downshift'
 import { inRange, isEqual } from 'lodash'
 import * as React from 'react'
-import { fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { concat, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
-    concat,
     debounceTime,
     delay,
     distinctUntilChanged,
@@ -16,7 +15,7 @@ import {
 } from 'rxjs/operators'
 import getCaretCoordinates from 'textarea-caret'
 import { Key } from 'ts-key-enum'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { getContext } from '../backend/context'
 import { asError, ErrorLike, isErrorLike } from '../backend/errors'
 import { fetchSymbols } from '../backend/search'
@@ -261,7 +260,7 @@ export class SymbolsDropdownContainer extends React.Component<Props, State> {
         if (queryText.length === 1) {
             // The user has likely just typed a brand-new autocomplete
             // query. Clear out the results from any previous symbol fetch requests.
-            return of(undefined).pipe(concat(incrementalResults))
+            return concat(of(undefined), incrementalResults)
         }
 
         return incrementalResults

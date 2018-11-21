@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { isErrorLike } from './errors'
-import { parseJSONCOrError } from './util'
+import { parseJSONCOrError } from './jsonc'
 
 describe('parseJSONCOrError', () => {
     it('parses valid JSON', () => assert.deepStrictEqual(parseJSONCOrError('{"a":1}'), { a: 1 }))

@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { ExtensionStatusPopover } from '../../../shared/src/app/ExtensionStatus'
+import { ExtensionStatusPopover } from '../../../shared/src/extensions/ExtensionStatus'
 import { ExtensionsEnvironmentProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 

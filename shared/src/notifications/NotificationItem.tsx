@@ -1,7 +1,7 @@
 import marked from 'marked'
 import * as React from 'react'
-import { MessageType } from '../../api/protocol'
-import { isErrorLike } from '../../errors'
+import { MessageType } from '../api/protocol'
+import { isErrorLike } from '../util/errors'
 import { Notification } from './notification'
 
 interface Props {

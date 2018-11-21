@@ -3,7 +3,7 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Markdown } from '../components/Markdown'
 

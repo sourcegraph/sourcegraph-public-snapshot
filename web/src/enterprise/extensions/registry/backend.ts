@@ -1,9 +1,9 @@
 import { Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
-import { createAggregateError } from '../../../../../shared/src/errors'
-import { gql } from '../../../../../shared/src/graphql'
-import { RegistryPublisher } from '../../../../../shared/src/graphqlschema'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import { RegistryPublisher } from '../../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
 import { mutateGraphQL } from '../../../backend/graphql'
 

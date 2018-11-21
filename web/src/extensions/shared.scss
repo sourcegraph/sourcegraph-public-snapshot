@@ -1,5 +1,4 @@
-// Imports, styles, and CSS variables for @sourcegraph/extensions-client-common.
-@import '../../shared/src/app/app.css';
+@import '../../shared/src/index.css';
 
 :root {
     --primary-opacity-2: #{transparentize($primary, 0.8)};

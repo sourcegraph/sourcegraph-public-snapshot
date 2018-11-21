@@ -1,7 +1,7 @@
 import { isEmpty } from 'lodash'
 import * as React from 'react'
-import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
+import { fromEvent, interval, merge, Observable, Subject, Subscription, zip } from 'rxjs'
+import { catchError, debounceTime, filter, map, switchMap, take, takeUntil, tap } from 'rxjs/operators'
 
 import { getPathExtension } from '../../../../../shared/src/languages'
 import * as github from '../../libs/github/util'
@@ -238,26 +238,29 @@ export class BlobAnnotator extends React.Component<Props, State> {
                             return [null]
                         }
                         const { target, ctx } = data
-                        return this.getTooltip(target, ctx).pipe(
-                            tap(tooltip => {
-                                if (!tooltip) {
-                                    this.setFixedTooltip()
-                                    return
-                                }
+                        return zip(
+                            this.getTooltip(target, ctx).pipe(
+                                tap(tooltip => {
+                                    if (!tooltip) {
+                                        this.setFixedTooltip()
+                                        return
+                                    }
 
-                                const contents = tooltip.contents
-                                if (!contents || isEmptyHover({ contents })) {
-                                    this.setFixedTooltip()
-                                    return
-                                }
+                                    const contents = tooltip.contents
+                                    if (!contents || isEmptyHover({ contents })) {
+                                        this.setFixedTooltip()
+                                        return
+                                    }
 
-                                this.setFixedTooltip(tooltip)
-                                // Show the tooltip with j2d and findRef buttons. We don't want to wait for
-                                // a response from getDefinition before showing this, as the response can take some time
-                                // for JS and TS when private packages are used.
-                                updateTooltip(tooltip, true, this.tooltipActions(ctx), this.props.isBase)
-                            }),
-                            zip(this.getDefinition(ctx)),
+                                    this.setFixedTooltip(tooltip)
+                                    // Show the tooltip with j2d and findRef buttons. We don't want to wait for
+                                    // a response from getDefinition before showing this, as the response can take some time
+                                    // for JS and TS when private packages are used.
+                                    updateTooltip(tooltip, true, this.tooltipActions(ctx), this.props.isBase)
+                                })
+                            ),
+                            this.getDefinition(ctx)
+                        ).pipe(
                             map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined } as TooltipData)),
                             catchError(e => {
                                 const data: TooltipData = { target, ctx }
@@ -322,8 +325,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
                     switchMap(({ target, ctx }) => {
                         const tooltip = this.getTooltip(target, ctx)
                         this.subscriptions.add(tooltip.subscribe(this.logTelemetryOnTooltip))
-                        const tooltipWithJ2D: Observable<TooltipData> = tooltip.pipe(
-                            zip(this.getDefinition(ctx)),
+                        const tooltipWithJ2D: Observable<TooltipData> = zip(tooltip, this.getDefinition(ctx)).pipe(
                             map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
                         )
                         const loading = this.getLoadingTooltip(target, ctx, tooltip)

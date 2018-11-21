@@ -1,5 +1,5 @@
-import { createAggregateError } from './errors'
-import * as GQL from './graphqlschema'
+import { createAggregateError } from '../util/errors'
+import * as GQL from './schema'
 
 export const graphQLContent = Symbol('graphQLContent')
 export interface GraphQLDocument {

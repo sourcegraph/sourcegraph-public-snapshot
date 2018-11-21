@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { ConfigurationUpdateParams } from '../api/protocol'
-import { convertUpdateConfigurationCommandArgs } from './clientCommands'
+import { convertUpdateConfigurationCommandArgs } from './commands'
 
 describe('convertUpdateConfigurationCommandArgs', () => {
     it('converts with a non-JSON-encoded arg', () =>

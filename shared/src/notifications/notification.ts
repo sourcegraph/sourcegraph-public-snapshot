@@ -1,5 +1,5 @@
-import { MessageType } from '../../api/protocol'
-import { ErrorLike } from '../../errors'
+import { MessageType } from '../api/protocol'
+import { ErrorLike } from '../util/errors'
 
 /**
  * A notification message to display to the user.

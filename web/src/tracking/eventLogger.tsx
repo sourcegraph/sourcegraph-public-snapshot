@@ -1,6 +1,6 @@
 import { matchPath } from 'react-router'
 import uuid from 'uuid'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { getPathExtension } from '../../../shared/src/languages'
 import { authenticatedUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'

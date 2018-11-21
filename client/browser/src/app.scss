@@ -89,7 +89,7 @@ $theme-colors-light: (
 @import '@sourcegraph/codeintellify/lib/HoverOverlay.scss';
 @import './libs/code_intelligence/HoverOverlay.scss';
 @import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
-@import './extensions-client-common';
+@import './shared';
 
 #sourcegraph-options-menu {
     .list-group-item.active {

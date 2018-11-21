@@ -2,10 +2,10 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { ActionsNavItems } from '../../../shared/src/app/actions/ActionsNavItems'
-import { CommandListPopoverButton } from '../../../shared/src/app/CommandList'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { CommandListPopoverButton } from '../../../shared/src/commandPalette/CommandList'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { isDiscussionsEnabled } from '../discussions'
 import {
     ExtensionsControllerProps,

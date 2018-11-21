@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '.'
-import { createAggregateError } from '../../../shared/src/errors'
-import { gql } from '../../../shared/src/graphql'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { memoizeObservable } from '../util/memoize'
 

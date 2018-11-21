@@ -1,8 +1,8 @@
 import { Subscribable } from 'rxjs'
-import { GraphQLResult } from './graphql'
-import * as GQL from './graphqlschema'
-import { SettingsCascadeOrError } from './settings'
+import { GraphQLResult } from './graphql/graphql'
+import * as GQL from './graphql/schema'
 import { UpdateExtensionSettingsArgs } from './settings/edit'
+import { SettingsCascadeOrError } from './settings/settings'
 
 /**
  * Description of the context in which extensions-client-common is running, and platform-specific hooks.

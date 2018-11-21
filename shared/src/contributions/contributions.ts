@@ -1,6 +1,6 @@
 import { sortBy } from 'lodash-es'
-import { ContributableMenu, Contributions } from '../../api/protocol'
-import { ActionItemProps } from './ActionItem'
+import { ActionItemProps } from '../actions/ActionItem'
+import { ContributableMenu, Contributions } from '../api/protocol'
 
 const MENU_ITEMS_PROP_SORT_ORDER = ['group', 'id']
 

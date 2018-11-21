@@ -5,20 +5,20 @@ import { InitData } from '../../../shared/src/api/extension/extensionHost'
 import { SettingsCascade } from '../../../shared/src/api/protocol'
 import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
-import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/client/controller'
 import {
     Context as ExtensionsContext,
     ExtensionsContextProps as GenericExtensionsContextProps,
 } from '../../../shared/src/context'
-import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
+import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
-import { gql } from '../../../shared/src/graphql'
+import { gql } from '../../../shared/src/graphql/graphql'
+import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import {
     gqlToCascade,
     Settings,
     SettingsCascadeProps as GenericSettingsCascadeProps,
-} from '../../../shared/src/settings'
-import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
+} from '../../../shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { requestGraphQL } from '../backend/graphql'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'

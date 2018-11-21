@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import {
     EXTENSION_NAME_MAX_LENGTH,
     EXTENSION_NAME_VALID_PATTERN,

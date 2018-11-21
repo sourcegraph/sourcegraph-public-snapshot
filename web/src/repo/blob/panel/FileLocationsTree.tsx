@@ -4,11 +4,10 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
-import { isError } from 'util'
 import { parseRepoURI } from '../..'
 import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
-import { asError } from '../../../../../shared/src/errors'
+import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError } from '../../../../../shared/src/util/errors'
 import { Resizable } from '../../../components/Resizable'
 import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../RepoLink'
@@ -98,12 +97,12 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                     switchMap(([query]) => {
                         type PartialStateUpdate = Pick<State, 'locationsOrError' | 'loading'>
                         const result = query().pipe(
-                            catchError(error => [asError(error)]),
+                            catchError(error => [asError(error) as ErrorLike]),
                             map(
                                 c =>
                                     ({
-                                        locationsOrError: isError(c) ? c : c.locations,
-                                        loading: isError(c) ? false : c.loading,
+                                        locationsOrError: isErrorLike(c) ? c : c.locations,
+                                        loading: isErrorLike(c) ? false : c.loading,
                                     } as PartialStateUpdate)
                             )
                         )

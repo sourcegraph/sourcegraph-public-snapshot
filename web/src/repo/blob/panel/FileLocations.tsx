@@ -5,11 +5,10 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
-import { isError } from 'util'
 import { parseRepoURI } from '../..'
 import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
-import { asError } from '../../../../../shared/src/errors'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
+import { asError } from '../../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { FileMatch, IFileMatch, ILineMatch } from '../../../components/FileMatch'
 import { VirtualList } from '../../../components/VirtualList'
 import { propertyIsDefined } from '../../../util/types'
@@ -111,12 +110,12 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     switchMap(([query]) => {
                         type PartialStateUpdate = Pick<State, 'locationsOrError' | 'loading'>
                         const result = query().pipe(
-                            catchError(error => [asError(error)]),
+                            catchError(error => [asError(error) as ErrorLike]),
                             map(
                                 c =>
                                     ({
-                                        locationsOrError: isError(c) ? c : c.locations,
-                                        loading: isError(c) ? false : c.loading,
+                                        locationsOrError: isErrorLike(c) ? c : c.locations,
+                                        loading: isErrorLike(c) ? false : c.loading,
                                     } as PartialStateUpdate)
                             )
                         )
@@ -221,6 +220,11 @@ function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[])
         },
         repository: {
             name: p.repoPath,
+            // This is the only usage of toRepoURL, and it is arguably simpler than getting the value from the
+            // GraphQL API. We will be removing these old-style git: URIs eventually, so it's not worth fixing this
+            // deprecated usage.
+            //
+            // tslint:disable-next-line deprecation
             url: toRepoURL(p.repoPath),
         },
         limitHit: false,

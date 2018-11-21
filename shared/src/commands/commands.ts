@@ -5,8 +5,8 @@ import { Controller } from '../api/client/controller'
 import { Extension } from '../api/client/extension'
 import { ActionContributionClientCommandUpdateConfiguration, ConfigurationUpdateParams } from '../api/protocol'
 import { Context } from '../context'
-import { isErrorLike } from '../errors'
-import { SettingsCascade } from '../settings'
+import { SettingsCascade } from '../settings/settings'
+import { isErrorLike } from '../util/errors'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See

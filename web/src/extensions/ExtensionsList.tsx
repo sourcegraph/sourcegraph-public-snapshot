@@ -13,12 +13,12 @@ import {
     takeUntil,
     withLatestFrom,
 } from 'rxjs/operators'
-import { viewerConfiguredExtensions } from '../../../shared/src/controller'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { ConfiguredExtension, toConfiguredExtensions } from '../../../shared/src/extensions/extension'
-import { gql } from '../../../shared/src/graphql'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { SettingsSubject } from '../../../shared/src/settings'
+import { viewerConfiguredExtensions } from '../../../shared/src/extensions/helpers'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { SettingsSubject } from '../../../shared/src/settings/settings'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
 import { ExtensionCard } from './ExtensionCard'

@@ -3,7 +3,7 @@ import * as React from 'react'
 import { concat, merge, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
 import getCaretCoordinates from 'textarea-caret'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { fetchAllUsers } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 

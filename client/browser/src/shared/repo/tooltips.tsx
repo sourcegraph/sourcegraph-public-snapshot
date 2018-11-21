@@ -2,6 +2,7 @@ import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import * as _ from 'lodash'
 import marked from 'marked'
 import { MarkupContent } from 'sourcegraph'
+import { Key } from 'ts-key-enum'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, parseBrowserRepoURL } from '.'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { getModeFromPath } from '../../../../../shared/src/languages'
@@ -322,7 +323,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
 }
 
 window.addEventListener('keyup', (e: KeyboardEvent) => {
-    if (e.keyCode === 27) {
+    if (e.key === Key.Escape) {
         hideTooltip()
     }
 })

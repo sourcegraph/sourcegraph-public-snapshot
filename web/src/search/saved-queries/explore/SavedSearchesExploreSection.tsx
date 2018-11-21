@@ -1,6 +1,6 @@
 import H from 'history'
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { SavedQueries } from '../SavedQueries'
 
 export const SavedSearchesExploreSection: React.FunctionComponent<{

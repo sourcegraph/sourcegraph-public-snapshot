@@ -2,9 +2,9 @@ import { from } from 'rxjs'
 import { map, switchMap, take } from 'rxjs/operators'
 import { ConfigurationUpdateParams } from '../api/protocol'
 import { Context as ExtensionsContext } from '../context'
-import { isErrorLike } from '../errors'
-import { dataOrThrowErrors, gql, graphQLContent } from '../graphql'
-import * as GQL from '../graphqlschema'
+import { dataOrThrowErrors, gql, graphQLContent } from '../graphql/graphql'
+import * as GQL from '../graphql/schema'
+import { isErrorLike } from '../util/errors'
 
 export type UpdateExtensionSettingsArgs =
     | { edit?: ConfigurationUpdateParams }

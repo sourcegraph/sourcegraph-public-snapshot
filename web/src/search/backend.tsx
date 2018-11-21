@@ -2,9 +2,9 @@ import { isEqual } from 'lodash'
 import { Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs/operators'
 import { SearchOptions } from '.'
-import { asError, createAggregateError, ErrorLike } from '../../../shared/src/errors'
-import { gql } from '../../../shared/src/graphql'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { mutateSettingsGraphQL } from '../configuration/backend'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
@@ -332,7 +332,7 @@ export function createSavedQuery(
                 $notifySlack: Boolean
                 $disableSubscriptionNotifications: Boolean
             ) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                     createSavedQuery(
                         description: $description
                         query: $query
@@ -357,10 +357,10 @@ export function createSavedQuery(
         }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
+            if (!data || !data.settingsMutation || !data.settingsMutation.createSavedQuery) {
                 throw createAggregateError(errors)
             }
-            return data.configurationMutation.createSavedQuery
+            return data.settingsMutation.createSavedQuery
         })
     )
 }
@@ -387,7 +387,7 @@ export function updateSavedQuery(
                 $notify: Boolean
                 $notifySlack: Boolean
             ) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                     updateSavedQuery(
                         id: $id
                         description: $description
@@ -405,10 +405,10 @@ export function updateSavedQuery(
         { id, description, query, showOnHomepage, notify, notifySlack }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {
+            if (!data || !data.settingsMutation || !data.settingsMutation.updateSavedQuery) {
                 throw createAggregateError(errors)
             }
-            return data.configurationMutation.updateSavedQuery
+            return data.settingsMutation.updateSavedQuery
         })
     )
 }
@@ -427,7 +427,7 @@ export function deleteSavedQuery(
                 $id: ID!
                 $disableSubscriptionNotifications: Boolean
             ) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                     deleteSavedQuery(id: $id, disableSubscriptionNotifications: $disableSubscriptionNotifications) {
                         alwaysNil
                     }
@@ -437,7 +437,7 @@ export function deleteSavedQuery(
         { id, disableSubscriptionNotifications: disableSubscriptionNotifications || false }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configurationMutation || !data.configurationMutation.deleteSavedQuery) {
+            if (!data || !data.settingsMutation || !data.settingsMutation.deleteSavedQuery) {
                 throw createAggregateError(errors)
             }
         })
