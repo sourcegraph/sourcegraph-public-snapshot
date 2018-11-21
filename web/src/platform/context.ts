@@ -17,6 +17,9 @@ import { Tooltip } from '../components/tooltip/Tooltip'
 import { settingsCascade } from '../settings/configuration'
 import { refreshSettings } from '../user/settings/backend'
 
+/**
+ * Creates the {@link PlatformContext} for the web app.
+ */
 export function createPlatformContext(): PlatformContext {
     const context: PlatformContext = {
         settingsCascade: settingsCascade.pipe(
@@ -24,6 +27,9 @@ export function createPlatformContext(): PlatformContext {
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
         updateSettings: async (subject, args) => {
+            // Unauthenticated users can't update settings. (In the browser extension, they can update client
+            // settings even when not authenticated. The difference in behavior in the web app vs. browser
+            // extension is why this logic lives here and not in shared/.)
             if (!window.context.isAuthenticatedUser) {
                 let editDescription = 'edit settings' // default description
                 if ('edit' in args && args.edit) {
@@ -44,6 +50,7 @@ export function createPlatformContext(): PlatformContext {
                         }**](${`${u.href.replace(/\/$/, '')}/sign-in`})`
                 )
             }
+
             try {
                 await updateSettings(context, subject, args, mutateSettings)
             } finally {
