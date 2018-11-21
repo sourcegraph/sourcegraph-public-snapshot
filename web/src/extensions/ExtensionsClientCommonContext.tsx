@@ -15,10 +15,9 @@ import {
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import {
     gqlToCascade,
-    Settings,
     SettingsCascadeProps as GenericSettingsCascadeProps,
 } from '../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { isErrorLike } from '../../../shared/src/util/errors'
 import { requestGraphQL } from '../backend/graphql'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
@@ -109,9 +108,4 @@ function createMessageTransports(
         throw new Error('failed to initialize extension host')
     }
     throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
-}
-
-/** Reports whether the given extension is mentioned (enabled or disabled) in the settings. */
-export function isExtensionAdded(settings: Settings | ErrorLike | null, extensionID: string): boolean {
-    return !!settings && !isErrorLike(settings) && !!settings.extensions && extensionID in settings.extensions
 }

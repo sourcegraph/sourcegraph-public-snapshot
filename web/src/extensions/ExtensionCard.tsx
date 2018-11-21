@@ -7,9 +7,10 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsSubject } from '../../../shared/src/graphql/schema'
 import { ExtensionManifest } from '../../../shared/src/schema/extension.schema'
 import { isErrorLike } from '../../../shared/src/util/errors'
+import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
-import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
+import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 import { ExtensionToggle } from './ExtensionToggle'
 
 interface Props extends SettingsCascadeProps, ExtensionsProps {

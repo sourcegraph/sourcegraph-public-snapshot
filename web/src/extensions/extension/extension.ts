@@ -1,4 +1,6 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { Settings } from '../../../../shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 
 /** Pattern for valid extension names. */
 export const EXTENSION_NAME_VALID_PATTERN = '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[_.-](?=[a-zA-Z0-9]))*$'
@@ -31,4 +33,9 @@ export function publisherName(p: RegistryPublisher): string {
 /** Returns the extension ID (in "publisher/name" format). */
 export function toExtensionID(publisher: string | RegistryPublisher, name: string): string {
     return `${typeof publisher === 'string' ? publisher : extensionIDPrefix(publisher)}/${name}`
+}
+
+/** Reports whether the given extension is mentioned (enabled or disabled) in the settings. */
+export function isExtensionAdded(settings: Settings | ErrorLike | null, extensionID: string): boolean {
+    return !!settings && !isErrorLike(settings) && !!settings.extensions && extensionID in settings.extensions
 }

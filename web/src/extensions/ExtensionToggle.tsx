@@ -6,7 +6,8 @@ import { Toggle } from '../../../shared/src/components/Toggle'
 import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import { SettingsCascade, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
+import { isExtensionAdded } from './extension/extension'
+import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
 interface Props extends SettingsCascadeProps, ExtensionsProps {
     /** The extension that this element is for. */
