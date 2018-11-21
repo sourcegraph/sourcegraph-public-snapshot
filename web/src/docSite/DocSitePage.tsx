@@ -5,7 +5,6 @@ import React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { isError } from 'util'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -75,12 +74,12 @@ export class DocSitePage extends React.PureComponent<Props, State> {
                 .pipe(
                     switchMap(path =>
                         queryDocPage(path).pipe(
-                            catchError(err => [asError(err)]),
+                            catchError(err => [asError(err) as ErrorLike]),
                             startWith(LOADING)
                         )
                     ),
                     tap(result => {
-                        if (result !== null && result !== LOADING && !isError(result)) {
+                        if (result !== null && result !== LOADING && !isErrorLike(result)) {
                             eventLogger.logViewEvent('Docs', { docs_title: result.title })
                         }
                     }),

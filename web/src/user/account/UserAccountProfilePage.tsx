@@ -2,18 +2,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
-import {
-    catchError,
-    concat,
-    distinctUntilChanged,
-    filter,
-    map,
-    mergeMap,
-    startWith,
-    switchMap,
-    tap,
-} from 'rxjs/operators'
+import { combineLatest, concat, Observable, Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, filter, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -144,7 +134,7 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                     }),
 
                     // In case the edited user is the current user, immediately reflect the changes in the UI.
-                    mergeMap(() => refreshAuthenticatedUser().pipe(concat([null])))
+                    mergeMap(() => concat(refreshAuthenticatedUser(), [null]))
                 )
                 .subscribe(undefined, this.handleError)
         )

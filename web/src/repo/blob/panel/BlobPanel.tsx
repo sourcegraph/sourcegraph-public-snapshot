@@ -3,11 +3,10 @@ import * as H from 'history'
 import { castArray, isEqual } from 'lodash'
 import marked from 'marked'
 import * as React from 'react'
-import { merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     bufferTime,
     catchError,
-    concat,
     delay,
     distinctUntilChanged,
     map,
@@ -341,9 +340,12 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         )
 
     private queryReferencesExternal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchExternalReferences(this.props as LSPTextDocumentPositionParams).pipe(
-            map(c => ({ loading: true, locations: c })),
-            concat([{ loading: false, locations: [] }]),
+        concat(
+            fetchExternalReferences(this.props as LSPTextDocumentPositionParams).pipe(
+                map(c => ({ loading: true, locations: c }))
+            ),
+            [{ loading: false, locations: [] }]
+        ).pipe(
             bufferTime(500), // reduce UI jitter
             scan<{ loading: boolean; locations: Location[] }[], { loading: boolean; locations: Location[] }>(
                 (cur, locs) => ({
