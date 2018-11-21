@@ -42,6 +42,17 @@ type Repo struct {
 	FreezeIndexedRevision bool
 }
 
+// ExternalService is a connection to an external service.
+type ExternalService struct {
+	ID          int64
+	Kind        string
+	DisplayName string
+	Config      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   *time.Time
+}
+
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
 	Language   string // e.g. "go"

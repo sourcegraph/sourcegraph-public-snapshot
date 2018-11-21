@@ -132,6 +132,22 @@ Referenced by:
 
 ```
 
+# Table "public.external_services"
+```
+    Column    |           Type           |                           Modifiers                            
+--------------+--------------------------+----------------------------------------------------------------
+ id           | bigint                   | not null default nextval('external_services_id_seq'::regclass)
+ kind         | text                     | not null
+ display_name | text                     | not null
+ config       | text                     | not null
+ created_at   | timestamp with time zone | not null default now()
+ updated_at   | timestamp with time zone | not null default now()
+ deleted_at   | timestamp with time zone | 
+Indexes:
+    "external_services_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.global_dep"
 ```
   Column  |  Type   | Modifiers 

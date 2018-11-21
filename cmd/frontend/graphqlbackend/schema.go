@@ -41,6 +41,10 @@ type Mutation {
     updateOrganization(id: ID!, displayName: String): Org!
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
+    # Adds a external service.
+    addExternalService(kind: ExternalServiceKind!, displayName: String!, config: String!): ExternalService!
+    # Updates a external service
+    updateExternalService(id: ID!, displayName: String, config: String): ExternalService!
     # Adds a repository on a code host that is already present in the site configuration. The name (which may
     # consist of one or more path components) of the repository must be recognized by an already configured code
     # host, or else Sourcegraph won't know how to clone it.
@@ -306,6 +310,26 @@ type Mutation {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomMutation!
+}
+
+# A new external service.
+input AddExternalServiceInput {
+    # The kind of the external service.
+    kind: ExternalServiceKind!
+    # The display name of the external service.
+    displayName: String!
+    # The JSON configuration of the external service.
+    config: String!
+}
+
+# Fields to update for an existing external service.
+input UpdateExternalServiceInput {
+    # The id of the external service to update.
+    id: ID!
+    # The updated display name, if provided.
+    displayName: String
+    # The updated config, if provided.
+    config: String
 }
 
 # A selection within a file.
@@ -626,6 +650,11 @@ type Query {
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
+    # Lists all external services.
+    externalServices(
+        # Returns the first n repositories from the list.
+        first: Int
+    ): ExternalServiceConnection!
     # List all repositories.
     repositories(
         # Returns the first n repositories from the list.
@@ -996,6 +1025,44 @@ type RefLocation {
     endLineNumber: Int!
     # The ending column.
     endColumn: Int!
+}
+
+# A list of external services.
+type ExternalServiceConnection {
+    # A list of external services.
+    nodes: [ExternalService!]!
+
+    # The total number of external services in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A specific kind of external service.
+enum ExternalServiceKind {
+    AWSCODECOMMIT
+    BITBUCKETSERVER
+    GITHUB
+    GITLAB
+    GITOLITE
+    PHABRICATOR
+}
+
+# A configured external service.
+type ExternalService {
+    # The external service's unique ID.
+    id: ID!
+    # The kind of external service.
+    kind: ExternalServiceKind!
+    # The display name of the external service.
+    displayName: String!
+    # The JSON configuration of the external service.
+    config: String!
+    # When the external service was created.
+    createdAt: String!
+    # When the external service was last updated.
+    updatedAt: String!
 }
 
 # A list of repositories.
