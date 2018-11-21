@@ -35,13 +35,7 @@ func init() {
 			mu.Lock()
 			defer mu.Unlock()
 
-			isEnabled := func() bool {
-				if exp := conf.Get().ExperimentalFeatures; exp != nil {
-					return exp.GitlabAuth
-				}
-				return false
-			}()
-			if !isEnabled {
+			if !conf.Get().ExperimentalFeatures.GitlabAuth {
 				new := map[schema.GitLabAuthProvider]auth.Provider{}
 				updates := make(map[auth.Provider]bool)
 				for c, p := range cur {
