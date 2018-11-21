@@ -1,3 +1,4 @@
 {
-  "extends": "@sourcegraph/tslint-config"
+  "extends": "@sourcegraph/tslint-config",
+  "linterOptions": { "exclude": ["node_modules/**"] }
 }

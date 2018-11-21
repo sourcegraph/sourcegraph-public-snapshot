@@ -1,6 +1,6 @@
 {
   "extends": ["@sourcegraph/tslint-config"],
-  "linterOptions": { "exclude": ["**/*.json"] },
+  "linterOptions": { "exclude": ["node_modules/**", "**/*.json"] },
   "rules": {
     "deprecation": {
       "severity": "warning"
