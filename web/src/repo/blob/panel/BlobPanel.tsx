@@ -19,8 +19,8 @@ import {
 } from 'rxjs/operators'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import {
     getDefinition,
     getHover,

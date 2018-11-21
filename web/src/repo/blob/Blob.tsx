@@ -16,7 +16,7 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLa
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/providers/decoration'
 import { TextDocumentDecoration } from '../../../../shared/src/api/protocol/plainTypes'
-import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'

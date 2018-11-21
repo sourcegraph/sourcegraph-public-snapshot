@@ -7,8 +7,8 @@ import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, tak
 import { isError } from 'util'
 import { parseRepoURI } from '../..'
 import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/errors'
-import { asError } from '../../../../../shared/src/errors'
+import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError } from '../../../../../shared/src/util/errors'
 import { Resizable } from '../../../components/Resizable'
 import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../RepoLink'

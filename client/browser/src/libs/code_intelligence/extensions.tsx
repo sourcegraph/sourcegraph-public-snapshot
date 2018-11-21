@@ -7,7 +7,7 @@ import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/p
 import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
 import { Controller as ClientController, createController } from '../../../../../shared/src/extensions/controller'
 import { Notifications } from '../../../../../shared/src/notifications/Notifications'
-import { ConfiguredSubject, SettingsCascade, SettingsCascadeOrError } from '../../../../../shared/src/settings'
+import { ConfiguredSubject, SettingsCascade, SettingsCascadeOrError } from '../../../../../shared/src/settings/settings'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'

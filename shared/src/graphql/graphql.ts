@@ -1,4 +1,4 @@
-import { createAggregateError } from '../errors'
+import { createAggregateError } from '../util/errors'
 import * as GQL from './schema'
 
 export const graphQLContent = Symbol('graphQLContent')

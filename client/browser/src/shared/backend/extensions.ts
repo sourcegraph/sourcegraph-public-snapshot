@@ -11,14 +11,14 @@ import { Context as ExtensionsContext } from '../../../../../shared/src/context'
 import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
 import { gql, graphQLContent } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { mutateSettings, UpdateExtensionSettingsArgs, updateSettings } from '../../../../../shared/src/settings/edit'
 import {
     gqlToCascade,
     mergeSettings,
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '../../../../../shared/src/settings'
-import { mutateSettings, UpdateExtensionSettingsArgs, updateSettings } from '../../../../../shared/src/settings/edit'
+} from '../../../../../shared/src/settings/settings'
 import storage, { StorageItems } from '../../browser/storage'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
 import { canFetchForURL } from '../util/context'

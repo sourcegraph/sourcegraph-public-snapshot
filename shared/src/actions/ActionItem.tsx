@@ -7,8 +7,8 @@ import { ActionContribution } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsContextProps } from '../context'
-import { asError, ErrorLike } from '../errors'
 import { ControllerProps } from '../extensions/controller'
+import { asError, ErrorLike } from '../util/errors'
 
 export interface ActionItemProps {
     /**

@@ -9,16 +9,16 @@ import {
     Context as ExtensionsContext,
     ExtensionsContextProps as GenericExtensionsContextProps,
 } from '../../../shared/src/context'
-import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
 import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { gql } from '../../../shared/src/graphql/graphql'
+import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import {
     gqlToCascade,
     Settings,
     SettingsCascadeProps as GenericSettingsCascadeProps,
-} from '../../../shared/src/settings'
-import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
+} from '../../../shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { requestGraphQL } from '../backend/graphql'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'

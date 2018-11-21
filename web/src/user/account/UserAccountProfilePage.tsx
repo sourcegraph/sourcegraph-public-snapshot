@@ -15,9 +15,9 @@ import {
     tap,
 } from 'rxjs/operators'
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '..'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/errors'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { refreshAuthenticatedUser } from '../../auth'
 import { UsernameInput } from '../../auth/SignInSignUpCommon'
 import { queryGraphQL } from '../../backend/graphql'

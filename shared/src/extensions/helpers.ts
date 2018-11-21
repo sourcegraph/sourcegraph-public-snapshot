@@ -1,10 +1,10 @@
 import { from, Observable, of, throwError } from 'rxjs'
 import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { Context } from '../context'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../errors'
 import { gql, graphQLContent } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
-import { SettingsCascadeOrError } from '../settings'
+import { SettingsCascadeOrError } from '../settings/settings'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { ConfiguredExtension, toConfiguredExtension } from './extension'
 
 const LOADING: 'loading' = 'loading'

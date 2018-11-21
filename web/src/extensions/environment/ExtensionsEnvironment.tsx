@@ -2,7 +2,7 @@ import { Environment } from '../../../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../../../shared/src/api/client/types/textDocument'
 import { WorkspaceRoot } from '../../../../shared/src/api/protocol/plainTypes'
 import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
-import { SettingsCascade } from '../../../../shared/src/settings'
+import { SettingsCascade } from '../../../../shared/src/settings/settings'
 
 /** React props or state representing the Sourcegraph extensions environment. */
 export interface ExtensionsEnvironmentProps {
