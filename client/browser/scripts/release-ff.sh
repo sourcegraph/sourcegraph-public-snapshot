@@ -13,6 +13,7 @@ for filename in $(ls build/web-ext); do
     gsutil cp build/web-ext/$filename gs://sourcegraph-for-firefox/$filename
     gsutil cp build/web-ext/$filename gs://sourcegraph-for-firefox/latest.xpi
     gsutil -m acl set -R -a public-read gs://sourcegraph-for-firefox/$filename
+    gsutil -m acl set -R -a public-read gs://sourcegraph-for-firefox/latest.xpi
 done
 
 gsutil ls gs://sourcegraph-for-firefox | xargs yarn ts-node scripts/build-updates-manifest.ts
