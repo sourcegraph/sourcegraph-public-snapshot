@@ -44,6 +44,7 @@ func (*discussionMailReplyTokens) Generate(ctx context.Context, userID int32, th
 	// like "foo+TOKEN@gmail.com", while still providing good security.
 	h := sha256.New()
 	io.Copy(h, io.LimitReader(cryptorand.Reader, 128)) // Using 128 bytes just to be on the safe side, but 32 bytes should be enough.
+	io.Copy(h, io.LimitReader(cryptorand.Reader, 128)) // Using 128 bytes just to be on the safe side, but 32 bytes should be enough.
 	token = fmt.Sprintf("%x", h.Sum(nil))
 
 	_, err = dbconn.Global.ExecContext(ctx, "INSERT INTO discussion_mail_reply_tokens(token, user_id, thread_id) VALUES($1, $2, $3)", token, userID, threadID)
