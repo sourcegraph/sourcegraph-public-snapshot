@@ -9,11 +9,12 @@ import (
 	"github.com/NYTimes/gziphandler"
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	internalauth "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
@@ -59,8 +60,8 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// Wrap in middleware.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
-	h = auth.OverrideAuthMiddleware(h)
-	h = auth.ForbidAllRequestsMiddleware(h)
+	h = internalauth.OverrideAuthMiddleware(h)
+	h = internalauth.ForbidAllRequestsMiddleware(h)
 	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
 	if hooks.PreAuthMiddleware != nil {
 		h = hooks.PreAuthMiddleware(h)

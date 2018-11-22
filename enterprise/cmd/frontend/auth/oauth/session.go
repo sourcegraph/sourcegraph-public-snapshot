@@ -6,7 +6,7 @@ import (
 	"time"
 
 	goauth2 "github.com/dghubble/gologin/oauth2"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"golang.org/x/oauth2"

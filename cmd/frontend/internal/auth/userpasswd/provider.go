@@ -3,7 +3,7 @@ package userpasswd
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

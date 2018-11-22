@@ -11,7 +11,7 @@ import (
 
 	"github.com/dghubble/gologin"
 	goauth2 "github.com/dghubble/gologin/oauth2"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
