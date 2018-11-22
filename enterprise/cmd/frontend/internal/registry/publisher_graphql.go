@@ -32,7 +32,7 @@ func extensionRegistryViewerPublishers(ctx context.Context) ([]graphqlbackend.Re
 	}
 	publishers = append(publishers, &registryPublisher{user: user})
 
-	orgs, err := db.Orgs.GetByUserID(ctx, user.SourcegraphID())
+	orgs, err := db.Orgs.GetByUserID(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (r *registryPublisher) ToOrg() (*graphqlbackend.OrgResolver, bool) { return
 func (r *registryPublisher) toDBRegistryPublisher() dbPublisher {
 	switch {
 	case r.user != nil:
-		return dbPublisher{UserID: r.user.SourcegraphID(), NonCanonicalName: r.user.Username()}
+		return dbPublisher{UserID: r.user.DatabaseID(), NonCanonicalName: r.user.Username()}
 	case r.org != nil:
 		return dbPublisher{OrgID: r.org.OrgID(), NonCanonicalName: r.org.Name()}
 	default:

@@ -1,6 +1,6 @@
 import FolderIcon from 'mdi-react/FolderIcon'
 import * as React from 'react'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { SymbolIcon } from '../../symbols/SymbolIcon'
 import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { basename, dirname } from '../../util/path'

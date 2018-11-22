@@ -1,8 +1,8 @@
 import * as H from 'history'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { CommandListPopoverButton } from '../../../../../shared/src/app/CommandList'
-import { Controller as ClientController } from '../../../../../shared/src/client/controller'
+import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
 import { Context as ExtensionsContext } from '../../../../../shared/src/context'
+import { Controller as ClientController } from '../../../../../shared/src/extensions/controller'
 
 import * as React from 'react'
 import { render } from 'react-dom'

@@ -3,8 +3,8 @@ import InformationVariantIcon from 'mdi-react/InformationVariantIcon'
 import * as React from 'react'
 import { throwError } from 'rxjs'
 import { catchError, map, tap } from 'rxjs/operators'
-import { asError } from '../../../../../shared/src/errors'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { asError } from '../../../../../shared/src/util/errors'
 import { createThread } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { parseHash } from '../../../util/url'
@@ -85,7 +85,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                     endCharacter,
 
                     // TODO(slimsag:discussions): Even though these fields are declared as
-                    // nullable in the GraphQL schema ("lines: [String!]"), graphqlschema.ts
+                    // nullable in the GraphQL schema ("lines: [String!]"), graphql/schema.ts
                     // not generate the proper nullable type, so we must cast to any.
                     //
                     // See https://github.com/sourcegraph/sourcegraph/issues/13098

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 
 type WithOptionalAuthenticatedUser<P extends object> = Pick<P, Exclude<keyof P, 'authenticatedUser'>> & {
     authenticatedUser: GQL.IUser | null

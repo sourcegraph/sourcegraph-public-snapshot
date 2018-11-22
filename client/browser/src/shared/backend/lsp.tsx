@@ -6,7 +6,7 @@ import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { TextDocumentIdentifier } from '../../../../../shared/src/api/client/types/textDocument'
 import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
 import { Definition } from '../../../../../shared/src/api/protocol/plainTypes'
-import { Controller } from '../../../../../shared/src/client/controller'
+import { Controller } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import {
     AbsoluteRepo,

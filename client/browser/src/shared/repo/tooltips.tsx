@@ -2,6 +2,7 @@ import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import * as _ from 'lodash'
 import marked from 'marked'
 import { MarkupContent } from 'sourcegraph'
+import { Key } from 'ts-key-enum'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, parseBrowserRepoURL } from '.'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { getModeFromPath } from '../../../../../shared/src/languages'
@@ -152,10 +153,6 @@ export function isTooltipVisible(ctx: AbsoluteRepoFile, isBase: boolean): boolea
         tooltip.classList.contains(ctx.filePath) &&
         tooltip.style.visibility === 'visible'
     )
-}
-
-export function isTooltipDocked(): boolean {
-    return tooltip && tooltip.classList.contains('docked')
 }
 
 export function isOtherFileTooltipVisible(ctx: AbsoluteRepoFile): boolean {
@@ -322,7 +319,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
 }
 
 window.addEventListener('keyup', (e: KeyboardEvent) => {
-    if (e.keyCode === 27) {
+    if (e.key === Key.Escape) {
         hideTooltip()
     }
 })
@@ -471,7 +468,7 @@ function consumeNextToken(txt: string): string {
     return txt[0]
 }
 
-export function getPreDataContainer(target: HTMLElement): HTMLPreElement | undefined {
+function getPreDataContainer(target: HTMLElement): HTMLPreElement | undefined {
     if (target.tagName === 'PRE') {
         return target as HTMLPreElement
     }
@@ -503,6 +500,6 @@ export function getTableDataCell(target: HTMLElement): HTMLTableDataCellElement 
     }
 }
 
-export function isInsideCodeContainer(target: HTMLElement): boolean {
+function isInsideCodeContainer(target: HTMLElement): boolean {
     return Boolean(getPreDataContainer(target) || getTableDataCell(target))
 }

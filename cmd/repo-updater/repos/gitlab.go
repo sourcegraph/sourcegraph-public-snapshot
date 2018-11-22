@@ -226,7 +226,7 @@ func newGitLabConnection(config *schema.GitLabConnection) (*gitlabConnection, er
 	return &gitlabConnection{
 		config:  config,
 		baseURL: baseURL,
-		client:  gitlab.NewClient(baseURL, config.Token, transport),
+		client:  gitlab.NewClient(baseURL, config.Token, "", transport),
 	}, nil
 }
 

@@ -1,54 +1,10 @@
 import { Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
-import { AbsoluteRepoFile, makeRepoURI, parseBrowserRepoURL } from '.'
+import { AbsoluteRepoFile, makeRepoURI } from '.'
 import { getContext } from '../backend/context'
 import { CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError } from '../backend/errors'
 import { queryGraphQL } from '../backend/graphql'
-import { memoizeAsync, memoizeObservable } from '../util/memoize'
-
-/**
- * @return Observable that emits the parent commit ID for a given commit ID.
- *         Errors with a `CloneInProgressError` if the repo is still being cloned.
- */
-export const resolveParentRev = memoizeObservable(
-    (ctx: { repoPath: string; rev: string }): Observable<string> =>
-        queryGraphQL({
-            ctx: getContext({ repoKey: ctx.repoPath }),
-            request: `query ResolveParentRev($repoPath: String!, $rev: String!) {
-                repository(name: $repoPath) {
-                    mirrorInfo {
-                        cloneInProgress
-                    }
-                    commit(rev: $rev) {
-                        parents {
-                            oid
-                        }
-                    }
-                }
-            }`,
-            variables: { ...ctx, rev: ctx.rev || '' },
-        }).pipe(
-            map(result => {
-                if (!result.data) {
-                    throw new Error('invalid response received from graphql endpoint')
-                }
-                if (!result.data.repository || !result.data.repository.commit) {
-                    throw new RepoNotFoundError(ctx.repoPath)
-                }
-                if (result.data.repository.mirrorInfo.cloneInProgress) {
-                    throw new CloneInProgressError(ctx.repoPath)
-                }
-                if (!result.data.repository.commit) {
-                    throw new RevNotFoundError(ctx.rev)
-                }
-                if (!result.data.repository.commit.parents) {
-                    throw new RevNotFoundError(ctx.rev)
-                }
-                return result.data.repository.commit.parents[0].oid
-            })
-        ),
-    makeRepoURI
-)
+import { memoizeObservable } from '../util/memoize'
 
 /**
  * @return Observable that emits the repo URL
@@ -147,33 +103,6 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
         )
 }
 
-export const listAllSearchResults = memoizeAsync(
-    (ctx: { query: string }): Promise<number> =>
-        queryGraphQL({
-            ctx: getContext({ repoKey: '' }),
-            request: `query Search($query: String!) {
-                search(query: $query) {
-                    results {
-                        resultCount
-                    }
-                }
-            }`,
-            variables: ctx,
-            retry: false,
-        })
-            .toPromise()
-            .then(result => {
-                if (!result.data || !result.data.search || !result.data.search.results) {
-                    throw new Error('invalid response received from graphql endpoint')
-                }
-                return result.data.search.results.resultCount
-            }),
-    () => {
-        const { repoPath } = parseBrowserRepoURL(window.location.href, window)
-        return `${repoPath}:${window.location.search}`
-    }
-)
-
 const trimRepoPath = ({ repoPath, ...rest }) => ({ ...rest, repoPath: repoPath.replace(/.git$/, '') })
 
 export const fetchBlobContentLines = memoizeObservable(
@@ -192,7 +121,7 @@ export const fetchBlobContentLines = memoizeObservable(
             variables: trimRepoPath(ctx),
             retry: false,
         }).pipe(
-            map(({ data, errors }) => {
+            map(({ data }) => {
                 if (
                     !data ||
                     !data.repository ||

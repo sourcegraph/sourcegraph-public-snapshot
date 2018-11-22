@@ -1,5 +1,5 @@
 import * as React from 'react'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { SingleValueCard } from '../../components/SingleValueCard'
 import { numberWithCommas } from '../../util/strings'
 import { formatUserCount } from '../productSubscription/helpers'

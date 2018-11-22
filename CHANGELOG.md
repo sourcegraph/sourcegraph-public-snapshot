@@ -11,6 +11,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
 - Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`.
+- Authentication via GitLab is now supported. To enable, add an item to the `auth.providers` list with `type: "gitlab"`.
 - GitHub repository permissions are supported if authentication via GitHub is enabled. See the
   documentation for the `authorization` field of the `GitHubConnection` configuration.
 - The repository settings mirroring page now shows when a repo is next scheduled for an update (requires experiment `"updateScheduler2": "enabled"`).
@@ -18,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 - When using HTTP header authentication, [`stripUsernameHeaderPrefix`](https://docs.sourcegraph.com/admin/auth/#username-header-prefixes) field lets an admin specify a prefix to strip from the HTTP auth header when converting the header value to a username.
 - Sourcegraph extensions whose title begins with `WIP:` or `[WIP]` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/creating_and_publishing#work-in-progress-wip-extensions) and are indicated as such to avoid users accidentally using them.
 - Information about user survey submissions and a chart showing weekly active users is now displayed on the site admin Overview page.
+- A new GraphQL API field `UserEmail.isPrimary` was added that indicates whether an email is the user's primary email.
 
 ### Changed
 

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { gql } from '../../../../../shared/src/graphql'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ProductSubscriptionLabel } from './ProductSubscriptionLabel'
 
 export const productSubscriptionFragment = gql`

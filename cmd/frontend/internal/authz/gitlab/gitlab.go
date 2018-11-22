@@ -83,7 +83,7 @@ type GitLabAuthzProviderOp struct {
 
 func NewProvider(op GitLabAuthzProviderOp) *GitLabAuthzProvider {
 	p := &GitLabAuthzProvider{
-		client:            gitlab.NewClient(op.BaseURL, op.SudoToken, nil),
+		client:            gitlab.NewClient(op.BaseURL, op.SudoToken, "", nil),
 		clientURL:         op.BaseURL,
 		codeHost:          gitlab.NewCodeHost(op.BaseURL),
 		cache:             op.MockCache,

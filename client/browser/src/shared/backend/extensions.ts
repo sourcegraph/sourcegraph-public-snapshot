@@ -9,16 +9,16 @@ import { MessageTransports } from '../../../../../shared/src/api/protocol/jsonrp
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { Context as ExtensionsContext } from '../../../../../shared/src/context'
 import { ConfiguredExtension } from '../../../../../shared/src/extensions/extension'
-import { gql, graphQLContent } from '../../../../../shared/src/graphql'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import { gql, graphQLContent } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { mutateSettings, UpdateExtensionSettingsArgs, updateSettings } from '../../../../../shared/src/settings/edit'
 import {
     gqlToCascade,
     mergeSettings,
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '../../../../../shared/src/settings'
-import { mutateSettings, UpdateExtensionSettingsArgs, updateSettings } from '../../../../../shared/src/settings/edit'
+} from '../../../../../shared/src/settings/settings'
 import storage, { StorageItems } from '../../browser/storage'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
 import { canFetchForURL } from '../util/context'
@@ -231,6 +231,10 @@ export const gqlSettingsCascade: Observable<Pick<GQL.ISettingsCascade, 'subjects
             retry: false,
         }).pipe(
             map(({ data, errors }) => {
+                // Suppress deprecation warnings because our use of these deprecated fields is intentional (see
+                // tsdoc comment).
+                //
+                // tslint:disable deprecation
                 if (!data || !data.viewerConfiguration) {
                     throw createAggregateError(errors)
                 }
@@ -245,6 +249,7 @@ export const gqlSettingsCascade: Observable<Pick<GQL.ISettingsCascade, 'subjects
                     subjects: data.viewerConfiguration.subjects,
                     final: data.viewerConfiguration.merged.contents,
                 }
+                // tslint:enable deprecation
             })
         )
     )

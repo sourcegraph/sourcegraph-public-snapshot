@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
-import { ExtensionStatusPopover } from '../../../../../shared/src/app/ExtensionStatus'
-import { Controller as ClientController } from '../../../../../shared/src/client/controller'
+import { Controller as ClientController } from '../../../../../shared/src/extensions/controller'
+import { ExtensionStatusPopover } from '../../../../../shared/src/extensions/ExtensionStatus'
 import { sourcegraphUrl } from '../util/context'
 import { ShortcutProvider } from './ShortcutProvider'
 

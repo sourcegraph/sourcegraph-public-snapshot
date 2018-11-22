@@ -3,9 +3,9 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { combineLatest, of, Subject, Subscription } from 'rxjs'
-import { catchError, concat, map, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import { combineLatest, concat, of, Subject, Subscription } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -82,18 +82,17 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                             })
                             queryUpdates.next(matchedScope.value)
                             if (matchedScope.value.includes('repo:') || matchedScope.value.includes('repogroup:')) {
-                                return of({
-                                    ...matchedScope,
-                                    markdownDescription,
-                                }).pipe(
-                                    concat(
-                                        fetchReposByQuery(matchedScope.value).pipe(
-                                            map(repositories => ({ repositories, errorMessage: undefined })),
-                                            catchError(err => {
-                                                console.error(err)
-                                                return [{ errorMessage: err.message, repositories: [], first: 0 }]
-                                            })
-                                        )
+                                return concat(
+                                    of({
+                                        ...matchedScope,
+                                        markdownDescription,
+                                    }),
+                                    fetchReposByQuery(matchedScope.value).pipe(
+                                        map(repositories => ({ repositories, errorMessage: undefined })),
+                                        catchError(err => {
+                                            console.error(err)
+                                            return [{ errorMessage: err.message, repositories: [], first: 0 }]
+                                        })
                                     )
                                 )
                             }

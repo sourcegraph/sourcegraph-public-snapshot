@@ -203,21 +203,63 @@ func main() {
 		return
 	}
 
-	if branch == "bext/release" {
+	addBrowserExtensionReleaseSteps := func() {
+		// // Run e2e tests
+		// pipeline.AddStep(":chromium:",
+		// 	bk.Env("FORCE_COLOR", "1"),
+		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		// 	bk.Env("DISPLAY", ":99"),
+		// 	bk.Cmd("Xvfb :99 &"),
+		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		// 	bk.Cmd("pushd client/browser"),
+		// 	bk.Cmd("yarn -s run build"),
+		// 	bk.Cmd("yarn -s run test:ci"),
+		// 	bk.Cmd("yarn -s run test:e2e-ci --retries 5"),
+		// 	bk.Cmd("popd"),
+		// 	bk.ArtifactPaths("./puppeteer/*.png"),
+		// )
+
+		// pipeline.AddWait()
+
+		// // Run e2e tests with extensions enabled
+		// //
+		// // TODO: Remove this step when extensions are enabled by default
+		// pipeline.AddStep(":chromium:",
+		// 	bk.Env("FORCE_COLOR", "1"),
+		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		// 	bk.Env("DISPLAY", ":99"),
+		// 	bk.Cmd("Xvfb :99 &"),
+		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		// 	bk.Cmd("pushd client/browser"),
+		// 	bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
+		// 	bk.Cmd("yarn -s run test:ci"),
+		// 	bk.Cmd("yarn -s run test:e2e-ci --retries 5"),
+		// 	bk.Cmd("popd"),
+		// 	bk.ArtifactPaths("./puppeteer/*.png"),
+		// )
+
+		// pipeline.AddWait()
+
+		// Release to the Chrome Webstore
 		pipeline.AddStep(":chrome:",
 			bk.Env("FORCE_COLOR", "1"),
-			bk.Env("DISPLAY", ":99"),
-			bk.Cmd("Xvfb :99 &"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s run test:ci"),
-			bk.Cmd("yarn -s run test:e2e"),
-			bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
-			bk.Cmd("yarn -s run test:ci"),
-			bk.Cmd("yarn -s run test:e2e"),
-			bk.Cmd("yarn -s run release"),
+			bk.Cmd("yarn release:chrome"),
 			bk.Cmd("popd"))
+
+		// Build and self sign the FF extension and upload it to ...
+		pipeline.AddStep(":firefox:",
+			bk.Env("FORCE_COLOR", "1"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd client/browser"),
+			bk.Cmd("yarn release:ff"),
+			bk.Cmd("popd"))
+	}
+
+	if branch == "bext/release" {
+		addBrowserExtensionReleaseSteps()
 		return
 	}
 

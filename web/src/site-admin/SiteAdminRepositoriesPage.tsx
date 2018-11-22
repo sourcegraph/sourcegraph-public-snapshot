@@ -10,7 +10,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import {
     FilteredConnection,
     FilteredConnectionFilter,

@@ -7,8 +7,8 @@ import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom }
 import { parseBrowserRepoURL } from '.'
 import { makeRepoURI, ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import { WorkspaceRoot } from '../../../shared/src/api/protocol/plainTypes'
-import { ErrorLike, isErrorLike } from '../../../shared/src/errors'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import {

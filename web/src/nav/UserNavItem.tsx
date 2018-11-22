@@ -2,7 +2,7 @@ import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { UserAvatar } from '../user/UserAvatar'
 
 interface Props {

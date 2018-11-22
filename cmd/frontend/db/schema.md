@@ -132,6 +132,22 @@ Referenced by:
 
 ```
 
+# Table "public.external_services"
+```
+    Column    |           Type           |                           Modifiers                            
+--------------+--------------------------+----------------------------------------------------------------
+ id           | bigint                   | not null default nextval('external_services_id_seq'::regclass)
+ kind         | text                     | not null
+ display_name | text                     | not null
+ config       | text                     | not null
+ created_at   | timestamp with time zone | not null default now()
+ updated_at   | timestamp with time zone | not null default now()
+ deleted_at   | timestamp with time zone | 
+Indexes:
+    "external_services_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.global_dep"
 ```
   Column  |  Type   | Modifiers 
@@ -147,6 +163,17 @@ Indexes:
     "global_dep_repo_id" btree (repo_id)
 Foreign-key constraints:
     "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.global_state"
+```
+   Column    |  Type   |       Modifiers        
+-------------+---------+------------------------
+ site_id     | uuid    | not null
+ initialized | boolean | not null default false
+Indexes:
+    "global_state_pkey" PRIMARY KEY, btree (site_id)
 
 ```
 
@@ -464,17 +491,6 @@ Foreign-key constraints:
  created_at         | timestamp with time zone | 
  user_id            | integer                  | 
  author_user_id     | integer                  | 
-
-```
-
-# Table "public.site_config"
-```
-   Column    |  Type   |       Modifiers        
--------------+---------+------------------------
- site_id     | uuid    | not null
- initialized | boolean | not null default false
-Indexes:
-    "site_config_pkey" PRIMARY KEY, btree (site_id)
 
 ```
 

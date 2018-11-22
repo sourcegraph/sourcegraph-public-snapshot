@@ -1,10 +1,17 @@
 import * as assert from 'assert'
-import { pickBy } from 'lodash'
 import * as _repo from '.'
 import { createTestBundle } from '../util/unit-test-utils'
 
-/** Remove undefined values from an object */
-const compact = (obj: any) => pickBy(obj, (val: any) => val !== undefined)
+/**
+ * Asserts deep object equality using node's assert.deepStrictEqual, except it (1) ignores differences in the
+ * prototype (because that causes 2 object literals to fail the test) and (2) treats undefined properties as
+ * missing.
+ */
+function assertDeepStrictEqual(actual: any, expected: any, message?: string): void {
+    actual = JSON.parse(JSON.stringify(actual))
+    expected = JSON.parse(JSON.stringify(expected))
+    assert.deepStrictEqual(actual, expected, message)
+}
 
 describe('repo/index', () => {
     let repo: typeof _repo
@@ -17,14 +24,14 @@ describe('repo/index', () => {
     describe('parseRepoURI', () => {
         it('should parse repo', () => {
             const parsed = repo.parseRepoURI('git://github.com/gorilla/mux')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
             })
         })
 
         it('should parse repo with rev', () => {
             const parsed = repo.parseRepoURI('git://github.com/gorilla/mux?branch')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
             })
@@ -32,7 +39,7 @@ describe('repo/index', () => {
 
         it('should parse repo with commitID', () => {
             const parsed = repo.parseRepoURI('git://github.com/gorilla/mux?24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
                 commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
@@ -41,7 +48,7 @@ describe('repo/index', () => {
 
         it('should parse repo with rev and file', () => {
             const parsed = repo.parseRepoURI('git://github.com/gorilla/mux?branch#mux.go')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -50,7 +57,7 @@ describe('repo/index', () => {
 
         it('should parse repo with rev and file and line', () => {
             const parsed = repo.parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -63,7 +70,7 @@ describe('repo/index', () => {
 
         it('should parse repo with rev and file and position', () => {
             const parsed = repo.parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3,5')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -76,7 +83,7 @@ describe('repo/index', () => {
 
         it('should parse repo with rev and file and range', () => {
             const parsed = repo.parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3,5-6,9')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -97,27 +104,27 @@ describe('repo/index', () => {
     describe('parseBrowserRepoURL', () => {
         it('should parse github repo', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/github.com/gorilla/mux')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
             })
         })
         it('should parse repo', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/gorilla/mux')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'gorilla/mux',
             })
         })
 
         it('should parse github repo with rev', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/github.com/gorilla/mux@branch')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
             })
         })
         it('should parse repo with rev', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/gorilla/mux@branch')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'gorilla/mux',
                 rev: 'branch',
             })
@@ -125,14 +132,14 @@ describe('repo/index', () => {
 
         it('should parse github repo with multi-path-part rev', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/github.com/gorilla/mux@foo/baz/bar')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'foo/baz/bar',
             })
             const parsed2 = repo.parseBrowserRepoURL(
                 'https://sourcegraph.com/github.com/gorilla/mux@foo/baz/bar/-/blob/mux.go'
             )
-            assert.deepEqual(compact(parsed2), {
+            assertDeepStrictEqual(parsed2, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'foo/baz/bar',
                 filePath: 'mux.go',
@@ -140,12 +147,12 @@ describe('repo/index', () => {
         })
         it('should parse repo with multi-path-part rev', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/gorilla/mux@foo/baz/bar')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'gorilla/mux',
                 rev: 'foo/baz/bar',
             })
             const parsed2 = repo.parseBrowserRepoURL('https://sourcegraph.com/gorilla/mux@foo/baz/bar/-/blob/mux.go')
-            assert.deepEqual(compact(parsed2), {
+            assertDeepStrictEqual(parsed2, {
                 repoPath: 'gorilla/mux',
                 rev: 'foo/baz/bar',
                 filePath: 'mux.go',
@@ -156,7 +163,7 @@ describe('repo/index', () => {
             const parsed = repo.parseBrowserRepoURL(
                 'https://sourcegraph.com/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7'
             )
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
                 commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
@@ -166,7 +173,7 @@ describe('repo/index', () => {
             const parsed = repo.parseBrowserRepoURL(
                 'https://sourcegraph.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7'
             )
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'gorilla/mux',
                 rev: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
                 commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
@@ -177,7 +184,7 @@ describe('repo/index', () => {
             const parsed = repo.parseBrowserRepoURL(
                 'https://sourcegraph.com/github.com/gorilla/mux@branch/-/blob/mux.go'
             )
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -185,7 +192,7 @@ describe('repo/index', () => {
         })
         it('should parse repo with rev and file', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/gorilla/mux@branch/-/blob/mux.go')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -196,7 +203,7 @@ describe('repo/index', () => {
             const parsed = repo.parseBrowserRepoURL(
                 'https://sourcegraph.com/github.com/gorilla/mux@branch/-/blob/mux.go#L3'
             )
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -208,7 +215,7 @@ describe('repo/index', () => {
         })
         it('should parse repo with rev and file and line', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/gorilla/mux@branch/-/blob/mux.go#L3')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -223,7 +230,7 @@ describe('repo/index', () => {
             const parsed = repo.parseBrowserRepoURL(
                 'https://sourcegraph.com/github.com/gorilla/mux@branch/-/blob/mux.go#L3:5'
             )
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -235,7 +242,7 @@ describe('repo/index', () => {
         })
         it('should parse repo with rev and file and position', () => {
             const parsed = repo.parseBrowserRepoURL('https://sourcegraph.com/gorilla/mux@branch/-/blob/mux.go#L3:5')
-            assert.deepEqual(compact(parsed), {
+            assertDeepStrictEqual(parsed, {
                 repoPath: 'gorilla/mux',
                 rev: 'branch',
                 filePath: 'mux.go',
@@ -252,7 +259,7 @@ describe('repo/index', () => {
             const uri = repo.makeRepoURI({
                 repoPath: 'github.com/gorilla/mux',
             })
-            assert.deepEqual(uri, 'git://github.com/gorilla/mux')
+            assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux')
         })
 
         it('should make repo with rev', () => {
@@ -260,7 +267,7 @@ describe('repo/index', () => {
                 repoPath: 'github.com/gorilla/mux',
                 rev: 'branch',
             })
-            assert.deepEqual(uri, 'git://github.com/gorilla/mux?branch')
+            assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch')
         })
 
         it('should make repo with commitID', () => {
@@ -269,7 +276,7 @@ describe('repo/index', () => {
                 rev: 'branch',
                 commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
             })
-            assert.deepEqual(uri, 'git://github.com/gorilla/mux?24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
+            assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
         })
 
         it('should make repo with rev and file', () => {
@@ -278,7 +285,7 @@ describe('repo/index', () => {
                 rev: 'branch',
                 filePath: 'mux.go',
             })
-            assert.deepEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go')
+            assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go')
         })
 
         it('should make repo with rev and file and line', () => {
@@ -291,7 +298,7 @@ describe('repo/index', () => {
                     character: 0,
                 },
             })
-            assert.deepEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go:3')
+            assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go:3')
         })
 
         it('should make repo with rev and file and position', () => {
@@ -304,7 +311,7 @@ describe('repo/index', () => {
                     character: 5,
                 },
             })
-            assert.deepEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go:3,5')
+            assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go:3,5')
         })
     })
 })
