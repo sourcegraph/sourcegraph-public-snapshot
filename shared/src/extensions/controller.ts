@@ -57,8 +57,6 @@ export interface ExtensionsControllerProps {
 /**
  * Filter the environment to omit extensions that should not be activated (based on their manifest's
  * activationEvents).
- *
- * @template CC settings cascade type
  */
 function environmentFilter(
     nextEnvironment: Environment<ConfiguredExtension, SettingsCascade>
