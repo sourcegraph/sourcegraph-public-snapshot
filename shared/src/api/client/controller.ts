@@ -11,7 +11,6 @@ import {
     ShowMessageRequestParams,
 } from '../protocol'
 import { Connection, createConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
-import { BrowserConsoleTracer, Trace } from '../protocol/jsonrpc2/trace'
 import { isEqual } from '../util'
 import { ClientCodeEditor } from './api/codeEditor'
 import { ClientCommands } from './api/commands'
@@ -286,16 +285,6 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
                 )
             )
         )
-    }
-
-    public set trace(value: Trace) {
-        for (const client of this._clientEntries.value) {
-            client.connection
-                .then(connection => {
-                    connection.trace(value, new BrowserConsoleTracer(client.key.id))
-                })
-                .catch(() => void 0)
-        }
     }
 
     public unsubscribe(): void {

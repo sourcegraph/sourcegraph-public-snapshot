@@ -5,7 +5,7 @@ import { Environment } from '../api/client/environment'
 import { ExecuteCommandParams } from '../api/client/providers/command'
 import { Contributions, MessageType } from '../api/protocol'
 import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
-import { BrowserConsoleTracer, Trace } from '../api/protocol/jsonrpc2/trace'
+import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands, updateConfiguration } from '../commands/commands'
 import { Context } from '../context'
 import { Notification } from '../notifications/notification'
@@ -143,7 +143,7 @@ export function createController(
         const traceEnabled = localStorage.getItem(ExtensionStatus.TRACE_STORAGE_KEY) !== null
         for (const e of entries) {
             e.connection
-                .then(c => c.trace(traceEnabled ? Trace.Verbose : Trace.Off, new BrowserConsoleTracer(e.key.id)))
+                .then(c => c.trace(traceEnabled ? new BrowserConsoleTracer(e.key.id) : null))
                 .catch(err => console.error(err))
         }
     })
