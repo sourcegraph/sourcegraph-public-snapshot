@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -68,14 +69,14 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(overrideSecretHeader, overrideSecret)
 		var calledMock bool
-		MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
+		auth.MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
 			calledMock = true
 			if want := defaultUsername; u.Username != want {
 				t.Errorf("got %q, want %q", u.Username, want)
 			}
 			return 1, nil
 		}
-		defer func() { MockCreateOrUpdateUser = nil }()
+		defer func() { auth.MockCreateOrUpdateUser = nil }()
 		db.Mocks.Users.SetIsSiteAdmin = func(int32, bool) error { return nil }
 		defer func() { db.Mocks = db.MockStores{} }()
 		handler.ServeHTTP(rr, req)
@@ -95,14 +96,14 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		req.Header.Set(overrideSecretHeader, overrideSecret)
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
 		var calledMock bool
-		MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
+		auth.MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
 			calledMock = true
 			if a.ServiceType == "override" && a.AccountID == defaultUsername {
 				return 1, nil
 			}
 			return 0, errors.New("x")
 		}
-		defer func() { MockCreateOrUpdateUser = nil }()
+		defer func() { auth.MockCreateOrUpdateUser = nil }()
 		db.Mocks.Users.SetIsSiteAdmin = func(int32, bool) error { return nil }
 		defer func() { db.Mocks = db.MockStores{} }()
 		handler.ServeHTTP(rr, req)

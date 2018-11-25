@@ -21,8 +21,8 @@ import (
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
@@ -189,8 +189,8 @@ func TestMiddleware(t *testing.T) {
 
 	mockGetProviderValue = &provider{config: *config}
 	defer func() { mockGetProviderValue = nil }()
-	auth.SetMockProviders([]auth.Provider{mockGetProviderValue})
-	defer func() { auth.SetMockProviders(nil) }()
+	auth.MockProviders = []auth.Provider{mockGetProviderValue}
+	defer func() { auth.MockProviders = nil }()
 
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
@@ -200,13 +200,13 @@ func TestMiddleware(t *testing.T) {
 	// Mock user
 	mockedExternalID := "testuser_id"
 	const mockedUserID = 123
-	auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
+	auth.MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
 		if a.ServiceType == "saml" && a.ServiceID == idpServer.IDP.MetadataURL.String() && a.ClientID == "http://example.com/.auth/saml/metadata" && a.AccountID == mockedExternalID {
 			return mockedUserID, nil
 		}
 		return 0, fmt.Errorf("account %v not found in mock", a)
-	})
-	defer func() { auth.SetMockCreateOrUpdateUser(nil) }()
+	}
+	defer func() { auth.MockCreateOrUpdateUser = nil }()
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()

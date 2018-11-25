@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -34,7 +35,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 				username = defaultUsername
 			}
 
-			userID, safeErrMsg, err := CreateOrUpdateUser(r.Context(), db.NewUser{
+			userID, safeErrMsg, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{
 				Username:        username,
 				Email:           username + "+override@example.com",
 				EmailIsVerified: true,
