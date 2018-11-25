@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
@@ -30,7 +30,7 @@ var Middleware = &auth.Middleware{
 // site config.
 //
 // TESTING: Use the testproxy test program to test HTTP auth proxy behavior. For example, run `go
-// run cmd/frontend/external/auth/httpheader/testproxy.go -username=alice` then go to
+// run cmd/frontend/auth/httpheader/testproxy.go -username=alice` then go to
 // http://localhost:4080. See `-h` for flag help.
 //
 // 🚨 SECURITY

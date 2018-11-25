@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"

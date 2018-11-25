@@ -3,8 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 )
 
 func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnectionResolver, error) {

@@ -11,7 +11,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
