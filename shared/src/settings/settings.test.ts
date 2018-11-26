@@ -38,9 +38,7 @@ const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContent
     latestSettings: { id: 3, contents: '.' },
 }
 
-const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([
-    new Error('Configuration parse error, code: 0 (offset: 0, length: 1)'),
-])
+const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([new Error('parse error (code: 0, offset: 0, length: 1)')])
 
 describe('gqlToCascade', () => {
     it('converts a value', () =>
