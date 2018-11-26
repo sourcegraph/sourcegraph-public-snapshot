@@ -318,6 +318,8 @@ github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd h1:wxP7dU7tN
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd/go.mod h1:Dl+4tLnKopzymgEhEZCi6/KSIZPFBe1rvoKMxCGh0Ms=
 github.com/sourcegraph/godockerize v0.0.0-20181102001209-f9c9d82c8d1c h1:0D6Kdy5X2sdLmGSrg6sOgA9xuWLBi4pa6f55Igu6fmA=
 github.com/sourcegraph/godockerize v0.0.0-20181102001209-f9c9d82c8d1c/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
+github.com/sourcegraph/godockerize v0.0.0-20181126200657-4f825419611b h1:EuY/1gvLCQi/T/L9J5o6+yUe5NFRPMxzNXxc/hp7eNU=
+github.com/sourcegraph/godockerize v0.0.0-20181126200657-4f825419611b/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8 h1:K7hzuWsJGoU8ILHJzrXxsuvXvLHpP/g4iUk7VFj2lY8=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8/go.mod h1:0VfoEApmSPgPhnePllwhrB4vwCUkI0K0w8aueOgoJQI=
 github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d h1:FxF0pen6r1WOqbm4kVDR3JV078HfPz65inWcMh1aVQI=
