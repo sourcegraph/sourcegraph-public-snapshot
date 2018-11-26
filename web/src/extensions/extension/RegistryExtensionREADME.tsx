@@ -1,13 +1,13 @@
 import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
+import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { Markdown } from '../../components/Markdown'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
 const PublishNewManifestAlert: React.FunctionComponent<{
-    extension: ConfiguredExtension
+    extension: ConfiguredRegistryExtension
     text: string
     buttonLabel: string
     alertClass: 'alert-info' | 'alert-danger'
@@ -27,7 +27,7 @@ const PublishNewManifestAlert: React.FunctionComponent<{
 )
 
 export const ExtensionREADME: React.FunctionComponent<{
-    extension: ConfiguredExtension
+    extension: ConfiguredRegistryExtension
 }> = ({ extension }) => {
     if (!extension.rawManifest) {
         return <ExtensionNoManifestAlert extension={extension} />

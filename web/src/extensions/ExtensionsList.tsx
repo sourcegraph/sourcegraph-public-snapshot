@@ -13,7 +13,7 @@ import {
     takeUntil,
     withLatestFrom,
 } from 'rxjs/operators'
-import { ConfiguredExtension, toConfiguredExtensions } from '../../../shared/src/extensions/extension'
+import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
 import { viewerConfiguredExtensions } from '../../../shared/src/extensions/helpers'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -70,7 +70,7 @@ const LOADING: 'loading' = 'loading'
 
 interface ExtensionsResult {
     /** The configured extensions. */
-    extensions: ConfiguredExtension<GQL.IRegistryExtension>[]
+    extensions: ConfiguredRegistryExtension<GQL.IRegistryExtension>[]
 
     /** An error message that should be displayed to the user (in addition to the configured extensions). */
     error: string | null
@@ -290,7 +290,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 )
             ),
             map(({ registryExtensions, error }) => ({
-                extensions: toConfiguredExtensions(registryExtensions),
+                extensions: registryExtensions.map(x => toConfiguredRegistryExtension(x)),
                 error,
             }))
         )

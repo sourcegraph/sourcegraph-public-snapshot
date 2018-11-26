@@ -2,7 +2,7 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
+import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsSubject } from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -15,7 +15,7 @@ import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionToggle } from './ExtensionToggle'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps {
-    node: ConfiguredExtension<GQL.IRegistryExtension>
+    node: ConfiguredRegistryExtension<GQL.IRegistryExtension>
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void
 }

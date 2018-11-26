@@ -5,7 +5,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
-import { ConfiguredExtension, toConfiguredExtensions } from '../../../../shared/src/extensions/extension'
+import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -68,7 +68,7 @@ export interface ExtensionAreaProps extends ExtensionsAreaRouteContext, RouteCom
 
 interface ExtensionAreaState {
     /** The registry extension, undefined while loading, or an error.  */
-    extensionOrError?: ConfiguredExtension<GQL.IRegistryExtension> | ErrorLike
+    extensionOrError?: ConfiguredRegistryExtension<GQL.IRegistryExtension> | ErrorLike
 }
 
 /**
@@ -79,7 +79,7 @@ export interface ExtensionAreaRouteContext extends SettingsCascadeProps, Platfor
     url: string
 
     /** The extension that is the subject of the page. */
-    extension: ConfiguredExtension<GQL.IRegistryExtension>
+    extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
 
     /** Called when the component updates the extension and it should be refreshed here. */
     onDidUpdateExtension: () => void
@@ -208,7 +208,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
     private onDidUpdateExtension = () => this.refreshRequests.next()
 }
 
-function queryExtension(extensionID: string): Observable<ConfiguredExtension> {
+function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension> {
     return queryGraphQL(
         gql`
             query RegistryExtension($extensionID: String!) {
@@ -228,6 +228,6 @@ function queryExtension(extensionID: string): Observable<ConfiguredExtension> {
             }
             return data.extensionRegistry.extension
         }),
-        map(registryExtension => toConfiguredExtensions([registryExtension])[0])
+        map(registryExtension => toConfiguredRegistryExtension(registryExtension))
     )
 }

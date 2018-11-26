@@ -5,16 +5,16 @@ import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
-import { ConfiguredExtension, toConfiguredExtension } from './extension'
+import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from './extension'
 
 const LOADING: 'loading' = 'loading'
 
 export function viewerConfiguredExtensions({
     settingsCascade,
     queryGraphQL,
-}: Pick<PlatformContext, 'settingsCascade' | 'queryGraphQL'>): Observable<ConfiguredExtension[]> {
+}: Pick<PlatformContext, 'settingsCascade' | 'queryGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
     return viewerConfiguredExtensionsOrLoading({ settingsCascade, queryGraphQL }).pipe(
-        filter((extensions): extensions is ConfiguredExtension[] | ErrorLike => extensions !== LOADING),
+        filter((extensions): extensions is ConfiguredRegistryExtension[] | ErrorLike => extensions !== LOADING),
         switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions]))
     )
 }
@@ -23,7 +23,7 @@ function viewerConfiguredExtensionsOrLoading({
     settingsCascade,
     queryGraphQL,
 }: Pick<PlatformContext, 'settingsCascade' | 'queryGraphQL'>): Observable<
-    typeof LOADING | ConfiguredExtension[] | ErrorLike
+    typeof LOADING | ConfiguredRegistryExtension[] | ErrorLike
 > {
     return from(settingsCascade).pipe(
         switchMap(
@@ -41,7 +41,7 @@ function viewerConfiguredExtensionsOrLoading({
 export function queryConfiguredExtensions(
     { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
     cascade: SettingsCascadeOrError
-): Observable<ConfiguredExtension[]> {
+): Observable<ConfiguredRegistryExtension[]> {
     if (isErrorLike(cascade.final)) {
         return throwError(cascade.final)
     }
@@ -95,12 +95,12 @@ export function queryConfiguredExtensions(
             )
         }),
         map(registryExtensions => {
-            const configuredExtensions: ConfiguredExtension[] = []
+            const configuredExtensions: ConfiguredRegistryExtension[] = []
             for (const extensionID of extensionIDs) {
                 const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
                 configuredExtensions.push(
                     registryExtension
-                        ? toConfiguredExtension(registryExtension)
+                        ? toConfiguredRegistryExtension(registryExtension)
                         : { id: extensionID, manifest: null, rawManifest: null, registryExtension: undefined }
                 )
             }
