@@ -140,7 +140,7 @@ func Main() {
 		`lsp-proxy: lsp-proxy`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
-		`frontend: frontend`,
+		`frontend: env CONFIGURATION_MODE=server frontend`,
 		`repo-updater: repo-updater`,
 		`indexer: indexer`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
