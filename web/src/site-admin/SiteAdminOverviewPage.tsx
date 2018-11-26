@@ -192,9 +192,8 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     this.state.info.surveyResponses.totalCount
                                 )} ${
                                     this.state.info.surveyResponses.totalCount >= 5
-                                        ? `, ${numberWithCommas(
-                                              this.state.info.surveyResponses.averageScore
-                                          )} average in last 30 days (from 0–10)`
+                                        ? `, ${Math.round(this.state.info.surveyResponses.averageScore * 10) /
+                                              10} average in last 30 days (from 0–10)`
                                         : ''
                                 }`}
                             />
