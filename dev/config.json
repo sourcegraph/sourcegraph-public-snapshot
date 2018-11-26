@@ -1,5 +1,8 @@
 // The Sourcegraph site configuration for development servers.
 {
+"extensions": {
+    "remoteRegistry": "https://sourcegraph.com/.api/registry"
+},
   "externalURL": "http://localhost:3080",
   "experimentalFeatures": {
     "discussions": "enabled"

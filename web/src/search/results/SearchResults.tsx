@@ -115,7 +115,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
-                            search(searchOptions, this.props).pipe(
+                            combineLatest(
+                                search(searchOptions, this.props),
+                                this.props.extensionsController.registries.issuesResultsProvider.provideIssueResults(
+                                    searchOptions.query
+                                )
+                            ).pipe(
                                 // Log telemetry
                                 tap(
                                     results =>
@@ -123,10 +128,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
                                                 results: {
-                                                    results_count: isErrorLike(results) ? 0 : results.results.length,
-                                                    any_cloning: isErrorLike(results)
-                                                        ? false
-                                                        : results.cloning.length > 0,
+                                                    // results_count: isErrorLike(results) ? 0 : results.results.length,
+                                                    results_count: 0,
+                                                    any_cloning: isErrorLike(results) ? false : 0,
+                                                    // : results.cloning.length > 0,
                                                 },
                                             },
                                         }),
@@ -137,16 +142,16 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         console.error(error)
                                     }
                                 ),
-                                map(results => ({ resultsOrError: results })),
+                                // map(results => ({ resultsOrError: results })),
                                 // Update view with results or error
-                                // map(([results, extensionsResults]) => {
-                                //     if (extensionsResults && !isErrorLike(results)) {
-                                //         // if empty, it's not iterable.
-                                //         console.log('EXTENSIONS RESULTS', extensionsResults)
-                                //         results.results.push(...(extensionsResults as GQL.IIssueResult[]))
-                                //     }
-                                //     return { resultsOrError: results }
-                                // }),
+                                map(([results, extensionsResults]) => {
+                                    if (extensionsResults && !isErrorLike(results)) {
+                                        // if empty, it's not iterable.
+                                        console.log('EXTENSIONS RESULTS', extensionsResults)
+                                        results.results.push(...extensionsResults)
+                                    }
+                                    return { resultsOrError: results }
+                                }),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )

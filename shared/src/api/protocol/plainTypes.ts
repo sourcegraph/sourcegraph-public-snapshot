@@ -46,7 +46,21 @@ export interface TextDocumentDecoration
 export interface PanelView extends Pick<sourcegraph.PanelView, 'title' | 'content'> {}
 
 export interface IssueResult {
-    title: string
-    body: string
+    icon: string
+    label: string
     url: string
+    detail: string
+    results: GenericSearchMatch[]
+}
+
+export interface GenericSearchMatch {
+    url: string
+    body: string
+    highlights: Highlight
+}
+
+export interface Highlight {
+    line: number
+    character: number
+    length: number
 }

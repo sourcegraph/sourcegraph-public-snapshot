@@ -39,23 +39,27 @@ export class GenericMatch extends React.Component<Props> {
 
     private renderBody = () => (
         <>
-            {this.props.result.results!.map(item => {
-                const highlightRanges: HighlightRange[] = []
-                item.highlights.map(i =>
-                    highlightRanges.push({ line: i.line, character: i.character, length: i.length })
-                )
+            {this.props.result &&
+                this.props.result.results &&
+                this.props.result.results.map(item => {
+                    const highlightRanges: HighlightRange[] = []
+                    if (item.highlights) {
+                        item.highlights.map(i =>
+                            highlightRanges.push({ line: i.line, character: i.character, length: i.length })
+                        )
+                    }
 
-                return (
-                    <GenCodeExcerpt
-                        key={item.url}
-                        item={item}
-                        body={item.body}
-                        url={item.url}
-                        highlightRanges={highlightRanges}
-                        isLightTheme={this.props.isLightTheme}
-                    />
-                )
-            })}
+                    return (
+                        <GenCodeExcerpt
+                            key={item.url}
+                            item={item}
+                            body={item.body}
+                            url={item.url}
+                            highlightRanges={highlightRanges}
+                            isLightTheme={this.props.isLightTheme}
+                        />
+                    )
+                })}
         </>
     )
 
@@ -204,12 +208,11 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps> {
 function splitLines(body: string): string {
     console.log('body', body)
     const split = body.split('\n')
-    console.log('split', split)
     let htmlAsString = ''
     for (const s of split) {
         const sp = `<span>${s}\n</span>`
         htmlAsString += sp
     }
-    console.log('HTML AS STRING', htmlAsString)
+
     return htmlAsString
 }
