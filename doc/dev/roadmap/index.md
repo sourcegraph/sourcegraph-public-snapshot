@@ -23,7 +23,6 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - [JavaScript/TypeScript language support via extension](https://github.com/sourcegraph/sourcegraph/issues/960)
 - [Python language support via extension](https://github.com/sourcegraph/sourcegraph/issues/959)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- Codecov and other dev tool extensions
 
 <small>[Draft announcement](https://github.com/sourcegraph/about/pull/49) --- [All 3.0-preview issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%223.0-preview%22)</small>
 
@@ -36,6 +35,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981)
+- Codecov extension
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
 
 ---
