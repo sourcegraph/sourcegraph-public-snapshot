@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
+import { filter, map, mapTo, mergeMap, take, tap } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
@@ -11,13 +11,13 @@ import { settingsCascade } from '../../settings/configuration'
  * Refreshes the viewer's settings from the server, which propagates throughout the app to all consumers of
  * settings.
  */
-export function refreshSettings(): Observable<never> {
+export function refreshSettings(): Observable<void> {
     return authRequired.pipe(
         take(1),
         filter(authRequired => !authRequired),
         mergeMap(() => fetchViewerSettings()),
         tap(result => settingsCascade.next(result)),
-        mergeMap(() => [])
+        mapTo(void 0)
     )
 }
 

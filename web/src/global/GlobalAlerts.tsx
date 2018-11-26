@@ -1,10 +1,10 @@
 import marked from 'marked'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+import { isSettingsValid, SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Markdown } from '../components/Markdown'
 import { Settings } from '../schema/settings.schema'
-import { viewerSettings } from '../settings/configuration'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
@@ -13,13 +13,12 @@ import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
 import { UpdateAvailableAlert } from '../site/UpdateAvailableAlert'
 import { GlobalAlert } from './GlobalAlert'
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     isSiteAdmin: boolean
 }
 
 interface State {
     siteFlags?: SiteFlags
-    finalSettings?: Settings
 }
 
 /**
@@ -32,7 +31,6 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
-        this.subscriptions.add(viewerSettings.subscribe(finalSettings => this.setState({ finalSettings })))
     }
 
     public componentWillUnmount(): void {
@@ -73,10 +71,10 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         ))}
                     </>
                 )}
-                {this.state.finalSettings &&
-                    this.state.finalSettings.motd &&
-                    Array.isArray(this.state.finalSettings.motd) &&
-                    this.state.finalSettings.motd.map(m => (
+                {isSettingsValid<Settings>(this.props.settingsCascade) &&
+                    this.props.settingsCascade.final.motd &&
+                    Array.isArray(this.props.settingsCascade.final.motd) &&
+                    this.props.settingsCascade.final.motd.map(m => (
                         <DismissibleAlert
                             key={m}
                             partialStorageKey={`motd.${m}`}
