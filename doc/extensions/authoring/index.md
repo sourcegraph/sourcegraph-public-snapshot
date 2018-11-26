@@ -10,6 +10,7 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 
 - [Set up your development environment](development_environment.md)
 - [Creating a Sourcegraph extension](creating.md)
+- [Sourcegraph extension manifest](manifest.md)
 - [Publishing a Sourcegraph extension](publishing.md)
 - [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html)
 - [Debugging a Sourcegraph extension](debugging.md)
@@ -20,6 +21,5 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 ## Tutorials
 
 - [Hello world](tutorials/hello-world.md)
-
 
 The [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) is also a helpful source of inspiration and working code samples from existing extensions.
