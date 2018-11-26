@@ -1,0 +1,13 @@
+.search-result-match {
+    width: 100%;
+}
+
+.theme-light {
+    // Override highlight.js theme for diffs when using light theme.
+    .hljs-addition {
+        background-color: rgba(31, 116, 31, 0.15);
+    }
+    .hljs-deletion {
+        background-color: rgba(192, 10, 10, 0.15);
+    }
+}

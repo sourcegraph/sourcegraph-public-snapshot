@@ -7,7 +7,6 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { Subject } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../util/dom'
-import { DecoratedTextLines } from './DecoratedTextLines'
 import { ResultContainer } from './ResultContainer'
 
 interface Props {
@@ -96,7 +95,6 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             if (visibleRows.length > 0) {
                 for (const h of this.props.highlightRanges) {
-                    // If we add context lines we must select the right line
                     const code = visibleRows[0].lastChild as HTMLTableDataCellElement
                     highlightNode(code, h.character, h.length)
                 }
@@ -139,6 +137,7 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
                     {this.bodyIsCode() ? (
                         <div
                             ref={this.setTableContainerElement}
+                            className="search-result-match"
                             dangerouslySetInnerHTML={{
                                 // Heuristic: replace 4 spaces with tabs, otherwise character counts get thrown off.
                                 // Marked does not preserve tabs, so we get wrong spacing for results where white-space
@@ -150,6 +149,7 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
                     ) : (
                         <div
                             ref={this.setTableContainerElement}
+                            className="search-result-match"
                             dangerouslySetInnerHTML={{
                                 __html: '<code>' + splitLines(this.props.body) + '</code>',
                             }}
