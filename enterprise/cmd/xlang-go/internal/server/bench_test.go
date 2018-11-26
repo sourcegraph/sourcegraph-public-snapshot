@@ -126,7 +126,7 @@ func BenchmarkIntegration(b *testing.B) {
 					b.ResetTimer()
 					for i := 0; i < b.N; i++ {
 						b.StopTimer()
-						c, done := ConnectionToNewBuildServer(string(rootURI), b)
+						c, done := connectionToNewBuildServer(string(rootURI), b)
 						b.StartTimer()
 
 						if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
@@ -161,7 +161,7 @@ func BenchmarkIntegration(b *testing.B) {
 
 					for i := 0; i < b.N; i++ {
 						b.StopTimer()
-						c, done := ConnectionToNewBuildServer(string(rootURI), b)
+						c, done := connectionToNewBuildServer(string(rootURI), b)
 						b.StartTimer()
 
 						if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
@@ -270,10 +270,10 @@ func BenchmarkIntegrationShared(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.StopTimer()
 
-				c, done1 := ConnectionToNewBuildServer(test.oldRootURI, b)
+				c, done1 := connectionToNewBuildServer(test.oldRootURI, b)
 				defer done1() // TODO ensure we close between each loop
 				do(c, test.oldRootURI)
-				c, done2 := ConnectionToNewBuildServer(test.rootURI, b)
+				c, done2 := connectionToNewBuildServer(test.rootURI, b)
 				defer done2()
 
 				b.StartTimer()

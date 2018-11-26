@@ -232,7 +232,7 @@ func TestIntegration(t *testing.T) {
 
 			ctx := context.Background()
 
-			c, done := ConnectionToNewBuildServer(string(rootURI), t)
+			c, done := connectionToNewBuildServer(string(rootURI), t)
 			defer done()
 
 			// Prepare the connection.

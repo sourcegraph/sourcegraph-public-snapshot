@@ -118,7 +118,7 @@ func BenchmarkStress(b *testing.B) {
 				// Don't measure the time it takes to dial and
 				// initialize, because this is amortized over each
 				// operation we do.
-				c, done := ConnectionToNewBuildServer(string(rootURI), b)
+				c, done := connectionToNewBuildServer(string(rootURI), b)
 				if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 					InitializeParams:      lsp.InitializeParams{RootURI: lsp.DocumentURI(root.String())},
 					InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},

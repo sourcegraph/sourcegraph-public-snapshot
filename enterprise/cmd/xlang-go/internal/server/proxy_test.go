@@ -604,7 +604,7 @@ func yza() {}
 				t.Fatal(err)
 			}
 
-			c, done := ConnectionToNewBuildServer(string(test.rootURI), t)
+			c, done := connectionToNewBuildServer(string(test.rootURI), t)
 			defer done()
 
 			// Prepare the connection.
@@ -649,7 +649,7 @@ func (c *pipeReadWriteCloser) Close() error {
 	return err2
 }
 
-func ConnectionToNewBuildServer(root string, t testing.TB) (*jsonrpc2.Conn, func()) {
+func connectionToNewBuildServer(root string, t testing.TB) (*jsonrpc2.Conn, func()) {
 	rootURI, err := gituri.Parse(root)
 	if err != nil {
 		t.Fatal(err)
