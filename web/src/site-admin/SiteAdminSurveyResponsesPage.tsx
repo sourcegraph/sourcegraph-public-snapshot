@@ -221,7 +221,7 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
         if (this.state.summary.netPromoterScore > 0) {
             npsText = `+${npsText}`
         } else if (this.state.summary.netPromoterScore < 0) {
-            npsText = `-${npsText}`
+            npsText = `${npsText}`
         }
         const npsClass =
             this.state.summary.netPromoterScore > 0

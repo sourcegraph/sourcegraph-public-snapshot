@@ -31,6 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
+- Fixed number formatting issues on site admin Overview and Survey Response pages.
 
 ### Removed
 
