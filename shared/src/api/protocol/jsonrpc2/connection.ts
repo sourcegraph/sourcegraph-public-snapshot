@@ -15,7 +15,7 @@ import {
     ResponseError,
     ResponseMessage,
 } from './messages'
-import { noopTracer, Trace, Tracer } from './trace'
+import { noopTracer, Tracer } from './trace'
 import { DataCallback, MessageReader, MessageWriter } from './transport'
 
 // Copied from vscode-languageserver to avoid adding extraneous dependencies.
@@ -97,7 +97,7 @@ export interface Connection extends Unsubscribable {
     onNotification(method: string, handler: GenericNotificationHandler): void
     onNotification(handler: StarNotificationHandler): void
 
-    trace(value: Trace, tracer: Tracer): void
+    trace(tracer: Tracer | null): void
 
     onError: Event<[Error, Message | undefined, number | undefined]>
     onClose: Event<void>
@@ -170,7 +170,6 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
     let responseObservables: { [name: string]: ResponseObserver } = Object.create(null)
     let requestAbortControllers: { [id: string]: AbortController } = Object.create(null)
 
-    let trace: Trace = Trace.Off
     let tracer: Tracer = noopTracer
 
     let state: ConnectionState = ConnectionState.New
@@ -600,7 +599,7 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
         const subject = new Subject<R>()
         const responseObserver: ResponseObserver = {
             method,
-            request: trace === Trace.Verbose ? requestMessage : undefined,
+            request: requestMessage,
             timerStart: Date.now(),
             complete: false,
             observer: subject,
@@ -657,12 +656,11 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                 requestHandlers[type] = { type: undefined, handler }
             }
         },
-        trace: (value: Trace, _tracer: Tracer, sendNotification = false) => {
-            trace = value
-            if (trace === Trace.Off) {
-                tracer = noopTracer
-            } else {
+        trace: (_tracer: Tracer | null) => {
+            if (_tracer) {
                 tracer = _tracer
+            } else {
+                tracer = noopTracer
             }
         },
         onError: errorEmitter.event,

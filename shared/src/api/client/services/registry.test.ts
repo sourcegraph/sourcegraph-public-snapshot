@@ -48,19 +48,6 @@ describe('FeatureProviderRegistry', () => {
         assert.deepStrictEqual(new FeatureProviderRegistry().providersSnapshot, [])
     })
 
-    it('accepts initial providers', () => {
-        const initialEntries = [
-            {
-                ...FIXTURE.PartialEntry,
-                provider: () => ({}),
-            },
-        ]
-        assert.deepStrictEqual(
-            new FeatureProviderRegistry(initialEntries).providersSnapshot,
-            initialEntries.map(({ provider }) => provider)
-        )
-    })
-
     it('registers and unregisters providers', () => {
         const subscriptions = new Subscription()
         const registry = new FeatureProviderRegistry()

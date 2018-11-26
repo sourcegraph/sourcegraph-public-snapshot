@@ -41,7 +41,7 @@ export interface ExtLanguageFeaturesAPI {
 }
 
 /** @internal */
-export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI {
+export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, Unsubscribable {
     private registrations = new ProviderMap<
         HoverProvider | DefinitionProvider | TypeDefinitionProvider | ImplementationProvider | ReferenceProvider
     >(id => this.proxy.$unregister(id))
@@ -163,6 +163,10 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI {
         const { id, subscription } = this.registrations.add(provider)
         this.proxy.$registerReferenceProvider(id, selector)
         return subscription
+    }
+
+    public unsubscribe(): void {
+        this.registrations.unsubscribe()
     }
 }
 

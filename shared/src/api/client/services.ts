@@ -2,21 +2,21 @@ import { Observable } from 'rxjs'
 import { SettingsCascade } from '../protocol'
 import { Environment } from './environment'
 import { Extension } from './extension'
-import { CommandRegistry } from './providers/command'
-import { ContributionRegistry } from './providers/contribution'
-import { TextDocumentDecorationProviderRegistry } from './providers/decoration'
-import { TextDocumentHoverProviderRegistry } from './providers/hover'
-import { TextDocumentLocationProviderRegistry, TextDocumentReferencesProviderRegistry } from './providers/location'
-import { QueryTransformerRegistry } from './providers/queryTransformer'
-import { ViewProviderRegistry } from './providers/view'
+import { CommandRegistry } from './services/command'
+import { ContributionRegistry } from './services/contribution'
+import { TextDocumentDecorationProviderRegistry } from './services/decoration'
+import { TextDocumentHoverProviderRegistry } from './services/hover'
+import { TextDocumentLocationProviderRegistry, TextDocumentReferencesProviderRegistry } from './services/location'
+import { QueryTransformerRegistry } from './services/queryTransformer'
+import { ViewProviderRegistry } from './services/view'
 
 /**
- * Registries is a container for all provider registries.
+ * Services is a container for all services.
  *
  * @template X extension type
  * @template C settings cascade type
  */
-export class Registries<X extends Extension, C extends SettingsCascade> {
+export class Services<X extends Extension, C extends SettingsCascade> {
     constructor(private environment: Observable<Environment<X, C>>) {}
 
     public readonly commands = new CommandRegistry()

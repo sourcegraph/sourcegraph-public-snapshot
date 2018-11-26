@@ -2,12 +2,6 @@ import { NotificationMessage, RequestMessage, ResponseMessage } from './messages
 
 // Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
 
-export enum Trace {
-    Off = 'off',
-    Messages = 'messages',
-    Verbose = 'verbose',
-}
-
 /** Records messages sent and received on a JSON-RPC 2.0 connection. */
 export interface Tracer {
     log(message: string, details?: string): void

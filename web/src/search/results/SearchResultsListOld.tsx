@@ -9,6 +9,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { buildSearchURLQuery, parseSearchURLQuery } from '..'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { FileMatch } from '../../components/FileMatch'
 import { ModalContainer } from '../../components/ModalContainer'
@@ -19,7 +20,7 @@ import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
-interface SearchResultsListProps {
+interface SearchResultsListProps extends SettingsCascadeProps {
     isLightTheme: boolean
     location: H.Location
     authenticatedUser: GQL.IUser | null
@@ -57,6 +58,7 @@ export class SearchResultsListOld extends React.PureComponent<SearchResultsListP
                                 values={{ query: parsedQuery ? parsedQuery.query : '' }}
                                 onDidCancel={this.props.onSavedQueryModalClose}
                                 onDidCreate={this.props.onDidCreateSavedQuery}
+                                settingsCascade={this.props.settingsCascade}
                             />
                         }
                     />

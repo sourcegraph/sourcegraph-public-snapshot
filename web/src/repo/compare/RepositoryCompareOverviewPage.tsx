@@ -5,13 +5,14 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
@@ -73,7 +74,7 @@ function queryRepositoryComparison(args: {
 interface Props
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsControllerProps,
         ExtensionsDocumentsProps {
     /** The base of the comparison. */

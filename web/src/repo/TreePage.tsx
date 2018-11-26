@@ -14,8 +14,11 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -24,11 +27,6 @@ import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
@@ -99,7 +97,7 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends SettingsCascadeProps, ExtensionsControllerProps, ExtensionsProps {
+interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps {
     repoPath: string
     repoID: GQL.ID
     repoDescription: string
@@ -324,7 +322,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                                 {...item}
                                                 className="btn btn-secondary mr-1 mb-1"
                                                 extensionsController={this.props.extensionsController}
-                                                extensionsContext={this.props.extensionsContext}
+                                                platformContext={this.props.platformContext}
                                                 location={this.props.location}
                                             />
                                         ))}
@@ -332,7 +330,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 )}
                                 empty={null}
                                 extensionsController={this.props.extensionsController}
-                                extensionsContext={this.props.extensionsContext}
+                                platformContext={this.props.platformContext}
                                 location={this.props.location}
                             />
                             <div className="tree-page__section">

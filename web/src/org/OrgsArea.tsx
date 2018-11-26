@@ -2,8 +2,8 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { HeroPage } from '../components/HeroPage'
-import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OrgArea } from './area/OrgArea'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
 
@@ -15,7 +15,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<any>, ExtensionsProps {
+interface Props extends RouteComponentProps<any>, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
 }

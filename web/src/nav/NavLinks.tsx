@@ -5,19 +5,17 @@ import { Subscription } from 'rxjs'
 import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { CommandListPopoverButton } from '../../../shared/src/commandPalette/CommandList'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { isDiscussionsEnabled } from '../discussions'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../extensions/ExtensionsClientCommonContext'
 import { KeybindingsProps } from '../keybindings'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { UserNavItem } from './UserNavItem'
 
-interface Props extends SettingsCascadeProps, ExtensionsProps, ExtensionsControllerProps, KeybindingsProps {
+interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsControllerProps, KeybindingsProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -57,7 +55,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 <ActionsNavItems
                     menu={ContributableMenu.GlobalNav}
                     extensionsController={this.props.extensionsController}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     location={this.props.location}
                 />
                 <li className="nav-item">
@@ -96,7 +94,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 <CommandListPopoverButton
                     menu={ContributableMenu.CommandPalette}
                     extensionsController={this.props.extensionsController}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
                     location={this.props.location}
                 />

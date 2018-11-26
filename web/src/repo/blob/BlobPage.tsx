@@ -5,8 +5,11 @@ import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { AbsoluteRepoFile, makeRepoURI, ParsedRepoURI } from '..'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ModeSpec } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -14,11 +17,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
@@ -90,7 +88,7 @@ interface Props
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     location: H.Location
@@ -285,7 +283,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             rev={this.props.rev}
                             mode={this.props.mode}
                             settingsCascade={this.props.settingsCascade}
-                            extensionsContext={this.props.extensionsContext}
+                            platformContext={this.props.platformContext}
                             extensionsController={this.props.extensionsController}
                             extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                             extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
@@ -315,7 +313,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     repoID={this.props.repoID}
                     repoPath={this.props.repoPath}
                     commitID={this.props.commitID}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     extensionsController={this.props.extensionsController}
                     position={
                         lprToRange(parseHash(this.props.location.hash))

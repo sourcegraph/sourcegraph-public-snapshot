@@ -1,14 +1,11 @@
-import { isEqual } from 'lodash'
 import { Observable } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs/operators'
+import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
 import { SearchOptions } from '.'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
-import { queryGraphQL } from '../backend/graphql'
-import { mutateSettingsGraphQL } from '../configuration/backend'
-import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
-import { viewerSettings } from '../settings/configuration'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export function search(
     options: SearchOptions,
@@ -17,7 +14,7 @@ export function search(
     /**
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
-    return extensionsController.registries.queryTransformer.transformQuery(options.query).pipe(
+    return extensionsController.services.queryTransformer.transformQuery(options.query).pipe(
         switchMap(query =>
             queryGraphQL(
                 gql`
@@ -284,15 +281,7 @@ const savedQueryFragment = gql`
     }
 `
 
-export function observeSavedQueries(): Observable<GQL.ISavedQuery[]> {
-    return viewerSettings.pipe(
-        map(config => config['search.savedQueries']),
-        distinctUntilChanged((a, b) => isEqual(a, b)),
-        mergeMap(fetchSavedQueries)
-    )
-}
-
-function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
+export function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
     return queryGraphQL(gql`
         query SavedQueries {
             savedQueries {
@@ -312,6 +301,7 @@ function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
 
 export function createSavedQuery(
     subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
+    settingsLastID: number | null,
     description: string,
     query: string,
     showOnHomepage: boolean,
@@ -319,8 +309,7 @@ export function createSavedQuery(
     notifySlack: boolean,
     disableSubscriptionNotifications?: boolean
 ): Observable<GQL.ISavedQuery> {
-    return mutateSettingsGraphQL(
-        subject,
+    return mutateGraphQL(
         gql`
             mutation CreateSavedQuery(
                 $subject: ID!
@@ -354,6 +343,8 @@ export function createSavedQuery(
             notify,
             notifySlack,
             disableSubscriptionNotifications: disableSubscriptionNotifications || false,
+            subject: subject.id,
+            lastID: settingsLastID,
         }
     ).pipe(
         map(({ data, errors }) => {
@@ -367,6 +358,7 @@ export function createSavedQuery(
 
 export function updateSavedQuery(
     subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
+    settingsLastID: number | null,
     id: GQL.ID,
     description: string,
     query: string,
@@ -374,8 +366,7 @@ export function updateSavedQuery(
     notify: boolean,
     notifySlack: boolean
 ): Observable<GQL.ISavedQuery> {
-    return mutateSettingsGraphQL(
-        subject,
+    return mutateGraphQL(
         gql`
             mutation UpdateSavedQuery(
                 $subject: ID!
@@ -402,7 +393,7 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, showOnHomepage, notify, notifySlack }
+        { id, description, query, showOnHomepage, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.settingsMutation || !data.settingsMutation.updateSavedQuery) {
@@ -415,11 +406,11 @@ export function updateSavedQuery(
 
 export function deleteSavedQuery(
     subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
+    settingsLastID: number | null,
     id: GQL.ID,
     disableSubscriptionNotifications?: boolean
 ): Observable<void> {
-    return mutateSettingsGraphQL(
-        subject,
+    return mutateGraphQL(
         gql`
             mutation DeleteSavedQuery(
                 $subject: ID!
@@ -434,7 +425,12 @@ export function deleteSavedQuery(
                 }
             }
         `,
-        { id, disableSubscriptionNotifications: disableSubscriptionNotifications || false }
+        {
+            id,
+            disableSubscriptionNotifications: disableSubscriptionNotifications || false,
+            subject: subject.id,
+            lastID: settingsLastID,
+        }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.settingsMutation || !data.settingsMutation.deleteSavedQuery) {

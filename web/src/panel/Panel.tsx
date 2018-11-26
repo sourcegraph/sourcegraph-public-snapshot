@@ -7,10 +7,10 @@ import { ReplaySubject, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
 import { PanelView } from '../../../shared/src/api/protocol/plainTypes'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Markdown } from '../components/Markdown'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
-import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../tracking/eventLogger'
 import { createLinkClickHandler } from '../util/linkClickHandler'
 import { parseHash } from '../util/url'
@@ -103,7 +103,7 @@ export class Panel extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            this.props.extensionsController.registries.views
+            this.props.extensionsController.services.views
                 .getViews(ContributableViewContainer.Panel)
                 .pipe(map(panelViews => ({ panelViews })))
                 .subscribe(stateUpdate => this.setState(stateUpdate))

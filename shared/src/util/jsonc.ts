@@ -26,7 +26,7 @@ function parseJSON(input: string): any {
             errors.map(v => ({
                 ...v,
                 code: ParseErrorCode[v.error],
-                message: `Configuration parse error, code: ${v.error} (offset: ${v.offset}, length: ${v.length})`,
+                message: `parse error (code: ${v.error}, offset: ${v.offset}, length: ${v.length})`,
             }))
         )
     }

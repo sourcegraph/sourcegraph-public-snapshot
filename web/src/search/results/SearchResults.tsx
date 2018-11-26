@@ -4,11 +4,12 @@ import * as React from 'react'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery, SearchOptions } from '..'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
-import { viewerSettings } from '../../settings/configuration'
+import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from '../backend'
 import { FilterChip } from '../FilterChip'
@@ -19,7 +20,7 @@ import { SearchResultsListOld } from './SearchResultsListOld'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps extends ExtensionsControllerProps {
+interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -42,8 +43,6 @@ interface SearchResultsState {
     // Saved Queries
     showSavedQueryModal: boolean
     didSaveQuery: boolean
-    /** All search scopes from configuration */
-    scopes?: SearchScope[]
 }
 
 const newRepoFilters = localStorage.getItem('newRepoFilters') !== 'false'
@@ -64,12 +63,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SearchResults')
-
-        this.subscriptions.add(
-            viewerSettings
-                .pipe(map(config => config['search.scopes'] || []))
-                .subscribe(scopes => this.setState({ scopes }))
-        )
 
         this.subscriptions.add(
             this.componentUpdates
@@ -216,6 +209,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         location={this.props.location}
                         history={this.props.history}
                         authenticatedUser={this.props.authenticatedUser}
+                        settingsCascade={this.props.settingsCascade}
                         isLightTheme={this.props.isLightTheme}
                     />
                 ) : (
@@ -232,6 +226,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         location={this.props.location}
                         authenticatedUser={this.props.authenticatedUser}
                         isLightTheme={this.props.isLightTheme}
+                        settingsCascade={this.props.settingsCascade}
                         uiLimit={this.state.uiLimit}
                     />
                 )}
@@ -252,26 +247,29 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 filters.set(d.value, d)
             }
         }
-        if (this.state.scopes) {
-            if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
-                for (const scope of this.state.scopes) {
-                    if (!filters.has(scope.value)) {
-                        filters.set(scope.value, scope)
-                    }
-                }
-            } else {
-                for (const scope of this.state.scopes) {
-                    // Check for if filter.value already exists and if so, overwrite with user's configured scope name.
-                    const existingFilter = filters.get(scope.value)
-                    // This works because user setting configs are the last to be processed after Global and Org.
-                    // Thus, user set filters overwrite the equal valued existing filters.
-                    if (existingFilter) {
-                        existingFilter.name = scope.name || scope.value
-                    }
-                    filters.set(scope.value, existingFilter || scope)
+        const scopes =
+            (isSettingsValid<Settings>(this.props.settingsCascade) &&
+                this.props.settingsCascade.final['search.scopes']) ||
+            []
+        if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
+            for (const scope of scopes) {
+                if (!filters.has(scope.value)) {
+                    filters.set(scope.value, scope)
                 }
             }
+        } else {
+            for (const scope of scopes) {
+                // Check for if filter.value already exists and if so, overwrite with user's configured scope name.
+                const existingFilter = filters.get(scope.value)
+                // This works because user setting configs are the last to be processed after Global and Org.
+                // Thus, user set filters overwrite the equal valued existing filters.
+                if (existingFilter) {
+                    existingFilter.name = scope.name || scope.value
+                }
+                filters.set(scope.value, existingFilter || scope)
+            }
         }
+
         return Array.from(filters.values())
     }
     private showMoreResults = () => {

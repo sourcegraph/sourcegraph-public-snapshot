@@ -3,7 +3,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
+import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
 import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -11,7 +11,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
-    extension: ConfiguredExtension
+    extension: ConfiguredRegistryExtension
 }> = ({ extension }) => (
     <div className="alert alert-info">
         This extension is not yet published.

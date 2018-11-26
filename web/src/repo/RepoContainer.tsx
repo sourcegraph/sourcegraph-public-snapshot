@@ -7,18 +7,15 @@ import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom }
 import { parseBrowserRepoURL } from '.'
 import { makeRepoURI, ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import { WorkspaceRoot } from '../../../shared/src/api/protocol/plainTypes'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
-import { refreshSettings } from '../user/settings/backend'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError, ResolvedRev } from './backend'
 import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
@@ -40,7 +37,7 @@ const RepoPageNotFound: React.FunctionComponent = () => (
 export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         SettingsCascadeProps,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
@@ -91,13 +88,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     public componentDidMount(): void {
-        // Refresh the list of Sourcegraph extensions to use. This helps when a
-        // language server gets automatically enabled after the first repository
-        // in that language is added.
-        refreshSettings()
-            .toPromise()
-            .catch(err => console.error(err))
-
         const parsedRouteChanges = this.routeMatchChanges.pipe(
             map(({ repoRevAndRest }) => parseURLPath(repoRevAndRest))
         )
@@ -234,7 +224,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
             settingsCascade: this.props.settingsCascade,
-            extensionsContext: this.props.extensionsContext,
+            platformContext: this.props.platformContext,
             extensionsOnRootsChange: this.props.extensionsOnRootsChange,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,
@@ -252,7 +242,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     rev={this.state.rev}
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     extensionsController={this.props.extensionsController}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
                     location={this.props.location}

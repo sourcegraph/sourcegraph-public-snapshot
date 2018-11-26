@@ -1,11 +1,11 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { PageTitle } from '../components/PageTitle'
-import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { SettingsArea } from '../settings/SettingsArea'
 
-interface Props extends RouteComponentProps<{}>, ExtensionsProps {
+interface Props extends RouteComponentProps<{}>, PlatformContextProps {
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
     site: Pick<GQL.ISite, '__typename' | 'id'>

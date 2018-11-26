@@ -34,10 +34,7 @@ class ExtPanelView implements sourcegraph.PanelView {
 }
 
 /** @internal */
-export interface ExtViewsAPI {}
-
-/** @internal */
-export class ExtViews implements ExtViewsAPI {
+export class ExtViews implements Unsubscribable {
     private registrations = new ProviderMap<{}>(id => this.proxy.$unregister(id))
 
     constructor(private proxy: ClientViewsAPI) {}
@@ -46,5 +43,9 @@ export class ExtViews implements ExtViewsAPI {
         const { id: regID, subscription } = this.registrations.add({})
         this.proxy.$registerPanelViewProvider(regID, { id })
         return new ExtPanelView(this.proxy, regID, subscription)
+    }
+
+    public unsubscribe(): void {
+        this.registrations.unsubscribe()
     }
 }
