@@ -2,7 +2,7 @@ import { from, Subject, Unsubscribable } from 'rxjs'
 import { filter, first, map, mergeMap } from 'rxjs/operators'
 import { Controller as BaseController, ExtensionConnectionKey } from '../api/client/controller'
 import { Environment } from '../api/client/environment'
-import { ExecuteCommandParams } from '../api/client/providers/command'
+import { ExecuteCommandParams } from '../api/client/services/command'
 import { Contributions, MessageType } from '../api/protocol'
 import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands, updateConfiguration } from '../commands/commands'
@@ -35,7 +35,7 @@ export class Controller extends BaseController<ConfiguredExtension, SettingsCasc
      * emitted as notifications).
      */
     public executeCommand(params: ExecuteCommandParams): Promise<any> {
-        return this.registries.commands.executeCommand(params).catch(err => {
+        return this.services.commands.executeCommand(params).catch(err => {
             this.notifications.next({ message: err, type: MessageType.Error, source: params.command })
             return Promise.reject(err)
         })
@@ -109,7 +109,7 @@ declare global {
  * of the application state that the controller needs to know.
  *
  * It receives state updates via calls to the setEnvironment method from React components. It provides results to
- * React components via its registries and the showMessages, etc., observables.
+ * React components via its services and the showMessages, etc., observables.
  */
 export function createController(context: PlatformContext): Controller {
     const controller: Controller = new Controller({
@@ -217,7 +217,7 @@ function registerExtensionContributions(controller: Controller): Unsubscribable 
                 .filter((contributions): contributions is Contributions => !!contributions)
         )
     )
-    return controller.registries.contribution.registerContributions({
+    return controller.services.contribution.registerContributions({
         contributions,
     })
 }

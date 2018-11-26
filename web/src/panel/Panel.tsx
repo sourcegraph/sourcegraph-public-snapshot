@@ -103,7 +103,7 @@ export class Panel extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            this.props.extensionsController.registries.views
+            this.props.extensionsController.services.views
                 .getViews(ContributableViewContainer.Panel)
                 .pipe(map(panelViews => ({ panelViews })))
                 .subscribe(stateUpdate => this.setState(stateUpdate))

@@ -25,7 +25,7 @@ import { ClientWindows } from './api/windows'
 import { applyContextUpdate, EMPTY_CONTEXT } from './context/context'
 import { EMPTY_ENVIRONMENT, Environment } from './environment'
 import { Extension } from './extension'
-import { Registries } from './registries'
+import { Services } from './services'
 
 /** The minimal unique identifier for a client. */
 export interface ExtensionConnectionKey {
@@ -90,8 +90,8 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
 
     private subscriptions = new Subscription()
 
-    /** The registries for various providers that expose extension functionality. */
-    public readonly registries: Registries<X, C>
+    /** The various services that expose extension functionality. */
+    public readonly services: Services<X, C>
 
     private readonly _logMessages = new Subject<LogMessageParams>()
     private readonly _showMessages = new Subject<ShowMessageParams>()
@@ -121,7 +121,7 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
             }
         })
 
-        this.registries = new Registries<X, C>(this.environment)
+        this.services = new Services<X, C>(this.environment)
     }
 
     /**
@@ -253,8 +253,8 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
                     })
             )
         )
-        subscription.add(new ClientViews(client, this.registries.views))
-        subscription.add(new ClientCodeEditor(client, this.registries.textDocumentDecoration))
+        subscription.add(new ClientViews(client, this.services.views))
+        subscription.add(new ClientCodeEditor(client, this.services.textDocumentDecoration))
         subscription.add(
             new ClientDocuments(
                 client,
@@ -267,15 +267,15 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
         subscription.add(
             new ClientLanguageFeatures(
                 client,
-                this.registries.textDocumentHover,
-                this.registries.textDocumentDefinition,
-                this.registries.textDocumentTypeDefinition,
-                this.registries.textDocumentImplementation,
-                this.registries.textDocumentReferences
+                this.services.textDocumentHover,
+                this.services.textDocumentDefinition,
+                this.services.textDocumentTypeDefinition,
+                this.services.textDocumentImplementation,
+                this.services.textDocumentReferences
             )
         )
-        subscription.add(new Search(client, this.registries.queryTransformer))
-        subscription.add(new ClientCommands(client, this.registries.commands))
+        subscription.add(new Search(client, this.services.queryTransformer))
+        subscription.add(new ClientCommands(client, this.services.commands))
         subscription.add(
             new ClientRoots(
                 client,

@@ -21,7 +21,7 @@ describe('LanguageFeatures (integration)', () => {
         }),
         run => ({ provideHover: run } as sourcegraph.HoverProvider),
         clientController =>
-            clientController.registries.textDocumentHover
+            clientController.services.textDocumentHover
                 .getHover({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
                 .pipe(take(1))
                 .toPromise()
@@ -36,7 +36,7 @@ describe('LanguageFeatures (integration)', () => {
         labeledDefinitionResults,
         run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
         clientController =>
-            clientController.registries.textDocumentDefinition
+            clientController.services.textDocumentDefinition
                 .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
                 .pipe(take(1))
                 .toPromise()
@@ -51,7 +51,7 @@ describe('LanguageFeatures (integration)', () => {
         labeledDefinitionResults,
         run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
         clientController =>
-            clientController.registries.textDocumentTypeDefinition
+            clientController.services.textDocumentTypeDefinition
                 .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
                 .pipe(take(1))
                 .toPromise()
@@ -66,7 +66,7 @@ describe('LanguageFeatures (integration)', () => {
         labeledDefinitionResults,
         run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
         clientController =>
-            clientController.registries.textDocumentImplementation
+            clientController.services.textDocumentImplementation
                 .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
                 .pipe(take(1))
                 .toPromise()
@@ -84,7 +84,7 @@ describe('LanguageFeatures (integration)', () => {
                 provideReferences: (doc, pos, _context: sourcegraph.ReferenceContext) => run(doc, pos),
             } as sourcegraph.ReferenceProvider),
         clientController =>
-            clientController.registries.textDocumentReferences
+            clientController.services.textDocumentReferences
                 .getLocation({
                     textDocument: { uri: 'file:///f' },
                     position: { line: 1, character: 2 },

@@ -29,7 +29,7 @@ export class ExtensionViewsExploreSection extends React.PureComponent<Props, Sta
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.extensionsController.registries.views
+            this.props.extensionsController.services.views
                 .getViews(ContributableViewContainer.Panel)
                 .pipe(map(views => ({ views })))
                 .subscribe(stateUpdate => this.setState(stateUpdate))

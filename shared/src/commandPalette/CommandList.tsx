@@ -78,7 +78,7 @@ export class CommandList extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.extensionsController.registries.contribution
+            this.props.extensionsController.services.contribution
                 .getContributions()
                 .subscribe(contributions => this.setState({ contributions }))
         )

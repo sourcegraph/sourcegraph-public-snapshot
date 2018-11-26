@@ -4,7 +4,7 @@ import { handleRequests } from '../../common/proxy'
 import { ContributableViewContainer } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
 import * as plain from '../../protocol/plainTypes'
-import { ViewProviderRegistry } from '../providers/view'
+import { ViewProviderRegistry } from '../services/view'
 import { SubscriptionMap } from './common'
 
 /** @internal */

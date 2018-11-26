@@ -432,7 +432,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         if (extensionsController && !info.baseCommitID) {
                             let oldDecorations: Unsubscribable[] = []
 
-                            extensionsController.registries.textDocumentDecoration
+                            extensionsController.services.textDocumentDecoration
                                 .getDecorations(toTextDocumentIdentifier(info))
                                 .subscribe(decorations => {
                                     for (const old of oldDecorations) {

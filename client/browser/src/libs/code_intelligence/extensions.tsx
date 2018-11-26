@@ -14,7 +14,7 @@ import { Environment } from '../../../../../shared/src/api/client/environment'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
-} from '../../../../../shared/src/api/client/providers/decoration'
+} from '../../../../../shared/src/api/client/services/decoration'
 import { viewerConfiguredExtensions } from '../../../../../shared/src/extensions/helpers'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { isSettingsValid } from '../../../../../shared/src/settings/settings'

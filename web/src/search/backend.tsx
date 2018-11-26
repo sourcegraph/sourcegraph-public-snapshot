@@ -14,7 +14,7 @@ export function search(
     /**
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
-    return extensionsController.registries.queryTransformer.transformQuery(options.query).pipe(
+    return extensionsController.services.queryTransformer.transformQuery(options.query).pipe(
         switchMap(query =>
             queryGraphQL(
                 gql`

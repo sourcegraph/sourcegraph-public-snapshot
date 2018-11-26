@@ -32,9 +32,7 @@ export class ActionsContainer extends React.PureComponent<ActionsContainerProps,
     public componentDidMount(): void {
         this.subscriptions.add(
             this.scopeChanges
-                .pipe(
-                    switchMap(scope => this.props.extensionsController.registries.contribution.getContributions(scope))
-                )
+                .pipe(switchMap(scope => this.props.extensionsController.services.contribution.getContributions(scope)))
                 .subscribe(contributions => this.setState({ contributions }))
         )
         this.scopeChanges.next(this.props.scope)

@@ -20,7 +20,7 @@ export function registerBuiltinClientCommands<E extends Extension>(
     const subscription = new Subscription()
 
     subscription.add(
-        controller.registries.commands.registerCommand({
+        controller.services.commands.registerCommand({
             command: 'open',
             run: (url: string) => {
                 // The `open` client command is usually implemented by ActionItem rendering the action with the
@@ -36,7 +36,7 @@ export function registerBuiltinClientCommands<E extends Extension>(
     )
 
     subscription.add(
-        controller.registries.commands.registerCommand({
+        controller.services.commands.registerCommand({
             command: 'openPanel',
             run: (viewID: string) => {
                 // As above for `open`, the `openPanel` client command is usually implemented by an HTML <a>
@@ -48,7 +48,7 @@ export function registerBuiltinClientCommands<E extends Extension>(
     )
 
     subscription.add(
-        controller.registries.commands.registerCommand({
+        controller.services.commands.registerCommand({
             command: 'updateConfiguration',
             run: (...anyArgs: any[]): Promise<void> => {
                 const args = anyArgs as ActionContributionClientCommandUpdateConfiguration['commandArguments']
@@ -62,7 +62,7 @@ export function registerBuiltinClientCommands<E extends Extension>(
      * with the privileges of the current user.
      */
     subscription.add(
-        controller.registries.commands.registerCommand({
+        controller.services.commands.registerCommand({
             command: 'queryGraphQL',
             run: (query: string, variables: { [name: string]: any }): Promise<any> =>
                 // 🚨 SECURITY: The request might contain private info (such as
@@ -79,7 +79,7 @@ export function registerBuiltinClientCommands<E extends Extension>(
      * performed with the privileges of the current user.
      */
     subscription.add(
-        controller.registries.commands.registerCommand({
+        controller.services.commands.registerCommand({
             command: 'queryLSP',
             run: requests => from(context.queryLSP(requests)).toPromise(),
         })
