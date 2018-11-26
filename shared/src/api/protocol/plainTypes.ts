@@ -44,9 +44,3 @@ export interface TextDocumentDecoration
 
 /** The plain properties of a {@link module:sourcegraph.PanelView}, without methods. */
 export interface PanelView extends Pick<sourcegraph.PanelView, 'title' | 'content'> {}
-
-export interface IssueResult {
-    title: string
-    body: string
-    url: string
-}

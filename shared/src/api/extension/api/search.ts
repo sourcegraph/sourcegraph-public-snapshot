@@ -1,12 +1,10 @@
 import { Unsubscribable } from 'rxjs'
-import { IssueResultsProvider, QueryTransformer } from 'sourcegraph'
-import { SearchAPI } from 'src/client/api/search'
-import { IssueResult } from 'src/protocol/plainTypes'
+import { QueryTransformer } from 'sourcegraph'
+import { SearchAPI } from '../../client/api/search'
 import { ProviderMap } from './common'
 
 export interface ExtSearchAPI {
     $transformQuery: (id: number, query: string) => Promise<string>
-    $provideIssueResults: (id: number, query: string) => Promise<IssueResult[] | null>
 }
 
 export class ExtSearch implements ExtSearchAPI, Unsubscribable {
