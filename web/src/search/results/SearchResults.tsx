@@ -114,15 +114,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     }
                                 ),
                                 map(results => ({ resultsOrError: results })),
-                                // Update view with results or error
-                                // map(([results, extensionsResults]) => {
-                                //     if (extensionsResults && !isErrorLike(results)) {
-                                //         // if empty, it's not iterable.
-                                //         console.log('EXTENSIONS RESULTS', extensionsResults)
-                                //         results.results.push(...(extensionsResults as GQL.IIssueResult[]))
-                                //     }
-                                //     return { resultsOrError: results }
-                                // }),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )
