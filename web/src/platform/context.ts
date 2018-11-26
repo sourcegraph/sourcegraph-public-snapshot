@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
 import { InitData } from '../../../shared/src/api/extension/extensionHost'
 import { SettingsCascade } from '../../../shared/src/api/protocol'
@@ -14,15 +14,16 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { requestGraphQL } from '../backend/graphql'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
-import { settingsCascade } from '../settings/configuration'
-import { refreshSettings } from '../user/settings/backend'
+import { fetchViewerSettings, settingsRefreshes } from '../user/settings/backend'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
  */
 export function createPlatformContext(): PlatformContext {
     const context: PlatformContext = {
-        settingsCascade: settingsCascade.pipe(
+        settingsCascade: settingsRefreshes.pipe(
+            startWith(void 0),
+            switchMap(() => fetchViewerSettings()),
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
@@ -54,7 +55,7 @@ export function createPlatformContext(): PlatformContext {
             try {
                 await updateSettings(context, subject, args, mutateSettings)
             } finally {
-                await refreshSettings().toPromise()
+                settingsRefreshes.next()
             }
         },
         queryGraphQL: (request, variables) =>

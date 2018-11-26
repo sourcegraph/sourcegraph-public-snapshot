@@ -1,13 +1,7 @@
 import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser'
-import { ReplaySubject } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { createAggregateError } from '../../../shared/src/util/errors'
-
-/**
- * Represents the settings from various subjects from GraphQL (user, orgs, and global).
- */
-export const settingsCascade = new ReplaySubject<GQL.ISettingsCascade>(1)
 
 /**
  * Parses the JSON input using the error-tolerant parser used for site config and settings.

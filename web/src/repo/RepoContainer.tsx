@@ -16,7 +16,6 @@ import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
-import { refreshSettings } from '../user/settings/backend'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError, ResolvedRev } from './backend'
 import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
@@ -89,13 +88,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     public componentDidMount(): void {
-        // Refresh the list of Sourcegraph extensions to use. This helps when a
-        // language server gets automatically enabled after the first repository
-        // in that language is added.
-        refreshSettings()
-            .toPromise()
-            .catch(err => console.error(err))
-
         const parsedRouteChanges = this.routeMatchChanges.pipe(
             map(({ repoRevAndRest }) => parseURLPath(repoRevAndRest))
         )

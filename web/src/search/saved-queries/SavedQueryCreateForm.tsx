@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { Observable } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { mapTo, tap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { getLastIDForSubject } from '../../settings/configuration'
-import { refreshSettings } from '../../user/settings/backend'
+import { settingsRefreshes } from '../../user/settings/backend'
 import { createSavedQuery } from '../backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
@@ -35,7 +35,10 @@ export const SavedQueryCreateForm: React.FunctionComponent<Props> = props => (
                 fields.showOnHomepage,
                 fields.notify,
                 fields.notifySlack
-            ).pipe(switchMap(refreshSettings))
+            ).pipe(
+                tap(() => settingsRefreshes.next()),
+                mapTo(void 0)
+            )
         }
     />
 )
