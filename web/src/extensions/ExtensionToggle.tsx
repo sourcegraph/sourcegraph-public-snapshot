@@ -84,7 +84,10 @@ export class ExtensionToggle extends React.PureComponent<Props> {
             ? undefined
             : last(cascade.subjects.filter(subject => isExtensionAdded(subject.settings, this.props.extension.id)))
         const state = subject && {
-            state: subject.settings.extensions ? subject.settings.extensions[this.props.extension.id] : false,
+            state:
+                subject.settings && subject.settings.extensions
+                    ? subject.settings.extensions[this.props.extension.id]
+                    : false,
             name: subject.subject.__typename,
         }
 
