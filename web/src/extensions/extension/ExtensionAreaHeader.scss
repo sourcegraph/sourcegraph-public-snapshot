@@ -1,15 +1,15 @@
 .extension-area-header {
     padding-top: 0.5rem;
-	padding-left: .5rem;
-	padding-right: .5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
 
     .container {
-		padding-left: 0;
-		padding-right: 0;
+        padding-left: 0;
+        padding-right: 0;
 
-		// Compensate for 1px border
-		// stylelint-disable-next-line declaration-property-unit-whitelist
-		margin-top: -1px;
+        // Compensate for 1px border
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-top: -1px;
     }
 
     &__icon {
