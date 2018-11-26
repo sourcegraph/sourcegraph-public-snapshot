@@ -1,13 +1,18 @@
 import { Subscribable } from 'rxjs'
-import { GraphQLResult } from './graphql/graphql'
-import * as GQL from './graphql/schema'
-import { UpdateExtensionSettingsArgs } from './settings/edit'
-import { SettingsCascadeOrError } from './settings/settings'
+import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
+import { ConfiguredExtension } from '../extensions/extension'
+import { GraphQLResult } from '../graphql/graphql'
+import * as GQL from '../graphql/schema'
+import { UpdateExtensionSettingsArgs } from '../settings/edit'
+import { SettingsCascade, SettingsCascadeOrError } from '../settings/settings'
 
 /**
- * Description of the context in which extensions-client-common is running, and platform-specific hooks.
+ * Platform-specific data and methods shared by multiple Sourcegraph components.
+ *
+ * Whenever shared code (in shared/) needs to perform an action or retrieve data that requires different
+ * implementations depending on the platform, the shared code should use this value's fields.
  */
-export interface Context {
+export interface PlatformContext {
     /**
      * An observable that emits whenever the settings cascade changes (including when any individual subject's
      * settings change).
@@ -49,11 +54,19 @@ export interface Context {
      * Forces the currently displayed tooltip, if any, to update its contents.
      */
     forceUpdateTooltip(): void
+
+    /**
+     * Spawns (e.g., in a Web Worker) and opens a communication channel to an extension.
+     */
+    createMessageTransports: (
+        extension: ConfiguredExtension,
+        settingsCascade: SettingsCascade
+    ) => Promise<MessageTransports>
 }
 
 /**
- * React partial props for components needing the extensions context.
+ * React partial props for components needing the {@link PlatformContext}.
  */
-export interface ExtensionsContextProps {
-    extensionsContext: Context
+export interface PlatformContextProps {
+    platformContext: PlatformContext
 }

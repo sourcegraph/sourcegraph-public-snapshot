@@ -1,9 +1,8 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { concat } from 'rxjs'
-import { mergeMap } from 'rxjs/operators'
+import { tap } from 'rxjs/operators'
 import { overwriteSettings } from '../configuration/backend'
-import { refreshSettings } from '../user/settings/backend'
+import { settingsRefreshes } from '../user/settings/backend'
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
@@ -41,7 +40,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
     private onDidCommit = (lastID: number | null, contents: string) => {
         this.setState({ commitError: undefined })
         overwriteSettings(this.props.subject.id, lastID, contents)
-            .pipe(mergeMap(() => concat(refreshSettings(), [null])))
+            .pipe(tap(() => settingsRefreshes.next()))
             .subscribe(
                 () => {
                     this.setState({ commitError: undefined })

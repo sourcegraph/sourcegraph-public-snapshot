@@ -2,13 +2,12 @@ import { from, Subject, Unsubscribable } from 'rxjs'
 import { filter, first, map, mergeMap } from 'rxjs/operators'
 import { Controller as BaseController, ExtensionConnectionKey } from '../api/client/controller'
 import { Environment } from '../api/client/environment'
-import { ExecuteCommandParams } from '../api/client/providers/command'
+import { ExecuteCommandParams } from '../api/client/services/command'
 import { Contributions, MessageType } from '../api/protocol'
-import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
-import { BrowserConsoleTracer, Trace } from '../api/protocol/jsonrpc2/trace'
+import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands, updateConfiguration } from '../commands/commands'
-import { Context } from '../context'
 import { Notification } from '../notifications/notification'
+import { PlatformContext } from '../platform/context'
 import { ExtensionManifest } from '../schema/extension.schema'
 import { SettingsCascade } from '../settings/settings'
 import { asError, isErrorLike } from '../util/errors'
@@ -36,7 +35,7 @@ export class Controller extends BaseController<ConfiguredExtension, SettingsCasc
      * emitted as notifications).
      */
     public executeCommand(params: ExecuteCommandParams): Promise<any> {
-        return this.registries.commands.executeCommand(params).catch(err => {
+        return this.services.commands.executeCommand(params).catch(err => {
             this.notifications.next({ message: err, type: MessageType.Error, source: params.command })
             return Promise.reject(err)
         })
@@ -47,7 +46,7 @@ export class Controller extends BaseController<ConfiguredExtension, SettingsCasc
  * React props or state containing the controller. There should be only a single controller for the whole
  * application.
  */
-export interface ControllerProps {
+export interface ExtensionsControllerProps {
     /**
      * The controller, which is used to communicate with the extensions and manages extensions based on the
      * environment.
@@ -58,8 +57,6 @@ export interface ControllerProps {
 /**
  * Filter the environment to omit extensions that should not be activated (based on their manifest's
  * activationEvents).
- *
- * @template CC settings cascade type
  */
 function environmentFilter(
     nextEnvironment: Environment<ConfiguredExtension, SettingsCascade>
@@ -112,15 +109,9 @@ declare global {
  * of the application state that the controller needs to know.
  *
  * It receives state updates via calls to the setEnvironment method from React components. It provides results to
- * React components via its registries and the showMessages, etc., observables.
+ * React components via its services and the showMessages, etc., observables.
  */
-export function createController(
-    context: Context,
-    createMessageTransports: (
-        extension: ConfiguredExtension,
-        settingsCascade: SettingsCascade
-    ) => Promise<MessageTransports>
-): Controller {
+export function createController(context: PlatformContext): Controller {
     const controller: Controller = new Controller({
         clientOptions: (_key: ExtensionConnectionKey, extension: ConfiguredExtension) => ({
             createMessageTransports: async () => {
@@ -130,7 +121,7 @@ export function createController(
                         map(({ configuration }) => configuration)
                     )
                     .toPromise()
-                return createMessageTransports(extension, settingsCascade)
+                return context.createMessageTransports(extension, settingsCascade)
             },
         }),
         environmentFilter,
@@ -143,7 +134,7 @@ export function createController(
         const traceEnabled = localStorage.getItem(ExtensionStatus.TRACE_STORAGE_KEY) !== null
         for (const e of entries) {
             e.connection
-                .then(c => c.trace(traceEnabled ? Trace.Verbose : Trace.Off, new BrowserConsoleTracer(e.key.id)))
+                .then(c => c.trace(traceEnabled ? new BrowserConsoleTracer(e.key.id) : null))
                 .catch(err => console.error(err))
         }
     })
@@ -226,7 +217,7 @@ function registerExtensionContributions(controller: Controller): Unsubscribable 
                 .filter((contributions): contributions is Contributions => !!contributions)
         )
     )
-    return controller.registries.contribution.registerContributions({
+    return controller.services.contribution.registerContributions({
         contributions,
     })
 }

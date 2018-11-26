@@ -10,13 +10,13 @@ describe('Commands (integration)', () => {
             // Register the command and call it.
             const unsubscribe = extensionHost.commands.registerCommand('c', () => 'a')
             assert.strictEqual(await extensionHost.commands.executeCommand('c'), 'a')
-            assert.strictEqual(await clientController.registries.commands.executeCommand({ command: 'c' }), 'a')
+            assert.strictEqual(await clientController.services.commands.executeCommand({ command: 'c' }), 'a')
 
             // Unregister the command and ensure it's removed.
             unsubscribe.unsubscribe()
             await extensionHost.internal.sync()
             assert.rejects(() => extensionHost.commands.executeCommand('c')) // tslint:disable-line no-floating-promises
-            assert.throws(() => clientController.registries.commands.executeCommand({ command: 'c' }))
+            assert.throws(() => clientController.services.commands.executeCommand({ command: 'c' }))
         })
 
         it('supports multiple commands', async () => {
@@ -29,9 +29,9 @@ describe('Commands (integration)', () => {
             await extensionHost.internal.sync()
 
             assert.strictEqual(await extensionHost.commands.executeCommand('c1'), 'a1')
-            assert.strictEqual(await clientController.registries.commands.executeCommand({ command: 'c1' }), 'a1')
+            assert.strictEqual(await clientController.services.commands.executeCommand({ command: 'c1' }), 'a1')
             assert.strictEqual(await extensionHost.commands.executeCommand('c2'), 'a2')
-            assert.strictEqual(await clientController.registries.commands.executeCommand({ command: 'c2' }), 'a2')
+            assert.strictEqual(await clientController.services.commands.executeCommand({ command: 'c2' }), 'a2')
         })
     })
 })

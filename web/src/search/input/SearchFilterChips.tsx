@@ -5,16 +5,17 @@ import * as React from 'react'
 import { matchPath } from 'react-router'
 import { NavLink } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { distinctUntilChanged } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Tooltip } from '../../components/tooltip/Tooltip'
 import { routes } from '../../routes'
-import { viewerSettings } from '../../settings/configuration'
+import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
 import { submitSearch, toggleSearchFilter } from '../helpers'
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -30,28 +31,11 @@ interface ISearchScope {
     value: string
 }
 
-interface State {
-    /** All search scopes from configuration */
-    configuredScopes?: ISearchScope[]
-    /** All fetched search scopes */
-    remoteScopes?: ISearchScope[]
-}
-
-export class SearchFilterChips extends React.PureComponent<Props, State> {
-    public state: State = {}
-
+export class SearchFilterChips extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            viewerSettings.pipe(map(config => config['search.scopes'] || [])).subscribe(searchScopes =>
-                this.setState({
-                    configuredScopes: searchScopes,
-                })
-            )
-        )
-
         // Update tooltip text immediately after clicking.
         this.subscriptions.add(
             this.componentUpdates
@@ -109,16 +93,10 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
     }
 
     private getScopes(): ISearchScope[] {
-        const allScopes: ISearchScope[] = []
-
-        if (this.state.configuredScopes) {
-            allScopes.push(...this.state.configuredScopes)
-        }
-
-        if (this.state.remoteScopes) {
-            allScopes.push(...this.state.remoteScopes)
-        }
-
+        const allScopes: ISearchScope[] =
+            (isSettingsValid<Settings>(this.props.settingsCascade) &&
+                this.props.settingsCascade.final['search.scopes']) ||
+            []
         allScopes.push(...this.getScopesForCurrentRoute())
         return allScopes
     }

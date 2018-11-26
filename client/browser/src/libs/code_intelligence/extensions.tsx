@@ -1,13 +1,12 @@
 import * as React from 'react'
 import { render } from 'react-dom'
 import { combineLatest, from, Observable, Unsubscribable } from 'rxjs'
-import { map, take } from 'rxjs/operators'
+import { filter, take } from 'rxjs/operators'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
 import { Controller as ClientController, createController } from '../../../../../shared/src/extensions/controller'
 import { Notifications } from '../../../../../shared/src/notifications/Notifications'
-import { ConfiguredSubject, SettingsCascade, SettingsCascadeOrError } from '../../../../../shared/src/settings/settings'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'
@@ -15,70 +14,28 @@ import { Environment } from '../../../../../shared/src/api/client/environment'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
-} from '../../../../../shared/src/api/client/providers/decoration'
-import { Context } from '../../../../../shared/src/context'
+} from '../../../../../shared/src/api/client/services/decoration'
 import { viewerConfiguredExtensions } from '../../../../../shared/src/extensions/helpers'
-import { isErrorLike } from '../../shared/backend/errors'
-import { createExtensionsContext, createMessageTransports } from '../../shared/backend/extensions'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
+import { isSettingsValid } from '../../../../../shared/src/settings/settings'
+import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
-import { sourcegraphUrl } from '../../shared/util/context'
 import { getGlobalDebugMount } from '../github/extensions'
 import { MountGetter } from './code_intelligence'
 
-// This is rather specific to extensions-client-common
-// and could be moved to that package in the future.
-export function logThenDropConfigurationErrors(cascadeOrError: SettingsCascadeOrError): SettingsCascade {
-    const EMPTY_CASCADE: SettingsCascade = {
-        subjects: [],
-        final: {},
-    }
-    if (!cascadeOrError.subjects) {
-        console.error('invalid configuration: no settings subjects available')
-        return EMPTY_CASCADE
-    }
-    if (!cascadeOrError.final) {
-        console.error('invalid configuration: no final settings available')
-        return EMPTY_CASCADE
-    }
-    if (isErrorLike(cascadeOrError.subjects)) {
-        console.error(`invalid configuration: error in settings subjects: ${cascadeOrError.subjects.message}`)
-        return EMPTY_CASCADE
-    }
-    if (isErrorLike(cascadeOrError.final)) {
-        console.error(`invalid configuration: error in final configuration: ${cascadeOrError.final.message}`)
-        return EMPTY_CASCADE
-    }
-    return {
-        subjects: cascadeOrError.subjects.filter(
-            (subject): subject is ConfiguredSubject => {
-                if (!subject) {
-                    console.error('invalid configuration: no settings subjects available')
-                    return false
-                }
-                if (isErrorLike(subject)) {
-                    console.error(`invalid configuration: error in settings subjects: ${subject.message}`)
-                    return false
-                }
-                return true
-            }
-        ),
-        final: cascadeOrError.final,
-    }
-}
-
 export interface Controllers {
-    extensionsContext: Context
+    platformContext: PlatformContext
     extensionsController: ClientController
 }
 
 function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
-    const extensionsContext = createExtensionsContext(sourcegraphUrl)
-    const extensionsController = createController(extensionsContext, createMessageTransports)
+    const platformContext = createPlatformContext()
+    const extensionsController = createController(platformContext)
 
     combineLatest(
-        viewerConfiguredExtensions(extensionsContext),
-        from(extensionsContext.settingsCascade).pipe(map(logThenDropConfigurationErrors)),
+        viewerConfiguredExtensions(platformContext),
+        from(platformContext.settingsCascade).pipe(filter(isSettingsValid)),
         environment
     ).subscribe(([extensions, configuration, { roots, visibleTextDocuments }]) => {
         from(extensionsController.environment)
@@ -94,7 +51,7 @@ function createControllers(environment: Observable<Pick<Environment, 'roots' | '
             })
     })
 
-    return { extensionsContext, extensionsController }
+    return { platformContext, extensionsController }
 }
 
 /**
@@ -104,7 +61,7 @@ export function initializeExtensions(
     getCommandPaletteMount: MountGetter,
     environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
 ): Controllers {
-    const { extensionsContext, extensionsController } = createControllers(environment)
+    const { platformContext, extensionsController } = createControllers(environment)
     const history = H.createBrowserHistory()
 
     render(
@@ -112,7 +69,7 @@ export function initializeExtensions(
             <CommandListPopoverButton
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
-                extensionsContext={extensionsContext}
+                platformContext={platformContext}
                 location={history.location}
             />
             <Notifications extensionsController={extensionsController} />
@@ -125,7 +82,7 @@ export function initializeExtensions(
         getGlobalDebugMount()
     )
 
-    return { extensionsContext, extensionsController }
+    return { platformContext, extensionsController }
 }
 
 const combineUnsubscribables = (...unsubscribables: Unsubscribable[]): Unsubscribable => ({

@@ -10,7 +10,7 @@ describe('search (integration)', () => {
         const unsubscribe = extensionHost.search.registerQueryTransformer({ transformQuery: () => 'bar' })
         await ready
         assert.deepStrictEqual(
-            await clientController.registries.queryTransformer
+            await clientController.services.queryTransformer
                 .transformQuery('foo')
                 .pipe(take(1))
                 .toPromise(),
@@ -20,7 +20,7 @@ describe('search (integration)', () => {
         // Unregister the provider and ensure it's removed.
         unsubscribe.unsubscribe()
         assert.deepStrictEqual(
-            await clientController.registries.queryTransformer
+            await clientController.services.queryTransformer
                 .transformQuery('foo')
                 .pipe(take(1))
                 .toPromise(),
@@ -36,7 +36,7 @@ describe('search (integration)', () => {
         extensionHost.search.registerQueryTransformer({ transformQuery: q => `${q} qux` })
         await ready
         assert.deepStrictEqual(
-            await clientController.registries.queryTransformer
+            await clientController.services.queryTransformer
                 .transformQuery('foo')
                 .pipe(take(1))
                 .toPromise(),

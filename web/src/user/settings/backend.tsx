@@ -1,25 +1,11 @@
-import { Observable } from 'rxjs'
-import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
+import { Observable, Subject } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
-import { authRequired } from '../../auth'
 import { queryGraphQL } from '../../backend/graphql'
-import { settingsCascade } from '../../settings/configuration'
 
-/**
- * Refreshes the viewer's settings from the server, which propagates throughout the app to all consumers of
- * settings.
- */
-export function refreshSettings(): Observable<never> {
-    return authRequired.pipe(
-        take(1),
-        filter(authRequired => !authRequired),
-        mergeMap(() => fetchViewerSettings()),
-        tap(result => settingsCascade.next(result)),
-        mergeMap(() => [])
-    )
-}
+export const settingsRefreshes = new Subject<void>()
 
 const settingsCascadeFragment = gql`
     fragment SettingsCascadeFields on SettingsCascade {
@@ -51,13 +37,13 @@ const settingsCascadeFragment = gql`
 `
 
 /**
- * Fetches the viewer's settings from the server. Callers should use refreshSettings instead of calling
+ * Fetches the viewer's settings from the server. Callers should use settingsRefreshes#next instead of calling
  * this function, to ensure that the result is propagated consistently throughout the app instead of only being
  * returned to the caller.
  *
  * @return Observable that emits the settings
  */
-function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
+export function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
     return queryGraphQL(gql`
         query ViewerSettings {
             viewerSettings {
@@ -74,7 +60,3 @@ function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
         })
     )
 }
-
-refreshSettings()
-    .toPromise()
-    .then(() => void 0, err => console.error(err))

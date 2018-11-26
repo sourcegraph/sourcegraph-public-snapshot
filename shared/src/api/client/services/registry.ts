@@ -14,12 +14,6 @@ export interface Entry<O, P> {
 export abstract class FeatureProviderRegistry<O, P> {
     protected entries = new BehaviorSubject<Entry<O, P>[]>([])
 
-    public constructor(initialEntries?: Entry<O, P>[]) {
-        if (initialEntries) {
-            this.entries.next(initialEntries)
-        }
-    }
-
     public registerProvider(registrationOptions: O, provider: P): Unsubscribable {
         const entry: Entry<O, P> = { registrationOptions, provider }
         this.entries.next([...this.entries.value, entry])

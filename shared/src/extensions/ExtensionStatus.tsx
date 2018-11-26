@@ -4,12 +4,12 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExtensionConnection } from '../api/client/controller'
-import { BrowserConsoleTracer, Trace } from '../api/protocol/jsonrpc2/trace'
+import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { PopoverButton } from '../components/PopoverButton'
 import { Toggle } from '../components/Toggle'
-import { ControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from '../extensions/controller'
 
-interface Props extends ControllerProps {
+interface Props extends ExtensionsControllerProps {
     link: React.ComponentType<{ id: string }>
 }
 
@@ -108,12 +108,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                 if (this.state.extensions) {
                     for (const e of this.state.extensions) {
                         e.connection
-                            .then(c =>
-                                c.trace(
-                                    this.state.trace ? Trace.Verbose : Trace.Off,
-                                    new BrowserConsoleTracer(e.key.id)
-                                )
-                            )
+                            .then(c => c.trace(this.state.trace ? new BrowserConsoleTracer(e.key.id) : null))
                             .catch(err => console.error(err))
                     }
                 }

@@ -2,6 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -11,7 +12,7 @@ import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchFilterChips } from './SearchFilterChips'
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -79,6 +80,7 @@ export class SearchPage extends React.Component<Props, State> {
                             history={this.props.history}
                             query={this.state.userQuery}
                             authenticatedUser={this.props.authenticatedUser}
+                            settingsCascade={this.props.settingsCascade}
                         />
                     </div>
                 </Form>

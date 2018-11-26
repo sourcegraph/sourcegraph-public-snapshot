@@ -5,7 +5,7 @@ import * as React from 'react'
 import { NEVER, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../util/types'
 
 const DiffBoundary: React.FunctionComponent<{
@@ -182,7 +182,7 @@ interface Part {
     filePath: string | null
 }
 
-interface Props extends ExtensionsProps {
+interface Props extends PlatformContextProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 

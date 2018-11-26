@@ -5,8 +5,8 @@ import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extension.schema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { isExtensionAdded } from '../ExtensionsClientCommonContext'
 import { ExtensionToggle } from '../ExtensionToggle'
+import { isExtensionAdded } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
 import { WorkInProgressBadge } from './WorkInProgressBadge'
@@ -89,7 +89,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         settingsCascade={props.settingsCascade}
                                         onUpdate={props.onDidUpdateExtension}
                                         addClassName="btn-primary"
-                                        extensionsContext={props.extensionsContext}
+                                        platformContext={props.platformContext}
                                     />
                                 </div>
                             )}

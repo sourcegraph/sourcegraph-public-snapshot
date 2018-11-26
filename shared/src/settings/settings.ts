@@ -3,6 +3,11 @@ import * as GQL from '../graphql/schema'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
 
+/**
+ * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
+ * such as the browser extension). This subject doesn't exist in the GraphQL API, but the related types that are
+ * also used as settings subjects {@link GQL.IUser}, {@link GQL.IOrg}, and {@link GQL.ISite} do.
+ */
 export interface IClient {
     __typename: 'Client'
     displayName: string
@@ -38,15 +43,24 @@ export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'settingsURL' | 
  * A cascade of settings from multiple subjects, from lowest precedence to highest precedence, and the final
  * settings, merged in order of precedence from the settings for each subject in the cascade.
  *
+ * For example, the client might support settings globally and per-user, and it is designed so that
+ * user settings override global settings. Then there would be two subjects, one for global settings and one for
+ * the user.
+ *
  * Callers that need to represent the null/error states should use {@link SettingsCascade}.
+ *
+ * @template S the settings type
  */
-export interface SettingsCascade {
+export interface SettingsCascade<S extends Settings = Settings> {
     /**
      * The settings for each subject in the cascade, from lowest to highest precedence.
      */
-    subjects: ConfiguredSubject[]
+    subjects: ConfiguredSubject<S>[]
 
-    final: Settings
+    /**
+     * The final settings (merged in order of precedence from the settings for each subject in the cascade).
+     */
+    final: S
 }
 
 /**
@@ -54,16 +68,17 @@ export interface SettingsCascade {
  * error.
  *
  * Callers that don't need to represent the null/error states should use {@link SettingsCascade}.
+ *
+ * @template S the settings type
  */
-export interface SettingsCascadeOrError
-    extends Pick<SettingsCascade, Exclude<keyof SettingsCascade, 'subjects' | 'final'>> {
+export interface SettingsCascadeOrError<S extends Settings = Settings> {
     /**
      * The settings for each subject in the cascade, from lowest to highest precedence, null if there are none, or
      * an error.
      *
      * @see SettingsCascade#subjects
      */
-    subjects: ConfiguredSubjectOrError[] | ErrorLike | null
+    subjects: ConfiguredSubjectOrError<S>[] | ErrorLike | null
 
     /**
      * The final settings (merged in order of precedence from the settings for each subject in the cascade), an
@@ -72,20 +87,22 @@ export interface SettingsCascadeOrError
      *
      * @see SettingsCascade#final
      */
-    final: Settings | ErrorLike | null
+    final: S | ErrorLike | null
 }
 
 /**
  * A subject and its settings.
  *
  * Callers that need to represent the null/error states should use {@link ConfiguredSubjectOrError}.
+ *
+ * @template S the settings type
  */
-export interface ConfiguredSubject {
+export interface ConfiguredSubject<S extends Settings = Settings> {
     /** The subject. */
     subject: SettingsSubject
 
     /** The subject's settings. */
-    settings: Settings
+    settings: S | null
 
     /** The sequential ID number of the settings, used to ensure that edits are applied to the correct version. */
     lastID: number | null
@@ -95,14 +112,16 @@ export interface ConfiguredSubject {
  * A subject and its settings, or null if there are no settings, or an error.
  *
  * Callers that don't need to represent the null/error states should use {@link ConfiguredSubject}.
+ *
+ * @template S the settings type
  */
-export interface ConfiguredSubjectOrError
-    extends Pick<ConfiguredSubject, Exclude<keyof ConfiguredSubject, 'settings'>> {
+export interface ConfiguredSubjectOrError<S extends Settings = Settings>
+    extends Pick<ConfiguredSubject<S>, Exclude<keyof ConfiguredSubject<S>, 'settings'>> {
     /**
      * The subject's settings (if any), an error (if any occurred while retrieving or parsing the settings), or
      * null if there are no settings.
      */
-    settings: Settings | ErrorLike | null
+    settings: S | ErrorLike | null
 }
 
 /** A minimal subset of a GraphQL SettingsSubject type that includes only the single contents value. */
@@ -113,37 +132,36 @@ export interface SubjectSettingsContents {
     } | null
 }
 
-/** Converts a GraphQL SettingsCascade value to a value of this library's SettingsCascade type. */
+/**
+ * Converts a GraphQL SettingsCascade value to a SettingsCascadeOrError value.
+ *
+ * @param subjects A list of settings subjects in the settings cascade. If empty, an error is thrown.
+ */
 export function gqlToCascade({
     subjects,
 }: {
     subjects: (SettingsSubject & SubjectSettingsContents)[]
 }): SettingsCascadeOrError {
-    const cascade: SettingsCascadeOrError & { subjects: ConfiguredSubjectOrError[] } = {
-        subjects: [],
-        final: null,
-    }
+    const configuredSubjects: ConfiguredSubjectOrError[] = []
     const allSettings: Settings[] = []
     const allSettingsErrors: ErrorLike[] = []
     for (const subject of subjects) {
         const settings = subject.latestSettings && parseJSONCOrError<Settings>(subject.latestSettings.contents)
         const lastID = subject.latestSettings ? subject.latestSettings.id : null
-        cascade.subjects.push({ subject, settings, lastID })
-
+        configuredSubjects.push({ subject, settings, lastID })
         if (isErrorLike(settings)) {
             allSettingsErrors.push(settings)
         } else if (settings !== null) {
             allSettings.push(settings)
         }
     }
-
-    if (allSettingsErrors.length > 0) {
-        cascade.final = createAggregateError(allSettingsErrors)
-    } else {
-        cascade.final = mergeSettings<Settings>(allSettings)
+    return {
+        subjects: configuredSubjects,
+        final:
+            allSettingsErrors.length > 0
+                ? createAggregateError(allSettingsErrors)
+                : mergeSettings<Settings>(allSettings),
     }
-
-    return cascade
 }
 
 /**
@@ -152,7 +170,7 @@ export function gqlToCascade({
  *
  * TODO(sqs): In the future, this will pass a CustomMergeFunctions value to merge.
  */
-export function mergeSettings<C extends Settings>(values: C[]): C | null {
+export function mergeSettings<S extends Settings>(values: S[]): S | null {
     if (values.length === 0) {
         return null
     }
@@ -189,6 +207,25 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
             base[key] = add[key]
         }
     }
+}
+
+/**
+ * Reports whether the settings cascade is valid (i.e., is non-empty and doesn't have any errors).
+ *
+ * @todo Display the errors to the user in another component.
+ *
+ * @template S the settings type
+ */
+export function isSettingsValid<S extends Settings>(
+    settingsCascade: SettingsCascadeOrError<S>
+): settingsCascade is SettingsCascade<S> {
+    return (
+        settingsCascade.subjects !== null &&
+        !isErrorLike(settingsCascade.subjects) &&
+        settingsCascade.subjects.every(subject => !isErrorLike(subject.settings)) &&
+        settingsCascade.final !== null &&
+        !isErrorLike(settingsCascade.final)
+    )
 }
 
 /**
