@@ -1,20 +1,16 @@
 package server_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
+	"io"
 	"net/url"
 	"os"
-	"reflect"
-	"sort"
-	"sync"
+	"path"
+	"strings"
 	"testing"
-	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -22,21 +18,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	gobuildserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/xlang"
-	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 )
-
-func init() {
-	// Use in-process Go language server for tests.
-	proxy.ServersByMode = map[string]func() (jsonrpc2.ObjectStream, error){
-		"go": func() (jsonrpc2.ObjectStream, error) {
-			// Run in-process for easy development (no recompiles, etc.).
-			a, b := proxy.InMemoryPeerConns()
-			jsonrpc2.NewConn(context.Background(), a, jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
-			return b, nil
-		},
-	}
-}
 
 func TestProxy(t *testing.T) {
 	if testing.Short() {
@@ -590,10 +572,6 @@ func yza() {}
 		t.Run(label, func(t *testing.T) {
 			// Mock repo and dep fetching to use test fixtures.
 			{
-				cleanup := useMapFS(test.fs)
-				defer cleanup()
-			}
-			{
 				orig := gobuildserver.NewDepRepoVFS
 				gobuildserver.NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					id := cloneURL.String() + "?" + rev
@@ -607,7 +585,7 @@ func yza() {}
 				}()
 
 				origRemoteFS := gobuildserver.RemoteFS
-				gobuildserver.RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
+				gobuildserver.RemoteFS = func(ctx context.Context, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
 					return mapFS(test.fs), nil
 				}
 
@@ -617,24 +595,22 @@ func yza() {}
 			}
 
 			ctx := context.Background()
-			p := proxy.New()
 			if test.rootURI == "" {
 				t.Fatal("no rootPath set in test fixture")
 			}
-
-			addr, done := startProxy(t, p)
-			defer done()
-			c := dialProxy(t, addr, nil)
 
 			root, err := gituri.Parse(string(test.rootURI))
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			c, done := connectionToNewBuildServer(string(test.rootURI), t)
+			defer done()
+
 			// Prepare the connection.
-			if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
-				InitializeParams:      lsp.InitializeParams{RootURI: test.rootURI},
-				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
+			if err := c.Call(ctx, "initialize", lspext.InitializeParams{
+				InitializeParams: lsp.InitializeParams{RootURI: "file:///"},
+				OriginalRootURI:  test.rootURI,
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}
@@ -644,337 +620,156 @@ func yza() {}
 	}
 }
 
-func startProxy(t testing.TB, p *proxy.Proxy) (addr string, done func()) {
-	proxy.LogServerStats = false
-	bindAddr := ":0"
-	if os.Getenv("CI") != "" {
-		// CircleCI has issues with IPv6 (e.g., "dial tcp [::]:39984:
-		// connect: network is unreachable").
-		bindAddr = "127.0.0.1:0"
-	}
-	l, err := net.Listen("tcp", bindAddr)
-	if err != nil {
-		t.Fatal("Listen:", err)
-	}
-	go p.Serve(context.Background(), l)
-	return l.Addr().String(), func() {
-		l.Close()
-		if err := p.Close(context.Background()); err != nil && err.Error() != "jsonrpc2: connection is closed" {
-			t.Fatal("proxy.Close:", err)
-		}
-	}
+// InMemoryPeerConns is a convenience helper that returns a pair of
+// io.ReadWriteClosers that are each other's peer.
+//
+// It can be used, for example, to run an in-memory JSON-RPC handler
+// that speaks to an in-memory client, without needin to open a Unix
+// or TCP connection.
+//
+// Copied from xlang/proxy/servers.go, which will get deleted soon.
+func InMemoryPeerConns() (jsonrpc2.ObjectStream, jsonrpc2.ObjectStream) {
+	sr, cw := io.Pipe()
+	cr, sw := io.Pipe()
+	return jsonrpc2.NewBufferedStream(&pipeReadWriteCloser{sr, sw}, jsonrpc2.VSCodeObjectCodec{}),
+		jsonrpc2.NewBufferedStream(&pipeReadWriteCloser{cr, cw}, jsonrpc2.VSCodeObjectCodec{})
 }
 
-func dialProxy(t testing.TB, addr string, recvDiags chan<- lsp.PublishDiagnosticsParams) *jsonrpc2.Conn {
-	h := &xlang.ClientHandler{
-		RecvDiagnostics: func(uri lsp.DocumentURI, diags []lsp.Diagnostic) {
-			if recvDiags == nil {
-				var buf bytes.Buffer
-				for _, d := range diags {
-					fmt.Fprintf(&buf, "\t:%d:%d: %s\n", d.Range.Start.Line+1, d.Range.Start.Character+1, d.Message)
-				}
-				t.Logf("diagnostics: %s\n%s", uri, buf.String())
-			} else {
-				recvDiags <- lsp.PublishDiagnosticsParams{URI: uri, Diagnostics: diags}
-			}
-		},
-		RecvPartialResult: func(id lsp.ID, patch interface{}) {
-			p, _ := json.Marshal(patch)
-			t.Logf("partialResult: %s %s", id.String(), string(p))
-		},
+type pipeReadWriteCloser struct {
+	*io.PipeReader
+	*io.PipeWriter
+}
+
+func (c *pipeReadWriteCloser) Close() error {
+	err1 := c.PipeReader.Close()
+	err2 := c.PipeWriter.Close()
+	if err1 != nil {
+		return err1
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	defer cancel()
-	c, err := xlang.DialProxy(ctx, addr, h)
+	return err2
+}
+
+func connectionToNewBuildServer(root string, t testing.TB) (*jsonrpc2.Conn, func()) {
+	rootURI, err := gituri.Parse(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return c
+	// Run in-process for easy development (no recompiles, etc.).
+	a, b := InMemoryPeerConns()
+
+	convertURIs := func(m *json.RawMessage, f func(root gituri.URI, uriStr string) (*gituri.URI, error)) error {
+		var obj interface{}
+		if err := json.Unmarshal(*m, &obj); err != nil {
+			return err
+		}
+		var walkErr error
+		lspext.WalkURIFields(obj, nil, func(uriStr lsp.DocumentURI) lsp.DocumentURI {
+			newURI, err := f(*rootURI, string(uriStr))
+			if err != nil {
+				walkErr = err
+				return ""
+			}
+			return lsp.DocumentURI(newURI.String())
+		})
+		if walkErr != nil {
+			return walkErr
+		}
+		r, err := json.Marshal(obj)
+		if err != nil {
+			return err
+		}
+		*m = json.RawMessage(r)
+		return nil
+	}
+
+	onSend := func(req *jsonrpc2.Request, res *jsonrpc2.Response) {
+		if res == nil {
+			err := convertURIs(req.Params, RelWorkspaceURI)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	onRecv := func(req *jsonrpc2.Request, res *jsonrpc2.Response) {
+		if res != nil && res.Result != nil {
+			err := convertURIs(res.Result, AbsWorkspaceURI)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	jsonrpc2.NewConn(context.Background(), a, jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
+
+	conn := jsonrpc2.NewConn(context.Background(), b, NoopHandler{}, jsonrpc2.OnRecv(onRecv), jsonrpc2.OnSend(onSend))
+	done := func() {
+		a.Close()
+		b.Close()
+	}
+	return conn, done
 }
 
-// TestProxy_connections tests that connections are created, reused
-// and resumed as appropriate.
-func TestProxy_connections(t *testing.T) {
-	ctx := context.Background()
+type NoopHandler struct{}
 
-	cleanup := useMapFS(map[string]string{"f": "x"})
-	defer cleanup()
+func (NoopHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {}
 
-	// Store data sent/received for checking.
-	var (
-		mu     sync.Mutex
-		reqs   []testRequest // store received reqs
-		addReq = func(req *jsonrpc2.Request) {
-			mu.Lock()
-			defer mu.Unlock()
-			reqs = append(reqs, testRequest{req.Method, req.Params})
+// RelWorkspaceURI and AbsWorkspaceURI were copied from xlang/proxy/uris.go,
+// which will get deleted soon.
+
+// RelWorkspaceURI maps absolute URIs like
+// "git://github.com/facebook/react.git?master#dir/file.txt" to
+// workspace-relative file URIs like "file:///dir/file.txt". The
+// result is a path within the workspace's virtual file system that
+// will contain the original path's contents.
+//
+// If uriStr isn't underneath root, the parsed original uriStr is
+// returned. This occurs when a cross-workspace resource is referenced
+// (e.g., a client performs a cross-workspace go-to-definition and
+// then notifies the server that the client opened the destination
+// resource).
+func RelWorkspaceURI(root gituri.URI, uriStr string) (*gituri.URI, error) {
+	u, err := gituri.Parse(uriStr)
+	if err != nil {
+		return nil, err
+	}
+	if !strings.HasPrefix(uriStr, root.String()) {
+		// The uriStr resource lives in a different workspace.
+		return u, nil
+	}
+	if p := path.Clean(u.FilePath()); strings.HasPrefix(p, "/") || strings.HasPrefix(p, "..") {
+		return nil, fmt.Errorf("invalid file path in URI %q in LSP proxy client request (must not begin with '/', '..', or contain '.' or '..' components)", uriStr)
+	} else if u.FilePath() != "" && p != u.FilePath() {
+		return nil, fmt.Errorf("invalid file path in URI %q (raw file path %q != cleaned file path %q)", uriStr, u.FilePath(), p)
+	}
+
+	// Support when root is rooted at a subdir.
+	if rootPath := root.FilePath(); rootPath != "" {
+		rootPath = strings.TrimSuffix(rootPath, string(os.PathSeparator))
+		if !strings.HasPrefix(u.FilePath(), rootPath+string(os.PathSeparator)) {
+			return u, nil
 		}
-		waitForReqs = func() error {
-			for t0 := time.Now(); time.Since(t0) < 250*time.Millisecond; time.Sleep(10 * time.Millisecond) {
-				mu.Lock()
-				if reqs != nil {
-					mu.Unlock()
-					return nil
-				}
-				mu.Unlock()
-			}
-			return errors.New("timed out waiting for test server to receive req")
-		}
-		getAndClearReqs = func() []testRequest {
-			mu.Lock()
-			defer mu.Unlock()
-			v := reqs
-			reqs = nil
-			return v
-		}
-		wantReqs = func(want []testRequest) error {
-			if os.Getenv("CI") != "" {
-				time.Sleep(3 * time.Second)
-			}
-			if err := waitForReqs(); err != nil {
-				return err
-			}
-			got := getAndClearReqs()
-			join := func(reqs []testRequest) (s string) {
-				for i, r := range reqs {
-					if i != 0 {
-						s += "\n"
-					}
-					s += r.String()
-				}
-				return
-			}
-			sort.Sort(testRequests(got))
-			sort.Sort(testRequests(want))
-			if !testRequestsEqual(got, want) {
-				return fmt.Errorf("got reqs != want reqs\n\nGOT REQS:\n%s\n\nWANT REQS:\n%s", join(got), join(want))
-			}
-			return nil
-		}
-	)
-
-	// Start test build/lang server S1.
-	calledConnectToTestServer := 0 // track the times we need to open a new server connection
-	proxy.ServersByMode["test"] = func() (jsonrpc2.ObjectStream, error) {
-		mu.Lock()
-		calledConnectToTestServer++
-		mu.Unlock()
-		a, b := proxy.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), a, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
-			addReq(req)
-			return nil, nil
-		})))
-		return b, nil
-	}
-	defer func() {
-		delete(proxy.ServersByMode, "test")
-	}()
-
-	proxy := proxy.New()
-	addr, done := startProxy(t, proxy)
-	defer done()
-
-	// We always send the same capabilities, put in variable to avoid
-	// repetition.
-	caps := lsp.ClientCapabilities{
-		XFilesProvider:   true,
-		XContentProvider: true,
-		XCacheProvider:   true,
+		u = u.WithFilePath(strings.TrimPrefix(u.FilePath(), rootPath+string(os.PathSeparator)))
 	}
 
-	// Start the test client C1.
-	c1 := dialProxy(t, addr, nil)
-
-	// C1 connects to the proxy.
-	initParams := lspext.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{
-			RootURI:      "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Capabilities: caps,
-		},
-		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
-	}
-	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(100 * time.Millisecond) // we're testing for a negative, so this is not as flaky as it seems; if a request is received later, it'll cause a test failure the next time we call wantReqs
-	want := []testRequest{
-		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{
-				RootPath:              "/",
-				RootURI:               "file:///",
-				Capabilities:          caps,
-				InitializationOptions: json.RawMessage("null"),
-			},
-			OriginalRootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Mode:            "test",
-		}},
-	}
-	if err := wantReqs(want); err != nil {
-		t.Fatal("after C1 initialize request:", err)
-	}
-
-	// Now C1 sends an actual request. The proxy should open a
-	// connection to S1, initialize it, and send the request.
-	if err := c1.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile"},
-		Position:     lsp.Position{Line: 1, Character: 2},
-	}, nil); err != nil {
-		t.Fatal(err)
-	}
-	want = []testRequest{
-		{"textDocument/definition", lsp.TextDocumentPositionParams{
-			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile"},
-			Position:     lsp.Position{Line: 1, Character: 2},
-		}},
-	}
-	if err := wantReqs(want); err != nil {
-		t.Fatal("after C1 textDocument/definition request:", err)
-	}
-	if want := 1; calledConnectToTestServer != want {
-		t.Errorf("got %d server connections, want %d (the server should have been connected to)", calledConnectToTestServer, want)
-	}
-
-	// C1 sends another request. The server is already initialized, so
-	// just the single request needs to get sent.
-	if err := c1.Call(ctx, "textDocument/hover", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile2"},
-		Position:     lsp.Position{Line: 3, Character: 4},
-	}, nil); err != nil {
-		t.Fatal(err)
-	}
-	want = []testRequest{
-		{"textDocument/hover", lsp.TextDocumentPositionParams{
-			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile2"},
-			Position:     lsp.Position{Line: 3, Character: 4}}},
-	}
-	if err := wantReqs(want); err != nil {
-		t.Fatal("after C1 textDocument/hover request:", err)
-	}
-
-	// Kill the server to simulate either an idle shutdown by the
-	// proxy, or an unexpected failure on the server.
-	if err := proxy.ShutdownServers(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	if want := 1; calledConnectToTestServer != want {
-		t.Errorf("got %d server connections, want %d (after shutting down the server, did not expect proxy to reconnect until the next client request arrived that should be routed to the server)", calledConnectToTestServer, want)
-	}
-
-	// C1 does not know the server was killed. When it sends the next
-	// request, the proxy should transparently spin up a new server
-	// and reinitialize it appropriately.
-	if err := c1.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile3"},
-		Position:     lsp.Position{Line: 5, Character: 6},
-	}, nil); err != nil {
-		t.Fatal(err)
-	}
-	want = []testRequest{
-		{"shutdown", nil},
-		{"exit", nil},
-		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{
-				RootPath:              "/",
-				RootURI:               "file:///",
-				Capabilities:          caps,
-				InitializationOptions: json.RawMessage("null"),
-			},
-			OriginalRootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Mode:            "test",
-		}},
-		{"textDocument/definition", lsp.TextDocumentPositionParams{
-			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile3"},
-			Position:     lsp.Position{Line: 5, Character: 6}}},
-	}
-	if err := wantReqs(want); err != nil {
-		t.Fatal("after C1's post-server-shutdown textDocument/definition request:", err)
-	}
-	if want := 2; calledConnectToTestServer != want {
-		t.Errorf("got %d server connections, want %d (the server should have been reconnected to and reinitialized)", calledConnectToTestServer, want)
-	}
+	return &gituri.URI{URL: url.URL{Scheme: "file", Path: "/" + u.FilePath()}}, nil
 }
 
-// TestProxy_propagation tests that diagnostics and log messages are
-// propagated from the build/lang server through the proxy to the
-// client.
-func TestProxy_propagation(t *testing.T) {
-	ctx := context.Background()
-
-	cleanup := useMapFS(map[string]string{"f": "x"})
-	defer cleanup()
-
-	p := proxy.New()
-	addr, done := startProxy(t, p)
-	defer done()
-
-	// Start test build/lang server that sends diagnostics about any
-	// file that we call textDocument/definition on.
-	proxy.ServersByMode["test"] = func() (jsonrpc2.ObjectStream, error) {
-		a, b := proxy.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), a, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
-			if req.Method == "textDocument/definition" {
-				var params lsp.TextDocumentPositionParams
-				if err := json.Unmarshal(*req.Params, &params); err != nil {
-					return nil, err
-				}
-				if err := conn.Notify(ctx, "textDocument/publishDiagnostics", lsp.PublishDiagnosticsParams{
-					URI: params.TextDocument.URI,
-					Diagnostics: []lsp.Diagnostic{
-						{
-							Range:   lsp.Range{Start: lsp.Position{Line: 1, Character: 1}, End: lsp.Position{Line: 1, Character: 1}},
-							Message: "m",
-						},
-					},
-				}); err != nil {
-					return nil, err
-				}
-				return []lsp.Location{}, nil
-			}
-			return nil, nil
-		})))
-		return b, nil
+// AbsWorkspaceURI is the inverse of relWorkspaceURI. It maps
+// workspace-relative URIs like "file:///dir/file.txt" to their
+// absolute URIs like
+// "git://github.com/facebook/react.git?master#dir/file.txt".
+func AbsWorkspaceURI(root gituri.URI, uriStr string) (*gituri.URI, error) {
+	uri, err := gituri.Parse(uriStr)
+	if err != nil {
+		return nil, err
 	}
-	defer func() {
-		delete(proxy.ServersByMode, "test")
-	}()
-
-	recvDiags := make(chan lsp.PublishDiagnosticsParams)
-	c := dialProxy(t, addr, recvDiags)
-
-	// Connect to the proxy.
-	initParams := lspext.ClientProxyInitializeParams{
-		InitializeParams:      lsp.InitializeParams{RootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
-		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
+	if uri.Scheme == "file" {
+		return root.WithFilePath(root.ResolveFilePath(uri.Path)), nil
 	}
-	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
-		t.Fatal(err)
-	}
-
-	// Call something that triggers the server to return diagnostics.
-	if err := c.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile"},
-		Position:     lsp.Position{Line: 1, Character: 2},
-	}, nil); err != nil {
-		t.Fatal(err)
-	}
-
-	// Check that we got the diagnostics.
-	select {
-	case diags := <-recvDiags:
-		want := lsp.PublishDiagnosticsParams{
-			URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile",
-			Diagnostics: []lsp.Diagnostic{
-				{
-					Range:   lsp.Range{Start: lsp.Position{Line: 1, Character: 1}, End: lsp.Position{Line: 1, Character: 1}},
-					Message: "m",
-				},
-			},
-		}
-		if !reflect.DeepEqual(diags, want) {
-			t.Errorf("got diags\n%+v\n\nwant diags\n%+v", diags, want)
-		}
-
-	case <-time.After(time.Second):
-		t.Fatal("want diagnostics, got nothing before timeout")
-	}
+	return uri, nil
+	// Another possibility is a "git://" URI that the build/lang
+	// server knew enough to produce on its own (e.g., to refer to
+	// git://github.com/golang/go for a Go stdlib definition). No need
+	// to rewrite those.
 }

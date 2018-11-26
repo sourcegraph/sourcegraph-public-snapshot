@@ -7,7 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-lsp/lspext"
-	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
@@ -24,7 +23,7 @@ import (
 // SECURITY NOTE: This DOES NOT check that the user or context has permissions
 // to read the repo. We assume permission checks happen before a request reaches
 // a build server.
-var RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
+var RemoteFS = func(ctx context.Context, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
 	zipURL := func() string {
 		initializationOptions, ok := initializeParams.InitializationOptions.(map[string]interface{})
 		if !ok {

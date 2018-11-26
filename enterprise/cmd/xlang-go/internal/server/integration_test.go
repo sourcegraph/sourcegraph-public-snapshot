@@ -8,19 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/jsonrpc2"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/go-lsp/lspext"
 	gobuildserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/xlang-go/internal/server"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
-	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 )
 
 func init() {
@@ -176,7 +172,7 @@ func TestIntegration(t *testing.T) {
 				"pkg/util/workqueue/queue.go:113:15": "struct field L sync.Locker",
 			},
 			wantSymbols: map[string][]string{
-				"kubectlAnn": []string{"git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33#pkg/kubectl/kubectl.go:constant:kubectl.kubectlAnnotationPrefix:30:0"},
+				"kubectlAnn": []string{"git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33#pkg/kubectl/kubectl.go:constant:kubectlAnnotationPrefix:31:1"},
 			},
 			wantXDependencies: "kubernetes-kubernetes.json",
 		},
@@ -235,17 +231,16 @@ func TestIntegration(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			proxy := proxy.New()
-			addr, done := startProxy(t, proxy)
+
+			c, done := connectionToNewBuildServer(string(rootURI), t)
 			defer done()
-			c := dialProxy(t, addr, nil)
 
 			// Prepare the connection.
-			if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
-				InitializeParams:      lsp.InitializeParams{RootURI: rootURI},
-				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
+			if err := c.Call(ctx, "initialize", lspext.InitializeParams{
+				InitializeParams: lsp.InitializeParams{RootURI: "file:///"},
+				OriginalRootURI:  rootURI,
 			}, nil); err != nil {
-				t.Fatal("initialize:", err)
+				t.Fatal("initialize:", err, rootURI)
 			}
 
 			root, err := gituri.Parse(string(rootURI))
@@ -268,14 +263,8 @@ func TestIntegration(t *testing.T) {
 // benefit of fast tests here outweighs the benefits of a coarser integration
 // test.
 func useGithubForVFS() func() {
-	origNewRemoteRepoVFS := proxy.NewRemoteRepoVFS
-	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (proxy.FileSystem, error) {
-		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
-		return vfsutil.NewGitHubRepoVFS(fullName, string(commitID))
-	}
-
 	origRemoteFS := gobuildserver.RemoteFS
-	gobuildserver.RemoteFS = func(ctx context.Context, conn *jsonrpc2.Conn, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
+	gobuildserver.RemoteFS = func(ctx context.Context, initializeParams lspext.InitializeParams) (ctxvfs.FileSystem, error) {
 		u, err := gituri.Parse(string(initializeParams.OriginalRootURI))
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse workspace URI for remotefs")
@@ -287,7 +276,6 @@ func useGithubForVFS() func() {
 	}
 
 	return func() {
-		proxy.NewRemoteRepoVFS = origNewRemoteRepoVFS
 		gobuildserver.RemoteFS = origRemoteFS
 	}
 }
