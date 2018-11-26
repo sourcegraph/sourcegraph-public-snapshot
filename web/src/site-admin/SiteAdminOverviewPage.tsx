@@ -188,14 +188,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     </Link>
                                 }
                                 title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
-                                    'survey response',
+                                    'user survey response',
                                     this.state.info.surveyResponses.totalCount
-                                )} ${
-                                    this.state.info.surveyResponses.totalCount >= 5
-                                        ? `, ${Math.round(this.state.info.surveyResponses.averageScore * 10) /
-                                              10} average in last 30 days (from 0–10)`
-                                        : ''
-                                }`}
+                                )}`}
                             />
                         </>
                     )}
