@@ -139,7 +139,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                         />
                     ) : (
                         license.userCount - actualUserCount < 0 && (
-                            <div className="alert alert-warning">
+                            <div className="alert alert-subscription alert-warning">
                                 You have exceeded your licensed users.{' '}
                                 <Link to="/site-admin/license">View your license details</Link> or{' '}
                                 <a href="https://about.sourcegraph.com/pricing" target="_blank">
