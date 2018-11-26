@@ -30,7 +30,7 @@ interface HighlightRange {
     length: number
 }
 
-export class GenericMatch extends React.Component<Props> {
+export class SearchResultMatch extends React.Component<Props> {
     constructor(props: Props) {
         super(props)
     }
@@ -46,7 +46,7 @@ export class GenericMatch extends React.Component<Props> {
                 )
 
                 return (
-                    <GenCodeExcerpt
+                    <MatchExcerpt
                         key={item.url}
                         item={item}
                         body={item.body}
@@ -73,14 +73,14 @@ export class GenericMatch extends React.Component<Props> {
 }
 
 interface CodeExcerptProps {
-    item: GQL.IGenericSearchMatch
+    item: GQL.ISearchMatch
     body: string
     url: string
     highlightRanges: HighlightRange[]
     isLightTheme: boolean
 }
 
-class GenCodeExcerpt extends React.Component<CodeExcerptProps> {
+class MatchExcerpt extends React.Component<CodeExcerptProps> {
     private visibilitySensorOffset = { bottom: -500 }
     private visibilityChanges = new Subject<boolean>()
 
@@ -116,30 +116,12 @@ class GenCodeExcerpt extends React.Component<CodeExcerptProps> {
         if (this.tableContainerElement) {
             // Our results are always wrapped in a code element.
             const visibleRows = this.tableContainerElement.querySelectorAll('code')
-            // for commits
-            // const visibleRows = this.tableContainerElement.querySelectorAll('p')
-            // For code elements, content is wrapped in <pre> and <code> tags, if not, we wrap a content with a <div>.
-            // const visibleRows = this.tableContainerElement.firstChild!.childNodes
-            // console.log(visibleRows)
             if (visibleRows.length > 0) {
-                // console.log(
-                //     'vis',
-                //     Array.from(visibleRows[0].childNodes).filter((node: ChildNode) => node.nodeValue !== '\n')
-                // )
                 for (const h of this.props.highlightRanges) {
-                    // console.log(h)
-                    // for diffs
                     const visRows = Array.from(visibleRows[0].childNodes).filter(
                         (node: ChildNode) => node.nodeValue !== '\n'
                     )
-                    // for commits
-                    // console.log('visibleROWS', visRows)
-                    // const visRows = visibleRows[h.line - 1]
-                    // console.log('FIRST ITEM IN VISIBLEROWS', visRows)
-                    // console.log(visRows[h.line - 1])
                     const code = visRows[h.line - 1]
-                    // const byLines = code.split('\n')
-                    // const code = visibleRows[h.line - 1].lastChild as HTMLTableDataCellElement
                     if (code) {
                         highlightNode(code as HTMLElement, h.character, h.length)
                     }

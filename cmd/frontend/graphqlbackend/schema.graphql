@@ -830,27 +830,30 @@ type Search {
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository
 
-# Search results.
+# A search result. Every search result must implement this interface. A result can contain multiple matches.
 interface GenericSearchResult {
-    # Base64 data uri to an icon.
+    # Base64 data URI to an icon that is displayed with every search result.
     icon: String!
     # A markdown string that is rendered prominently.
     label: String!
     # The URL of the result.
     url: String!
-    # Additional details that are rendered less prominently.
+    # A markdown string that is rendered less prominently.
     detail: String
-    # The result previews of the result.
-    results: [GenericSearchMatch!]!
+    # A list of individual matches in a result.
+    results: [SearchMatch!]!
 }
 
-type GenericSearchMatch {
-    # URL for the individual result match. If there is at most one match per result, this should be the same as the result's url.
+# An individual search result match. Matches make up the body content of a search result.
+type SearchMatch {
+    # URL for the individual result match.
     url: String!
-    # Raw string of the result.
+    # A markdown string containing the contents of the result match. Currently, code blocks will be rendered as code, and all other
+    # markdown syntax will not be rendered specially.
     body: String!
-    # {Line, character, length} objects used to specify the offsets of each match in the body. Used to highlight matches in lines.
-    # Can be left empty.
+    # A list of objects containing the line, character, and length of matches in the result body.
+    # This is used to highlight matches in the body.
+    # This can be left as an empty list if these values are not given by the result provider.
     highlights: [Highlight!]!
 }
 
@@ -995,7 +998,7 @@ type CommitSearchResult implements GenericSearchResult {
     # Additional details that are rendered less prominently.
     detail: String
     # The result previews of the result.
-    results: [GenericSearchMatch!]!
+    results: [SearchMatch!]!
     # The commit that matched the search query.
     commit: GitCommit!
     # The ref names of the commit.
@@ -1237,7 +1240,7 @@ type Repository implements Node & GenericSearchResult {
     # Additional details that are rendered less prominently.
     detail: String
     # The result previews of the result.
-    results: [GenericSearchMatch!]!
+    results: [SearchMatch!]!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -2029,7 +2032,7 @@ type FileMatch implements GenericSearchResult {
     # Additional details that are rendered less prominently.
     detail: String
     # The result previews of the result.
-    results: [GenericSearchMatch!]!
+    results: [SearchMatch!]!
     # The file containing the match.
     #
     # KNOWN ISSUE: This file's "commit" field contains incomplete data.

@@ -14,14 +14,13 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { FileMatch } from '../../components/FileMatch'
-import { GenericMatch } from '../../components/GenericMatch'
+import { SearchResultMatch } from '../../components/GenericMatch'
 import { ModalContainer } from '../../components/ModalContainer'
 import { VirtualList } from '../../components/VirtualList'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { isDefined } from '../../util/types'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
-import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
@@ -420,19 +419,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         allExpanded={this.props.allExpanded}
                     />
                 )
-            //     case 'CommitSearchResult':
-            //         return (
-            //             <CommitSearchResult
-            //                 key={'commit:' + result.commit.id}
-            //                 location={this.props.location}
-            //                 result={result}
-            //                 onSelect={this.logEvent}
-            //                 expanded={expanded}
-            //                 allExpanded={this.props.allExpanded}
-            //             />
-            //         )
         }
-        return <GenericMatch key={result.label} result={result} isLightTheme={this.props.isLightTheme} />
+        return <SearchResultMatch key={result.label} result={result} isLightTheme={this.props.isLightTheme} />
         // return undefined
     }
 
