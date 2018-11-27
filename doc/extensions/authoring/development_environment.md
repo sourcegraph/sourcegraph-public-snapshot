@@ -10,7 +10,7 @@ Sourcegraph extensions are usually written in TypeScript and are distributed as 
 
 Install [Node.js](https://nodejs.org) to build and package your extension.
 
-## Sourcegraph.com account and the sourcegraph CLI
+## Sourcegraph.com account and the Sourcegraph CLI
 
 Publishing an extension requires a [Sourcegraph.com account](https://sourcegraph.com/sign-up). Sourcegraph Enterprise instances support a [private extension registry](https://docs.sourcegraph.com/extensions).
 
@@ -20,7 +20,7 @@ Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli#ins
 
 Bring your extension's features for code viewed on GitHub, GitLab and other code hosts by [installing the Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
 
-### Enabling sourcegraph sxtensions outside a sourcegraph instance
+### Enabling Sourcegraph extensions outside a Sourcegraph instance
 
 As Sourcegraph extensions are in alpha, they need to be manually enabled in the browser extension:
 
