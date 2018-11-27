@@ -118,3 +118,27 @@ export function fetchSurveyResponseAggregates(): Observable<SurveyResponseConnec
         map(data => data.surveyResponses)
     )
 }
+
+/**
+ * Submits a request for a Sourcegraph Enterprise trial license.
+ */
+export const submitTrialRequest = (email: string): void => {
+    mutateGraphQL(
+        gql`
+            mutation RequestTrial($email: String!) {
+                requestTrial(email: $email) {
+                    alwaysNil
+                }
+            }
+        `,
+        { email }
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(() => undefined)
+        )
+        .subscribe(undefined, error => {
+            // Swallow errors since the form submission is a non-blocking request that happens during site-init
+            // if a trial license key is requested.
+        })
+}

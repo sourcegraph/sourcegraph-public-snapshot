@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SignUpArgs, SignUpForm } from '../auth/SignUpPage'
-import { eventLogger } from '../tracking/eventLogger'
+import { submitTrialRequest } from '../marketing/backend'
 
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser | null
@@ -64,13 +64,9 @@ export class SiteInitPage extends React.Component<Props> {
             if (resp.status !== 200) {
                 return resp.text().then(text => Promise.reject(new Error(text)))
             }
-
-            eventLogger.log('ServerInstallationComplete', {
-                server: {
-                    email: args.email,
-                    appId: window.context.siteID,
-                },
-            })
+            if (args.requestedTrial) {
+                submitTrialRequest(args.email)
+            }
 
             window.location.replace('/site-admin')
             return Promise.resolve()

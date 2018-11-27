@@ -12,13 +12,14 @@ import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { signupTerms } from '../util/features'
+import { enterpriseTrial, signupTerms } from '../util/features'
 import { EmailInput, getReturnTo, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 
 export interface SignUpArgs {
     email: string
     username: string
     password: string
+    requestedTrial: boolean
 }
 
 interface SignUpFormProps {
@@ -37,6 +38,7 @@ interface SignUpFormState {
     password: string
     error?: Error
     loading: boolean
+    requestedTrial: boolean
 }
 
 export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
@@ -49,6 +51,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
             username: '',
             password: '',
             loading: false,
+            requestedTrial: false,
         }
     }
 
@@ -87,6 +90,14 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         autoComplete="new-password"
                     />
                 </div>
+                {enterpriseTrial && (
+                    <div className="form-group">
+                        <label>
+                            <input className="mr-1" type="checkbox" onChange={this.onRequestTrialFieldChange} />
+                            Try Sourcegraph Enterprise free for 30-days
+                        </label>
+                    </div>
+                )}
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
                         {this.state.loading ? (
@@ -124,6 +135,10 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
         this.setState({ password: e.target.value })
     }
 
+    private onRequestTrialFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ requestedTrial: e.target.checked })
+    }
+
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         if (this.state.loading) {
@@ -138,6 +153,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         email: this.state.email,
                         username: this.state.username,
                         password: this.state.password,
+                        requestedTrial: this.state.requestedTrial,
                     })
                     .catch(error => this.setState({ error: asError(error), loading: false }))
             ).subscribe()
