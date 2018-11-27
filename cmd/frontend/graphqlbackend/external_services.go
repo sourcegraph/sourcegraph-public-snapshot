@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"sync"
 
@@ -10,6 +11,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
+
+var externalServiceKinds = map[string]struct{}{
+	"AWSCODECOMMIT":   struct{}{},
+	"BITBUCKETSERVER": struct{}{},
+	"GITHUB":          struct{}{},
+	"GITLAB":          struct{}{},
+	"GITOLITE":        struct{}{},
+	"PHABRICATOR":     struct{}{},
+}
+
+func checkKind(kind string) error {
+	if _, ok := externalServiceKinds[kind]; !ok {
+		return fmt.Errorf("invalid external service kind: %s", kind)
+	}
+	return nil
+}
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	Input *struct {
@@ -22,6 +39,11 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
+
+	if err := checkKind(args.Input.Kind); err != nil {
+		return nil, err
+	}
+
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,

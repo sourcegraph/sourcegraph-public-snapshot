@@ -1050,7 +1050,7 @@ enum ExternalServiceKind {
 }
 
 # A configured external service.
-type ExternalService {
+type ExternalService implements Node {
     # The external service's unique ID.
     id: ID!
     # The kind of external service.

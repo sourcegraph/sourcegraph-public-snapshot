@@ -94,6 +94,11 @@ func (r *nodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToExternalService() (*externalServiceResolver, bool) {
+	n, ok := r.node.(*externalServiceResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
 	n, ok := r.node.(*gitRefResolver)
 	return n, ok
@@ -164,6 +169,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return nil, errors.New("not implemented")
 	case "ExternalAccount":
 		return externalAccountByID(ctx, id)
+	case externalServiceIDKind:
+		return externalServiceByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
 	case "Repository":
