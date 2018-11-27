@@ -1,24 +1,15 @@
 import { from } from 'rxjs'
 import { map, switchMap, take } from 'rxjs/operators'
-import { ConfigurationUpdateParams } from '../api/protocol'
+import { SettingsEdit } from '../api/protocol'
 import { dataOrThrowErrors, gql, graphQLContent } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { isErrorLike } from '../util/errors'
 
-export type UpdateExtensionSettingsArgs =
-    | { edit?: ConfigurationUpdateParams }
-    | {
-          extensionID: string
-          // TODO: unclean api, allows 4 states (2 bools), but only 3 are valid (none/disabled/enabled)
-          enabled?: boolean
-          remove?: boolean
-      }
-
 export function updateSettings(
     { settingsCascade, queryGraphQL }: Pick<PlatformContext, 'settingsCascade' | 'queryGraphQL'>,
     subject: GQL.ID,
-    args: UpdateExtensionSettingsArgs,
+    args: SettingsEdit,
     applySettingsEdit: (
         { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
         subject: GQL.ID,
@@ -45,19 +36,10 @@ export function updateSettings(
                 }
                 const lastID = subjectSettings.settings ? subjectSettings.lastID : null
 
-                let edit: GQL.ISettingsEdit
-                if ('edit' in args && args.edit) {
-                    edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
-                } else if ('extensionID' in args) {
-                    edit = {
-                        keyPath: toGQLKeyPath(['extensions', args.extensionID]),
-                        value: typeof args.enabled === 'boolean' ? args.enabled : null,
-                    }
-                } else {
-                    throw new Error('no edit')
-                }
-
-                return applySettingsEdit({ queryGraphQL }, subject, lastID, edit)
+                return applySettingsEdit({ queryGraphQL }, subject, lastID, {
+                    keyPath: toGQLKeyPath(args.path),
+                    value: args.value,
+                })
             })
         )
         .toPromise()

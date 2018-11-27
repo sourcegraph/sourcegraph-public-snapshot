@@ -2,10 +2,10 @@ import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } fr
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ContextValues } from 'sourcegraph'
 import {
-    ConfigurationUpdateParams,
     LogMessageParams,
     MessageActionItem,
     SettingsCascade,
+    SettingsEdit,
     ShowInputParams,
     ShowMessageParams,
     ShowMessageRequestParams,
@@ -48,7 +48,7 @@ type ShowMessageRequest = ShowMessageRequestParams & PromiseCallback<MessageActi
 
 type ShowInputRequest = ShowInputParams & PromiseCallback<string | null>
 
-export type ConfigurationUpdate = ConfigurationUpdateParams & PromiseCallback<void>
+export type ConfigurationUpdate = SettingsEdit & PromiseCallback<void>
 
 /**
  * Options for creating the controller.
@@ -221,7 +221,7 @@ export class Controller<X extends Extension, C extends SettingsCascade> implemen
             new ClientConfiguration(
                 client,
                 configuration,
-                (params: ConfigurationUpdateParams) =>
+                (params: SettingsEdit) =>
                     new Promise<void>(resolve => this._configurationUpdates.next({ ...params, resolve }))
             )
         )

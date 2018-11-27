@@ -20,15 +20,15 @@ export function createPlatformContext(): PlatformContext {
 
     const context: PlatformContext = {
         settingsCascade,
-        updateSettings: async (subject, args) => {
+        updateSettings: async (subject, edit) => {
             try {
                 await updateSettings(
                     context,
                     subject,
-                    args,
+                    edit,
                     // Support storing settings on the client (in the browser extension) so that unauthenticated
                     // Sourcegraph viewers can update settings.
-                    subject === 'Client' ? () => editClientSettings(args) : mutateSettings
+                    subject === 'Client' ? () => editClientSettings(edit) : mutateSettings
                 )
             } finally {
                 settingsCascadeRefreshes.next()

@@ -6,7 +6,10 @@
  */
 export type KeyPath = (string | number)[]
 
-export interface ConfigurationUpdateParams {
+/**
+ * An edit to apply to settings.
+ */
+export interface SettingsEdit {
     /** The key path to the value. */
     path: KeyPath
 

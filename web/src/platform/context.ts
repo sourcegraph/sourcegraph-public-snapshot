@@ -27,21 +27,12 @@ export function createPlatformContext(): PlatformContext {
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
-        updateSettings: async (subject, args) => {
+        updateSettings: async (subject, edit) => {
             // Unauthenticated users can't update settings. (In the browser extension, they can update client
             // settings even when not authenticated. The difference in behavior in the web app vs. browser
             // extension is why this logic lives here and not in shared/.)
             if (!window.context.isAuthenticatedUser) {
-                let editDescription = 'edit settings' // default description
-                if ('edit' in args && args.edit) {
-                    editDescription = `update user setting ` + '`' + args.edit.path + '`'
-                } else if ('extensionID' in args) {
-                    editDescription =
-                        `${typeof args.enabled === 'boolean' ? 'enable' : 'disable'} extension ` +
-                        '`' +
-                        args.extensionID +
-                        '`'
-                }
+                const editDescription = `update user setting` + '`' + edit.path.join('.') + '`'
                 const u = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
@@ -53,7 +44,7 @@ export function createPlatformContext(): PlatformContext {
             }
 
             try {
-                await updateSettings(context, subject, args, mutateSettings)
+                await updateSettings(context, subject, edit, mutateSettings)
             } finally {
                 settingsRefreshes.next()
             }

@@ -1,9 +1,9 @@
 import { Subscribable } from 'rxjs'
+import { SettingsEdit } from '../api/protocol'
 import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
 import { ConfiguredExtension } from '../extensions/extension'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
-import { UpdateExtensionSettingsArgs } from '../settings/edit'
 import { SettingsCascade, SettingsCascadeOrError } from '../settings/settings'
 
 /**
@@ -22,7 +22,7 @@ export interface PlatformContext {
     /**
      * Update the settings for the subject.
      */
-    updateSettings(subject: GQL.ID, args: UpdateExtensionSettingsArgs): Promise<void>
+    updateSettings(subject: GQL.ID, edit: SettingsEdit): Promise<void>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.

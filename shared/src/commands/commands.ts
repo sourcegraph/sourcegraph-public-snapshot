@@ -3,7 +3,7 @@ import { from, Subscription, throwError, Unsubscribable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
 import { Controller } from '../api/client/controller'
 import { Extension } from '../api/client/extension'
-import { ActionContributionClientCommandUpdateConfiguration, ConfigurationUpdateParams } from '../api/protocol'
+import { ActionContributionClientCommandUpdateConfiguration, SettingsEdit } from '../api/protocol'
 import { PlatformContext } from '../platform/context'
 import { SettingsCascade } from '../settings/settings'
 import { isErrorLike } from '../util/errors'
@@ -113,7 +113,7 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
  */
 export function updateConfiguration(
     context: Pick<PlatformContext, 'settingsCascade' | 'updateSettings'>,
-    params: ConfigurationUpdateParams
+    edit: SettingsEdit
 ): Promise<void> {
     // TODO(sqs): Allow extensions to specify which subject's settings to update
     // (instead of always updating the highest-precedence subject's settings).
@@ -132,7 +132,7 @@ export function updateConfiguration(
                     )
                 }
                 const subject = x.subjects[x.subjects.length - 1].subject
-                return context.updateSettings(subject.id, { edit: params })
+                return context.updateSettings(subject.id, edit)
             })
         )
         .toPromise()
@@ -145,7 +145,7 @@ export function updateConfiguration(
  */
 export function convertUpdateConfigurationCommandArgs(
     args: ActionContributionClientCommandUpdateConfiguration['commandArguments']
-): ConfigurationUpdateParams {
+): SettingsEdit {
     if (
         !isArray(args) ||
         !(args.length >= 2 && args.length <= 4) ||

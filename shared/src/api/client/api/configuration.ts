@@ -1,12 +1,12 @@
 import { Observable, Subscription } from 'rxjs'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtConfigurationAPI } from '../../extension/api/configuration'
-import { ConfigurationUpdateParams } from '../../protocol'
+import { SettingsEdit } from '../../protocol'
 import { Connection, ConnectionError, ConnectionErrors } from '../../protocol/jsonrpc2/connection'
 
 /** @internal */
 export interface ClientConfigurationAPI {
-    $acceptConfigurationUpdate(params: ConfigurationUpdateParams): Promise<void>
+    $acceptConfigurationUpdate(params: SettingsEdit): Promise<void>
 }
 
 /**
@@ -20,7 +20,7 @@ export class ClientConfiguration<C> implements ClientConfigurationAPI {
     constructor(
         connection: Connection,
         environmentConfiguration: Observable<C>,
-        private updateConfiguration: (params: ConfigurationUpdateParams) => Promise<void>
+        private updateConfiguration: (params: SettingsEdit) => Promise<void>
     ) {
         this.proxy = createProxyAndHandleRequests('configuration', connection, this)
 
@@ -38,7 +38,7 @@ export class ClientConfiguration<C> implements ClientConfigurationAPI {
         )
     }
 
-    public async $acceptConfigurationUpdate(params: ConfigurationUpdateParams): Promise<void> {
+    public async $acceptConfigurationUpdate(params: SettingsEdit): Promise<void> {
         await this.updateConfiguration(params)
     }
 
