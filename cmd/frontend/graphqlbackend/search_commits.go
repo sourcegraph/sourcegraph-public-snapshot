@@ -330,7 +330,23 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) stri
 	}
 
 	for n := range highlights {
-		highlights[n].line = highlights[n].line - lineByCountIgnored[int(highlights[n].line)]
+		// For each highlight, adjust the line number by the number of lines that were
+		// ignored in the diff before.
+		linesIgnored := lineByCountIgnored[int(highlights[n].line)]
+		if highlights[n].line == (1 | 2 | 3) {
+			// Highlights on lines 1, 2, or 3 are matches on removed lines, so we effectively remove them by setting
+			// line to -1.
+			highlights[n].line = -1
+		}
+		if linesIgnored > 0 {
+			highlights[n].line = highlights[n].line - linesIgnored
+		}
+
+		if highlights[n].line == 1 {
+			// If there is a highlight on line 1 after the calculation, remove it. It will match the
+			// first line inaccurately, so remove it to avoid false positives.
+			highlights[n].line = -1
+		}
 	}
 
 	return strings.Join(finalLines, "\n")
