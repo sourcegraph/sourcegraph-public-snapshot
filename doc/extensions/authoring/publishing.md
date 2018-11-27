@@ -1,6 +1,6 @@
 # Publishing a Sourcegraph extension
 
-Publishing a Sourcegraph extension is fast and easy. It simply involves building (compiling and bundling) one or more TypeScript files into a single JavaScript file.
+Publishing a Sourcegraph extension is fast and easy. It involves building (compiling and bundling) one or more TypeScript files into a single JavaScript file.
 
 When [setting up your development environment](development_environment.md), you'll already have:
 
