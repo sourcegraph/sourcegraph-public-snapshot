@@ -182,6 +182,7 @@
     "@sourcegraph/codeintellify": "^3.9.3",
     "@sourcegraph/react-loading-spinner": "0.0.6",
     "@sqs/jsonc-parser": "^1.0.3",
+    "@types/sanitize-html": "^1.18.2",
     "abortable-rx": "^1.0.9",
     "babel-plugin-istanbul": "^5.0.1",
     "bootstrap": "^4.1.3",

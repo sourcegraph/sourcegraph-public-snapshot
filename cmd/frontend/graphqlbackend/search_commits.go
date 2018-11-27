@@ -305,11 +305,11 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 }
 
 func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) string {
+	var lineByCountIgnored = make(map[int]int32)
 	lines := strings.Split(rawDiffResult, "\n")
 	var finalLines []string
 	ignoreUntilAtAt := false
 	var countIgnored int32
-	var boundary int32
 	for i, line := range lines {
 		// ignore index, ---file, and +++file lines
 		if ignoreUntilAtAt && !strings.HasPrefix(line, "@@ ") {
@@ -320,32 +320,17 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) stri
 		}
 		if strings.HasPrefix(line, "diff ") {
 			ignoreUntilAtAt = true
-			for n := range highlights {
-				// We remove the number of lines we have ignored from highlights[n].line to ensure it's still accurate for the frontend.
-				if highlights[n].line > boundary && highlights[n].line <= int32(i) {
-					if highlights[n].line-countIgnored > 0 {
-						highlights[n].line = highlights[n].line - countIgnored
-					}
-				}
-			}
+			lineByCountIgnored[i] = countIgnored
 			l := strings.Replace(line, "diff --git ", "", 1)
 			finalLines = append(finalLines, l)
-			boundary = int32(i)
 		} else {
+			lineByCountIgnored[i] = countIgnored
 			finalLines = append(finalLines, line)
 		}
 	}
 
-	//TODO @attfarhan: create a hash table that states the line boundaries, and how much to subtract from `highlights[n].lines`, so we just have to go through it twice.
-	// Remove the countIgnored from lines in the last file, since it doesn't get ignored above.
 	for n := range highlights {
-		// We remove the number of lines we have ignored from highlights[n].line to ensure it's still accurate for the frontend.
-		if highlights[n].line > boundary && highlights[n].line <= int32(len(lines)) {
-			// fmt.Println("COUNT IGNORED", countIgnored, line)
-			if highlights[n].line-countIgnored > 0 {
-				highlights[n].line = highlights[n].line - countIgnored
-			}
-		}
+		highlights[n].line = highlights[n].line - lineByCountIgnored[int(highlights[n].line)]
 	}
 
 	return strings.Join(finalLines, "\n")

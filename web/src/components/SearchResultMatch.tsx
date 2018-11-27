@@ -5,6 +5,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Subject } from 'rxjs'
+import sanitizeHtml from 'sanitize-html'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../util/dom'
 import { ResultContainer } from './ResultContainer'
@@ -117,6 +118,8 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
         }
     }
 
+    // Split text splits text nodes. Marked will combine text lines into a single node,
+    // which causes our line counts to be off, so we run this to ensure our line counts match.
     private splitText(): void {
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('code')
@@ -136,7 +139,13 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
                                 indices.push(res.index + 1)
                                 res = newLineRegex.exec(n.textContent.trim())
                             }
-                            indices.map(i => node.splitText(i))
+                            indices.map(i => {
+                                try {
+                                    node.splitText(i)
+                                } catch {
+                                    console.error('Index for split text invalid ' + i)
+                                }
+                            })
                         }
                     }
                 }
@@ -152,7 +161,18 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
         this.visibilityChanges.next(isVisible)
     }
 
+    private getLanguage(): string | undefined {
+        const matches = /(?:```)([^\s]+)\s/.exec(this.props.body)
+        if (!matches) {
+            return undefined
+        }
+        return matches[1]
+    }
+
     public render(): JSX.Element {
+        console.log('markedOutput', marked(this.props.body, this.markedOpts).split('\n'))
+        console.log('hl', highlight('diff', this.props.body, true).value)
+        const lang = this.getLanguage()
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
@@ -165,11 +185,12 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
                             ref={this.setTableContainerElement}
                             className="search-result-match"
                             dangerouslySetInnerHTML={{
-                                // Heuristic: replace 4 spaces with tabs, otherwise character counts get thrown off.
+                                // Heuristic: replace 4 spaces with a tab, otherwise character counts get thrown off for languages like Go.
                                 // Marked does not preserve tabs, so we get wrong spacing for results where white-space
                                 // is actually spaces. TODO @attfarhan: we could read the language of the code block.
                                 // or the file that the diff result comes from to optimize this.
-                                __html: marked(this.props.body, this.highlightfn).replace(/\s{4}/g, '\t'),
+                                // marked(this.props.body, this.markedOpts)
+                                __html: '<code>' + this.highlightCodeBlock() + '</code>',
                             }}
                         />
                     ) : (
@@ -177,7 +198,7 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
                             ref={this.setTableContainerElement}
                             className="search-result-match"
                             dangerouslySetInnerHTML={{
-                                __html: '<code>' + splitLines(this.props.body) + '</code>',
+                                __html: '<code>' + splitLines(sanitizeHtml(this.props.body)) + '</code>',
                             }}
                         />
                     )}
@@ -186,27 +207,34 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
         )
     }
 
-    private getLanguage = () => {
-        const matches = /(?:```)([^\s]+)\s/.exec(this.props.body)
-        if (!matches) {
-            return null
-        }
-        return matches[1]
-    }
-
     private setTableContainerElement = (ref: HTMLElement | null) => {
         this.tableContainerElement = ref
     }
 
-    private highlightfn = {
+    private markedOpts = {
         sanitize: true,
         highlight: (code: string) => {
             const lang = this.getLanguage()
             return lang ? highlight(lang, code, true).value : highlightAuto(code).value
         },
     }
+
+    private highlightCodeBlock(): string {
+        const lang = this.getLanguage()
+        if (lang) {
+            return highlight(lang!, stripCodeFence(sanitizeHtml(this.props.body)), true).value
+        }
+        return highlightAuto(stripCodeFence(sanitizeHtml(this.props.body))).value
+    }
 }
 
+function stripCodeFence(code: string): string {
+    if (code.startsWith('```') && code.endsWith('```')) {
+        const c = code.split('\n')
+        return c.slice(1, c.length - 1).join('\n')
+    }
+    return code
+}
 // Split lines separates markdown text lines into individual elements so that we can treat each
 // line individually for match highlighting.
 function splitLines(body: string): string {
@@ -218,3 +246,12 @@ function splitLines(body: string): string {
     }
     return htmlAsString
 }
+
+// function replaceSpacesWithTabs(code: string): string {
+//     const lang = getLanguage(code)
+//     let toReturn = code
+//     if (lang && lang.toLowerCase() === 'go') {
+//         toReturn = toReturn.replace(/\s{4}/g, '\t')
+//     }
+//     return toReturn
+// }
