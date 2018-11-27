@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 )
 
 type externalServices struct{}
@@ -100,8 +100,8 @@ func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOpt
 
 func (c *externalServices) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at 
-		FROM external_services 
+		SELECT id, kind, display_name, config, created_at, updated_at
+		FROM external_services
 		WHERE (%s)
 		ORDER BY id DESC
 		%s`,
