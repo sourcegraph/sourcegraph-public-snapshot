@@ -308,26 +308,46 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) stri
 	lines := strings.Split(rawDiffResult, "\n")
 	var finalLines []string
 	ignoreUntilAtAt := false
-	for _, line := range lines {
+	var countIgnored int32
+	var boundary int32
+	for i, line := range lines {
 		// ignore index, ---file, and +++file lines
 		if ignoreUntilAtAt && !strings.HasPrefix(line, "@@ ") {
+			countIgnored++
 			continue
 		} else {
 			ignoreUntilAtAt = false
 		}
 		if strings.HasPrefix(line, "diff ") {
 			ignoreUntilAtAt = true
+			for n := range highlights {
+				// We remove the number of lines we have ignored from highlights[n].line to ensure it's still accurate for the frontend.
+				if highlights[n].line > boundary && highlights[n].line <= int32(i) {
+					if highlights[n].line-countIgnored > 0 {
+						highlights[n].line = highlights[n].line - countIgnored
+					}
+				}
+			}
 			l := strings.Replace(line, "diff --git ", "", 1)
 			finalLines = append(finalLines, l)
+			boundary = int32(i)
 		} else {
 			finalLines = append(finalLines, line)
 		}
 	}
-	for _, h := range highlights {
-		// We remove 3 because we remove 3 lines
-		// TODO @attfarhan: why does it work properly with - 4 but not - 3....???
-		h.line = h.line - 4
+
+	//TODO @attfarhan: create a hash table that states the line boundaries, and how much to subtract from `highlights[n].lines`, so we just have to go through it twice.
+	// Remove the countIgnored from lines in the last file, since it doesn't get ignored above.
+	for n := range highlights {
+		// We remove the number of lines we have ignored from highlights[n].line to ensure it's still accurate for the frontend.
+		if highlights[n].line > boundary && highlights[n].line <= int32(len(lines)) {
+			// fmt.Println("COUNT IGNORED", countIgnored, line)
+			if highlights[n].line-countIgnored > 0 {
+				highlights[n].line = highlights[n].line - countIgnored
+			}
+		}
 	}
+
 	return strings.Join(finalLines, "\n")
 }
 

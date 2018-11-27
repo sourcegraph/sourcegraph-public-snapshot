@@ -90,27 +90,16 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
 
     private tableContainerElement: HTMLElement | null = null
 
+    public componentDidMount(): void {
+        this.highlightNodes()
+    }
+
     public componentDidUpdate(prevProps: CodeExcerptProps): void {
-        if (this.tableContainerElement) {
-            const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
-            if (visibleRows.length > 0) {
-                for (const h of this.props.highlightRanges) {
-                    const code = visibleRows[0].lastChild as HTMLTableDataCellElement
-                    highlightNode(code, h.character, h.length)
-                }
-            }
-        }
+        this.highlightNodes()
     }
 
-    private bodyIsCode(): boolean {
-        return this.props.body.startsWith('```') && this.props.body.endsWith('```')
-    }
-
-    private onChangeVisibility = (isVisible: boolean): void => {
-        this.visibilityChanges.next(isVisible)
-    }
-
-    public render(): JSX.Element {
+    private highlightNodes(): void {
+        this.splitText()
         if (this.tableContainerElement) {
             // Our results are always wrapped in a code element.
             const visibleRows = this.tableContainerElement.querySelectorAll('code')
@@ -126,7 +115,44 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
                 }
             }
         }
+    }
 
+    private splitText(): void {
+        if (this.tableContainerElement) {
+            const visibleRows = this.tableContainerElement.querySelectorAll('code')
+            if (visibleRows.length > 0) {
+                const visRows = Array.from(visibleRows[0].childNodes).filter(
+                    (node: ChildNode) => node.nodeValue !== '\n'
+                )
+
+                for (const n of visRows) {
+                    if (n.nodeName === '#text') {
+                        if (n.textContent && n.textContent.indexOf('\n') >= 0) {
+                            const node = n as Text
+                            const newLineRegex = /\n/g
+                            const indices = []
+                            let res = newLineRegex.exec(n.textContent.trim())
+                            while (res) {
+                                indices.push(res.index + 1)
+                                res = newLineRegex.exec(n.textContent.trim())
+                            }
+                            indices.map(i => node.splitText(i))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private bodyIsCode(): boolean {
+        return this.props.body.startsWith('```') && this.props.body.endsWith('```')
+    }
+
+    private onChangeVisibility = (isVisible: boolean): void => {
+        this.visibilityChanges.next(isVisible)
+    }
+
+    public render(): JSX.Element {
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
@@ -184,14 +210,11 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
 // Split lines separates markdown text lines into individual elements so that we can treat each
 // line individually for match highlighting.
 function splitLines(body: string): string {
-    console.log('body', body)
     const split = body.split('\n')
-    console.log('split', split)
     let htmlAsString = ''
     for (const s of split) {
         const sp = `<span>${s}\n</span>`
         htmlAsString += sp
     }
-    console.log('HTML AS STRING', htmlAsString)
     return htmlAsString
 }
