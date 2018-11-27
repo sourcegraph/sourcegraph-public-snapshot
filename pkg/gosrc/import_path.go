@@ -21,23 +21,24 @@ import (
 var RuntimeVersion = runtime.Version()
 
 type noGoGetDomainsT struct {
-	mu      sync.RWMutex
-	domains []string
+	mu         sync.Mutex
+	domains    []string
+	configured bool
 }
 
 func (n *noGoGetDomainsT) get() []string {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-	return n.domains
-}
-
-func (n *noGoGetDomainsT) reconfigure() {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-
-	// Parse noGoGetDomains to avoid needing to validate them when
-	// resolving static import paths
-	n.domains = parseCommaSeparatedList(conf.Get().NoGoGetDomains)
+	if !n.configured {
+		n.domains = parseCommaSeparatedList(conf.Get().NoGoGetDomains)
+		n.configured = true
+		go conf.Watch(func() {
+			n.mu.Lock()
+			defer n.mu.Unlock()
+			n.domains = parseCommaSeparatedList(conf.Get().NoGoGetDomains)
+		})
+	}
+	return n.domains
 }
 
 func parseCommaSeparatedList(list string) []string {
@@ -57,10 +58,6 @@ func parseCommaSeparatedList(list string) []string {
 // import resolution. Instead we take an educated guess based on the URL how
 // to create the directory struct.
 var noGoGetDomains = &noGoGetDomainsT{}
-
-func init() {
-	conf.Watch(noGoGetDomains.reconfigure)
-}
 
 type Directory struct {
 	ImportPath  string // the Go import path for this package
