@@ -11,6 +11,7 @@ import (
 )
 
 func TestRegistryExtensionReleases(t *testing.T) {
+	t.Skip()
 	if testing.Short() {
 		t.Skip()
 	}
