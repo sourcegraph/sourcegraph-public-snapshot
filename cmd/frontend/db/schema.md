@@ -37,6 +37,21 @@ Indexes:
 
 ```
 
+# Table "public.critical_and_site_config"
+```
+   Column   |           Type           |                               Modifiers                               
+------------+--------------------------+-----------------------------------------------------------------------
+ id         | integer                  | not null default nextval('critical_and_site_config_id_seq'::regclass)
+ type       | critical_or_site         | not null
+ contents   | text                     | not null
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
+    "critical_and_site_config_unique" UNIQUE, btree (id, type)
+
+```
+
 # Table "public.discussion_comments"
 ```
      Column     |           Type           |                            Modifiers                             
