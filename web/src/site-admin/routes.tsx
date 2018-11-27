@@ -3,6 +3,7 @@ import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
 import { SiteAdminCreateUserPage } from './SiteAdminCreateUserPage'
+import { SiteAdminExternalServicesPage } from './SiteAdminExternalServicesPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminPingsPage } from './SiteAdminPingsPage'
@@ -29,6 +30,11 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
         path: '/global-settings',
         exact: true,
         render: props => <SiteAdminSettingsPage {...props} />,
+    },
+    {
+        path: '/external-services',
+        render: props => <SiteAdminExternalServicesPage {...props} />,
+        exact: true,
     },
     {
         path: '/repositories',
