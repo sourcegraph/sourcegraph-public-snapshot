@@ -206,11 +206,12 @@ func (r *repositoryResolver) Icon() string {
 	return r.icon
 }
 func (r *repositoryResolver) Label() string {
-	return r.label
+	return "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
 }
 
 func (r *repositoryResolver) Detail() *string {
-	return r.detail
+	str := "Repository name match"
+	return &str
 }
 
 func (r *repositoryResolver) Results() []*GenericSearchMatchResolver {

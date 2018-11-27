@@ -50,6 +50,7 @@ export function search(
                                         url
                                         label
                                         icon
+                                        detail
                                         results {
                                             url
                                             body
@@ -83,6 +84,7 @@ export function search(
                                         label
                                         url
                                         icon
+                                        detail
                                         lineMatches {
                                             preview
                                             lineNumber
@@ -140,6 +142,7 @@ export function search(
                                         label
                                         url
                                         icon
+                                        detail
                                         results {
                                             url
                                             body

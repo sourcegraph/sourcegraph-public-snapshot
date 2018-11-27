@@ -404,8 +404,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     private renderResult(result: GQL.GenericSearchResult, expanded: boolean): JSX.Element | undefined {
         switch (result.__typename) {
-            case 'Repository':
-                return <RepositorySearchResult key={'repo:' + result.id} result={result} onSelect={this.logEvent} />
             case 'FileMatch':
                 return (
                     <FileMatch
