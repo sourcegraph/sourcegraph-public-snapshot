@@ -35,11 +35,21 @@ export class SearchResultMatch extends React.Component<Props> {
         super(props)
     }
 
-    private renderTitle = () => <div dangerouslySetInnerHTML={{ __html: marked(this.props.result.label) }} />
+    private renderTitle = () => (
+        <div className="repository-search-result__title">
+            <span dangerouslySetInnerHTML={{ __html: marked(sanitizeHtml(this.props.result.label)) }} />
+            {this.props.result.detail && (
+                <>
+                    <span className="repository-search-result__spacer" />
+                    <small dangerouslySetInnerHTML={{ __html: marked(sanitizeHtml(this.props.result.detail)) }} />
+                </>
+            )}
+        </div>
+    )
 
     private renderBody = () => (
         <>
-            {this.props.result.results!.map(item => {
+            {this.props.result.results.map(item => {
                 const highlightRanges: HighlightRange[] = []
                 item.highlights.map(i =>
                     highlightRanges.push({ line: i.line, character: i.character, length: i.length })
