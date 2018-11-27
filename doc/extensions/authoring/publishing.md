@@ -1,4 +1,4 @@
-# Publishing a sourcegraph extension
+# Publishing a Sourcegraph extension
 
 Publishing a Sourcegraph extension is fast and easy. It simply involves building (compiling and bundling) one or more TypeScript files into a single JavaScript file.
 
@@ -13,7 +13,7 @@ Now publish your extension by running:
 src extensions publish
 ```
 
-At this point your extension has been built and sent to Sourcegraph. The output will include a link to a detail page where you can enable your extension and start using it.
+At this point, your extension has been built and sent to Sourcegraph. The output will include a link to a detail page where you can enable your extension and start using it.
 
 > Any user can publish to the Sourcegraph.com extension registry, and all Sourcegraph instances can use extensions from Sourcegraph.com. To publish extensions *privately* so that they're only visible to you, use a [private extension registry](../../admin/extensions/index.md).
 
@@ -42,7 +42,7 @@ To set this up:
 
 1. In a terminal window, run `npm run serve` in your extension's directory to run the Parcel dev server. Wait until it reports that it's listening on http://localhost:1234 (or another port number).
 
-1. In another terminal window, run `src extensions publish -url http://localhost:1234/my-extension.js` (`my-extension.js` This is the bundled JavaScript file in your `dist` directory, and it works for you because the browser will load your extension from http://localhost:1234/my-extension.js.
+In another terminal window, run src extensions publish -url http://localhost:1234/my-extension.js (my-extension.jsbeing the bundled JavaScript file in your dist directory). Sourcegraph will now fetch the extension code from the value of the -url argument.
 
 1. Make a change inside `src`, then save. Your code will be re-bundled and a reload of the browser window will cause your changes to be loaded.
 
