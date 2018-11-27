@@ -19,9 +19,14 @@ export interface Props {
     height?: number
 
     /**
-     * The JSON Schema that describes the document.
+     * The id of the JSON schema for the document.
      */
-    jsonSchema: { $id: string }
+    jsonSchemaId: string
+
+    /**
+     * Extra schemas that are transitively referenced by jsonSchemaId.
+     */
+    extraSchemas?: { $id: string }[]
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -139,13 +144,20 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         }
 
+        const extraSchemas = (this.props.extraSchemas || []).map(schema => ({
+            uri: schema.$id,
+            schema,
+        }))
+
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
             validate: true,
             allowComments: true,
             schemas: [
                 {
-                    uri: this.props.jsonSchema.$id,
-                    schema: this.props.jsonSchema,
+                    uri: 'root#', // doesn't matter as long as it doesn't collide
+                    schema: {
+                        $ref: this.props.jsonSchemaId,
+                    },
                     fileMatch: ['*'],
                 },
 
@@ -169,7 +181,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     uri: 'https://sourcegraph.com/v1/contribution.schema.json#',
                     schema: contributionSchema,
                 },
-            ],
+            ].concat(extraSchemas),
         })
 
         monaco.editor.defineTheme('sourcegraph-dark', {
