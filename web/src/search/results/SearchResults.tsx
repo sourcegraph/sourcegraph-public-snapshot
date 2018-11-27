@@ -1,17 +1,8 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { combineLatest, concat, Subject, Subscription } from 'rxjs'
-import {
-    catchError,
-    distinctUntilChanged,
-    filter,
-    map,
-    startWith,
-    switchMap,
-    tap,
-    withLatestFrom,
-} from 'rxjs/operators'
+import { concat, Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery, SearchOptions } from '..'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -113,18 +104,14 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         console.error(error)
                                     }
                                 ),
+                                // Update view with results or error
                                 map(results => ({ resultsOrError: results })),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )
                     )
                 )
-                .subscribe(
-                    newState => {
-                        this.setState(newState as SearchResultsState)
-                    },
-                    err => console.error(err)
-                )
+                .subscribe(newState => this.setState(newState as SearchResultsState), err => console.error(err))
         )
     }
 

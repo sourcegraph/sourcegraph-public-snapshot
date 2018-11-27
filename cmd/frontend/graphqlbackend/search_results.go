@@ -947,7 +947,6 @@ type searchResultResolver struct {
 	repo      *repositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
-	issue     *issueSearchResultResolver  // issue match
 }
 
 // getSearchResultURIs returns the repo name and file uri respectiveley
