@@ -231,7 +231,11 @@ function initCodeIntelligence(
         for (const className of classNames) {
             overlayMount.classList.add(className)
         }
-        document.body.appendChild(overlayMount)
+        const container = document.querySelector('#js-repo-pjax-container')
+        if (!container) {
+            throw new Error('Could not find toolbar mount location.')
+        }
+        container.appendChild(overlayMount)
         return overlayMount
     }
 
