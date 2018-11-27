@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 )
 
 type savedQueries struct{}
