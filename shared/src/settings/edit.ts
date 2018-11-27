@@ -40,9 +40,6 @@ export function updateSettings(
                 if (!subjectSettings) {
                     throw new Error(`no settings subject: ${subject}`)
                 }
-                if (subjectSettings.settings === null) {
-                    throw new Error('settings subject not available')
-                }
                 if (isErrorLike(subjectSettings.settings)) {
                     throw new Error(`settings subject error: ${subjectSettings.settings.message}`)
                 }
