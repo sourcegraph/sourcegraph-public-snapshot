@@ -3,15 +3,15 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { combineLatest, concat, of, Subject, Subscription } from 'rxjs'
+import { concat, of, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { RepoLink } from '../../repo/RepoLink'
-import { SearchScope } from '../../schema/settings.schema'
-import { viewerSettings } from '../../settings/configuration'
+import { SearchScope, Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { fetchReposByQuery } from '../backend'
@@ -34,7 +34,7 @@ const ScopeNotFound = () => (
     />
 )
 
-interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }> {
+interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }>, SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
 }
 
@@ -66,12 +66,13 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         eventLogger.logViewEvent('Scope')
 
         this.subscriptions.add(
-            combineLatest(
-                this.propUpdates,
-                viewerSettings.pipe(map((config): SearchScope[] => config['search.scopes'] || []))
-            )
+            this.propUpdates
                 .pipe(
-                    switchMap(([props, searchScopes]) => {
+                    switchMap(props => {
+                        const searchScopes =
+                            (isSettingsValid<Settings>(props.settingsCascade) &&
+                                props.settingsCascade.final['search.scopes']) ||
+                            []
                         this.setState({ searchScopes })
                         const matchedScope = searchScopes.find(o => o.id === props.match.params.id)
                         if (matchedScope) {

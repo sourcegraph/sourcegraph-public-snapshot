@@ -8,6 +8,7 @@ go env
 ./gofmt.sh
 ./template-inlines.sh
 ./go-enterprise-import.sh
+./go-dbconn-import.sh
 ./go-generate.sh
 ./go-lint.sh
 ./todo-security.sh

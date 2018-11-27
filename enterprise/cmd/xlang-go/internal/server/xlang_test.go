@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,9 +23,7 @@ import (
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 )
 
 var update = flag.Bool("update", false, "update golden files on disk")
@@ -467,84 +464,6 @@ func (v *locations) UnmarshalJSON(data []byte) error {
 	}
 	*v = []lsp.Location{{}}
 	return json.Unmarshal(data, &(*v)[0])
-}
-
-// testRequest is a simplified version of jsonrpc2.Request for easier
-// test expectation definition and checking of the fields that matter.
-type testRequest struct {
-	Method string
-	Params interface{}
-}
-
-func (r testRequest) String() string {
-	b, err := json.Marshal(r.Params)
-	if err != nil {
-		panic(err)
-	}
-	return fmt.Sprintf("%s(%s)", r.Method, b)
-}
-
-func testRequestEqual(a, b testRequest) bool {
-	if a.Method != b.Method {
-		return false
-	}
-
-	// We want to see if a and b have identical canonical JSON
-	// representations. They are NOT identical Go structures, since
-	// one comes from the wire (as raw JSON) and one is an interface{}
-	// of a concrete struct/slice type provided as a test expectation.
-	ajson, err := json.Marshal(a.Params)
-	if err != nil {
-		panic(err)
-	}
-	bjson, err := json.Marshal(b.Params)
-	if err != nil {
-		panic(err)
-	}
-	var a2, b2 interface{}
-	if err := json.Unmarshal(ajson, &a2); err != nil {
-		panic(err)
-	}
-	if err := json.Unmarshal(bjson, &b2); err != nil {
-		panic(err)
-	}
-	return reflect.DeepEqual(a2, b2)
-}
-
-func testRequestsEqual(as, bs []testRequest) bool {
-	if len(as) != len(bs) {
-		return false
-	}
-	for i, a := range as {
-		if !testRequestEqual(a, bs[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-type testRequests []testRequest
-
-func (v testRequests) Len() int      { return len(v) }
-func (v testRequests) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
-func (v testRequests) Less(i, j int) bool {
-	ii, err := json.Marshal(v[i])
-	if err != nil {
-		panic(err)
-	}
-	jj, err := json.Marshal(v[j])
-	if err != nil {
-		panic(err)
-	}
-	return string(ii) < string(jj)
-}
-
-func useMapFS(m map[string]string) func() {
-	orig := proxy.NewRemoteRepoVFS
-	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (proxy.FileSystem, error) {
-		return mapFS(m), nil
-	}
-	return func() { proxy.NewRemoteRepoVFS = orig }
 }
 
 // mapFS lets us easily instantiate a VFS with a map[string]string

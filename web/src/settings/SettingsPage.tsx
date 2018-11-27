@@ -1,9 +1,8 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { concat } from 'rxjs'
-import { mergeMap } from 'rxjs/operators'
+import { tap } from 'rxjs/operators'
 import { overwriteSettings } from '../configuration/backend'
-import { refreshSettings } from '../user/settings/backend'
+import { settingsRefreshes } from '../user/settings/backend'
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
@@ -28,7 +27,8 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         return (
             <SettingsFile
                 settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
-                jsonSchema={this.props.data.settingsJSONSchema}
+                jsonSchemaId="settings.schema.json#"
+                extraSchemas={[this.props.data.settingsJSONSchema]}
                 commitError={this.state.commitError}
                 onDidCommit={this.onDidCommit}
                 onDidDiscard={this.onDidDiscard}
@@ -41,7 +41,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
     private onDidCommit = (lastID: number | null, contents: string) => {
         this.setState({ commitError: undefined })
         overwriteSettings(this.props.subject.id, lastID, contents)
-            .pipe(mergeMap(() => concat(refreshSettings(), [null])))
+            .pipe(tap(() => settingsRefreshes.next()))
             .subscribe(
                 () => {
                     this.setState({ commitError: undefined })

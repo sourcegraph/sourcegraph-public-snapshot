@@ -2,7 +2,7 @@ import { Subscription } from 'rxjs'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtCommandsAPI } from '../../extension/api/commands'
 import { Connection } from '../../protocol/jsonrpc2/connection'
-import { CommandRegistry } from '../providers/command'
+import { CommandRegistry } from '../services/command'
 import { SubscriptionMap } from './common'
 
 /** @internal */

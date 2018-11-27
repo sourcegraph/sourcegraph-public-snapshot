@@ -1,9 +1,13 @@
 package graphqlbackend
 
 import (
+	"context"
 	"fmt"
+
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"time"
 )
@@ -13,6 +17,25 @@ type externalServiceResolver struct {
 }
 
 const externalServiceIDKind = "ExternalService"
+
+func externalServiceByID(ctx context.Context, id graphql.ID) (*externalServiceResolver, error) {
+	// 🚨 SECURITY: Only site admins are allowed to read internal services.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	externalServiceID, err := unmarshalExternalServiceID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	externalService, err := db.ExternalServices.GetByID(ctx, externalServiceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalServiceResolver{externalService: externalService}, nil
+}
 
 func marshalExternalServiceID(id int64) graphql.ID {
 	return relay.MarshalID(externalServiceIDKind, id)

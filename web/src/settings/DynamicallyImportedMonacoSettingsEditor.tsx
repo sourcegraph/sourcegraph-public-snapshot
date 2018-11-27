@@ -16,7 +16,10 @@ import { EditorAction } from '../site-admin/configHelpers'
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props
-    extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'isLightTheme'> {
+    extends Pick<
+            _monacoSettingsEditorModule.Props,
+            'id' | 'readOnly' | 'height' | 'jsonSchemaId' | 'extraSchemas' | 'isLightTheme'
+        > {
     value: string
 
     actions?: EditorAction[]

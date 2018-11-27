@@ -3,7 +3,7 @@ import { flatten } from 'lodash'
 import { forkJoin, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Definition, Location, TextDocumentDecoration } from '../../../shared/src/api/protocol/plainTypes'
-import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import {
@@ -36,7 +36,7 @@ export function getHover(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<HoverMerged | null> {
-    return extensionsController.registries.textDocumentHover
+    return extensionsController.services.textDocumentHover
         .getHover({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
@@ -57,7 +57,7 @@ export function getDefinition(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Definition> {
-    return extensionsController.registries.textDocumentDefinition.getLocation({
+    return extensionsController.services.textDocumentDefinition.getLocation({
         textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
         position: {
             character: ctx.position.character - 1,
@@ -138,7 +138,7 @@ export function getReferences(
     ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[]> {
-    return extensionsController.registries.textDocumentReferences
+    return extensionsController.services.textDocumentReferences
         .getLocation({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
@@ -162,7 +162,7 @@ export function getImplementations(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[]> {
-    return extensionsController.registries.textDocumentImplementation
+    return extensionsController.services.textDocumentImplementation
         .getLocation({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
@@ -195,7 +195,7 @@ export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
-    return extensionsController.registries.textDocumentDecoration.getDecorations({
+    return extensionsController.services.textDocumentDecoration.getDecorations({
         uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
     })
 }

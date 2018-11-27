@@ -654,6 +654,12 @@ const SiteSchemaJSON = `{
           "description": "The TTL of the repository permissions data cache.",
           "type": "string",
           "default": "3h"
+        },
+        "organizations": {
+          "description":
+            "A list of GitHub organization names. If specified, only GitHub users that are members of the specified orgs will be allowed to authenticate",
+          "type": "array",
+          "items": { "type": "string" }
         }
       }
     },

@@ -1,19 +1,11 @@
 package githuboauth
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/dghubble/gologin/github"
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	githubcodehost "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
@@ -49,58 +41,13 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 		ServiceID:    codeHost.ServiceID(),
 		ServiceType:  codeHost.ServiceType(),
 		Login:        github.LoginHandler(&oauth2Cfg, nil),
-		Callback: github.CallbackHandler(&oauth2Cfg, oauth.SessionIssuer(
-			sessionKey, codeHost.ServiceType(), codeHost.ServiceID(), p.ClientID, getOrCreateUser,
-			func(w http.ResponseWriter) {
-				stateConfig := getStateConfig()
-				stateConfig.MaxAge = -1
-				http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
-			}), nil),
+		Callback: github.CallbackHandler(
+			&oauth2Cfg,
+			oauth.SessionIssuer(&sessionIssuerHelper{
+				CodeHost: codeHost,
+				clientID: p.ClientID,
+			}, sessionKey),
+			nil,
+		),
 	}), nil
-}
-
-func getOrCreateUser(ctx context.Context, serviceType, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
-	ghUser, err := github.UserFromContext(ctx)
-	if err != nil {
-		return nil, "Could not read GitHub user from callback request.", errors.Wrap(err, "could not read user from context")
-	}
-
-	login, err := auth.NormalizeUsername(deref(ghUser.Login))
-	if err != nil {
-		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
-	}
-
-	var data extsvc.ExternalAccountData
-	data.SetAccountData(ghUser)
-	data.SetAuthData(token)
-	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		Username:        login,
-		Email:           deref(ghUser.Email),
-		EmailIsVerified: deref(ghUser.Email) != "",
-		DisplayName:     deref(ghUser.Name),
-		AvatarURL:       deref(ghUser.AvatarURL),
-	}, extsvc.ExternalAccountSpec{
-		ServiceType: serviceType,
-		ServiceID:   serviceID,
-		ClientID:    clientID,
-		AccountID:   strconv.FormatInt(derefInt64(ghUser.ID), 10),
-	}, data)
-	if err != nil {
-		return nil, safeErrMsg, err
-	}
-	return actor.FromUser(userID), "", nil
-}
-
-func deref(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func derefInt64(i *int64) int64 {
-	if i == nil {
-		return 0
-	}
-	return *i
 }

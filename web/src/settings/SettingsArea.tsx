@@ -10,17 +10,17 @@ import { queryConfiguredExtensions } from '../../../shared/src/extensions/helper
 import { gql } from '../../../shared/src/graphql/graphql'
 import { ISettingsCascade } from '../../../shared/src/graphql/schema'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { gqlToCascade } from '../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
-import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { SettingsPage } from './SettingsPage'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends ExtensionsProps {
+interface SettingsAreaPageCommonProps extends PlatformContextProps {
     /** The subject whose settings to edit. */
     subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
 
@@ -138,7 +138,7 @@ export class SettingsArea extends React.Component<Props, State> {
             authenticatedUser: this.props.authenticatedUser,
             onUpdate: this.onUpdate,
             isLightTheme: this.props.isLightTheme,
-            extensionsContext: this.props.extensionsContext,
+            platformContext: this.props.platformContext,
         }
 
         return (
@@ -162,7 +162,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private onUpdate = () => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
-        return queryConfiguredExtensions(this.props.extensionsContext, gqlToCascade(cascade)).pipe(
+        return queryConfiguredExtensions(this.props.platformContext, gqlToCascade(cascade)).pipe(
             map(configuredExtensions => ({
                 $id: 'settings.schema.json',
                 allOf: [

@@ -9,9 +9,8 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	gobuildserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 )
 
 // Notable benchmark results:
@@ -113,7 +112,7 @@ func BenchmarkIntegration(b *testing.B) {
 		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
 		b.Run(label, func(b *testing.B) {
-			fs, err := proxy.NewRemoteRepoVFS(context.Background(), root.CloneURL(), api.CommitID(root.Rev()))
+			fs, err := gobuildserver.RemoteFS(context.Background(), lspext.InitializeParams{OriginalRootURI: rootURI})
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -123,14 +122,11 @@ func BenchmarkIntegration(b *testing.B) {
 				test.definitionParams.TextDocument.URI = rootURI + "#" + test.definitionParams.TextDocument.URI
 				b.Run("definition", func(b *testing.B) {
 					ctx := context.Background()
-					proxy := proxy.New()
-					addr, done := startProxy(b, proxy)
-					defer done()
 
 					b.ResetTimer()
 					for i := 0; i < b.N; i++ {
 						b.StopTimer()
-						c := dialProxy(b, addr, nil)
+						c, done := connectionToNewBuildServer(string(rootURI), b)
 						b.StartTimer()
 
 						if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
@@ -145,15 +141,11 @@ func BenchmarkIntegration(b *testing.B) {
 							b.Fatal(err)
 						}
 
-						if err := c.Close(); err != nil {
-							b.Fatal(err)
-						}
-
 						// If we don't shut down the server, then subsequent
 						// iterations will test the performance when it's
 						// already cached, which is not what we want.
 						b.StopTimer()
-						proxy.ShutdownServers(ctx)
+						done()
 						if !reflect.DeepEqual(loc, test.wantDefinitions) {
 							b.Fatalf("got %v, want %v", loc, test.wantDefinitions)
 						}
@@ -166,13 +158,10 @@ func BenchmarkIntegration(b *testing.B) {
 			if test.symbolParams != nil {
 				b.Run("symbols", func(b *testing.B) {
 					ctx := context.Background()
-					proxy := proxy.New()
-					addr, done := startProxy(b, proxy)
-					defer done()
 
 					for i := 0; i < b.N; i++ {
 						b.StopTimer()
-						c := dialProxy(b, addr, nil)
+						c, done := connectionToNewBuildServer(string(rootURI), b)
 						b.StartTimer()
 
 						if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
@@ -187,15 +176,11 @@ func BenchmarkIntegration(b *testing.B) {
 							b.Fatal(err)
 						}
 
-						if err := c.Close(); err != nil {
-							b.Fatal(err)
-						}
-
 						// If we don't shut down the server, then subsequent
 						// iterations will test the performance when it's
 						// already cached, which is not what we want.
 						b.StopTimer()
-						proxy.ShutdownServers(ctx)
+						done()
 						if !reflect.DeepEqual(syms, test.wantSymbols) {
 							b.Fatalf("got %v, want %v", syms, test.wantSymbols)
 						}
@@ -247,20 +232,11 @@ func BenchmarkIntegrationShared(b *testing.B) {
 	ctx := context.Background()
 	for label, test := range tests {
 		b.Run(label, func(b *testing.B) {
-			old, err := gituri.Parse(test.oldRootURI)
+			oldfs, err := gobuildserver.RemoteFS(context.Background(), lspext.InitializeParams{OriginalRootURI: lsp.DocumentURI(test.oldRootURI)})
 			if err != nil {
 				b.Fatal(err)
 			}
-			root, err := gituri.Parse(test.rootURI)
-			if err != nil {
-				b.Fatal(err)
-			}
-
-			oldfs, err := proxy.NewRemoteRepoVFS(ctx, old.CloneURL(), api.CommitID(old.Rev()))
-			if err != nil {
-				b.Fatal(err)
-			}
-			fs, err := proxy.NewRemoteRepoVFS(ctx, root.CloneURL(), api.CommitID(root.Rev()))
+			fs, err := gobuildserver.RemoteFS(context.Background(), lspext.InitializeParams{OriginalRootURI: lsp.DocumentURI(test.rootURI)})
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -294,20 +270,15 @@ func BenchmarkIntegrationShared(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.StopTimer()
 
-				proxy := proxy.New()
-				addr, done := startProxy(b, proxy)
-				defer done() // TODO ensure we close between each loop
-
-				c := dialProxy(b, addr, nil)
+				c, done1 := connectionToNewBuildServer(test.oldRootURI, b)
+				defer done1() // TODO ensure we close between each loop
 				do(c, test.oldRootURI)
-				c = dialProxy(b, addr, nil)
+				c, done2 := connectionToNewBuildServer(test.rootURI, b)
+				defer done2()
 
 				b.StartTimer()
 				do(c, test.rootURI)
 				b.StopTimer()
-
-				proxy.ShutdownServers(ctx)
-				done()
 			}
 		})
 	}

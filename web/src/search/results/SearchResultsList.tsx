@@ -11,6 +11,7 @@ import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
 import { buildSearchURLQuery, parseSearchURLQuery } from '..'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { FileMatch } from '../../components/FileMatch'
 import { ModalContainer } from '../../components/ModalContainer'
@@ -25,7 +26,7 @@ import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
-interface SearchResultsListProps {
+interface SearchResultsListProps extends SettingsCascadeProps {
     isLightTheme: boolean
     location: H.Location
     history: H.History
@@ -248,6 +249,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     values={{ query: parsedQuery ? parsedQuery.query : '' }}
                                     onDidCancel={this.props.onSavedQueryModalClose}
                                     onDidCreate={this.props.onDidCreateSavedQuery}
+                                    settingsCascade={this.props.settingsCascade}
                                 />
                             }
                         />

@@ -9,12 +9,21 @@ import { startWith } from 'rxjs/operators'
 import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from '../../shared/src/api/client/environment'
 import { TextDocumentItem } from '../../shared/src/api/client/types/textDocument'
 import { WorkspaceRoot } from '../../shared/src/api/protocol/plainTypes'
-import { createController as createExtensionsController } from '../../shared/src/extensions/controller'
+import {
+    createController as createExtensionsController,
+    ExtensionsControllerProps,
+} from '../../shared/src/extensions/controller'
 import { ConfiguredExtension } from '../../shared/src/extensions/extension'
 import { viewerConfiguredExtensions } from '../../shared/src/extensions/helpers'
 import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
-import { ConfiguredSubject, SettingsCascadeOrError } from '../../shared/src/settings/settings'
+import { PlatformContextProps } from '../../shared/src/platform/context'
+import {
+    ConfiguredSubject,
+    isSettingsValid,
+    SettingsCascadeOrError,
+    SettingsCascadeProps,
+} from '../../shared/src/settings/settings'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { FeedbackText } from './components/FeedbackText'
@@ -26,16 +35,10 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import {
-    createMessageTransports,
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from './extensions/ExtensionsClientCommonContext'
-import { createExtensionsContext } from './extensions/ExtensionsClientCommonContext'
 import { KeybindingsProps } from './keybindings'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
+import { createPlatformContext } from './platform/context'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -67,7 +70,7 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
 
 interface SourcegraphWebAppState
     extends SettingsCascadeProps,
-        ExtensionsProps,
+        PlatformContextProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps {
     error?: Error
@@ -107,21 +110,19 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminis
 export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     constructor(props: SourcegraphWebAppProps) {
         super(props)
-        const extensionsContext = createExtensionsContext()
+        const platformContext = createPlatformContext()
         this.state = {
             isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
             navbarSearchQuery: '',
             settingsCascade: { subjects: null, final: null },
-            extensionsContext,
+            platformContext,
             extensionsEnvironment: {
                 ...EXTENSIONS_EMPTY_ENVIRONMENT,
                 context: {
                     'clientApplication.isSourcegraph': true,
                 },
             },
-            extensionsController: createExtensionsController(extensionsContext, (extension, settingsCascade) =>
-                Promise.resolve(createMessageTransports(extension, settingsCascade))
-            ),
+            extensionsController: createExtensionsController(platformContext),
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             isMainPage: false,
         }
@@ -142,7 +143,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         this.subscriptions.add(
             combineLatest(
-                from(this.state.extensionsContext.settingsCascade).pipe(startWith(null)),
+                from(this.state.platformContext.settingsCascade).pipe(startWith(null)),
                 authenticatedUser.pipe(startWith(null))
             ).subscribe(([cascade, authenticatedUser]) => {
                 this.setState(() => {
@@ -166,7 +167,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.subscriptions.add(this.state.extensionsController)
 
         this.subscriptions.add(
-            this.state.extensionsContext.settingsCascade.subscribe(
+            this.state.platformContext.settingsCascade.subscribe(
                 v => this.onSettingsCascadeChange(v),
                 err => console.error(err)
             )
@@ -176,7 +177,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         //
         // TODO(sqs): handle loading and errors
         this.subscriptions.add(
-            viewerConfiguredExtensions(this.state.extensionsContext).subscribe(
+            viewerConfiguredExtensions(this.state.platformContext).subscribe(
                 extensions => this.onViewerConfiguredExtensionsChange(extensions),
                 err => console.error(err)
             )
@@ -260,7 +261,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 navbarSearchQuery={this.state.navbarSearchQuery}
                                 onNavbarQueryChange={this.onNavbarQueryChange}
                                 // Extensions
-                                extensionsContext={this.state.extensionsContext}
+                                platformContext={this.state.platformContext}
                                 extensionsEnvironment={this.state.extensionsEnvironment}
                                 extensionsOnRootsChange={this.extensionsOnRootsChange}
                                 extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
@@ -299,16 +300,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     settingsCascade,
                     extensionsEnvironment: prevState.extensionsEnvironment,
                 }
-                if (
-                    settingsCascade.subjects !== null &&
-                    !isErrorLike(settingsCascade.subjects) &&
-                    settingsCascade.final !== null &&
-                    !isErrorLike(settingsCascade.final)
-                ) {
+                if (isSettingsValid(settingsCascade)) {
                     // Only update Sourcegraph extensions environment configuration if the configuration was
                     // successfully parsed.
-                    //
-                    // TODO(sqs): Think through how this error should be handled.
                     update.extensionsEnvironment = {
                         ...prevState.extensionsEnvironment,
                         configuration: {

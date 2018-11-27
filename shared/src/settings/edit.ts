@@ -1,9 +1,9 @@
 import { from } from 'rxjs'
 import { map, switchMap, take } from 'rxjs/operators'
 import { ConfigurationUpdateParams } from '../api/protocol'
-import { Context as ExtensionsContext } from '../context'
 import { dataOrThrowErrors, gql, graphQLContent } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
+import { PlatformContext } from '../platform/context'
 import { isErrorLike } from '../util/errors'
 
 export type UpdateExtensionSettingsArgs =
@@ -16,11 +16,11 @@ export type UpdateExtensionSettingsArgs =
       }
 
 export function updateSettings(
-    { settingsCascade, queryGraphQL }: Pick<ExtensionsContext, 'settingsCascade' | 'queryGraphQL'>,
+    { settingsCascade, queryGraphQL }: Pick<PlatformContext, 'settingsCascade' | 'queryGraphQL'>,
     subject: GQL.ID,
     args: UpdateExtensionSettingsArgs,
     applySettingsEdit: (
-        { queryGraphQL }: Pick<ExtensionsContext, 'queryGraphQL'>,
+        { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
         subject: GQL.ID,
         lastID: number | null,
         edit: GQL.ISettingsEdit
@@ -39,9 +39,6 @@ export function updateSettings(
                 const subjectSettings = settingsCascade.subjects.find(s => s.subject.id === subject)
                 if (!subjectSettings) {
                     throw new Error(`no settings subject: ${subject}`)
-                }
-                if (subjectSettings.settings === null) {
-                    throw new Error('settings subject not available')
                 }
                 if (isErrorLike(subjectSettings.settings)) {
                     throw new Error(`settings subject error: ${subjectSettings.settings.message}`)
@@ -72,7 +69,7 @@ function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
 
 // NOTE: uses configurationMutation (not settingsMutation) and editConfiguration (not editSettings) for backcompat.
 export function mutateSettings(
-    { queryGraphQL }: Pick<ExtensionsContext, 'queryGraphQL'>,
+    { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
     subject: GQL.ID,
     lastID: number | null,
     edit: GQL.IConfigurationEdit

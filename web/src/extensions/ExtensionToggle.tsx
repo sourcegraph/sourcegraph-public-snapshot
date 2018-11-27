@@ -3,14 +3,15 @@ import * as React from 'react'
 import { EMPTY, from, Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { Toggle } from '../../../shared/src/components/Toggle'
-import { ConfiguredExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
-import { SettingsCascade, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
+import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascade, SettingsCascadeOrError, SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { ExtensionsProps, isExtensionAdded, SettingsCascadeProps } from './ExtensionsClientCommonContext'
+import { isExtensionAdded } from './extension/extension'
 
-interface Props extends SettingsCascadeProps, ExtensionsProps {
+interface Props extends SettingsCascadeProps, PlatformContextProps {
     /** The extension that this element is for. */
-    extension: ConfiguredExtension
+    extension: ConfiguredRegistryExtension
 
     disabled?: boolean
 
@@ -62,7 +63,7 @@ export class ExtensionToggle extends React.PureComponent<Props> {
                         }
 
                         return from(
-                            this.props.extensionsContext.updateSettings(highestPrecedenceSubject.subject.id, {
+                            this.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
                                 extensionID: this.props.extension.id,
                                 enabled,
                             })
@@ -83,7 +84,10 @@ export class ExtensionToggle extends React.PureComponent<Props> {
             ? undefined
             : last(cascade.subjects.filter(subject => isExtensionAdded(subject.settings, this.props.extension.id)))
         const state = subject && {
-            state: subject.settings.extensions ? subject.settings.extensions[this.props.extension.id] : false,
+            state:
+                subject.settings && subject.settings.extensions
+                    ? subject.settings.extensions[this.props.extension.id]
+                    : false,
             name: subject.subject.__typename,
         }
 
@@ -104,7 +108,10 @@ export class ExtensionToggle extends React.PureComponent<Props> {
 /**
  * Shows a modal confirmation prompt to the user confirming whether to add an extension.
  */
-function confirmAddExtension(extensionID: string, extensionManifest?: ConfiguredExtension['manifest']): boolean {
+function confirmAddExtension(
+    extensionID: string,
+    extensionManifest?: ConfiguredRegistryExtension['manifest']
+): boolean {
     // Either `"title" (id)` (if there is a title in the manifest) or else just `id`. It is
     // important to show the ID because it indicates who the publisher is and allows
     // disambiguation from other similarly titled extensions.

@@ -87,7 +87,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                         context.repoHeaderContributionsLifecycleProps
                                     }
                                     settingsCascade={context.settingsCascade}
-                                    extensionsContext={context.extensionsContext}
+                                    platformContext={context.platformContext}
                                     extensionsOnRootsChange={context.extensionsOnRootsChange}
                                     extensionsOnVisibleTextDocumentsChange={
                                         context.extensionsOnVisibleTextDocumentsChange
@@ -108,7 +108,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     filePath={context.match.params.filePath || ''}
                                     settingsCascade={context.settingsCascade}
                                     extensionsController={context.extensionsController}
-                                    extensionsContext={context.extensionsContext}
+                                    platformContext={context.platformContext}
                                     location={context.location}
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}

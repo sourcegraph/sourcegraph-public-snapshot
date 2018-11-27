@@ -1,43 +1,36 @@
 import { isEqual } from 'lodash'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
 import { InitData } from '../../../shared/src/api/extension/extensionHost'
 import { SettingsCascade } from '../../../shared/src/api/protocol'
 import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
-import {
-    Context as ExtensionsContext,
-    ExtensionsContextProps as GenericExtensionsContextProps,
-} from '../../../shared/src/context'
-import { ControllerProps as GenericExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { gql } from '../../../shared/src/graphql/graphql'
+import { PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
-import {
-    gqlToCascade,
-    Settings,
-    SettingsCascadeProps as GenericSettingsCascadeProps,
-} from '../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { gqlToCascade } from '../../../shared/src/settings/settings'
+import { isErrorLike } from '../../../shared/src/util/errors'
 import { requestGraphQL } from '../backend/graphql'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
-import { settingsCascade } from '../settings/configuration'
-import { refreshSettings } from '../user/settings/backend'
+import { fetchViewerSettings, settingsRefreshes } from '../user/settings/backend'
 
-export interface ExtensionsControllerProps extends GenericExtensionsControllerProps {}
-
-export interface SettingsCascadeProps extends GenericSettingsCascadeProps {}
-
-export interface ExtensionsProps extends GenericExtensionsContextProps {}
-
-export function createExtensionsContext(): ExtensionsContext {
-    const context: ExtensionsContext = {
-        settingsCascade: settingsCascade.pipe(
+/**
+ * Creates the {@link PlatformContext} for the web app.
+ */
+export function createPlatformContext(): PlatformContext {
+    const context: PlatformContext = {
+        settingsCascade: settingsRefreshes.pipe(
+            startWith(void 0),
+            switchMap(() => fetchViewerSettings()),
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
         updateSettings: async (subject, args) => {
+            // Unauthenticated users can't update settings. (In the browser extension, they can update client
+            // settings even when not authenticated. The difference in behavior in the web app vs. browser
+            // extension is why this logic lives here and not in shared/.)
             if (!window.context.isAuthenticatedUser) {
                 let editDescription = 'edit settings' // default description
                 if ('edit' in args && args.edit) {
@@ -58,10 +51,11 @@ export function createExtensionsContext(): ExtensionsContext {
                         }**](${`${u.href.replace(/\/$/, '')}/sign-in`})`
                 )
             }
+
             try {
                 await updateSettings(context, subject, args, mutateSettings)
             } finally {
-                await refreshSettings().toPromise()
+                settingsRefreshes.next()
             }
         },
         queryGraphQL: (request, variables) =>
@@ -73,11 +67,13 @@ export function createExtensionsContext(): ExtensionsContext {
             ),
         queryLSP: requests => sendLSPHTTPRequests(requests),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
+        createMessageTransports: (extension, settingsCascade) =>
+            Promise.resolve(createMessageTransports(extension, settingsCascade)),
     }
     return context
 }
 
-export function createMessageTransports(
+function createMessageTransports(
     extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
     settingsCascade: SettingsCascade<any>
 ): MessageTransports {
@@ -107,9 +103,4 @@ export function createMessageTransports(
         throw new Error('failed to initialize extension host')
     }
     throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
-}
-
-/** Reports whether the given extension is mentioned (enabled or disabled) in the settings. */
-export function isExtensionAdded(settings: Settings | ErrorLike | null, extensionID: string): boolean {
-    return !!settings && !isErrorLike(settings) && !!settings.extensions && extensionID in settings.extensions
 }

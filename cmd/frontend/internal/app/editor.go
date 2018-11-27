@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -104,7 +105,13 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// won't work, but it is worth the increase in simplicity (plus there is an error message for
 	// users). In the future we can let users specify a custom mapping to the Sourcegraph repo in
 	// their local Git repo (instead of having them pass it here).
-	repoName := guessRepoNameFromRemoteURL(remoteURL, q.Get("pattern"))
+	var hostnameToPattern map[string]string
+	if hostnameToPatternStr := q.Get("hostname_patterns"); hostnameToPatternStr != "" {
+		if err := json.Unmarshal([]byte(hostnameToPatternStr), &hostnameToPattern); err != nil {
+			return err
+		}
+	}
+	repoName := guessRepoNameFromRemoteURL(remoteURL, hostnameToPattern)
 	if repoName == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
@@ -149,15 +156,13 @@ var gitProtocolRegExp = regexp.MustCompile("^(git|(git+)?(https?|ssh))://")
 // It first normalizes the remote URL (ensuring a scheme exists, stripping any "git@" username in
 // the host, stripping any trailing ".git" from the path, etc.). It then returns the repo name as
 // templatized by the pattern specified, which references the hostname and path of the normalized
-// URL. The default pattern is "{hostname}/{path}".
+// URL. Patterns are keyed by hostname in the hostnameToPattern parameter. The default pattern is
+// "{hostname}/{path}".
 //
-// For example, given "https://github.com/foo/bar.git" and an empty pattern, it returns
-// "github.com/foo/bar". Given the same remote URL and pattern "{path}", it returns "foo/bar".
-func guessRepoNameFromRemoteURL(urlStr string, pattern string) api.RepoName {
-	if pattern == "" {
-		pattern = "{hostname}/{path}"
-	}
-
+// For example, given "https://github.com/foo/bar.git" and an empty hostnameToPattern, it returns
+// "github.com/foo/bar". Given the same remote URL and hostnametoPattern
+// `map[string]string{"github.com": "{path}"}`, it returns "foo/bar".
+func guessRepoNameFromRemoteURL(urlStr string, hostnameToPattern map[string]string) api.RepoName {
 	if !gitProtocolRegExp.MatchString(urlStr) {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
@@ -165,6 +170,13 @@ func guessRepoNameFromRemoteURL(urlStr string, pattern string) api.RepoName {
 	u, _ := url.Parse(urlStr)
 	if u == nil {
 		return ""
+	}
+
+	pattern := "{hostname}/{path}"
+	if hostnameToPattern != nil {
+		if p, ok := hostnameToPattern[u.Hostname()]; ok {
+			pattern = p
+		}
 	}
 
 	return api.RepoName(strings.NewReplacer(

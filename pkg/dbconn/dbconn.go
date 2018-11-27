@@ -1,4 +1,7 @@
 // Package dbconn provides functionality to connect to our DB and migrate it.
+//
+// Most services should connect to the frontend for DB access instead, using
+// api.InternalClient.
 package dbconn
 
 import (
@@ -23,7 +26,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/migrations"
+	"github.com/sourcegraph/sourcegraph/migrations"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

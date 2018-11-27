@@ -1,4 +1,4 @@
  --recursive
- --watch-extensions ts
+ --watch-extensions ts,tsx,js
  --timeout 200
  src/**/*.test.ts?(x)

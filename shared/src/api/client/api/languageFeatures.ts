@@ -6,9 +6,9 @@ import { ExtLanguageFeaturesAPI } from '../../extension/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
 import { Definition, Hover, Location } from '../../protocol/plainTypes'
-import { ProvideTextDocumentHoverSignature } from '../providers/hover'
-import { ProvideTextDocumentLocationSignature, TextDocumentReferencesProviderRegistry } from '../providers/location'
-import { FeatureProviderRegistry } from '../providers/registry'
+import { ProvideTextDocumentHoverSignature } from '../services/hover'
+import { ProvideTextDocumentLocationSignature, TextDocumentReferencesProviderRegistry } from '../services/location'
+import { FeatureProviderRegistry } from '../services/registry'
 import { SubscriptionMap } from './common'
 
 /** @internal */

@@ -3,14 +3,17 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
-import { startWith, switchMap, withLatestFrom } from 'rxjs/operators'
+import { mapTo, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { getLastIDForSubject } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
+import { settingsRefreshes } from '../../user/settings/backend'
 import { createSavedQuery, deleteSavedQuery } from '../backend'
 import { SavedQueryRow } from './SavedQueryRow'
 import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
     savedQuery: GQL.ISavedQuery
     onDidUpdate?: () => void
@@ -49,18 +52,24 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                     switchMap(([, props]) =>
                         createSavedQuery(
                             props.savedQuery.subject,
+                            getLastIDForSubject(props.settingsCascade, props.savedQuery.subject.id),
                             duplicate(props.savedQuery.description),
                             props.savedQuery.query,
                             props.savedQuery.showOnHomepage,
                             props.savedQuery.notify,
                             props.savedQuery.notifySlack
                         )
-                    )
+                    ),
+                    tap(() => settingsRefreshes.next()),
+                    mapTo(void 0)
                 )
                 .subscribe(
-                    newSavedQuery => {
+                    () => {
                         if (this.props.onDidDuplicate) {
                             this.props.onDidDuplicate()
+                        }
+                        if (this.props.onDidUpdate) {
+                            this.props.onDidUpdate()
                         }
                     },
                     err => {
@@ -73,12 +82,23 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             this.deleteRequested
                 .pipe(
                     withLatestFrom(propsChanges),
-                    switchMap(([, props]) => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.id))
+                    switchMap(([, props]) =>
+                        deleteSavedQuery(
+                            props.savedQuery.subject,
+                            getLastIDForSubject(props.settingsCascade, props.savedQuery.subject.id),
+                            props.savedQuery.id
+                        )
+                    ),
+                    tap(() => settingsRefreshes.next()),
+                    mapTo(void 0)
                 )
                 .subscribe(
                     () => {
                         if (this.props.onDidDelete) {
                             this.props.onDidDelete()
+                        }
+                        if (this.props.onDidUpdate) {
+                            this.props.onDidUpdate()
                         }
                     },
                     err => {
@@ -134,6 +154,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                                 savedQuery={this.props.savedQuery}
                                 onDidUpdate={this.onDidUpdateSavedQuery}
                                 onDidCancel={this.toggleEditing}
+                                settingsCascade={this.props.settingsCascade}
                             />
                         </div>
                     )

@@ -1,9 +1,4 @@
 {
   "extends": "@sourcegraph/tslint-config",
-  "rules": {
-    "rxjs-no-wholesale": false,
-    "rxjs-no-deep-operators": {
-      "severity": "error"
-    }
-  }
+  "linterOptions": { "exclude": ["node_modules/**"] }
 }

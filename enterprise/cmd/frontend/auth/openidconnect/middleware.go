@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/csrf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"golang.org/x/oauth2"
