@@ -27,7 +27,8 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         return (
             <SettingsFile
                 settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
-                jsonSchema={this.props.data.settingsJSONSchema}
+                jsonSchemaId="settings.schema.json#"
+                extraSchemas={[this.props.data.settingsJSONSchema]}
                 commitError={this.state.commitError}
                 onDidCommit={this.onDidCommit}
                 onDidDiscard={this.onDidDiscard}
