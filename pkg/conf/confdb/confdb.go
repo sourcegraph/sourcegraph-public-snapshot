@@ -55,8 +55,9 @@ func SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (
 	return (*SiteConfig)(criticalSite), err
 }
 
-// CriticalCreateIfUpToDate saves the given critical config "contents" to the database iff the
-// supplied "lastID" is equal to the one that was most recently saved to the database.
+// CriticalCreateIfUpToDate saves the given critical config "contents" to the
+// database iff the supplied "lastID" is equal to the one that was most
+// recently saved to the database (i.e. SiteGetlatest's ID field).
 //
 // The critical config that was most recently saved to the database is returned.
 // An error is returned if "contents" is invalid JSON.
@@ -142,7 +143,7 @@ func newTransaction(ctx context.Context) (tx queryable, done func(), err error) 
 	}, nil
 }
 
-func addDefault(ctx context.Context, tx queryable, configType string, contents string) (newLastID *int32, err error) {
+func addDefault(ctx context.Context, tx queryable, configType configType, contents string) (newLastID *int32, err error) {
 	latest, err := getLatest(ctx, tx, configType)
 	if err != nil {
 		return nil, err
@@ -160,7 +161,7 @@ func addDefault(ctx context.Context, tx queryable, configType string, contents s
 	return &latest.ID, nil
 }
 
-func createIfUpToDate(ctx context.Context, tx queryable, configType string, lastID *int32, contents string) (latest *Config, err error) {
+func createIfUpToDate(ctx context.Context, tx queryable, configType configType, lastID *int32, contents string) (latest *Config, err error) {
 	// Validate JSON syntax before saving.
 	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
 		return nil, fmt.Errorf("invalid settings JSON: %v", errs)
@@ -190,7 +191,7 @@ func createIfUpToDate(ctx context.Context, tx queryable, configType string, last
 	return latest, nil
 }
 
-func getLatest(ctx context.Context, tx queryable, configType string) (*Config, error) {
+func getLatest(ctx context.Context, tx queryable, configType configType) (*Config, error) {
 	q := sqlf.Sprintf("SELECT s.id, s.type, s.contents, s.created_at, s.updated_at FROM critical_and_site_config s WHERE type=%s ORDER BY id DESC LIMIT 1", configType)
 	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -231,9 +232,11 @@ type queryable interface {
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
 
+type configType string
+
 const (
-	typeCritical = "critical"
-	typeSite     = "site"
+	typeCritical configType = "critical"
+	typeSite     configType = "site"
 )
 
 // SetDefaultConfigs should be invoked once early on in the program
