@@ -35,7 +35,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                     <div>
                         <Link
                             className="btn btn-secondary btn-sm"
-                            to={`/external-services/${this.props.node.id}`}
+                            to={`/site-admin/external-services/${this.props.node.id}`}
                             data-tooltip="External service settings"
                         >
                             <SettingsIcon className="icon-inline" /> Settings
