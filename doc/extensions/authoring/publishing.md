@@ -42,7 +42,7 @@ To set this up:
 
 1. In a terminal window, run `npm run serve` in your extension's directory to run the Parcel dev server. Wait until it reports that it's listening on http://localhost:1234 (or another port number).
 
-In another terminal window, run src extensions publish -url http://localhost:1234/my-extension.js (my-extension.jsbeing the bundled JavaScript file in your dist directory). Sourcegraph will now fetch the extension code from the value of the -url argument.
+In another terminal window, run `src extensions publish -url http://localhost:1234/my-extension.js` (my-extension.js being the bundled JavaScript file in your dist directory). Sourcegraph will now fetch the extension code from the value of the `-url` argument.
 
 1. Make a change inside `src`, then save. Your code will be re-bundled and a reload of the browser window will cause your changes to be loaded.
 
