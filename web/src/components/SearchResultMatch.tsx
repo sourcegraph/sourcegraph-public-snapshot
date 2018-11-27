@@ -170,9 +170,6 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
     }
 
     public render(): JSX.Element {
-        console.log('markedOutput', marked(this.props.body, this.markedOpts).split('\n'))
-        console.log('hl', highlight('diff', this.props.body, true).value)
-        const lang = this.getLanguage()
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
@@ -185,15 +182,11 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
                             ref={this.setTableContainerElement}
                             className="search-result-match"
                             dangerouslySetInnerHTML={{
-                                // Heuristic: replace 4 spaces with a tab, otherwise character counts get thrown off for languages like Go.
-                                // Marked does not preserve tabs, so we get wrong spacing for results where white-space
-                                // is actually spaces. TODO @attfarhan: we could read the language of the code block.
-                                // or the file that the diff result comes from to optimize this.
-                                // marked(this.props.body, this.markedOpts)
                                 __html: '<code>' + this.highlightCodeBlock() + '</code>',
                             }}
                         />
                     ) : (
+                        // TODO @attfarhan: Render markdown in the future using marked.
                         <div
                             ref={this.setTableContainerElement}
                             className="search-result-match"
@@ -211,14 +204,6 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
         this.tableContainerElement = ref
     }
 
-    private markedOpts = {
-        sanitize: true,
-        highlight: (code: string) => {
-            const lang = this.getLanguage()
-            return lang ? highlight(lang, code, true).value : highlightAuto(code).value
-        },
-    }
-
     private highlightCodeBlock(): string {
         const lang = this.getLanguage()
         if (lang) {
@@ -228,6 +213,7 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
     }
 }
 
+// Strips the code fence from a markdown code block.
 function stripCodeFence(code: string): string {
     if (code.startsWith('```') && code.endsWith('```')) {
         const c = code.split('\n')
@@ -235,6 +221,7 @@ function stripCodeFence(code: string): string {
     }
     return code
 }
+
 // Split lines separates markdown text lines into individual elements so that we can treat each
 // line individually for match highlighting.
 function splitLines(body: string): string {
@@ -246,12 +233,3 @@ function splitLines(body: string): string {
     }
     return htmlAsString
 }
-
-// function replaceSpacesWithTabs(code: string): string {
-//     const lang = getLanguage(code)
-//     let toReturn = code
-//     if (lang && lang.toLowerCase() === 'go') {
-//         toReturn = toReturn.replace(/\s{4}/g, '\t')
-//     }
-//     return toReturn
-// }
