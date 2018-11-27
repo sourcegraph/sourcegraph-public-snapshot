@@ -287,7 +287,7 @@ type OpenIDConnectAuthProvider struct {
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
 }
-type Phabricator struct {
+type PhabricatorConnection struct {
 	Repos []*Repos `json:"repos,omitempty"`
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
@@ -408,7 +408,7 @@ type SiteConfiguration struct {
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
 	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
-	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
+	Phabricator                       []*PhabricatorConnection     `json:"phabricator,omitempty"`
 	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
 	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
 	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`
