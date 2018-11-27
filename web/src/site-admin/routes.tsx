@@ -1,4 +1,5 @@
 import React from 'react'
+import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
@@ -34,6 +35,11 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     {
         path: '/external-services',
         render: props => <SiteAdminExternalServicesPage {...props} />,
+        exact: true,
+    },
+    {
+        path: '/external-services/add',
+        render: props => <SiteAdminAddExternalServicePage {...props} />,
         exact: true,
     },
     {
