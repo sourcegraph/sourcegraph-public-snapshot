@@ -1,0 +1,27 @@
+{
+  "name": "sourcegraph",
+  "version": "19.1.0",
+  "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
+  "author": "Sourcegraph",
+  "bugs": {
+    "url": "https://github.com/sourcegraph/sourcegraph/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph"
+  },
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "src/sourcegraph.d.ts",
+  "files": [
+    "src",
+    "dist/docs"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
+    "docs": "typedoc",
+    "prepublishOnly": "yarn run tslint && yarn run docs"
+  }
+}
