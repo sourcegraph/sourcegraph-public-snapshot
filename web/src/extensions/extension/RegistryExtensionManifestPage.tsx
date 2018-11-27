@@ -98,7 +98,8 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             id="registry-extension-edit-page__data"
                             value={this.props.extension.rawManifest}
                             height={500}
-                            jsonSchema={extensionSchemaJSON}
+                            jsonSchemaId="extension.schema.json#"
+                            extraSchemas={[extensionSchemaJSON]}
                             readOnly={true}
                             isLightTheme={this.props.isLightTheme}
                             history={this.props.history}

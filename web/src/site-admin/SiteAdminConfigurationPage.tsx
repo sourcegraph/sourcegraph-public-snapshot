@@ -260,7 +260,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             <DynamicallyImportedMonacoSettingsEditor
                                 value={contents || ''}
                                 actions={siteConfigActions}
-                                jsonSchema={siteSchemaJSON}
+                                jsonSchemaId="site.schema.json#"
+                                extraSchemas={[siteSchemaJSON]}
                                 onDirtyChange={this.onDirtyChange}
                                 canEdit={this.state.site.configuration.canUpdate}
                                 saving={this.state.saving}
