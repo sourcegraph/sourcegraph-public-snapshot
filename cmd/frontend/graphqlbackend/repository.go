@@ -259,7 +259,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		return nil, errors.New("unable to resolve the origin of the phabricator instance")
 	}
 
-	client, clientErr := makePhabClientForOrigin(origin)
+	client, clientErr := makePhabClientForOrigin(ctx, origin)
 
 	patch := ""
 	if args.Patch != nil {
@@ -326,8 +326,12 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	return getCommit()
 }
 
-func makePhabClientForOrigin(origin string) (*phabricator.Client, error) {
-	phabs := conf.Get().Phabricator
+func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.Client, error) {
+	phabs, err := db.ExternalServices.ListPhabricatorConnections(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, phab := range phabs {
 		if phab.Url != origin {
 			continue
