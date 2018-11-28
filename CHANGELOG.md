@@ -39,6 +39,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 2.13.6
+
+### Added
+
+- The `/-/editor` endpoint now accepts a `hostname_patterns` URL parameter, which specifies a JSON
+  object mapping from hostname to repository name pattern. This serves as a hint to Sourcegraph when
+  resolving git clone URLs to repository names. The name pattern is the same style as is used in
+  code host configurations. The default value is `{hostname}/{path}`.
+
 ## 2.13.5
 
 ### Fixed
