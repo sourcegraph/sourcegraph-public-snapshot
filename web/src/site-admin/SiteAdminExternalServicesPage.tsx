@@ -17,16 +17,7 @@ interface ExternalServiceNodeProps {
     onDidUpdate?: () => void
 }
 
-interface ExternalServiceNodeState {
-    // loading: boolean
-    // errorDescription?: string
-}
-
-class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, ExternalServiceNodeState> {
-    public state: ExternalServiceNodeState = {
-        // loading: false,
-    }
-
+class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, {}> {
     public render(): JSX.Element | null {
         return (
             <li className="external-service-node list-group-item py-2">
@@ -48,8 +39,6 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
 }
 
 interface Props extends RouteComponentProps<{}> {}
-interface State {}
-
 class FilteredExternalServiceConnection extends FilteredConnection<
     GQL.IExternalService,
     Pick<ExternalServiceNodeProps, 'onDidUpdate'>
@@ -58,9 +47,7 @@ class FilteredExternalServiceConnection extends FilteredConnection<
 /**
  * A page displaying the external services on this site.
  */
-export class SiteAdminExternalServicesPage extends React.PureComponent<Props, State> {
-    public state: State = {}
-
+export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}> {
     private updates = new Subject<void>()
 
     public componentDidMount(): void {
@@ -86,7 +73,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
                     className="list-group list-group-flush"
                     noun="external service"
                     pluralNoun="external services"
-                    queryConnection={this.queryExternalServices}
+                    queryConnection={queryExternalServices}
                     nodeComponent={ExternalServiceNode}
                     nodeComponentProps={nodeProps}
                     hideSearch={true}
@@ -99,35 +86,36 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
         )
     }
 
-    private queryExternalServices = (args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> =>
-        queryGraphQL(
-            gql`
-                query ExternalServices($first: Int) {
-                    externalServices(first: $first) {
-                        nodes {
-                            id
-                            kind
-                            displayName
-                            config
-                        }
-                        totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
+    private onDidUpdateExternalServices = () => this.updates.next()
+}
+
+function queryExternalServices(args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> {
+    return queryGraphQL(
+        gql`
+            query ExternalServices($first: Int) {
+                externalServices(first: $first) {
+                    nodes {
+                        id
+                        kind
+                        displayName
+                        config
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
                     }
                 }
-            `,
-            {
-                first: args.first,
             }
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.externalServices || errors) {
-                    throw createAggregateError(errors)
-                }
-                return data.externalServices
-            })
-        )
-
-    private onDidUpdateExternalServices = () => this.updates.next()
+        `,
+        {
+            first: args.first,
+        }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.externalServices || errors) {
+                throw createAggregateError(errors)
+            }
+            return data.externalServices
+        })
+    )
 }
