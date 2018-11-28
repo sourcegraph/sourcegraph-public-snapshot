@@ -35,71 +35,31 @@ const defaultConfig = `{
 }`
 
 export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
-    private submits = new Subject<void>()
-    private subscriptions = new Subscription()
-
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            loading: false,
-            input: {
-                kind: GQL.ExternalServiceKind.GITHUB,
-                displayName: '',
-                config: defaultConfig,
-            },
-        }
+    public state: State = {
+        loading: false,
+        input: {
+            kind: GQL.ExternalServiceKind.GITHUB,
+            displayName: '',
+            config: defaultConfig,
+        },
     }
+
+    private submits = new Subject<GQL.IAddExternalServiceInput>()
+    private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('AddExternalService')
         this.subscriptions.add(
-            this.submits
-                .pipe(
-                    mergeMap(() =>
-                        this.addExternalService().pipe(
-                            catchError(error => {
-                                console.error(error)
-                                this.setState({ error, loading: false })
-                                return []
-                            })
-                        )
-                    )
-                )
-                .subscribe(
-                    service => {
-                        this.setState({ loading: false })
-                        this.props.history.push(`/site-admin/external-services/${service.id}`)
-                    },
-                    error => {
-                        console.error(error)
-                    }
-                )
-        )
-    }
-
-    private addExternalService(): Observable<GQL.IExternalService> {
-        return mutateGraphQL(
-            gql`
-                mutation addExternalService($input: AddExternalServiceInput!) {
-                    addExternalService(input: $input) {
-                        id
-                    }
+            this.submits.pipe(mergeMap(input => addExternalService(input))).subscribe(
+                externalService => {
+                    this.setState({ loading: false })
+                    this.props.history.push(`/site-admin/external-services/${externalService.id}`)
+                },
+                error => {
+                    console.error(error)
+                    this.setState({ error, loading: false })
                 }
-            `,
-            { input: this.state.input }
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.addExternalService || (errors && errors.length > 0)) {
-                    eventLogger.log('AddExternalServiceFailed')
-                    throw createAggregateError(errors)
-                }
-                eventLogger.log('AddExternalServiceSucceeded', {
-                    externalService: {
-                        kind: data.addExternalService.kind,
-                    },
-                })
-                return data.addExternalService
-            })
+            )
         )
     }
 
@@ -132,6 +92,32 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
             event.preventDefault()
         }
         this.setState({ loading: true })
-        this.submits.next()
+        this.submits.next(this.state.input)
     }
+}
+
+function addExternalService(input: GQL.IAddExternalServiceInput): Observable<GQL.IExternalService> {
+    return mutateGraphQL(
+        gql`
+            mutation addExternalService($input: AddExternalServiceInput!) {
+                addExternalService(input: $input) {
+                    id
+                }
+            }
+        `,
+        { input }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
+                eventLogger.log('AddExternalServiceFailed')
+                throw createAggregateError(errors)
+            }
+            eventLogger.log('AddExternalServiceSucceeded', {
+                externalService: {
+                    kind: data.addExternalService.kind,
+                },
+            })
+            return data.addExternalService
+        })
+    )
 }
