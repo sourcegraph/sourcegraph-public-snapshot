@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { SettingsEdit } from '../api/protocol'
+import { SettingsEdit } from '../api/client/services/settings'
 import { convertUpdateConfigurationCommandArgs } from './commands'
 
 describe('convertUpdateConfigurationCommandArgs', () => {

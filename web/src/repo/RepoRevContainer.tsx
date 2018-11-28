@@ -12,7 +12,6 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
-import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
@@ -29,7 +28,6 @@ export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        ExtensionsDocumentsProps,
         PlatformContextProps {
     repo: GQL.IRepository
     rev: string
@@ -46,7 +44,6 @@ interface RepoRevContainerProps
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     routes: ReadonlyArray<RepoRevContainerRoute>
     repo: GQL.IRepository
@@ -193,8 +190,6 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         const context: RepoRevContainerContext = {
             platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
-            extensionsOnRootsChange: this.props.extensionsOnRootsChange,
-            extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             isLightTheme: this.props.isLightTheme,
             repo: this.props.repo,
             repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,

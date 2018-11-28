@@ -1,4 +1,4 @@
-import { KeyPath } from './configuration'
+import { KeyPath } from '../client/services/settings'
 
 // NOTE: You must manually keep this file in sync with contribution.schema.json.
 //

@@ -1,3 +1,4 @@
+import { Observable, of } from 'rxjs'
 import uuid from 'uuid'
 import { MessageTransports } from '../../../../shared/src/api/protocol/jsonrpc2/connection'
 import { Message } from '../../../../shared/src/api/protocol/jsonrpc2/messages'
@@ -8,46 +9,13 @@ import {
     MessageReader,
     MessageWriter,
 } from '../../../../shared/src/api/protocol/jsonrpc2/transport'
-import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
-import { SettingsCascade } from '../../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../../shared/src/util/errors'
-import { ExtensionConnectionInfo, onFirstMessage } from '../messaging'
 
 /**
  * Spawns an extension and returns a communication channel to it.
  */
-export function createMessageTransports(
-    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
-    settingsCascade: SettingsCascade
-): Promise<MessageTransports> {
-    if (!extension.manifest) {
-        throw new Error(`unable to connect to extension ${JSON.stringify(extension.id)}: no manifest found`)
-    }
-    const manifest = extension.manifest
-    if (isErrorLike(manifest)) {
-        throw new Error(
-            `unable to connect to extension ${JSON.stringify(extension.id)}: invalid manifest: ${manifest.message}`
-        )
-    }
-    return new Promise<MessageTransports>((resolve, reject) => {
-        const channelID = uuid.v4()
-        const port = chrome.runtime.connect({ name: channelID })
-        port.postMessage({
-            extensionID: extension.id,
-            jsBundleURL: manifest.url,
-            settingsCascade,
-        } as ExtensionConnectionInfo)
-        onFirstMessage(port, (response: { error?: any }) => {
-            if (response.error) {
-                reject(response.error)
-            } else {
-                resolve(createPortMessageTransports(port))
-            }
-        })
-    }).catch(err => {
-        console.error('Error connecting to', extension.id + ':', err)
-        throw err
-    })
+export function createExtensionHost(): Observable<MessageTransports> {
+    const channelID = uuid.v4()
+    return of(createPortMessageTransports(chrome.runtime.connect({ name: channelID })))
 }
 
 class PortMessageReader extends AbstractMessageReader implements MessageReader {

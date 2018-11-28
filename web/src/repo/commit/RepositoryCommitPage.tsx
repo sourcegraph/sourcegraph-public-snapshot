@@ -23,7 +23,6 @@ import { getHover, getJumpURL } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { memoizeObservable } from '../../util/memoize'
 import { propertyIsDefined } from '../../util/types'
@@ -65,11 +64,7 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props
-    extends RouteComponentProps<{ revspec: string }>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+interface Props extends RouteComponentProps<{ revspec: string }>, PlatformContextProps, ExtensionsControllerProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
@@ -256,10 +251,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 noSummaryIfAllNodesVisible={true}
                                 history={this.props.history}
                                 location={this.props.location}
-                                extensionsOnVisibleTextDocumentsChange={
-                                    this.props.extensionsOnVisibleTextDocumentsChange
-                                }
-                                extensionsOnRootsChange={this.props.extensionsOnRootsChange}
+                                extensionsController={this.props.extensionsController}
                             />
                         </>
                     )}

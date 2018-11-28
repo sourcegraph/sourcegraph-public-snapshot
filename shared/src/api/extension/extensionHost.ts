@@ -1,13 +1,12 @@
-import { Subscription } from 'rxjs'
+import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { createProxy, handleRequests } from '../common/proxy'
-import { SettingsCascade } from '../protocol'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
-import { createWebWorkerMessageTransports } from '../protocol/jsonrpc2/transports/webWorker'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
 import { ExtContext } from './api/context'
 import { ExtDocuments } from './api/documents'
+import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
 import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
@@ -38,45 +37,95 @@ const consoleLogger: Logger = {
  * Required information when initializing an extension host.
  */
 export interface InitData {
-    /** The URL to the JavaScript source file (that exports an `activate` function) for the extension. */
-    bundleURL: string
-
     /** @see {@link module:sourcegraph.internal.sourcegraphURL} */
     sourcegraphURL: string
 
     /** @see {@link module:sourcegraph.internal.clientApplication} */
     clientApplication: 'sourcegraph' | 'other'
-
-    /**
-     * The settings cascade at the time of extension host initialization. It must be provided because extensions
-     * expect that the settings are synchronously available when their `activate` method is called.
-     */
-    settingsCascade: SettingsCascade<any>
 }
 
 /**
- * Creates the Sourcegraph extension host and the extension API handle (which extensions access with `import
- * sourcegraph from 'sourcegraph'`).
+ * Starts the extension host, which runs extensions. It is a Web Worker or other similar isolated
+ * JavaScript execution context. There is exactly 1 extension host, and it has zero or more
+ * extensions activated (and running).
  *
- * @param initData The information to initialize this extension host.
- * @param transports The message reader and writer to use for communication with the client. Defaults to
- *                   communicating using self.postMessage and MessageEvents with the parent (assuming that it is
- *                   called in a Web Worker).
- * @return The extension API.
+ * It expects to receive a message containing {@link InitData} from the client application as the
+ * first message.
+ *
+ * @param transports The message reader and writer to use for communication with the client.
+ * @return An unsubscribable to terminate the extension host.
  */
-export function createExtensionHost(
-    initData: InitData,
-    transports: MessageTransports = createWebWorkerMessageTransports()
-): typeof sourcegraph {
+export function startExtensionHost(
+    transports: MessageTransports
+): Unsubscribable & { __testAPI: Promise<typeof sourcegraph> } {
     const connection = createConnection(transports, consoleLogger)
     connection.listen()
-    return createExtensionHandle(initData, connection)
-}
 
-function createExtensionHandle(initData: InitData, connection: Connection): typeof sourcegraph {
     const subscription = new Subscription()
     subscription.add(connection)
 
+    // Wait for "initialize" message from client application before proceeding to create the
+    // extension host.
+    let initialized = false
+    const __testAPI = new Promise<typeof sourcegraph>(resolve => {
+        connection.onRequest('initialize', (initData: InitData) => {
+            if (initialized) {
+                throw new Error('extension host is already initialized')
+            }
+            initialized = true
+            const { unsubscribe, __testAPI } = initializeExtensionHost(connection, initData)
+            subscription.add(unsubscribe)
+            resolve(__testAPI)
+        })
+    })
+
+    return { unsubscribe: () => subscription.unsubscribe(), __testAPI }
+}
+
+/**
+ * Initializes the extension host using the {@link InitData} from the client application. It is
+ * called by {@link startExtensionHost} after the {@link InitData} is received.
+ *
+ * The extension API is made globally available to all requires/imports of the "sourcegraph" module
+ * by other scripts running in the same JavaScript context.
+ *
+ * @param connection The connection used to communicate with the client.
+ * @param initData The information to initialize this extension host.
+ * @return An unsubscribable to terminate the extension host.
+ */
+function initializeExtensionHost(
+    connection: Connection,
+    initData: InitData
+): Unsubscribable & { __testAPI: typeof sourcegraph } {
+    const subscriptions = new Subscription()
+
+    const { api, subscription: apiSubscription } = createExtensionAPI(initData, connection)
+    subscriptions.add(apiSubscription)
+
+    // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
+    ;(global as any).require = (modulePath: string): any => {
+        if (modulePath === 'sourcegraph') {
+            return api
+        }
+        // All other requires/imports in the extension's code should not reach here because their JS
+        // bundler should have resolved them locally.
+        throw new Error(`require: module not found: ${modulePath}`)
+    }
+    subscriptions.add(() => {
+        ;(global as any).require = () => {
+            // Prevent callers from attempting to access the extension API after it was
+            // unsubscribed.
+            throw new Error(`require: Sourcegraph extension API was unsubscribed`)
+        }
+    })
+
+    return { unsubscribe: () => subscriptions.unsubscribe(), __testAPI: api }
+}
+
+function createExtensionAPI(
+    initData: InitData,
+    connection: Connection
+): { api: typeof sourcegraph; subscription: Subscription } {
     const subscriptions = new Subscription()
 
     // For debugging/tests.
@@ -89,6 +138,10 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     const documents = new ExtDocuments(sync)
     handleRequests(connection, 'documents', documents)
 
+    const extensions = new ExtExtensions()
+    subscriptions.add(extensions)
+    handleRequests(connection, 'extensions', extensions)
+
     const roots = new ExtRoots()
     handleRequests(connection, 'roots', roots)
 
@@ -99,7 +152,7 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     subscriptions.add(views)
     handleRequests(connection, 'views', views)
 
-    const configuration = new ExtConfiguration<any>(createProxy(connection, 'configuration'), initData.settingsCascade)
+    const configuration = new ExtConfiguration<any>(createProxy(connection, 'configuration'))
     handleRequests(connection, 'configuration', configuration)
 
     const languageFeatures = new ExtLanguageFeatures(createProxy(connection, 'languageFeatures'), documents)
@@ -114,7 +167,7 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     subscriptions.add(commands)
     handleRequests(connection, 'commands', commands)
 
-    return {
+    const api: typeof sourcegraph = {
         URI,
         Position,
         Range,
@@ -184,4 +237,5 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
             clientApplication: initData.clientApplication,
         },
     }
+    return { api, subscription: subscriptions }
 }
