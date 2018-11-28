@@ -9,13 +9,13 @@ import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
 import { Markdown } from '../components/Markdown'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createLinkClickHandler } from '../util/linkClickHandler'
-import { memoizeObservable } from '../util/memoize'
 
 const queryDocPage = memoizeObservable(
     (path: string): Observable<GQL.IDocSitePage | null> =>

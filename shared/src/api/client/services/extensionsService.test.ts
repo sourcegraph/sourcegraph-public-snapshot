@@ -11,7 +11,7 @@ const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b)
 
 class TestExtensionsService extends ExtensionsService {
     constructor(
-        private mockConfiguredExtensions: ConfiguredExtension[],
+        mockConfiguredExtensions: ConfiguredExtension[],
         model: Subscribable<Pick<Model, 'visibleTextDocuments'>>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
@@ -30,9 +30,8 @@ class TestExtensionsService extends ExtensionsService {
             settingsService,
             extensionActivationFilter
         )
+        this.configuredExtensions = of(mockConfiguredExtensions)
     }
-
-    protected configuredExtensions = of(this.mockConfiguredExtensions)
 }
 
 describe('activeExtensions', () => {

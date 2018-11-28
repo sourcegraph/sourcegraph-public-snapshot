@@ -1,5 +1,5 @@
-import { combineLatest, from, Subscribable } from 'rxjs'
-import { distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
+import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
+import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
     getScriptURLFromExtensionManifest,
@@ -8,7 +8,8 @@ import {
 import { viewerConfiguredExtensions } from '../../../extensions/helpers'
 import { PlatformContext } from '../../../platform/context'
 import { isErrorLike } from '../../../util/errors'
-import { isEqual, memoizeAsync } from '../../util'
+import { memoizeObservable } from '../../../util/memoizeObservable'
+import { isEqual } from '../../util'
 import { Model } from '../model'
 import { SettingsService } from './settings'
 
@@ -78,35 +79,44 @@ export class ExtensionsService {
             }),
             map(([, extensions]) => (extensions ? extensions.filter(x => activatedExtensionIDs.includes(x.id)) : [])),
             distinctUntilChanged((a, b) => isEqual(a, b)),
-            switchMap(async extensions =>
-                Promise.all(
-                    extensions.map(x =>
-                        Promise.resolve(
-                            this.memoizedGetScriptURLForExtension(getScriptURLFromExtensionManifest(x))
-                        ).then(
-                            scriptURL =>
-                                scriptURL === null
-                                    ? null
-                                    : {
-                                          id: x.id,
-                                          scriptURL,
-                                      }
-                        )
-                    )
-                )
+            switchMap(
+                extensions =>
+                    extensions.length === 0
+                        ? [[]]
+                        : combineLatest(
+                              extensions.map(x =>
+                                  this.memoizedGetScriptURLForExtension(getScriptURLFromExtensionManifest(x)).pipe(
+                                      map(
+                                          scriptURL =>
+                                              scriptURL === null
+                                                  ? null
+                                                  : {
+                                                        id: x.id,
+                                                        scriptURL,
+                                                    }
+                                      )
+                                  )
+                              )
+                          )
             ),
             map(extensions => extensions.filter((x): x is ExecutableExtension => x !== null))
         )
     }
 
-    private memoizedGetScriptURLForExtension = memoizeAsync<string, string | null>(
+    private memoizedGetScriptURLForExtension = memoizeObservable<string, string | null>(
         url =>
-            Promise.resolve(this.platformContext.getScriptURLForExtension(url)).catch(err => {
-                console.error(`Error fetching extension script URL ${url}`, err)
-                return null
-            }),
+            asObservable(this.platformContext.getScriptURLForExtension(url)).pipe(
+                catchError(err => {
+                    console.error(`Error fetching extension script URL ${url}`, err)
+                    return [null]
+                })
+            ),
         url => url
     )
+}
+
+function asObservable(input: string | ObservableInput<string>): Observable<string> {
+    return typeof input === 'string' ? of(input) : from(input)
 }
 
 function extensionsWithMatchedActivationEvent(
