@@ -32,7 +32,7 @@ import {
     toTextDocumentIdentifier,
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { AbsoluteRepo, AbsoluteRepoFile } from '../../shared/repo'
+import { toRootURI, toURIWithPath } from '../../shared/repo'
 import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
@@ -418,10 +418,6 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     getToolbarMount,
                     toolbarButtonProps,
                 }) => {
-                    const toRootURI = (ctx: AbsoluteRepo) => `git://${ctx.repoPath}?${ctx.commitID}`
-                    const toURIWithPath = (ctx: AbsoluteRepoFile) =>
-                        `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
-
                     const originalDOM = dom
                     dom = {
                         ...dom,
