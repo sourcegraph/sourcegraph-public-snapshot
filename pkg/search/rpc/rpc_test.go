@@ -18,7 +18,7 @@ func TestClientServer(t *testing.T) {
 		wantSearch: query.NewAnd(mustParse("hello world|universe"), query.NewRepoSet("foo/bar", "baz/bam")),
 		searchResult: &search.Result{
 			Files: []search.FileMatch{
-				{FileName: "bin.go"},
+				{Path: "bin.go"},
 			},
 		},
 	}
