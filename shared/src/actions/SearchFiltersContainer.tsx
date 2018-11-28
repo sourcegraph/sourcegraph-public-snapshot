@@ -4,13 +4,12 @@ import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from '../api/client/types/textDocument'
 import { SearchFilters } from '../api/protocol'
 import { ExtensionsControllerProps } from '../extensions/controller'
-import { PlatformContextProps } from '../platform/context'
 import { ContributionsState } from './actions'
 
 export interface SearchFiltersProps extends ExtensionsControllerProps {
     scope?: TextDocumentItem
 }
-interface SearchFiltersContainerProps extends SearchFiltersProps, PlatformContextProps {
+interface SearchFiltersContainerProps extends SearchFiltersProps {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.

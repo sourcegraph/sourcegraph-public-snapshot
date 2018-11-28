@@ -162,7 +162,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )}
                 empty={null}
                 extensionsController={this.props.extensionsController}
-                platformContext={this.props.platformContext}
             />
         )
         return (
