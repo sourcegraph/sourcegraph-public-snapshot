@@ -116,7 +116,6 @@ func (p *phabricator) GetByName(ctx context.Context, name api.RepoName) (*types.
 					URL:      config.Url,
 				}, nil
 			}
-
 		}
 	}
 
