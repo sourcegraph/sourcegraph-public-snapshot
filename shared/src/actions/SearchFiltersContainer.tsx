@@ -3,8 +3,13 @@ import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TextDocumentItem } from '../api/client/types/textDocument'
 import { SearchFilters } from '../api/protocol'
-import { ContributionsState, SearchFiltersProps } from './actions'
+import { ExtensionsControllerProps } from '../extensions/controller'
+import { PlatformContextProps } from '../platform/context'
+import { ContributionsState } from './actions'
 
+export interface SearchFiltersProps extends ExtensionsControllerProps, PlatformContextProps {
+    scope?: TextDocumentItem
+}
 interface SearchFiltersContainerProps extends SearchFiltersProps {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
@@ -34,9 +39,7 @@ export class SearchFiltersContainer extends React.PureComponent<
     public componentDidMount(): void {
         this.subscriptions.add(
             this.scopeChanges
-                .pipe(
-                    switchMap(scope => this.props.extensionsController.registries.contribution.getContributions(scope))
-                )
+                .pipe(switchMap(scope => this.props.extensionsController.services.contribution.getContributions(scope)))
                 .subscribe(contributions => this.setState({ contributions }))
         )
         this.scopeChanges.next(this.props.scope)
