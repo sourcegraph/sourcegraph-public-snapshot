@@ -201,5 +201,7 @@ func (h httpFetcher) FetchConfig() (string, error) {
 type passthroughFetcherFrontendOnly struct{}
 
 func (p passthroughFetcherFrontendOnly) FetchConfig() (string, error) {
+	<-configurationServerFrontendOnlyInitialized
+
 	return configurationServerFrontendOnly.Raw(), nil
 }
