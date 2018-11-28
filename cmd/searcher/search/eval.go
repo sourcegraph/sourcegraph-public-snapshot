@@ -337,7 +337,7 @@ func newMatchTree(q query.Q) (matchtree.MatchTree, error) {
 				fileName: s.FileName,
 			}
 
-			return matchtree.And(tr, &matchtree.NoVisit{subMT}), nil
+			return matchtree.And(tr, &matchtree.NoVisit{MatchTree: subMT}), nil
 
 		case *query.Substring:
 			b := []byte(s.Pattern)
