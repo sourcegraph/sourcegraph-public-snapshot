@@ -16,11 +16,16 @@ type externalServices struct{}
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
+	Kind string
 	*LimitOffset
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
-	return []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	if o.Kind != "" {
+		conds = append(conds, sqlf.Sprintf("kind=%s", o.Kind))
+	}
+	return conds
 }
 
 // Create creates a external service.
