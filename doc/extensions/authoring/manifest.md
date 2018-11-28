@@ -1,4 +1,4 @@
-# Sourcegraph extension manifest file - package.json
+# Sourcegraph extension manifest - package.json
 
 Sourcegraph extensions use a `package.json` file for metadata and configuration.
 
@@ -8,13 +8,14 @@ Name | Required | Type | Details
 ---- |:--------:| ---- | -------
 `name` | ✔️ | `string` | Extension identifier: all lowercase, alphanumeric with hyphens and underscores.
 `title` | ✔️ | `string`| The name displayed in the extension registry. Can be used to indicate a [work-in-progress extension](publishing.md#wip-extensions).
-`description` | ✔️ | `string` | A short description of what your extension is and does.
+`readmne` | | `string` | Describe (in detail) the extension's purpose, features, and usage instructions. Markdown formatting is supported."
+`description` | ✔️ | `string` | The extension's description, which summarizes the extension's purpose and features.
 `version` | | `string` | [Semantic versioning](https://semver.org/) format.
 `publisher` | ✔️ | `string` | Your [Sourcegraph username](development_environment#sourcegraph-com-account-and-the-sourcegraph-cli)
 `license` | | `string` | The type of license chosen.
 `main` | | `string` | Path to the transpiled JavaScript file for your extension.
-`contributes` | | `object` | An object describing the contributions (extension points) for this extension (e.g. menus, buttons, configuration and more).
-[`activationEvents`](activation.md) | Y | `array` | An array of event strings for activating your extension.
+`contributes` | | `object` | An object describing the contributions (features) this extension provides.
+[`activationEvents`](activation.md) | Y | `array` | A list of events that cause this extension to be activated.
 `devDependencies` | | `object` | npm dependencies needed for development.
 `dependencies` | | `object` | npm dependencies needed at runtime.
 `scripts` | ✔️ | `object` | npm's scripts with Sourcegraph specific entries such as `sourcegraph:prepublish`.
