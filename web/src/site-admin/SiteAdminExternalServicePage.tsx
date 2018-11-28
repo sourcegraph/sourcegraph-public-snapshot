@@ -20,7 +20,7 @@ interface State {
     externalServiceOrError: typeof LOADING | GQL.IExternalService | ErrorLike
 
     /**
-     * The result of updating the paid product subscription: null when complete or not started yet,
+     * The result of updating the external service: null when complete or not started yet,
      * loading, or an error.
      */
     updateOrError: null | typeof LOADING | ErrorLike
