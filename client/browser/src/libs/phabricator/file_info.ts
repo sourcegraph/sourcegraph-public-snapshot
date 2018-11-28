@@ -3,9 +3,9 @@ import { catchError, filter, map, switchMap } from 'rxjs/operators'
 import { DifferentialState, DiffusionState, PhabricatorMode } from '.'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
+import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { resolveDiffRev } from './backend'
 import { getFilepathFromFile, getPhabricatorState } from './util'
-import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     from(getPhabricatorState(window.location)).pipe(
