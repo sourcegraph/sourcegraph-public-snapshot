@@ -1070,10 +1070,10 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^3.9.3":
-  version "3.9.3"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-3.9.3.tgz#c87c1d79aec224be8726213c6a9b90e8570a625d"
-  integrity sha512-76LnAflyKuLbuSJ+zu6/xIUAyq8noJRRCmFTW3h6MPHlKfs0EA51HfDKuo7hvLaFQxDCShRGjhrgkvbRjrBbJQ==
+"@sourcegraph/codeintellify@^3.9.4":
+  version "3.9.4"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-3.9.4.tgz#e42d3db0776cb056259e6be5c8ddd16d165096c5"
+  integrity sha512-yVwE+D7NsIDr4g3kUJZxFwy9PQ9vlsmsuZchKiZHgOReG3wyUoDjktNfJ8tLPzAgC0ICqfHsBpIlpK9dZySODg==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.0"
     "@sourcegraph/react-loading-spinner" "0.0.6"
@@ -13294,8 +13294,7 @@ source-map@^0.7.2:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "19.1.0"
 
 sparkles@^1.0.0:
   version "1.0.1"
