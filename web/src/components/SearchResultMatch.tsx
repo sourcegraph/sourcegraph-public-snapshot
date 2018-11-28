@@ -9,6 +9,7 @@ import sanitizeHtml from 'sanitize-html'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../util/dom'
 import { ResultContainer } from './ResultContainer'
+import _ from 'lodash'
 
 interface Props {
     result: GQL.GenericSearchResult
@@ -37,11 +38,19 @@ export class SearchResultMatch extends React.Component<Props> {
 
     private renderTitle = () => (
         <div className="repository-search-result__title">
-            <span dangerouslySetInnerHTML={{ __html: marked(sanitizeHtml(this.props.result.label)) }} />
+            <span
+                dangerouslySetInnerHTML={{
+                    __html: marked(this.props.result.label, { gfm: true, breaks: true, sanitize: true }),
+                }}
+            />
             {this.props.result.detail && (
                 <>
                     <span className="repository-search-result__spacer" />
-                    <small dangerouslySetInnerHTML={{ __html: marked(sanitizeHtml(this.props.result.detail)) }} />
+                    <small
+                        dangerouslySetInnerHTML={{
+                            __html: marked(this.props.result.detail, { gfm: true, breaks: true, sanitize: true }),
+                        }}
+                    />
                 </>
             )}
         </div>
@@ -217,9 +226,9 @@ class MatchExcerpt extends React.Component<CodeExcerptProps> {
     private highlightCodeBlock(): string {
         const lang = this.getLanguage()
         if (lang) {
-            return highlight(lang!, stripCodeFence(sanitizeHtml(this.props.body)), true).value
+            return highlight(lang!, stripCodeFence(this.props.body), true).value
         }
-        return highlightAuto(stripCodeFence(sanitizeHtml(this.props.body))).value
+        return highlightAuto(stripCodeFence(this.props.body)).value
     }
 }
 
