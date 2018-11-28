@@ -1,6 +1,10 @@
 package authz
 
-import "sync"
+import (
+	"os"
+	"path/filepath"
+	"sync"
+)
 
 var (
 	// allowAccessByDefault, if set to true, grants all users access to repositories that are
@@ -8,6 +12,12 @@ var (
 	// error modes (when the configuration is in a state where interpreting it literally could lead
 	// to leakage of private repositories).
 	allowAccessByDefault bool = true
+
+	// authzProvidersReady and authzProvidersReadyOnce together indicate when
+	// GetProviders should no longer block. It should block until SetProviders
+	// is called at least once.
+	authzProvidersReadyOnce sync.Once
+	authzProvidersReady     = make(chan struct{})
 
 	// authzProviders is the currently registered list of authorization providers.
 	authzProviders []Provider
@@ -23,10 +33,18 @@ func SetProviders(authzAllowByDefault bool, z []Provider) {
 
 	authzProviders = z
 	allowAccessByDefault = authzAllowByDefault
+	authzProvidersReadyOnce.Do(func() {
+		close(authzProvidersReady)
+	})
 }
 
 // GetProviders returns the current authz parameters. It is concurrency-safe.
+//
+// It blocks until SetProviders has been called at least once.
 func GetProviders() (authzAllowByDefault bool, providers []Provider) {
+	if !isTest {
+		<-authzProvidersReady
+	}
 	authzMu.Lock()
 	defer authzMu.Unlock()
 
@@ -37,3 +55,8 @@ func GetProviders() (authzAllowByDefault bool, providers []Provider) {
 	copy(providers, authzProviders)
 	return allowAccessByDefault, providers
 }
+
+var isTest = (func() bool {
+	path, _ := os.Executable()
+	return filepath.Ext(path) == ".test"
+})()
