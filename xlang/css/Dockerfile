@@ -1,6 +1,6 @@
 # Docker image for CSS/LESS/SCSS lang/build server
 
-FROM node:6.9-slim
+FROM node:6.15-slim
 
 COPY css-langserver /css-langserver
 
