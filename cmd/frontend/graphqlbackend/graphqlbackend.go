@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -195,19 +196,30 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {
-	Name *string
+	Name     *string
+	CloneURL *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
 }) (*repositoryResolver, error) {
-	if args.Name != nil {
-		args.URI = args.Name
+	var name api.RepoName
+	if args.URI != nil {
+		// Deprecated query by "URI"
+		name = api.RepoName(*args.URI)
+	} else if args.Name != nil {
+		// Query by name
+		name = api.RepoName(*args.Name)
+	} else if args.CloneURL != nil {
+		// Query by git clone URL
+		var err error
+		name, err = reposource.CloneURLToRepoName(*args.CloneURL)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("Neither name nor cloneURL given")
 	}
 
-	if args.URI == nil {
-		return nil, nil
-	}
-
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
