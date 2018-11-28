@@ -36,10 +36,6 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
     private submits = new Subject<GQL.IUpdateExternalServiceInput>()
     private subscriptions = new Subscription()
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminExternalService')
 
@@ -80,6 +76,10 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+    }
+
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public render(): JSX.Element | null {
