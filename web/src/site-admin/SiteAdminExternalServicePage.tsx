@@ -95,8 +95,6 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
             externalService = this.state.externalServiceOrError
         }
 
-        console.log(externalService)
-
         const loading = this.state.updateOrError === LOADING || this.state.externalServiceOrError === LOADING
         return (
             <div className="site-admin-configuration-page">
