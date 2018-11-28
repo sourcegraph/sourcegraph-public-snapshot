@@ -337,7 +337,7 @@ export class MainPage extends React.Component<Props, State> {
 						<div className="container">
 							<div className="row">
 								<div className="col-12">
-									<h2>Companies developing with Sourcegraph</h2>
+									<h2>Powering developers at</h2>
 								</div>
 									<div className="col-3 logo">
 										<figure className="logo-image logo1"/>
