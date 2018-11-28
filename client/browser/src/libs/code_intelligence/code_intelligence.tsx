@@ -447,14 +447,14 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         }
 
                         visibleTextDocuments = [
-                            // All the currently open documents
-                            ...visibleTextDocuments,
                             // Either a normal file, or HEAD when codeView is a diff
                             {
                                 uri: toURIWithPath(info),
                                 languageId: getModeFromPath(info.filePath) || 'could not determine mode',
                                 text: content!,
                             },
+                            // All the currently open documents
+                            ...visibleTextDocuments,
                         ]
                         const roots: Model['roots'] = [{ uri: toRootURI(info) }]
 
