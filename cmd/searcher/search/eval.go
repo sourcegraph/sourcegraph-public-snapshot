@@ -363,7 +363,6 @@ func newMatchTree(q query.Q) (matchtree.MatchTree, error) {
 // candidateMatch is a candidate match for a substring.
 type candidateMatch struct {
 	// Offsets are relative to the start of the filename or file contents.
-	runeOffset  int
 	byteOffset  int
 	byteMatchSz int
 
