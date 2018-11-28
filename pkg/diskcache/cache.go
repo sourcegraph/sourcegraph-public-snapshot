@@ -73,10 +73,7 @@ func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *Fi
 		return nil, errors.New("diskcache.Store.Dir must be set")
 	}
 
-	// path uses a sha256 hash of the key since we want to use it for the
-	// disk name.
-	h := sha256.Sum256([]byte(key))
-	path := filepath.Join(s.Dir, hex.EncodeToString(h[:])) + ".zip"
+	path := s.path(key)
 	span.LogKV("key", key, "path", path)
 
 	// First do a fast-path, assume already on disk
@@ -114,6 +111,14 @@ func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *Fi
 	case r := <-ch:
 		return r.f, r.err
 	}
+}
+
+// path returns the path for key.
+func (s *Store) path(key string) string {
+	// path uses a sha256 hash of the key since we want to use it for the
+	// disk name.
+	h := sha256.Sum256([]byte(key))
+	return filepath.Join(s.Dir, hex.EncodeToString(h[:])) + ".zip"
 }
 
 func doFetch(ctx context.Context, path string, fetcher Fetcher) (file *File, err error) {

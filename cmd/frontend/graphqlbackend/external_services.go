@@ -21,7 +21,7 @@ var externalServiceKinds = map[string]struct{}{
 	"PHABRICATOR":     struct{}{},
 }
 
-func checkKind(kind string) error {
+func validateKind(kind string) error {
 	if _, ok := externalServiceKinds[kind]; !ok {
 		return fmt.Errorf("invalid external service kind: %s", kind)
 	}
@@ -40,7 +40,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := checkKind(args.Input.Kind); err != nil {
+	if err := validateKind(args.Input.Kind); err != nil {
 		return nil, err
 	}
 

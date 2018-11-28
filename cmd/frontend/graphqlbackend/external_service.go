@@ -19,7 +19,7 @@ type externalServiceResolver struct {
 const externalServiceIDKind = "ExternalService"
 
 func externalServiceByID(ctx context.Context, id graphql.ID) (*externalServiceResolver, error) {
-	// 🚨 SECURITY: Only site admins are allowed to read internal services.
+	// 🚨 SECURITY: Only site admins are allowed to read external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}

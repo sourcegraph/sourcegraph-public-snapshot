@@ -87,6 +87,12 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "externalServices": {
+          "description": "Enables external service management UI",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "updateScheduler2": {
           "description": "Enables a new update scheduler algorithm",
           "type": "string",
@@ -159,37 +165,7 @@ const SiteSchemaJSON = `{
         "JSON array of configuration for Phabricator hosts. See Phabricator Configuration section for more information.",
       "type": "array",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "url": {
-            "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
-            "type": "string"
-          },
-          "token": {
-            "description": "API token for the Phabricator instance.",
-            "type": "string"
-          },
-          "repos": {
-            "description": "The list of repositories available on Phabricator.",
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["path", "callsign"],
-              "properties": {
-                "path": {
-                  "description": "Display path for the url e.g. gitolite/my/repo",
-                  "type": "string"
-                },
-                "callsign": {
-                  "description": "The unique Phabricator identifier for the repository, like 'MUX'.",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
+        "$ref": "#/definitions/PhabricatorConnection"
       }
     },
     "git.cloneURLToRepositoryName": {
@@ -583,6 +559,39 @@ const SiteSchemaJSON = `{
     }
   },
   "definitions": {
+    "PhabricatorConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
+          "type": "string"
+        },
+        "token": {
+          "description": "API token for the Phabricator instance.",
+          "type": "string"
+        },
+        "repos": {
+          "description": "The list of repositories available on Phabricator.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "callsign"],
+            "properties": {
+              "path": {
+                "description": "Display path for the url e.g. gitolite/my/repo",
+                "type": "string"
+              },
+              "callsign": {
+                "description": "The unique Phabricator identifier for the repository, like 'MUX'.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
     "GitHubConnection": {
       "type": "object",
       "additionalProperties": false,

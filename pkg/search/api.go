@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 // FileMatch contains all the matches within a file.
 type FileMatch struct {
-	FileName string
+	Path string
 
 	Repository Repository
 
+	// LineMatches contains the lines that match. If empty then we matched the
+	// Path only.
 	LineMatches []LineMatch
 }
 
@@ -39,8 +42,12 @@ type LineFragmentMatch struct {
 
 // Repository is a repository at a commit.
 type Repository struct {
-	Name   string
-	Commit string
+	Name   api.RepoName
+	Commit api.CommitID
+}
+
+func (r *Repository) String() string {
+	return string(r.Name) + "@" + string(r.Commit)
 }
 
 // Result contains search matches and extra data
@@ -70,6 +77,11 @@ type Options struct {
 	// MaxWallTime if non-zero will abort the search after this much time has
 	// passed. It will return results found so far.
 	MaxWallTime time.Duration
+
+	// FetchTimeout if non-zero will abort fetching files to search after this
+	// much time has passed. This is a subset of MaxWallTime. For example
+	// searcher fetches file from gitserver which can be slow.
+	FetchTimeout time.Duration
 
 	// MaxDocDisplayCount if non-zero trims the number of results after
 	// collating and sorting the results.

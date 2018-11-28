@@ -9,6 +9,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Repositories can now be queried by a git clone URL through the GraphQL API.
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
 - Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`.
 - Authentication via GitLab is now supported. To enable, add an item to the `auth.providers` list with `type: "gitlab"`.
@@ -38,6 +39,15 @@ All notable changes to Sourcegraph are documented in this file.
 - The `siteID` site configuration option was removed because it is no longer needed. If you previously specified this in site configuration, a new, random site ID will be generated upon server startup. You can safely remove the existing `siteID` value from your site configuration after upgrading.
 
 ### Removed
+
+## 2.13.6
+
+### Added
+
+- The `/-/editor` endpoint now accepts a `hostname_patterns` URL parameter, which specifies a JSON
+  object mapping from hostname to repository name pattern. This serves as a hint to Sourcegraph when
+  resolving git clone URLs to repository names. The name pattern is the same style as is used in
+  code host configurations. The default value is `{hostname}/{path}`.
 
 ## 2.13.5
 
