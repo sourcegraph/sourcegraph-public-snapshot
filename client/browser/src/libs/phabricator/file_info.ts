@@ -5,6 +5,7 @@ import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 import { resolveDiffRev } from './backend'
 import { getFilepathFromFile, getPhabricatorState } from './util'
+import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     from(getPhabricatorState(window.location)).pipe(
@@ -100,7 +101,8 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
 
             headHasFileContents: info.headFileContent.length > 0,
             baseHasFileContents: info.baseFileContent.length > 0,
-        }))
+        })),
+        ensureRevisionsAreCloned
     )
 
 export const resolveDiffusionFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
