@@ -220,4 +220,5 @@ type ProductSubscriptionEvent interface {
 type PlanTier interface {
 	UnitAmount() int32
 	UpTo() int32
+	FlatAmount() int32
 }
