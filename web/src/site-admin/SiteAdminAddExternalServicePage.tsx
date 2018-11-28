@@ -1,9 +1,7 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map, mergeMap, tap } from 'rxjs/operators'
+import { catchError, map, mergeMap } from 'rxjs/operators'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -11,12 +9,16 @@ import { mutateGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
 interface Props {
     history: H.History
+    isLightTheme: boolean
 }
 
-interface State extends GQL.IAddExternalServiceInput {
+interface State {
+    input: GQL.IAddExternalServiceInput
+
     /**
      * Holds any error returned by the remote GraphQL endpoint on failed requests.
      */
@@ -28,17 +30,23 @@ interface State extends GQL.IAddExternalServiceInput {
     loading: boolean
 }
 
+const defaultConfig = `{
+    // Configure your external service here (Ctrl+Space to see hints)
+}`
+
 export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
-    private submits = new Subject<React.FormEvent<HTMLFormElement>>()
+    private submits = new Subject<void>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
         this.state = {
             loading: false,
-            kind: GQL.ExternalServiceKind.GITHUB,
-            displayName: '',
-            config: '{}',
+            input: {
+                kind: GQL.ExternalServiceKind.GITHUB,
+                displayName: '',
+                config: defaultConfig,
+            },
         }
     }
 
@@ -47,16 +55,11 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         this.subscriptions.add(
             this.submits
                 .pipe(
-                    tap(event => {
-                        event.preventDefault()
-                        eventLogger.log('AddExternalServiceClicked')
-                    }),
-                    filter(event => event.currentTarget.checkValidity()),
                     mergeMap(() =>
                         this.addExternalService().pipe(
                             catchError(error => {
                                 console.error(error)
-                                this.setState({ error })
+                                this.setState({ error, loading: false })
                                 return []
                             })
                         )
@@ -64,6 +67,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                 )
                 .subscribe(
                     service => {
+                        this.setState({ loading: false })
                         this.props.history.push(`/site-admin/external-services/${service.id}`)
                     },
                     error => {
@@ -82,7 +86,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     }
                 }
             `,
-            { input: this.state }
+            { input: this.state.input }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.addExternalService || (errors && errors.length > 0)) {
@@ -103,83 +107,31 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         return (
             <div className="add-external-service-page">
                 <PageTitle title="Add external service" />
-                <Form className="settings-form" onSubmit={this.onSubmit}>
-                    <h1>Add a new external service</h1>
-                    <p>Sourcegraph can synchronize data (e.g. code) from external services.</p>
-                    {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
-                    <div className="form-group">
-                        <label htmlFor="add-external-service-page__form-display-name">Display name</label>
-                        <input
-                            id="add-external-service-page__form-display-name"
-                            type="text"
-                            className="form-control"
-                            placeholder="ACME private code"
-                            required={true}
-                            autoCorrect="off"
-                            autoComplete="off"
-                            autoFocus={true}
-                            value={this.state.displayName}
-                            onChange={this.onDisplayNameChange}
-                            disabled={this.state.loading}
-                            // aria-describedby="add-external-service-page__form-display-name-help"
-                        />
-                        {/* <small id="add-external-service-page__form-display-name-help" className="form-text text-muted">
-                            A descriptive name of this external service.
-                        </small> */}
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="add-external-service-page__form-kind">Kind</label>
-                        <input
-                            id="add-external-service-page__form-kind"
-                            type="text"
-                            className="form-control"
-                            placeholder="GITHUB"
-                            required={true}
-                            autoCorrect="off"
-                            value={this.state.kind}
-                            onChange={this.onKindChange}
-                            disabled={this.state.loading}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="add-external-service-page__form-config">Config</label>
-                        <input
-                            id="add-external-service-page__form-config"
-                            type="text"
-                            className="form-control"
-                            placeholder="{}"
-                            required={true}
-                            autoCorrect="off"
-                            value={this.state.config}
-                            onChange={this.onConfigChange}
-                            disabled={this.state.loading}
-                        />
-                    </div>
-                    <button type="submit" className="btn btn-primary" disabled={this.state.loading}>
-                        Add external service
-                    </button>
-                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                </Form>
+                <h1>Add a new external service</h1>
+                <p>Sourcegraph can synchronize data (e.g. code) from external services.</p>
+                <SiteAdminExternalServiceForm
+                    error={this.state.error}
+                    input={this.state.input}
+                    history={this.props.history}
+                    isLightTheme={this.props.isLightTheme}
+                    mode="create"
+                    loading={this.state.loading}
+                    onSubmit={this.onSubmit}
+                    onChange={this.onChange}
+                />
             </div>
         )
     }
 
-    private onDisplayNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.setState({ displayName: event.currentTarget.value })
+    private onChange = (input: GQL.IAddExternalServiceInput) => {
+        this.setState({ input })
     }
 
-    private onKindChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        // TODO: validation of config
-        this.setState({ kind: event.currentTarget.value as GQL.ExternalServiceKind })
-    }
-
-    private onConfigChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.setState({ config: event.currentTarget.value })
-    }
-
-    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        this.submits.next(event)
+    private onSubmit = (event?: React.FormEvent<HTMLFormElement>): void => {
+        if (event) {
+            event.preventDefault()
+        }
+        this.setState({ loading: true })
+        this.submits.next()
     }
 }

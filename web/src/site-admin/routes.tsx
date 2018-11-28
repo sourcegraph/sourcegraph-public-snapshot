@@ -4,6 +4,7 @@ import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
 import { SiteAdminCreateUserPage } from './SiteAdminCreateUserPage'
+import { SiteAdminExternalServicePage } from './SiteAdminExternalServicePage'
 import { SiteAdminExternalServicesPage } from './SiteAdminExternalServicesPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
@@ -40,6 +41,11 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     {
         path: '/external-services/add',
         render: props => <SiteAdminAddExternalServicePage {...props} />,
+        exact: true,
+    },
+    {
+        path: '/external-services/:id',
+        render: props => <SiteAdminExternalServicePage {...props} />,
         exact: true,
     },
     {
