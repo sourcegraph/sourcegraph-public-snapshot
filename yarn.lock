@@ -1657,6 +1657,11 @@
   resolved "https://registry.npmjs.org/@types/handlebars/-/handlebars-4.0.39.tgz#961fb54db68030890942e6aeffe9f93a957807bd"
   integrity sha512-vjaS7Q0dVqFp85QhyPSZqDKnTTCemcSHNHFvDdalO1s0Ifz5KuE64jQD5xoUkfdWwF4WpqdJEl7LsWH8rzhKJA==
 
+"@types/he@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/@types/he/-/he-1.1.0.tgz#0ddc2ae80f0814f729f0f7e5aa77b191ab4a9598"
+  integrity sha512-HyiLOiJhclRBPzcbYrNThdi0JOdq7bT4hq9jFBPQk4HGjzkwYVQnMj9IDi7qvYkg9QTly2oZ9kjm4j7d8Ic9eA==
+
 "@types/highlight.js@9.12.3", "@types/highlight.js@^9.12.3":
   version "9.12.3"
   resolved "https://registry.npmjs.org/@types/highlight.js/-/highlight.js-9.12.3.tgz#b672cfaac25cbbc634a0fd92c515f66faa18dbca"
@@ -7501,7 +7506,7 @@ he@1.1.1:
   resolved "https://registry.npmjs.org/he/-/he-1.1.1.tgz#93410fd21b009735151f8868c2f271f3427e23fd"
   integrity sha1-k0EP0hsAlzUVH4howvJx80J+I/0=
 
-he@^1.1.1:
+he@^1.1.1, he@^1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==

@@ -53,6 +53,19 @@ func (*schemaResolver) RenderMarkdown(args *struct {
 	return markdown.Render(args.Markdown, nil)
 }
 
+func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
+	Code           string
+	Path           string
+	DisableTimeout bool
+	IsLightTheme   bool
+}) (string, error) {
+	html, _, err := highlight.Code(ctx, []byte(args.Code), args.Path, args.DisableTimeout, args.IsLightTheme)
+	if err != nil {
+		return args.Code, err
+	}
+	return string(html), nil
+}
+
 func (r *gitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	content, err := r.Content(ctx)
 	if err != nil {

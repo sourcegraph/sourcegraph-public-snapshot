@@ -280,7 +280,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 			} else {
 				results[i].messagePreview = &highlightedString{value: string(commit.Message)}
 			}
-			matchBody = rawResult.Commit.Message
+			matchBody = "```COMMIT_EDITMSG\n" + rawResult.Commit.Message + "\n```"
 		}
 
 		if rawResult.Diff != nil && op.diff {

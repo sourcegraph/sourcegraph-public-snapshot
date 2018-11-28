@@ -419,7 +419,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 )
         }
         return <SearchResultMatch key={result.label} result={result} isLightTheme={this.props.isLightTheme} />
-        // return undefined
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */

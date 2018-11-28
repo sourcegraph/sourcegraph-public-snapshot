@@ -754,6 +754,8 @@ type Query {
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
+    # Syntax highlights a code string.
+    highlightCode(code: String!, path: String!, disableTimeout: Boolean!, isLightTheme: Boolean!): String!
     # Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
     # be a site (which has global settings), an organization, or a user.
     settingsSubject(id: ID!): SettingsSubject

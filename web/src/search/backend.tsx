@@ -461,3 +461,26 @@ export function deleteSavedQuery(
         })
     )
 }
+
+export function highlightCode(
+    code: string,
+    path: string,
+    disableTimeout: boolean,
+    isLightTheme: boolean
+): Observable<string> {
+    return queryGraphQL(
+        gql`
+            query highlightCode($code: String!, $path: String!, $disableTimeout: Boolean!, $isLightTheme: Boolean!) {
+                highlightCode(code: $code, path: $path, disableTimeout: $disableTimeout, isLightTheme: $isLightTheme)
+            }
+        `,
+        { code, path, disableTimeout, isLightTheme }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.highlightCode) {
+                throw createAggregateError(errors)
+            }
+            return data.highlightCode
+        })
+    )
+}
