@@ -26,6 +26,8 @@ export interface Context {
     [key: string]: string | number | boolean | Context | null
 }
 
+export interface ContributionScope extends Pick<TextDocumentItem, 'uri' | 'languageId'> {}
+
 /**
  * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
  * and the context entries (with lower precedence).
@@ -38,7 +40,7 @@ export function getComputedContextProperty(
     settings: SettingsCascadeOrError,
     context: Context,
     key: string,
-    scope?: TextDocumentItem
+    scope?: ContributionScope
 ): any {
     if (key.startsWith('config.')) {
         const prop = key.slice('config.'.length)
@@ -48,7 +50,8 @@ export function getComputedContextProperty(
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const textDocument: TextDocumentItem | null = scope || (model.visibleTextDocuments && model.visibleTextDocuments[0])
+    const textDocument: ContributionScope | null =
+        scope || (model.visibleTextDocuments && model.visibleTextDocuments[0])
     if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
         return !!textDocument
     }
@@ -71,8 +74,6 @@ export function getComputedContextProperty(
                 return extname(textDocument.uri)
             case 'language':
                 return textDocument.languageId
-            case 'textContent':
-                return textDocument.text
             case 'type':
                 return 'textDocument'
         }

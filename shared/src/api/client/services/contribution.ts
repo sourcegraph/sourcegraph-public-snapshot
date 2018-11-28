@@ -18,11 +18,10 @@ import {
     MenuItemContribution,
 } from '../../protocol'
 import { flatten, isEqual } from '../../util'
-import { Context, getComputedContextProperty } from '../context/context'
+import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
 import { Model } from '../model'
-import { TextDocumentItem } from '../types/textDocument'
 import { SettingsService } from './settings'
 
 /** A registered set of contributions from an extension in the registry. */
@@ -89,13 +88,13 @@ export class ContributionRegistry {
      * Returns an observable that emits all contributions (merged) evaluated in the current model (with the
      * optional scope). It emits whenever there is any change.
      */
-    public getContributions(scope?: TextDocumentItem): Observable<Contributions> {
+    public getContributions(scope?: ContributionScope): Observable<Contributions> {
         return this.getContributionsFromEntries(this._entries, scope)
     }
 
     protected getContributionsFromEntries(
         entries: Observable<ContributionsEntry[]>,
-        scope?: TextDocumentItem
+        scope?: ContributionScope
     ): Observable<Contributions> {
         return combineLatest(
             entries.pipe(

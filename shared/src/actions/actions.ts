@@ -1,12 +1,12 @@
 import H from 'history'
-import { TextDocumentItem } from '../api/client/types/textDocument'
+import { ContributionScope } from '../api/client/context/context'
 import { ContributableMenu, Contributions } from '../api/protocol'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 
 export interface ActionsProps extends ExtensionsControllerProps, PlatformContextProps {
     menu: ContributableMenu
-    scope?: TextDocumentItem
+    scope?: ContributionScope
     actionItemClass?: string
     listClass?: string
     location: H.Location

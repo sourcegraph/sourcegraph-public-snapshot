@@ -67,11 +67,6 @@ describe('getComputedContextProperty', () => {
                     getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.language'),
                     'l'
                 ))
-            it('provides resource.textContent', () =>
-                assert.strictEqual(
-                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.textContent'),
-                    't'
-                ))
             it('provides resource.type', () =>
                 assert.strictEqual(
                     getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.type'),

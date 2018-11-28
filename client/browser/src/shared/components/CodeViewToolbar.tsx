@@ -5,10 +5,12 @@ import { ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavIte
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
+import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { FileInfo } from '../../libs/code_intelligence'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
+import { toURIWithPath } from '../repo'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
@@ -64,6 +66,10 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                 listClass="BtnGroup"
                                 actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
                                 location={this.props.location}
+                                scope={{
+                                    uri: toURIWithPath(this.props),
+                                    languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
+                                }}
                             />
                         )}
                 </ul>
