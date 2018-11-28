@@ -35,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
-const port = "6075"
+const port = "2633"
 
 func main() {
 	env.Lock()
