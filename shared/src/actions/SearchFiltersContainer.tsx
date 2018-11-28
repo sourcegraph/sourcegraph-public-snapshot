@@ -7,10 +7,10 @@ import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { ContributionsState } from './actions'
 
-export interface SearchFiltersProps extends ExtensionsControllerProps, PlatformContextProps {
+export interface SearchFiltersProps extends ExtensionsControllerProps {
     scope?: TextDocumentItem
 }
-interface SearchFiltersContainerProps extends SearchFiltersProps {
+interface SearchFiltersContainerProps extends SearchFiltersProps, PlatformContextProps {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.

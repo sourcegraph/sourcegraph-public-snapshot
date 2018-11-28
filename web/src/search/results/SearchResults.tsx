@@ -7,6 +7,7 @@ import { parseSearchURLQuery, SearchOptions } from '..'
 import { SearchFiltersContainer } from '../../../../shared/src/actions/SearchFiltersContainer'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
@@ -21,7 +22,7 @@ import { SearchResultsListOld } from './SearchResultsListOld'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps {
+interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -161,7 +162,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )}
                 empty={null}
                 extensionsController={this.props.extensionsController}
-                extensions={this.props.extensions}
+                platformContext={this.props.platformContext}
             />
         )
         return (
