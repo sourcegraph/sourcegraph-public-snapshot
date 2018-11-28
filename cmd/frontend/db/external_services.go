@@ -3,8 +3,11 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -101,6 +104,27 @@ func (c *externalServices) GetByID(ctx context.Context, id int64) (*types.Extern
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list external services.
 func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return c.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+}
+
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to list external services.
+func (c *externalServices) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().Phabricator, nil
+	}
+
+	externalServices, err := c.List(ctx, ExternalServicesListOptions{Kind: "PHABRICATOR"})
+	if err != nil {
+		return nil, err
+	}
+	var connections []*schema.PhabricatorConnection
+	for _, externalService := range externalServices {
+		var connection schema.PhabricatorConnection
+		if err := json.Unmarshal([]byte(externalService.Config), &connection); err != nil {
+			return nil, err
+		}
+		connections = append(connections, &connection)
+	}
+	return connections, nil
 }
 
 func (c *externalServices) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
