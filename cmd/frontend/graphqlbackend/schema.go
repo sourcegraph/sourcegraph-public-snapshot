@@ -3489,6 +3489,8 @@ type PlanTier {
     unitAmount: Int!
     # The maximum number of users that this tier applies to.
     upTo: Int!
+    # The base fee that this tier applies to.
+    flatAmount: Int!
 }
 
 # The information about a product subscription that determines its price.
