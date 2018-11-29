@@ -34,7 +34,7 @@ This tutorial presumes you have created and published an extension. If not, comp
 
 Create the extension, adding a prefix to the name to ensure it is unique.
 
-```console
+```
 mkdir line-counter
 cd line-counter
 npm init sourcegraph-extension
@@ -51,9 +51,13 @@ Then confirm your extension is enabled and working by:
 - Opening the extension detail page.
 - Viewing a file on Sourcegraph.com and seeing your extensions hover message appearing.
 
-## Actions and menus
+## Sourcegraph extension actions and menu items
 
-At a high level:
+An **Action** is `JSON` with a unique identifier (string) that defines the properties of the UI element, e.g. `label`, as well as the `command`, which is the name of a registered callback to invoke.
+
+A **Menu Item** is `JSON` that specifies which UI element to add the **Action** to.
+
+These:
 
 1. An **action** is created with a unique identifier.
 1. A **menu item** is created that references the action using the unique identifier.
@@ -68,7 +72,7 @@ Add the following code to `package.json` in the `.contributions.actions` array:
 ```json
 {
   "id": "linecounter.get",
-  "command": "UpdateConfiguration",
+  "command": "updateConfiguration",
   "actionItem": {
     "label": "Line Count",
     "description": "Get line count for this file"
@@ -87,7 +91,7 @@ This `JSON` is processed by the extension runtime to create an [`ActionContribut
 
 ## Adding the item to a menu
 
-Now that an action exists, we must choose a menu for it. We have chosen the file header because it's the most easily accessible and close to the code.
+Now that an action exists, we must choose which menu it will be inserted into. We have chosen the **file header** because it's the most easily accessible and close to the code.
 
 Add the following code to `package.json` in the `.contributions.menus.editor/title` array:
 
@@ -100,10 +104,10 @@ Add the following code to `package.json` in the `.contributions.menus.editor/tit
 
 This `JSON` is processed by the extension runtime to create a [`MenuItemContribution`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/api/protocol/contribution.ts#L217:18) object.
 
-- `action`: The action to invoke when the item is in its active state. Must match the `id` field of the action.
-- `when`: An (optional) expression that must evaluate to true (or a truthy value).
+- `action`: The action to invoke when the item is in its active state. Matches `id` field of an action.
+- `when`: An (optional) expression that must evaluate to true (or a truthy value). If the result of the expression is false or falsey, then the item will not appear in its chosen menu.
 
-Setting `"when"` to `"resource"` means the menu item will display only when a resource (document) is available.
+Setting `"when"` to the value `"resource"` means the menu item will display only when a resource (document) is available.
 
 <!--TDO Ryan Check out the [extension activation tutorial](activation.md) for a more complex usage of the `when` field.-->
 
