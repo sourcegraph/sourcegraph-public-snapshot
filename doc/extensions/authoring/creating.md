@@ -13,13 +13,13 @@ export function activate() {
 }
 ```
 
-A build tool such as Parcel bundles this code for module loading, putting the exported file into a `dist` directory. A `package.json` is required for dependencies, configuration and metadata, and the extension is now ready for publishing.
+A build tool, such as Parcel, bundles this code for module loading and puts the exported file into a `dist` directory. A `package.json` is required for dependencies, configuration, and metadata. Now the extension is ready for publishing.
 
-There's no magic so you can use any build tools, so long as they meet these requirements.
+You can use any build tool you wish, so long as it meets these requirements.
 
 ## Creating an extension the easy way
 
-The easiest way to get an extension to a publish-ready state is to use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension):
+The easiest way to get an extension ready to publish is to use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension):
 
 ```shell
 mkdir my-extension
@@ -44,11 +44,11 @@ Follow the prompts, and when complete, you'll have the following files:
 
 #### The src directory and activate function
 
-A `src` directory was created, containing a TypeScript file with an exported `activate` function.
+A `src` directory has been created; it contains a TypeScript file with an exported `activate` function.
 
-For simplicity, the extension will always activate. See the [activation documentation](activation.md) to configure the activation of your extension.
+For simplicity, the extension will always activate. See the [activation documentation](activation.md) to configure your extension's activation.
 
-For code layout, a single TypeScript/JavaScript file is usually all that's needed. For larger projects, create multiples files in the `src` directory, and Parcel will bundle them into a single JavaScript file.
+For code layout, a single TypeScript/JavaScript file is usually all you'll need. For larger projects, create multiples files in the `src` directory, and Parcel will bundle them into a single JavaScript file.
 
 #### README.md
 
@@ -62,4 +62,4 @@ The `package.json` defines extension configuration and commands required for dev
 
 #### tslint.json and tsconfig.json
 
-These are configuration files for linting and TypeScript compilation and will be sufficient for most extensions.
+These are configuration files for linting and TypeScript compilation. They will be sufficient for most extensions.
