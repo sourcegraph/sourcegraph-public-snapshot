@@ -215,6 +215,10 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
+		if name == "" {
+			// Clone URL could not be mapped to a code host
+			return nil, nil
+		}
 	} else {
 		return nil, errors.New("Neither name nor cloneURL given")
 	}
