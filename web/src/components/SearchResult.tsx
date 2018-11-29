@@ -1,10 +1,7 @@
 import marked from 'marked'
 import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'
-import { Subject, Subscription } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { renderMarkdowns } from '../discussions/backend'
 import { ResultContainer } from './ResultContainer'
 import { SearchResultMatch } from './SearchResultMatch'
 
@@ -28,28 +25,11 @@ interface Props {
     isLightTheme: boolean
 }
 
-interface State {
-    matchesRenderedMarkdown: string[]
-}
-
-export class SearchResult extends React.Component<Props, State> {
-    private subscriptions = new Subscription()
-    private propsChanges = new Subject<Props>()
-
+export class SearchResult extends React.Component<Props> {
     constructor(props: Props) {
         super(props)
-        this.state = { matchesRenderedMarkdown: [] }
     }
 
-    // public componentDidMount(): void {
-    //     this.subscriptions.add(
-    //         this.propsChanges
-    //             .pipe(switchMap(props => props.result.matches.map renderMarkdowns()))
-    //             .subscribe(str => this.setState({ HTML: str }))
-    //     )
-
-    //     this.propsChanges.next(this.props)
-    // }
     private renderTitle = () => (
         <div className="repository-search-result__title">
             <span

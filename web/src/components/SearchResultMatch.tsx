@@ -27,10 +27,24 @@ interface SearchResultMatchState {
 
 export class SearchResultMatch extends React.Component<SearchResultMatchProps, SearchResultMatchState> {
     public state: SearchResultMatchState = {}
+    private tableContainerElement: HTMLElement | null = null
     private visibilitySensorOffset = { bottom: -500 }
+
     private visibilityChanges = new Subject<boolean>()
     private subscriptions = new Subscription()
     private propsChanges = new Subject<SearchResultMatchProps>()
+
+    private getLanguage(): string | undefined {
+        const matches = /(?:```)([^\s]+)\s/.exec(this.props.body)
+        if (!matches) {
+            return undefined
+        }
+        return matches[1]
+    }
+
+    private bodyIsCode(): boolean {
+        return this.props.body.startsWith('```') && this.props.body.endsWith('```')
+    }
 
     public constructor(props: SearchResultMatchProps) {
         super(props)
@@ -67,8 +81,6 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         )
     }
 
-    private tableContainerElement: HTMLElement | null = null
-
     public componentDidMount(): void {
         this.propsChanges.next(this.props)
         this.highlightNodes()
@@ -79,7 +91,6 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     private highlightNodes(): void {
-        // this.splitText()
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             if (visibleRows.length > 0) {
@@ -93,55 +104,8 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         }
     }
 
-    // Split text splits text nodes. Marked will combine text lines into a single node,
-    // which causes our line counts to be off, so we run this to ensure our line counts match.
-    private splitText(): void {
-        if (this.tableContainerElement) {
-            const visibleRows = this.tableContainerElement.querySelectorAll('code')
-            if (visibleRows.length > 0) {
-                const visRows = Array.from(visibleRows[0].childNodes).filter(
-                    (node: ChildNode) => node.nodeValue !== '\n'
-                )
-
-                for (const n of visRows) {
-                    if (n.nodeName === '#text') {
-                        if (n.textContent && n.textContent.indexOf('\n') >= 0) {
-                            const node = n as Text
-                            const newLineRegex = /\n/g
-                            const indices = []
-                            let res = newLineRegex.exec(n.textContent.trim())
-                            while (res) {
-                                indices.push(res.index + 1)
-                                res = newLineRegex.exec(n.textContent.trim())
-                            }
-                            indices.map(i => {
-                                try {
-                                    node.splitText(i)
-                                } catch {
-                                    console.error('Index for split text invalid ' + i)
-                                }
-                            })
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private bodyIsCode(): boolean {
-        return this.props.body.startsWith('```') && this.props.body.endsWith('```')
-    }
-
     private onChangeVisibility = (isVisible: boolean): void => {
         this.visibilityChanges.next(isVisible)
-    }
-
-    private getLanguage(): string | undefined {
-        const matches = /(?:```)([^\s]+)\s/.exec(this.props.body)
-        if (!matches) {
-            return undefined
-        }
-        return matches[1]
     }
 
     private getFirstLine(): number {
