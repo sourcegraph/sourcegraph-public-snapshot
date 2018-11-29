@@ -22,13 +22,9 @@ UI contributions are pre-defined in `package.json` at `.contributions`, and thro
 
 ## What you will be building
 
-This tutorial will have you build an extension that:
+This tutorial will teach you how to add a button to the file header that when clicked displays a notification containing the file name and number of lines of code.
 
-- Displays a button in the file header.
-- Defines a custom method for displaying a notification with the file name and number of lines of code.
-- Calls the custom method on button click.
-
-While this tutorial focusses on adding a button to the file header, the process is the same for the other contribution types.
+![line counter extension](img/line-counter.png)
 
 If you get stuck at any point or just want to look at the code, you can get it from the [Sourcegraph extensions sample repository](https://github.com/sourcegraph/sourcegraph-extension-samples/tree/master/line-counter).
 
@@ -36,11 +32,15 @@ If you get stuck at any point or just want to look at the code, you can get it f
 
 This tutorial presumes you have created and published an extension. If not, complete the [Hello world tutorial](hello-world.md) first.
 
-## Create and publish an extension for this tutorial
-
 Create the extension, adding a prefix to the name to ensure it is unique.
 
-<img alt="init sourcegraph extension" src="img/line-counter-init.png" width="450" />
+```console
+mkdir line-counter
+cd line-counter
+npm init sourcegraph-extension
+```
+
+![init sourcegraph extension](img/line-counter-init.png)
 
 Publish your extension:
 
@@ -203,6 +203,8 @@ As a result of completing this tutorial, you've learnt:
 - How to create an action that supplies arguments to the custom method.
 - How to create a menu item.
 - How to display a notification.
+
+While this tutorial focussed on adding a button to the file header, the process is the same for the other contribution types, e.g. adding a menu item to the command palette.
 
 ## Next Steps
 
