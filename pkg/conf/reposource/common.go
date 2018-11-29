@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // repoSource is a wrapper around a repository source (typically a code host config) that provides a
@@ -25,7 +26,8 @@ type repoSource interface {
 
 // CloneURLToRepoName maps a Git clone URL (format documented here:
 // https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
-// exists a code host configuration that matches the clone URL. Returns the empty string and nil
+// exists a code host configuration that matches the clone URL. Implicitly, it includes a code host
+// configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
 func CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
@@ -39,7 +41,7 @@ func CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
 		len(cfg.Gitlab)+
 		len(cfg.BitbucketServer)+
 		len(cfg.AwsCodeCommit)+
-		1+ /* for repos.list */
+		2+ /* for repos.list and fallback GitHub.com */
 		len(cfg.Gitolite))
 
 	for _, c := range cfg.Github {
@@ -58,6 +60,8 @@ func CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
 	for _, c := range cfg.Gitolite {
 		repoSources = append(repoSources, Gitolite{c})
 	}
+	// Fallback for github.com
+	repoSources = append(repoSources, GitHub{&schema.GitHubConnection{Url: "https://github.com"}})
 	for _, ch := range repoSources {
 		repoName, err := ch.cloneURLToRepoName(cloneURL)
 		if err != nil {
