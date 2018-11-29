@@ -23,8 +23,8 @@ declare module 'markvis' {
         /**
          * Customized renderer to render a new layout you want.
          */
-        // render: (any) => any
-        chart: (any) => any
+        render: (any) => any
+        // chart: (any) => any
 
         /**
          * DOM contained the visualization result.

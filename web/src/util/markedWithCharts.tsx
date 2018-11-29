@@ -22,7 +22,6 @@ export function markedWithCharts(
     callback?: ((error: any, parseResult: string) => void) | undefined
 ): string {
     const renderer = new marked.Renderer()
-    const originalCodeRenderer = renderer.code
     renderer.code = (code: string, language: string, escaped: boolean): string => {
         if (language === 'vis') {
             let userOpts: MarkvisProps
@@ -72,7 +71,7 @@ export function markedWithCharts(
             )
             return layouts[chart](opts)
         }
-        return originalCodeRenderer(code, language, escaped)
+        return renderer.code(code, language, escaped)
     }
     return marked(src, Object.assign({}, options, { renderer }), callback)
 }

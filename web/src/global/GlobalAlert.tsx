@@ -17,9 +17,7 @@ export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className
     const content = (
         <>
             <Icon className="icon-inline mr-2 flex-shrink-0" />
-            <Markdown
-                dangerousInnerHTML={marked(alert.message, { gfm: true, breaks: true, sanitize: true })}
-            />
+            <Markdown dangerousInnerHTML={marked(alert.message, { gfm: true, breaks: true, sanitize: true })} />
         </>
     )
     const className = `${commonClassName} alert alert-${alertClassForType(alert.type)} d-flex`

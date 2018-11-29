@@ -9330,15 +9330,15 @@ marked@^0.4.0:
   resolved "https://registry.npmjs.org/marked/-/marked-0.5.1.tgz#062f43b88b02ee80901e8e8d8e6a620ddb3aa752"
   integrity sha512-iUkBZegCZou4AdwbKTwSW/lNDcz5OuRSl3qdcl31Ia0B2QPG0Jn+tKblh/9/eP9/6+4h27vpoh8wel/vQOV0vw==
 
-markvis-bar@^0.0.9:
-  version "0.0.9"
-  resolved "https://registry.npmjs.org/markvis-bar/-/markvis-bar-0.0.9.tgz#7f685ef06bfd79beaf1e17a59dfe4474964cc939"
-  integrity sha512-MeLG/2VkjVKIq7ggbLjpNDsU0zPZ5p0BL7FCsGfKBI61HZDzKYOBTl5H0wZZwToU/RMN401QKn/2Jcy8RkGIxw==
+markvis-bar@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.npmjs.org/markvis-bar/-/markvis-bar-0.0.10.tgz#986cf8e07f2c87962caa9c1ca29eaec050a90e87"
+  integrity sha512-cEHQysyGEOqDY1TMRcZaG33J+x1xbFksQc60c87H2bwTM1l8gTDpAlapAekT4lKhkBrB8E5atafOsHrONI14fA==
 
-markvis-line@^0.0.6:
-  version "0.0.6"
-  resolved "https://registry.npmjs.org/markvis-line/-/markvis-line-0.0.6.tgz#8fecf8fe1b87d7fc798cae7c52d56cb3faabce8a"
-  integrity sha512-7o+6plDmok/w44FzGJznTHno4T14mEEeT19kKH5jC9nIMPlhLmBjS7SFadBf7gMfuS6L/4W+nt27YV4W/FSItA==
+markvis-line@^0.0.7:
+  version "0.0.7"
+  resolved "https://registry.npmjs.org/markvis-line/-/markvis-line-0.0.7.tgz#8ce38aff0c3bc135bc0d56d5940c690260c3f218"
+  integrity sha512-jyO7PW6Q+7LsVcH1dLhpTbNDHGoCCC2PaYhozyt9iInSN1edQzHJ7iagM09Ondb8PBFsHGOB18tkHycH/MiwSA==
 
 matchdep@^2.0.0:
   version "2.0.0"
@@ -13319,7 +13319,8 @@ source-map@^0.7.2:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "19.1.0"
+  version "0.0.0"
+  uid ""
 
 sparkles@^1.0.0:
   version "1.0.1"
