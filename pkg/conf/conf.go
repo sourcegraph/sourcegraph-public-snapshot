@@ -9,6 +9,19 @@ import (
 	"github.com/sourcegraph/jsonx"
 )
 
+// Unified represents the overall global Sourcegraph configuration from various
+// sources:
+//
+// - The critical configuration, from the database (from the management console).
+// - The site configuration, from the database (from the site-admin panel).
+// - Service connections, from the frontend (e.g. which gitservers to talk to).
+//
+type Unified struct {
+	schema.SiteConfiguration
+	Critical   schema.CriticalSiteConfiguration
+	ServiceConnections conftypes.ServiceConnections
+}
+
 type configurationMode int
 
 const (
