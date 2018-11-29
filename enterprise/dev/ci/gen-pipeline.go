@@ -47,6 +47,8 @@ func main() {
 	}
 	releaseBranch := regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch)
 
+	isBextReleaseBranch := branch == "bext/release"
+
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
@@ -54,8 +56,10 @@ func main() {
 		bk.Env("ENTERPRISE", "1"),
 	)
 
-	pipeline.AddStep(":white_check_mark:",
-		bk.Cmd("./dev/check/all.sh"))
+	if !isBextReleaseBranch {
+		pipeline.AddStep(":white_check_mark:",
+			bk.Cmd("./dev/check/all.sh"))
+	}
 
 	pipeline.AddStep(":lipstick:",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
@@ -81,29 +85,31 @@ func main() {
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("popd"))
 
-	pipeline.AddStep(":webpack:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("NODE_ENV=production yarn -s run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-		bk.Cmd("popd"))
+	if !isBextReleaseBranch {
+		pipeline.AddStep(":webpack:",
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd web"),
+			bk.Cmd("yarn -s run browserslist"),
+			bk.Cmd("NODE_ENV=production yarn -s run build --color"),
+			bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
+			bk.Cmd("popd"))
 
-	pipeline.AddStep(":webpack: :moneybag:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-		bk.Cmd("popd"))
+		pipeline.AddStep(":webpack: :moneybag:",
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd web"),
+			bk.Cmd("yarn -s run browserslist"),
+			bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
+			bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
+			bk.Cmd("popd"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run cover"),
-		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-		bk.Cmd("popd"),
-		bk.ArtifactPaths("web/coverage/coverage-final.json"))
+		pipeline.AddStep(":typescript:",
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd web"),
+			bk.Cmd("yarn -s run cover"),
+			bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("web/coverage/coverage-final.json"))
+	}
 
 	pipeline.AddStep(":typescript:",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
@@ -113,24 +119,26 @@ func main() {
 		bk.Cmd("popd"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
-	// TODO(sqs): reenable the DB backcompat test
-	//
-	// pipeline.AddStep(":postgres:",
-	// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+	if !isBextReleaseBranch {
+		// TODO(sqs): reenable the DB backcompat test
+		//
+		// pipeline.AddStep(":postgres:",
+		// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go generate ./..."),
-		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
-		bk.ArtifactPaths("coverage.txt"))
+		pipeline.AddStep(":go:",
+			bk.Cmd("go generate ./..."),
+			bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+			bk.ArtifactPaths("coverage.txt"))
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go generate ./..."),
-		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
-	)
+		pipeline.AddStep(":go:",
+			bk.Cmd("go generate ./..."),
+			bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
+		)
 
-	pipeline.AddStep(":docker:",
-		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+		pipeline.AddStep(":docker:",
+			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+			bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+	}
 
 	pipeline.AddWait()
 
@@ -259,7 +267,7 @@ func main() {
 			bk.Cmd("popd"))
 	}
 
-	if branch == "bext/release" {
+	if isBextReleaseBranch {
 		addBrowserExtensionReleaseSteps()
 		return
 	}
