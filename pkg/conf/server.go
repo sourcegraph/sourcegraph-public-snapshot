@@ -60,7 +60,7 @@ func (s *Server) Raw() string {
 func (s *Server) Write(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parse.ParseConfigEnvironment(input)
+	_, err := parse.ParseConfigData(input)
 	if err != nil {
 		return err
 	}

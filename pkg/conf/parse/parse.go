@@ -7,8 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// parseConfigData reads the provided config string, but NOT the environment
-func parseConfigData(data string) (*schema.SiteConfiguration, error) {
+// ParseConfigData reads the provided config string, but NOT the environment
+func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
 	var tmpConfig schema.SiteConfiguration
 
 	if data != "" {
@@ -26,25 +26,6 @@ func parseConfigData(data string) (*schema.SiteConfiguration, error) {
 		tmpConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 	}
 	return &tmpConfig, nil
-}
-
-// ParseConfigEnvironment reads the provided string, then merges in additional
-// data from the (deprecated) environment.
-func ParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
-	tmpConfig, err := parseConfigData(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := configFromEnv(); err != nil {
-		return nil, err
-	} else if len(envVarNames) > 0 {
-		if err := json.Unmarshal(v, tmpConfig); err != nil {
-			return nil, err
-		}
-	}
-	return tmpConfig, nil
 }
 
 // requireRestart describes the list of config properties that require
