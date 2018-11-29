@@ -35,42 +35,42 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     public constructor(props: SearchResultMatchProps) {
         super(props)
         // Render the match body as markdown, and syntax highlight the response if it's a code block.
-        // this.subscriptions.add(
-        //     combineLatest(this.propsChanges, this.visibilityChanges)
-        //         .pipe(
-        //             filter(([, isVisible]) => isVisible),
-        //             switchMap(([props]) => renderMarkdown({ markdown: props.body }))
-        //         )
-        //         .pipe(
-        //             switchMap(markdownHTML => {
-        //                 if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
-        //                     const lang = this.getLanguage() || 'txt'
-        //                     const codeContent = /<code(?:.*)>([\s\S]*?)<\/code>/.exec(markdownHTML)
-        //                     if (codeContent && codeContent[1]) {
-        //                         return highlightCode({
-        //                             code: decode(codeContent[1]),
-        //                             path: 'file.' + lang,
-        //                             disableTimeout: false,
-        //                             isLightTheme: this.props.isLightTheme,
-        //                         }).pipe(
-        //                             switchMap(highlightedStr => {
-        //                                 const highlightedMarkdown = markdownHTML.replace(codeContent[1], highlightedStr)
-        //                                 return of(highlightedMarkdown)
-        //                             })
-        //                         )
-        //                     }
-        //                 }
-        //                 return of(markdownHTML)
-        //             })
-        //         )
-        //         .subscribe(str => this.setState({ HTML: str }), error => console.error(error))
-        // )
+        this.subscriptions.add(
+            combineLatest(this.propsChanges, this.visibilityChanges)
+                .pipe(
+                    filter(([, isVisible]) => isVisible),
+                    switchMap(([props]) => renderMarkdown({ markdown: props.body }))
+                )
+                .pipe(
+                    switchMap(markdownHTML => {
+                        if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
+                            const lang = this.getLanguage() || 'txt'
+                            const codeContent = /<code(?:.*)>([\s\S]*?)<\/code>/.exec(markdownHTML)
+                            if (codeContent && codeContent[1]) {
+                                return highlightCode({
+                                    code: decode(codeContent[1]),
+                                    path: 'file.' + lang,
+                                    disableTimeout: false,
+                                    isLightTheme: this.props.isLightTheme,
+                                }).pipe(
+                                    switchMap(highlightedStr => {
+                                        const highlightedMarkdown = markdownHTML.replace(codeContent[1], highlightedStr)
+                                        return of(highlightedMarkdown)
+                                    })
+                                )
+                            }
+                        }
+                        return of(markdownHTML)
+                    })
+                )
+                .subscribe(str => this.setState({ HTML: str }), error => console.error(error))
+        )
     }
 
     private tableContainerElement: HTMLElement | null = null
 
     public componentDidMount(): void {
-        // this.propsChanges.next(this.props)
+        this.propsChanges.next(this.props)
         this.highlightNodes()
     }
 
@@ -169,35 +169,34 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 offset={this.visibilitySensorOffset}
             >
                 <>
-                    {
+                    {this.state.HTML && (
                         <Link key={this.props.url} to={this.props.url} className="file-match__item">
                             <Markdown
                                 refFn={this.setTableContainerElement}
                                 className="search-result-match code-excerpt"
-                                dangerousInnerHTML={this.props.body}
+                                dangerousInnerHTML={this.state.HTML}
                             />
                         </Link>
-                    }
+                    )}
+                    {!this.state.HTML && (
+                        <table>
+                            <tbody>
+                                {range(firstLine, lastLine).map(i => (
+                                    <tr key={i}>
+                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                        <td className="line line-hidden">
+                                            <code>{i}</code>
+                                        </td>
+                                        <td className="code"> </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </>
             </VisibilitySensor>
         )
     }
-
-    //  {!this.state.HTML && (
-    //                     <table>
-    //                         <tbody>
-    //                             {range(firstLine, lastLine).map(i => (
-    //                                 <tr key={i}>
-    //                                     {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-    //                                     <td className="line line-hidden">
-    //                                         <code>{i}</code>
-    //                                     </td>
-    //                                     <td className="code"> </td>
-    //                                 </tr>
-    //                             ))}
-    //                         </tbody>
-    //                     </table>
-    //                 )}
 
     private setTableContainerElement = (ref: HTMLElement | null) => {
         this.tableContainerElement = ref

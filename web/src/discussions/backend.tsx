@@ -298,7 +298,7 @@ export const renderMarkdown = memoizeObservable(
  *
  * @return Observable that emits the HTML string, which is already sanitized and escaped and thus is always safe to render.
  */
-export function renderMarkdowns(markdown: string[], options?: GQL.IMarkdownOptions): Observable<string[]> {
+export function renderMarkdowns(markdown: string[], options?: GQL.IMarkdownOptions): Observable<string> {
     return queryGraphQL(
         gql`
             query RenderMarkdowns($markdown: [String!]!, $options: MarkdownOptions) {
@@ -308,11 +308,10 @@ export function renderMarkdowns(markdown: string[], options?: GQL.IMarkdownOptio
         { markdown }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.renderMarkdowns) {
-                console.log(errors)
+            if (!data || !data.renderMarkdown) {
                 throw createAggregateError(errors)
             }
-            return data.renderMarkdowns
+            return data.renderMarkdown
         })
     )
 }
