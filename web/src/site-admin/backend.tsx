@@ -391,6 +391,7 @@ export function fetchSite(): Observable<GQL.ISite> {
             site {
                 id
                 configuration {
+                    id
                     effectiveContents
                     validationMessages
                     canUpdate
@@ -410,14 +411,14 @@ export function fetchSite(): Observable<GQL.ISite> {
  * @returns An observable indicating whether or not a service restart is
  * required for the update to be applied.
  */
-export function updateSiteConfiguration(input: string): Observable<boolean> {
+export function updateSiteConfiguration(lastID: number, input: string): Observable<boolean> {
     return mutateGraphQL(
         gql`
-            mutation UpdateSiteConfiguration($input: String!) {
-                updateSiteConfiguration(input: $input)
+            mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                updateSiteConfiguration(lastID: $lastID, input: $input)
             }
         `,
-        { input }
+        { lastID, input }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.updateSiteConfiguration as boolean)
