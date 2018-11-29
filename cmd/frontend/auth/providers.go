@@ -12,21 +12,18 @@ import (
 )
 
 var (
-	// allProvidersRegistered once all providers are initially registered. Any
-	// user of the allProviders value should wait on this before using it
-	// (otherwise there would be a time period where some providers are not yet
-	// registered and requests could accidently go by unauthenticated).
+	// allProvidersRegistered is closed once all providers are initially
+	// registered.
 	allProvidersRegisteredOnce sync.Once
 	allProvidersRegistered     = make(chan struct{})
 
+	// allProviders should not be accessed directly, use Providers() instead.
 	allProvidersMu sync.RWMutex
-	allProviders   []Provider // all configured authentication provider instances (modified by UpdateProviders)
+	allProviders   []Provider
 )
 
 // Providers returns a list of all authentication provider instances that are active in the site
 // config. The return value is immutable.
-//
-// It blocks until UpdateProviders has been called at least once.
 func Providers() []Provider {
 	if MockProviders != nil {
 		return MockProviders
@@ -40,8 +37,6 @@ func Providers() []Provider {
 
 // GetProviderByConfigID returns the provider with the given config ID (if it is currently
 // registered via UpdateProviders).
-//
-// It blocks until UpdateProviders has been called at least once.
 func GetProviderByConfigID(id ProviderConfigID) Provider {
 	var ps []Provider
 	if MockProviders != nil {
@@ -130,9 +125,14 @@ func ConfWatch(f func()) {
 	atomic.AddInt32(&needRegisteredProviders, 1)
 
 	go func() {
+		init := true
 		conf.Watch(func() {
 			f()
 
+			if !init {
+				return
+			}
+			init = false
 			if atomic.AddInt32(&needRegisteredProviders, -1) <= 0 {
 				// Done registering providers.
 				allProvidersRegisteredOnce.Do(func() {
