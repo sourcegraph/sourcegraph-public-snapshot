@@ -107,8 +107,12 @@ var isTest = (func() bool {
 
 func init() {
 	if isTest {
-		// Tests do not call ConfWatch, so we close the channel now.
-		close(allProvidersRegistered)
+		// Tests do not usually call ConfWatch or if they do, conf.Watch is not
+		// fired due to no config mocking in the tests, so we close the channel
+		// now.
+		allProvidersRegisteredOnce.Do(func() {
+			close(allProvidersRegistered)
+		})
 	}
 }
 
