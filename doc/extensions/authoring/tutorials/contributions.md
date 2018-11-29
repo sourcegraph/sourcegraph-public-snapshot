@@ -51,21 +51,15 @@ Then confirm your extension is enabled and working by:
 - Opening the extension detail page.
 - Viewing a file on Sourcegraph.com and seeing your extensions hover message appearing.
 
-## Sourcegraph extension actions and menu items
+## Sourcegraph extension Actions and Menu Items
 
 An **Action** is `JSON` with a unique identifier (string) that defines the properties of the UI element, e.g. `label`, as well as the `command`, which is the name of a registered callback to invoke.
 
 A **Menu Item** is `JSON` that specifies which UI element to add the **Action** to.
 
-These:
-
-1. An **action** is created with a unique identifier.
-1. A **menu item** is created that references the action using the unique identifier.
-1. The **action** method is invoked when the menu item is in its active state.
-
 <img src="img/menu-action-diagram.svg" width="300" />
 
-## Adding an action
+## Adding an Action
 
 Add the following code to `package.json` in the `.contributions.actions` array:
 
@@ -82,6 +76,8 @@ Add the following code to `package.json` in the `.contributions.actions` array:
 
 This `JSON` is processed by the extension runtime to create an [`ActionContribution`]((https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/api/protocol/contribution.ts#L22:18)) object:
 
+To explain this `JSON`:
+
 - `id`: Unique identifier for this action (must be unique for all actions).
 - `command`: The command will be invoked in its active state (this will change to a custom method later).
 - `actionItem.label`: The item text.
@@ -89,9 +85,9 @@ This `JSON` is processed by the extension runtime to create an [`ActionContribut
 
 **Note**: The [`actionItem`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/api/protocol/contribution.ts#L161:18) field is only required for actions in `editor/title`.
 
-## Adding the item to a menu
+## Adding the Action to the file header
 
-Now that an action exists, we must choose which menu it will be inserted into. We have chosen the **file header** because it's the most easily accessible and close to the code.
+Now that an **Action** exists, we must choose which part of the UI it will be inserted into. We have chosen the **file header** because it's the most easily accessible and close to the code.
 
 Add the following code to `package.json` in the `.contributions.menus.editor/title` array:
 
@@ -104,32 +100,33 @@ Add the following code to `package.json` in the `.contributions.menus.editor/tit
 
 This `JSON` is processed by the extension runtime to create a [`MenuItemContribution`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/api/protocol/contribution.ts#L217:18) object.
 
-- `action`: The action to invoke when the item is in its active state. Matches `id` field of an action.
-- `when`: An (optional) expression that must evaluate to true (or a truthy value). If the result of the expression is false or falsey, then the item will not appear in its chosen menu.
+To explain this `JSON`:
 
-Setting `"when"` to the value `"resource"` means the menu item will display only when a resource (document) is available.
+- `action`: The **Action** to invoke when the **Menu Item** is in its active state. Matches the `id` value of an **Action**.
+- `when`: An (optional) expression that must evaluate to true (or a truthy value). If the result of the expression is false or falsey, the **Menu Item** will not be displayed.
+
+Setting `"when"` to the value `"resource"` means the **Menu Item** will display only when a `resource` (document) is available.
 
 <!--TDO Ryan Check out the [extension activation tutorial](activation.md) for a more complex usage of the `when` field.-->
 
-## Testing the extension for button display
+You now have the code required to display a button so let's test it.
 
-You now have the code required to display a button so let's test it by:
+## Check that the button displays
+
+Test it by:
 
 - Publishing the extension.
-- Viewing a file on Sourcegraph or GitHub.
+- Viewing a file on Sourcegraph.com or GitHub.
 - You should see a **Line Count** button in the header above the file.
-
-Clicking the button does nothing so now, let's write the application code for the extension.
+- View the [Sourcegraph repository page](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) and the **Line Count** button should not be displayed.
 
 ## Extension application code
 
-Our goal is to click the **Line Counter** button to display the file name and number of lines of code in a notification. We'll code this in 3 parts.
+Now that we have the button, the next step is to display the notification. We'll code this in 3 steps. 
 
 ## Extension code part 1. Registering a custom method
 
-We'll use [`sourcegraph.commands.registerCommand(command: string, callback: function)`](https://unpkg.com/sourcegraph/dist/docs/modules/_sourcegraph_.commands.html#registercommand) to register a callback invoked by the menu item action.
-
-Open the TypeScript file in `src` and delete all of its code. Then replace it with:
+Open the TypeScript file in `src` and delete all the code. Then replace it with:
 
 ```typescript
 import * as sourcegraph from 'sourcegraph'
@@ -143,7 +140,7 @@ export function activate(): void {
 }
 ```
 
-Using [`sourcegraph.commands.registerCommand`](https://unpkg.com/sourcegraph/dist/docs/modules/_sourcegraph_.commands.html#registercommand), we register a callback that can be invoked by our action.
+When the extension is activated, it will use the [`sourcegraph.commands.registerCommand(command: string, callback: function)`](https://unpkg.com/sourcegraph/dist/docs/modules/_sourcegraph_.commands.html#registercommand), function to register a callback that can be invoked by our **Action** by using the value of the `command` argument.
 
 ## Extension code part 2. Configure the action to call the custom method
 
@@ -164,14 +161,14 @@ To configure the action, open the `package.json` replace the contents of the ite
 }
 ```
 
-The value of the `command` field now matches the custom method identifier and the `commandArguments` array provides the values required.
+The value of the `command` field now matches the custom method identifier from step 1 and the `commandArguments` array provides the arguments required by our callback (`uri:string, text: string`).
 
 <!--
 TODO: Ryan Link to template lang docs
 The syntax to get the argument values is a *template expression** which is a simple and very limited template language.
 -->
 
-The `resource` object is defined because our button will display only **when** there is a **resource**. The `resource` object is similar to a `TextDocument`, but with more, and slightly different field names. You can find the complete list of resource keys [from this switch statement](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/api/client/context/context.ts#L60:9).
+We can rely on the `resource` object being defined here because our button will display only if there is a `resource`. The `resource` object is a generic object and you can get the list of object keys [from this switch statement](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/api/client/context/context.ts#L60:9).
 
 ## Extension code part 3. Showing the notification
 
@@ -193,25 +190,25 @@ In your TypeScript extension file, replace `// Call to display notification here
 
 This code:
 
-- Checks a `Window` object exists as it's responsible for displaying the notification.
+- Checks that there is an active `Window` object.
 - Gets the file name and line count values.
 - Displays a notification.
 
-Now publish the extension see the line counter extension in action.
+Now publish the extension to see the line counter extension in action!
 
 ## Summary
 
 As a result of completing this tutorial, you've learnt:
 
 - How to register a custom method.
-- How to create an action that supplies arguments to the custom method.
-- How to create a menu item.
+- How to create an **Action** that supplies arguments to the custom method.
+- How to create a **Menu Item** which adds the **Action** to the UI.
 - How to display a notification.
 
-While this tutorial focussed on adding a button to the file header, the process is the same for the other contribution types, e.g. adding a menu item to the command palette.
+While this tutorial focussed on adding a button to the file header, the process is the same for the other contribution types, e.g. adding a **Menu Item** to the command palette.
 
 ## Next Steps
 
-- [Cookbook for writing Sourcegraph extensions]
+- [Cookbook for writing Sourcegraph extensions](../cookbook.md)
 - [Sourcegraph extension activation]
 - [Debugging a Sourcegraph extension]
