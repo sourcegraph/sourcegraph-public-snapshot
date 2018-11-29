@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"path"
 	"time"
@@ -61,11 +62,11 @@ func (*schemaResolver) RenderMarkdowns(args *struct {
 	for _, md := range args.Markdown {
 		renderedMd, err := markdown.Render(md, nil)
 		if err != nil {
+			fmt.Println("GOT ERROR", err)
 			return []string{""}, err
 		}
 		htmlStrings = append(htmlStrings, renderedMd)
 	}
-
 	return htmlStrings, nil
 }
 

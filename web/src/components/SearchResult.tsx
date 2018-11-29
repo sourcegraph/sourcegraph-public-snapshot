@@ -1,7 +1,7 @@
 import marked from 'marked'
 import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'
-import { Subject, Subscription } from 'rxjs'
+import { Subject, Subscription, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdowns } from '../discussions/backend'
@@ -29,27 +29,35 @@ interface Props {
 }
 
 interface State {
-    matchesRenderedMarkdown: string[]
+    matchesRenderedMarkdown?: string[]
 }
 
 export class SearchResult extends React.Component<Props, State> {
+    public state: State = {}
     private subscriptions = new Subscription()
     private propsChanges = new Subject<Props>()
 
     constructor(props: Props) {
         super(props)
-        this.state = { matchesRenderedMarkdown: [] }
+        this.subscriptions.add(
+            this.propsChanges
+                .pipe(
+                    switchMap(props => {
+                        const markdownsToRender: string[] = []
+                        props.result.matches.map(matches => markdownsToRender.push(matches.body))
+                        return renderMarkdowns(markdownsToRender).pipe(
+                            switchMap(renderedMarkdowns => of(renderedMarkdowns))
+                        )
+                    })
+                )
+                .subscribe(htmlList => this.setState({ matchesRenderedMarkdown: htmlList }))
+        )
     }
 
-    // public componentDidMount(): void {
-    //     this.subscriptions.add(
-    //         this.propsChanges
-    //             .pipe(switchMap(props => props.result.matches.map renderMarkdowns()))
-    //             .subscribe(str => this.setState({ HTML: str }))
-    //     )
+    public componentDidMount(): void {
+        this.propsChanges.next(this.props)
+    }
 
-    //     this.propsChanges.next(this.props)
-    // }
     private renderTitle = () => (
         <div className="repository-search-result__title">
             <span
@@ -72,27 +80,28 @@ export class SearchResult extends React.Component<Props, State> {
 
     private renderBody = () => (
         <>
-            {this.props.result.matches.map(item => {
-                const highlightRanges: HighlightRange[] = []
-                item.highlights.map(highlight =>
-                    highlightRanges.push({
-                        line: highlight.line,
-                        character: highlight.character,
-                        length: highlight.length,
-                    })
-                )
+            {!!this.state.matchesRenderedMarkdown &&
+                this.props.result.matches.map((item, index) => {
+                    const highlightRanges: HighlightRange[] = []
+                    item.highlights.map(highlight =>
+                        highlightRanges.push({
+                            line: highlight.line,
+                            character: highlight.character,
+                            length: highlight.length,
+                        })
+                    )
 
-                return (
-                    <SearchResultMatch
-                        key={item.url}
-                        item={item}
-                        body={item.body}
-                        url={item.url}
-                        highlightRanges={highlightRanges}
-                        isLightTheme={this.props.isLightTheme}
-                    />
-                )
-            })}
+                    return (
+                        <SearchResultMatch
+                            key={item.url}
+                            item={item}
+                            body={this.state.matchesRenderedMarkdown[index]}
+                            url={item.url}
+                            highlightRanges={highlightRanges}
+                            isLightTheme={this.props.isLightTheme}
+                        />
+                    )
+                })}
         </>
     )
 
