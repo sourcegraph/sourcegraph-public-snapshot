@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -143,7 +144,7 @@ func main() {
 	addDockerImageStep := func(app string, insiders bool) {
 		cmdDir := "cmd/" + app
 		var pkgPath string
-		if _, err := os.Stat(cmdDir); err != nil {
+		if _, err := os.Stat(filepath.Join("enterprise", cmdDir)); err != nil {
 			fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
 			pkgPath = "github.com/sourcegraph/sourcegraph/cmd/" + app
 		} else {
