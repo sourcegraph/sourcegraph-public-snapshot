@@ -1,0 +1,8 @@
+graph TD
+A[File header menu]
+B[Button]
+C[Action]
+D[Invoke method on button click]
+A-->|Create menu item|B
+B-->|Get properties from|C
+C-->D
