@@ -74,7 +74,7 @@ type fileMatchResolver struct {
 	label    string
 	url      string
 	detail   *string
-	results  []*GenericSearchMatchResolver
+	matches  []*GenericSearchMatchResolver
 }
 
 func (fm *fileMatchResolver) Key() string {
@@ -128,8 +128,8 @@ func (fm *fileMatchResolver) Detail() *string {
 	return fm.detail
 }
 
-func (fm *fileMatchResolver) Results() []*GenericSearchMatchResolver {
-	return fm.results
+func (fm *fileMatchResolver) Matches() []*GenericSearchMatchResolver {
+	return fm.matches
 }
 
 // LineMatch is the struct used by vscode to receive search results for a line

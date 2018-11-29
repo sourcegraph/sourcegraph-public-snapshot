@@ -826,7 +826,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 							}
 							matches = append(matches, &GenericSearchMatchResolver{url: url, body: lm.Preview(), highlights: highlights})
 						}
-						r.results = matches
+						r.matches = matches
 						r.icon = fileIcon
 						r.label = label
 						r.url = r.File().URL()

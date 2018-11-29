@@ -32,7 +32,7 @@ type repositoryResolver struct {
 	label       string
 	url         string
 	detail      *string
-	results     []*GenericSearchMatchResolver
+	matches     []*GenericSearchMatchResolver
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
@@ -214,8 +214,8 @@ func (r *repositoryResolver) Detail() *string {
 	return &str
 }
 
-func (r *repositoryResolver) Results() []*GenericSearchMatchResolver {
-	return r.results
+func (r *repositoryResolver) Matches() []*GenericSearchMatchResolver {
+	return r.matches
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

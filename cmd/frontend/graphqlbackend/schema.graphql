@@ -761,6 +761,9 @@ type Query {
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
+    # Renders a list of Markdown strings to HTML. Each returned HTML string is already sanitized and
+    # escaped and thus is always safe to render.
+    renderMarkdowns(markdown: [String!]!, options: MarkdownOptions): [String!]!
     # Syntax highlights a code string.
     highlightCode(code: String!, path: String!, disableTimeout: Boolean!, isLightTheme: Boolean!): String!
     # Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
@@ -843,7 +846,7 @@ interface GenericSearchResult {
     # A markdown string that is rendered less prominently.
     detail: String
     # A list of individual matches in a result.
-    results: [SearchMatch!]!
+    matches: [SearchMatch!]!
 }
 
 # An individual search result match. Matches make up the body content of a search result.
@@ -854,7 +857,7 @@ type SearchMatch {
     # markdown syntax will not be rendered specially.
     body: String!
     # A list of objects containing the line, character, and length of matches in the result body.
-    # This is used to highlight matches in the body.
+    # This is used to highlight matches in the match body. Currently, highlights will only be shown on matches that return code blocks
     # This can be left as an empty list if these values are not given by the result provider.
     highlights: [Highlight!]!
 }
@@ -1000,7 +1003,7 @@ type CommitSearchResult implements GenericSearchResult {
     # Additional details that are rendered less prominently.
     detail: String
     # The result previews of the result.
-    results: [SearchMatch!]!
+    matches: [SearchMatch!]!
     # The commit that matched the search query.
     commit: GitCommit!
     # The ref names of the commit.
@@ -1242,7 +1245,7 @@ type Repository implements Node & GenericSearchResult {
     # Additional details that are rendered less prominently.
     detail: String
     # The result previews of the result.
-    results: [SearchMatch!]!
+    matches: [SearchMatch!]!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -2034,7 +2037,7 @@ type FileMatch implements GenericSearchResult {
     # Additional details that are rendered less prominently.
     detail: String
     # The result previews of the result.
-    results: [SearchMatch!]!
+    matches: [SearchMatch!]!
     # The file containing the match.
     #
     # KNOWN ISSUE: This file's "commit" field contains incomplete data.

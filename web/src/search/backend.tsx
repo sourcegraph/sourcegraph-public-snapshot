@@ -6,6 +6,7 @@ import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { memoizeObservable } from '../util/memoize'
 
 export function search(
     options: SearchOptions,
@@ -51,7 +52,7 @@ export function search(
                                         label
                                         icon
                                         detail
-                                        results {
+                                        matches {
                                             url
                                             body
                                             highlights {
@@ -90,7 +91,7 @@ export function search(
                                             lineNumber
                                             offsetAndLengths
                                         }
-                                        results {
+                                        matches {
                                             url
                                             body
                                             highlights {
@@ -143,7 +144,7 @@ export function search(
                                         url
                                         icon
                                         detail
-                                        results {
+                                        matches {
                                             url
                                             body
                                             highlights {
@@ -462,25 +463,32 @@ export function deleteSavedQuery(
     )
 }
 
-export function highlightCode(
-    code: string,
-    path: string,
-    disableTimeout: boolean,
-    isLightTheme: boolean
-): Observable<string> {
-    return queryGraphQL(
-        gql`
-            query highlightCode($code: String!, $path: String!, $disableTimeout: Boolean!, $isLightTheme: Boolean!) {
-                highlightCode(code: $code, path: $path, disableTimeout: $disableTimeout, isLightTheme: $isLightTheme)
-            }
-        `,
-        { code, path, disableTimeout, isLightTheme }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.highlightCode) {
-                throw createAggregateError(errors)
-            }
-            return data.highlightCode
-        })
-    )
-}
+export const highlightCode = memoizeObservable(
+    (ctx: { code: string; path: string; disableTimeout: boolean; isLightTheme: boolean }): Observable<string> =>
+        queryGraphQL(
+            gql`
+                query highlightCode(
+                    $code: String!
+                    $path: String!
+                    $disableTimeout: Boolean!
+                    $isLightTheme: Boolean!
+                ) {
+                    highlightCode(
+                        code: $code
+                        path: $path
+                        disableTimeout: $disableTimeout
+                        isLightTheme: $isLightTheme
+                    )
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.highlightCode) {
+                    throw createAggregateError(errors)
+                }
+                return data.highlightCode
+            })
+        ),
+    ctx => `${ctx.code}:${ctx.path}:${ctx.disableTimeout}:${ctx.isLightTheme}`
+)

@@ -15,13 +15,12 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { FileMatch } from '../../components/FileMatch'
 import { ModalContainer } from '../../components/ModalContainer'
-import { SearchResultMatch } from '../../components/SearchResultMatch'
+import { SearchResult } from '../../components/SearchResult'
 import { VirtualList } from '../../components/VirtualList'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { isDefined } from '../../util/types'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
-import { RepositorySearchResult } from './RepositorySearchResult'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
@@ -418,7 +417,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     />
                 )
         }
-        return <SearchResultMatch key={result.label} result={result} isLightTheme={this.props.isLightTheme} />
+        return <SearchResult key={result.label} result={result} isLightTheme={this.props.isLightTheme} />
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */

@@ -32,7 +32,7 @@ type commitSearchResultResolver struct {
 	label          string
 	url            string
 	detail         *string
-	results        []*GenericSearchMatchResolver
+	matches        []*GenericSearchMatchResolver
 }
 
 func (r *commitSearchResultResolver) Commit() *gitCommitResolver         { return r.commit }
@@ -55,8 +55,8 @@ func (r *commitSearchResultResolver) Detail() *string {
 	return r.detail
 }
 
-func (r *commitSearchResultResolver) Results() []*GenericSearchMatchResolver {
-	return r.results
+func (r *commitSearchResultResolver) Matches() []*GenericSearchMatchResolver {
+	return r.matches
 }
 
 var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
@@ -298,7 +298,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		results[i].icon = commitIcon
 		match := &GenericSearchMatchResolver{body: matchBody, highlights: highlights, url: commitResolver.URL()}
 		matches := []*GenericSearchMatchResolver{match}
-		results[i].results = matches
+		results[i].matches = matches
 	}
 
 	return results, limitHit, timedOut, nil

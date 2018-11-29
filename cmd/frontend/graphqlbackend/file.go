@@ -53,6 +53,22 @@ func (*schemaResolver) RenderMarkdown(args *struct {
 	return markdown.Render(args.Markdown, nil)
 }
 
+func (*schemaResolver) RenderMarkdowns(args *struct {
+	Markdown []string
+	Options  *markdownOptions
+}) ([]string, error) {
+	htmlStrings := []string{}
+	for _, md := range args.Markdown {
+		renderedMd, err := markdown.Render(md, nil)
+		if err != nil {
+			return []string{""}, err
+		}
+		htmlStrings = append(htmlStrings, renderedMd)
+	}
+
+	return htmlStrings, nil
+}
+
 func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 	Code           string
 	Path           string
