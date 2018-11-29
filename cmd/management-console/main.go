@@ -7,8 +7,8 @@
 //docker:env PGSSLMODE=disable
 //docker:env PGUSER=sg
 
-// The management console provides a failsafe editor for the core configuration
-// options for the Sourcegraph instance.
+// The management console provides a failsafe editor for the critical
+// configuration options for the Sourcegraph instance.
 //
 // 🚨 SECURITY: No authentication is done by the management console.
 // It is currently the user's responsibility to:

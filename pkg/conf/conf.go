@@ -18,7 +18,7 @@ import (
 //
 type Unified struct {
 	schema.SiteConfiguration
-	Critical   schema.CriticalSiteConfiguration
+	Critical           schema.CriticalConfiguration
 	ServiceConnections conftypes.ServiceConnections
 }
 

@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -48,7 +47,7 @@ func init() {
 }
 
 func init() {
-	conf.ContributeValidator(func(cfg schema.SiteConfiguration) []string {
+	conf.ContributeValidator(func(cfg conf.Unified) []string {
 		_, _, seriousProblems, warnings := providersFromConfig(&cfg)
 		return append(seriousProblems, warnings...)
 	})
@@ -62,7 +61,7 @@ func init() {
 // It also returns any validation problems with the config, separating these into "serious problems"
 // and "warnings".  "Serious problems" are those that should make Sourcegraph set
 // authz.allowAccessByDefault to false. "Warnings" are all other validation problems.
-func providersFromConfig(cfg *schema.SiteConfiguration) (
+func providersFromConfig(cfg *conf.Unified) (
 	allowAccessByDefault bool,
 	authzProviders []authz.Provider,
 	seriousProblems []string,

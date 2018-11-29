@@ -58,7 +58,7 @@ func configureExternalURL() (*url.URL, error) {
 	} else {
 		hostPort = httpAddr
 	}
-	externalURL := conf.Get().ExternalURL
+	externalURL := conf.Get().Critical.ExternalURL
 	if externalURL == "" {
 		externalURL = "http://<http-addr>"
 	}
@@ -148,10 +148,10 @@ func Main() error {
 		hooks.AfterDBInit()
 	}
 
-	tlsCert := conf.Get().TlsCert
-	tlsKey := conf.Get().TlsKey
+	tlsCert := conf.Get().Critical.TlsCert
+	tlsKey := conf.Get().Critical.TlsKey
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
-	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.ExternalURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
+	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.ExternalURL.Scheme == "https" && conf.Get().Critical.TlsLetsencrypt != "off"))
 	if useTLS && globals.ExternalURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "externalURL", globals.ExternalURL)
 	}
@@ -201,7 +201,7 @@ func Main() error {
 		l, err := net.Listen("tcp", httpsAddr)
 		if err != nil {
 			// Fatal if we manually specified TLS or enforce lets encrypt
-			if tlsCertAndKey || conf.GetTODO().TlsLetsencrypt == "on" {
+			if tlsCertAndKey || conf.Get().Critical.TlsLetsencrypt == "on" {
 				log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
 			} else {
 				log15.Warn("Failed to bind to HTTPS port, TLS disabled", "address", httpsAddr, "error", err)

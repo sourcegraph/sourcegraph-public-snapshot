@@ -24,7 +24,7 @@ const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
 
 // HTTPStrictTransportSecurity returns the value of the Strict-Transport-Security HTTP header to set.
 func HTTPStrictTransportSecurity() string {
-	switch v := Get().HttpStrictTransportSecurity.(type) {
+	switch v := Get().Critical.HttpStrictTransportSecurity.(type) {
 	case string:
 		return v
 	case bool:
@@ -218,7 +218,7 @@ func IsValidDeployType(deployType string) bool {
 
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
-	channel := GetTODO().UpdateChannel
+	channel := Get().Critical.UpdateChannel
 	if channel == "" {
 		return "release"
 	}
