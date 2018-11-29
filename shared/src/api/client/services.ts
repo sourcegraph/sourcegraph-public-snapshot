@@ -19,12 +19,12 @@ export class Services {
     constructor(
         private platformContext: Pick<
             PlatformContext,
-            'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension'
+            'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension' | 'clientApplication'
         >
     ) {}
 
     public readonly commands = new CommandRegistry()
-    public readonly context = createContextService()
+    public readonly context = createContextService(this.platformContext)
     public readonly model = createModelService()
     public readonly notifications = new NotificationsService()
     public readonly settings = createSettingsService(this.platformContext)

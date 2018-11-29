@@ -26,13 +26,17 @@ interface TestContext {
 }
 
 interface Mocks
-    extends Pick<PlatformContext, 'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension'> {}
+    extends Pick<
+            PlatformContext,
+            'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension' | 'clientApplication'
+        > {}
 
 const NOOP_MOCKS: Mocks = {
     settings: NEVER,
     updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
     queryGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
     getScriptURLForExtension: scriptURL => scriptURL,
+    clientApplication: 'sourcegraph',
 }
 
 /**

@@ -1,4 +1,5 @@
 import { BehaviorSubject, NextObserver, Subscribable } from 'rxjs'
+import { PlatformContext } from '../../../platform/context'
 import { Context } from './context'
 
 /**
@@ -13,8 +14,10 @@ export interface ContextService {
 }
 
 /** Create a {@link ContextService} instance. */
-export function createContextService(): ContextService {
+export function createContextService({
+    clientApplication,
+}: Pick<PlatformContext, 'clientApplication'>): ContextService {
     return {
-        data: new BehaviorSubject<Context>({}),
+        data: new BehaviorSubject<Context>({ 'clientApplication.isSourcegraph': clientApplication === 'sourcegraph' }),
     }
 }

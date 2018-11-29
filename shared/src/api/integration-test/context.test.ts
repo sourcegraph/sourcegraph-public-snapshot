@@ -12,7 +12,10 @@ describe('Context (integration)', () => {
 
             extensionHost.internal.updateContext({ a: 1 })
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(values, [{}, { a: 1 }] as ContextValues[])
+            assert.deepStrictEqual(values, [
+                { 'clientApplication.isSourcegraph': true },
+                { a: 1, 'clientApplication.isSourcegraph': true },
+            ] as ContextValues[])
         })
     })
 })

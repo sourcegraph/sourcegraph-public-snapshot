@@ -9,6 +9,7 @@ describe('Services', () => {
             updateSettings: () => Promise.reject(new Error('not implemented')),
             queryGraphQL: () => NEVER,
             getScriptURLForExtension: scriptURL => scriptURL,
+            clientApplication: 'sourcegraph',
         })
     })
 })
