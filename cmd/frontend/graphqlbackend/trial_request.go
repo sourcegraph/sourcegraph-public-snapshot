@@ -11,10 +11,9 @@ import (
 )
 
 type trialRequestForHubSpot struct {
-	Email	*string `url:"email"`
-	SiteID	string  `url:"site_id"`
+	Email  *string `url:"email"`
+	SiteID string  `url:"site_id"`
 }
-
 
 // RequestTrial makes a submission to the request trial form.
 func (r *schemaResolver) RequestTrial(ctx context.Context, args *struct {
@@ -23,8 +22,7 @@ func (r *schemaResolver) RequestTrial(ctx context.Context, args *struct {
 	email := args.Email
 
 	// If user is authenticated, use their uid and overwrite the optional email field.
-	actor := actor.FromContext(ctx)
-	if actor.IsAuthenticated() {
+	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
 		e, _, err := db.UserEmails.GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
@@ -36,8 +34,8 @@ func (r *schemaResolver) RequestTrial(ctx context.Context, args *struct {
 
 	// Submit form to HubSpot
 	if err := hubspotutil.Client().SubmitForm(hubspotutil.TrialFormID, &trialRequestForHubSpot{
-		Email:	&email,
-		SiteID:	siteid.Get(),
+		Email:  &email,
+		SiteID: siteid.Get(),
 	}); err != nil {
 		return nil, err
 	}

@@ -1,10 +1,11 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
+import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { from, Subscription } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError } from '../../../shared/src/util/errors'
@@ -92,9 +93,12 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                 </div>
                 {enterpriseTrial && (
                     <div className="form-group">
-                        <label>
+                        <label className="signin-signup-form__checkbox-label">
                             <input className="mr-1" type="checkbox" onChange={this.onRequestTrialFieldChange} />
                             Try Sourcegraph Enterprise free for 30-days
+                            <a className="ml-1" target="_blank" href="https://about.sourcegraph.com/pricing">
+                                <HelpCircleOutlineIcon className="icon-inline" />
+                            </a>
                         </label>
                     </div>
                 )}
