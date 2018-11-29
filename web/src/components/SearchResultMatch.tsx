@@ -5,13 +5,14 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
-import { filter, switchMap } from 'rxjs/operators'
+import { filter, switchMap, catchError } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
 import { highlightNode } from '../util/dom'
 import { Markdown } from './Markdown'
 import { HighlightRange } from './SearchResult'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 interface SearchResultMatchProps {
     item: GQL.ISearchMatch
@@ -70,12 +71,16 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     switchMap(highlightedStr => {
                                         const highlightedMarkdown = markdownHTML.replace(codeContent[1], highlightedStr)
                                         return of(highlightedMarkdown)
-                                    })
+                                    }),
+                                    // Return the rendered markdown if highlighting fails.
+                                    catchError(() => of(markdownHTML))
                                 )
                             }
                         }
                         return of(markdownHTML)
-                    })
+                    }),
+                    // Return the raw body if markdown rendering fails, maintaing the text structure.
+                    catchError(() => of('<pre>' + props.body + '</pre>'))
                 )
                 .subscribe(str => this.setState({ HTML: str }), error => console.error(error))
         )
@@ -143,19 +148,22 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                         </Link>
                     )}
                     {!this.state.HTML && (
-                        <table>
-                            <tbody>
-                                {range(firstLine, lastLine).map(i => (
-                                    <tr key={i}>
-                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                        <td className="line line-hidden">
-                                            <code>{i}</code>
-                                        </td>
-                                        <td className="code"> </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <>
+                            <LoadingSpinner className="icon-inline" />
+                            <table>
+                                <tbody>
+                                    {range(firstLine, lastLine).map(i => (
+                                        <tr key={i}>
+                                            {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                            <td className="line line-hidden">
+                                                <code>{i}</code>
+                                            </td>
+                                            <td className="code"> </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </>
                     )}
                 </>
             </VisibilitySensor>
