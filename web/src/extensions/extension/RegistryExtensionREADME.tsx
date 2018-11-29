@@ -1,9 +1,10 @@
-import marked from 'marked'
+import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { Markdown } from '../../components/Markdown'
+import { markedWithCharts } from '../../util/markedWithCharts'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
 const PublishNewManifestAlert: React.FunctionComponent<{
@@ -62,7 +63,7 @@ export const ExtensionREADME: React.FunctionComponent<{
     }
 
     try {
-        const html = marked(manifest.readme, { gfm: true, breaks: true, sanitize: true })
+        const html = markedWithCharts(manifest.readme, { gfm: true, breaks: true, sanitize: true })
         return <Markdown dangerousInnerHTML={html} />
     } catch (err) {
         return (

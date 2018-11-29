@@ -1,5 +1,4 @@
 import * as H from 'history'
-import marked from 'marked'
 import CancelIcon from 'mdi-react/CancelIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
@@ -13,6 +12,7 @@ import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
 import { createLinkClickHandler } from '../util/linkClickHandler'
+import { markedWithCharts } from '../util/markedWithCharts'
 import { parseHash } from '../util/url'
 
 /**
@@ -127,7 +127,7 @@ export class Panel extends React.PureComponent<Props, State> {
                             priority: 0,
                             element: (
                                 <div className="p-2" onClick={createLinkClickHandler(this.props.history)}>
-                                    <Markdown dangerousInnerHTML={marked(panelView.content)} />
+                                    <Markdown dangerousInnerHTML={markedWithCharts(panelView.content)} />
                                 </div>
                             ),
                         } as PanelItem)

@@ -1504,6 +1504,11 @@
     "@types/cp-file" "*"
     "@types/glob" "*"
 
+"@types/d3-array@^1.2.4":
+  version "1.2.4"
+  resolved "https://registry.npmjs.org/@types/d3-array/-/d3-array-1.2.4.tgz#7088445c8717ba1fba416a1df7bbd11cc72a3763"
+  integrity sha512-3r1fOAAb+SGfcOGXty/LGvoP0ovMec4UtGNUyHOSzYyvSGpmt+eNMxLowol/3HryusevznSfcHZebEShXMwsZA==
+
 "@types/d3-axis@1.0.11":
   version "1.0.11"
   resolved "https://registry.npmjs.org/@types/d3-axis/-/d3-axis-1.0.11.tgz#efd975f9fec14c2afd03828f3acec0ef97d37c3b"
@@ -1690,6 +1695,11 @@
   integrity sha512-zudCJPwluh1VUDB6Gl/OQdRp+fYy3+47huJB/JMQubMS2p+sH18MCVK4WUz3FqaWLB12yh5ELxVR/+tqwlm/qA==
   dependencies:
     "@types/node" "*"
+
+"@types/js-yaml@^3.11.2":
+  version "3.11.2"
+  resolved "https://registry.npmjs.org/@types/js-yaml/-/js-yaml-3.11.2.tgz#699ad86054cc20043c30d66a6fcde30bbf5d3d5e"
+  integrity sha512-JRDtMPEqXrzfuYAdqbxLot1GvAr/QvicIZAnOAigZaj8xVMhuSJTg/xsv9E1TvyL+wujYhRLx9ZsQ0oFOSmwyA==
 
 "@types/jsdom@11.12.0":
   version "11.12.0"
@@ -4928,6 +4938,11 @@ d3-array@1.2.1:
   version "1.2.1"
   resolved "https://registry.npmjs.org/d3-array/-/d3-array-1.2.1.tgz#d1ca33de2f6ac31efadb8e050a021d7e2396d5dc"
   integrity sha512-CyINJQ0SOUHojDdFDH4JEM0552vCR1utGyLHegJHyYH0JyCpSeTPxi4OBqHMA2jJZq4NH782LtaJWBImqI/HBw==
+
+d3-array@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.npmjs.org/d3-array/-/d3-array-2.0.2.tgz#c9a8a203b43403c6ced881ee66828edc6e561c61"
+  integrity sha512-dbjbKhMdnTW6ToWsopRs4/+ZPOsqQE1QeeoUEvzIqhdkT29zzAUcUh8HMb92tTITVlbW/G0UBz4ryBqC2RTUIA==
 
 d3-axis@1.0.8:
   version "1.0.8"
@@ -9314,6 +9329,16 @@ marked@^0.4.0:
   version "0.5.1"
   resolved "https://registry.npmjs.org/marked/-/marked-0.5.1.tgz#062f43b88b02ee80901e8e8d8e6a620ddb3aa752"
   integrity sha512-iUkBZegCZou4AdwbKTwSW/lNDcz5OuRSl3qdcl31Ia0B2QPG0Jn+tKblh/9/eP9/6+4h27vpoh8wel/vQOV0vw==
+
+markvis-bar@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.npmjs.org/markvis-bar/-/markvis-bar-0.0.9.tgz#7f685ef06bfd79beaf1e17a59dfe4474964cc939"
+  integrity sha512-MeLG/2VkjVKIq7ggbLjpNDsU0zPZ5p0BL7FCsGfKBI61HZDzKYOBTl5H0wZZwToU/RMN401QKn/2Jcy8RkGIxw==
+
+markvis-line@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.npmjs.org/markvis-line/-/markvis-line-0.0.6.tgz#8fecf8fe1b87d7fc798cae7c52d56cb3faabce8a"
+  integrity sha512-7o+6plDmok/w44FzGJznTHno4T14mEEeT19kKH5jC9nIMPlhLmBjS7SFadBf7gMfuS6L/4W+nt27YV4W/FSItA==
 
 matchdep@^2.0.0:
   version "2.0.0"

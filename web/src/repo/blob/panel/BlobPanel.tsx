@@ -1,7 +1,6 @@
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
 import { castArray, isEqual } from 'lodash'
-import marked from 'marked'
 import * as React from 'react'
 import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
@@ -36,6 +35,7 @@ import { isDiscussionsEnabled } from '../../../discussions'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
+import { markedWithCharts } from '../../../util/markedWithCharts'
 import { parseHash } from '../../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
@@ -371,7 +371,7 @@ function renderHoverContents(contents: HoverMerged['contents'][0]): React.ReactF
             return (
                 <div
                     dangerouslySetInnerHTML={{
-                        __html: marked(value, { gfm: true, breaks: true, sanitize: true }),
+                        __html: markedWithCharts(value, { gfm: true, breaks: true, sanitize: true }),
                     }}
                 />
             )
