@@ -101,9 +101,10 @@ export class SearchResult extends React.Component<Props, State> {
             <ResultContainer
                 stringIcon={this.props.result.icon}
                 icon={FileIcon}
+                collapsible={this.props.result && this.props.result.matches.length > 0}
+                defaultExpanded={true}
                 title={this.renderTitle()}
                 expandedChildren={this.renderBody()}
-                collapsedChildren={this.renderBody()}
             />
         )
     }

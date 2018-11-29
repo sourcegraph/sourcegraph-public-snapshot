@@ -44,9 +44,9 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 .pipe(
                     switchMap(markdownHTML => {
                         if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
-                            const lang = this.getLanguage()
+                            const lang = this.getLanguage() || 'txt'
                             const codeContent = /<code(?:.*)>([\s\S]*?)<\/code>/.exec(markdownHTML)
-                            if (lang && codeContent && codeContent[1]) {
+                            if (codeContent && codeContent[1]) {
                                 return highlightCode({
                                     code: decode(codeContent[1]),
                                     path: 'file.' + lang,
@@ -63,7 +63,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                         return of(markdownHTML)
                     })
                 )
-                .subscribe(str => this.setState({ HTML: str }))
+                .subscribe(str => this.setState({ HTML: str }), error => console.error(error))
         )
     }
 
@@ -154,8 +154,16 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     public render(): JSX.Element {
+        const firstLine = this.getFirstLine()
+        let lastLine = this.getLastLine()
+        if (firstLine === lastLine) {
+            // Some edge cases yield the same first and last line, causing the visibility sensor to break, so make sure to avoid this.
+            lastLine++
+        }
+
         return (
             <VisibilitySensor
+                active={true}
                 onChange={this.onChangeVisibility}
                 partialVisibility={true}
                 offset={this.visibilitySensorOffset}
@@ -173,12 +181,12 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     {!this.state.HTML && (
                         <table>
                             <tbody>
-                                {range(this.getFirstLine(), this.getLastLine()).map(i => (
+                                {range(firstLine, lastLine).map(i => (
                                     <tr key={i}>
-                                        <td className="line">
+                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                        <td className="line line-hidden">
                                             <code>{i}</code>
                                         </td>
-                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                         <td className="code"> </td>
                                     </tr>
                                 ))}
@@ -193,25 +201,4 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     private setTableContainerElement = (ref: HTMLElement | null) => {
         this.tableContainerElement = ref
     }
-}
-
-// Strips the code fence from a markdown code block.
-function stripCodeFence(code: string): string {
-    if (code.startsWith('```') && code.endsWith('```')) {
-        const c = code.split('\n')
-        return c.slice(1, c.length - 1).join('\n')
-    }
-    return code
-}
-
-// Split lines separates markdown text lines into individual elements so that we can treat each
-// line individually for match highlighting.
-function splitLines(body: string): string {
-    const split = body.split('\n')
-    let htmlAsString = ''
-    for (const s of split) {
-        const sp = `<span>${s}\n</span>`
-        htmlAsString += sp
-    }
-    return htmlAsString
 }

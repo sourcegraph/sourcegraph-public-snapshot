@@ -1,5 +1,10 @@
 .search-result-match {
     width: 100%;
+    .line {
+        &-hidden {
+            visibility: hidden;
+        }
+    }
 }
 
 .theme-light {
@@ -11,5 +16,10 @@
     .hljs-deletion {
         background-color: rgba(192, 10, 10, 0.15);
         color: black;
+    }
+    .line {
+        &-hidden {
+            visibility: hidden;
+        }
     }
 }
