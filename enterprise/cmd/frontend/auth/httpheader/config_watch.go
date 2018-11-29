@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -19,7 +18,7 @@ func init() {
 		pc *schema.HTTPHeaderAuthProvider
 		pi auth.Provider
 	)
-	conf.Watch(func() {
+	auth.ConfWatch(func() {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -44,6 +43,6 @@ func init() {
 		auth.UpdateProviders(updates)
 		pc = newPC
 		pi = newPI
+		init = false
 	})
-	init = false
 }
