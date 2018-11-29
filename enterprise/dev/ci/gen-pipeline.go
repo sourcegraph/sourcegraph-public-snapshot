@@ -267,7 +267,7 @@ func main() {
 			bk.Cmd("popd"))
 	}
 
-	if branch == "bext/release" {
+	if isBextReleaseBranch {
 		addBrowserExtensionReleaseSteps()
 		return
 	}
