@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
 // ContributeValidator adds the site configuration validator function to the validation process. It
@@ -17,9 +19,12 @@ func ContributeValidator(f func(Unified) (problems []string)) {
 
 var contributedValidators []func(Unified) []string
 
-func validateCustomRaw(normalizedInput []byte) (problems []string, err error) {
+func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems []string, err error) {
 	var cfg Unified
-	if err := json.Unmarshal(normalizedInput, &cfg); err != nil {
+	if err := json.Unmarshal([]byte(normalizedInput.Critical), &cfg.Critical); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal([]byte(normalizedInput.Site), &cfg.SiteConfiguration); err != nil {
 		return nil, err
 	}
 	return validateCustom(cfg), nil

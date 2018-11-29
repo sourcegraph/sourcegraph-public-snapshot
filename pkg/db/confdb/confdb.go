@@ -10,6 +10,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -43,7 +44,7 @@ func SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (
 	}
 	defer done()
 
-	newLastID, err := addDefault(ctx, tx, typeSite, defaultSiteConfig)
+	newLastID, err := addDefault(ctx, tx, typeSite, confdefaults.Default.Site)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +72,7 @@ func CriticalCreateIfUpToDate(ctx context.Context, lastID *int32, contents strin
 	}
 	defer done()
 
-	newLastID, err := addDefault(ctx, tx, typeCritical, defaultCriticalConfig)
+	newLastID, err := addDefault(ctx, tx, typeCritical, confdefaults.Default.Critical)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +96,7 @@ func SiteGetLatest(ctx context.Context) (latest *SiteConfig, err error) {
 	}
 	defer done()
 
-	_, err = addDefault(ctx, tx, typeSite, defaultSiteConfig)
+	_, err = addDefault(ctx, tx, typeSite, confdefaults.Default.Site)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +117,7 @@ func CriticalGetLatest(ctx context.Context) (latest *CriticalConfig, err error) 
 	}
 	defer done()
 
-	_, err = addDefault(ctx, tx, typeCritical, defaultCriticalConfig)
+	_, err = addDefault(ctx, tx, typeCritical, confdefaults.Default.Critical)
 	if err != nil {
 		return nil, err
 	}
@@ -237,22 +238,4 @@ type configType string
 const (
 	typeCritical configType = "critical"
 	typeSite     configType = "site"
-)
-
-// SetDefaultConfigs should be invoked once early on in the program
-// startup, before calls to e.g. conf.Get are made. It will panic if called
-// more than once.
-func SetDefaultConfigs(critical, site string) {
-	if setDefaultConfigsCalled {
-		panic("confdb.SetDefaultConfigs may not be called twice")
-	}
-	setDefaultConfigsCalled = true
-	defaultCriticalConfig = critical
-	defaultSiteConfig = site
-}
-
-var (
-	setDefaultConfigsCalled bool
-	defaultCriticalConfig   string
-	defaultSiteConfig       string
 )

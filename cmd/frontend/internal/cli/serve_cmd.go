@@ -77,6 +77,13 @@ func Main() error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
+	// Connect to the database and start the configuration server.
+	if err := dbconn.ConnectToDB(""); err != nil {
+		log.Fatal(err)
+	}
+	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
+	conf.MustValidateDefaults()
+
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	tracer.Init(tracer.Filter(loghandlers.Trace(strings.Fields(trace), d)))
@@ -129,10 +136,6 @@ func Main() error {
 	}
 
 	go debugserver.Start()
-
-	if err := dbconn.ConnectToDB(""); err != nil {
-		log.Fatal(err)
-	}
 
 	siteid.Init()
 
