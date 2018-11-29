@@ -4,9 +4,7 @@ Difficulty | Time
 ---- |:--------:|
 Intermediate | 30 minutes
 
-Sourcegraph extension contributions, is the functionality an extension contributes via commands invoked from menu items (e.g. button) configured in the [extension manifest](../manifest.md). These commands can be invoked manually in extension code, as well as from other extensions.
-
-Menu items can be injected into pre-defined UI locations such as:
+**Contributions** are the combination of UI elements configured by your Sourcegraph extension that invoke built-in and custom functionality. When present, UI elements can only be added to pre-defined locations such as:
 
 - The file header
 - Command palette
@@ -16,7 +14,7 @@ Menu items can be injected into pre-defined UI locations such as:
 
 <!-- **Note**: Here is the complete list of [contribution points](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/api/protocol/contribution.ts#L192:13).  -->
 
-<!-- TODO: Ryan What `ContributableMenu` points are supported in Sourcegraph and code hosts. -->
+<!-- TODO: Ryan What `ContributableMenu` points are supported in Sourcegraph and code hosts. Are they meant to be different? -->
 
 <!-- Sourcegraph extensions can create buttons and menu items on Sourcegraph.com, GitHub and other supported code hosts. -->
 <!-- 
