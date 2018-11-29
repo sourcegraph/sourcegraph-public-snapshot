@@ -29,6 +29,11 @@ const diffCodeView: CodeViewWithOutSelector = {
     isDiff: true,
 }
 
+const diffConversationCodeView: CodeViewWithOutSelector = {
+    ...diffCodeView,
+    getToolbarMount: undefined,
+}
+
 const singleFileCodeView: CodeViewWithOutSelector = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createCodeViewToolbarMount,
@@ -95,7 +100,15 @@ const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector => {
     const { filePath } = parseURL()
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
-    return isSingleCodeFile ? singleFileCodeView : diffCodeView
+    if (isSingleCodeFile) {
+        return singleFileCodeView
+    }
+
+    if (elem.closest('.discussion-item-body')) {
+        return diffConversationCodeView
+    }
+
+    return diffCodeView
 }
 
 const codeViewResolver: CodeViewResolver = {
@@ -113,11 +126,24 @@ function checkIsGithub(): boolean {
     return isGithub || isGitHubEnterprise
 }
 
+const getOverlayMount = () => {
+    const container = document.querySelector('#js-repo-pjax-container')
+    if (!container) {
+        throw new Error('unable to find repo pjax container')
+    }
+
+    const mount = document.createElement('div')
+    container.appendChild(mount)
+
+    return mount
+}
+
 export const githubCodeHost: CodeHost = {
     name: 'github',
     codeViews: [searchResultCodeView, commentSnippetCodeView],
     codeViewResolver,
     check: checkIsGithub,
+    getOverlayMount,
     getCommandPaletteMount,
     getGlobalDebugMount,
     buildJumpURLLocation: (def: JumpURLLocation) => {
