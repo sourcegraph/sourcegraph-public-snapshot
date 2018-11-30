@@ -1,5 +1,6 @@
 import assert from 'assert'
-import { EMPTY_ENVIRONMENT, Environment } from '../environment'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
+import { EMPTY_MODEL, Model } from '../model'
 import { applyContextUpdate, Context, getComputedContextProperty } from './context'
 
 describe('applyContextUpdate', () => {
@@ -14,25 +15,23 @@ describe('applyContextUpdate', () => {
 
 describe('getComputedContextProperty', () => {
     it('provides config', () => {
-        const env: Environment = {
-            ...EMPTY_ENVIRONMENT,
-            configuration: {
-                final: {
-                    a: 1,
-                    'a.b': 2,
-                    'c.d': 3,
-                },
+        const settings: SettingsCascadeOrError = {
+            final: {
+                a: 1,
+                'a.b': 2,
+                'c.d': 3,
             },
+            subjects: [],
         }
-        assert.strictEqual(getComputedContextProperty(env, 'config.a'), 1)
-        assert.strictEqual(getComputedContextProperty(env, 'config.a.b'), 2)
-        assert.strictEqual(getComputedContextProperty(env, 'config.c.d'), 3)
-        assert.strictEqual(getComputedContextProperty(env, 'config.x'), null)
+        assert.strictEqual(getComputedContextProperty(EMPTY_MODEL, settings, {}, 'config.a'), 1)
+        assert.strictEqual(getComputedContextProperty(EMPTY_MODEL, settings, {}, 'config.a.b'), 2)
+        assert.strictEqual(getComputedContextProperty(EMPTY_MODEL, settings, {}, 'config.c.d'), 3)
+        assert.strictEqual(getComputedContextProperty(EMPTY_MODEL, settings, {}, 'config.x'), null)
     })
 
-    describe('environment with component', () => {
-        const env: Environment = {
-            ...EMPTY_ENVIRONMENT,
+    describe('model with component', () => {
+        const model: Model = {
+            ...EMPTY_MODEL,
             visibleTextDocuments: [
                 {
                     uri: 'file:///a/b.c',
@@ -44,35 +43,60 @@ describe('getComputedContextProperty', () => {
 
         describe('resource', () => {
             it('provides resource.uri', () =>
-                assert.strictEqual(getComputedContextProperty(env, 'resource.uri'), 'file:///a/b.c'))
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.uri'),
+                    'file:///a/b.c'
+                ))
             it('provides resource.basename', () =>
-                assert.strictEqual(getComputedContextProperty(env, 'resource.basename'), 'b.c'))
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.basename'),
+                    'b.c'
+                ))
             it('provides resource.dirname', () =>
-                assert.strictEqual(getComputedContextProperty(env, 'resource.dirname'), 'file:///a'))
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.dirname'),
+                    'file:///a'
+                ))
             it('provides resource.extname', () =>
-                assert.strictEqual(getComputedContextProperty(env, 'resource.extname'), '.c'))
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.extname'),
+                    '.c'
+                ))
             it('provides resource.language', () =>
-                assert.strictEqual(getComputedContextProperty(env, 'resource.language'), 'l'))
-            it('provides resource.textContent', () =>
-                assert.strictEqual(getComputedContextProperty(env, 'resource.textContent'), 't'))
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.language'),
+                    'l'
+                ))
             it('provides resource.type', () =>
-                assert.strictEqual(getComputedContextProperty(env, 'resource.type'), 'textDocument'))
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.type'),
+                    'textDocument'
+                ))
 
-            it('returns undefined when the environment has no component', () =>
-                assert.strictEqual(getComputedContextProperty(EMPTY_ENVIRONMENT, 'resource.uri'), undefined))
+            it('returns undefined when the model has no component', () =>
+                assert.strictEqual(
+                    getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'resource.uri'),
+                    undefined
+                ))
         })
 
         describe('component', () => {
             it('provides component.type', () =>
-                assert.strictEqual(getComputedContextProperty(env, 'component.type'), 'textEditor'))
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.type'),
+                    'textEditor'
+                ))
 
-            it('returns undefined when the environment has no component', () =>
-                assert.strictEqual(getComputedContextProperty(EMPTY_ENVIRONMENT, 'component.type'), undefined))
+            it('returns undefined when the model has no component', () =>
+                assert.strictEqual(
+                    getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'component.type'),
+                    undefined
+                ))
         })
     })
 
-    it('falls back to the environment context', () => {
-        assert.strictEqual(getComputedContextProperty({ ...EMPTY_ENVIRONMENT, context: { x: 1 } }, 'x'), 1)
-        assert.strictEqual(getComputedContextProperty({ ...EMPTY_ENVIRONMENT, context: {} }, 'y'), undefined)
+    it('falls back to the context entries', () => {
+        assert.strictEqual(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, { x: 1 }, 'x'), 1)
+        assert.strictEqual(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'y'), undefined)
     })
 })

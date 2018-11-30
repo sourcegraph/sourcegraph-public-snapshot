@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { TextDocumentItem } from '../../../../shared/src/api/client/types/textDocument'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { Connection, FilteredConnection } from '../../components/FilteredConnection'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { FileDiffNodeProps } from './FileDiffNode'
 
 class FilteredFileDiffConnection extends FilteredConnection<
@@ -23,7 +23,7 @@ class FilteredFileDiffConnection extends FilteredConnection<
     >
 > {}
 
-type Props = FilteredFileDiffConnection['props'] & ExtensionsDocumentsProps
+type Props = FilteredFileDiffConnection['props'] & ExtensionsControllerProps
 
 /**
  * Displays a list of file diffs.
@@ -60,6 +60,9 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                 }
             }
         }
-        this.props.extensionsOnVisibleTextDocumentsChange(visibleTextDocuments)
+        this.props.extensionsController.services.model.model.next({
+            ...this.props.extensionsController.services.model.model.value,
+            visibleTextDocuments,
+        })
     }
 }

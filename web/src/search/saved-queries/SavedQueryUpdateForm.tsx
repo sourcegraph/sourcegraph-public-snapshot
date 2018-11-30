@@ -1,10 +1,9 @@
 import * as React from 'react'
 import { Observable } from 'rxjs'
-import { mapTo, mergeMap, tap } from 'rxjs/operators'
+import { mapTo, mergeMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { getLastIDForSubject } from '../../settings/configuration'
-import { settingsRefreshes } from '../../user/settings/backend'
 import { createSavedQuery, deleteSavedQuery, updateSavedQuery } from '../backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
@@ -57,7 +56,6 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
                     true
                 )
             ),
-            tap(() => settingsRefreshes.next()),
             mapTo(void 0)
         )
     }
@@ -72,8 +70,5 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
         fields.showOnHomepage,
         fields.notify,
         fields.notifySlack
-    ).pipe(
-        tap(() => settingsRefreshes.next()),
-        mapTo(void 0)
-    )
+    ).pipe(mapTo(void 0))
 }

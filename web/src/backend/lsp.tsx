@@ -3,8 +3,8 @@ import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Location } from '../../../shared/src/api/protocol/plainTypes'
 import { normalizeAjaxError } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
-import { memoizeObservable } from '../util/memoize'
 import { HoverMerged, ModeSpec } from './features'
 
 /**

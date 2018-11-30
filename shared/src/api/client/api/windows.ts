@@ -2,14 +2,14 @@ import { Observable, Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtWindowsAPI } from '../../extension/api/windows'
+import { Connection } from '../../protocol/jsonrpc2/connection'
 import {
     MessageActionItem,
     MessageType,
     ShowInputParams,
     ShowMessageParams,
     ShowMessageRequestParams,
-} from '../../protocol'
-import { Connection } from '../../protocol/jsonrpc2/connection'
+} from '../services/notifications'
 import { TextDocumentItem } from '../types/textDocument'
 import { SubscriptionMap } from './common'
 
@@ -28,7 +28,7 @@ export class ClientWindows implements ClientWindowsAPI {
 
     constructor(
         connection: Connection,
-        environmentTextDocuments: Observable<TextDocumentItem[] | null>,
+        modelTextDocuments: Observable<TextDocumentItem[] | null>,
         /** Called when the client receives a window/showMessage notification. */
         private showMessage: (params: ShowMessageParams) => void,
         /**
@@ -45,7 +45,7 @@ export class ClientWindows implements ClientWindowsAPI {
         this.proxy = createProxyAndHandleRequests('windows', connection, this)
 
         this.subscriptions.add(
-            environmentTextDocuments.subscribe(textDocuments => {
+            modelTextDocuments.subscribe(textDocuments => {
                 this.proxy.$acceptWindowData(
                     textDocuments ? textDocuments.map(textDocument => ({ visibleTextDocument: textDocument.uri })) : []
                 )

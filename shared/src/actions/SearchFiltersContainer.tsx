@@ -1,13 +1,13 @@
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { TextDocumentItem } from '../api/client/types/textDocument'
+import { ContributionScope } from '../api/client/context/context'
 import { SearchFilters } from '../api/protocol'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { ContributionsState } from './actions'
 
 export interface SearchFiltersProps extends ExtensionsControllerProps {
-    scope?: TextDocumentItem
+    scope?: ContributionScope
 }
 interface SearchFiltersContainerProps extends SearchFiltersProps {
     /**
@@ -31,7 +31,7 @@ export class SearchFiltersContainer extends React.PureComponent<
 > {
     public state: ContributionsState = {}
 
-    private scopeChanges = new Subject<TextDocumentItem | undefined>()
+    private scopeChanges = new Subject<ContributionScope | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {

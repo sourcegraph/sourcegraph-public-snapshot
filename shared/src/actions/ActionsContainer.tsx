@@ -2,7 +2,7 @@ import H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { TextDocumentItem } from '../api/client/types/textDocument'
+import { ContributionScope } from '../api/client/context/context'
 import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -12,7 +12,7 @@ import { ContributionsState } from './actions'
 
 export interface ActionsProps extends ExtensionsControllerProps, PlatformContextProps {
     menu: ContributableMenu
-    scope?: TextDocumentItem
+    scope?: ContributionScope
     actionItemClass?: string
     listClass?: string
     location: H.Location
@@ -37,7 +37,7 @@ interface ActionsContainerState extends ContributionsState {}
 export class ActionsContainer extends React.PureComponent<ActionsContainerProps, ActionsContainerState> {
     public state: ContributionsState = {}
 
-    private scopeChanges = new Subject<TextDocumentItem | undefined>()
+    private scopeChanges = new Subject<ContributionScope | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
