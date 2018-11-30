@@ -29,45 +29,42 @@ func init() {
 		mu  sync.Mutex
 		cur = map[schema.GitLabAuthProvider]auth.Provider{} // tracks current mapping of valid config to auth.Provider
 	)
+	auth.ConfWatch(func() {
+		mu.Lock()
+		defer mu.Unlock()
 
-	go func() {
-		conf.Watch(func() {
-			mu.Lock()
-			defer mu.Unlock()
-
-			if !conf.Get().ExperimentalFeatures.GitlabAuth {
-				new := map[schema.GitLabAuthProvider]auth.Provider{}
-				updates := make(map[auth.Provider]bool)
-				for c, p := range cur {
-					if _, ok := new[c]; !ok {
-						updates[p] = false
-					}
-				}
-				auth.UpdateProviders(updates)
-				cur = new
-				ffIsEnabled = false
-				return
-			}
-
-			log15.Info("Reloading changed GitLab OAuth authentication provider configuration.")
-
-			new, _ := parseConfig(conf.Get())
+		if !conf.Get().ExperimentalFeatures.GitlabAuth {
+			new := map[schema.GitLabAuthProvider]auth.Provider{}
 			updates := make(map[auth.Provider]bool)
 			for c, p := range cur {
 				if _, ok := new[c]; !ok {
 					updates[p] = false
 				}
 			}
-			for c, p := range new {
-				if _, ok := cur[c]; !ok {
-					updates[p] = true
-				}
-			}
 			auth.UpdateProviders(updates)
 			cur = new
-			ffIsEnabled = true
-		})
-	}()
+			ffIsEnabled = false
+			return
+		}
+
+		log15.Info("Reloading changed GitLab OAuth authentication provider configuration.")
+
+		new, _ := parseConfig(conf.Get())
+		updates := make(map[auth.Provider]bool)
+		for c, p := range cur {
+			if _, ok := new[c]; !ok {
+				updates[p] = false
+			}
+		}
+		for c, p := range new {
+			if _, ok := cur[c]; !ok {
+				updates[p] = true
+			}
+		}
+		auth.UpdateProviders(updates)
+		cur = new
+		ffIsEnabled = true
+	})
 	conf.ContributeValidator(func(cfg schema.SiteConfiguration) (problems []string) {
 		_, problems = parseConfig(&cfg)
 		return problems

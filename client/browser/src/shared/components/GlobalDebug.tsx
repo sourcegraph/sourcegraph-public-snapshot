@@ -2,10 +2,11 @@ import * as H from 'history'
 import * as React from 'react'
 import { Controller as ClientController } from '../../../../../shared/src/extensions/controller'
 import { ExtensionStatusPopover } from '../../../../../shared/src/extensions/ExtensionStatus'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { sourcegraphUrl } from '../util/context'
 import { ShortcutProvider } from './ShortcutProvider'
 
-interface Props {
+interface Props extends PlatformContextProps {
     location: H.Location
     extensionsController: ClientController
 }
@@ -31,6 +32,7 @@ export const GlobalDebug: React.FunctionComponent<Props> = props =>
                             location={props.location}
                             extensionsController={props.extensionsController}
                             link={ExtensionLink}
+                            platformContext={props.platformContext}
                         />
                     </ShortcutProvider>
                 </li>

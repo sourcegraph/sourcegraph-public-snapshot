@@ -11,14 +11,13 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { ModeSpec } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
-import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -89,7 +88,6 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     location: H.Location
     history: H.History
@@ -160,8 +158,13 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 .subscribe(blobOrError => this.setState({ blobOrError }), err => console.error(err))
         )
 
-        // Clear the Sourcegraph extensions environment's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.extensionsOnVisibleTextDocumentsChange(null))
+        // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
+        this.subscriptions.add(() =>
+            this.props.extensionsController.services.model.model.next({
+                ...this.props.extensionsController.services.model.model.value,
+                visibleTextDocuments: null,
+            })
+        )
 
         this.propsUpdates.next(this.props)
     }
@@ -285,8 +288,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             settingsCascade={this.props.settingsCascade}
                             platformContext={this.props.platformContext}
                             extensionsController={this.props.extensionsController}
-                            extensionsOnRootsChange={this.props.extensionsOnRootsChange}
-                            extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                             wrapCode={this.state.wrapCode}
                             renderMode={renderMode}
                             location={this.props.location}

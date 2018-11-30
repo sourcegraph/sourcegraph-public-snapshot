@@ -21,8 +21,5 @@ export interface ExtensionManifest {
     }
     icon?: string
     activationEvents: string[]
-    args?: {
-        [k: string]: any
-    }
     contributes?: Contributions & { configuration?: { [key: string]: any } }
 }

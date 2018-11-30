@@ -645,10 +645,14 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
-    # Looks up a repository by name.
+    # Looks up a repository by either name or cloneURL.
     repository(
-        # The name, for example "github.com/gorilla/mux".
+        # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
+        # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
+        # by checking if there exists a code host configuration that matches the clone URL.
+        # Will not actually check the code host to see if the repository actually exists.
+        cloneURL: String
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
@@ -1052,7 +1056,7 @@ enum ExternalServiceKind {
 }
 
 # A configured external service.
-type ExternalService {
+type ExternalService implements Node {
     # The external service's unique ID.
     id: ID!
     # The kind of external service.
@@ -3487,6 +3491,8 @@ type PlanTier {
     unitAmount: Int!
     # The maximum number of users that this tier applies to.
     upTo: Int!
+    # The base fee that this tier applies to.
+    flatAmount: Int!
 }
 
 # The information about a product subscription that determines its price.

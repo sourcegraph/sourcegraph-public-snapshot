@@ -40,10 +40,6 @@ export class ExtensionToggle extends React.PureComponent<Props> {
                         if (this.props.settingsCascade.subjects === null) {
                             return EMPTY
                         }
-                        if (isErrorLike(this.props.settingsCascade.subjects)) {
-                            // TODO: Show error.
-                            return EMPTY
-                        }
 
                         // Only operate on the highest precedence settings, for simplicity.
                         const subjects = this.props.settingsCascade.subjects
@@ -64,8 +60,8 @@ export class ExtensionToggle extends React.PureComponent<Props> {
 
                         return from(
                             this.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
-                                extensionID: this.props.extension.id,
-                                enabled,
+                                path: ['extensions', this.props.extension.id],
+                                value: enabled,
                             })
                         )
                     })
@@ -128,7 +124,7 @@ function confirmAddExtension(
 
 /** Converts a SettingsCascadeOrError to a SettingsCascade, returning the first error it finds. */
 function extractErrors(c: SettingsCascadeOrError): SettingsCascade | ErrorLike {
-    if (c.subjects === null || isErrorLike(c.subjects)) {
+    if (c.subjects === null) {
         return new Error('Subjects was ' + c.subjects)
     } else if (c.final === null || isErrorLike(c.final)) {
         return new Error('Merged was ' + c.final)

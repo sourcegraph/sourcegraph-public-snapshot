@@ -27,7 +27,7 @@ declare module '*.json' {
  *
  * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
  */
-declare module 'worker-loader*' {
+declare module 'worker-loader?inline!*' {
     class WebpackWorker extends Worker {
         constructor()
     }

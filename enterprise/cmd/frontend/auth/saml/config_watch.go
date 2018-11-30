@@ -30,7 +30,7 @@ func init() {
 		cur []*schema.SAMLAuthProvider
 		reg = map[schema.SAMLAuthProvider]auth.Provider{}
 	)
-	conf.Watch(func() {
+	auth.ConfWatch(func() {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -64,8 +64,8 @@ func init() {
 		}
 		auth.UpdateProviders(updates)
 		cur = new
+		init = false
 	})
-	init = false
 }
 
 func diffProviderConfig(old, new []*schema.SAMLAuthProvider) map[schema.SAMLAuthProvider]bool {

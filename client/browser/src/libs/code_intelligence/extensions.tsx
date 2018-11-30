@@ -1,67 +1,36 @@
 import * as React from 'react'
 import { render } from 'react-dom'
-import { combineLatest, from, Observable, Unsubscribable } from 'rxjs'
-import { filter, take } from 'rxjs/operators'
+import { Unsubscribable } from 'rxjs'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
-import { Controller as ClientController, createController } from '../../../../../shared/src/extensions/controller'
 import { Notifications } from '../../../../../shared/src/notifications/Notifications'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'
-import { Environment } from '../../../../../shared/src/api/client/environment'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
 } from '../../../../../shared/src/api/client/services/decoration'
-import { viewerConfiguredExtensions } from '../../../../../shared/src/extensions/helpers'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { isSettingsValid } from '../../../../../shared/src/settings/settings'
+import {
+    createController as createExtensionsController,
+    ExtensionsControllerProps,
+} from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { getGlobalDebugMount } from '../github/extensions'
 import { MountGetter } from './code_intelligence'
 
-export interface Controllers {
-    platformContext: PlatformContext
-    extensionsController: ClientController
-}
-
-function createControllers(environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>): Controllers {
-    const platformContext = createPlatformContext()
-    const extensionsController = createController(platformContext)
-
-    combineLatest(
-        viewerConfiguredExtensions(platformContext),
-        from(platformContext.settingsCascade).pipe(filter(isSettingsValid)),
-        environment
-    ).subscribe(([extensions, configuration, { roots, visibleTextDocuments }]) => {
-        from(extensionsController.environment)
-            .pipe(take(1))
-            .subscribe(({ context }) => {
-                extensionsController.setEnvironment({
-                    roots,
-                    extensions,
-                    configuration,
-                    visibleTextDocuments,
-                    context,
-                })
-            })
-    })
-
-    return { platformContext, extensionsController }
-}
-
 /**
  * Initializes extensions for a page. It creates the controllers and injects the command palette.
  */
 export function initializeExtensions(
-    getCommandPaletteMount: MountGetter,
-    environment: Observable<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
-): Controllers {
-    const { platformContext, extensionsController } = createControllers(environment)
+    getCommandPaletteMount: MountGetter
+): PlatformContextProps & ExtensionsControllerProps {
+    const platformContext = createPlatformContext()
+    const extensionsController = createExtensionsController(platformContext)
     const history = H.createBrowserHistory()
 
     render(
@@ -78,7 +47,11 @@ export function initializeExtensions(
     )
 
     render(
-        <GlobalDebug extensionsController={extensionsController} location={history.location} />,
+        <GlobalDebug
+            extensionsController={extensionsController}
+            location={history.location}
+            platformContext={platformContext}
+        />,
         getGlobalDebugMount()
     )
 

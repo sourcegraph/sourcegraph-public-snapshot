@@ -90,3 +90,7 @@ export function isPromise(value: any): value is Promise<any> {
 export function isSubscribable(value: any): value is Subscribable<any> {
     return typeof value.subscribe === 'function'
 }
+
+export interface PromiseCallback<T> {
+    resolve: (p: T | Promise<T>) => void
+}

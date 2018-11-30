@@ -30,6 +30,7 @@ for COMPONENT in "${COMPONENTS[@]}"; do
             *"lsp-proxy"*) run 2352 "$COMPONENT";;
             *"xlang-go"*) run 2353 "$COMPONENT";;
             *"frontend"*) run 2354 "$COMPONENT";;
+            *"management-console"*) run 2355 "$COMPONENT";;
         esac
     fi
 done

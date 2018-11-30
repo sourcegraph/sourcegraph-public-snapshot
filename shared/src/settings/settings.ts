@@ -78,7 +78,7 @@ export interface SettingsCascadeOrError<S extends Settings = Settings> {
      *
      * @see SettingsCascade#subjects
      */
-    subjects: ConfiguredSubjectOrError<S>[] | ErrorLike | null
+    subjects: ConfiguredSubjectOrError<S>[] | null
 
     /**
      * The final settings (merged in order of precedence from the settings for each subject in the cascade), an
@@ -89,6 +89,8 @@ export interface SettingsCascadeOrError<S extends Settings = Settings> {
      */
     final: S | ErrorLike | null
 }
+
+export const EMPTY_SETTINGS_CASCADE: SettingsCascade = { final: {}, subjects: [] }
 
 /**
  * A subject and its settings.
@@ -221,8 +223,7 @@ export function isSettingsValid<S extends Settings>(
 ): settingsCascade is SettingsCascade<S> {
     return (
         settingsCascade.subjects !== null &&
-        !isErrorLike(settingsCascade.subjects) &&
-        settingsCascade.subjects.every(subject => !isErrorLike(subject.settings)) &&
+        !settingsCascade.subjects.some(subject => isErrorLike(subject.settings)) &&
         settingsCascade.final !== null &&
         !isErrorLike(settingsCascade.final)
     )

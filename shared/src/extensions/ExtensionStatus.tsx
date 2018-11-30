@@ -3,28 +3,26 @@ import * as H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { ExtensionConnection } from '../api/client/controller'
-import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
+import { ExecutableExtension } from '../api/client/services/extensionsService'
 import { PopoverButton } from '../components/PopoverButton'
 import { Toggle } from '../components/Toggle'
 import { ExtensionsControllerProps } from '../extensions/controller'
+import { PlatformContextProps } from '../platform/context'
 
-interface Props extends ExtensionsControllerProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     link: React.ComponentType<{ id: string }>
 }
 
 interface State {
-    /** The extension clients, or undefined while loading. */
-    extensions?: ExtensionConnection[]
+    /** The extension IDs of extensions that are active, or undefined while loading. */
+    extensions?: Pick<ExecutableExtension, 'id'>[]
 
     /** Whether to log traces of communication with extensions. */
-    trace?: boolean
+    traceExtensionHostCommunication?: boolean
 }
 
 export class ExtensionStatus extends React.PureComponent<Props, State> {
-    public static TRACE_STORAGE_KEY = 'traceExtensions'
-
-    public state: State = { trace: localStorage.getItem(ExtensionStatus.TRACE_STORAGE_KEY) !== null }
+    public state: State = {}
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -34,14 +32,26 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
             map(({ extensionsController }) => extensionsController),
             distinctUntilChanged()
         )
-
         this.subscriptions.add(
             extensionsController
                 .pipe(
-                    switchMap(extensionsController => extensionsController.clientEntries),
+                    switchMap(extensionsController => extensionsController.services.extensions.activeExtensions),
                     map(extensions => ({ extensions }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+        )
+
+        const platformContext = this.componentUpdates.pipe(
+            map(({ platformContext }) => platformContext),
+            distinctUntilChanged()
+        )
+        this.subscriptions.add(
+            platformContext
+                .pipe(
+                    switchMap(({ traceExtensionHostCommunication }) => traceExtensionHostCommunication),
+                    map(traceExtensionHostCommunication => ({ traceExtensionHostCommunication }))
+                )
+                .subscribe(stateUpdate => this.setState(stateUpdate))
         )
 
         this.componentUpdates.next(this.props)
@@ -62,12 +72,12 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                 {this.state.extensions ? (
                     this.state.extensions.length > 0 ? (
                         <div className="list-group list-group-flush">
-                            {this.state.extensions.map(({ key }, i) => (
+                            {this.state.extensions.map(({ id }, i) => (
                                 <div
                                     key={i}
                                     className="list-group-item py-2 d-flex align-items-center justify-content-between"
                                 >
-                                    <this.props.link id={key.id} />
+                                    <this.props.link id={id} />
                                 </div>
                             ))}
                         </div>
@@ -86,7 +96,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     <Toggle
                         id="extension-status__trace"
                         onToggle={this.onToggleTrace}
-                        value={this.state.trace}
+                        value={this.state.traceExtensionHostCommunication}
                         title="Toggle extension trace logging to devtools console"
                     />
                 </div>
@@ -95,25 +105,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
     }
 
     private onToggleTrace = () => {
-        this.setState(
-            prevState => ({ trace: !prevState.trace }),
-            () => {
-                if (this.state.trace) {
-                    localStorage.setItem(ExtensionStatus.TRACE_STORAGE_KEY, 'true')
-                } else {
-                    localStorage.removeItem(ExtensionStatus.TRACE_STORAGE_KEY)
-                }
-
-                // Update trace setting for all existing connections.
-                if (this.state.extensions) {
-                    for (const e of this.state.extensions) {
-                        e.connection
-                            .then(c => c.trace(this.state.trace ? new BrowserConsoleTracer(e.key.id) : null))
-                            .catch(err => console.error(err))
-                    }
-                }
-            }
-        )
+        this.props.platformContext.traceExtensionHostCommunication.next(!this.state.traceExtensionHostCommunication)
     }
 }
 

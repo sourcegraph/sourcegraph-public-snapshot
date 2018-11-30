@@ -46,6 +46,8 @@ export const tsRule: webpack.RuleSetRule = {
                     module: 'esnext',
                     noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
                 },
+                experimentalWatchApi: true,
+                happyPackMode: true, // Typechecking is done by a separate tsc process, disable here for performance
                 transpileOnly: process.env.DISABLE_TYPECHECKING === 'true',
             },
         },

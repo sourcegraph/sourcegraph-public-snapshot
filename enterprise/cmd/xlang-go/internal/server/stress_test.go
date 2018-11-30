@@ -16,9 +16,8 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	gobuildserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 )
 
 // BenchmarkStress benchmarks performing "textDocument/definition",
@@ -33,15 +32,10 @@ func BenchmarkStress(b *testing.B) {
 		b.Skip("skip long integration test")
 	}
 
-	defer func(b bool) { proxy.LogServerStats = b }(proxy.LogServerStats)
-	defer func(b bool) { proxy.LogTrackedErrors = b }(proxy.LogTrackedErrors)
-	proxy.LogServerStats = false
-	proxy.LogTrackedErrors = false
-
 	cleanup := useGithubForVFS()
 	defer cleanup()
 
-	tests := map[string]struct { // map key is rootURI
+	tests := map[lsp.DocumentURI]struct { // map key is rootURI
 		mode    string
 		fileExt string
 	}{
@@ -59,14 +53,14 @@ func BenchmarkStress(b *testing.B) {
 		},
 	}
 	for rootURI, test := range tests {
-		root, err := gituri.Parse(rootURI)
+		root, err := gituri.Parse(string(rootURI))
 		if err != nil {
 			b.Fatal(err)
 		}
 		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
 		b.Run(label, func(b *testing.B) {
-			fs, err := proxy.NewRemoteRepoVFS(context.Background(), root.CloneURL(), api.CommitID(root.Rev()))
+			fs, err := gobuildserver.RemoteFS(context.Background(), lspext.InitializeParams{OriginalRootURI: rootURI})
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -117,9 +111,6 @@ func BenchmarkStress(b *testing.B) {
 			}
 
 			ctx := context.Background()
-			proxy := proxy.New()
-			addr, done := startProxy(b, proxy)
-			defer done()
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -127,7 +118,7 @@ func BenchmarkStress(b *testing.B) {
 				// Don't measure the time it takes to dial and
 				// initialize, because this is amortized over each
 				// operation we do.
-				c := dialProxy(b, addr, nil)
+				c, done := connectionToNewBuildServer(string(rootURI), b)
 				if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 					InitializeParams:      lsp.InitializeParams{RootURI: lsp.DocumentURI(root.String())},
 					InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
@@ -156,7 +147,7 @@ func BenchmarkStress(b *testing.B) {
 				// iterations will test the performance when it's
 				// already cached, which is not what we want.
 				b.StopTimer()
-				proxy.ShutdownServers(ctx)
+				done()
 				b.StartTimer()
 			}
 			b.StopTimer() // don't include server teardown

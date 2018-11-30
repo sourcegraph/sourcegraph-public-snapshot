@@ -22,7 +22,11 @@ type Searcher struct {
 }
 
 func (s *Searcher) Search(ctx context.Context, args *SearchArgs, reply *SearchReply) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	timeout := 10 * time.Second
+	if args.Opts.MaxWallTime > 0 {
+		timeout = args.Opts.MaxWallTime + time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	r, err := s.Searcher.Search(ctx, args.Q, args.Opts)
 	if err != nil {

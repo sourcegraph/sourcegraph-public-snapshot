@@ -23,7 +23,6 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { isDefined, propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
@@ -40,7 +39,6 @@ interface BlobProps
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     /** The raw content of the blob. */
     content: string
@@ -287,16 +285,19 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        // Update the Sourcegraph extensions environment to reflect the current file.
+        // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
-                this.props.extensionsOnVisibleTextDocumentsChange([
-                    {
-                        uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
-                        languageId: model.mode,
-                        text: model.content,
-                    },
-                ])
+                this.props.extensionsController.services.model.model.next({
+                    ...this.props.extensionsController.services.model.model.value,
+                    visibleTextDocuments: [
+                        {
+                            uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
+                            languageId: model.mode,
+                            text: model.content,
+                        },
+                    ],
+                })
             })
         )
 

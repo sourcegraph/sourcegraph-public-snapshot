@@ -13,12 +13,12 @@ export class ClientDocuments {
 
     constructor(
         connection: Connection,
-        environmentTextDocuments: Observable<Pick<TextDocument, 'uri' | 'languageId' | 'text'>[] | null>
+        modelTextDocuments: Observable<Pick<TextDocument, 'uri' | 'languageId' | 'text'>[] | null>
     ) {
         this.proxy = createProxyAndHandleRequests('documents', connection, this)
 
         this.subscriptions.add(
-            environmentTextDocuments.subscribe(docs => {
+            modelTextDocuments.subscribe(docs => {
                 this.proxy.$acceptDocumentData(docs || [])
             })
         )

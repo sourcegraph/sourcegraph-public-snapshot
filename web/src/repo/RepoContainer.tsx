@@ -13,7 +13,6 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
-import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
@@ -38,7 +37,6 @@ export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
@@ -152,7 +150,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             )
         )
 
-        // Update the Sourcegraph extensions environment to reflect the current workspace root.
+        // Update the Sourcegraph extensions model to reflect the current workspace root.
         this.subscriptions.add(
             this.revResolves
                 .pipe(
@@ -168,13 +166,21 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                 },
                             ]
                         }
-                        this.props.extensionsOnRootsChange(roots)
+                        this.props.extensionsController.services.model.model.next({
+                            ...this.props.extensionsController.services.model.model.value,
+                            roots,
+                        })
                     })
                 )
                 .subscribe()
         )
-        // Clear the Sourcegraph extensions environment's roots when navigating away.
-        this.subscriptions.add(() => this.props.extensionsOnRootsChange(null))
+        // Clear the Sourcegraph extensions model's roots when navigating away.
+        this.subscriptions.add(() =>
+            this.props.extensionsController.services.model.model.next({
+                ...this.props.extensionsController.services.model.model.value,
+                roots: null,
+            })
+        )
     }
 
     public componentWillReceiveProps(props: RepoContainerProps): void {
@@ -225,8 +231,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repoMatchURL,
             settingsCascade: this.props.settingsCascade,
             platformContext: this.props.platformContext,
-            extensionsOnRootsChange: this.props.extensionsOnRootsChange,
-            extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,
             ...this.state.repoHeaderContributionsLifecycleProps,
         }

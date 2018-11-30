@@ -1,4 +1,4 @@
-import { MessageType } from '../api/protocol'
+import { MessageType } from '../api/client/services/notifications'
 import { ErrorLike } from '../util/errors'
 
 /**

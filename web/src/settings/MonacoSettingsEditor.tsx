@@ -5,7 +5,6 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../schema/settings.schema.json'
-import contributionSchema from '../../../shared/src/api/protocol/contribution.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -19,9 +18,14 @@ export interface Props {
     height?: number
 
     /**
-     * The JSON Schema that describes the document.
+     * The id of the JSON schema for the document.
      */
-    jsonSchema: { $id: string }
+    jsonSchemaId: string
+
+    /**
+     * Extra schemas that are transitively referenced by jsonSchemaId.
+     */
+    extraSchemas?: { $id: string }[]
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -139,13 +143,20 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         }
 
+        const extraSchemas = (this.props.extraSchemas || []).map(schema => ({
+            uri: schema.$id,
+            schema,
+        }))
+
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
             validate: true,
             allowComments: true,
             schemas: [
                 {
-                    uri: this.props.jsonSchema.$id,
-                    schema: this.props.jsonSchema,
+                    uri: 'root#', // doesn't matter as long as it doesn't collide
+                    schema: {
+                        $ref: this.props.jsonSchemaId,
+                    },
                     fileMatch: ['*'],
                 },
 
@@ -158,18 +169,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     uri: 'settings.schema.json#',
                     schema: settingsSchema,
                 },
-                {
-                    // This is the literal relative URI used in extension.schema.json to refer to the contributions
-                    // JSON Schema.
-                    uri: './contribution.schema.json',
-                    schema: contributionSchema,
-                },
-                {
-                    // This is the absolute URI of the contributions JSON Schema used in extension.schema.json.
-                    uri: 'https://sourcegraph.com/v1/contribution.schema.json#',
-                    schema: contributionSchema,
-                },
-            ],
+            ].concat(extraSchemas),
         })
 
         monaco.editor.defineTheme('sourcegraph-dark', {

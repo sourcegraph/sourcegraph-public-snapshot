@@ -9,17 +9,18 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 ## Topics
 
 - [Set up your development environment](development_environment.md)
-- [Creating a Sourcegraph extension](creating.md)
-- [Publishing a Sourcegraph extension](publishing.md)
+- [Creating an extension](creating.md)
+- [Extension manifest (`package.json`)](manifest.md)
+- [Publishing an extension](publishing.md)
 - [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html)
-- [Debugging a Sourcegraph extension](debugging.md)
-- [Sourcegraph extension activation](activation.md)
+- [Debugging an extension](debugging.md)
+- [Activation](activation.md)
+- [Builtin commands](builtin_commands.md)
 - [Sample extensions (`sourcegraph-extension-samples`)](https://github.com/sourcegraph/sourcegraph-extension-samples)
 - [Cookbook (sample code)](cookbook.md)
 
 ## Tutorials
 
 - [Hello world](tutorials/hello-world.md)
-
 
 The [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) is also a helpful source of inspiration and working code samples from existing extensions.

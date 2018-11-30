@@ -136,6 +136,7 @@ function queryProductPlans(): Observable<GQL.IProductPlan[]> {
                         planTiers {
                             unitAmount
                             upTo
+                            flatAmount
                         }
                     }
                 }
