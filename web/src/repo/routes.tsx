@@ -88,10 +88,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     }
                                     settingsCascade={context.settingsCascade}
                                     platformContext={context.platformContext}
-                                    extensionsOnRootsChange={context.extensionsOnRootsChange}
-                                    extensionsOnVisibleTextDocumentsChange={
-                                        context.extensionsOnVisibleTextDocumentsChange
-                                    }
                                     extensionsController={context.extensionsController}
                                     location={context.location}
                                     history={context.history}

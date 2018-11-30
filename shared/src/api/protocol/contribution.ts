@@ -1,6 +1,7 @@
-import { KeyPath } from './configuration'
+import { KeyPath } from '../client/services/settings'
 
-// NOTE: You must manually keep this file in sync with contribution.schema.json.
+// NOTE: You must manually keep this file in sync with extension.schema.json#/properties/contributes (and possibly
+// extension_schema.go, if your changes are relevant to the subset of this schema used by our Go code).
 //
 // The available tools for automatically generating the JSON Schema from this file add more complexity than it's
 // worth.

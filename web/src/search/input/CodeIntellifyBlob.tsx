@@ -19,11 +19,10 @@ import { getModeFromPath } from '../../../../shared/src/languages'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { fetchBlob } from '../../repo/blob/BlobPage'
 import { isDefined, propertyIsDefined } from '../../util/types'
 
-interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
+interface Props extends ExtensionsControllerProps {
     history: H.History
     className: string
     startLine: number
@@ -208,13 +207,16 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         this.componentUpdates.next()
 
         this.subscriptions.add(
-            this.props.extensionsOnVisibleTextDocumentsChange([
-                {
-                    uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
-                    languageId: 'go',
-                    text: '',
-                },
-            ])
+            this.props.extensionsController.services.model.model.next({
+                ...this.props.extensionsController.services.model.model.value,
+                visibleTextDocuments: [
+                    {
+                        uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
+                        languageId: 'go',
+                        text: '',
+                    },
+                ],
+            })
         )
     }
 

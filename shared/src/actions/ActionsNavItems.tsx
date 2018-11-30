@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { TextDocumentItem } from '../api/client/types/textDocument'
+import { ContributionScope } from '../api/client/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ActionItem } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
@@ -13,7 +13,7 @@ import { ActionsProps, ActionsState } from './actions'
 export class ActionsNavItems extends React.PureComponent<ActionsProps, ActionsState> {
     public state: ActionsState = {}
 
-    private scopeChanges = new Subject<TextDocumentItem | undefined>()
+    private scopeChanges = new Subject<ContributionScope | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {

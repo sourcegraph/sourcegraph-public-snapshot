@@ -5,7 +5,6 @@ import * as GQL from '../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
-import { ExtensionsDocumentsProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -30,9 +29,7 @@ export interface LayoutProps
     extends RouteComponentProps<any>,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
-        ExtensionsDocumentsProps,
         KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>

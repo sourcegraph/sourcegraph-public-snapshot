@@ -16,12 +16,14 @@ import { toPrettyBlobURL } from '@sourcegraph/codeintellify/lib/url'
 import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
-import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { animationFrameScheduler, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
-import { Environment } from '../../../../../shared/src/api/client/environment'
+import { Model } from '../../../../../shared/src/api/client/model'
 import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
@@ -30,14 +32,14 @@ import {
     toTextDocumentIdentifier,
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { AbsoluteRepo, AbsoluteRepoFile } from '../../shared/repo'
+import { toRootURI, toURIWithPath } from '../../shared/repo'
 import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews, getContentOfCodeView } from './code_views'
-import { applyDecoration, Controllers, initializeExtensions } from './extensions'
+import { applyDecoration, initializeExtensions } from './extensions'
 
 /**
  * Defines a type of code view a given code host can have. It tells us how to
@@ -207,16 +209,13 @@ export interface FileInfo {
  * @param codeHost
  */
 function initCodeIntelligence(
-    codeHost: CodeHost,
-    environment: BehaviorSubject<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
+    codeHost: CodeHost
 ): {
     hoverifier: Hoverifier
-    controllers: Partial<Controllers>
+    controllers: Partial<ExtensionsControllerProps & PlatformContextProps>
 } {
-    const { platformContext, extensionsController }: Partial<Controllers> =
-        useExtensions && codeHost.getCommandPaletteMount
-            ? initializeExtensions(codeHost.getCommandPaletteMount, environment)
-            : {}
+    const { platformContext, extensionsController }: Partial<ExtensionsControllerProps & PlatformContextProps> =
+        useExtensions && codeHost.getCommandPaletteMount ? initializeExtensions(codeHost.getCommandPaletteMount) : {}
     const simpleProviderFns = extensionsController ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
 
     /** Emits when the go to definition button was clicked */
@@ -387,14 +386,10 @@ export interface ResolvedCodeView extends CodeViewWithOutSelector {
 }
 
 function handleCodeHost(codeHost: CodeHost): Subscription {
-    const environmentSubject = new BehaviorSubject<Pick<Environment, 'roots' | 'visibleTextDocuments'>>({
-        roots: null,
-        visibleTextDocuments: null,
-    })
     const {
         hoverifier,
         controllers: { platformContext, extensionsController },
-    } = initCodeIntelligence(codeHost, environmentSubject)
+    } = initCodeIntelligence(codeHost)
 
     const subscriptions = new Subscription()
 
@@ -423,10 +418,6 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     getToolbarMount,
                     toolbarButtonProps,
                 }) => {
-                    const toRootURI = (ctx: AbsoluteRepo) => `git://${ctx.repoPath}?${ctx.commitID}`
-                    const toURIWithPath = (ctx: AbsoluteRepoFile) =>
-                        `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
-
                     const originalDOM = dom
                     dom = {
                         ...dom,
@@ -456,16 +447,16 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         }
 
                         visibleTextDocuments = [
-                            // All the currently open documents
-                            ...visibleTextDocuments,
                             // Either a normal file, or HEAD when codeView is a diff
                             {
                                 uri: toURIWithPath(info),
                                 languageId: getModeFromPath(info.filePath) || 'could not determine mode',
                                 text: content!,
                             },
+                            // All the currently open documents
+                            ...visibleTextDocuments,
                         ]
-                        const roots: Environment['roots'] = [{ uri: toRootURI(info) }]
+                        const roots: Model['roots'] = [{ uri: toRootURI(info) }]
 
                         // When codeView is a diff, add BASE too.
                         if (baseContent! && info.baseRepoPath && info.baseCommitID && info.baseFilePath) {
@@ -511,7 +502,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                 })
                         }
 
-                        environmentSubject.next({ roots, visibleTextDocuments })
+                        extensionsController.services.model.model.next({ roots, visibleTextDocuments })
                     }
 
                     const resolveContext: ContextResolver = ({ part }) => ({
