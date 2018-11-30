@@ -10,10 +10,11 @@ pkgs=${@:-./...}
 
 go install honnef.co/go/tools/cmd/staticcheck
 
-set -x
-
+echo "--- go install"
 go install -buildmode=archive ${pkgs}
 
+echo "--- go vet"
 go vet ${pkgs}
 
+echo "--- staticcheck"
 staticcheck -ignore '*:ST1005' ${pkgs}
