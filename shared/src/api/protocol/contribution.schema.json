@@ -141,6 +141,22 @@
       },
       "required": ["action"],
       "type": "object"
+    },
+    "SearchFilters": {
+      "additionalProperties": false,
+      "description":
+        "A search filters interface with `name` and `value` to display on a filter chip in the search results filters bar.",
+      "properties": {
+        "name": {
+          "description": "The name to be displayed on the search filter chip.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value of the search filter chip.",
+          "type": "string"
+        }
+      },
+      "type": "array"
     }
   },
   "description": "Contributions describes the functionality provided by an extension.",
@@ -155,6 +171,13 @@
     "menus": {
       "$ref": "https://sourcegraph.com/v1/contribution.schema.json#/definitions/MenuContributions",
       "description": "Menu items contributed by the extension."
+    },
+    "searchFilters": {
+      "description": "Search Filters contributed by the extension.",
+      "items": {
+        "$ref": "https://sourcegraph.com/v1/contribution.schema.json#/definitions/SearchFilters"
+      },
+      "type": "array"
     }
   },
   "type": "object"

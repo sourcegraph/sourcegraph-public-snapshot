@@ -246,8 +246,19 @@ export interface MenuItemContribution {
     group?: string
 }
 
+/**
+ * A search filters interface with `name` and `value` to display on a filter chip
+ * in the search results filters bar.
+ */
 export interface SearchFilters {
+    /**
+     * The name to be displayed on the search filter chip.
+     */
     name: string
+
+    /**
+     * The value of the search filter chip.
+     */
     value: string
 }
 

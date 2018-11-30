@@ -11,8 +11,7 @@ export interface SearchFiltersProps extends ExtensionsControllerProps {
 }
 interface SearchFiltersContainerProps extends SearchFiltersProps {
     /**
-     * Called with the array of contributed items to produce the rendered component. If not set, uses a default
-     * render function that renders a <ActionItem> for each item.
+     * Called with the array of contributed items to produce the rendered component. If not set, it doesn't render.
      */
     render: (items: SearchFilters[]) => React.ReactElement<any>
 
@@ -25,7 +24,7 @@ interface SearchFiltersContainerProps extends SearchFiltersProps {
 
 interface SearchFiltersContainerState extends ContributionsState {}
 
-/** Displays the actions in a container, with a wrapper and/or empty element. */
+/** Displays the search filters in a container, with a wrapper and/or empty element. */
 export class SearchFiltersContainer extends React.PureComponent<
     SearchFiltersContainerProps,
     SearchFiltersContainerState
@@ -58,7 +57,6 @@ export class SearchFiltersContainer extends React.PureComponent<
         if (!this.state.contributions) {
             return null // loading
         }
-
         return this.props.render(this.state.contributions.searchFilters || [])
     }
 }
