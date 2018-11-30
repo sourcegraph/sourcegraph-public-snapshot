@@ -311,6 +311,8 @@ type Mutation {
     reloadSite: EmptyResponse
     # Submits a user satisfaction (NPS) survey.
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
+    # Submits a request for a Sourcegraph Enterprise trial license.
+    requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
     # Mutations that are only used on Sourcegraph.com.

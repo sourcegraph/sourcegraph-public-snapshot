@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Information about user survey submissions and a chart showing weekly active users is now displayed on the site admin Overview page.
 - A new GraphQL API field `UserEmail.isPrimary` was added that indicates whether an email is the user's primary email.
 - Extensions' `activate` functions now receive a `sourcegraph.ExtensionContext` parameter (i.e., `export function activate(ctx: sourcegraph.ExtensionContext): void { ... }`) to support deactivation and running multiple extensions in the same process.
+- Users can now request an Enterprise trial license from the site init page.
 
 ### Changed
 
