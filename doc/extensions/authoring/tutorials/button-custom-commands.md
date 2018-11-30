@@ -76,7 +76,7 @@ Now publish the extension to see the button in action:
 
 ```src extension publish```
 
-View the [`tuf_store.go`](https://github.com/theupdateframework/notary/blob/master/server/storage/tuf_store.go) file on GitHub and you should see the **Line Count** button in the file header.
+As an example, view the [`tuf_store.go`](https://github.com/theupdateframework/notary/blob/master/server/storage/tuf_store.go) file on GitHub and you should see the **Line Count** button in the file header.
 
 Click on the **View File** button in the file header to view [`tuf_store.go` on Sourcegraph](https://sourcegraph.com/github.com/theupdateframework/notary@master/-/blob/server/storage/tuf_store.go). You'll also see the **Learn Count** button in the Sourcegraph file header.
 
@@ -122,7 +122,7 @@ function displayLineCount(editor: sourcegraph.CodeEditor | undefined = activeEdi
  * conditions in package.json are satisfied.
  */
 export function activate(): void {
-    sourcegraph.commands.registerCommand('linecounter.displayLineCount', () => displayLineCount())
+    sourcegraph.commands.registerCommand('linecounter.displayLineCount', displayLineCount)
 }
 ```
 
