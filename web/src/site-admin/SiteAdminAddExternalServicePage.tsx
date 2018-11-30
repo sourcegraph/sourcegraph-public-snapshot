@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
-import { map, mergeMap } from 'rxjs/operators'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -49,16 +49,24 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     public componentDidMount(): void {
         eventLogger.logViewEvent('AddExternalService')
         this.subscriptions.add(
-            this.submits.pipe(mergeMap(input => addExternalService(input))).subscribe(
-                externalService => {
-                    this.setState({ loading: false })
-                    this.props.history.push(`/site-admin/external-services/${externalService.id}`)
-                },
-                error => {
-                    console.error(error)
-                    this.setState({ error, loading: false })
-                }
-            )
+            this.submits
+                .pipe(
+                    tap(() => this.setState({ loading: true })),
+                    switchMap(input =>
+                        addExternalService(input).pipe(
+                            map(externalService => {
+                                this.setState({ loading: false })
+                                this.props.history.push(`/site-admin/external-services/${externalService.id}`)
+                            }),
+                            catchError(error => {
+                                console.error(error)
+                                this.setState({ error, loading: false })
+                                return []
+                            })
+                        )
+                    )
+                )
+                .subscribe()
         )
     }
 
@@ -90,7 +98,6 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         if (event) {
             event.preventDefault()
         }
-        this.setState({ loading: true })
         this.submits.next(this.state.input)
     }
 }
