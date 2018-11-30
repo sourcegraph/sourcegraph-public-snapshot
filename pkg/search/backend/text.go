@@ -10,10 +10,12 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // TextJIT is a client for searching our just in time text search (the
@@ -97,6 +99,10 @@ func (t *TextJIT) client(r search.Repository) (search.Searcher, error) {
 type Zoekt struct {
 	Client zoekt.Searcher
 
+	// DisableCache when true prevents caching of Client.List. Useful in
+	// tests.
+	DisableCache bool
+
 	mu       sync.Mutex
 	state    int32 // 0 not running, 1 running, 2 stopped
 	listResp *zoekt.RepoList
@@ -110,6 +116,202 @@ func (c *Zoekt) Close() {
 	c.mu.Unlock()
 }
 
+func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (res *search.Result, err error) {
+	repos := opts.Repositories
+	if len(repos) == 0 {
+		return nil, errors.Errorf("repository list empty for indexed text search on %s", q.String())
+	}
+
+	zq, err := mapQueryToZoekt(q)
+	if err != nil {
+		return nil, err
+	}
+
+	// Have a top level AND to ensure we only return results for repositories
+	// in opts.Repositories
+	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
+	for _, r := range repos {
+		repoSet.Set[string(r.Name)] = true
+	}
+	zq = zoektquery.NewAnd(repoSet, zq)
+	zq = zoektquery.Simplify(zq)
+
+	tr, ctx := trace.New(ctx, "zoekt.Search", fmt.Sprintf("%d %+v", len(repoSet.Set), zq.String()))
+	defer func() {
+		tr.SetError(err)
+		if res != nil && len(res.Files) > 0 {
+			tr.LazyPrintf("%d file matches", len(res.Files))
+		}
+		tr.Finish()
+	}()
+
+	// If we're only searching a small number of repositories, return more
+	// comprehensive results. This is arbitrary.
+	defaultMaxSearchResults := 30
+	k := 1
+	switch {
+	case len(repos) <= 500:
+		k = 2
+	case len(repos) <= 100:
+		k = 3
+	case len(repos) <= 50:
+		k = 5
+	case len(repos) <= 25:
+		k = 8
+	case len(repos) <= 10:
+		k = 10
+	case len(repos) <= 5:
+		k = 100
+	}
+	if opts.TotalMaxMatchCount > defaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(opts.TotalMaxMatchCount) / float64(defaultMaxSearchResults))
+	}
+
+	searchOpts := zoekt.SearchOptions{
+		MaxWallTime:            opts.MaxWallTime,
+		ShardMaxMatchCount:     100 * k,
+		TotalMaxMatchCount:     100 * k,
+		ShardMaxImportantMatch: 15 * k,
+		TotalMaxImportantMatch: 25 * k,
+		MaxDocDisplayCount:     opts.MaxDocDisplayCount,
+	}
+
+	// We want zoekt to return more than TotalMaxMatchCount results since we
+	// use the extra results to populate reposLimitHit. Additionally the
+	// defaults are very low, so we always want to return at least 2000.
+	if opts.TotalMaxMatchCount > defaultMaxSearchResults {
+		searchOpts.MaxDocDisplayCount = 2 * int(opts.TotalMaxMatchCount)
+	}
+	if searchOpts.MaxDocDisplayCount < 2000 {
+		searchOpts.MaxDocDisplayCount = 2000
+	}
+
+	if userProbablyWantsToWaitLonger := opts.TotalMaxMatchCount > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(opts.TotalMaxMatchCount) / float64(defaultMaxSearchResults))
+	}
+
+	resp, err := c.Client.Search(ctx, zq, &searchOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	files := make([]search.FileMatch, len(resp.Files))
+	for i, fm := range resp.Files {
+		lines := make([]search.LineMatch, 0, len(fm.LineMatches))
+		for _, lm := range fm.LineMatches {
+			if lm.FileName {
+				continue
+			}
+
+			frags := make([]search.LineFragmentMatch, len(lm.LineFragments))
+			for i, f := range lm.LineFragments {
+				frags[i] = search.LineFragmentMatch{
+					LineOffset:  f.LineOffset,
+					MatchLength: f.MatchLength,
+				}
+			}
+
+			lines = append(lines, search.LineMatch{
+				Line:          lm.Line,
+				LineStart:     lm.LineStart,
+				LineEnd:       lm.LineEnd,
+				LineNumber:    lm.LineNumber,
+				LineFragments: frags,
+			})
+		}
+
+		files[i] = search.FileMatch{
+			Path:        fm.FileName,
+			Repository:  search.Repository{Name: api.RepoName(fm.Repository)}, // Branch? Safe to case RepoName?
+			LineMatches: lines,
+		}
+	}
+
+	return &search.Result{Files: files}, nil
+}
+
+// mapQueryToZoekt translates q to a zoektquery.Q. Additionally we treat any
+// ref: clause as false, since we are only allowed to search HEAD.
+func mapQueryToZoekt(q query.Q) (zoektquery.Q, error) {
+	switch s := q.(type) {
+
+	// Composite types
+	case *query.And:
+		qs, err := mapQueriesToZoekt(s.Children)
+		if err != nil {
+			return nil, err
+		}
+		return zoektquery.NewAnd(qs...), nil
+	case *query.Or:
+		qs, err := mapQueriesToZoekt(s.Children)
+		if err != nil {
+			return nil, err
+		}
+		return zoektquery.NewOr(qs...), nil
+	case *query.Not:
+		c, err := mapQueryToZoekt(s.Child)
+		if err != nil {
+			return nil, err
+		}
+		return &zoektquery.Not{Child: c}, nil
+	case *query.Type:
+		c, err := mapQueryToZoekt(s.Child)
+		if err != nil {
+			return nil, err
+		}
+		return &zoektquery.Type{Child: c}, nil
+
+		// Atoms we can convert
+	case *query.Substring:
+		return &zoektquery.Substring{
+			Pattern:       s.Pattern,
+			CaseSensitive: s.CaseSensitive,
+			FileName:      s.FileName,
+			Content:       s.Content,
+		}, nil
+	case *query.Regexp:
+		return &zoektquery.Regexp{
+			Regexp:        s.Regexp,
+			FileName:      s.FileName,
+			Content:       s.Content,
+			CaseSensitive: s.CaseSensitive,
+		}, nil
+	case *query.RepoSet:
+		repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(s.Set))}
+		for r := range s.Set {
+			repoSet.Set[r] = true
+		}
+		return repoSet, nil
+
+	case *query.Ref:
+		// Refs are false since we only index the default branch.
+		return &zoektquery.Const{Value: false}, nil
+
+	case *query.Repo:
+		// We only want reposets
+		return nil, errors.Errorf("zoekt does not allow repo atom: %v", q)
+
+	default:
+		return nil, errors.Errorf("unexpected query atom %T: %v", q, q)
+	}
+}
+
+func mapQueriesToZoekt(qs []query.Q) ([]zoektquery.Q, error) {
+	r := make([]zoektquery.Q, len(qs))
+	for i, q := range qs {
+		var err error
+		r[i], err = mapQueryToZoekt(q)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return r, nil
+}
+
+func (c *Zoekt) String() string {
+	return fmt.Sprintf("zoekt(%v)", c.Client)
+}
+
 // ListAll returns the response of List without any restrictions.
 func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
 	c.mu.Lock()
@@ -118,7 +320,9 @@ func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
 
 	// No cached responses, start up and just do uncached query.
 	if r == nil && err == nil {
-		go c.start()
+		if !c.DisableCache {
+			go c.start()
+		}
 		r, err = c.Client.List(ctx, &zoektquery.Const{Value: true})
 	}
 
