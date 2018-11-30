@@ -10,7 +10,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ## Future releases
 
-### 3.0-preview (2018-12-03)
+### 3.0-preview (week of 2018-12-03)
 
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
