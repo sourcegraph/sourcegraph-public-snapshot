@@ -98,7 +98,11 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         const loading = this.state.updateOrError === LOADING || this.state.externalServiceOrError === LOADING
         return (
             <div className="site-admin-configuration-page">
-                <PageTitle title="External Service - " />
+                {externalService ? (
+                    <PageTitle title={`External service - ${externalService.displayName}`} />
+                ) : (
+                    <PageTitle title="External service" />
+                )}
                 <h2>External Service</h2>
                 {externalService && (
                     <SiteAdminExternalServiceForm
