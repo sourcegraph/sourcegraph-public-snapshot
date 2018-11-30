@@ -39,20 +39,15 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminExternalService')
 
-        const externalServiceChanges = this.componentUpdates.pipe(
-            map(props => props.match.params.id),
-            distinctUntilChanged(),
-            switchMap(id =>
-                fetchExternalService(id).pipe(
-                    catchError(err => [asError(err)]),
-                    startWith(LOADING)
-                )
-            )
-        )
-
         this.subscriptions.add(
-            externalServiceChanges
-                .pipe(map(result => ({ externalServiceOrError: result })))
+            this.componentUpdates
+                .pipe(
+                    map(props => props.match.params.id),
+                    distinctUntilChanged(),
+                    switchMap(id => fetchExternalService(id).pipe(startWith(LOADING))),
+                    catchError(err => [asError(err)]),
+                    map(result => ({ externalServiceOrError: result }))
+                )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
         )
 
