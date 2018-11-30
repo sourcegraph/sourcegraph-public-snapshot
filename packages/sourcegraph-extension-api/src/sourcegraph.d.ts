@@ -752,11 +752,15 @@ declare module 'sourcegraph' {
 
     /**
      * A type definition provider implements the "go-to-type-definition" feature.
+     *
+     * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider} instead.
      */
     export interface TypeDefinitionProvider {
         /**
          * Provide the type definition of the symbol at the given position and document.
          *
+         * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider}
+         * instead.
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          * @return A type definition location, or an array of definitions, or `null` if there is no type
@@ -767,11 +771,15 @@ declare module 'sourcegraph' {
 
     /**
      * An implementation provider implements the "go-to-implementations" and "go-to-interfaces" features.
+     *
+     * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider} instead.
      */
     export interface ImplementationProvider {
         /**
          * Provide the implementations of the symbol at the given position and document.
          *
+         * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider}
+         * instead.
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          * @return Implementation locations, or `null` if there are none.
@@ -805,6 +813,21 @@ declare module 'sourcegraph' {
             position: Position,
             context: ReferenceContext
         ): ProviderResult<Location[]>
+    }
+
+    /**
+     * A location provider implements features such as "find implementations" and "find type definition". It is the
+     * general form of {@link DefinitionProvider} and {@link ReferenceProvider}.
+     */
+    export interface LocationProvider {
+        /**
+         * Provide related locations for the symbol at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @return Related locations, or `null` if there are none.
+         */
+        provideLocations(document: TextDocument, position: Position): ProviderResult<Location[]>
     }
 
     export namespace languages {
@@ -845,6 +868,7 @@ declare module 'sourcegraph' {
          * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
          * operation to fail.
          *
+         * @deprecated Use {@link LocationProvider} and {@link registerLocationProvider} instead.
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A type definition provider.
          * @return An unsubscribable to unregister this provider.
@@ -861,6 +885,7 @@ declare module 'sourcegraph' {
          * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
          * operation to fail.
          *
+         * @deprecated Use {@link LocationProvider} and {@link registerLocationProvider} instead.
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider An implementation provider.
          * @return An unsubscribable to unregister this provider.
@@ -885,6 +910,19 @@ declare module 'sourcegraph' {
             selector: DocumentSelector,
             provider: ReferenceProvider
         ): Unsubscribable
+
+        /**
+         * Registers a generic provider of a list of locations. It is the general form of
+         * {@link registerDefinitionProvider} and {@link registerReferenceProvider}. It is intended for "find
+         * implementations", "find type definition", and other similar features.
+         *
+         * The provider can be executed using the `executeLocationProvider` command
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A location provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerLocationProvider(selector: DocumentSelector, provider: LocationProvider): Unsubscribable
     }
 
     /**
