@@ -32,7 +32,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 ### 3.0 (2019-01-07)
 
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
-- [Swift language support](https://github.com/sourcegraph/sourcegraph/issues/979)
+- [Swift language support](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981)
