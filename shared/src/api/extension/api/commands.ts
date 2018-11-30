@@ -1,4 +1,4 @@
-import { Unsubscribable } from 'rxjs'
+import { Observable, Unsubscribable } from 'rxjs'
 import { ClientCommandsAPI } from '../../client/api/commands'
 import { ProviderMap } from './common'
 
@@ -29,7 +29,7 @@ export class ExtCommands implements ExtCommandsAPI, Unsubscribable {
      * to execute the command because the desired command might be implemented on the client (or otherwise not in
      * this extension host).
      */
-    public executeCommand(command: string, args: any[]): Promise<any> {
+    public executeCommand(command: string, args: any[]): Promise<any> | Observable<any> {
         return this.proxy.$executeCommand(command, args)
     }
 

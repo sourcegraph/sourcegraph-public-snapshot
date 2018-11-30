@@ -968,8 +968,8 @@ declare module 'sourcegraph' {
          * {@link commands.executeCommand}).
          *
          * @param command A unique identifier for the command.
-         * @param callback A command function. If it returns a {@link Promise}, execution waits until it is
-         *                 resolved.
+         * @param callback A command function. See {@link executeCommand} and {@link observeCommand} for
+         * documentation on how functions are handled that return {@link Promise} or {@link Observable} values.
          * @return Unsubscribable to unregister this command.
          * @throws Registering a command with an existing command identifier throws an error.
          */
@@ -981,10 +981,21 @@ declare module 'sourcegraph' {
          * @template T The result type of the command.
          * @param command Identifier of the command to execute.
          * @param rest Parameters passed to the command function.
-         * @return A {@link Promise} that resolves to the result of the given command.
+         * @return A {@link Promise} that resolves to the result of the given command. If the command returns an {@link Observable}, it resolves after the first emission
          * @throws If no command exists wih the given command identifier, an error is thrown.
          */
         export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>
+
+        /**
+         * Executes the command with the given command identifier.
+         *
+         * @template T The result type of the command.
+         * @param command Identifier of the command to execute.
+         * @param rest Parameters passed to the command function.
+         * @return A {@link Promise} that resolves to the result of the given command.
+         * @throws If no command exists wih the given command identifier, an error is thrown.
+         */
+        export function observeCommand<T = any>(command: string, ...args: any[]): Subscribable<T>
     }
 
     export interface ContextValues {

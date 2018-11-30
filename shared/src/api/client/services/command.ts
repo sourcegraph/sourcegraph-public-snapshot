@@ -6,7 +6,7 @@ export interface CommandEntry {
     command: string
 
     /** The function called to run the command and return an async value. */
-    run: (...args: any[]) => Promise<any>
+    run: (...args: any[]) => Promise<any> | Observable<any>
 }
 
 export interface ExecuteCommandParams {

@@ -1,4 +1,4 @@
-import { Subscription } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtCommandsAPI } from '../../extension/api/commands'
 import { Connection } from '../../protocol/jsonrpc2/connection'
@@ -9,7 +9,7 @@ import { SubscriptionMap } from './common'
 export interface ClientCommandsAPI {
     $unregister(id: number): void
     $registerCommand(id: number, command: string): void
-    $executeCommand(command: string, args: any[]): Promise<any>
+    $executeCommand(command: string, args: any[]): Promise<any> | Observable<any>
 }
 
 /** @internal */
@@ -38,7 +38,7 @@ export class ClientCommands implements ClientCommandsAPI {
         )
     }
 
-    public $executeCommand(command: string, args: any[]): Promise<any> {
+    public $executeCommand(command: string, args: any[]): Promise<any> | Observable<any> {
         return this.registry.executeCommand({ command, arguments: args })
     }
 
