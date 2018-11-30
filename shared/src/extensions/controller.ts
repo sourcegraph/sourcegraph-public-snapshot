@@ -159,9 +159,9 @@ export function createController(context: PlatformContext): Controller {
 
 function registerExtensionContributions(
     contributionRegistry: ContributionRegistry,
-    { enabledExtensions }: Pick<ExtensionsService, 'enabledExtensions'>
+    { activeExtensions }: Pick<ExtensionsService, 'activeExtensions'>
 ): Unsubscribable {
-    const contributions = from(enabledExtensions).pipe(
+    const contributions = from(activeExtensions).pipe(
         map(extensions =>
             extensions
                 .map(({ manifest }) => manifest)
