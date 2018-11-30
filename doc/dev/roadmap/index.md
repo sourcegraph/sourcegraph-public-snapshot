@@ -37,6 +37,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981)
 - Codecov extension
+- Java language support via extension
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
 
 ---
@@ -49,6 +50,8 @@ Browser authorization flow for clients
 - [LDAP and Active Directory user authentication](https://github.com/sourcegraph/sourcegraph/issues/963)
 Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
 Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow] -->
+
+- PHP language support via extension
 
 ---
 
