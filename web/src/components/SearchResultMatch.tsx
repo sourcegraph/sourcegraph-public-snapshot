@@ -153,7 +153,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     )}
                     {!this.state.HTML && (
                         <>
-                            <LoadingSpinner className="icon-inline" />
+                            <LoadingSpinner className="icon-inline search-result-match__loader" />
                             <table>
                                 <tbody>
                                     {range(firstLine, lastLine).map(i => (

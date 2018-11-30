@@ -97,4 +97,9 @@
             visibility: hidden;
         }
     }
+
+    &__loader {
+        position: relative;
+        left: 50%;
+    }
 }
