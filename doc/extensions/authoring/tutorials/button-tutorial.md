@@ -1,4 +1,4 @@
-# Sourcegraph button tutorial
+# Sourcegraph extension button tutorial
 
 This tutorial will teach you how to add a button to the **file header** and a menu item to the **command palette**.
 
