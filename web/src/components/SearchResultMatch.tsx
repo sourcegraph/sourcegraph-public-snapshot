@@ -143,10 +143,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             >
                 <>
                     {this.state.HTML && (
-                        <Link key={this.props.url} to={this.props.url} className="search-result-match__item">
+                        <Link key={this.props.url} to={this.props.url} className="search-result-match">
                             <Markdown
                                 refFn={this.setTableContainerElement}
-                                className="search-result-match code-excerpt"
+                                className="search-result-match__markdown code-excerpt"
                                 dangerousInnerHTML={this.state.HTML}
                             />
                         </Link>
@@ -159,7 +159,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     {range(firstLine, lastLine).map(i => (
                                         <tr key={i}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                            <td className="line line-hidden">
+                                            <td className="line search-result-match__line--hidden">
                                                 <code>{i}</code>
                                             </td>
                                             <td className="code"> </td>

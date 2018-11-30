@@ -71,7 +71,7 @@
         max-width: 100%;
     }
 
-    &.search-result-match {
+    &.search-result-match__markdown {
         table,
         th,
         td {
@@ -81,10 +81,6 @@
         &.code-excerpt {
             td.line {
                 display: none;
-            }
-
-            td.code {
-                padding-left: 0;
             }
         }
 
@@ -123,7 +119,7 @@
             border-left-color: #dfe2e5;
         }
 
-        &.search-result-match {
+        &.search-result-match__markdown {
             table,
             th,
             td {
@@ -133,10 +129,6 @@
             &.code-excerpt {
                 td.line {
                     display: none;
-                }
-
-                td.code {
-                    padding-left: 0;
                 }
             }
 
