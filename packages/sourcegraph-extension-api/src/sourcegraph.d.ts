@@ -808,6 +808,18 @@ declare module 'sourcegraph' {
     }
 
     export namespace languages {
+        /**
+         * Registers a hover provider, which returns a formatted hover message (intended for display in a tooltip)
+         * when the user hovers on code.
+         *
+         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
+         * operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A hover provider.
+         * @return An unsubscribable to unregister this provider.
+         */
         export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable
 
         /**
