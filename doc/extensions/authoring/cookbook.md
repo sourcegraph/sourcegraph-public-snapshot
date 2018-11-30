@@ -95,20 +95,11 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
 import * as sourcegraph from "sourcegraph";
 
 export function activate(): void {
-  function afterActivate() {
-    const address = sourcegraph.configuration.get().get("graphql.langserver-address");
-    if (!address) {
-      console.log("No graphql.langserver-address was set, exiting.");
-      return;
-    }
-    // ...
+  const address = sourcegraph.configuration.get().get("graphql.langserver-address");
+  if (!address) {
+    console.log("No graphql.langserver-address was set, exiting.");
+    return;
   }
-
-  // Error creating extension host: Error: Configuration is not yet available.
-  // `sourcegraph.configuration.get` is not usable until after the extension
-  // `activate` function is finished executing. This is a known issue and will
-  // be fixed before the beta release of Sourcegraph extensions. In the
-  // meantime, work around this limitation by deferring calls to `get`.
-  setTimeout(afterActivate, 0);
+  // ...
 }
 ```
