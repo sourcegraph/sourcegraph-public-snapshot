@@ -6,31 +6,20 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
-import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from '../../shared/src/api/client/environment'
-import { TextDocumentItem } from '../../shared/src/api/client/types/textDocument'
-import { WorkspaceRoot } from '../../shared/src/api/protocol/plainTypes'
 import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
 } from '../../shared/src/extensions/controller'
-import { ConfiguredExtension } from '../../shared/src/extensions/extension'
-import { viewerConfiguredExtensions } from '../../shared/src/extensions/helpers'
 import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContextProps } from '../../shared/src/platform/context'
-import {
-    ConfiguredSubject,
-    isSettingsValid,
-    SettingsCascadeOrError,
-    SettingsCascadeProps,
-} from '../../shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
-import { ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -68,11 +57,7 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     routes: ReadonlyArray<LayoutRouteProps>
 }
 
-interface SourcegraphWebAppState
-    extends SettingsCascadeProps,
-        PlatformContextProps,
-        ExtensionsEnvironmentProps,
-        ExtensionsControllerProps {
+interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadeProps, ExtensionsControllerProps {
     error?: Error
 
     /** The currently authenticated user (or null if the viewer is anonymous). */
@@ -114,15 +99,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state = {
             isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
             navbarSearchQuery: '',
-            settingsCascade: { subjects: null, final: null },
             platformContext,
-            extensionsEnvironment: {
-                ...EXTENSIONS_EMPTY_ENVIRONMENT,
-                context: {
-                    'clientApplication.isSourcegraph': true,
-                },
-            },
             extensionsController: createExtensionsController(platformContext),
+            settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             isMainPage: false,
         }
@@ -142,45 +121,30 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
 
         this.subscriptions.add(
-            combineLatest(
-                from(this.state.platformContext.settingsCascade).pipe(startWith(null)),
-                authenticatedUser.pipe(startWith(null))
-            ).subscribe(([cascade, authenticatedUser]) => {
-                this.setState(() => {
-                    if (authenticatedUser) {
-                        return { viewerSubject: authenticatedUser }
-                    } else if (
-                        cascade &&
-                        !isErrorLike(cascade) &&
-                        cascade.subjects &&
-                        !isErrorLike(cascade.subjects) &&
-                        cascade.subjects.length > 0
-                    ) {
-                        return { viewerSubject: cascade.subjects[0].subject }
-                    } else {
-                        return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
-                    }
-                })
-            })
+            combineLatest(from(this.state.platformContext.settings), authenticatedUser.pipe(startWith(null))).subscribe(
+                ([cascade, authenticatedUser]) => {
+                    this.setState(() => {
+                        if (authenticatedUser) {
+                            return { viewerSubject: authenticatedUser }
+                        } else if (
+                            cascade &&
+                            !isErrorLike(cascade) &&
+                            cascade.subjects &&
+                            cascade.subjects.length > 0
+                        ) {
+                            return { viewerSubject: cascade.subjects[0].subject }
+                        } else {
+                            return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
+                        }
+                    })
+                }
+            )
         )
 
         this.subscriptions.add(this.state.extensionsController)
 
         this.subscriptions.add(
-            this.state.platformContext.settingsCascade.subscribe(
-                v => this.onSettingsCascadeChange(v),
-                err => console.error(err)
-            )
-        )
-
-        // Keep the Sourcegraph extensions controller's extensions up-to-date.
-        //
-        // TODO(sqs): handle loading and errors
-        this.subscriptions.add(
-            viewerConfiguredExtensions(this.state.platformContext).subscribe(
-                extensions => this.onViewerConfiguredExtensionsChange(extensions),
-                err => console.error(err)
-            )
+            from(this.state.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
     }
 
@@ -262,9 +226,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 onNavbarQueryChange={this.onNavbarQueryChange}
                                 // Extensions
                                 platformContext={this.state.platformContext}
-                                extensionsEnvironment={this.state.extensionsEnvironment}
-                                extensionsOnRootsChange={this.extensionsOnRootsChange}
-                                extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
                                 extensionsController={this.state.extensionsController}
                             />
                         )}
@@ -286,63 +247,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     private onMainPage = (mainPage: boolean) => {
-        this.setState(state => ({ isMainPage: mainPage }))
+        this.setState(() => ({ isMainPage: mainPage }))
     }
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {
         this.setState({ navbarSearchQuery })
-    }
-
-    private onSettingsCascadeChange(settingsCascade: SettingsCascadeOrError): void {
-        this.setState(
-            prevState => {
-                const update: Pick<SourcegraphWebAppState, 'settingsCascade' | 'extensionsEnvironment'> = {
-                    settingsCascade,
-                    extensionsEnvironment: prevState.extensionsEnvironment,
-                }
-                if (isSettingsValid(settingsCascade)) {
-                    // Only update Sourcegraph extensions environment configuration if the configuration was
-                    // successfully parsed.
-                    update.extensionsEnvironment = {
-                        ...prevState.extensionsEnvironment,
-                        configuration: {
-                            subjects: settingsCascade.subjects.filter(
-                                (subject): subject is ConfiguredSubject =>
-                                    subject.settings !== null && !isErrorLike(subject.settings)
-                            ),
-                            final: settingsCascade.final,
-                        },
-                    }
-                }
-                return update
-            },
-            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
-        )
-    }
-
-    private extensionsOnRootsChange = (roots: WorkspaceRoot[] | null): void => {
-        this.setState(
-            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, roots } }),
-            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
-        )
-    }
-
-    private onViewerConfiguredExtensionsChange(viewerConfiguredExtensions: ConfiguredExtension[]): void {
-        this.setState(
-            prevState => ({
-                extensionsEnvironment: {
-                    ...prevState.extensionsEnvironment,
-                    extensions: viewerConfiguredExtensions,
-                },
-            }),
-            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
-        )
-    }
-
-    private extensionsOnVisibleTextDocumentsChange = (visibleTextDocuments: TextDocumentItem[] | null): void => {
-        this.setState(
-            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, visibleTextDocuments } }),
-            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
-        )
     }
 }

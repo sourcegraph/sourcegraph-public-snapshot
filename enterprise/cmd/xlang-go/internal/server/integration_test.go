@@ -73,7 +73,7 @@ func TestIntegration(t *testing.T) {
 				"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6", // vendored TODO(sqs): really want the below result which has the non-vendored path as well, need to implement that
 				//"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6 git://github.com/alecthomas/units#bytes.go:30:6", // vendored
 
-				"config/vendor/github.com/coreos/ignition/config/vendor/github.com/coreos/go-semver/semver/semver_test.go:287:27": "git://github.com/go-yaml/yaml?v2.2.1#yaml.go:138:6", // diff repo
+				"config/vendor/github.com/coreos/ignition/config/vendor/github.com/coreos/go-semver/semver/semver_test.go:287:27": "git://github.com/go-yaml/yaml?v2.2.2#yaml.go:138:6", // diff repo
 			},
 			wantXDefinition: map[string]string{
 				"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6 id:github.com/coreos/fuze/config/vendor/github.com/alecthomas/units/-/ParseBase2Bytes name:ParseBase2Bytes package:github.com/coreos/fuze/config/vendor/github.com/alecthomas/units packageName:units recv: vendor:true",

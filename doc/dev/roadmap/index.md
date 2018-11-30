@@ -10,7 +10,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ## Future releases
 
-### 3.0-preview (2018-12-03)
+### 3.0-preview (week of 2018-12-03)
 
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
@@ -32,11 +32,12 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 ### 3.0 (2019-01-07)
 
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
-- [Swift language support](https://github.com/sourcegraph/sourcegraph/issues/979)
+- [Swift language support](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981)
 - Codecov extension
+- Java language support via extension
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
 
 ---
@@ -49,6 +50,8 @@ Browser authorization flow for clients
 - [LDAP and Active Directory user authentication](https://github.com/sourcegraph/sourcegraph/issues/963)
 Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
 Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow] -->
+
+- PHP language support via extension
 
 ---
 

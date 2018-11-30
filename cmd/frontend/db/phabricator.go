@@ -4,11 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 )
@@ -17,37 +15,6 @@ type phabricator struct{}
 
 type errPhabricatorRepoNotFound struct {
 	args []interface{}
-}
-
-var (
-	phabricatorRepos          = atomicvalue.New()
-	phabricatorReposReadyOnce sync.Once
-	phabricatorReposReady     = make(chan struct{})
-)
-
-func init() {
-	go func() {
-		conf.Watch(func() {
-			phabricatorRepos.Set(func() interface{} {
-				repos := map[api.RepoName]*types.PhabricatorRepo{}
-				for _, config := range conf.Get().Phabricator {
-					for _, repo := range config.Repos {
-						repos[api.RepoName(repo.Path)] = &types.PhabricatorRepo{
-							Name:     api.RepoName(repo.Path),
-							Callsign: repo.Callsign,
-							URL:      config.Url,
-						}
-					}
-				}
-				return repos
-			})
-		})
-
-		phabricatorReposReadyOnce.Do(func() {
-			close(phabricatorReposReady)
-		})
-	}()
-
 }
 
 func (err errPhabricatorRepoNotFound) Error() string {
@@ -139,11 +106,19 @@ func (p *phabricator) GetByName(ctx context.Context, name api.RepoName) (*types.
 	if Mocks.Phabricator.GetByName != nil {
 		return Mocks.Phabricator.GetByName(name)
 	}
-	<-phabricatorReposReady
-	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoName]*types.PhabricatorRepo)
-	if r := phabricatorRepos[name]; r != nil {
-		return r, nil
+
+	for _, config := range conf.Get().Phabricator {
+		for _, repo := range config.Repos {
+			if api.RepoName(repo.Path) == name {
+				return &types.PhabricatorRepo{
+					Name:     api.RepoName(repo.Path),
+					Callsign: repo.Callsign,
+					URL:      config.Url,
+				}, nil
+			}
+		}
 	}
+
 	return p.getOneBySQL(ctx, "WHERE repo_name=$1", name)
 }
 

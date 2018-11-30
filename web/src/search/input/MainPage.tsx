@@ -9,7 +9,6 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
@@ -17,7 +16,7 @@ import { CodeIntellifyBlob } from './CodeIntellifyBlob'
 import { QueryInputForModal } from './QueryInputForModal'
 import { SearchButton } from './SearchButton'
 
-interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
+interface Props extends ExtensionsControllerProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History

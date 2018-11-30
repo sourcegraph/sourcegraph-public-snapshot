@@ -1,11 +1,9 @@
-import { Observable, Subject } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
-
-export const settingsRefreshes = new Subject<void>()
 
 const settingsCascadeFragment = gql`
     fragment SettingsCascadeFields on SettingsCascade {

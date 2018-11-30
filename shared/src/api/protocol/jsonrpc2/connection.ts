@@ -462,8 +462,12 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                 )
                 try {
                     if (responseMessage.error) {
-                        const error = responseMessage.error
-                        responseObservable.observer.error(new ResponseError(error.code, error.message, error.data))
+                        const { code, message, data } = responseMessage.error
+                        const err = new ResponseError(code, message, data)
+                        if (data && data.stack) {
+                            err.stack = data.stack
+                        }
+                        responseObservable.observer.error(err)
                     } else if (responseMessage.result !== undefined) {
                         responseObservable.observer.next(responseMessage.result)
                     }

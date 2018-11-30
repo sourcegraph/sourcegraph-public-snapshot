@@ -5,7 +5,6 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../schema/settings.schema.json'
-import contributionSchema from '../../../shared/src/api/protocol/contribution.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -169,17 +168,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                 {
                     uri: 'settings.schema.json#',
                     schema: settingsSchema,
-                },
-                {
-                    // This is the literal relative URI used in extension.schema.json to refer to the contributions
-                    // JSON Schema.
-                    uri: './contribution.schema.json',
-                    schema: contributionSchema,
-                },
-                {
-                    // This is the absolute URI of the contributions JSON Schema used in extension.schema.json.
-                    uri: 'https://sourcegraph.com/v1/contribution.schema.json#',
-                    schema: contributionSchema,
                 },
             ].concat(extraSchemas),
         })

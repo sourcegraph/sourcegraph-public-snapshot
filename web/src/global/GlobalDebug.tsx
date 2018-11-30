@@ -3,9 +3,9 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ExtensionStatusPopover } from '../../../shared/src/extensions/ExtensionStatus'
-import { ExtensionsEnvironmentProps } from '../extensions/environment/ExtensionsEnvironment'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
 
-interface Props extends ExtensionsEnvironmentProps, ExtensionsControllerProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     location: H.Location
 }
 
@@ -27,6 +27,7 @@ export const GlobalDebug: React.FunctionComponent<Props> = props =>
                         link={ExtensionLink}
                         location={props.location}
                         extensionsController={props.extensionsController}
+                        platformContext={props.platformContext}
                     />
                 </li>
             </ul>

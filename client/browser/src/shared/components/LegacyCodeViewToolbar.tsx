@@ -15,7 +15,6 @@ import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
@@ -46,27 +45,17 @@ interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<Ex
     location: H.Location
 }
 
-interface CodeViewToolbarState extends SettingsCascadeProps {
+interface CodeViewToolbarState {
     site?: ISite
     currentUser?: IUser
 }
 
 export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeViewToolbarState> {
-    public state: CodeViewToolbarState = {
-        settingsCascade: { subjects: [], final: {} },
-    }
+    public state: CodeViewToolbarState = {}
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        if (this.props.platformContext) {
-            this.subscriptions.add(
-                this.props.platformContext.settingsCascade.subscribe(
-                    settingsCascade => this.setState({ settingsCascade }),
-                    err => console.error(err)
-                )
-            )
-        }
         this.subscriptions.add(fetchSite().subscribe(site => this.setState(() => ({ site }))))
         this.subscriptions.add(fetchCurrentUser().subscribe(currentUser => this.setState(() => ({ currentUser }))))
     }

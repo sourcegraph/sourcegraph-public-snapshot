@@ -10,7 +10,9 @@ Sourcegraph supports syncing repositories from GitLab.com, GitLab CE, and GitLab
 2.  Press **Add GitLab projects**.
 3.  Fill in the fields in the generated `gitlab` configuration option.
 
-By default, it adds every GitLab project where the token's user is a member. To see other optional GitLab configuration settings, view [all settings](../admin/site_config/index.md) or press Ctrl+Space or Cmd+Space in the site configuration editor.
+By default, it adds every GitLab project where the token's user is a member. If you wish to limit the set of repositories that is indexed by Sourcegraph, the recommended way is to create a Sourcegraph "bot" user, which is just a normal user account with the desired access scope. For instance, if you wanted to add all internal GitLab projects to Sourcegraph, you could create a user "sourcegraph-bot" and give it no explicit access to any GitLab repositories.
+
+To see other optional GitLab configuration settings, view [all settings](../admin/site_config/index.md) or press Ctrl+Space or Cmd+Space in the site configuration editor.
 
 ### Repository permissions
 

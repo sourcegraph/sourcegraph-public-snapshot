@@ -44,12 +44,6 @@ var (
 	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API. Only used if manual tls cert and key are specified.")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
-	externalURL             = conf.GetTODO().ExternalURL
-	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
-
-	tlsCert = conf.GetTODO().TlsCert
-	tlsKey  = conf.GetTODO().TlsKey
-
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
@@ -64,6 +58,7 @@ func configureExternalURL() (*url.URL, error) {
 	} else {
 		hostPort = httpAddr
 	}
+	externalURL := conf.Get().ExternalURL
 	if externalURL == "" {
 		externalURL = "http://<http-addr>"
 	}
@@ -153,6 +148,8 @@ func Main() error {
 		hooks.AfterDBInit()
 	}
 
+	tlsCert := conf.Get().TlsCert
+	tlsKey := conf.Get().TlsKey
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
 	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.ExternalURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
 	if useTLS && globals.ExternalURL.Scheme == "http" {
@@ -269,7 +266,7 @@ func Main() error {
 		fmt.Println(logoColor)
 		fmt.Println(" ")
 	}
-	fmt.Printf("✱ Sourcegraph is ready at: %s\n", externalURL)
+	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL)
 
 	srv.Wait()
 	return nil

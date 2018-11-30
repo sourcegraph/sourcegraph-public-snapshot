@@ -3,6 +3,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { HeroPage } from '../components/HeroPage'
 import { RouteDescriptor } from '../util/contributions'
@@ -20,7 +21,7 @@ const NotSiteAdminPage: React.ComponentType<{}> = () => (
     <HeroPage icon={MapSearchIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
-export interface SiteAdminAreaRouteContext extends PlatformContextProps {
+export interface SiteAdminAreaRouteContext extends PlatformContextProps, SettingsCascadeProps {
     site: Pick<GQL.ISite, '__typename' | 'id'>
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
@@ -31,7 +32,7 @@ export interface SiteAdminAreaRouteContext extends PlatformContextProps {
 
 export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
 
-interface SiteAdminAreaProps extends RouteComponentProps<{}>, PlatformContextProps {
+interface SiteAdminAreaProps extends RouteComponentProps<{}>, PlatformContextProps, SettingsCascadeProps {
     routes: ReadonlyArray<SiteAdminAreaRoute>
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: ReadonlyArray<React.ComponentType>
@@ -53,6 +54,7 @@ export const SiteAdminArea = withAuthenticatedUser(
             const context: SiteAdminAreaRouteContext = {
                 authenticatedUser: this.props.authenticatedUser,
                 platformContext: this.props.platformContext,
+                settingsCascade: this.props.settingsCascade,
                 isLightTheme: this.props.isLightTheme,
                 site: { __typename: 'Site' as 'Site', id: window.context.siteGQLID },
                 overviewComponents: this.props.overviewComponents,

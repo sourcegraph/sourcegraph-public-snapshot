@@ -12,7 +12,6 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
@@ -75,8 +74,7 @@ interface Props
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        ExtensionsControllerProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
 
@@ -166,7 +164,6 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                                 commitID: this.state.rangeOrError.headRevSpec.object!.oid,
                             }}
                             extensionsController={this.props.extensionsController}
-                            extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                         />
                     </>
                 )}

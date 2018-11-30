@@ -8,6 +8,7 @@ import { noop, Subscription } from 'rxjs'
 import storage from '../../browser/storage'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
+import { initSentry } from '../../libs/sentry'
 import { getAccessToken, setAccessToken } from '../../shared/auth/access_token'
 import { createAccessToken, fetchAccessTokenIDs } from '../../shared/backend/auth'
 import { fetchCurrentUser, fetchSite } from '../../shared/backend/server'
@@ -16,7 +17,9 @@ import { assertEnv } from '../envAssertion'
 
 assertEnv('OPTIONS')
 
-type State = Pick<FeatureFlags, 'useExtensions'> & { sourcegraphURL: string | null }
+initSentry('options')
+
+type State = Pick<FeatureFlags, 'useExtensions' | 'allowErrorReporting'> & { sourcegraphURL: string | null }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(k => key === k)
@@ -31,14 +34,14 @@ const toggleFeatureFlag = (key: string) => {
 }
 
 class Options extends React.Component<{}, State> {
-    public state: State = { sourcegraphURL: null, useExtensions: false }
+    public state: State = { sourcegraphURL: null, useExtensions: false, allowErrorReporting: false }
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            storage.observeSync('featureFlags').subscribe(({ useExtensions }) => {
-                this.setState({ useExtensions })
+            storage.observeSync('featureFlags').subscribe(({ allowErrorReporting, useExtensions }) => {
+                this.setState({ allowErrorReporting, useExtensions })
             })
         )
 
@@ -74,7 +77,10 @@ class Options extends React.Component<{}, State> {
             fetchAccessTokenIDs,
 
             toggleFeatureFlag,
-            featureFlags: [{ key: 'useExtensions', value: this.state.useExtensions }],
+            featureFlags: [
+                { key: 'useExtensions', value: this.state.useExtensions },
+                { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
+            ],
         }
 
         return <OptionsContainer {...props} />

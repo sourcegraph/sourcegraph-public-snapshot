@@ -26,6 +26,7 @@ type productPlan struct {
 type planTier struct {
 	unitAmount int64
 	upTo       int64
+	flatAmount int64
 }
 
 func (r *productPlan) ProductPlanID() string      { return r.productPlanID }
@@ -44,6 +45,7 @@ func (r *productPlan) PlanTiers() []graphqlbackend.PlanTier {
 
 func (r *planTier) UnitAmount() int32 { return int32(r.unitAmount) }
 func (r *planTier) UpTo() int32       { return int32(r.upTo) }
+func (r *planTier) FlatAmount() int32 { return int32(r.flatAmount) }
 
 // ToProductPlan returns a resolver for the GraphQL type ProductPlan from the given billing plan.
 func ToProductPlan(plan *stripe.Plan) (graphqlbackend.ProductPlan, error) {
@@ -64,6 +66,7 @@ func ToProductPlan(plan *stripe.Plan) (graphqlbackend.ProductPlan, error) {
 	var tiers []graphqlbackend.PlanTier
 	for _, tier := range plan.Tiers {
 		tiers = append(tiers, &planTier{
+			flatAmount: tier.FlatAmount,
 			unitAmount: tier.UnitAmount,
 			upTo:       tier.UpTo,
 		})

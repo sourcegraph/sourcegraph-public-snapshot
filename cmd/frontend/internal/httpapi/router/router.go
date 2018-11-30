@@ -45,7 +45,7 @@ const (
 	ReposListEnabled       = "internal.repos.list-enabled"
 	ReposUpdateIndex       = "internal.repos.update-index"
 	ReposUpdateMetadata    = "internal.repos.update-metadata"
-	ConfigurationRawJSON   = "internal.configuration.raw-json"
+	Configuration          = "internal.configuration"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -111,7 +111,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
-	base.Path("/configuration/raw-json").Methods("POST").Name(ConfigurationRawJSON)
+	base.Path("/configuration").Methods("POST").Name(Configuration)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)

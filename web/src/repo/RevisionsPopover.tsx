@@ -7,12 +7,12 @@ import { replaceRevisionInURL } from '.'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
 import { CircleChevronLeftIcon } from '../util/icons' // TODO: Switch to mdi icon
-import { memoizeObservable } from '../util/memoize'
 import { GitRefNode, queryGitRefs } from './GitRef'
 
 const fetchRepositoryCommits = memoizeObservable(

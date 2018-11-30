@@ -33,9 +33,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	zoektpkg "github.com/sourcegraph/sourcegraph/pkg/zoekt"
 )
 
 var (
@@ -927,7 +927,7 @@ func (sem semaphore) Release() {
 }
 
 var zoektCl zoekt.Searcher
-var zoektCache *zoektpkg.Cache
+var zoektCache *backend.Zoekt
 var searcherURLs *endpoint.Map
 
 func init() {
@@ -939,7 +939,7 @@ func init() {
 	zoektHost := env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
 	if zoektHost != "" {
 		zoektCl = zoektrpc.Client(zoektHost)
-		zoektCache = &zoektpkg.Cache{Client: zoektCl}
+		zoektCache = &backend.Zoekt{Client: zoektCl}
 	}
 }
 

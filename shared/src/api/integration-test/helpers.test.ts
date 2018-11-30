@@ -1,11 +1,15 @@
-import { filter, first } from 'rxjs/operators'
+import { NEVER, NextObserver, of, Subscribable, throwError } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { Controller } from '../client/controller'
-import { Environment } from '../client/environment'
-import { createExtensionHost } from '../extension/extensionHost'
+import { PlatformContext } from '../../platform/context'
+import { createExtensionHostClient, ExtensionHostClient } from '../client/client'
+import { Model } from '../client/model'
+import { Services } from '../client/services'
+import { InitData, startExtensionHost } from '../extension/extensionHost'
+import { createConnection } from '../protocol/jsonrpc2/connection'
 import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 
-const FIXTURE_ENVIRONMENT: Environment = {
+const FIXTURE_MODEL: Model = {
     roots: [{ uri: 'file:///' }],
     visibleTextDocuments: [
         {
@@ -14,14 +18,25 @@ const FIXTURE_ENVIRONMENT: Environment = {
             text: 't',
         },
     ],
-    extensions: [{ id: 'x' }],
-    configuration: { final: { a: 1 } },
-    context: {},
 }
 
 interface TestContext {
-    clientController: Controller<any, any>
+    client: ExtensionHostClient
     extensionHost: typeof sourcegraph
+}
+
+interface Mocks
+    extends Pick<
+            PlatformContext,
+            'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension' | 'clientApplication'
+        > {}
+
+const NOOP_MOCKS: Mocks = {
+    settings: NEVER,
+    updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
+    queryGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
+    getScriptURLForExtension: scriptURL => scriptURL,
+    clientApplication: 'sourcegraph',
 }
 
 /**
@@ -29,69 +44,47 @@ interface TestContext {
  *
  * @internal
  */
-export async function integrationTestContext(): Promise<
+export async function integrationTestContext(
+    partialMocks: Partial<Mocks> = NOOP_MOCKS
+): Promise<
     TestContext & {
-        getEnvironment: () => Environment
-        ready: Promise<void>
+        model: Subscribable<Model> & { value: Model } & NextObserver<Model>
+        services: Services
     }
 > {
+    const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
+
     const [clientTransports, serverTransports] = createMessageTransports()
 
-    const clientController = new Controller({
-        clientOptions: () => ({ createMessageTransports: () => clientTransports }),
-    })
-    clientController.setEnvironment(FIXTURE_ENVIRONMENT)
+    const extensionHost = startExtensionHost(serverTransports)
 
-    // Ack all configuration updates.
-    clientController.configurationUpdates.subscribe(({ resolve }) => resolve(Promise.resolve()))
+    const services = new Services(mocks)
+    const client = createExtensionHostClient(
+        services,
+        of(clientTransports).pipe(
+            switchMap(async clientTransports => {
+                const connection = createConnection(clientTransports)
+                connection.listen()
 
-    const extensionHost = createExtensionHost(
-        {
-            bundleURL: '',
-            sourcegraphURL: 'https://example.com',
-            clientApplication: 'sourcegraph',
-            settingsCascade: {
-                final: { a: 1 },
-            },
-        },
-        serverTransports
+                const initData: InitData = {
+                    sourcegraphURL: 'https://example.com',
+                    clientApplication: 'sourcegraph',
+                }
+                await connection.sendRequest('initialize', [initData])
+                return connection
+            })
+        )
     )
 
-    // Wait for client to be ready.
-    await clientController.clientEntries
-        .pipe(
-            filter(entries => entries.length > 0),
-            first()
-        )
-        .toPromise()
+    services.model.model.next(FIXTURE_MODEL)
 
+    await (await extensionHost.__testAPI).internal.sync()
     return {
-        clientController,
-        extensionHost,
-        getEnvironment(): Environment {
-            // This runs synchronously because the Observable's root source is a BehaviorSubject (which has an initial value).
-            // Confirm it is synchronous just in case, because a bug here would be hard to diagnose.
-            let value!: Environment
-            let sync = false
-            clientController.environment
-                .pipe(first())
-                .subscribe(environment => {
-                    value = environment
-                    sync = true
-                })
-                .unsubscribe()
-            if (!sync) {
-                throw new Error('environment is not synchronously available')
-            }
-            return value
-        },
-        ready: ready({ clientController, extensionHost }),
+        client,
+        extensionHost: await extensionHost.__testAPI,
+        services,
+        model: services.model.model,
     }
-}
-
-/** @internal */
-async function ready({ extensionHost }: TestContext): Promise<void> {
-    await extensionHost.internal.sync()
 }
 
 /**
