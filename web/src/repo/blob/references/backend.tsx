@@ -4,10 +4,10 @@ import { makeRepoURI } from '../..'
 import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { getXdefinition, getXreferences } from '../../../backend/features'
 import { queryGraphQL } from '../../../backend/graphql'
 import { LSPTextDocumentPositionParams } from '../../../backend/lsp'
-import { memoizeObservable } from '../../../util/memoize'
 
 const fetchDependencyReferences = memoizeObservable(
     (ctx: LSPTextDocumentPositionParams): Observable<GQL.IDependencyReferences | null> =>

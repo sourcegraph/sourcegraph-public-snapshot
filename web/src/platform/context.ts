@@ -1,47 +1,36 @@
-import { isEqual } from 'lodash'
-import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
-import { InitData } from '../../../shared/src/api/extension/extensionHost'
-import { SettingsCascade } from '../../../shared/src/api/protocol'
-import { MessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/connection'
+import { concat, Observable, ReplaySubject } from 'rxjs'
+import { map, publishReplay, refCount } from 'rxjs/operators'
+import ExtensionHostWorker from 'worker-loader!../../../shared/src/api/extension/main.worker.ts'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
-import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
 import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import { gqlToCascade } from '../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import { requestGraphQL } from '../backend/graphql'
 import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
-import { fetchViewerSettings, settingsRefreshes } from '../user/settings/backend'
+import { fetchViewerSettings } from '../user/settings/backend'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
  */
 export function createPlatformContext(): PlatformContext {
+    const updatedSettings = new ReplaySubject<GQL.ISettingsCascade>(1)
     const context: PlatformContext = {
-        settingsCascade: settingsRefreshes.pipe(
-            startWith(void 0),
-            switchMap(() => fetchViewerSettings()),
+        settings: concat(fetchViewerSettings(), updatedSettings).pipe(
             map(gqlToCascade),
-            distinctUntilChanged((a, b) => isEqual(a, b))
+            publishReplay(1),
+            refCount()
         ),
-        updateSettings: async (subject, args) => {
+        updateSettings: async (subject, edit) => {
             // Unauthenticated users can't update settings. (In the browser extension, they can update client
             // settings even when not authenticated. The difference in behavior in the web app vs. browser
             // extension is why this logic lives here and not in shared/.)
             if (!window.context.isAuthenticatedUser) {
-                let editDescription = 'edit settings' // default description
-                if ('edit' in args && args.edit) {
-                    editDescription = `update user setting ` + '`' + args.edit.path + '`'
-                } else if ('extensionID' in args) {
-                    editDescription =
-                        `${typeof args.enabled === 'boolean' ? 'enable' : 'disable'} extension ` +
-                        '`' +
-                        args.extensionID +
-                        '`'
-                }
+                const editDescription =
+                    typeof edit === 'string' ? 'edit settings' : `update setting` + '`' + edit.path.join('.') + '`'
                 const u = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
@@ -52,11 +41,8 @@ export function createPlatformContext(): PlatformContext {
                 )
             }
 
-            try {
-                await updateSettings(context, subject, args, mutateSettings)
-            } finally {
-                settingsRefreshes.next()
-            }
+            await updateSettings(context, subject, edit, mutateSettings)
+            updatedSettings.next(await fetchViewerSettings().toPromise())
         },
         queryGraphQL: (request, variables) =>
             requestGraphQL(
@@ -67,40 +53,18 @@ export function createPlatformContext(): PlatformContext {
             ),
         queryLSP: requests => sendLSPHTTPRequests(requests),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createMessageTransports: (extension, settingsCascade) =>
-            Promise.resolve(createMessageTransports(extension, settingsCascade)),
+        createExtensionHost: () => {
+            const worker = new ExtensionHostWorker()
+            const messageTransports = createWebWorkerMessageTransports(worker)
+            return new Observable(sub => {
+                sub.next(messageTransports)
+                return () => worker.terminate()
+            })
+        },
+        getScriptURLForExtension: bundleURL => bundleURL,
+        sourcegraphURL: window.context.externalURL,
+        clientApplication: 'sourcegraph',
+        traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
     }
     return context
-}
-
-function createMessageTransports(
-    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
-    settingsCascade: SettingsCascade<any>
-): MessageTransports {
-    if (!extension.manifest) {
-        throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no manifest found`)
-    }
-    if (isErrorLike(extension.manifest)) {
-        throw new Error(
-            `unable to run extension ${JSON.stringify(extension.id)}: invalid manifest: ${extension.manifest.message}`
-        )
-    }
-
-    if (extension.manifest.url) {
-        try {
-            const worker = new ExtensionHostWorker()
-            const initData: InitData = {
-                bundleURL: extension.manifest.url,
-                sourcegraphURL: window.context.externalURL,
-                clientApplication: 'sourcegraph',
-                settingsCascade,
-            }
-            worker.postMessage(initData)
-            return createWebWorkerMessageTransports(worker)
-        } catch (err) {
-            console.error(err)
-        }
-        throw new Error('failed to initialize extension host')
-    }
-    throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
 }

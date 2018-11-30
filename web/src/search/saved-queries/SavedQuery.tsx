@@ -3,12 +3,11 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
-import { mapTo, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { mapTo, startWith, switchMap, withLatestFrom } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { getLastIDForSubject } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
-import { settingsRefreshes } from '../../user/settings/backend'
 import { createSavedQuery, deleteSavedQuery } from '../backend'
 import { SavedQueryRow } from './SavedQueryRow'
 import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
@@ -60,7 +59,6 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             props.savedQuery.notifySlack
                         )
                     ),
-                    tap(() => settingsRefreshes.next()),
                     mapTo(void 0)
                 )
                 .subscribe(
@@ -89,7 +87,6 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             props.savedQuery.id
                         )
                     ),
-                    tap(() => settingsRefreshes.next()),
                     mapTo(void 0)
                 )
                 .subscribe(

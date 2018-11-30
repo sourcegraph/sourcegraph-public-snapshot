@@ -262,3 +262,8 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
     return uri
 }
+
+export const toRootURI = (ctx: AbsoluteRepo) => `git://${ctx.repoPath}?${ctx.commitID}`
+export function toURIWithPath(ctx: AbsoluteRepoFile): string {
+    return `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
+}

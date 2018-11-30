@@ -105,7 +105,7 @@ func watchLangServers() {
 				Readme:      readme,
 				// The same extension is used for each language server (for now). It is built from
 				// https://github.com/sourcegraph/sourcegraph-langserver-http.
-				Url:              "https://storage.googleapis.com/sourcegraph-cx-dev/sourcegraph-langserver-http.4.js",
+				Url:              "https://storage.googleapis.com/sourcegraph-cx-dev/sourcegraph-langserver-http.5.js",
 				ActivationEvents: []string{"onLanguage:" + ls.Language},
 				Contributes: &schema.Contributions{
 					Actions: []*schema.Action{

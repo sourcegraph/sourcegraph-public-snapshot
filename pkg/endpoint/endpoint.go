@@ -22,10 +22,11 @@ import (
 // the endpoints for a service and update the map when they change. It can
 // also fallback to static URLs if not configured for kubernetes.
 type Map struct {
-	mu   sync.Mutex
-	init func() (*hashMap, error)
-	err  error
-	urls *hashMap
+	mu      sync.Mutex
+	init    func() (*hashMap, error)
+	err     error
+	urls    *hashMap
+	urlspec string
 }
 
 // New creates a new Map for the URL specifier.
@@ -47,10 +48,13 @@ type Map struct {
 //
 func New(urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
-		return &Map{urls: newConsistentHashMap(strings.Split(urlspec, " "))}
+		return &Map{
+			urlspec: urlspec,
+			urls:    newConsistentHashMap(strings.Split(urlspec, " ")),
+		}
 	}
 
-	m := &Map{}
+	m := &Map{urlspec: urlspec}
 
 	// Kick off setting the initial urls or err on first access. We don't rely
 	// just on inform since it may not communicate updates.
@@ -84,6 +88,10 @@ func New(urlspec string) *Map {
 	}
 
 	return m
+}
+
+func (m *Map) String() string {
+	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
 }
 
 // Get the closest URL in the hash to the provided key that is not in

@@ -1,6 +1,6 @@
 import marked from 'marked'
 import * as React from 'react'
-import { MessageType } from '../api/protocol'
+import { MessageType } from '../api/client/services/notifications'
 import { isErrorLike } from '../util/errors'
 import { Notification } from './notification'
 

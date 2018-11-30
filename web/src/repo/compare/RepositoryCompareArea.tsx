@@ -21,7 +21,6 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { propertyIsDefined } from '../../util/types'
 import { escapeRevspecForURL } from '../../util/url'
@@ -43,8 +42,7 @@ interface Props
     extends RouteComponentProps<{ spec: string }>,
         RepoHeaderContributionsLifecycleProps,
         PlatformContextProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        ExtensionsControllerProps {
     repo: GQL.IRepository
 }
 
@@ -200,10 +198,6 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                                             {...commonProps}
                                             hoverifier={this.hoverifier}
                                             extensionsController={this.props.extensionsController}
-                                            extensionsOnVisibleTextDocumentsChange={
-                                                this.props.extensionsOnVisibleTextDocumentsChange
-                                            }
-                                            extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                                         />
                                     )}
                                 />

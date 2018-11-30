@@ -1,4 +1,13 @@
-import { BehaviorSubject, combineLatest, isObservable, Observable, ObservableInput, of, Unsubscribable } from 'rxjs'
+import {
+    BehaviorSubject,
+    combineLatest,
+    isObservable,
+    Observable,
+    ObservableInput,
+    of,
+    Subscribable,
+    Unsubscribable,
+} from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import {
     ActionContribution,
@@ -9,11 +18,11 @@ import {
     MenuItemContribution,
 } from '../../protocol'
 import { flatten, isEqual } from '../../util'
-import { getComputedContextProperty } from '../context/context'
+import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
-import { Environment } from '../environment'
-import { TextDocumentItem } from '../types/textDocument'
+import { Model } from '../model'
+import { SettingsService } from './settings'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -40,7 +49,11 @@ export class ContributionRegistry {
     /** All entries, including entries that are not enabled in the current context. */
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
-    public constructor(private environment: Observable<Environment>) {}
+    public constructor(
+        private model: Subscribable<Model>,
+        private settingsService: Pick<SettingsService, 'data'>,
+        private context: Subscribable<Context>
+    ) {}
 
     /** Register contributions and return an unsubscribable that deregisters the contributions. */
     public registerContributions(entry: ContributionsEntry): ContributionUnsubscribable {
@@ -72,16 +85,16 @@ export class ContributionRegistry {
     }
 
     /**
-     * Returns an observable that emits all contributions (merged) evaluated in the current
-     * environment (with the optional scope). It emits whenever there is any change.
+     * Returns an observable that emits all contributions (merged) evaluated in the current model (with the
+     * optional scope). It emits whenever there is any change.
      */
-    public getContributions(scope?: TextDocumentItem): Observable<Contributions> {
+    public getContributions(scope?: ContributionScope): Observable<Contributions> {
         return this.getContributionsFromEntries(this._entries, scope)
     }
 
     protected getContributionsFromEntries(
         entries: Observable<ContributionsEntry[]>,
-        scope?: TextDocumentItem
+        scope?: ContributionScope
     ): Observable<Contributions> {
         return combineLatest(
             entries.pipe(
@@ -93,10 +106,15 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            this.environment
+            this.model,
+            this.settingsService.data,
+            this.context
         ).pipe(
-            map(([multiContributions, environment]) => {
-                const computedContext = { get: (key: string) => getComputedContextProperty(environment, key, scope) }
+            map(([multiContributions, model, settings, context]) => {
+                // TODO(sqs): use {@link ContextService#observeValue}
+                const computedContext = {
+                    get: (key: string) => getComputedContextProperty(model, settings, context, key, scope),
+                }
                 return flatten(multiContributions).map(contributions => {
                     try {
                         return evaluateContributions(
