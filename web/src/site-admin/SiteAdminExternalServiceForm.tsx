@@ -113,5 +113,4 @@ function getKindDefinitionId(kind: GQL.ExternalServiceKind): string {
         case GQL.ExternalServiceKind.PHABRICATOR:
             return 'PhabricatorConnection'
     }
-    throw new Error(`unknown external service kind: ${kind}`)
 }
