@@ -338,6 +338,8 @@ github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stripe/stripe-go v0.0.0-20181003141555-9e2a36d584c4 h1:J4BmydJMFWdlbtB3jqPTyAbq0LGBTqpofb+xJ9iH4gs=
 github.com/stripe/stripe-go v0.0.0-20181003141555-9e2a36d584c4/go.mod h1:A1dQZmO/QypXmsL0T8axYZkSN/uA/T/A64pfKdBAMiY=
+github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e h1:Td8imVpXVet0O6vMMhqYx20aezAw5jcO9ia1c3Mvee4=
+github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e/go.mod h1:A1dQZmO/QypXmsL0T8axYZkSN/uA/T/A64pfKdBAMiY=
 github.com/stvp/tempredis v0.0.0-20160122230306-83f7aae7ea49 h1:aBiMfOQ47GCfoTbNcnVyph/dnUuTWN0rSqEKFq3T58Y=
 github.com/stvp/tempredis v0.0.0-20160122230306-83f7aae7ea49/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
 github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea h1:uTsERZ8h4VnqCoMip8dLd+uvk1R1xR2AviWn+pfoUa0=

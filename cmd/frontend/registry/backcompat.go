@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -22,23 +23,26 @@ import (
 // BACKCOMPAT: This eases the transition to extensions from language servers configured in the site
 // config "langservers" property.
 func listSynthesizedRegistryExtensions(ctx context.Context, query string) []*registry.Extension {
-	backcompatLangServerExtensionsMu.Lock()
-	defer backcompatLangServerExtensionsMu.Unlock()
-	return FilterRegistryExtensions(backcompatLangServerExtensions, query)
+	latest := backcompatLangServerExtensions.Get().([]*registry.Extension)
+	return FilterRegistryExtensions(latest, query)
 }
 
 func getSynthesizedRegistryExtension(ctx context.Context, field, value string) (*registry.Extension, error) {
-	backcompatLangServerExtensionsMu.Lock()
-	defer backcompatLangServerExtensionsMu.Unlock()
-	return FindRegistryExtension(backcompatLangServerExtensions, field, value), nil
+	latest := backcompatLangServerExtensions.Get().([]*registry.Extension)
+	return FindRegistryExtension(latest, field, value), nil
 }
 
 var (
-	backcompatLangServerExtensionsMu sync.Mutex
-	backcompatLangServerExtensions   []*registry.Extension
+	backcompatLangServerExtensions          = atomicvalue.New()
+	backcompatLangServerExtensionsReadyOnce sync.Once
+	backcompatLangServerExtensionsReady     = make(chan struct{})
 )
 
 func init() {
+	go watchLangServers()
+}
+
+func watchLangServers() {
 	// Synthesize extensions for language server in the site config "langservers" property, and keep
 	// them in sync.
 	var lastEnabledLangServers []*schema.Langservers
@@ -51,9 +55,7 @@ func init() {
 		}
 		lastEnabledLangServers = enabledLangServers
 
-		backcompatLangServerExtensionsMu.Lock()
-		defer backcompatLangServerExtensionsMu.Unlock()
-		backcompatLangServerExtensions = make([]*registry.Extension, 0, len(enabledLangServers))
+		newValue := make([]*registry.Extension, 0, len(enabledLangServers))
 		for _, ls := range enabledLangServers {
 			info := backcompatLanguageServers[ls.Language]
 
@@ -136,7 +138,7 @@ func init() {
 			}
 			dataStr := string(data)
 
-			backcompatLangServerExtensions = append(backcompatLangServerExtensions, &registry.Extension{
+			newValue = append(newValue, &registry.Extension{
 				UUID:        uuid.NewSHA1(uuid.Nil, []byte(ls.Language)).String(),
 				ExtensionID: "langserver/" + ls.Language,
 				Publisher:   registry.Publisher{Name: "langserver"},
@@ -147,8 +149,15 @@ func init() {
 				IsSynthesizedLocalExtension: true,
 			})
 		}
-		sort.Slice(backcompatLangServerExtensions, func(i, j int) bool {
-			return backcompatLangServerExtensions[i].ExtensionID < backcompatLangServerExtensions[j].ExtensionID
+		sort.Slice(newValue, func(i, j int) bool {
+			return newValue[i].ExtensionID < newValue[j].ExtensionID
+		})
+
+		backcompatLangServerExtensions.Set(func() interface{} {
+			return newValue
+		})
+		backcompatLangServerExtensionsReadyOnce.Do(func() {
+			close(backcompatLangServerExtensionsReady)
 		})
 	})
 }

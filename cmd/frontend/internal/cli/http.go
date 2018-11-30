@@ -141,7 +141,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
 		// to the incoming header URL. Otherwise use the configured CORS origin.
 		headerOrigin := r.Header.Get("Origin")
-		isExtensionRequest := (headerOrigin == devExtension || headerOrigin == prodExtension) && !disableBrowserExtension
+		isExtensionRequest := (headerOrigin == devExtension || headerOrigin == prodExtension) && !conf.Get().DisableBrowserExtension
 		if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 
@@ -169,7 +169,7 @@ func isTrustedOrigin(r *http.Request) bool {
 	requestOrigin := r.Header.Get("Origin")
 
 	var isExtensionRequest bool
-	if !disableBrowserExtension {
+	if !conf.Get().DisableBrowserExtension {
 		isExtensionRequest = requestOrigin == devExtension || requestOrigin == prodExtension
 	}
 

@@ -6,13 +6,14 @@ export GOBIN="$PWD/.bin"
 export PATH=$GOBIN:$PATH
 export GO111MODULE=on
 
+pkgs=${@:-./...}
+
 go install honnef.co/go/tools/cmd/staticcheck
 
-echo go install...
-go install -buildmode=archive ./...
+set -x
 
-echo go vet...
-go vet ./...
+go install -buildmode=archive ${pkgs}
 
-echo staticcheck...
-staticcheck -ignore '*:ST1005' ./...
+go vet ${pkgs}
+
+staticcheck -ignore '*:ST1005' ${pkgs}

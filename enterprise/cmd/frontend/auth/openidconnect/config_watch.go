@@ -31,7 +31,7 @@ func init() {
 		cur []*schema.OpenIDConnectAuthProvider
 		reg = map[schema.OpenIDConnectAuthProvider]auth.Provider{}
 	)
-	conf.Watch(func() {
+	auth.ConfWatch(func() {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -64,8 +64,8 @@ func init() {
 		}
 		auth.UpdateProviders(updates)
 		cur = new
+		init = false
 	})
-	init = false
 }
 
 func diffProviderConfig(old, new []*schema.OpenIDConnectAuthProvider) map[schema.OpenIDConnectAuthProvider]bool {

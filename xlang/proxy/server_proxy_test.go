@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 
@@ -34,7 +33,7 @@ func TestCache(t *testing.T) {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
 		}
 		a, b := InMemoryPeerConns()
-		jsonrpc2.NewConn(ctx, a, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(handler)))
+		jsonrpc2.NewConn(ctx, a, jsonrpc2.HandlerWithError(handler))
 		stream = b
 	}
 	defer stream.Close()
@@ -42,7 +41,7 @@ func TestCache(t *testing.T) {
 	c := &serverProxyConn{
 		id: serverID{contextID: contextID{mode: "cache-test"}},
 	}
-	c.conn = jsonrpc2.NewConn(ctx, stream, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)))
+	c.conn = jsonrpc2.NewConn(ctx, stream, jsonrpc2.HandlerWithError(c.handle))
 	defer c.conn.Close()
 	c.initOnce.Do(func() {
 		_, err := c.lspInitialize(ctx)
@@ -87,8 +86,6 @@ func TestCache(t *testing.T) {
 	}
 	for _, v := range []string{"hello", "", "world"} {
 		set("x", v)
-		// Sleep since notifications don't block
-		time.Sleep(50 * time.Millisecond)
 		got, ok := get("x")
 		if !ok {
 			t.Fatalf("expected get(x) = %v, got cache miss", v)
