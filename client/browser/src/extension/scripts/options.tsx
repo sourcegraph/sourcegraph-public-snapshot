@@ -8,6 +8,7 @@ import { noop, Subscription } from 'rxjs'
 import storage from '../../browser/storage'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
+import { initSentry } from '../../libs/sentry'
 import { getAccessToken, setAccessToken } from '../../shared/auth/access_token'
 import { createAccessToken, fetchAccessTokenIDs } from '../../shared/backend/auth'
 import { fetchCurrentUser, fetchSite } from '../../shared/backend/server'
@@ -15,6 +16,8 @@ import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('OPTIONS')
+
+initSentry('options')
 
 type State = Pick<FeatureFlags, 'useExtensions'> & { sourcegraphURL: string | null }
 
