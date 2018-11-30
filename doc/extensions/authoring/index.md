@@ -15,6 +15,7 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 - [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html)
 - [Debugging an extension](debugging.md)
 - [Activation](activation.md)
+- [Builtin commands](builtin_commands.md)
 - [Sample extensions (`sourcegraph-extension-samples`)](https://github.com/sourcegraph/sourcegraph-extension-samples)
 - [Cookbook (sample code)](cookbook.md)
 
