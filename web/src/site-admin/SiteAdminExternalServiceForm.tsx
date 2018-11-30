@@ -7,6 +7,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+import AddIcon from 'mdi-react/AddIcon'
 
 interface Props {
     history: H.History
@@ -74,9 +75,13 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                     </p>
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={this.props.loading}>
+                    {this.props.loading ? (
+                        <LoadingSpinner className="icon-inline" />
+                    ) : (
+                        this.props.mode === 'create' && <AddIcon className="icon-inline" />
+                    )}
                     {this.props.mode === 'edit' ? 'Update' : 'Add external service'}
                 </button>
-                {this.props.loading && <LoadingSpinner className="icon-inline" />}
             </Form>
         )
     }
