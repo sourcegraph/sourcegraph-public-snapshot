@@ -53,15 +53,13 @@ describe('activeExtensions', () => {
             })
         ))
 
+    const manifest = { url: 'u', activationEvents: [] }
     it('previously activated extensions remain activated when their activationEvents no longer match', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 from(
                     new TestExtensionsService(
-                        [
-                            { id: 'x', manifest: { url: 'u', activationEvents: [] }, rawManifest: null },
-                            { id: 'y', manifest: { url: 'u', activationEvents: [] }, rawManifest: null },
-                        ],
+                        [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
                         cold<Pick<Model, 'visibleTextDocuments'>>('-a-b-|', {
                             a: { visibleTextDocuments: [{ languageId: 'x', text: '', uri: '' }] },
                             b: { visibleTextDocuments: [{ languageId: 'y', text: '', uri: '' }] },
@@ -79,8 +77,8 @@ describe('activeExtensions', () => {
                     ).activeExtensions
                 )
             ).toBe('-a-b-|', {
-                a: [{ id: 'x', scriptURL: 'u' }],
-                b: [{ id: 'x', scriptURL: 'u' }, { id: 'y', scriptURL: 'u' }],
+                a: [{ id: 'x', manifest, scriptURL: 'u' }],
+                b: [{ id: 'x', manifest, scriptURL: 'u' }, { id: 'y', manifest, scriptURL: 'u' }],
             } as Record<string, ExecutableExtension[]>)
         ))
 })
