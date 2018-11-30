@@ -721,7 +721,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	searchedFileContentsOrPaths := false
-	fileIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEzLDlWMy41TDE4LjUsOU02LDJDNC44OSwyIDQsMi44OSA0LDRWMjBBMiwyIDAgMCwwIDYsMjJIMThBMiwyIDAgMCwwIDIwLDIwVjhMMTQsMkg2WiIgLz48L3N2Zz4="
 	for _, resultType := range resultTypes {
 		resultType := resultType // shadow so it doesn't change in the goroutine
 		if _, seen := seenResultTypes[resultType]; seen {
@@ -827,7 +826,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 							matches = append(matches, &GenericSearchMatchResolver{url: url, body: lm.Preview(), highlights: highlights})
 						}
 						r.matches = matches
-						r.icon = fileIcon
+						r.icon = repoIcon
 						r.label = label
 						r.url = r.File().URL()
 						resultsMu.Lock()

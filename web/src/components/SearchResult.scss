@@ -1,25 +1,9 @@
-.search-result-match {
-    width: 100%;
-    .line {
-        &-hidden {
-            visibility: hidden;
-        }
+.search-result {
+    &__title {
+        display: flex;
+        align-items: center;
     }
-}
-
-.theme-light {
-    // Override highlight.js theme for diffs when using light theme.
-    .hljs-addition {
-        background-color: rgba(31, 116, 31, 0.15);
-        color: black;
-    }
-    .hljs-deletion {
-        background-color: rgba(192, 10, 10, 0.15);
-        color: black;
-    }
-    .line {
-        &-hidden {
-            visibility: hidden;
-        }
+    &__spacer {
+        flex: 1;
     }
 }

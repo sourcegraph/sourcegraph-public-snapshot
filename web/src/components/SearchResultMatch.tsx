@@ -1,18 +1,19 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { decode } from 'he'
-import { range } from 'lodash'
 import _ from 'lodash'
+import { range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
-import { filter, switchMap, catchError } from 'rxjs/operators'
+import { catchError, filter, switchMap } from 'rxjs/operators'
+import sanitizeHtml = require('sanitize-html')
 import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
 import { highlightNode } from '../util/dom'
 import { Markdown } from './Markdown'
 import { HighlightRange } from './SearchResult'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 interface SearchResultMatchProps {
     item: GQL.ISearchMatch
@@ -49,7 +50,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
 
     public constructor(props: SearchResultMatchProps) {
         super(props)
+
         // Render the match body as markdown, and syntax highlight the response if it's a code block.
+        // This is a lot of network requests right now, but once extensions can run on the backend we can
+        // run results through the renderer and syntax highlighter without network requests.
         this.subscriptions.add(
             combineLatest(this.propsChanges, this.visibilityChanges)
                 .pipe(
@@ -80,7 +84,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                         return of(markdownHTML)
                     }),
                     // Return the raw body if markdown rendering fails, maintaing the text structure.
-                    catchError(() => of('<pre>' + props.body + '</pre>'))
+                    catchError(() => of('<pre>' + sanitizeHtml(props.body) + '</pre>'))
                 )
                 .subscribe(str => this.setState({ HTML: str }), error => console.error(error))
         )
@@ -139,7 +143,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             >
                 <>
                     {this.state.HTML && (
-                        <Link key={this.props.url} to={this.props.url} className="file-match__item">
+                        <Link key={this.props.url} to={this.props.url} className="search-result-match__item">
                             <Markdown
                                 refFn={this.setTableContainerElement}
                                 className="search-result-match code-excerpt"

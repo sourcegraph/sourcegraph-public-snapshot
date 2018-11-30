@@ -101,7 +101,11 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     }
                     onClick={this.toggle}
                 >
-                    {!!stringIcon ? <img src={stringIcon} /> : <Icon className="icon-inline" />}
+                    {!!stringIcon ? (
+                        <img src={stringIcon} className="icon-inline icon-inline__filtered" />
+                    ) : (
+                        <Icon className="icon-inline" />
+                    )}
                     <div className={`result-container__header-title ${this.props.titleClassName || ''}`}>
                         {this.props.collapsible ? (
                             <span onClick={blockExpandAndCollapse}>{this.props.title}</span>

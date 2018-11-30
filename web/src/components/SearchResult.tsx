@@ -31,7 +31,7 @@ export class SearchResult extends React.Component<Props> {
     }
 
     private renderTitle = () => (
-        <div className="repository-search-result__title">
+        <div className="search-result__title">
             <span
                 dangerouslySetInnerHTML={{
                     __html: marked(this.props.result.label, { gfm: true, breaks: true, sanitize: true }),
@@ -39,7 +39,7 @@ export class SearchResult extends React.Component<Props> {
             />
             {this.props.result.detail && (
                 <>
-                    <span className="repository-search-result__spacer" />
+                    <span className="search-result__spacer" />
                     <small
                         dangerouslySetInnerHTML={{
                             __html: marked(this.props.result.detail, { gfm: true, breaks: true, sanitize: true }),
