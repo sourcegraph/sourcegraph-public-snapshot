@@ -58,7 +58,7 @@ func Code(ctx context.Context, content []byte, filepath string, disableTimeout b
 
 	themechoice := "Sourcegraph"
 	if isLightTheme {
-		themechoice = "Solarized (light)"
+		themechoice = "Sourcegraph (light)"
 	}
 
 	// Trim a single newline from the end of the file. This means that a file
