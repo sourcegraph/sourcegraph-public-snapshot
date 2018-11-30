@@ -22,5 +22,6 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 ## Tutorials
 
 - [Hello world](tutorials/hello-world.md)
+- [Buttons and custom commands](tutorials/button-custom-commands.md)
 
 The [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) is also a helpful source of inspiration and working code samples from existing extensions.

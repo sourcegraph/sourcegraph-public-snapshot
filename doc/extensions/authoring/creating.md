@@ -56,10 +56,14 @@ The `README.md` is the content for your extension page in the [extensions regist
 
 #### package.json
 
-The `package.json` defines extension configuration and commands required for development and publishing.
-
-<!--TODO: Ryan: If you're creating your first extension, leave the `package.json` as is or see the [extension configuration documentation](extension_configuration.md).-->
+The Sourcegraph extension creator generates a minimal and production ready `package.json` used for [extension metadata and configuration](manifest.md).
 
 #### tslint.json and tsconfig.json
 
-These are configuration files for linting and TypeScript compilation. They will be sufficient for most extensions.
+These are configuration files for linting and TypeScript compilation and will be sufficient for most extensions.
+
+## Next steps
+
+- [Publishing an extension](publishing.md)
+- [Extension activation](activation.md)
+- [Extension manifest (configuration)](manifest.md)
