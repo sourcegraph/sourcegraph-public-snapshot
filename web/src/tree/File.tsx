@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { RepositoryIcon } from '../util/icons'
+import { RepositoryIcon } from '../../../shared/src/components/icons'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, treePadding } from './util'
 

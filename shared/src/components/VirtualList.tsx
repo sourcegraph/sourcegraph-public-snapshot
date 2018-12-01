@@ -45,7 +45,7 @@ export class VirtualList extends React.PureComponent<Props, State> {
             <div className={this.props.className} ref={this.props.onRef}>
                 {this.props.items.slice(0, this.props.itemsToShow).map((item, i) => (
                     <VisibilitySensor
-                        key={item.key}
+                        key={item.key || '0'}
                         // tslint:disable-next-line:jsx-no-lambda
                         onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, i)}
                         containment={this.props.containment}

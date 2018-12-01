@@ -1,9 +1,9 @@
 import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'
-import { AbsoluteRepoFile } from '..'
 import { decorationAttachmentStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
+import { AbsoluteRepoFile } from '../../../../shared/src/util/url'
 
 interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
     line: number

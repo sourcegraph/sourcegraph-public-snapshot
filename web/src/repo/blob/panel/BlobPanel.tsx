@@ -16,8 +16,8 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
+import { RepositoryIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PanelItemPortal } from '../../../../../shared/src/panel/PanelItemPortal'
@@ -26,6 +26,7 @@ import { FileLocationsTree } from '../../../../../shared/src/panel/views/FileLoc
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { AbsoluteRepoFile, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
 import {
     getDefinition,
     getHover,
@@ -37,8 +38,7 @@ import {
 import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
-import { parseHash } from '../../../util/url'
+import { fetchHighlightedFileLines } from '../../backend'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
@@ -223,6 +223,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 icon={RepositoryIcon}
                                 pluralNoun="definitions"
                                 isLightTheme={this.props.isLightTheme}
+                                fetchHighlightedFileLines={fetchHighlightedFileLines}
                             />
                         }
                     />
@@ -244,6 +245,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 icon={RepositoryIcon}
                                 pluralNoun="local references"
                                 isLightTheme={this.props.isLightTheme}
+                                fetchHighlightedFileLines={fetchHighlightedFileLines}
                             />
                         }
                     />
@@ -264,6 +266,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 pluralNoun="external references"
                                 isLightTheme={this.props.isLightTheme}
                                 location={this.props.location}
+                                fetchHighlightedFileLines={fetchHighlightedFileLines}
                             />
                         }
                     />
@@ -285,6 +288,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 icon={RepositoryIcon}
                                 pluralNoun="implementations"
                                 isLightTheme={this.props.isLightTheme}
+                                fetchHighlightedFileLines={fetchHighlightedFileLines}
                             />
                         }
                     />

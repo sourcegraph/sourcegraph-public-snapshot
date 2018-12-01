@@ -2,7 +2,6 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
-import { eventLogger } from '../tracking/eventLogger'
 
 export interface Props {
     /**
@@ -130,9 +129,6 @@ export class ResultContainer extends React.PureComponent<Props, State> {
     }
 
     private toggle = () => {
-        if (!this.state.expanded) {
-            eventLogger.log('SearchResultsExpanded')
-        }
         this.setState(state => ({ expanded: !state.expanded }))
     }
 }

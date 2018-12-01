@@ -1,11 +1,18 @@
 import { range } from 'lodash'
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
-import { combineLatest, Subject, Subscription } from 'rxjs'
+import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
-import { Repo } from '../repo'
-import { fetchHighlightedFileLines } from '../repo/backend'
 import { highlightNode } from '../util/dom'
+import { Repo } from '../util/url'
+
+export interface FetchFileCtx {
+    repoPath: string
+    commitID: string
+    filePath: string
+    disableTimeout?: boolean
+    isLightTheme: boolean
+}
 
 interface Props extends Repo {
     commitID: string
@@ -15,6 +22,7 @@ interface Props extends Repo {
     highlightRanges: HighlightRange[]
     className?: string
     isLightTheme: boolean
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 interface HighlightRange {
@@ -51,7 +59,13 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                 .pipe(
                     filter(([, isVisible]) => isVisible),
                     switchMap(([{ repoPath, filePath, commitID, isLightTheme }]) =>
-                        fetchHighlightedFileLines({ repoPath, commitID, filePath, isLightTheme, disableTimeout: true })
+                        props.fetchHighlightedFileLines({
+                            repoPath,
+                            commitID,
+                            filePath,
+                            isLightTheme,
+                            disableTimeout: true,
+                        })
                     )
                 )
                 .subscribe(

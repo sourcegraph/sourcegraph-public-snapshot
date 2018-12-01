@@ -7,11 +7,11 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { pluralize } from '../../../shared/src/util/strings'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
-import { pluralize } from '../util/strings'
 import { deleteOrganization, fetchAllOrganizations } from './backend'
 
 interface OrgNodeProps {
