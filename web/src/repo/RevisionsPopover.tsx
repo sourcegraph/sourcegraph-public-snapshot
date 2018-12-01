@@ -9,10 +9,10 @@ import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { replaceRevisionInURL } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
+import { replaceRevisionInURL } from '../util/url'
 import { GitRefNode, queryGitRefs } from './GitRef'
 
 const fetchRepositoryCommits = memoizeObservable(

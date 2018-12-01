@@ -3,15 +3,11 @@ import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { ChatIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
-import {
-    lprToRange,
-    parseHash,
-    toPositionOrRangeHash,
-    toViewStateHashComponent,
-} from '../../../../../shared/src/util/url'
+import { parseHash, toPositionOrRangeHash, toViewStateHashComponent } from '../../../../../shared/src/util/url'
 import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { lprToRange } from '../../../util/url'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 /**
  * A repository header action that toggles the visibility of the discussions panel.
