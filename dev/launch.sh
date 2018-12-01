@@ -70,8 +70,8 @@ export ZOEKT_HOST=localhost:6070
 export SRC_HTTP_ADDR=":3081"
 export WEBPACK_DEV_SERVER=1
 
-# we want to keep config.json, but allow local config.
-export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE:-./dev/config.json}
+export DEV_OVERRIDE_CRITICAL_CONFIG=${DEV_OVERRIDE_CRITICAL_CONFIG:-./dev/critical-config.json}
+export DEV_OVERRIDE_SITE_CONFIG=${DEV_OVERRIDE_SITE_CONFIG:-./dev/site-config.json}
 
 # WebApp
 export NODE_ENV=development

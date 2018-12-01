@@ -83,6 +83,7 @@ func Main() error {
 	}
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
+	handleConfigOverrides()
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
