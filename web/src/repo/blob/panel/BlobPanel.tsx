@@ -20,7 +20,6 @@ import { Location, Position } from '../../../../../shared/src/api/protocol/plain
 import { RepositoryIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { PanelItemPortal } from '../../../../../shared/src/panel/PanelItemPortal'
 import { FileLocations } from '../../../../../shared/src/panel/views/FileLocations'
 import { FileLocationsTree } from '../../../../../shared/src/panel/views/FileLocationsTree'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'

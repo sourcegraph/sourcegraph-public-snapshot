@@ -84,7 +84,7 @@ export function createExtensionHostClientConnection(
                 })
         )
     )
-    subscription.add(new ClientViews(connection, services.views))
+    subscription.add(new ClientViews(connection, services.views, services.textDocumentLocations))
     subscription.add(new ClientCodeEditor(connection, services.textDocumentDecoration))
     subscription.add(
         new ClientDocuments(
@@ -105,7 +105,8 @@ export function createExtensionHostClientConnection(
             services.textDocumentDefinition,
             services.textDocumentTypeDefinition,
             services.textDocumentImplementation,
-            services.textDocumentReferences
+            services.textDocumentReferences,
+            services.textDocumentLocations
         )
     )
     subscription.add(new Search(connection, services.queryTransformer))

@@ -1,32 +1,25 @@
 import * as H from 'history'
-import marked from 'marked'
-import CancelIcon from 'mdi-react/CancelIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../../shared/src/api/client/services/view'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
-import { PanelView } from '../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { Markdown } from '../components/Markdown'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
-import { createLinkClickHandler } from '../util/linkClickHandler'
-
-const EmptyPanelView: React.FunctionComponent = () => (
-    <div className="panel__empty">
-        <CancelIcon className="icon-inline" /> Nothing to show here
-    </div>
-)
+import { EmptyPanelView } from './views/EmptyPanelView'
+import { PanelView } from './views/PanelView'
 
 interface Props extends ExtensionsControllerProps {
     location: H.Location
     history: H.History
+    isLightTheme: boolean
 }
 
 interface State {
     /** Panel views contributed by extensions. */
-    panelViews?: (PanelView & { id: string })[] | null
+    panelViews?: (PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>)[] | null
 }
 
 /**
@@ -76,13 +69,14 @@ export class Panel extends React.PureComponent<Props, State> {
                               label: panelView.title,
                               id: panelView.id,
                               priority: 0, // TODO!(sqs)
-                              element:
-                                  panelView.component ||
-                                  ((
-                                      <div className="p-2" onClick={createLinkClickHandler(this.props.history)}>
-                                          <Markdown dangerousInnerHTML={marked(panelView.content)} />
-                                      </div>
-                                  ) || <EmptyPanelView />),
+                              element: (
+                                  <PanelView
+                                      panelView={panelView}
+                                      history={this.props.history}
+                                      location={this.props.location}
+                                      isLightTheme={this.props.isLightTheme}
+                                  />
+                              ),
                           } as PanelItem)
                   )
                   .sort(byPriority)

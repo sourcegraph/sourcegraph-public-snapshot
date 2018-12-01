@@ -59,7 +59,7 @@ interface Props {
     /** The plural noun described by the locations, such as "references" or "implementations". */
     pluralNoun: string
 
-    className: string
+    className?: string
 
     isLightTheme: boolean
 
@@ -174,7 +174,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className={`file-locations ${this.props.className}`}>
+            <div className={`file-locations ${this.props.className || ''}`}>
                 <VirtualList
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}

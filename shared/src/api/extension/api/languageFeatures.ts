@@ -7,6 +7,7 @@ import {
     HoverProvider,
     ImplementationProvider,
     Location,
+    LocationProvider,
     ReferenceContext,
     ReferenceProvider,
     Subscribable,
@@ -38,12 +39,22 @@ export interface ExtLanguageFeaturesAPI {
         position: plain.Position,
         context: ReferenceContext
     ): Observable<plain.Location[] | null | undefined>
+    $observeLocations(
+        id: number,
+        resource: string,
+        position: plain.Position
+    ): Observable<plain.Location[] | null | undefined>
 }
 
 /** @internal */
 export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, Unsubscribable {
     private registrations = new ProviderMap<
-        HoverProvider | DefinitionProvider | TypeDefinitionProvider | ImplementationProvider | ReferenceProvider
+        | HoverProvider
+        | DefinitionProvider
+        | TypeDefinitionProvider
+        | ImplementationProvider
+        | ReferenceProvider
+        | LocationProvider
     >(id => this.proxy.$unregister(id))
 
     constructor(private proxy: ClientLanguageFeaturesAPI, private documents: ExtDocuments) {}
@@ -162,6 +173,37 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, Unsubscribab
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
         const { id, subscription } = this.registrations.add(provider)
         this.proxy.$registerReferenceProvider(id, selector)
+        return subscription
+    }
+
+    public $observeLocations(
+        id: number,
+        resource: string,
+        position: plain.Position
+    ): Observable<plain.Location[] | null | undefined> {
+        const provider = this.registrations.get<LocationProvider>(id)
+        return toProviderResultObservable(
+            this.documents
+                .getSync(resource)
+                .then<Location[] | null | undefined | Subscribable<Location[] | null | undefined>>(document =>
+                    provider.provideLocations(document, toPosition(position))
+                ),
+            toLocations
+        )
+    }
+
+    public registerLocationProvider(
+        idStr: string,
+        selector: DocumentSelector,
+        provider: LocationProvider
+    ): Unsubscribable {
+        /**
+         * {@link idStr} is the `id` parameter to {@link sourcegraph.languages.registerLocationProvider} that
+         * identifies the provider and is chosen by the extension. {@link id} is an internal implementation detail:
+         * the numeric registry ID used to identify this provider solely between the client and extension host.
+         */
+        const { id, subscription } = this.registrations.add(provider)
+        this.proxy.$registerLocationProvider(id, idStr, selector)
         return subscription
     }
 

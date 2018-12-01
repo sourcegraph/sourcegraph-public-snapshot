@@ -37,23 +37,30 @@ export abstract class FeatureProviderRegistry<O, P> {
  * For example, hovers are scoped to a document (i.e., the document URI is one of the required arguments passed to
  * the hover provider), so this class is used for the hover provider registry.
  */
-export abstract class DocumentFeatureProviderRegistry<P> extends FeatureProviderRegistry<
-    TextDocumentRegistrationOptions,
-    P
-> {
+export abstract class DocumentFeatureProviderRegistry<
+    P,
+    O extends TextDocumentRegistrationOptions = TextDocumentRegistrationOptions
+> extends FeatureProviderRegistry<O, P> {
     /**
-     * Returns an observable of the set if registered providers that apply to the document. The observable emits
+     * @param document The text document to find applicable providers for.
+     * @param filter An optional function to filter providers based on their registration options.
+     * @returns an observable of the set of registered providers that apply to the document. The observable emits
      * initially and whenever the set changes (due to a provider being registered or unregistered).
      */
-    public providersForDocument(document: TextDocumentIdentifier): Observable<P[]> {
+    protected providersForDocument(
+        document: TextDocumentIdentifier,
+        filter?: (registrationOptions: O) => boolean
+    ): Observable<P[]> {
         return this.entries.pipe(
             map(entries =>
                 entries
-                    .filter(({ registrationOptions }) =>
-                        match(registrationOptions.documentSelector, {
-                            uri: document.uri,
-                            languageId: getModeFromPath(document.uri),
-                        })
+                    .filter(
+                        ({ registrationOptions }) =>
+                            (filter ? filter(registrationOptions) : true) &&
+                            match(registrationOptions.documentSelector, {
+                                uri: document.uri,
+                                languageId: getModeFromPath(document.uri),
+                            })
                     )
                     .map(({ provider }) => provider)
             )

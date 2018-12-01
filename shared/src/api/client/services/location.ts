@@ -1,7 +1,8 @@
 import { combineLatest, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
+import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
+import { TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
@@ -77,5 +78,49 @@ export class TextDocumentReferencesProviderRegistry extends TextDocumentLocation
         // References are always an array (unlike other locations, which can be returned as L | L[] |
         // null).
         return getLocations(this.providersForDocument(params.textDocument), params)
+    }
+}
+
+/**
+ * Registration options for a text document provider that has an ID (such as {@link sourcegraph.LocationProvider}).
+ */
+export interface TextDocumentProviderIDRegistrationOptions extends TextDocumentRegistrationOptions {
+    /**
+     * The identifier of the provider, used to distinguish it among other providers.
+     *
+     * This corresponds to, e.g., the `id` parameter in {@link sourcegraph.languages.registerLocationProvider}.
+     */
+    id: string
+}
+
+/**
+ * The registry for text document location providers with a distinguishing ID (i.e., registered using
+ * {@link TextDocumentProviderIDRegistrationOptions}).
+ */
+export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProviderRegistry<
+    ProvideTextDocumentLocationSignature<TextDocumentPositionParams, Location>,
+    TextDocumentProviderIDRegistrationOptions
+> {
+    /**
+     * @param id The provider ID.
+     * @returns an observable of the set of registered providers that apply to the document with the given ID.
+     * (Usually there is at most 1 such provider.) The observable emits initially and whenever the set changes (due
+     * to a provider being registered or unregistered).
+     */
+    public providersForDocumentWithID(
+        id: string,
+        document: TextDocumentIdentifier
+    ): Observable<ProvideTextDocumentLocationSignature<TextDocumentPositionParams, Location>[]> {
+        return this.providersForDocument(document, registrationOptions => registrationOptions.id === id)
+    }
+
+    /**
+     * Gets locations from the provider with the given ID (i.e., the `id` parameter to
+     * {@link sourcegraph.languageFeatures.registerLocationProvider}).
+     *
+     * @param id The provider ID.
+     */
+    public getLocation(id: string, params: TextDocumentPositionParams): Observable<Location[] | null> {
+        return getLocations(this.providersForDocumentWithID(id, params.textDocument), params)
     }
 }
