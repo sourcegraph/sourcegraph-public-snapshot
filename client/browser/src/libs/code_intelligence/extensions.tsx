@@ -39,6 +39,7 @@ export function initializeExtensions(
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
                 platformContext={platformContext}
+                autoFocus={false}
                 location={history.location}
             />
             <Notifications extensionsController={extensionsController} />

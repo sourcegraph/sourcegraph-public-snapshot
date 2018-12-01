@@ -53,6 +53,7 @@ export function injectExtensionsGlobalComponents(
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
                 platformContext={platformContext}
+                autoFocus={false}
                 location={location}
             />
         </ShortcutProvider>,
