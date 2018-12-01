@@ -6,17 +6,13 @@
         flex-direction: column-reverse;
     }
 
-    $handle-size: 0.165rem;
+    $handle-size: 0.35rem;
 
     &__handle {
         position: relative;
 
         opacity: 0;
         user-select: none;
-        background-color: $color-border;
-        transition-property: width margin-bottom margin-left opacity;
-        transition-duration: 0.125s;
-        transition-timing-function: ease-in-out;
         z-index: 1;
 
         &--right {
@@ -36,15 +32,6 @@
             top: 0;
             left: 0;
             right: 0;
-        }
-
-        &:hover,
-        &--resizing {
-            opacity: 1 !important;
-        }
-
-        &--resizing {
-            filter: brightness(1.25);
         }
     }
 
