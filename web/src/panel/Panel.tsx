@@ -30,7 +30,6 @@ export interface PanelItem extends Tab<string> {
 }
 
 interface Props extends ExtensionsControllerProps {
-    isLightTheme: boolean
     location: H.Location
     history: H.History
 }
