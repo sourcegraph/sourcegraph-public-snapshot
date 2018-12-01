@@ -6,7 +6,7 @@ import { NEVER, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { isDefined } from '../../util/types'
+import { isDefined } from '../../../../shared/src/util/types'
 
 const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */

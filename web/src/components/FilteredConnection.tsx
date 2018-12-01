@@ -20,7 +20,7 @@ import {
 } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { pluralize } from '../util/strings'
+import { pluralize } from '../../../shared/src/util/strings'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
 

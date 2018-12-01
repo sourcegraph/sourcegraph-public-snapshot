@@ -9,6 +9,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
+import { fetchHighlightedFileLines } from '../../repo/backend'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from '../backend'
@@ -211,6 +212,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         authenticatedUser={this.props.authenticatedUser}
                         settingsCascade={this.props.settingsCascade}
                         isLightTheme={this.props.isLightTheme}
+                        fetchHighlightedFileLines={fetchHighlightedFileLines}
                     />
                 ) : (
                     <SearchResultsListOld
@@ -228,6 +230,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         isLightTheme={this.props.isLightTheme}
                         settingsCascade={this.props.settingsCascade}
                         uiLimit={this.state.uiLimit}
+                        fetchHighlightedFileLines={fetchHighlightedFileLines}
                     />
                 )}
             </div>

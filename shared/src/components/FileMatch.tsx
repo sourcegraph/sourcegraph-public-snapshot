@@ -1,11 +1,12 @@
 import { flatMap } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../shared/src/graphql/schema'
+import { Observable } from 'rxjs'
+import { pluralize } from '../../../shared/src/util/strings'
+import * as GQL from '../graphql/schema'
 import { SymbolIcon } from '../symbols/SymbolIcon'
-import { pluralize } from '../util/strings'
 import { toPositionOrRangeHash } from '../util/url'
-import { CodeExcerpt } from './CodeExcerpt'
+import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
 import { mergeContext } from './FileMatchContext'
 import { RepoFileLink } from './RepoFileLink'
@@ -59,6 +60,8 @@ interface Props {
     isLightTheme: boolean
 
     allExpanded?: boolean
+
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 // Dev flag for disabling syntax highlighting on search results pages.
@@ -200,6 +203,7 @@ export class FileMatch extends React.PureComponent<Props> {
                                 highlightRanges={items}
                                 className="file-match__item-code-excerpt"
                                 isLightTheme={this.props.isLightTheme}
+                                fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                             />
                         </Link>
                     )

@@ -17,10 +17,10 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { fetchBlob } from '../../repo/blob/BlobPage'
-import { isDefined, propertyIsDefined } from '../../util/types'
 
 interface Props extends ExtensionsControllerProps {
     history: H.History

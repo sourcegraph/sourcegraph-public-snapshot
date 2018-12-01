@@ -3,11 +3,11 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
+import { RepoQuestionIcon } from '../../../shared/src/components/icons'
+import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { displayRepoPath } from '../../../shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
-import { displayRepoPath } from '../components/RepoFileLink'
-import { RepoQuestionIcon } from '../util/icons'
-import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND, resolveRev } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 

@@ -3,10 +3,15 @@ import HistoryIcon from 'mdi-react/HistoryIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+import {
+    lprToRange,
+    parseHash,
+    toPositionOrRangeHash,
+    toViewStateHashComponent,
+} from '../../../../../shared/src/util/url'
 import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { lprToRange, parseHash, toPositionOrRangeHash, toViewStateHashComponent } from '../../../util/url'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 
 /**

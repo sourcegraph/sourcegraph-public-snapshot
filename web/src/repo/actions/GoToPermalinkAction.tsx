@@ -3,7 +3,7 @@ import LinkIcon from 'mdi-react/LinkIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { replaceRevisionInURL } from '..'
+import { replaceRevisionInURL } from '../../../../shared/src/util/url'
 import { ActionItem } from '../../components/ActionItem'
 
 /**
