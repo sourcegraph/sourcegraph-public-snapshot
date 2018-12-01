@@ -121,8 +121,10 @@ function displayLineCount(editor: sourcegraph.CodeEditor | undefined = activeEdi
  * The activate function is called when one of the extensions `activateEvents`
  * conditions in package.json are satisfied.
  */
-export function activate(): void {
-    sourcegraph.commands.registerCommand('linecounter.displayLineCount', displayLineCount)
+export function activate(ctx: sourcegraph.ExtensionContext): void {
+    ctx.subscriptions.add(
+      sourcegraph.commands.registerCommand('linecounter.displayLineCount', displayLineCount)
+    )
 }
 ```
 
