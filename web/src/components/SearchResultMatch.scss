@@ -2,7 +2,7 @@
     text-decoration: none; // don't use cascading link style
     display: flex;
     align-items: center;
-    padding: 0.25rem 0.5rem;
+    padding: 0.25rem 0;
     overflow-x: auto;
     overflow-y: hidden;
     background-color: #070a0d;
@@ -48,6 +48,53 @@
         flex-direction: column;
     }
 
+    &__markdown {
+        padding: 0.25rem 0.5rem;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    &__code-excerpt {
+        padding-top: 0;
+        padding-bottom: 1rem;
+        padding-left: 0;
+        padding-right: 0;
+
+        td.line {
+            display: none;
+        }
+        td.code > span:first-child {
+            padding-left: 1rem;
+        }
+
+        td.code > span:last-child {
+            padding-right: 1rem;
+        }
+    }
+
+    &__line {
+        &--hidden {
+            visibility: hidden;
+        }
+    }
+
+    &__loader {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        left: 50%;
+    }
+
+    code.language-diff & {
+        font-style: italic;
+        tr:first-child {
+            td.code:first-child {
+                background-color: red;
+            }
+        }
+    }
+
     .theme-light & {
         background-color: $color-light-bg-1;
         border-top: 1px solid $color-light-border;
@@ -84,24 +131,21 @@
             flex-grow: 1;
             flex-direction: column;
         }
-    }
 
-    &__markdown {
-        padding: 0.25rem 0.5rem;
-        display: flex;
-        flex-grow: 1;
-    }
+        &__code-excerpt {
+            padding-top: 0;
+            padding-bottom: 1rem;
 
-    &__line {
-        &--hidden {
-            visibility: hidden;
+            td.line {
+                display: none;
+            }
+            td.code > span:first-child {
+                padding-left: 1rem;
+            }
+
+            td.code > span:last-child {
+                padding-right: 1rem;
+            }
         }
-    }
-
-    &__loader {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        left: 50%;
     }
 }

@@ -146,7 +146,9 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                         <Link key={this.props.url} to={this.props.url} className="search-result-match">
                             <Markdown
                                 refFn={this.setTableContainerElement}
-                                className="search-result-match__markdown code-excerpt"
+                                className={`search-result-match__markdown ${
+                                    this.bodyIsCode() ? 'search-result-match__code-excerpt' : ''
+                                }`}
                                 dangerousInnerHTML={this.state.HTML}
                             />
                         </Link>
