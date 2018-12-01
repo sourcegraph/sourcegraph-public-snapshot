@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Markdown } from '../../components/Markdown'
+import { Markdown } from '../../../../shared/src/components/Markdown'
 
 interface Props {
     /**

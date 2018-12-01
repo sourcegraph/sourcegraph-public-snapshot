@@ -11,9 +11,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import { Markdown } from '../components/Markdown'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
-import { eventLogger } from '../tracking/eventLogger'
 import { createLinkClickHandler } from '../util/linkClickHandler'
-import { parseHash } from '../util/url'
 
 /**
  * A tab and corresponding content to display in the panel.
@@ -155,7 +153,6 @@ export class Panel extends React.PureComponent<Props, State> {
                         }
                         className="panel__tabs"
                         tabClassName="tab-bar__tab--h5like"
-                        onSelectTab={this.onSelectTab}
                         location={this.props.location}
                     >
                         {items && items.map(({ id, element }) => React.cloneElement(element, { key: id }))}
@@ -169,8 +166,6 @@ export class Panel extends React.PureComponent<Props, State> {
         )
     }
 
-    private onSelectTab = (tab: string): void => eventLogger.log('PanelTabActivated', { tab })
-
     private onDismiss = (): void =>
         this.props.history.push(TabsWithURLViewStatePersistence.urlForTabID(this.props.location, null))
 }
@@ -180,13 +175,13 @@ function byPriority(a: { priority: number }, b: { priority: number }): number {
 }
 
 /** A wrapper around Panel that makes it resizable. */
-export const ResizablePanel: React.FunctionComponent<Props> = props =>
-    !!parseHash(props.location.hash).viewState ? (
-        <Resizable
-            className="panel--resizable"
-            handlePosition="top"
-            defaultSize={350}
-            storageKey="panel-size"
-            element={<Panel {...props} />}
-        />
-    ) : null
+// TODO!(sqs): show this selectively
+export const ResizablePanel: React.FunctionComponent<Props> = props => (
+    <Resizable
+        className="panel--resizable"
+        handlePosition="top"
+        defaultSize={350}
+        storageKey="panel-size"
+        element={<Panel {...props} />}
+    />
+)

@@ -3,9 +3,9 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
+import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { Markdown } from '../components/Markdown'
 
 /**
  * A global alert that is shown at the top of the viewport.

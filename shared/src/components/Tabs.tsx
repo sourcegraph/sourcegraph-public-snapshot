@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
-import { parseHash } from '../util/url'
+import { parseHash } from '../../../web/src/util/url'
 
 /**
  * Describes a tab.
