@@ -12,7 +12,7 @@ import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 export function getCommandPaletteMount(): HTMLElement {
     const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
     if (!headerElem) {
-        throw new Error('Unable to find command pallete mount')
+        throw new Error('Unable to find command palette mount')
     }
 
     const commandListClass = 'command-palette-button'
