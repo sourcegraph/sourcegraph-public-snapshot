@@ -24,7 +24,7 @@ The easiest way to get an extension ready to publish is to use the [Sourcegraph 
 ```shell
 mkdir my-extension
 cd my-extension
-npm init @sourcegraph/extension
+npm init sourcegraph-extension
 ```
 
 Follow the prompts, and when complete, you'll have the following files:
