@@ -14,19 +14,18 @@ export interface ViewProviderRegistrationOptions {
 
 export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'title' | 'content'> {
     /**
-     * If the panel view has a location provider component, this is its provider.
+     * The location provider whose results to render in the panel view.
      */
+    // TODO!(sqs): why null and not ?:
     locationProvider: ProvideTextDocumentLocationSignature<TextDocumentPositionParams, plain.Location> | null
 
     /**
-     * The React component to render as the panel view. If this is set, it is the only component that is rendered
-     * ({@link PanelViewWithComponent#locationProvider} and {@link PanelViewWithComponent#content} are not
-     * rendered).
+     * The React element to render in the panel view.
      */
-    reactComponent: React.Component | null
+    reactElement?: React.ReactFragment
 }
 
-export type ProvideViewSignature = Observable<PanelViewWithComponent>
+export type ProvideViewSignature = Observable<PanelViewWithComponent | null>
 
 /** Provides views from all extensions. */
 export class ViewProviderRegistry extends FeatureProviderRegistry<
@@ -48,7 +47,7 @@ export class ViewProviderRegistry extends FeatureProviderRegistry<
      */
     public getViews(
         container: ContributableViewContainer
-    ): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[] | null> {
+    ): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[]> {
         return getViews(this.entries, container)
     }
 }
@@ -60,7 +59,7 @@ export class ViewProviderRegistry extends FeatureProviderRegistry<
  * @internal
  */
 export function getView(
-    entries: Observable<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>,
+    entries: Observable<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>[]>,
     id: string
 ): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions) | null> {
     return entries.pipe(
@@ -76,9 +75,9 @@ export function getView(
  * @internal
  */
 export function getViews(
-    entries: Observable<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>,
+    entries: Observable<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>[]>,
     container: ContributableViewContainer
-): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[] | null> {
+): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[]> {
     return entries.pipe(
         switchMap(
             entries =>
@@ -100,13 +99,13 @@ export function getViews(
                               )
                           )
                       )
-                    : [null]
+                    : [[]]
         )
     )
 }
 
 function addRegistrationOptions(
-    entry: Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>
-): Observable<PanelViewWithComponent & ViewProviderRegistrationOptions> {
-    return entry.provider.pipe(map(view => ({ ...view, ...entry.registrationOptions })))
+    entry: Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>
+): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions) | null> {
+    return entry.provider.pipe(map(view => view && { ...view, ...entry.registrationOptions }))
 }

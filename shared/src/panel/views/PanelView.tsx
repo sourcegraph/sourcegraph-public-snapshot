@@ -31,6 +31,7 @@ export class PanelView extends React.PureComponent<Props, State> {
                         <Markdown dangerousInnerHTML={marked(this.props.panelView.content)} />
                     </div>
                 )}
+                {this.props.panelView.reactElement}
                 {this.props.panelView.locationProvider && (
                     <FileLocations
                         // tslint:disable-next-line:jsx-no-lambda
@@ -41,7 +42,9 @@ export class PanelView extends React.PureComponent<Props, State> {
                         isLightTheme={this.props.isLightTheme}
                     />
                 )}
-                {!this.props.panelView.content && !this.props.panelView.locationProvider && <EmptyPanelView />}
+                {!this.props.panelView.content &&
+                    !this.props.panelView.reactElement &&
+                    !this.props.panelView.locationProvider && <EmptyPanelView />}
             </div>
         )
     }

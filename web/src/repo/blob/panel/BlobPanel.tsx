@@ -16,6 +16,7 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
+import { ContributableViewContainer } from '../../../../../shared/src/api/protocol'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
 import { RepositoryIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -100,17 +101,12 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
 
 const LOADING: 'loading' = 'loading'
 
-interface State {
-    /** The hover information for the subject. */
-    hoverOrError?: HoverMerged | ErrorLike | typeof LOADING
-}
+type PanelSubject = AbsoluteRepoFile & ModeSpec & PlatformContextProps & { position?: Position }
 
 /**
  * A panel on the blob page that displays contextual information.
  */
-export class BlobPanel extends React.PureComponent<Props, State> {
-    public state: State = {}
-
+export class BlobPanel extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
     private locationsUpdates = new Subject<void>()
     private subscriptions = new Subscription()
@@ -123,47 +119,227 @@ export class BlobPanel extends React.PureComponent<Props, State> {
             distinctUntilChanged<Props>((a, b) => subjectIsEqual(toSubject(a), toSubject(b)))
         )
 
-        // Update hover.
+        // Info (hover) panel view.
         this.subscriptions.add(
-            subjectChanges
-                .pipe(
-                    switchMap(
-                        (subject: AbsoluteRepoFile & ModeSpec & PlatformContextProps & { position?: Position }) => {
-                            const { position } = subject
-                            if (
-                                !position ||
-                                position.character ===
-                                    0 /* 1-indexed, so this means only line (not position) is selected */
-                            ) {
-                                return [{ hoverOrError: undefined }]
-                            }
-                            type PartialStateUpdate = Pick<State, 'hoverOrError'>
-                            const result = getHover(
-                                {
-                                    ...(subject as Pick<
-                                        typeof subject,
-                                        Exclude<keyof typeof subject, 'platformContext'>
-                                    >),
-                                    position,
-                                },
-                                { extensionsController: this.props.extensionsController }
-                            ).pipe(
-                                catchError(error => [asError(error)]),
-                                map(c => ({ hoverOrError: c } as PartialStateUpdate))
-                            )
-                            return merge(
-                                result,
-                                of({ hoverOrError: LOADING }).pipe(
-                                    delay(150),
-                                    takeUntil(result)
-                                ) // delay loading spinner to reduce jitter
-                            ).pipe(
-                                startWith<PartialStateUpdate>({ hoverOrError: undefined }) // clear old data immediately)
-                            )
+            this.props.extensionsController.services.views.registerProvider(
+                { id: 'Info', container: ContributableViewContainer.Panel },
+                subjectChanges.pipe(
+                    switchMap((subject: PanelSubject) => {
+                        const { position } = subject
+                        if (
+                            !position ||
+                            position.character === 0 /* 1-indexed, so this means only line (not position) is selected */
+                        ) {
+                            return [undefined]
                         }
+                        const result = getHover(
+                            {
+                                ...(subject as Pick<typeof subject, Exclude<keyof typeof subject, 'platformContext'>>),
+                                position,
+                            },
+                            { extensionsController: this.props.extensionsController }
+                        ).pipe(catchError(error => [asError(error) as ErrorLike]))
+                        return merge(
+                            result,
+                            of(LOADING).pipe(
+                                delay(150),
+                                takeUntil(result)
+                            ) // delay loading spinner to reduce jitter
+                        ).pipe(
+                            startWith(undefined) // clear old data immediately
+                        )
+                    }),
+                    map((hoverOrError: undefined | null | HoverMerged | ErrorLike | typeof LOADING) => {
+                        if (
+                            hoverOrError &&
+                            hoverOrError !== LOADING &&
+                            !isErrorLike(hoverOrError) &&
+                            !isEmptyHover(hoverOrError)
+                        ) {
+                            if (Array.isArray(hoverOrError.contents) && hoverOrError.contents.length >= 2) {
+                                return {
+                                    title: 'Info',
+                                    content: '',
+                                    locationProvider: null,
+                                    reactElement: hoverOrError.contents.map((s, i) => (
+                                        <div key={i} className="blob-panel__extra-item px-2 pt-1">
+                                            {renderHoverContents(s)}
+                                        </div>
+                                    )),
+                                }
+                            }
+                        }
+                        return null
+                    })
+                )
+            )
+        )
+
+        // Definition panel view.
+        this.subscriptions.add(
+            this.props.extensionsController.services.views.registerProvider(
+                { id: 'def', container: ContributableViewContainer.Panel },
+                subjectChanges.pipe(
+                    map((subject: PanelSubject) => ({
+                        title: 'Definition',
+                        content: '',
+                        locationProvider: null,
+                        reactElement: (
+                            <FileLocations
+                                className="panel__tabs-content"
+                                query={this.queryDefinition}
+                                inputRepo={subject.repoPath}
+                                inputRevision={subject.rev}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                onSelect={() => this.onSelectLocation('def')}
+                                icon={RepositoryIcon}
+                                pluralNoun="definitions"
+                                isLightTheme={this.props.isLightTheme}
+                                fetchHighlightedFileLines={fetchHighlightedFileLines}
+                            />
+                        ),
+                    }))
+                )
+            )
+        )
+
+        // References panel view.
+        this.subscriptions.add(
+            this.props.extensionsController.services.views.registerProvider(
+                { id: 'references', container: ContributableViewContainer.Panel },
+                subjectChanges.pipe(
+                    map((subject: PanelSubject) => ({
+                        title: 'References',
+                        content: '',
+                        locationProvider: null,
+                        reactElement: (
+                            <FileLocations
+                                className="panel__tabs-content"
+                                query={this.queryReferencesLocal}
+                                inputRepo={subject.repoPath}
+                                inputRevision={subject.rev}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                onSelect={() => this.onSelectLocation('references')}
+                                icon={RepositoryIcon}
+                                pluralNoun="local references"
+                                isLightTheme={this.props.isLightTheme}
+                                fetchHighlightedFileLines={fetchHighlightedFileLines}
+                            />
+                        ),
+                    }))
+                )
+            )
+        )
+
+        // External references panel view.
+        this.subscriptions.add(
+            this.props.extensionsController.services.views.registerProvider(
+                { id: 'references:external', container: ContributableViewContainer.Panel },
+                subjectChanges.pipe(
+                    map((subject: PanelSubject) => ({
+                        title: 'External references',
+                        content: '',
+                        locationProvider: null,
+                        reactElement: (
+                            <FileLocationsTree
+                                className="panel__tabs-content"
+                                query={this.queryReferencesExternal}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                onSelectLocation={() => this.onSelectLocation('references:external')}
+                                icon={RepositoryIcon}
+                                pluralNoun="external references"
+                                isLightTheme={this.props.isLightTheme}
+                                location={this.props.location}
+                                fetchHighlightedFileLines={fetchHighlightedFileLines}
+                            />
+                        ),
+                    }))
+                )
+            )
+        )
+
+        // Implementations panel view.
+        this.subscriptions.add(
+            this.props.extensionsController.services.views.registerProvider(
+                { id: 'impl', container: ContributableViewContainer.Panel },
+                subjectChanges.pipe(
+                    map((subject: PanelSubject) => ({
+                        title: 'Implementation',
+                        content: '',
+                        locationProvider: null,
+                        reactElement: (
+                            <FileLocations
+                                className="panel__tabs-content"
+                                query={this.queryImplementation}
+                                inputRepo={subject.repoPath}
+                                inputRevision={subject.rev}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                onSelect={() => this.onSelectLocation('impl')}
+                                icon={RepositoryIcon}
+                                pluralNoun="implementations"
+                                isLightTheme={this.props.isLightTheme}
+                                fetchHighlightedFileLines={fetchHighlightedFileLines}
+                            />
+                        ),
+                    }))
+                )
+            )
+        )
+
+        // File history view.
+        this.subscriptions.add(
+            this.props.extensionsController.services.views.registerProvider(
+                { id: 'history', container: ContributableViewContainer.Panel },
+                subjectChanges.pipe(
+                    map((subject: PanelSubject) => ({
+                        title: 'History',
+                        content: '',
+                        locationProvider: null,
+                        reactElement: (
+                            <RepoRevSidebarCommits
+                                key="commits"
+                                repoName={subject.repoPath}
+                                repoID={this.props.repoID}
+                                rev={subject.rev}
+                                filePath={subject.filePath}
+                                history={this.props.history}
+                                location={this.props.location}
+                            />
+                        ),
+                    }))
+                )
+            )
+        )
+
+        // Code discussions view.
+        this.subscriptions.add(
+            this.props.extensionsController.services.views.registerProvider(
+                { id: 'discussions', container: ContributableViewContainer.Panel },
+                subjectChanges.pipe(
+                    map(
+                        (subject: PanelSubject) =>
+                            isDiscussionsEnabled(this.props.settingsCascade)
+                                ? {
+                                      title: 'Discussions',
+                                      content: '',
+                                      locationProvider: null,
+                                      reactElement: (
+                                          <DiscussionsTree
+                                              repoID={this.props.repoID}
+                                              repoPath={subject.repoPath}
+                                              commitID={subject.commitID}
+                                              rev={subject.rev}
+                                              filePath={subject.filePath}
+                                              history={this.props.history}
+                                              location={this.props.location}
+                                              authenticatedUser={this.props.authenticatedUser}
+                                          />
+                                      ),
+                                  }
+                                : null
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+            )
         )
 
         // Update references when subject changes after the initial mount.
@@ -179,156 +355,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        let extraRendered: React.ReactFragment | undefined
-        const { hoverOrError } = this.state
-        if (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && !isEmptyHover(hoverOrError)) {
-            if (Array.isArray(hoverOrError.contents) && hoverOrError.contents.length >= 2) {
-                extraRendered = hoverOrError.contents.map((s, i) => (
-                    <div key={i} className="blob-panel__extra-item px-2 pt-1">
-                        {renderHoverContents(s)}
-                    </div>
-                ))
-            }
-        }
-
-        const isValidToken = hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)
-
-        const viewState = parseHash<BlobPanelTabID>(this.props.location.hash).viewState
-
-        return (
-            <>
-                {extraRendered && (
-                    <PanelItemPortal
-                        id="info"
-                        label="Info"
-                        priority={1}
-                        element={<div className="mt-2">{extraRendered}</div>}
-                    />
-                )}
-                {(isValidToken || viewState === 'def') && (
-                    <PanelItemPortal
-                        id="def"
-                        label="Definition"
-                        priority={0}
-                        element={
-                            <FileLocations
-                                className="panel__tabs-content"
-                                query={this.queryDefinition}
-                                updates={this.locationsUpdates}
-                                inputRepo={this.props.repoPath}
-                                inputRevision={this.props.rev}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onSelect={() => this.onSelectLocation('def')}
-                                icon={RepositoryIcon}
-                                pluralNoun="definitions"
-                                isLightTheme={this.props.isLightTheme}
-                                fetchHighlightedFileLines={fetchHighlightedFileLines}
-                            />
-                        }
-                    />
-                )}
-                {(isValidToken || viewState === 'references') && (
-                    <PanelItemPortal
-                        id="references"
-                        label="References"
-                        priority={-1}
-                        element={
-                            <FileLocations
-                                className="panel__tabs-content"
-                                query={this.queryReferencesLocal}
-                                updates={this.locationsUpdates}
-                                inputRepo={this.props.repoPath}
-                                inputRevision={this.props.rev}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onSelect={() => this.onSelectLocation('references')}
-                                icon={RepositoryIcon}
-                                pluralNoun="local references"
-                                isLightTheme={this.props.isLightTheme}
-                                fetchHighlightedFileLines={fetchHighlightedFileLines}
-                            />
-                        }
-                    />
-                )}
-                {(isValidToken || viewState === 'references:external') && (
-                    <PanelItemPortal
-                        id="references:external"
-                        label="External references"
-                        priority={-2}
-                        element={
-                            <FileLocationsTree
-                                className="panel__tabs-content"
-                                query={this.queryReferencesExternal}
-                                updates={this.locationsUpdates}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onSelectLocation={() => this.onSelectLocation('references:external')}
-                                icon={RepositoryIcon}
-                                pluralNoun="external references"
-                                isLightTheme={this.props.isLightTheme}
-                                location={this.props.location}
-                                fetchHighlightedFileLines={fetchHighlightedFileLines}
-                            />
-                        }
-                    />
-                )}
-                {(isValidToken || viewState === 'impl') && (
-                    <PanelItemPortal
-                        id="impl"
-                        label="Implementation"
-                        priority={-3}
-                        element={
-                            <FileLocations
-                                className="panel__tabs-content"
-                                query={this.queryImplementation}
-                                updates={this.locationsUpdates}
-                                inputRepo={this.props.repoPath}
-                                inputRevision={this.props.rev}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onSelect={() => this.onSelectLocation('impl')}
-                                icon={RepositoryIcon}
-                                pluralNoun="implementations"
-                                isLightTheme={this.props.isLightTheme}
-                                fetchHighlightedFileLines={fetchHighlightedFileLines}
-                            />
-                        }
-                    />
-                )}
-                <PanelItemPortal
-                    id="history"
-                    label="File history"
-                    priority={-4}
-                    element={
-                        <RepoRevSidebarCommits
-                            key="commits"
-                            repoName={this.props.repoPath}
-                            repoID={this.props.repoID}
-                            rev={this.props.rev}
-                            filePath={this.props.filePath}
-                            history={this.props.history}
-                            location={this.props.location}
-                        />
-                    }
-                />
-                {isDiscussionsEnabled(this.props.settingsCascade) && (
-                    <PanelItemPortal
-                        id="discussions"
-                        label="File discussions"
-                        priority={-5}
-                        element={
-                            <DiscussionsTree
-                                repoID={this.props.repoID}
-                                repoPath={this.props.repoPath}
-                                commitID={this.props.commitID}
-                                rev={this.props.rev}
-                                filePath={this.props.filePath}
-                                history={this.props.history}
-                                location={this.props.location}
-                                authenticatedUser={this.props.authenticatedUser}
-                            />
-                        }
-                    />
-                )}
-            </>
-        )
+        return null
     }
 
     private onSelectLocation = (tab: BlobPanelTabID): void => eventLogger.log('BlobPanelLocationSelected', { tab })
