@@ -100,7 +100,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	location, err := symbolLocation(r.Context(), vfs, importPath, receiver, symbolName)
+	location, err := symbolLocation(r.Context(), vfs, commitID, importPath, receiver, symbolName)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, importPath string, receiver *string, symbol string) (*lsp.Location, error) {
+func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.CommitID, importPath string, receiver *string, symbol string) (*lsp.Location, error) {
 	bctx := buildContextFromVFS(ctx, vfs)
 
 	fileSet := token.NewFileSet()
@@ -188,7 +188,7 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, importPath strin
 
 	position := fileSet.Position(*pos)
 	location := lsp.Location{
-		URI: lsp.DocumentURI("https://" + string(importPath) + "?master" + "#" + position.Filename),
+		URI: lsp.DocumentURI("https://" + string(importPath) + "?" + string(commitID) + "#" + position.Filename),
 		Range: lsp.Range{
 			Start: lsp.Position{
 				Line:      position.Line - 1,

@@ -6,10 +6,12 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type symbolLocationArgs struct {
 	vfs        map[string]string
+	commitID   api.CommitID
 	importPath string
 	receiver   *string
 	symbol     string
@@ -22,7 +24,7 @@ type test struct {
 
 func mkLocation(uri string, line int, character int) *lsp.Location {
 	return &lsp.Location{
-		URI: "https://github.com/gorilla/mux?master#/mux.go",
+		URI: "https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#/mux.go",
 		Range: lsp.Range{
 			Start: lsp.Position{
 				Line:      line,
@@ -49,6 +51,7 @@ func TestSymbolLocation(t *testing.T) {
 		test{
 			args: symbolLocationArgs{
 				vfs:        vfs,
+				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
 				receiver:   nil,
 				symbol:     "NonexistentSymbol",
@@ -58,42 +61,46 @@ func TestSymbolLocation(t *testing.T) {
 		test{
 			args: symbolLocationArgs{
 				vfs:        vfs,
+				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
 				receiver:   nil,
 				symbol:     "Foo",
 			},
-			want: mkLocation("https://github.com/gorilla/mux?master#mux.go", 1, 6),
+			want: mkLocation("https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go", 1, 6),
 		},
 		test{
 			args: symbolLocationArgs{
 				vfs:        vfs,
+				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
 				receiver:   nil,
 				symbol:     "Bar",
 			},
-			want: mkLocation("https://github.com/gorilla/mux?master#mux.go", 2, 5),
+			want: mkLocation("https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go", 2, 5),
 		},
 		test{
 			args: symbolLocationArgs{
 				vfs:        vfs,
+				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
 				receiver:   strptr("Bar"),
 				symbol:     "Quux",
 			},
-			want: mkLocation("https://github.com/gorilla/mux?master#mux.go", 3, 13),
+			want: mkLocation("https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go", 3, 13),
 		},
 		test{
 			args: symbolLocationArgs{
 				vfs:        vfs,
+				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
 				receiver:   nil,
 				symbol:     "Floop",
 			},
-			want: mkLocation("https://github.com/gorilla/mux?master#mux.go", 4, 4),
+			want: mkLocation("https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go", 4, 4),
 		},
 	}
 	for i, test := range tests {
-		got, _ := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.importPath, test.args.receiver, test.args.symbol)
+		got, _ := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.commitID, test.args.importPath, test.args.receiver, test.args.symbol)
 		if got != test.want && (got == nil || test.want == nil || *got != *test.want) {
 			t.Errorf("Test #%d:\ngot  %#v\nwant %#v", i, got, test.want)
 		}
