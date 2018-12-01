@@ -7,18 +7,19 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Subject, Subscription } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
 import { buildSearchURLQuery, parseSearchURLQuery } from '..'
+import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
+import { FileMatch } from '../../../../shared/src/components/FileMatch'
+import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { VirtualList } from '../../../../shared/src/components/VirtualList'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { FileMatch } from '../../components/FileMatch'
+import { isDefined } from '../../../../shared/src/util/types'
 import { ModalContainer } from '../../components/ModalContainer'
-import { VirtualList } from '../../components/VirtualList'
 import { eventLogger } from '../../tracking/eventLogger'
-import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
-import { isDefined } from '../../util/types'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
@@ -46,6 +47,8 @@ interface SearchResultsListProps extends SettingsCascadeProps {
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
+
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 interface State {
@@ -417,6 +420,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         showAllMatches={false}
                         isLightTheme={this.props.isLightTheme}
                         allExpanded={this.props.allExpanded}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                     />
                 )
             case 'CommitSearchResult':

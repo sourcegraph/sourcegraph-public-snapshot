@@ -1,7 +1,10 @@
 @import './commandPalette/CommandList';
+@import './components/CodeExcerpt';
+@import './components/FileMatch';
 @import './components/Markdown';
 @import './components/PopoverButton';
 @import './components/Resizable';
+@import './components/ResultContainer';
 @import './components/Toggle';
 @import './components/Tabs';
 @import './extensions/ExtensionStatus';
@@ -10,4 +13,5 @@
 @import './panel/Panel';
 @import './panel/views/FileLocations';
 @import './panel/views/FileLocationsTree';
+@import './symbols/SymbolIcon';
 /* TODO!(sqs): ensure no CSS class name conflict with github/gitlab for browser ext */

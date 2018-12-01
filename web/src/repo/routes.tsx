@@ -1,7 +1,7 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
-import { formatHash, isLegacyFragment, parseHash } from '../util/url'
+import { formatHash, isLegacyFragment, parseHash } from '../../../shared/src/util/url'
 import { BlobPage } from './blob/BlobPage'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
