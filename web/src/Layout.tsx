@@ -14,6 +14,7 @@ import { GlobalDebug } from './global/GlobalDebug'
 import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { ResizablePanel } from './panel/Panel'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -115,6 +116,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     )
                 })}
             </Switch>
+            <ResizablePanel
+                history={props.history}
+                location={props.location}
+                extensionsController={props.extensionsController}
+            />
             <GlobalDebug {...props} />
         </div>
     )

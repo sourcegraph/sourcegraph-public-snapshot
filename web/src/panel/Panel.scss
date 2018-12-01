@@ -16,8 +16,9 @@
     width: 100%;
 
     &--resizable {
-        min-height: 10rem;
-        max-height: 80%;
+        min-height: 6rem;
+        max-height: calc(100% - 3rem);
+        width: 100%;
     }
 
     &__empty {
