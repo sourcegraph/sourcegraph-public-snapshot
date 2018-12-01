@@ -1,7 +1,6 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
-import { ResizablePanel } from '../panel/Panel'
 import { formatHash, isLegacyFragment, parseHash } from '../util/url'
 import { BlobPage } from './blob/BlobPage'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
@@ -110,7 +109,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     isLightTheme={context.isLightTheme}
                                 />
                             )}
-                            <ResizablePanel {...context} />
                         </div>
                     )}
                 </>
