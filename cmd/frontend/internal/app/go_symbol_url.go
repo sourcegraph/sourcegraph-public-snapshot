@@ -220,7 +220,7 @@ func buildContextFromVFS(ctx context.Context, vfs ctxvfs.FileSystem) build.Conte
 }
 
 func repoVFS(ctx context.Context, name api.RepoName, rev api.CommitID) (ctxvfs.FileSystem, error) {
-	if strings.HasPrefix(string(name), "github.com") {
+	if strings.HasPrefix(string(name), "github.com/") {
 		return vfsutil.NewGitHubRepoVFS(string(name), string(rev))
 	}
 
