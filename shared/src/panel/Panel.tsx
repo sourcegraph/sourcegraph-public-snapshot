@@ -3,8 +3,8 @@ import marked from 'marked'
 import CancelIcon from 'mdi-react/CancelIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { ReplaySubject, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { Subscription } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
 import { PanelView } from '../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -13,10 +13,26 @@ import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { createLinkClickHandler } from '../util/linkClickHandler'
 
+const EmptyPanelView: React.FunctionComponent = () => (
+    <div className="panel__empty">
+        <CancelIcon className="icon-inline" /> Nothing to show here
+    </div>
+)
+
+interface Props extends ExtensionsControllerProps {
+    location: H.Location
+    history: H.History
+}
+
+interface State {
+    /** Panel views contributed by extensions. */
+    panelViews?: (PanelView & { id: string })[] | null
+}
+
 /**
  * A tab and corresponding content to display in the panel.
  */
-export interface PanelItem extends Tab<string> {
+interface PanelItem extends Tab<string> {
     /**
      * Controls the relative order of panel items. The items are laid out from highest priority (at the beginning)
      * to lowest priority (at the end). The default is 0.
@@ -27,22 +43,6 @@ export interface PanelItem extends Tab<string> {
     element: React.ReactElement<any>
 }
 
-interface Props extends ExtensionsControllerProps {
-    location: H.Location
-    history: H.History
-}
-
-interface State {
-    /** Panel items to display. */
-    items: PanelItem[]
-
-    /** Panel views contributed by extensions. */
-    panelViews?: (PanelView & { id: string })[] | null
-}
-
-// TODO: Panel should be mounted whenever the blob page is shown.
-// There's no reason to not have it rendered. We can just hide it. This will make the logic here a lot safer.
-
 /**
  * The panel, which is a tabbed component with contextual information. Components rendering the panel should
  * generally use ResizablePanel, not Panel.
@@ -50,55 +50,11 @@ interface State {
  * Other components can contribute panel items to the panel.
  */
 export class Panel extends React.PureComponent<Props, State> {
-    private static forceUpdates = new Subject<void>()
-
-    // We'll use ReplaySubject so everything will get emitted even if the panel isn't mounted
-    private static newItems = new ReplaySubject<PanelItem>()
-    private static itemsToRemove = new ReplaySubject<PanelItem>()
+    public state: State = {}
 
     private subscriptions = new Subscription()
 
-    public state: State = { items: [] }
-
-    /**
-     * Add an item to the panel. Do not call directly; use PanelItemPortal instead.
-     * @param item to add to the header
-     */
-    public static addItem(item: PanelItem): Unsubscribable {
-        Panel.newItems.next(item)
-        return {
-            unsubscribe: () => {
-                Panel.itemsToRemove.next(item)
-            },
-        }
-    }
-
-    /**
-     * Forces an update of items in the panel. Do not call directly; use PanelItemPortal instead.
-     */
-    public static forceUpdate(): void {
-        this.forceUpdates.next()
-    }
-
     public componentDidMount(): void {
-        this.subscriptions.add(Panel.forceUpdates.subscribe(() => this.forceUpdate()))
-
-        this.subscriptions.add(
-            Panel.newItems.pipe(distinctUntilChanged()).subscribe(item => {
-                this.setState(state => ({
-                    items: state.items.concat(item).sort(byPriority),
-                }))
-            })
-        )
-
-        this.subscriptions.add(
-            Panel.itemsToRemove.subscribe(item => {
-                this.setState(state => ({
-                    items: state.items.filter(i => i !== item),
-                }))
-            })
-        )
-
         this.subscriptions.add(
             this.props.extensionsController.services.views
                 .getViews(ContributableViewContainer.Panel)
@@ -112,25 +68,25 @@ export class Panel extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        let items = this.state.items
-        if (this.state.panelViews) {
-            items = [
-                ...items,
-                ...this.state.panelViews.map(
-                    panelView =>
-                        ({
-                            label: panelView.title,
-                            id: panelView.id,
-                            priority: 0,
-                            element: (
-                                <div className="p-2" onClick={createLinkClickHandler(this.props.history)}>
-                                    <Markdown dangerousInnerHTML={marked(panelView.content)} />
-                                </div>
-                            ),
-                        } as PanelItem)
-                ),
-            ]
-        }
+        const items = this.state.panelViews
+            ? this.state.panelViews
+                  .map(
+                      panelView =>
+                          ({
+                              label: panelView.title,
+                              id: panelView.id,
+                              priority: 0, // TODO!(sqs)
+                              element:
+                                  panelView.component ||
+                                  ((
+                                      <div className="p-2" onClick={createLinkClickHandler(this.props.history)}>
+                                          <Markdown dangerousInnerHTML={marked(panelView.content)} />
+                                      </div>
+                                  ) || <EmptyPanelView />),
+                          } as PanelItem)
+                  )
+                  .sort(byPriority)
+            : []
 
         const hasTabs = items.length > 0
 
@@ -158,9 +114,7 @@ export class Panel extends React.PureComponent<Props, State> {
                         {items && items.map(({ id, element }) => React.cloneElement(element, { key: id }))}
                     </TabsWithURLViewStatePersistence>
                 ) : (
-                    <div className="panel__empty">
-                        <CancelIcon className="icon-inline" /> Nothing to show here
-                    </div>
+                    <EmptyPanelView />
                 )}
             </div>
         )
