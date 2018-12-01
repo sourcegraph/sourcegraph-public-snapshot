@@ -20,6 +20,9 @@ import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { Location, Position } from '../../../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PanelItemPortal } from '../../../../../shared/src/panel/PanelItemPortal'
+import { FileLocations } from '../../../../../shared/src/panel/views/FileLocations'
+import { FileLocationsTree } from '../../../../../shared/src/panel/views/FileLocationsTree'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -33,7 +36,6 @@ import {
 } from '../../../backend/features'
 import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
-import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 import { parseHash } from '../../../util/url'
@@ -41,8 +43,6 @@ import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
 import { fetchExternalReferences } from '../references/backend'
-import { FileLocations } from './FileLocations'
-import { FileLocationsTree } from './FileLocationsTree'
 
 interface Props
     extends AbsoluteRepoFile,

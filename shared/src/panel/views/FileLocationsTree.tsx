@@ -4,13 +4,13 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
-import { parseRepoURI } from '../..'
-import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { asError } from '../../../../../shared/src/util/errors'
-import { Resizable } from '../../../components/Resizable'
-import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
-import { RepoLink } from '../../RepoLink'
+import { parseRepoURI } from '../../../../web/src/repo'
+import { RepoLink } from '../../../../web/src/repo/RepoLink'
+import { RepositoryIcon } from '../../../../web/src/util/icons' // TODO: Switch to mdi icon
+import { Location } from '../../api/protocol/plainTypes'
+import { Resizable } from '../../components/Resizable'
+import { ErrorLike, isErrorLike } from '../../util/errors'
+import { asError } from '../../util/errors'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 
 interface Props {
