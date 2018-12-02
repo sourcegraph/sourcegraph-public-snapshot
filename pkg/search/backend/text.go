@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
@@ -17,6 +18,72 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
+
+// Text is a searcher which routes requests for indexed commits to indexed
+// search, but fallsback to our just in time search for everything else.
+type Text struct {
+	// Index is the indexed searcher (Zoekt). It needs to return the list of
+	// repositories it can search. This should be Zoekt, but is an interface
+	// for testing purposes.
+	Index interface {
+		search.Searcher
+		SplitRepositories(context.Context, []search.Repository) (canSearch, cantSearch []search.Repository, err error)
+	}
+
+	// Fallback is the searcher used for anything that Index can't
+	// search. This should be TextJIT, but is an interface for testing
+	// purposes.
+	Fallback search.Searcher
+}
+
+func (t *Text) Search(ctx context.Context, q query.Q, opts *search.Options) (res *search.Result, err error) {
+	if len(opts.Repositories) == 0 {
+		return nil, errors.Errorf("repository list empty for text search on %s", q.String())
+	}
+
+	tr, ctx := trace.New(ctx, "Text.Search", fmt.Sprintf("query: %v, numRepoRevs: %d", q, len(opts.Repositories)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	shards := make(chan shard)
+	go func() {
+		defer close(shards)
+
+		index, fallback, err := t.Index.SplitRepositories(ctx, opts.Repositories)
+		if err != nil {
+			// Don't hard fail if index is not available yet.
+			tr.LogFields(otlog.String("indexErr", err.Error()))
+			err = nil
+			index = nil
+			fallback = opts.Repositories
+		}
+
+		if len(index) > 0 {
+			o := *opts
+			o.Repositories = index
+			shards <- shard{Searcher: t.Index, Q: q, Options: &o}
+		}
+
+		if len(fallback) > 0 {
+			o := *opts
+			o.Repositories = fallback
+			shards <- shard{Searcher: t.Fallback, Q: q, Options: &o}
+		}
+	}()
+
+	return shardedSearch(ctx, shards)
+}
+
+func (t *Text) Close() {}
+
+func (t *Text) String() string {
+	return fmt.Sprintf("text(index=%v fallback=%v)", t.Index, t.Fallback)
+}
 
 // TextJIT is a client for searching our just in time text search (the
 // searcher service).
@@ -33,7 +100,7 @@ type TextJIT struct {
 // results. opts.Repositories is required to be non-empty.
 func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
 	if len(opts.Repositories) == 0 {
-		return nil, errors.Errorf("repository list empty for text search on %s", q.String())
+		return nil, errors.Errorf("repository list empty for jit text search on %s", q.String())
 	}
 
 	all := &search.Result{}
@@ -282,6 +349,8 @@ func mapQueryToZoekt(q query.Q) (zoektquery.Q, error) {
 			repoSet.Set[r] = true
 		}
 		return repoSet, nil
+	case *query.Const:
+		return q, nil
 
 	case *query.Ref:
 		// Refs are false since we only index the default branch.
@@ -310,6 +379,47 @@ func mapQueriesToZoekt(qs []query.Q) ([]zoektquery.Q, error) {
 
 func (c *Zoekt) String() string {
 	return fmt.Sprintf("zoekt(%v)", c.Client)
+}
+
+func (c *Zoekt) SplitRepositories(ctx context.Context, repos []search.Repository) (indexed, unindexed []search.Repository, err error) {
+	for _, r := range repos {
+		// TODO is this how we decide default branch?
+		if r.Commit == "" {
+			indexed = append(indexed, r)
+		} else {
+			unindexed = append(unindexed, r)
+		}
+	}
+
+	// Return early if we don't need to querying zoekt
+	if len(indexed) == 0 {
+		return indexed, unindexed, nil
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	resp, err := c.ListAll(ctx)
+	if err != nil {
+		return nil, repos, err
+	}
+
+	// Everything currently in indexed is at HEAD. Filter out repos which
+	// zoekt hasn't indexed yet.
+	set := map[string]struct{}{}
+	for _, repo := range resp.Repos {
+		set[repo.Repository.Name] = struct{}{}
+	}
+	head := indexed
+	indexed = indexed[:0]
+	for _, r := range head {
+		if _, ok := set[string(r.Name)]; ok {
+			indexed = append(indexed, r)
+		} else {
+			unindexed = append(unindexed, r)
+		}
+	}
+
+	return indexed, unindexed, nil
 }
 
 // ListAll returns the response of List without any restrictions.

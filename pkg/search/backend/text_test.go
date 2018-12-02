@@ -3,20 +3,167 @@ package backend_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
+
+func TestText(t *testing.T) {
+	mz := &mockZoekt{SearchResult: &zoekt.SearchResult{}}
+	index := &backend.Zoekt{
+		Client:       mz,
+		DisableCache: true,
+	}
+	fallback := &backend.Mock{Result: &search.Result{}}
+	s := &backend.Text{
+		Index:    index,
+		Fallback: fallback,
+	}
+
+	defer fallback.Close()
+	defer index.Close()
+	defer s.Close()
+
+	// Test string codepath
+	t.Log(s.String())
+
+	cases := []struct {
+		Name         string
+		Repos        string
+		Indexed      string
+		WantIndex    string
+		WantFallback string
+		WantError    string
+	}{{
+		Name:      "all",
+		Repos:     "a b c",
+		Indexed:   "a b c",
+		WantIndex: "a b c",
+	}, {
+		Name:         "none",
+		Repos:        "a b c",
+		Indexed:      "d e f",
+		WantFallback: "a b c",
+	}, {
+		Name:         "empty_index",
+		Repos:        "a b c",
+		WantFallback: "a b c",
+	}, {
+		Name:      "subset_of_indexed",
+		Repos:     "a b c",
+		Indexed:   "a b c d",
+		WantIndex: "a b c",
+	}, {
+		Name:         "mix",
+		Repos:        "a@x b@x c d",
+		Indexed:      "a d e",
+		WantIndex:    "d",
+		WantFallback: "a@x b@x c",
+	}, {
+		Name:         "no-head",
+		Repos:        "a@x b@x c@x d@x",
+		Indexed:      "a b c",
+		WantFallback: "a@x b@x c@x d@x",
+	}, {
+		Name:      "empty",
+		WantError: "repository list empty",
+	}}
+
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			// Reset mocks
+			fallback.LastOpts = nil
+			mz.LastSearchQ = nil
+			mz.ListResult = zoektRepoList(c.Indexed)
+
+			_, err := s.Search(context.Background(), &query.Const{Value: true}, &search.Options{Repositories: repoList(c.Repos)})
+			assertError(t, err, c.WantError)
+
+			var gotIndexParts []string
+			if mz.LastSearchQ != nil {
+				zoektquery.VisitAtoms(mz.LastSearchQ, func(q zoektquery.Q) {
+					if rs, ok := q.(*zoektquery.RepoSet); ok {
+						for name := range rs.Set {
+							gotIndexParts = append(gotIndexParts, name)
+						}
+					}
+				})
+			}
+			sort.Strings(gotIndexParts)
+			gotIndex := strings.Join(gotIndexParts, " ")
+			if gotIndex != c.WantIndex {
+				t.Errorf("unexpected repos sent to index\ngot:  %s\nwant: %s", gotIndex, c.WantIndex)
+			}
+
+			var gotFallbackParts []string
+			if fallback.LastOpts != nil {
+				for _, r := range fallback.LastOpts.Repositories {
+					gotFallbackParts = append(gotFallbackParts, r.String())
+				}
+			}
+			gotFallback := strings.Join(gotFallbackParts, " ")
+			if gotFallback != c.WantFallback {
+				t.Errorf("unexpected repos sent to index\ngot:  %s\nwant: %s", gotFallback, c.WantFallback)
+			}
+		})
+	}
+}
+
+func TestText_error(t *testing.T) {
+	mz := &mockZoekt{SearchResult: &zoekt.SearchResult{}}
+	index := &backend.Zoekt{
+		Client:       mz,
+		DisableCache: true,
+	}
+	fallback := &backend.Mock{Result: &search.Result{}}
+	s := &backend.Text{
+		Index:    index,
+		Fallback: fallback,
+	}
+
+	defer fallback.Close()
+	defer index.Close()
+	defer s.Close()
+
+	expectError := func(e string) {
+		_, err := s.Search(context.Background(), &query.Const{Value: true}, &search.Options{Repositories: repoList("a b")})
+		assertError(t, err, e)
+	}
+
+	// If we fail to list, then we should just skip index
+	mz.ListError = errors.New("foo1")
+	expectError("")
+	if mz.LastSearchQ != nil {
+		t.Fatal("expected not to search zoekt")
+	}
+	if fallback.LastOpts == nil {
+		t.Fatal("expected to search jit")
+	}
+
+	fallback.LastOpts = nil
+	mz.LastSearchQ = nil
+	mz.ListError = nil
+	mz.ListResult = zoektRepoList("a")
+	mz.SearchError = errors.New("foo2")
+	expectError("foo2")
+
+	mz.SearchError = nil
+	fallback.Error = errors.New("foo3")
+	expectError("foo3")
+}
 
 func TestZoekt(t *testing.T) {
 	parse := func(s string) query.Q {
@@ -28,7 +175,7 @@ func TestZoekt(t *testing.T) {
 	}
 
 	mock := &mockZoekt{
-		ListResult: zoektRepoList("a", "b", "c"),
+		ListResult: zoektRepoList("a b c"),
 	}
 	z := &backend.Zoekt{
 		Client:       mock,
@@ -42,7 +189,7 @@ func TestZoekt(t *testing.T) {
 		Q          query.Q
 		Opts       *search.Options
 		WantResult string
-		WantError  error
+		WantError  string
 
 		ZoektResult   *zoekt.SearchResult
 		ZoektError    error
@@ -51,30 +198,43 @@ func TestZoekt(t *testing.T) {
 	}{{
 		Name: "simple",
 		Q:    parse("foo"),
-		Opts: &search.Options{
-			Repositories: []search.Repository{{Name: "a"}},
-		},
+		Opts: &search.Options{Repositories: repoList("a")},
 
 		ZoektResult: &zoekt.SearchResult{},
 		WantZoektQ:  `(and (reposet a) substr:"foo")`,
 	}, {
 		Name: "ref",
 		Q:    parse("(foo ref:x) or bar"),
-		Opts: &search.Options{
-			Repositories: []search.Repository{{Name: "a"}},
-		},
+		Opts: &search.Options{Repositories: repoList("a")},
 
 		ZoektResult: &zoekt.SearchResult{},
 		WantZoektQ:  `(and (reposet a) substr:"bar")`,
 	}, {
+		Name: "complex",
+		Q:    query.NewAnd(parse("type:file -foo$"), query.NewRepoSet("a")),
+		Opts: &search.Options{Repositories: repoList("a")},
+
+		ZoektResult: &zoekt.SearchResult{},
+		WantZoektQ:  `(and (reposet a) (type:filematch (not regex:"foo(?m:$)")) (reposet a))`,
+	}, {
+		Name: "error-repo",
+		Q:    parse("foo r:a"),
+		Opts: &search.Options{Repositories: repoList("a")},
+
+		WantError: "zoekt does not allow repo atom",
+	}, {
+		Name: "error-empty",
+		Q:    parse("foo"),
+		Opts: &search.Options{},
+
+		WantError: "repository list empty",
+	}, {
 		Name: "results",
 		Q:    parse("foo"),
-		Opts: &search.Options{
-			Repositories: []search.Repository{{Name: "a"}},
-		},
+		Opts: &search.Options{Repositories: repoList("a")},
 		WantResult: `
-a@:src/do_foo.go
-a@:src/do_test.go:6:func foo() {
+a:src/do_foo.go
+a:src/do_test.go:6:func foo() {
 `,
 
 		ZoektResult: &zoekt.SearchResult{
@@ -107,8 +267,8 @@ a@:src/do_test.go:6:func foo() {
 			mock.SearchError = c.ZoektError
 
 			results, err := z.Search(context.Background(), c.Q, c.Opts)
-			if err != c.WantError {
-				t.Fatalf("got error %v, want %v", err, c.WantError)
+			if assertError(t, err, c.WantError) {
+				return
 			}
 
 			if c.WantZoektQ != "" && (mock.LastSearchQ.String() != c.WantZoektQ) {
@@ -152,9 +312,9 @@ func (m *mockZoekt) String() string {
 	return "mockZoekt"
 }
 
-func zoektRepoList(names ...string) *zoekt.RepoList {
-	repos := make([]*zoekt.RepoListEntry, 0, len(names))
-	for _, name := range names {
+func zoektRepoList(names string) *zoekt.RepoList {
+	var repos []*zoekt.RepoListEntry
+	for _, name := range strings.Fields(names) {
 		repos = append(repos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				Name: name,
@@ -164,6 +324,43 @@ func zoektRepoList(names ...string) *zoekt.RepoList {
 	return &zoekt.RepoList{
 		Repos: repos,
 	}
+}
+
+func repoList(specs string) []search.Repository {
+	var res []search.Repository
+	for _, spec := range strings.Fields(specs) {
+		p := strings.Split(spec, "@")
+		if len(p) == 1 {
+			res = append(res, search.Repository{
+				Name: api.RepoName(p[0]),
+			})
+		} else {
+			res = append(res, search.Repository{
+				Name:   api.RepoName(p[0]),
+				Commit: api.CommitID(p[1]),
+			})
+		}
+	}
+	return res
+}
+
+func assertError(t *testing.T, err error, contains string) bool {
+	t.Helper()
+	if contains == "" {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		return err != nil
+	}
+
+	if err == nil {
+		t.Fatalf("expected error containing %q, got nil", contains)
+	}
+
+	if !strings.Contains(err.Error(), contains) {
+		t.Fatalf("expected error containing %q, got %q", contains, err.Error())
+	}
+	return err != nil
 }
 
 func assertResults(t *testing.T, r *search.Result, want string) {
