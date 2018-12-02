@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
 func TestOverrideAuthMiddleware(t *testing.T) {
@@ -69,14 +68,14 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(overrideSecretHeader, overrideSecret)
 		var calledMock bool
-		auth.MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
 			calledMock = true
-			if want := defaultUsername; u.Username != want {
-				t.Errorf("got %q, want %q", u.Username, want)
+			if want := defaultUsername; op.UserProps.Username != want {
+				t.Errorf("got %q, want %q", op.UserProps.Username, want)
 			}
-			return 1, nil
+			return 1, "", nil
 		}
-		defer func() { auth.MockCreateOrUpdateUser = nil }()
+		defer func() { auth.MockGetAndSaveUser = nil }()
 		db.Mocks.Users.SetIsSiteAdmin = func(int32, bool) error { return nil }
 		defer func() { db.Mocks = db.MockStores{} }()
 		handler.ServeHTTP(rr, req)
@@ -96,14 +95,14 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		req.Header.Set(overrideSecretHeader, overrideSecret)
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
 		var calledMock bool
-		auth.MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
 			calledMock = true
-			if a.ServiceType == "override" && a.AccountID == defaultUsername {
-				return 1, nil
+			if op.ExternalAccount.ServiceType == "override" && op.ExternalAccount.AccountID == defaultUsername {
+				return 1, "", nil
 			}
-			return 0, errors.New("x")
+			return 0, "safeErr", errors.New("x")
 		}
-		defer func() { auth.MockCreateOrUpdateUser = nil }()
+		defer func() { auth.MockGetAndSaveUser = nil }()
 		db.Mocks.Users.SetIsSiteAdmin = func(int32, bool) error { return nil }
 		defer func() { db.Mocks = db.MockStores{} }()
 		handler.ServeHTTP(rr, req)

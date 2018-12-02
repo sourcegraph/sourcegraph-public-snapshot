@@ -55,18 +55,23 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 		UserClaims *userClaims    `json:"userClaims"`
 	}{IDToken: idToken, UserInfo: userInfo, UserClaims: claims})
 
-	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		Username:        login,
-		Email:           email,
-		EmailIsVerified: email != "", // TODO(sqs): https://github.com/sourcegraph/sourcegraph/issues/10118
-		DisplayName:     displayName,
-		AvatarURL:       claims.Picture,
-	}, extsvc.ExternalAccountSpec{
-		ServiceType: providerType,
-		ServiceID:   pi.ServiceID,
-		ClientID:    pi.ClientID,
-		AccountID:   idToken.Subject,
-	}, data)
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetUserOp{
+		UserProps: db.NewUser{
+			Username:        login,
+			Email:           email,
+			EmailIsVerified: email != "", // verified email check is at the top of the function
+			DisplayName:     displayName,
+			AvatarURL:       claims.Picture,
+		},
+		ExternalAccount: extsvc.ExternalAccountSpec{
+			ServiceType: providerType,
+			ServiceID:   pi.ServiceID,
+			ClientID:    pi.ClientID,
+			AccountID:   idToken.Subject,
+		},
+		ExternalAccountData: data,
+		CreateIfNotExist:    true,
+	})
 	if err != nil {
 		return nil, safeErrMsg, err
 	}

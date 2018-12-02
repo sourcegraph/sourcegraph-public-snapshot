@@ -22,13 +22,11 @@ import (
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -200,13 +198,13 @@ func TestMiddleware(t *testing.T) {
 	// Mock user
 	mockedExternalID := "testuser_id"
 	const mockedUserID = 123
-	auth.MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
-		if a.ServiceType == "saml" && a.ServiceID == idpServer.IDP.MetadataURL.String() && a.ClientID == "http://example.com/.auth/saml/metadata" && a.AccountID == mockedExternalID {
-			return mockedUserID, nil
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
+		if op.ExternalAccount.ServiceType == "saml" && op.ExternalAccount.ServiceID == idpServer.IDP.MetadataURL.String() && op.ExternalAccount.ClientID == "http://example.com/.auth/saml/metadata" && op.ExternalAccount.AccountID == mockedExternalID {
+			return mockedUserID, "", nil
 		}
-		return 0, fmt.Errorf("account %v not found in mock", a)
+		return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
 	}
-	defer func() { auth.MockCreateOrUpdateUser = nil }()
+	defer func() { auth.MockGetAndSaveUser = nil }()
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()
