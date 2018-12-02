@@ -117,7 +117,7 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 
 // GetAll returns a slice of values such that m[keys[i]] == values[i]. It is a
 // more efficient implementation than calling Get on each key.
-func (m *Map) GetAll(keys ...string) ([]string, error) {
+func (m *Map) GetAll(keys []string, exclude map[string]bool) ([]string, error) {
 	m.mu.Lock()
 	if m.init != nil {
 		m.urls, m.err = m.init()
@@ -129,7 +129,11 @@ func (m *Map) GetAll(keys ...string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return urls.getAll(keys...), nil
+	v := make([]string, len(keys))
+	for i, key := range keys {
+		v[i] = urls.get(key, exclude)
+	}
+	return v, nil
 }
 
 func inform(client *k8s.Client, m *Map, u *k8sURL) error {

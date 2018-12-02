@@ -2,7 +2,6 @@ package endpoint
 
 import (
 	"fmt"
-	"hash/crc32"
 	"strings"
 	"testing"
 	"testing/quick"
@@ -51,31 +50,19 @@ func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ..
 			t.Fatalf("map never returned %v", e)
 		}
 	}
-
-	keys := []string{}
-	for i := 0; i < len(endpoints)*10; i++ {
-		keys = append(keys, fmt.Sprintf("test-%d", i))
-	}
-	values, err := m.GetAll(keys...)
-	if err != nil {
-		t.Fatalf("GetAll failed: %v", err)
-	}
-	for i := range keys {
-		if v, err := m.Get(keys[i], nil); err != nil {
-			t.Fatal(err)
-		} else if v != values[i] {
-			t.Fatalf("GetAll for %v returned %v, want %v", keys[i], values[i], v)
-		}
-	}
 }
 
-func TestEndpointsGetAll(t *testing.T) {
-	m := hashMapNew(3, crc32.ChecksumIEEE)
-	m.add(strings.Split("a b c d", " ")...)
+func TestGetAll(t *testing.T) {
+	m := New("http://test-1 http://test-2 http://test-3 http://test-4")
 	f := func(keys []string) bool {
-		values := m.getAll(keys...)
+		values, err := m.GetAll(keys, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		for i := range keys {
-			if m.get(keys[i], nil) != values[i] {
+			if v, err := m.Get(keys[i], nil); err != nil {
+				t.Fatal(err)
+			} else if v != values[i] {
 				return false
 			}
 		}
