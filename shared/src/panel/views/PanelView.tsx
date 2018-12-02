@@ -35,7 +35,7 @@ export class PanelView extends React.PureComponent<Props, State> {
                 {this.props.panelView.locationProvider && (
                     <FileLocations
                         // tslint:disable-next-line:jsx-no-lambda
-                        query={this.queryLocations}
+                        query={this.props.panelView.locationProvider}
                         // TODO!(sqs): add updates
                         icon={RepositoryIcon}
                         pluralNoun="locations"

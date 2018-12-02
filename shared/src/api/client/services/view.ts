@@ -52,6 +52,29 @@ export class ViewProviderRegistry extends FeatureProviderRegistry<
     }
 }
 
+/*
+                {
+                    // References panel view.
+                    registrationOptions: { id: 'references', container: ContributableViewContainer.Panel },
+                    provider: subjectChanges.pipe(
+                        map((subject: PanelSubject) => ({
+                            title: 'References',
+                            content: '',
+                            locationProvider: null,
+                            reactElement: (
+                                <FileLocations
+                                    className="panel__tabs-content"
+                                    query={this.queryReferencesLocal}
+                                    icon={RepositoryIcon}
+                                    pluralNoun="local references"
+                                    isLightTheme={this.props.isLightTheme}
+                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                />
+                            ),
+                        }))
+                    ),
+                },*/
+
 /**
  * Exported for testing only. Most callers should use {@link ViewProviderRegistry#getView}, which uses the
  * registered view providers.

@@ -72,6 +72,7 @@ export class Panel extends React.PureComponent<Props, State> {
                               element: (
                                   <PanelView
                                       panelView={panelView}
+                                      subject={}
                                       history={this.props.history}
                                       location={this.props.location}
                                       isLightTheme={this.props.isLightTheme}

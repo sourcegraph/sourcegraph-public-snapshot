@@ -1,7 +1,13 @@
-import { combineLatest, from, Observable } from 'rxjs'
+import { combineLatest, from, Observable, Subscription, Unsubscribable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import {
+    ContributableViewContainer,
+    ReferenceParams,
+    TextDocumentPositionParams,
+    TextDocumentRegistrationOptions,
+} from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
+import { Services } from '../services'
 import { TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
@@ -72,12 +78,46 @@ export function getLocations<
  * Reference results are always an array or null, unlike results from other location providers (e.g., from
  * textDocument/definition), which can be a single item, an array, or null.
  */
-export class TextDocumentReferencesProviderRegistry extends TextDocumentLocationProviderRegistry<ReferenceParams> {
+export class TextDocumentReferencesProviderRegistry extends TextDocumentLocationProviderRegistry<ReferenceParams>
+    implements Unsubscribable {
+    private subscriptions = new Subscription()
+
+    public constructor({ views }: Pick<Services, 'views'>) {
+        super()
+
+        this.subscriptions.add(
+            views.registerProvider(
+                { id: 'references', container: ContributableViewContainer.Panel },
+                this.providers.pipe(
+                    map(providers => {
+                        if (providers.length === 0) {
+                            return null
+                        }
+                        return {
+                            title: 'References',
+                            content: '',
+                            locationProvider: (params: TextDocumentPositionParams) =>
+                                getLocations(this.providersForDocument(params.textDocument), {
+                                    ...params,
+                                    context: { includeDeclaration: false },
+                                }),
+                        }
+                    })
+                )
+            )
+        )
+    }
+
     /** Gets reference locations from all matching providers. */
     public getLocation(params: ReferenceParams): Observable<Location[] | null> {
         // References are always an array (unlike other locations, which can be returned as L | L[] |
         // null).
         return getLocations(this.providersForDocument(params.textDocument), params)
+    }
+
+    public unsubscribe(): void {
+        // TODO!(sqs): this isnt actually called anywhere
+        this.subscriptions.unsubscribe()
     }
 }
 

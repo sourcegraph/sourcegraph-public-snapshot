@@ -1,6 +1,6 @@
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
-import { castArray, isEqual } from 'lodash'
+import { isEqual } from 'lodash'
 import marked from 'marked'
 import * as React from 'react'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -21,20 +21,12 @@ import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { RepositoryIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { FileLocations } from '../../../../../shared/src/panel/views/FileLocations'
 import { FileLocationsTree } from '../../../../../shared/src/panel/views/FileLocationsTree'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AbsoluteRepoFile, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
-import {
-    getDefinition,
-    getHover,
-    getImplementations,
-    getReferences,
-    HoverMerged,
-    ModeSpec,
-} from '../../../backend/features'
+import { getHover, HoverMerged, ModeSpec } from '../../../backend/features'
 import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
 import { fetchHighlightedFileLines } from '../../backend'
@@ -153,50 +145,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                 },
 
                 {
-                    // Definition panel view.
-                    registrationOptions: { id: 'def', container: ContributableViewContainer.Panel },
-                    provider: subjectChanges.pipe(
-                        map((subject: PanelSubject) => ({
-                            title: 'Definition',
-                            content: '',
-                            locationProvider: null,
-                            reactElement: (
-                                <FileLocations
-                                    className="panel__tabs-content"
-                                    query={this.queryDefinition}
-                                    icon={RepositoryIcon}
-                                    pluralNoun="definitions"
-                                    isLightTheme={this.props.isLightTheme}
-                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                />
-                            ),
-                        }))
-                    ),
-                },
-
-                {
-                    // References panel view.
-                    registrationOptions: { id: 'references', container: ContributableViewContainer.Panel },
-                    provider: subjectChanges.pipe(
-                        map((subject: PanelSubject) => ({
-                            title: 'References',
-                            content: '',
-                            locationProvider: null,
-                            reactElement: (
-                                <FileLocations
-                                    className="panel__tabs-content"
-                                    query={this.queryReferencesLocal}
-                                    icon={RepositoryIcon}
-                                    pluralNoun="local references"
-                                    isLightTheme={this.props.isLightTheme}
-                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                />
-                            ),
-                        }))
-                    ),
-                },
-
-                {
                     // External references panel view.
                     registrationOptions: { id: 'references:external', container: ContributableViewContainer.Panel },
                     provider: subjectChanges.pipe(
@@ -212,28 +160,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                     pluralNoun="external references"
                                     isLightTheme={this.props.isLightTheme}
                                     location={this.props.location}
-                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                />
-                            ),
-                        }))
-                    ),
-                },
-
-                {
-                    // Implementations panel view.
-                    registrationOptions: { id: 'impl', container: ContributableViewContainer.Panel },
-                    provider: subjectChanges.pipe(
-                        map((subject: PanelSubject) => ({
-                            title: 'Implementation',
-                            content: '',
-                            locationProvider: null,
-                            reactElement: (
-                                <FileLocations
-                                    className="panel__tabs-content"
-                                    query={this.queryImplementation}
-                                    icon={RepositoryIcon}
-                                    pluralNoun="implementations"
-                                    isLightTheme={this.props.isLightTheme}
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                                 />
                             ),
@@ -311,22 +237,11 @@ export class BlobPanel extends React.PureComponent<Props> {
         return null
     }
 
-    private queryDefinition = (): Observable<Location[]> =>
-        getDefinition(this.props as LSPTextDocumentPositionParams, this.props).pipe(
-            map(locations => castArray(locations || []))
-        )
-
-    private queryReferencesLocal = (): Observable<Location[]> =>
-        getReferences({ ...(this.props as LSPTextDocumentPositionParams), includeDeclaration: false }, this.props)
-
     private queryReferencesExternal = (): Observable<Location[]> =>
         fetchExternalReferences(this.props as LSPTextDocumentPositionParams).pipe(
             bufferTime(500), // reduce UI jitter
             scan<Location[][], Location[]>((cur, locs) => cur.concat(...locs.map(locations => locations)), [])
         )
-
-    private queryImplementation = (): Observable<Location[]> =>
-        getImplementations(this.props as LSPTextDocumentPositionParams, this.props)
 }
 
 function renderHoverContents(contents: HoverMerged['contents'][0]): React.ReactFragment {
