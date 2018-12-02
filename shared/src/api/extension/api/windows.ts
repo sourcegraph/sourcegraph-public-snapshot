@@ -1,11 +1,13 @@
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
+import { Selection } from '../../protocol/plainTypes'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
 
 export interface WindowData {
     visibleTextDocument: string | null
+    selections: Selection[]
 }
 
 /**
@@ -67,7 +69,14 @@ export class ExtWindows implements ExtWindowsAPI {
                 new ExtWindow(
                     this.windowsProxy,
                     window.visibleTextDocument
-                        ? [new ExtCodeEditor(window.visibleTextDocument, this.codeEditorProxy, this.documents)]
+                        ? [
+                              new ExtCodeEditor(
+                                  window.visibleTextDocument,
+                                  window.selections,
+                                  this.codeEditorProxy,
+                                  this.documents
+                              ),
+                          ]
                         : []
                 )
         )

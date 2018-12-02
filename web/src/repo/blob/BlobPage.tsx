@@ -162,7 +162,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
         this.subscriptions.add(() =>
             this.props.extensionsController.services.model.model.next({
                 ...this.props.extensionsController.services.model.model.value,
-                visibleTextDocuments: null,
+                visibleViewComponents: null,
             })
         )
 

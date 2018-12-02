@@ -70,7 +70,7 @@ export function createExtensionHostClientConnection(
         new ClientWindows(
             connection,
             from(services.model.model).pipe(
-                map(({ visibleTextDocuments }) => visibleTextDocuments),
+                map(({ visibleViewComponents }) => visibleViewComponents),
                 distinctUntilChanged()
             ),
             (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
@@ -90,7 +90,10 @@ export function createExtensionHostClientConnection(
         new ClientDocuments(
             connection,
             from(services.model.model).pipe(
-                map(({ visibleTextDocuments }) => visibleTextDocuments),
+                map(
+                    ({ visibleViewComponents }) =>
+                        visibleViewComponents && visibleViewComponents.map(({ item }) => item)
+                ),
                 distinctUntilChanged()
             )
         )
