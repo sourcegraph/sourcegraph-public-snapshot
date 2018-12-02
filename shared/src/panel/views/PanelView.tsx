@@ -8,6 +8,7 @@ import { Markdown } from '../../components/Markdown'
 import { createLinkClickHandler } from '../../util/linkClickHandler'
 import { EmptyPanelView } from './EmptyPanelView'
 import { FileLocations } from './FileLocations'
+import { FileLocationsTree } from './FileLocationsTree'
 
 interface Props {
     panelView: PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>
@@ -32,10 +33,8 @@ export class PanelView extends React.PureComponent<Props, State> {
                 )}
                 {this.props.panelView.reactElement}
                 {this.props.panelView.locationProvider && (
-                    <FileLocations
-                        // tslint:disable-next-line:jsx-no-lambda
-                        query={this.props.panelView.locationProvider}
-                        // TODO!(sqs): add updates
+                    <FileLocationsTree
+                        locations={this.props.panelView.locationProvider}
                         icon={RepositoryIcon}
                         isLightTheme={this.props.isLightTheme}
                         fetchHighlightedFileLines={fetchHighlightedFileLines}

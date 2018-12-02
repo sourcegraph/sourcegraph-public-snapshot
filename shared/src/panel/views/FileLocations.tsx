@@ -28,9 +28,9 @@ export const FileLocationsNotFound: React.FunctionComponent = () => (
 
 interface Props {
     /**
-     * The function called to query for file locations.
+     * The observable that emits the locations.
      */
-    query: Observable<Location[] | null>
+    locations: Observable<Location[] | null>
 
     /** The icon to use for each location. */
     icon: React.ComponentType<{ className?: string }>
@@ -70,14 +70,13 @@ export class FileLocations extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        // Changes to the query callback function.
-        const queryFuncChanges = this.componentUpdates.pipe(
-            map(({ query }) => query),
+        const locationsChanges = this.componentUpdates.pipe(
+            map(({ locations }) => locations),
             distinctUntilChanged()
         )
 
         this.subscriptions.add(
-            queryFuncChanges
+            locationsChanges
                 .pipe(
                     switchMap(query => query.pipe(catchError(error => [asError(error) as ErrorLike]))),
                     startWith(LOADING),

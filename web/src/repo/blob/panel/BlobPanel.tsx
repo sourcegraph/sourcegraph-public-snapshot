@@ -215,7 +215,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                             reactElement: (
                                 <FileLocationsTree
                                     className="panel__tabs-content"
-                                    query={this.queryReferencesExternal}
+                                    locations={this.queryReferencesExternal}
                                     icon={RepositoryIcon}
                                     isLightTheme={this.props.isLightTheme}
                                     location={this.props.location}

@@ -1,7 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap } from 'rxjs/operators'
 import { Location } from '../../api/protocol/plainTypes'
@@ -16,9 +14,9 @@ import { FileLocations, FileLocationsError, FileLocationsNotFound } from './File
 
 interface Props {
     /**
-     * The function called to query for file locations.
+     * The observable that emits the locations.
      */
-    query: () => Observable<Location[]>
+    locations: Observable<Location[] | null>
 
     /** The icon to use for each location. */
     icon: React.ComponentType<{ className?: string }>
@@ -29,11 +27,9 @@ interface Props {
     /** Called when a location is selected. */
     onSelectLocation?: () => void
 
-    className: string
+    className?: string
 
     isLightTheme: boolean
-
-    location: H.Location
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
@@ -62,19 +58,18 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        // Changes to the query callback function.
-        const queryFuncChanges = this.componentUpdates.pipe(
-            map(({ query }) => query),
+        const locationsChanges = this.componentUpdates.pipe(
+            map(({ locations }) => locations),
             distinctUntilChanged()
         )
 
         this.subscriptions.add(
-            queryFuncChanges
+            locationsChanges
                 .pipe(
-                    switchMap(query =>
-                        query().pipe(
+                    switchMap(locations =>
+                        locations.pipe(
                             catchError(error => [asError(error) as ErrorLike]),
-                            map(result => ({ locationsOrError: result, locationsComplete: false })),
+                            map(result => ({ locationsOrError: result || [], locationsComplete: false })),
                             startWith<Pick<State, 'locationsOrError' | 'locationsComplete'>>({
                                 locationsOrError: LOADING,
                                 locationsComplete: false,
@@ -143,12 +138,11 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                     element={
                         <div className="list-group list-group-flush file-locations-tree__list">
                             {orderedRepos.map((repo, i) => (
-                                <Link
+                                <span
                                     key={i}
                                     className={`list-group-item file-locations-tree__item ${
                                         selectedRepo === repo ? 'active' : ''
                                     }`}
-                                    to={this.props.location}
                                     // tslint:disable-next-line:jsx-no-lambda
                                     onClick={e => this.onSelectTree(e, repo)}
                                 >
@@ -161,7 +155,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                                     <span className="badge badge-secondary badge-pill file-locations-tree__item-badge">
                                         {locationsByRepo.get(repo)!.length}
                                     </span>
-                                </Link>
+                                </span>
                             ))}
                             {!this.state.locationsComplete && <LoadingSpinner className="icon-inline m-2" />}
                         </div>
@@ -169,8 +163,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                 />
                 <FileLocations
                     className="file-locations-tree__content"
-                    // tslint:disable-next-line:jsx-no-lambda
-                    query={of(selectedRepo ? locationsByRepo.get(selectedRepo)! : [])}
+                    locations={of(selectedRepo ? locationsByRepo.get(selectedRepo)! : [])}
                     onSelect={this.props.onSelectLocation}
                     icon={RepositoryIcon}
                     isLightTheme={this.props.isLightTheme}
