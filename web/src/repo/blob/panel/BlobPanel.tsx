@@ -37,7 +37,6 @@ import {
 } from '../../../backend/features'
 import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { fetchHighlightedFileLines } from '../../backend'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
@@ -165,10 +164,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 <FileLocations
                                     className="panel__tabs-content"
                                     query={this.queryDefinition}
-                                    inputRepo={subject.repoPath}
-                                    inputRevision={subject.rev}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onSelect={() => this.onSelectLocation('def')}
                                     icon={RepositoryIcon}
                                     pluralNoun="definitions"
                                     isLightTheme={this.props.isLightTheme}
@@ -191,10 +186,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 <FileLocations
                                     className="panel__tabs-content"
                                     query={this.queryReferencesLocal}
-                                    inputRepo={subject.repoPath}
-                                    inputRevision={subject.rev}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onSelect={() => this.onSelectLocation('references')}
                                     icon={RepositoryIcon}
                                     pluralNoun="local references"
                                     isLightTheme={this.props.isLightTheme}
@@ -217,8 +208,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 <FileLocationsTree
                                     className="panel__tabs-content"
                                     query={this.queryReferencesExternal}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onSelectLocation={() => this.onSelectLocation('references:external')}
                                     icon={RepositoryIcon}
                                     pluralNoun="external references"
                                     isLightTheme={this.props.isLightTheme}
@@ -242,10 +231,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 <FileLocations
                                     className="panel__tabs-content"
                                     query={this.queryImplementation}
-                                    inputRepo={subject.repoPath}
-                                    inputRevision={subject.rev}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onSelect={() => this.onSelectLocation('impl')}
                                     icon={RepositoryIcon}
                                     pluralNoun="implementations"
                                     isLightTheme={this.props.isLightTheme}
@@ -325,8 +310,6 @@ export class BlobPanel extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return null
     }
-
-    private onSelectLocation = (tab: BlobPanelTabID): void => eventLogger.log('BlobPanelLocationSelected', { tab })
 
     private queryDefinition = (): Observable<Location[]> =>
         getDefinition(this.props as LSPTextDocumentPositionParams, this.props).pipe(

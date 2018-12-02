@@ -20,18 +20,6 @@ interface Props {
      */
     query: () => Observable<Location[]>
 
-    /**
-     * Used along with the "inputRevision" prop to preserve the original Git revision specifier for the current
-     * repository.
-     */
-    inputRepo?: string
-
-    /**
-     * If given, use this revision in the link URLs to the files (instead of empty) for locations whose repository
-     * matches the "inputRepo" prop.
-     */
-    inputRevision?: string
-
     /** The icon to use for each location. */
     icon: React.ComponentType<{ className?: string }>
 
@@ -186,8 +174,6 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                     className="file-locations-tree__content"
                     // tslint:disable-next-line:jsx-no-lambda
                     query={() => of(selectedRepo ? locationsByRepo.get(selectedRepo)! : [])}
-                    inputRepo={this.props.inputRepo}
-                    inputRevision={this.props.inputRevision}
                     onSelect={this.props.onSelectLocation}
                     icon={RepositoryIcon}
                     pluralNoun={this.props.pluralNoun}

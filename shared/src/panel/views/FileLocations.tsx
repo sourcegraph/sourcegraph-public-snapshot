@@ -4,7 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, publishReplay, refCount, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Location } from '../../api/protocol/plainTypes'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
@@ -34,18 +34,6 @@ interface Props {
      * The function called to query for file locations.
      */
     query: () => Observable<Location[]>
-
-    /**
-     * Used along with the "inputRevision" prop to preserve the original Git revision specifier for the current
-     * repository.
-     */
-    inputRepo?: string
-
-    /**
-     * If given, use this revision in the link URLs to the files (instead of empty) for locations whose repository
-     * matches the "inputRepo" prop.
-     */
-    inputRevision?: string
 
     /** The icon to use for each location. */
     icon: React.ComponentType<{ className?: string }>
@@ -153,11 +141,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         <FileMatch
                             key={i}
                             expanded={true}
-                            result={refsToFileMatch(
-                                uri,
-                                repo === this.props.inputRepo ? this.props.inputRevision : undefined,
-                                locationsByURI.get(uri)!
-                            )}
+                            result={refsToFileMatch(uri, locationsByURI.get(uri)!)}
                             icon={this.props.icon}
                             onSelect={this.onSelect}
                             showAllMatches={true}
@@ -181,14 +165,14 @@ export class FileLocations extends React.PureComponent<Props, State> {
     }
 }
 
-function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[]): IFileMatch {
+function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
     const p = parseRepoURI(uri)
     return {
         file: {
             path: p.filePath || '',
-            url: toPrettyBlobURL({ repoPath: p.repoPath, filePath: p.filePath!, rev: rev || p.commitID || '' }),
+            url: toPrettyBlobURL({ repoPath: p.repoPath, filePath: p.filePath!, rev: p.commitID || '' }),
             commit: {
-                oid: p.commitID || p.rev || rev,
+                oid: p.commitID || p.rev,
             },
         },
         repository: {
