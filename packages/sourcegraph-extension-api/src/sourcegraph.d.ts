@@ -308,9 +308,23 @@ declare module 'sourcegraph' {
         constructor(uri: URI, rangeOrPosition?: Range | Position)
     }
 
+    /**
+     * A text document, such as a file in a repository.
+     */
     export interface TextDocument {
+        /**
+         * The URI of the text document.
+         */
         readonly uri: string
+
+        /**
+         * The language of the text document.
+         */
         readonly languageId: string
+
+        /**
+         * The text contents of the text document.
+         */
         readonly text: string
     }
 
@@ -499,9 +513,25 @@ declare module 'sourcegraph' {
         type: 'CodeEditor'
 
         /**
-         * The text document that is open in this editor.
+         * The text document that is open in this editor. The document remains the same for the entire lifetime of
+         * this editor.
          */
         readonly document: TextDocument
+
+        /**
+         * The primary selection in this text editor. This is equivalent to `CodeEditor.selections[0] || null`.
+         *
+         * @todo Make this non-readonly.
+         */
+        readonly selection: Selection | null
+
+        /**
+         * The selections in this text editor. A text editor has zero or more selections. The primary selection
+         * ({@link CodeEditor#selection}), if any selections exist, is always at index 0.
+         *
+         * @todo Make this non-readonly.
+         */
+        readonly selections: Selection[]
 
         /**
          * Draw decorations on this editor.

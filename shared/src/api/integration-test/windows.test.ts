@@ -40,7 +40,9 @@ describe('Windows (integration)', () => {
 
             model.next({
                 ...model.value,
-                visibleTextDocuments: [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }],
+                visibleViewComponents: [
+                    { type: 'textEditor', item: { uri: 'file:///f2', languageId: 'l2', text: 't2' }, selections: [] },
+                ],
             })
             await extensionHost.internal.sync()
 

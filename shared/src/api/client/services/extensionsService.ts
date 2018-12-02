@@ -30,7 +30,7 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
 export class ExtensionsService {
     public constructor(
         private platformContext: Pick<PlatformContext, 'queryGraphQL' | 'getScriptURLForExtension'>,
-        private model: Subscribable<Pick<Model, 'visibleTextDocuments'>>,
+        private model: Subscribable<Pick<Model, 'visibleViewComponents'>>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent
     ) {}
@@ -127,7 +127,7 @@ function asObservable(input: string | ObservableInput<string>): Observable<strin
 
 function extensionsWithMatchedActivationEvent(
     enabledExtensions: ConfiguredExtension[],
-    model: Pick<Model, 'visibleTextDocuments'>
+    model: Pick<Model, 'visibleViewComponents'>
 ): ConfiguredExtension[] {
     return enabledExtensions.filter(x => {
         try {
@@ -141,8 +141,8 @@ function extensionsWithMatchedActivationEvent(
                 console.warn(`Extension ${x.id} has no activation events, so it will never be activated.`)
                 return false
             }
-            const visibleTextDocumentLanguages = model.visibleTextDocuments
-                ? model.visibleTextDocuments.map(({ languageId }) => languageId)
+            const visibleTextDocumentLanguages = model.visibleViewComponents
+                ? model.visibleViewComponents.map(({ item: { languageId } }) => languageId)
                 : []
             return x.manifest.activationEvents.some(
                 e => e === '*' || visibleTextDocumentLanguages.some(l => e === `onLanguage:${l}`)
