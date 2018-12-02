@@ -115,6 +115,23 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	return urls.get(key, exclude), nil
 }
 
+// GetAll returns a slice of values such that m[keys[i]] == values[i]. It is a
+// more efficient implementation than calling Get on each key.
+func (m *Map) GetAll(keys ...string) ([]string, error) {
+	m.mu.Lock()
+	if m.init != nil {
+		m.urls, m.err = m.init()
+		m.init = nil // prevent running again
+	}
+	urls, err := m.urls, m.err
+	m.mu.Unlock()
+
+	if err != nil {
+		return nil, err
+	}
+	return urls.getAll(keys...), nil
+}
+
 func inform(client *k8s.Client, m *Map, u *k8sURL) error {
 	watcher, err := client.Watch(context.Background(), client.Namespace, new(corev1.Endpoints), k8s.QueryParam("fieldSelector", "metadata.name="+u.Service))
 	if err != nil {

@@ -2,8 +2,10 @@ package endpoint
 
 import (
 	"fmt"
+	"hash/crc32"
 	"strings"
 	"testing"
+	"testing/quick"
 )
 
 func TestStatic(t *testing.T) {
@@ -48,5 +50,38 @@ func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ..
 		if c == 0 {
 			t.Fatalf("map never returned %v", e)
 		}
+	}
+
+	keys := []string{}
+	for i := 0; i < len(endpoints)*10; i++ {
+		keys = append(keys, fmt.Sprintf("test-%d", i))
+	}
+	values, err := m.GetAll(keys...)
+	if err != nil {
+		t.Fatalf("GetAll failed: %v", err)
+	}
+	for i := range keys {
+		if v, err := m.Get(keys[i], nil); err != nil {
+			t.Fatal(err)
+		} else if v != values[i] {
+			t.Fatalf("GetAll for %v returned %v, want %v", keys[i], values[i], v)
+		}
+	}
+}
+
+func TestEndpointsGetAll(t *testing.T) {
+	m := hashMapNew(3, crc32.ChecksumIEEE)
+	m.add(strings.Split("a b c d", " ")...)
+	f := func(keys []string) bool {
+		values := m.getAll(keys...)
+		for i := range keys {
+			if m.get(keys[i], nil) != values[i] {
+				return false
+			}
+		}
+		return len(keys) == len(values)
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
 	}
 }
