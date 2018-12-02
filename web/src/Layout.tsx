@@ -120,6 +120,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
                 location={props.location}
                 extensionsController={props.extensionsController}
+                isLightTheme={props.isLightTheme}
             />
             <GlobalDebug {...props} />
         </div>

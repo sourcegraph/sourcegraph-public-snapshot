@@ -3,7 +3,7 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import marked from 'marked'
 import * as React from 'react'
-import { merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { combineLatest, from, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     bufferTime,
     catchError,
@@ -16,6 +16,7 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
+import { getLocations } from '../../../../../shared/src/api/client/services/location'
 import { ContributableViewContainer } from '../../../../../shared/src/api/protocol'
 import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { RepositoryIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
@@ -92,6 +93,28 @@ export class BlobPanel extends React.PureComponent<Props> {
         const subjectChanges = componentUpdates.pipe(
             map(toSubject),
             distinctUntilChanged((a, b) => isEqual(a, b))
+        )
+
+        this.subscriptions.add(
+            this.props.extensionsController.services.views.registerProvider(
+                { id: 'references', container: ContributableViewContainer.Panel },
+                this.props.extensionsController.services.textDocumentReferences
+                    .getLocationsAndProviders(from(this.props.extensionsController.services.model.model), {
+                        context: { includeDeclaration: false },
+                    })
+                    .pipe(
+                        map(({ locations, hasProviders }) => {
+                            if (!hasProviders || !locations) {
+                                return null
+                            }
+                            return {
+                                title: 'References',
+                                content: '',
+                                locationProvider: () => locations,
+                            }
+                        })
+                    )
+            )
         )
 
         this.subscriptions.add(

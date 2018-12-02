@@ -37,7 +37,7 @@ export class Services {
     public readonly views = new ViewProviderRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentImplementation = new TextDocumentLocationProviderRegistry()
-    public readonly textDocumentReferences = new TextDocumentReferencesProviderRegistry({ views: this.views })
+    public readonly textDocumentReferences = new TextDocumentReferencesProviderRegistry()
     public readonly textDocumentTypeDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()

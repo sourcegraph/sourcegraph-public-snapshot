@@ -14,18 +14,15 @@ import { ErrorLike, isErrorLike } from '../../util/errors'
 import { propertyIsDefined } from '../../util/types'
 import { parseRepoURI, toPrettyBlobURL } from '../../util/url'
 
-export const FileLocationsError: React.FunctionComponent<{ pluralNoun: string; error: ErrorLike }> = ({
-    pluralNoun,
-    error,
-}) => (
+export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="file-locations__error alert alert-danger m-2">
-        <AlertCircleIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
+        <AlertCircleIcon className="icon-inline" /> Error getting locations: {upperFirst(error.message)}
     </div>
 )
 
-export const FileLocationsNotFound: React.FunctionComponent<{ pluralNoun: string }> = ({ pluralNoun }) => (
+export const FileLocationsNotFound: React.FunctionComponent = () => (
     <div className="file-locations__not-found m-2">
-        <MapSearchIcon className="icon-inline" /> No {pluralNoun} found
+        <MapSearchIcon className="icon-inline" /> No locations found
     </div>
 )
 
@@ -40,9 +37,6 @@ interface Props {
 
     /** Called when a location is selected. */
     onSelect?: () => void
-
-    /** The plural noun described by the locations, such as "references" or "implementations". */
-    pluralNoun: string
 
     className?: string
 
@@ -105,13 +99,13 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         if (isErrorLike(this.state.locationsOrError)) {
-            return <FileLocationsError pluralNoun={this.props.pluralNoun} error={this.state.locationsOrError} />
+            return <FileLocationsError error={this.state.locationsOrError} />
         }
         if (this.state.locationsOrError === LOADING) {
             return <LoadingSpinner className="icon-inline m-1" />
         }
         if (this.state.locationsOrError.length === 0) {
-            return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
+            return <FileLocationsNotFound />
         }
 
         // Locations by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go

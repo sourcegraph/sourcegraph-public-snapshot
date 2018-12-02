@@ -29,9 +29,6 @@ interface Props {
     /** Called when a location is selected. */
     onSelectLocation?: () => void
 
-    /** The plural noun described by the locations, such as "references" or "implementations". */
-    pluralNoun: string
-
     className: string
 
     isLightTheme: boolean
@@ -102,7 +99,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         if (isErrorLike(this.state.locationsOrError)) {
-            return <FileLocationsError pluralNoun={this.props.pluralNoun} error={this.state.locationsOrError} />
+            return <FileLocationsError error={this.state.locationsOrError} />
         }
         if (
             this.state.locationsOrError === LOADING ||
@@ -111,7 +108,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
             return <LoadingSpinner className="icon-inline m-1" />
         }
         if (this.state.locationsOrError.length === 0) {
-            return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
+            return <FileLocationsNotFound />
         }
 
         // Locations grouped by repository.
@@ -176,7 +173,6 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                     query={() => of(selectedRepo ? locationsByRepo.get(selectedRepo)! : [])}
                     onSelect={this.props.onSelectLocation}
                     icon={RepositoryIcon}
-                    pluralNoun={this.props.pluralNoun}
                     isLightTheme={this.props.isLightTheme}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                 />

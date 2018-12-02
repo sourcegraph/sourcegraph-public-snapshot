@@ -2,9 +2,8 @@ import React from 'react'
 import { combineLatest, Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { ContributableViewContainer, TextDocumentPositionParams } from '../../protocol'
+import { ContributableViewContainer } from '../../protocol'
 import * as plain from '../../protocol/plainTypes'
-import { ProvideTextDocumentLocationSignature } from './location'
 import { Entry, FeatureProviderRegistry } from './registry'
 
 export interface ViewProviderRegistrationOptions {
@@ -17,7 +16,7 @@ export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'tit
      * The location provider whose results to render in the panel view.
      */
     // TODO!(sqs): why null and not ?:
-    locationProvider: ProvideTextDocumentLocationSignature<TextDocumentPositionParams, plain.Location> | null
+    locationProvider: (() => Observable<plain.Location[] | null>) | null
 
     /**
      * The React element to render in the panel view.
@@ -53,6 +52,7 @@ export class ViewProviderRegistry extends FeatureProviderRegistry<
 }
 
 /*
+TODO!(sqs)
                 {
                     // References panel view.
                     registrationOptions: { id: 'references', container: ContributableViewContainer.Panel },

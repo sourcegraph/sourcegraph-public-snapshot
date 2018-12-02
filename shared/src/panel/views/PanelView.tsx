@@ -1,12 +1,11 @@
 import H from 'history'
 import marked from 'marked'
 import React from 'react'
-import { map } from 'rxjs/operators'
+import { fetchHighlightedFileLines } from '../../../../web/src/repo/backend'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
 import { RepositoryIcon } from '../../components/icons'
 import { Markdown } from '../../components/Markdown'
 import { createLinkClickHandler } from '../../util/linkClickHandler'
-import { makeRepoURI } from '../../util/url'
 import { EmptyPanelView } from './EmptyPanelView'
 import { FileLocations } from './FileLocations'
 
@@ -38,30 +37,14 @@ export class PanelView extends React.PureComponent<Props, State> {
                         query={this.props.panelView.locationProvider}
                         // TODO!(sqs): add updates
                         icon={RepositoryIcon}
-                        pluralNoun="locations"
                         isLightTheme={this.props.isLightTheme}
+                        fetchHighlightedFileLines={fetchHighlightedFileLines}
                     />
                 )}
                 {!this.props.panelView.content &&
                     !this.props.panelView.reactElement &&
-                    !this.props.panelView.locationProvider && <EmptyPanelView />}
+                    !this.props.panelView.locationProvider && <EmptyPanelView className="mt-3" />}
             </div>
         )
     }
-
-    private queryLocations = () =>
-        this.props.panelView.locationProvider!(
-            // TODO!(sqs)
-            {
-                textDocument: {
-                    uri: makeRepoURI(parseBrowserRepoURL(this.props.location.pathname)),
-                },
-                position: { line: 1, character: 3 },
-            }
-        ).pipe(
-            map(locations => ({
-                loading: false,
-                locations: locations ? (Array.isArray(locations) ? locations : [locations]).filter(l => !!l) : [],
-            }))
-        )
 }

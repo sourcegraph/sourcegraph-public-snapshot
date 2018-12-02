@@ -1,14 +1,9 @@
-import { combineLatest, from, Observable, Subscription, Unsubscribable } from 'rxjs'
+import { combineLatest, from, Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import {
-    ContributableViewContainer,
-    ReferenceParams,
-    TextDocumentPositionParams,
-    TextDocumentRegistrationOptions,
-} from '../../protocol'
+import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
-import { Services } from '../services'
-import { TextDocumentIdentifier } from '../types/textDocument'
+import { Model, ViewComponentData } from '../model'
+import { match, TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
@@ -31,6 +26,38 @@ export class TextDocumentLocationProviderRegistry<
 > extends DocumentFeatureProviderRegistry<ProvideTextDocumentLocationSignature<P, L>> {
     public getLocation(params: P): Observable<L | L[] | null> {
         return getLocation<P, L>(this.providersForDocument(params.textDocument), params)
+    }
+
+    public getLocationsAndProviders(
+        model: Observable<Pick<Model, 'visibleViewComponents'>>,
+        extraParams: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
+    ): Observable<{ locations: Observable<Location[] | null> | null; hasProviders: boolean }> {
+        return combineLatest(this.entries, model).pipe(
+            map(([entries, { visibleViewComponents }]) => {
+                // TODO!(sqs): add a way to get the focused view component
+                if (
+                    !visibleViewComponents ||
+                    visibleViewComponents.length === 0 ||
+                    visibleViewComponents[0].selections.length === 0
+                ) {
+                    return { locations: null, hasProviders: false }
+                }
+
+                const providers = entries
+                    .filter(({ registrationOptions }) =>
+                        match(registrationOptions.documentSelector, visibleViewComponents[0].item)
+                    )
+                    .map(({ provider }) => provider)
+                return {
+                    locations: getLocations<P, L>(of(providers), {
+                        textDocument: visibleViewComponents[0].item,
+                        position: visibleViewComponents[0].selections[0].start,
+                        ...extraParams,
+                    }),
+                    hasProviders: providers.length > 0,
+                }
+            })
+        )
     }
 }
 
@@ -78,46 +105,12 @@ export function getLocations<
  * Reference results are always an array or null, unlike results from other location providers (e.g., from
  * textDocument/definition), which can be a single item, an array, or null.
  */
-export class TextDocumentReferencesProviderRegistry extends TextDocumentLocationProviderRegistry<ReferenceParams>
-    implements Unsubscribable {
-    private subscriptions = new Subscription()
-
-    public constructor({ views }: Pick<Services, 'views'>) {
-        super()
-
-        this.subscriptions.add(
-            views.registerProvider(
-                { id: 'references', container: ContributableViewContainer.Panel },
-                this.providers.pipe(
-                    map(providers => {
-                        if (providers.length === 0) {
-                            return null
-                        }
-                        return {
-                            title: 'References',
-                            content: '',
-                            locationProvider: (params: TextDocumentPositionParams) =>
-                                getLocations(this.providersForDocument(params.textDocument), {
-                                    ...params,
-                                    context: { includeDeclaration: false },
-                                }),
-                        }
-                    })
-                )
-            )
-        )
-    }
-
+export class TextDocumentReferencesProviderRegistry extends TextDocumentLocationProviderRegistry<ReferenceParams> {
     /** Gets reference locations from all matching providers. */
     public getLocation(params: ReferenceParams): Observable<Location[] | null> {
         // References are always an array (unlike other locations, which can be returned as L | L[] |
         // null).
         return getLocations(this.providersForDocument(params.textDocument), params)
-    }
-
-    public unsubscribe(): void {
-        // TODO!(sqs): this isnt actually called anywhere
-        this.subscriptions.unsubscribe()
     }
 }
 

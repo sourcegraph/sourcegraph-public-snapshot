@@ -1,7 +1,8 @@
-import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, combineLatest, Observable, Subscribable, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { getModeFromPath } from '../../../languages'
 import { TextDocumentRegistrationOptions } from '../../protocol'
+import { Model } from '../model'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
 
 /** A registry entry for a registered provider. */
@@ -72,6 +73,28 @@ export abstract class DocumentFeatureProviderRegistry<
                     )
                     .map(({ provider }) => provider)
             )
+        )
+    }
+
+    // TODO!(sqs)
+    public providersForModel(model: Subscribable<Model>): Subscribable<P[]> {
+        return combineLatest(this.entries, model).pipe(
+            map(([entries, { visibleViewComponents }]) => {
+                // TODO!(sqs): add a way to get the focused view component
+                if (
+                    !visibleViewComponents ||
+                    visibleViewComponents.length === 0 ||
+                    visibleViewComponents[0].selections.length === 0
+                ) {
+                    return []
+                }
+
+                return entries
+                    .filter(({ registrationOptions }) =>
+                        match(registrationOptions.documentSelector, visibleViewComponents[0].item)
+                    )
+                    .map(({ provider }) => provider)
+            })
         )
     }
 }
