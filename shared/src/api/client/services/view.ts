@@ -16,7 +16,7 @@ export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'tit
      * The location provider whose results to render in the panel view.
      */
     // TODO!(sqs): why null and not ?:
-    locationProvider: (() => Observable<plain.Location[] | null>) | null
+    locationProvider: Observable<plain.Location[] | null> | null
 
     /**
      * The React element to render in the panel view.

@@ -170,7 +170,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                 <FileLocations
                     className="file-locations-tree__content"
                     // tslint:disable-next-line:jsx-no-lambda
-                    query={() => of(selectedRepo ? locationsByRepo.get(selectedRepo)! : [])}
+                    query={of(selectedRepo ? locationsByRepo.get(selectedRepo)! : [])}
                     onSelect={this.props.onSelectLocation}
                     icon={RepositoryIcon}
                     isLightTheme={this.props.isLightTheme}

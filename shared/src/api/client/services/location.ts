@@ -2,7 +2,7 @@ import { combineLatest, from, Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
-import { Model, ViewComponentData } from '../model'
+import { Model } from '../model'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
@@ -30,7 +30,7 @@ export class TextDocumentLocationProviderRegistry<
 
     public getLocationsAndProviders(
         model: Observable<Pick<Model, 'visibleViewComponents'>>,
-        extraParams: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
+        extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
     ): Observable<{ locations: Observable<Location[] | null> | null; hasProviders: boolean }> {
         return combineLatest(this.entries, model).pipe(
             map(([entries, { visibleViewComponents }]) => {
@@ -38,7 +38,9 @@ export class TextDocumentLocationProviderRegistry<
                 if (
                     !visibleViewComponents ||
                     visibleViewComponents.length === 0 ||
-                    visibleViewComponents[0].selections.length === 0
+                    visibleViewComponents[0].selections.length === 0 ||
+                    // TODO!(sqs): find a way to represent a line (not char) selection
+                    visibleViewComponents[0].selections[0].start.character === 0 // TODO!(sqs)
                 ) {
                     return { locations: null, hasProviders: false }
                 }
@@ -49,11 +51,11 @@ export class TextDocumentLocationProviderRegistry<
                     )
                     .map(({ provider }) => provider)
                 return {
-                    locations: getLocations<P, L>(of(providers), {
+                    locations: getLocations<P, L>(of(providers), ({
                         textDocument: visibleViewComponents[0].item,
                         position: visibleViewComponents[0].selections[0].start,
                         ...extraParams,
-                    }),
+                    } as unknown) as P),
                     hasProviders: providers.length > 0,
                 }
             })

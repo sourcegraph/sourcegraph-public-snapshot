@@ -30,7 +30,7 @@ interface Props {
     /**
      * The function called to query for file locations.
      */
-    query: () => Observable<Location[]>
+    query: Observable<Location[] | null>
 
     /** The icon to use for each location. */
     icon: React.ComponentType<{ className?: string }>
@@ -52,7 +52,7 @@ interface State {
      * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
      * to load.
      */
-    locationsOrError: typeof LOADING | Location[] | ErrorLike
+    locationsOrError: typeof LOADING | Location[] | null | ErrorLike
 
     itemsToShow: number
 }
@@ -79,7 +79,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             queryFuncChanges
                 .pipe(
-                    switchMap(query => query().pipe(catchError(error => [asError(error) as ErrorLike]))),
+                    switchMap(query => query.pipe(catchError(error => [asError(error) as ErrorLike]))),
                     startWith(LOADING),
                     map(result => ({ locationsOrError: result }))
                 )
@@ -104,7 +104,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         if (this.state.locationsOrError === LOADING) {
             return <LoadingSpinner className="icon-inline m-1" />
         }
-        if (this.state.locationsOrError.length === 0) {
+        if (this.state.locationsOrError === null || this.state.locationsOrError.length === 0) {
             return <FileLocationsNotFound />
         }
 

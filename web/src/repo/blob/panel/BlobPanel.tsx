@@ -3,7 +3,7 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import marked from 'marked'
 import * as React from 'react'
-import { combineLatest, from, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { from, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     bufferTime,
     catchError,
@@ -16,8 +16,13 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { getLocations } from '../../../../../shared/src/api/client/services/location'
-import { ContributableViewContainer } from '../../../../../shared/src/api/protocol'
+import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
+import { Entry } from '../../../../../shared/src/api/client/services/registry'
+import {
+    ProvideViewSignature,
+    ViewProviderRegistrationOptions,
+} from '../../../../../shared/src/api/client/services/view'
+import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
 import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { RepositoryIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -53,7 +58,15 @@ interface Props
     authenticatedUser: GQL.IUser | null
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'references:external' | 'discussions' | 'impl' | 'history'
+export type BlobPanelTabID =
+    | 'info'
+    | 'def'
+    | 'references'
+    | 'references:external'
+    | 'discussions'
+    | 'impl'
+    | 'typedef'
+    | 'history'
 
 /** The subject (what the contextual information refers to). */
 interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec> {
@@ -95,36 +108,60 @@ export class BlobPanel extends React.PureComponent<Props> {
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
 
-        this.subscriptions.add(
-            this.props.extensionsController.services.views.registerProvider(
-                { id: 'references', container: ContributableViewContainer.Panel },
-                this.props.extensionsController.services.textDocumentReferences
-                    .getLocationsAndProviders(from(this.props.extensionsController.services.model.model), {
-                        context: { includeDeclaration: false },
-                    })
-                    .pipe(
-                        map(({ locations, hasProviders }) => {
-                            if (!hasProviders || !locations) {
-                                return null
-                            }
-                            return {
-                                title: 'References',
-                                content: '',
-                                locationProvider: () => locations,
-                            }
-                        })
+        const entryForViewProviderRegistration: <P extends TextDocumentPositionParams>(
+            id: string,
+            title: string,
+            registry: TextDocumentLocationProviderRegistry<P>,
+            extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
+        ) => Entry<ViewProviderRegistrationOptions, ProvideViewSignature> = (id, title, registry, extraParams) => ({
+            registrationOptions: { id, container: ContributableViewContainer.Panel },
+            provider: registry
+                .getLocationsAndProviders(from(this.props.extensionsController.services.model.model), extraParams)
+                .pipe(
+                    map(
+                        ({ locations, hasProviders }) =>
+                            hasProviders && locations
+                                ? {
+                                      title,
+                                      content: '',
+                                      locationProvider: locations,
+                                  }
+                                : null
                     )
-            )
-        )
+                ),
+        })
 
         this.subscriptions.add(
             this.props.extensionsController.services.views.registerProviders([
+                entryForViewProviderRegistration(
+                    'def',
+                    'Definition',
+                    this.props.extensionsController.services.textDocumentDefinition
+                ),
+                entryForViewProviderRegistration(
+                    'references',
+                    'References',
+                    this.props.extensionsController.services.textDocumentReferences,
+                    {
+                        context: { includeDeclaration: false },
+                    }
+                ),
+                entryForViewProviderRegistration(
+                    'impl',
+                    'Implementation',
+                    this.props.extensionsController.services.textDocumentImplementation
+                ),
+                entryForViewProviderRegistration(
+                    'typedef',
+                    'Type definition',
+                    this.props.extensionsController.services.textDocumentTypeDefinition
+                ),
                 {
                     // Info (hover) panel view.
                     registrationOptions: { id: 'Info', container: ContributableViewContainer.Panel },
                     provider: subjectChanges.pipe(
                         switchMap((subject: PanelSubject) => {
-                            if (!subject.position) {
+                            if (!subject.position || subject.position.character === 0) {
                                 return [null]
                             }
                             const result = getHover(subject as LSPTextDocumentPositionParams, {
@@ -180,7 +217,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                     className="panel__tabs-content"
                                     query={this.queryReferencesExternal}
                                     icon={RepositoryIcon}
-                                    pluralNoun="external references"
                                     isLightTheme={this.props.isLightTheme}
                                     location={this.props.location}
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
