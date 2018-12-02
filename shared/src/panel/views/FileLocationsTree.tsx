@@ -2,8 +2,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
+import { Observable, of, Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap } from 'rxjs/operators'
 import { Location } from '../../api/protocol/plainTypes'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
@@ -18,10 +18,7 @@ interface Props {
     /**
      * The function called to query for file locations.
      */
-    query: () => Observable<{ loading: boolean; locations: Location[] }>
-
-    /** An observable that upon emission causes the connection to refresh the data (by calling queryConnection). */
-    updates?: Observable<void>
+    query: () => Observable<Location[]>
 
     /**
      * Used along with the "inputRevision" prop to preserve the original Git revision specifier for the current
@@ -56,15 +53,16 @@ interface Props {
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
+const LOADING: 'loading' = 'loading'
+
 interface State {
     /**
-     * Locations (inside files identified by LSP-style git:// URIs) to display, or an error if they failed to load.
-     * Undefined while loading.
+     * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
+     * to load.
      */
-    locationsOrError?: Location[] | ErrorLike
+    locationsOrError: typeof LOADING | Location[] | ErrorLike
 
-    /** Whether to show a loading indicator. */
-    loading: boolean
+    locationsComplete: boolean
 
     selectedRepo?: string
 }
@@ -73,51 +71,32 @@ interface State {
  * Displays a two-column view, with a repository list, and a list of file excerpts for the selected tree item.
  */
 export class FileLocationsTree extends React.PureComponent<Props, State> {
-    public state: State = { loading: false }
+    public state: State = { locationsOrError: LOADING, locationsComplete: false }
 
     private componentUpdates = new Subject<Props>()
-    private locationsUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        // Manually requested refreshes.
-        const refreshRequests = new Subject<void>()
-
         // Changes to the query callback function.
         const queryFuncChanges = this.componentUpdates.pipe(
             map(({ query }) => query),
             distinctUntilChanged()
         )
 
-        // Force updates from parent component.
-        if (this.props.updates) {
-            this.subscriptions.add(this.props.updates.subscribe(c => refreshRequests.next()))
-        }
-
         this.subscriptions.add(
-            combineLatest(queryFuncChanges, refreshRequests.pipe(startWith<void>(void 0)))
+            queryFuncChanges
                 .pipe(
-                    switchMap(([query]) => {
-                        type PartialStateUpdate = Pick<State, 'locationsOrError' | 'loading'>
-                        const result = query().pipe(
+                    switchMap(query =>
+                        query().pipe(
                             catchError(error => [asError(error) as ErrorLike]),
-                            map(
-                                c =>
-                                    ({
-                                        locationsOrError: isErrorLike(c) ? c : c.locations,
-                                        loading: isErrorLike(c) ? false : c.loading,
-                                    } as PartialStateUpdate)
-                            )
+                            map(result => ({ locationsOrError: result, locationsComplete: false })),
+                            startWith<Pick<State, 'locationsOrError' | 'locationsComplete'>>({
+                                locationsOrError: LOADING,
+                                locationsComplete: false,
+                            }),
+                            endWith({ locationsComplete: true })
                         )
-
-                        return merge(
-                            result,
-                            of({ loading: true }).pipe(
-                                delay(50),
-                                takeUntil(result)
-                            ) // delay loading spinner to reduce jitter
-                        ).pipe(startWith<PartialStateUpdate>({ locationsOrError: undefined, loading: false })) // clear old data immediately
-                    })
+                    )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )
@@ -137,15 +116,14 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
         if (isErrorLike(this.state.locationsOrError)) {
             return <FileLocationsError pluralNoun={this.props.pluralNoun} error={this.state.locationsOrError} />
         }
-        if (!this.state.loading && this.state.locationsOrError && this.state.locationsOrError.length === 0) {
-            return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
+        if (
+            this.state.locationsOrError === LOADING ||
+            (!this.state.locationsComplete && this.state.locationsOrError.length === 0)
+        ) {
+            return <LoadingSpinner className="icon-inline m-1" />
         }
-
-        // Don't show tree until we have at least one item.
-        if (this.state.locationsOrError === undefined) {
-            return null
-        } else if (this.state.loading && this.state.locationsOrError.length === 0) {
-            return <LoadingSpinner className="icon-inline p-2" />
+        if (this.state.locationsOrError.length === 0) {
+            return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
         }
 
         // Locations grouped by repository.
@@ -200,20 +178,14 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                                     </span>
                                 </Link>
                             ))}
-                            {this.state.loading && <LoadingSpinner className="icon-inline p-2" />}
+                            {!this.state.locationsComplete && <LoadingSpinner className="icon-inline m-2" />}
                         </div>
                     }
                 />
                 <FileLocations
                     className="file-locations-tree__content"
                     // tslint:disable-next-line:jsx-no-lambda
-                    query={() =>
-                        of({
-                            loading: false,
-                            locations: selectedRepo ? locationsByRepo.get(selectedRepo)! : [],
-                        })
-                    }
-                    updates={this.locationsUpdates}
+                    query={() => of(selectedRepo ? locationsByRepo.get(selectedRepo)! : [])}
                     inputRepo={this.props.inputRepo}
                     inputRevision={this.props.inputRevision}
                     onSelect={this.props.onSelectLocation}

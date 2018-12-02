@@ -3,8 +3,8 @@ import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
-import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
+import { Observable, Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, map, publishReplay, refCount, startWith, switchMap } from 'rxjs/operators'
 import { Location } from '../../api/protocol/plainTypes'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
@@ -33,10 +33,7 @@ interface Props {
     /**
      * The function called to query for file locations.
      */
-    query: () => Observable<{ loading: boolean; locations: Location[] }>
-
-    /** An observable that upon emission causes the connection to refresh the data (by calling queryConnection). */
-    updates?: Observable<void>
+    query: () => Observable<Location[]>
 
     /**
      * Used along with the "inputRevision" prop to preserve the original Git revision specifier for the current
@@ -66,15 +63,14 @@ interface Props {
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
+const LOADING: 'loading' = 'loading'
+
 interface State {
     /**
-     * Locations (inside files identified by LSP-style git:// URIs) to display, or an error if they failed to load.
-     * Undefined while loading.
+     * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
+     * to load.
      */
-    locationsOrError?: Location[] | ErrorLike
-
-    /** Whether to show a loading indicator. */
-    loading: boolean
+    locationsOrError: typeof LOADING | Location[] | ErrorLike
 
     itemsToShow: number
 }
@@ -84,54 +80,26 @@ interface State {
  */
 export class FileLocations extends React.PureComponent<Props, State> {
     public state: State = {
+        locationsOrError: LOADING,
         itemsToShow: 3,
-        loading: false,
     }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        // Manually requested refreshes.
-        const refreshRequests = new Subject<void>()
-
         // Changes to the query callback function.
         const queryFuncChanges = this.componentUpdates.pipe(
             map(({ query }) => query),
             distinctUntilChanged()
         )
 
-        // Force updates from parent component.
-        if (this.props.updates) {
-            this.subscriptions.add(this.props.updates.subscribe(c => refreshRequests.next()))
-        }
-
         this.subscriptions.add(
-            combineLatest(queryFuncChanges, refreshRequests.pipe(startWith<void>(void 0)))
+            queryFuncChanges
                 .pipe(
-                    switchMap(([query]) => {
-                        type PartialStateUpdate = Pick<State, 'locationsOrError' | 'loading'>
-                        const result = query().pipe(
-                            catchError(error => [asError(error) as ErrorLike]),
-                            map(
-                                c =>
-                                    ({
-                                        locationsOrError: isErrorLike(c) ? c : c.locations,
-                                        loading: isErrorLike(c) ? false : c.loading,
-                                    } as PartialStateUpdate)
-                            )
-                        )
-
-                        return merge(
-                            result,
-                            of({ loading: true }).pipe(
-                                delay(50),
-                                takeUntil(result)
-                            ) // delay loading spinner to reduce jitter
-                        ).pipe(
-                            startWith<PartialStateUpdate>({ locationsOrError: undefined, loading: false }) // clear old data immediately
-                        )
-                    })
+                    switchMap(query => query().pipe(catchError(error => [asError(error) as ErrorLike]))),
+                    startWith(LOADING),
+                    map(result => ({ locationsOrError: result }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )
@@ -151,7 +119,10 @@ export class FileLocations extends React.PureComponent<Props, State> {
         if (isErrorLike(this.state.locationsOrError)) {
             return <FileLocationsError pluralNoun={this.props.pluralNoun} error={this.state.locationsOrError} />
         }
-        if (!this.state.loading && this.state.locationsOrError && this.state.locationsOrError.length === 0) {
+        if (this.state.locationsOrError === LOADING) {
+            return <LoadingSpinner className="icon-inline m-1" />
+        }
+        if (this.state.locationsOrError.length === 0) {
             return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
         }
 
@@ -195,7 +166,6 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         />
                     ))}
                 />
-                {this.state.loading && <LoadingSpinner className="icon-inline m-1" />}
             </div>
         )
     }

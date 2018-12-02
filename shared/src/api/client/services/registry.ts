@@ -15,11 +15,19 @@ export abstract class FeatureProviderRegistry<O, P> {
     protected entries = new BehaviorSubject<Entry<O, P>[]>([])
 
     public registerProvider(registrationOptions: O, provider: P): Unsubscribable {
-        const entry: Entry<O, P> = { registrationOptions, provider }
-        this.entries.next([...this.entries.value, entry])
+        return this.registerProviders([{ registrationOptions, provider }])
+    }
+
+    /**
+     * Bulk-register providers. This is useful when registering an initial set of providers. Registering them all
+     * at once means there is only one emission from {@link FeatureProviderRegistry#entries} (instead of one per
+     * entry).
+     */
+    public registerProviders(entries: Entry<O, P>[]): Unsubscribable {
+        this.entries.next([...this.entries.value, ...entries])
         return {
             unsubscribe: () => {
-                this.entries.next(this.entries.value.filter(e => e !== entry))
+                this.entries.next([...this.entries.value.filter(e => !entries.includes(e))])
             },
         }
     }
