@@ -122,6 +122,7 @@ function displayLineCount(editor: sourcegraph.CodeEditor | undefined = activeEdi
  * conditions in package.json are satisfied.
  */
 export function activate(ctx: sourcegraph.ExtensionContext): void {
+    // Add each subscription to the extension's context so they can unsubscribed upon deactivation
     ctx.subscriptions.add(
       sourcegraph.commands.registerCommand('linecounter.displayLineCount', displayLineCount)
     )
