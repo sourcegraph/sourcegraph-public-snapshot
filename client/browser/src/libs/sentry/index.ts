@@ -17,6 +17,10 @@ const callSentryInit = once(() => {
 
 /** Initialize Sentry for error reporting. */
 export function initSentry(script: 'content' | 'options' | 'background'): void {
+    if (process.env.NODE_ENV !== 'production') {
+        return
+    }
+
     storage.observeSync('featureFlags').subscribe(flags => {
         const allowed = flags.allowErrorReporting
 
