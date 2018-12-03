@@ -292,18 +292,20 @@ func main() {
 		pipeline.AddWait()
 
 		// Run e2e tests against dogfood
-		pipeline.AddStep(":chromium:",
-			// Protect against deploys while tests are running
-			bk.ConcurrencyGroup("deploy"),
-			bk.Concurrency(1),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("yarn cache clean puppeteer"), // ensure it's downloaded even if the package was cached w/o downloading
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd web"),
-			bk.Cmd("yarn -s run test-e2e-sgdev --retries 5"),
-			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
-		pipeline.AddWait()
+		// TODO@ggilmore: disabled until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976
+		// is completed.
+		// pipeline.AddStep(":chromium:",
+		// 	// Protect against deploys while tests are running
+		// 	bk.ConcurrencyGroup("deploy"),
+		// 	bk.Concurrency(1),
+		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		// 	bk.Cmd("yarn cache clean puppeteer"), // ensure it's downloaded even if the package was cached w/o downloading
+		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		// 	bk.Cmd("pushd web"),
+		// 	bk.Cmd("yarn -s run test-e2e-sgdev --retries 5"),
+		// 	bk.Cmd("popd"),
+		// 	bk.ArtifactPaths("./puppeteer/*.png"))
+		// pipeline.AddWait()
 
 		// Deploy to prod
 		pipeline.AddStep(":rocket:",
