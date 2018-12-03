@@ -341,12 +341,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
-	var workspace string
-	if rev != "" {
-		workspace = "git://" + string(repo.Name) + "?" + url.QueryEscape(rev) + "#"
-	} else {
-		workspace = "git://" + string(repo.Name) + "#"
-	}
+	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
 		fm.repo = repo
@@ -355,6 +350,21 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	}
 
 	return matches, limitHit, err
+}
+
+func fileMatchURI(name api.RepoName, ref, path string) string {
+	var b strings.Builder
+	ref = url.QueryEscape(ref)
+	b.Grow(len(name) + len(ref) + len(path) + len("git://?#"))
+	b.WriteString("git://")
+	b.WriteString(string(name))
+	if ref != "" {
+		b.WriteByte('?')
+		b.WriteString(ref)
+	}
+	b.WriteByte('#')
+	b.WriteString(path)
+	return b.String()
 }
 
 func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
@@ -525,12 +535,13 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 				})
 			}
 		}
+		repo := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
 		matches[i] = &fileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
-			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
-			repo:         repoMap[api.RepoName(strings.ToLower(string(file.Repository)))],
+			uri:          fileMatchURI(repo.Name, "", file.FileName),
+			repo:         repo,
 			commitID:     "", // zoekt only searches default branch
 		}
 	}
