@@ -6,11 +6,23 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ActionItem } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
 
+interface Props extends ActionsProps {
+    /**
+     * If true, it renders a <ul className="nav">...</ul> around the items. If there are no items, it renders null.
+     *
+     * If falsey (the default behavior), it emits a fragment of just the <li>s.
+     */
+    wrapInList?: boolean
+
+    actionItemClass?: string
+    listItemClass?: string
+}
+
 /**
  * Renders the actions as a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul
  * class="nav"> or <ul class="navbar-nav">.
  */
-export class ActionsNavItems extends React.PureComponent<ActionsProps, ActionsState> {
+export class ActionsNavItems extends React.PureComponent<Props, ActionsState> {
     public state: ActionsState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
@@ -35,27 +47,27 @@ export class ActionsNavItems extends React.PureComponent<ActionsProps, ActionsSt
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element | null {
+    public render(): JSX.Element | React.ReactFragment | null {
         if (!this.state.contributions) {
             return null // loading
         }
 
-        return (
-            <>
-                {getContributedActionItems(this.state.contributions, this.props.menu).map((item, i) => (
-                    <li key={i} className={this.props.listClass || 'nav-item'}>
-                        <ActionItem
-                            key={i}
-                            {...item}
-                            variant="actionItem"
-                            extensionsController={this.props.extensionsController}
-                            platformContext={this.props.platformContext}
-                            className={this.props.actionItemClass}
-                            location={this.props.location}
-                        />
-                    </li>
-                ))}
-            </>
-        )
+        const actionItems = getContributedActionItems(this.state.contributions, this.props.menu).map((item, i) => (
+            <li key={i} className={this.props.listItemClass || 'nav-item'}>
+                <ActionItem
+                    key={i}
+                    {...item}
+                    variant="actionItem"
+                    extensionsController={this.props.extensionsController}
+                    platformContext={this.props.platformContext}
+                    className={this.props.actionItemClass}
+                    location={this.props.location}
+                />
+            </li>
+        ))
+        if (this.props.wrapInList) {
+            return actionItems.length > 0 ? <ul className="nav">{actionItems}</ul> : null
+        }
+        return <>{actionItems}</>
     }
 }

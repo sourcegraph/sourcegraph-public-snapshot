@@ -7,8 +7,6 @@ import { PlatformContextProps } from '../platform/context'
 export interface ActionsProps extends ExtensionsControllerProps, PlatformContextProps {
     menu: ContributableMenu
     scope?: ContributionScope
-    actionItemClass?: string
-    listClass?: string
     location: H.Location
 }
 
