@@ -274,22 +274,24 @@ func main() {
 
 	pipeline.AddWait()
 
-	fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
-		return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
-	}
+	// fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
+	// 	return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
+	// }
 
 	addDeploySteps := func() {
 		// Deploy to dogfood
-		pipeline.AddStep(":dog:",
-			// Protect against concurrent/out-of-order deploys
-			bk.ConcurrencyGroup("deploy"),
-			bk.Concurrency(1),
-			bk.Env("VERSION", version),
-			bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
-			bk.Env("NAMESPACE", "default"),
-			fetchClusterCredentials("dogfood-cluster-7", "us-central1-a", "sourcegraph-dev"),
-			bk.Cmd("./dev/ci/deploy-dogfood.sh"))
-		pipeline.AddWait()
+		// TODO@ggilmore: disabled until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976
+		// is completed.
+		// pipeline.AddStep(":dog:",
+		// 	// Protect against concurrent/out-of-order deploys
+		// 	bk.ConcurrencyGroup("deploy"),
+		// 	bk.Concurrency(1),
+		// 	bk.Env("VERSION", version),
+		// 	bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
+		// 	bk.Env("NAMESPACE", "default"),
+		// 	fetchClusterCredentials("dogfood-cluster-7", "us-central1-a", "sourcegraph-dev"),
+		// 	bk.Cmd("./dev/ci/deploy-dogfood.sh"))
+		// pipeline.AddWait()
 
 		// Run e2e tests against dogfood
 		// TODO@ggilmore: disabled until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976
