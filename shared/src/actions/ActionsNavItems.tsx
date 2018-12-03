@@ -4,15 +4,15 @@ import { switchMap } from 'rxjs/operators'
 import { ContributionScope } from '../api/client/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ActionItem } from './ActionItem'
-import { ActionsContainerState } from './ActionsContainer'
+import { ActionsState } from './actions'
 import { ActionsProps } from './ActionsContainer'
 
 /**
  * Renders the actions as a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul
  * class="nav"> or <ul class="navbar-nav">.
  */
-export class ActionsNavItems extends React.PureComponent<ActionsProps, ActionsContainerState> {
-    public state: ActionsContainerState = {}
+export class ActionsNavItems extends React.PureComponent<ActionsProps, ActionsState> {
+    public state: ActionsState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
     private subscriptions = new Subscription()

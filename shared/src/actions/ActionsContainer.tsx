@@ -3,12 +3,12 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ContributionScope } from '../api/client/context/context'
-import { Contributions } from '../api/protocol'
 import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { ActionItem, ActionItemProps } from './ActionItem'
+import { ActionsState } from './actions'
 
 export interface ActionsProps extends ExtensionsControllerProps, PlatformContextProps {
     menu: ContributableMenu
@@ -31,14 +31,11 @@ interface ActionsContainerProps extends ActionsProps {
     empty?: React.ReactElement<any> | null
 }
 
-export interface ActionsContainerState {
-    /** The contributions, merged from all extensions, or undefined before the initial emission. */
-    contributions?: Contributions
-}
+interface ActionsContainerState extends ActionsState {}
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
 export class ActionsContainer extends React.PureComponent<ActionsContainerProps, ActionsContainerState> {
-    public state: ActionsContainerState = {}
+    public state: ActionsState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
     private subscriptions = new Subscription()
