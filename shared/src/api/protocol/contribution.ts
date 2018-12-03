@@ -249,7 +249,7 @@ export interface SearchFilters {
     name: string
 
     /**
-     * The value of the search filter chip.
+     * The value of the search filter chip (i.e. the literal search query string).
      */
     value: string
 }

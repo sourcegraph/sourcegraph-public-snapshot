@@ -194,7 +194,7 @@
                 "type": "string"
               },
               "value": {
-                "description": "The value of the search filter chip.",
+                "description": "The value of the search filter chip (i.e. the literal search query string).",
                 "type": "string"
               }
             },

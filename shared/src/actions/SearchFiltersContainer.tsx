@@ -2,9 +2,9 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ContributionScope } from '../api/client/context/context'
+import { Contributions } from '../api/protocol'
 import { SearchFilters } from '../api/protocol'
 import { ExtensionsControllerProps } from '../extensions/controller'
-import { ContributionsState } from './actions'
 
 export interface SearchFiltersProps extends ExtensionsControllerProps {
     scope?: ContributionScope
@@ -22,14 +22,17 @@ interface SearchFiltersContainerProps extends SearchFiltersProps {
     empty?: React.ReactElement<any> | null
 }
 
-interface SearchFiltersContainerState extends ContributionsState {}
+export interface SearchFiltersContainerState {
+    /** The contributions, merged from all extensions, or undefined before the initial emission. */
+    contributions?: Contributions
+}
 
 /** Displays the search filters in a container, with a wrapper and/or empty element. */
 export class SearchFiltersContainer extends React.PureComponent<
     SearchFiltersContainerProps,
     SearchFiltersContainerState
 > {
-    public state: ContributionsState = {}
+    public state: SearchFiltersContainerState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
     private subscriptions = new Subscription()

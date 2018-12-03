@@ -153,7 +153,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 <FilterChip
                                     query={this.props.navbarSearchQuery}
                                     onFilterChosen={this.onDynamicFilterClicked}
-                                    key={item.name}
+                                    key={item.name + item.value}
                                     value={item.value}
                                     name={item.name}
                                 />
@@ -178,7 +178,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     <FilterChip
                                         query={this.props.navbarSearchQuery}
                                         onFilterChosen={this.onDynamicFilterClicked}
-                                        key={filter.value}
+                                        key={filter.name + filter.value}
                                         value={filter.value}
                                         name={filter.name}
                                     />
