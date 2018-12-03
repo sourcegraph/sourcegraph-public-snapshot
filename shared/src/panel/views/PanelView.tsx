@@ -8,7 +8,7 @@ import { Markdown } from '../../components/Markdown'
 import { createLinkClickHandler } from '../../util/linkClickHandler'
 import { EmptyPanelView } from './EmptyPanelView'
 import { FileLocations } from './FileLocations'
-import { FileLocationsTree } from './FileLocationsTree'
+import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 
 interface Props {
     panelView: PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>
@@ -25,7 +25,10 @@ interface State {}
 export class PanelView extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
-            <div onClick={createLinkClickHandler(this.props.history)} className="panel__tabs-content">
+            <div
+                onClick={createLinkClickHandler(this.props.history)}
+                className="panel__tabs-content panel__tabs-content--scroll"
+            >
                 {this.props.panelView.content && (
                     <div className="px-2 pt-2">
                         <Markdown dangerousInnerHTML={marked(this.props.panelView.content)} />
@@ -33,7 +36,7 @@ export class PanelView extends React.PureComponent<Props, State> {
                 )}
                 {this.props.panelView.reactElement}
                 {this.props.panelView.locationProvider && (
-                    <FileLocationsTree
+                    <HierarchicalLocationsView
                         locations={this.props.panelView.locationProvider}
                         icon={RepositoryIcon}
                         isLightTheme={this.props.isLightTheme}

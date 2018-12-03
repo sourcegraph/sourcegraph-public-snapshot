@@ -1,7 +1,6 @@
-.file-locations-tree {
+.hierarchical-locations-view {
     height: 100%;
     display: flex;
-    overflow: hidden;
 
     &__resizable {
         min-width: 6rem;
@@ -21,6 +20,9 @@
         justify-content: space-between;
         align-items: center;
 
+        cursor: pointer;
+        user-select: none;
+
         &-name {
             margin-right: 0.5rem;
             display: flex;
@@ -32,6 +34,13 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                direction: rtl;
+
+                color: var(--text-muted);
+                strong {
+                    color: var(--body-color);
+                    font-weight: normal;
+                }
             }
         }
         &-icon {
@@ -51,7 +60,7 @@
 }
 
 .theme-light {
-    .file-locations-tree {
+    .hierarchical-locations {
         &__list {
             border-right: 1px solid $color-light-border;
         }

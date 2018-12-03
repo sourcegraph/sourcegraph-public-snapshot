@@ -53,7 +53,11 @@ export class TextDocumentLocationProviderRegistry<
                 return {
                     locations: getLocations<P, L>(of(providers), ({
                         textDocument: visibleViewComponents[0].item,
-                        position: visibleViewComponents[0].selections[0].start,
+                        position: {
+                            // TODO!(sqs): off by one weirdness
+                            line: visibleViewComponents[0].selections[0].start.line - 1,
+                            character: visibleViewComponents[0].selections[0].start.character - 1,
+                        },
                         ...extraParams,
                     } as unknown) as P),
                     hasProviders: providers.length > 0,

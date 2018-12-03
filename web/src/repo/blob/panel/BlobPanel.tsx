@@ -19,6 +19,7 @@ import {
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
+    PanelViewWithComponent,
     ProvideViewSignature,
     ViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/view'
@@ -27,7 +28,7 @@ import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { RepositoryIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { FileLocationsTree } from '../../../../../shared/src/panel/views/FileLocationsTree'
+import { HierarchicalLocationsView } from '../../../../../shared/src/panel/views/HierarchicalLocationsView'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -57,6 +58,8 @@ interface Props
     isLightTheme: boolean
     authenticatedUser: GQL.IUser | null
 }
+
+const showExternalReferences = localStorage.getItem('hideExternalReferencesPanel') === null
 
 export type BlobPanelTabID =
     | 'info'
@@ -132,152 +135,160 @@ export class BlobPanel extends React.PureComponent<Props> {
         })
 
         this.subscriptions.add(
-            this.props.extensionsController.services.views.registerProviders([
-                entryForViewProviderRegistration(
-                    'def',
-                    'Definition',
-                    this.props.extensionsController.services.textDocumentDefinition
-                ),
-                entryForViewProviderRegistration(
-                    'references',
-                    'References',
-                    this.props.extensionsController.services.textDocumentReferences,
+            this.props.extensionsController.services.views.registerProviders(
+                [
+                    entryForViewProviderRegistration(
+                        'def',
+                        'Definition',
+                        this.props.extensionsController.services.textDocumentDefinition
+                    ),
+                    entryForViewProviderRegistration(
+                        'references',
+                        'References',
+                        this.props.extensionsController.services.textDocumentReferences,
+                        {
+                            context: { includeDeclaration: false },
+                        }
+                    ),
+                    entryForViewProviderRegistration(
+                        'impl',
+                        'Implementation',
+                        this.props.extensionsController.services.textDocumentImplementation
+                    ),
+                    entryForViewProviderRegistration(
+                        'typedef',
+                        'Type definition',
+                        this.props.extensionsController.services.textDocumentTypeDefinition
+                    ),
                     {
-                        context: { includeDeclaration: false },
-                    }
-                ),
-                entryForViewProviderRegistration(
-                    'impl',
-                    'Implementation',
-                    this.props.extensionsController.services.textDocumentImplementation
-                ),
-                entryForViewProviderRegistration(
-                    'typedef',
-                    'Type definition',
-                    this.props.extensionsController.services.textDocumentTypeDefinition
-                ),
-                {
-                    // Info (hover) panel view.
-                    registrationOptions: { id: 'Info', container: ContributableViewContainer.Panel },
-                    provider: subjectChanges.pipe(
-                        switchMap((subject: PanelSubject) => {
-                            if (!subject.position || subject.position.character === 0) {
-                                return [null]
-                            }
-                            const result = getHover(subject as LSPTextDocumentPositionParams, {
-                                extensionsController: this.props.extensionsController,
-                            }).pipe(catchError(error => [asError(error) as ErrorLike]))
-                            return merge(
-                                result,
-                                // Delay loading spinner to reduce jitter.
-                                of(LOADING).pipe(
-                                    delay(150),
-                                    takeUntil(result)
+                        // Info (hover) panel view.
+                        registrationOptions: { id: 'Info', container: ContributableViewContainer.Panel },
+                        provider: subjectChanges.pipe(
+                            switchMap((subject: PanelSubject) => {
+                                if (!subject.position || subject.position.character === 0) {
+                                    return [null]
+                                }
+                                const result = getHover(subject as LSPTextDocumentPositionParams, {
+                                    extensionsController: this.props.extensionsController,
+                                }).pipe(catchError(error => [asError(error) as ErrorLike]))
+                                return merge(
+                                    result,
+                                    // Delay loading spinner to reduce jitter.
+                                    of(LOADING).pipe(
+                                        delay(150),
+                                        takeUntil(result)
+                                    )
+                                ).pipe(
+                                    // Clear old data immediately.
+                                    startWith(null)
                                 )
-                            ).pipe(
-                                // Clear old data immediately.
-                                startWith(null)
-                            )
-                        }),
-                        map((hoverOrError: null | HoverMerged | ErrorLike | typeof LOADING) => {
-                            if (
-                                hoverOrError &&
-                                hoverOrError !== LOADING &&
-                                !isErrorLike(hoverOrError) &&
-                                !isEmptyHover(hoverOrError)
-                            ) {
-                                if (Array.isArray(hoverOrError.contents) && hoverOrError.contents.length >= 2) {
-                                    return {
-                                        title: 'Info',
-                                        content: '',
-                                        locationProvider: null,
-                                        reactElement: hoverOrError.contents.map((s, i) => (
-                                            <div key={i} className="blob-panel__extra-item px-2 pt-1">
-                                                {renderHoverContents(s)}
-                                            </div>
-                                        )),
+                            }),
+                            map((hoverOrError: null | HoverMerged | ErrorLike | typeof LOADING) => {
+                                if (
+                                    hoverOrError &&
+                                    hoverOrError !== LOADING &&
+                                    !isErrorLike(hoverOrError) &&
+                                    !isEmptyHover(hoverOrError)
+                                ) {
+                                    if (Array.isArray(hoverOrError.contents) && hoverOrError.contents.length >= 2) {
+                                        return {
+                                            title: 'Info',
+                                            content: '',
+                                            locationProvider: null,
+                                            reactElement: hoverOrError.contents.map((s, i) => (
+                                                <div key={i} className="blob-panel__extra-item px-2 pt-1">
+                                                    {renderHoverContents(s)}
+                                                </div>
+                                            )),
+                                        }
                                     }
                                 }
-                            }
-                            return null
-                        })
-                    ),
-                },
+                                return null
+                            })
+                        ),
+                    },
 
-                {
-                    // External references panel view.
-                    registrationOptions: { id: 'references:external', container: ContributableViewContainer.Panel },
-                    provider: subjectChanges.pipe(
-                        map(() => ({
-                            title: 'External references',
-                            content: '',
-                            locationProvider: null,
-                            reactElement: (
-                                <FileLocationsTree
-                                    className="panel__tabs-content"
-                                    locations={this.queryReferencesExternal}
-                                    icon={RepositoryIcon}
-                                    isLightTheme={this.props.isLightTheme}
-                                    location={this.props.location}
-                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                />
-                            ),
-                        }))
-                    ),
-                },
+                    showExternalReferences
+                        ? {
+                              // External references panel view.
+                              registrationOptions: {
+                                  id: 'references:external',
+                                  container: ContributableViewContainer.Panel,
+                              },
+                              provider: subjectChanges.pipe(
+                                  map(() => ({
+                                      title: 'External references',
+                                      content: '',
+                                      locationProvider: null,
+                                      reactElement: (
+                                          <HierarchicalLocationsView
+                                              className="panel__tabs-content"
+                                              locations={this.queryReferencesExternal()}
+                                              icon={RepositoryIcon}
+                                              isLightTheme={this.props.isLightTheme}
+                                              fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                          />
+                                      ),
+                                  }))
+                              ),
+                          }
+                        : null,
 
-                {
-                    // File history view.
-                    registrationOptions: { id: 'history', container: ContributableViewContainer.Panel },
-                    provider: subjectChanges.pipe(
-                        map((subject: PanelSubject) => ({
-                            title: 'History',
-                            content: '',
-                            locationProvider: null,
-                            reactElement: (
-                                <RepoRevSidebarCommits
-                                    key="commits"
-                                    repoName={subject.repoPath}
-                                    repoID={this.props.repoID}
-                                    rev={subject.rev}
-                                    filePath={subject.filePath}
-                                    history={this.props.history}
-                                    location={this.props.location}
-                                />
-                            ),
-                        }))
-                    ),
-                },
+                    {
+                        // File history view.
+                        registrationOptions: { id: 'history', container: ContributableViewContainer.Panel },
+                        provider: subjectChanges.pipe(
+                            map((subject: PanelSubject) => ({
+                                title: 'History',
+                                content: '',
+                                locationProvider: null,
+                                reactElement: (
+                                    <RepoRevSidebarCommits
+                                        key="commits"
+                                        repoName={subject.repoPath}
+                                        repoID={this.props.repoID}
+                                        rev={subject.rev}
+                                        filePath={subject.filePath}
+                                        history={this.props.history}
+                                        location={this.props.location}
+                                    />
+                                ),
+                            }))
+                        ),
+                    },
 
-                {
-                    // Code discussions view.
-                    registrationOptions: { id: 'discussions', container: ContributableViewContainer.Panel },
-                    provider: subjectChanges.pipe(
-                        map(
-                            (subject: PanelSubject) =>
-                                isDiscussionsEnabled(this.props.settingsCascade)
-                                    ? {
-                                          title: 'Discussions',
-                                          content: '',
-                                          locationProvider: null,
-                                          reactElement: (
-                                              <DiscussionsTree
-                                                  repoID={this.props.repoID}
-                                                  repoPath={subject.repoPath}
-                                                  commitID={subject.commitID}
-                                                  rev={subject.rev}
-                                                  filePath={subject.filePath}
-                                                  history={this.props.history}
-                                                  location={this.props.location}
-                                                  authenticatedUser={this.props.authenticatedUser}
-                                              />
-                                          ),
-                                      }
-                                    : null
-                        )
-                    ),
-                },
-            ])
+                    {
+                        // Code discussions view.
+                        registrationOptions: { id: 'discussions', container: ContributableViewContainer.Panel },
+                        provider: subjectChanges.pipe(
+                            map(
+                                (subject: PanelSubject) =>
+                                    isDiscussionsEnabled(this.props.settingsCascade)
+                                        ? {
+                                              title: 'Discussions',
+                                              content: '',
+                                              locationProvider: null,
+                                              reactElement: (
+                                                  <DiscussionsTree
+                                                      repoID={this.props.repoID}
+                                                      repoPath={subject.repoPath}
+                                                      commitID={subject.commitID}
+                                                      rev={subject.rev}
+                                                      filePath={subject.filePath}
+                                                      history={this.props.history}
+                                                      location={this.props.location}
+                                                      authenticatedUser={this.props.authenticatedUser}
+                                                  />
+                                              ),
+                                          }
+                                        : null
+                            )
+                        ),
+                    },
+                ].filter(
+                    (v): v is Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>> => !!v
+                )
+            )
         )
 
         // Update references when subject changes after the initial mount.
