@@ -513,7 +513,7 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A panel view created by {@link app.registerPanelView}.
+     * A panel view created by {@link sourcegraph.app.createPanelView}.
      */
     export interface PanelView extends Unsubscribable {
         /**
