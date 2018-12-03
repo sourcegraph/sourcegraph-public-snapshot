@@ -120,3 +120,41 @@ This can be used to identify the current user, perform a search, fetch a file's 
 - Returns: `void`
 
 Opens a view in the panel. The view must have been previously created by the extension using `sourcegraph.app.createPanelView`.
+
+### executeLocationProvider
+
+- Parameters:
+  1. `id` (string) - The location provider ID. This is defined by the extension as the first argument to `sourcegraph.languages.registerLocationProvider`.
+  1. `uri` (string) - The URI of a text document (usually the currently active document).
+  1. `position` (Position, `{line: number, character: number}`) - A position in a text document (usually the cursor position).
+- Returns: `Location[] | Promise<Location[]>`
+
+Executes a location provider and returns the results (a list of locations). Location providers are registered by extensions calling `sourcegraph.languages.registerLocationProvider`. They are the general form of definition providers and reference providers; they accept a document position and return a list of related locations in other files.
+
+The `executeLocationProvider` command returns results to the caller but does not display them to the user.
+
+Known issues:
+
+- If the location provider returns an `Observable` (stream of values), the `executeLocationProvider` only returns a promise that resolves with the first emission. It does not return an observable.
+
+#### Opening a panel with a list of file locations
+
+This example shows how to open a panel view that displays the location results from a location provider.
+
+In your extension code, create a location provider and panel view, and link them together:
+
+```typescript
+// Create the panel view.
+const panelView = sourcegraph.app.createPanelView('fooPanel')
+panelView.title = 'Foo'
+
+// Create a location provider.
+sourcegraph.languages.registerLocationProvider('fooLocations', ['*'], {
+  provideLocations: () => [],
+})
+
+// Tell the panel view to display the location provider's results.
+panelView.component = { locationProvider: 'fooLocations' }
+```
+
+Now, execute the [`openPanel`](builtin_commands.md#openPanel) command with the first argument `fooPanel`. The panel will display the results from the location provider for the currently active document position.

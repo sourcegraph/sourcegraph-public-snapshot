@@ -2,13 +2,14 @@ import { ReplaySubject, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'
 import { handleRequests } from '../../common/proxy'
-import { ContributableViewContainer } from '../../protocol'
+import { ContributableViewContainer, TextDocumentPositionParams } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
+import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { PanelViewWithComponent, ViewProviderRegistry } from '../services/view'
 import { SubscriptionMap } from './common'
 
 /** @internal */
-export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority'> {}
+export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
 
 /** @internal */
 export interface ClientViewsAPI {
@@ -23,7 +24,11 @@ export class ClientViews implements ClientViewsAPI {
     private panelViews = new Map<number, Subject<PanelViewData>>()
     private registrations = new SubscriptionMap()
 
-    constructor(connection: Connection, private viewRegistry: ViewProviderRegistry) {
+    constructor(
+        connection: Connection,
+        private viewRegistry: ViewProviderRegistry,
+        private textDocumentLocations: TextDocumentLocationProviderIDRegistry
+    ) {
         this.subscriptions.add(this.registrations)
 
         handleRequests(connection, 'views', this)
@@ -42,11 +47,15 @@ export class ClientViews implements ClientViewsAPI {
             { ...provider, container: ContributableViewContainer.Panel },
             panelView.pipe(
                 map(
-                    ({ title, content, priority }) =>
+                    ({ title, content, priority, component }) =>
                         ({
                             title,
                             content,
                             priority,
+                            locationProvider: component
+                                ? (params: TextDocumentPositionParams) =>
+                                      this.textDocumentLocations.getLocation(component.locationProvider, params)
+                                : undefined,
                         } as PanelViewWithComponent)
                 )
             )

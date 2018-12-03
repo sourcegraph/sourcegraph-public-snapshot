@@ -219,6 +219,8 @@ function createExtensionAPI(
                 languageFeatures.registerImplementationProvider(selector, provider),
             registerReferenceProvider: (selector, provider) =>
                 languageFeatures.registerReferenceProvider(selector, provider),
+            registerLocationProvider: (id, selector, provider) =>
+                languageFeatures.registerLocationProvider(id, selector, provider),
         },
 
         search: {

@@ -11,6 +11,7 @@ class ExtPanelView implements sourcegraph.PanelView {
         title: '',
         content: '',
         priority: 0,
+        component: null,
     }
 
     constructor(private proxy: ClientViewsAPI, private id: number, private subscription: Unsubscribable) {}
@@ -36,6 +37,14 @@ class ExtPanelView implements sourcegraph.PanelView {
     }
     public set priority(value: number) {
         this.data.priority = value
+        this.sendData()
+    }
+
+    public get component(): sourcegraph.PanelView['component'] {
+        return this.data.component
+    }
+    public set component(value: sourcegraph.PanelView['component']) {
+        this.data.component = value
         this.sendData()
     }
 
