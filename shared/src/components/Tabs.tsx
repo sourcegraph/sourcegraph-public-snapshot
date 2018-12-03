@@ -92,6 +92,11 @@ interface TabsProps<ID extends string, T extends Tab<ID>> {
      */
     tabBarEndFragment?: React.ReactFragment
 
+    /**
+     * A fragment to display underneath the tab bar.
+     */
+    toolbarFragment?: React.ReactFragment
+
     children: React.ReactFragment
 
     id?: string
@@ -139,6 +144,7 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
                     tabClassName={this.props.tabClassName}
                     tabComponent={this.props.tabComponent}
                 />
+                {this.props.toolbarFragment && <div className="tabs__toolbar small">{this.props.toolbarFragment}</div>}
                 {children && children.find(c => c && c.key === this.props.activeTab)}
             </div>
         )
