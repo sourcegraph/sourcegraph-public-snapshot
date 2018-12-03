@@ -570,6 +570,12 @@ declare module 'sourcegraph' {
          * The content to show in the panel view. Markdown is supported.
          */
         content: string
+
+        /**
+         * The priority of this panel view. A higher value means that the item is shown near the beginning (usually
+         * the left side).
+         */
+        priority: number
     }
 
     /**

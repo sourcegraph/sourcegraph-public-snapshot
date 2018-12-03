@@ -1,7 +1,9 @@
-import { combineLatest, from, Observable } from 'rxjs'
+import { combineLatest, from, Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
+import { Model, modelToTextDocumentPositionParams } from '../model'
+import { match } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
@@ -24,6 +26,33 @@ export class TextDocumentLocationProviderRegistry<
 > extends DocumentFeatureProviderRegistry<ProvideTextDocumentLocationSignature<P, L>> {
     public getLocation(params: P): Observable<L | L[] | null> {
         return getLocation<P, L>(this.providersForDocument(params.textDocument), params)
+    }
+
+    public getLocationsAndProviders(
+        model: Observable<Pick<Model, 'visibleViewComponents'>>,
+        extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
+    ): Observable<{ locations: Observable<Location[] | null> | null; hasProviders: boolean }> {
+        return combineLatest(this.entries, model).pipe(
+            map(([entries, { visibleViewComponents }]) => {
+                const params = modelToTextDocumentPositionParams({ visibleViewComponents })
+                if (!params) {
+                    return { locations: null, hasProviders: false }
+                }
+
+                const providers = entries
+                    .filter(({ registrationOptions }) =>
+                        match(registrationOptions.documentSelector, params.textDocument)
+                    )
+                    .map(({ provider }) => provider)
+                return {
+                    locations: getLocations<P, L>(of(providers), {
+                        ...(params as Pick<P, keyof TextDocumentPositionParams>),
+                        ...(extraParams as Pick<P, Exclude<keyof P, 'textDocument' | 'position'>>),
+                    } as P),
+                    hasProviders: providers.length > 0,
+                }
+            })
+        )
     }
 }
 

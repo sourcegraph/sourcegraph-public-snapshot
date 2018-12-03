@@ -1,3 +1,4 @@
+import { TextDocumentPositionParams } from '../protocol'
 import { Selection, WorkspaceRoot } from '../protocol/plainTypes'
 import { TextDocumentItem } from './types/textDocument'
 
@@ -38,4 +39,35 @@ export interface Model {
 export const EMPTY_MODEL: Model = {
     roots: null,
     visibleViewComponents: null,
+}
+
+/**
+ * Helper function to converts from {@link Model} to {@link TextDocumentPositionParams}. If the model doesn't have
+ * a position, it returns null.
+ */
+export function modelToTextDocumentPositionParams({
+    visibleViewComponents,
+}: Pick<Model, 'visibleViewComponents'>): (TextDocumentPositionParams & { textDocument: TextDocumentItem }) | null {
+    if (!visibleViewComponents) {
+        return null
+    }
+    const activeViewComponent = visibleViewComponents.find(({ isActive }) => isActive)
+    if (!activeViewComponent) {
+        return null
+    }
+    const sel = activeViewComponent.selections[0]
+    // TODO(sqs): Return null for empty selections (but currently all selected tokens are treated as an empty
+    // selection at the beginning of the token, so this would break a lot of things).
+    //
+    // HACK(sqs): Character === -1 means that the whole line is selected (this is a bug in the caller, but it is
+    // useful here).
+    const isEmpty =
+        sel.start.line === sel.end.line && sel.start.character === sel.end.character && sel.start.character === -1
+    if (isEmpty) {
+        return null
+    }
+    return {
+        textDocument: activeViewComponent.item,
+        position: sel.start,
+    }
 }

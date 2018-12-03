@@ -4,7 +4,7 @@
   "title": "Sourcegraph extension manifest",
   "description": "The Sourcegraph extension manifest describes the extension and the features it provides.",
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["url", "activationEvents"],
   "properties": {
     "title": {
@@ -167,6 +167,12 @@
               "type": "array"
             },
             "global/nav": {
+              "items": {
+                "$ref": "#/properties/contributes/definitions/MenuItemContribution"
+              },
+              "type": "array"
+            },
+            "panel/toolbar": {
               "items": {
                 "$ref": "#/properties/contributes/definitions/MenuItemContribution"
               },

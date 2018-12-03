@@ -3,8 +3,8 @@ import marked from 'marked'
 import React from 'react'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { PanelViewWithComponent } from '../../../../shared/src/api/client/services/view'
 import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
-import { PanelView } from '../../../../shared/src/api/protocol/plainTypes'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { createLinkClickHandler } from '../../../../shared/src/util/linkClickHandler'
@@ -15,14 +15,15 @@ interface Props extends ExtensionsControllerProps {
 
 interface State {
     /** Views contributed by extensions. */
-    views?: (PanelView & { id: string })[] | null
+    views?: PanelViewWithComponent[] | null
 }
 
 /**
  * An explore section that shows views from extensions.
  *
  * TODO(sqs): This reuses panels displayed in the blob panel, which is hacky. The sourcegraph.app.createPanelView
- * API should let you specify where the panel should live.
+ * API should let you specify where the panel should live. This also does not support panel views with a component
+ * (e.g., a location provider).
  */
 export class ExtensionViewsExploreSection extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()

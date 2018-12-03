@@ -31,7 +31,7 @@ import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/fe
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
 import { eventLogger } from '../../tracking/eventLogger'
-import { lprToSelections } from '../../util/url'
+import { lprToSelectionsZeroIndexed } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
@@ -304,7 +304,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 languageId: model.mode,
                                 text: model.content,
                             },
-                            selections: lprToSelections(pos),
+                            selections: lprToSelectionsZeroIndexed(pos),
                             isActive: true,
                         },
                     ],

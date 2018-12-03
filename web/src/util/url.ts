@@ -152,12 +152,18 @@ export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
     }
 }
 
-export function lprToSelections(lpr: LineOrPositionOrRange): Selection[] {
+export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selection[] {
     const range = lprToRange(lpr)
     if (range === undefined) {
         return []
     }
-    return [{ ...range, isReversed: false }]
+    return [
+        {
+            start: { line: range.start.line - 1, character: range.start.character - 1 },
+            end: { line: range.end.line - 1, character: range.end.character - 1 },
+            isReversed: false,
+        },
+    ]
 }
 
 /** The results of parsing a repo-rev string like "my/repo@my/rev". */

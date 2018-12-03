@@ -2,6 +2,7 @@ import * as assert from 'assert'
 import { Observable, Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { TextDocumentIdentifier } from '../types/textDocument'
 import {
     DocumentFeatureProviderRegistry as AbstractDocumentFeatureProviderRegistry,
     Entry,
@@ -78,6 +79,14 @@ class DocumentFeatureProviderRegistry extends AbstractDocumentFeatureProviderReg
         if (entries) {
             entries.subscribe(entries => this.entries.next(entries))
         }
+    }
+
+    /** Make public for tests. */
+    public providersForDocument(
+        document: TextDocumentIdentifier,
+        filter?: (registrationOptions: TextDocumentRegistrationOptions) => boolean
+    ): Observable<{ a: number }[]> {
+        return super.providersForDocument(document, filter)
     }
 }
 
