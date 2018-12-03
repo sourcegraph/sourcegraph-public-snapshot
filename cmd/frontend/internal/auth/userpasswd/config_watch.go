@@ -1,48 +1,20 @@
 package userpasswd
 
 import (
-	"reflect"
-	"sync"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // Watch for configuration changes related to the builtin auth provider.
 func init() {
-	var (
-		init = true
-
-		mu sync.Mutex
-		pc *schema.BuiltinAuthProvider
-		pi auth.Provider
-	)
-	auth.ConfWatch(func() {
-		mu.Lock()
-		defer mu.Unlock()
-
-		// Only react when the config changes.
-		newPC, _ := getProviderConfig()
-		if reflect.DeepEqual(newPC, pc) {
-			return
-		}
-
-		if !init {
-			log15.Info("Reloading changed builtin authentication provider configuration.")
-		}
-		updates := map[auth.Provider]bool{}
-		var newPI auth.Provider
-		if newPC != nil {
-			newPI = &provider{c: newPC}
-			updates[newPI] = true
-		}
-		if pi != nil {
-			updates[pi] = false
-		}
-		auth.UpdateProviders(updates)
-		pc = newPC
-		pi = newPI
-		init = false
-	})
+	go func() {
+		conf.Watch(func() {
+			newPC, _ := getProviderConfig()
+			if newPC == nil {
+				auth.UpdateProviders("builtin", nil)
+			} else {
+				auth.UpdateProviders("builtin", []auth.Provider{&provider{c: newPC}})
+			}
+		})
+	}()
 }
