@@ -301,7 +301,7 @@ function initCodeIntelligence(
     }
 
     class HoverOverlayContainer extends React.Component<{}, HoverState> {
-        private portal: HTMLElement | null = getOverlayMount()
+        private portal: HTMLElement | null = null
 
         private observer: MutationObserver
 
@@ -329,7 +329,7 @@ function initCodeIntelligence(
             }
         }
         public componentDidUpdate(): void {
-            if (!document.body.contains(this.portal)) {
+            if (!this.portal || !document.body.contains(this.portal)) {
                 this.portal = getOverlayMount()
                 this.observer.observe(this.portal.parentElement!, { childList: true })
             }
