@@ -53,6 +53,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                             text: dummyText,
                         },
                         selections: [],
+                        isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
                     })
                 }
                 if (fileDiff.newPath) {
@@ -64,6 +65,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                             text: dummyText,
                         },
                         selections: [],
+                        isActive: true,
                     })
                 }
             }

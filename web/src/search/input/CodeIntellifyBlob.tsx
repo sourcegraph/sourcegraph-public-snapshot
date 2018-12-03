@@ -218,6 +218,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                             text: '',
                         },
                         selections: [],
+                        isActive: true,
                     },
                 ],
             })

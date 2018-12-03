@@ -305,6 +305,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 text: model.content,
                             },
                             selections: lprToSelections(pos),
+                            isActive: true,
                         },
                     ],
                 })

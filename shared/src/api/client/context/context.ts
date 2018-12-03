@@ -52,7 +52,8 @@ export function getComputedContextProperty(
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const component: ContributionScope | null = scope || (model.visibleViewComponents && model.visibleViewComponents[0])
+    const component: ContributionScope | null =
+        scope || (model.visibleViewComponents && model.visibleViewComponents.find(({ isActive }) => isActive)) || null
     if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
         return !!component
     }

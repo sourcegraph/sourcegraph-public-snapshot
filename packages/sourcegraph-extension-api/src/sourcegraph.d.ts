@@ -404,6 +404,11 @@ declare module 'sourcegraph' {
         visibleViewComponents: ViewComponent[]
 
         /**
+         * The currently active view component in the window.
+         */
+        activeViewComponent: ViewComponent | undefined
+
+        /**
          * Show a notification message to the user that does not require interaction or steal focus.
          *
          * @deprecated This API will change.

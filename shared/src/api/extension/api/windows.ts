@@ -1,13 +1,13 @@
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
-import { Selection } from '../../protocol/plainTypes'
+import { ViewComponentData } from '../../client/model'
+import { TextDocumentIdentifier } from '../../client/types/textDocument'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
 
 export interface WindowData {
-    visibleTextDocument: string | null
-    selections: Selection[]
+    visibleViewComponents: (Pick<ViewComponentData, 'selections' | 'isActive'> & { item: TextDocumentIdentifier })[]
 }
 
 /**
@@ -15,10 +15,15 @@ export interface WindowData {
  * @internal
  */
 class ExtWindow implements sourcegraph.Window {
-    constructor(
-        private windowsProxy: ClientWindowsAPI,
-        public readonly visibleViewComponents: sourcegraph.ViewComponent[]
-    ) {}
+    constructor(private windowsProxy: ClientWindowsAPI, private readonly textEditors: ExtCodeEditor[]) {}
+
+    public get visibleViewComponents(): sourcegraph.ViewComponent[] {
+        return this.textEditors
+    }
+
+    public get activeViewComponent(): sourcegraph.ViewComponent | undefined {
+        return this.textEditors.find(({ isActive }) => isActive)
+    }
 
     public showNotification(message: string): void {
         this.windowsProxy.$showNotification(message)
@@ -33,7 +38,7 @@ class ExtWindow implements sourcegraph.Window {
     }
 
     public toJSON(): any {
-        return { visibleViewComponents: this.visibleViewComponents }
+        return { visibleViewComponents: this.visibleViewComponents, activeViewComponent: this.activeViewComponent }
     }
 }
 
@@ -68,16 +73,16 @@ export class ExtWindows implements ExtWindowsAPI {
             window =>
                 new ExtWindow(
                     this.windowsProxy,
-                    window.visibleTextDocument
-                        ? [
-                              new ExtCodeEditor(
-                                  window.visibleTextDocument,
-                                  window.selections,
-                                  this.codeEditorProxy,
-                                  this.documents
-                              ),
-                          ]
-                        : []
+                    window.visibleViewComponents.map(
+                        c =>
+                            new ExtCodeEditor(
+                                c.item.uri,
+                                c.selections,
+                                c.isActive,
+                                this.codeEditorProxy,
+                                this.documents
+                            )
+                    )
                 )
         )
     }

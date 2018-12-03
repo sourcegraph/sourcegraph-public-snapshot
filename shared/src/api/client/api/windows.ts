@@ -48,10 +48,15 @@ export class ClientWindows implements ClientWindowsAPI {
             modelVisibleViewComponents.subscribe(viewComponents => {
                 this.proxy.$acceptWindowData(
                     viewComponents
-                        ? viewComponents.map(viewComponent => ({
-                              visibleTextDocument: viewComponent.item.uri,
-                              selections: viewComponent.selections,
-                          }))
+                        ? [
+                              {
+                                  visibleViewComponents: viewComponents.map(viewComponent => ({
+                                      item: viewComponent.item,
+                                      selections: viewComponent.selections,
+                                      isActive: viewComponent.isActive,
+                                  })),
+                              },
+                          ]
                         : []
                 )
             })

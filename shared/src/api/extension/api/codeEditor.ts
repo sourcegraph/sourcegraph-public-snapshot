@@ -10,6 +10,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
     constructor(
         private resource: string,
         public _selections: plain.Selection[],
+        public readonly isActive: boolean,
         private proxy: ClientCodeEditorAPI,
         private documents: ExtDocuments
     ) {}

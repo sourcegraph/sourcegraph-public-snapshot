@@ -12,6 +12,7 @@ export interface ViewComponentData {
     type: 'textEditor'
     item: TextDocumentItem
     selections: Selection[]
+    isActive: boolean
 }
 
 /**

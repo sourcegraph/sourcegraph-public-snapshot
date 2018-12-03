@@ -16,7 +16,12 @@ describe('Documents (integration)', () => {
             model.next({
                 ...model.value,
                 visibleViewComponents: [
-                    { type: 'textEditor', item: { uri: 'file:///f2', languageId: 'l2', text: 't2' }, selections: [] },
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
                 ],
             })
             await extensionHost.internal.sync()
@@ -37,7 +42,12 @@ describe('Documents (integration)', () => {
             model.next({
                 ...model.value,
                 visibleViewComponents: [
-                    { type: 'textEditor', item: { uri: 'file:///f2', languageId: 'l2', text: 't2' }, selections: [] },
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
                 ],
             })
             await extensionHost.internal.sync()

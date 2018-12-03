@@ -454,9 +454,10 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                     text: content!,
                                 },
                                 selections: [],
+                                isActive: true,
                             },
-                            // All the currently open documents
-                            ...visibleViewComponents,
+                            // All the currently open documents, which are all now considered inactive.
+                            ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
                         ]
                         const roots: Model['roots'] = [{ uri: toRootURI(info) }]
 
@@ -478,6 +479,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                 // TODO: Support interpreting GitHub #L1-2, etc., URL fragments as selections (and
                                 // similar on other code hosts), or find some other way to get this info.
                                 selections: [],
+                                isActive: false,
                             })
                             roots.push({
                                 uri: toRootURI({

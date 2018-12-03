@@ -39,11 +39,22 @@ describe('getComputedContextProperty', () => {
                 {
                     type: 'textEditor',
                     item: {
+                        uri: 'file:///inactive',
+                        languageId: 'inactive',
+                        text: 'inactive',
+                    },
+                    selections: [new Selection(new Position(11, 22), new Position(33, 44)).toPlain()],
+                    isActive: false,
+                },
+                {
+                    type: 'textEditor',
+                    item: {
                         uri: 'file:///a/b.c',
                         languageId: 'l',
                         text: 't',
                     },
                     selections: [new Selection(new Position(1, 2), new Position(3, 4)).toPlain()],
+                    isActive: true,
                 },
             ],
         }
@@ -195,6 +206,7 @@ describe('getComputedContextProperty', () => {
                                 text: 't',
                             },
                             selections: [],
+                            isActive: true,
                         },
                     ],
                 })

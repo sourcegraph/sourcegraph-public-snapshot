@@ -20,6 +20,7 @@ const FIXTURE_MODEL: Model = {
                 text: 't',
             },
             selections: [],
+            isActive: true,
         },
     ],
 }
