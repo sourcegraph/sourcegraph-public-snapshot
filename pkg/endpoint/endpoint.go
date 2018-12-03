@@ -101,23 +101,40 @@ func (m *Map) String() string {
 // endpoint may not actually be available yet / at the moment. So users of the
 // URL should implement a retry strategy.
 func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
-	m.mu.Lock()
-	if m.init != nil {
-		m.urls, m.err = m.init()
-		m.init = nil // prevent running again
-	}
-	urls, err := m.urls, m.err
-	m.mu.Unlock()
-
+	urls, err := m.getUrls()
 	if err != nil {
 		return "", err
 	}
+
 	return urls.get(key, exclude), nil
 }
 
 // GetAll returns a slice of values such that m[keys[i]] == values[i]. It is a
 // more efficient implementation than calling Get on each key.
 func (m *Map) GetAll(keys []string, exclude map[string]bool) ([]string, error) {
+	urls, err := m.getUrls()
+	if err != nil {
+		return nil, err
+	}
+
+	v := make([]string, len(keys))
+	for i, key := range keys {
+		v[i] = urls.get(key, exclude)
+	}
+	return v, nil
+}
+
+// Endpoints returns a set of all addresses.
+func (m *Map) Endpoints() (map[string]struct{}, error) {
+	urls, err := m.getUrls()
+	if err != nil {
+		return nil, err
+	}
+
+	return urls.values(), nil
+}
+
+func (m *Map) getUrls() (*hashMap, error) {
 	m.mu.Lock()
 	if m.init != nil {
 		m.urls, m.err = m.init()
@@ -125,15 +142,7 @@ func (m *Map) GetAll(keys []string, exclude map[string]bool) ([]string, error) {
 	}
 	urls, err := m.urls, m.err
 	m.mu.Unlock()
-
-	if err != nil {
-		return nil, err
-	}
-	v := make([]string, len(keys))
-	for i, key := range keys {
-		v[i] = urls.get(key, exclude)
-	}
-	return v, nil
+	return urls, err
 }
 
 func inform(client *k8s.Client, m *Map, u *k8sURL) error {
