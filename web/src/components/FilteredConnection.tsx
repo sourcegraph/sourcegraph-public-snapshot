@@ -144,7 +144,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
 
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
-        const ListComponent = this.props.listComponent || 'ul'
+        const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
 
@@ -218,7 +218,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         }
 
         const nodes = this.props.connection.nodes.map((node, i) => (
-            <NodeComponent key={hasID(node) ? node.id : i} node={node} {...this.props.nodeComponentProps} />
+            <NodeComponent key={hasID(node) ? node.id : i} node={node} {...this.props.nodeComponentProps!} />
         ))
 
         return (
