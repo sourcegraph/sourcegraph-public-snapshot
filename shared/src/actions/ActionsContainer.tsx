@@ -6,7 +6,7 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
 
-interface ActionsContainerProps extends ActionsProps {
+interface Props extends ActionsProps {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
@@ -20,10 +20,8 @@ interface ActionsContainerProps extends ActionsProps {
     empty?: React.ReactElement<any> | null
 }
 
-interface ActionsContainerState extends ActionsState {}
-
 /** Displays the actions in a container, with a wrapper and/or empty element. */
-export class ActionsContainer extends React.PureComponent<ActionsContainerProps, ActionsContainerState> {
+export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
     public state: ActionsState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
@@ -38,7 +36,7 @@ export class ActionsContainer extends React.PureComponent<ActionsContainerProps,
         this.scopeChanges.next(this.props.scope)
     }
 
-    public componentDidUpdate(prevProps: ActionsContainerProps): void {
+    public componentDidUpdate(prevProps: Props): void {
         if (prevProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
         }
