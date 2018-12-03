@@ -315,7 +315,6 @@ function initCodeIntelligence(
                     if (mutation.type === 'childList') {
                         for (const removedNode of mutation.removedNodes) {
                             if (removedNode.contains(removedNode)) {
-                                console.log('faksdjflaksjdflk')
                                 nextCloseButtonClick(new MouseEvent('click'))
                             }
                         }

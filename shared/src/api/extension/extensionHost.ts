@@ -68,7 +68,7 @@ export function startExtensionHost(
     // extension host.
     let initialized = false
     const __testAPI = new Promise<typeof sourcegraph>(resolve => {
-        connection.onRequest('initialize', (initData: InitData) => {
+        connection.onRequest('initialize', ([initData]: [InitData]) => {
             if (initialized) {
                 throw new Error('extension host is already initialized')
             }

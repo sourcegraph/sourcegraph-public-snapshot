@@ -16,7 +16,7 @@ import { SettingsService } from './settings'
 /**
  * The information about an extension necessary to execute and activate it.
  */
-export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id'> {
+export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'manifest'> {
     /** The URL to the JavaScript bundle of the extension. */
     scriptURL: string
 }
@@ -40,7 +40,12 @@ export class ExtensionsService {
         queryGraphQL: this.platformContext.queryGraphQL,
     })
 
-    public get enabledExtensions(): Subscribable<ConfiguredExtension[]> {
+    /**
+     * Returns an observable that emits the set of enabled extensions upon subscription and whenever it changes.
+     *
+     * Most callers should use {@link ExtensionsService#activeExtensions}.
+     */
+    private get enabledExtensions(): Subscribable<ConfiguredExtension[]> {
         return combineLatest(from(this.settingsService.data), this.configuredExtensions).pipe(
             map(([settings, configuredExtensions]) =>
                 configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))
@@ -92,6 +97,7 @@ export class ExtensionsService {
                                                   ? null
                                                   : {
                                                         id: x.id,
+                                                        manifest: x.manifest,
                                                         scriptURL,
                                                     }
                                       )

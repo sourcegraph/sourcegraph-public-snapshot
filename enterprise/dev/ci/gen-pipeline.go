@@ -62,61 +62,38 @@ func main() {
 	}
 
 	pipeline.AddStep(":lipstick:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run prettier"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier"))
 
 	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run all:tslint"))
+		bk.Cmd("dev/ci/yarn-run.sh all:tslint"))
 
 	pipeline.AddStep(":stylelint:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run all:stylelint"),
-		bk.Cmd("yarn run all:typecheck"))
+		bk.Cmd("dev/ci/yarn-run.sh all:stylelint all:typecheck"))
 
 	pipeline.AddStep(":graphql:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn run graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
 
 	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("yarn -s run build"),
-		bk.Cmd("popd"))
+		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
 	if !isBextReleaseBranch {
 		pipeline.AddStep(":webpack:",
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd web"),
-			bk.Cmd("yarn -s run browserslist"),
-			bk.Cmd("NODE_ENV=production yarn -s run build --color"),
-			bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-			bk.Cmd("popd"))
+			bk.Cmd("dev/ci/yarn-build.sh web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", "0"))
 
 		pipeline.AddStep(":webpack: :moneybag:",
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd web"),
-			bk.Cmd("yarn -s run browserslist"),
-			bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
-			bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-			bk.Cmd("popd"))
+			bk.Cmd("dev/ci/yarn-build.sh web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", "1"))
 
 		pipeline.AddStep(":typescript:",
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd web"),
-			bk.Cmd("yarn -s run cover"),
-			bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-			bk.Cmd("popd"),
+			bk.Cmd("dev/ci/yarn-test.sh web"),
 			bk.ArtifactPaths("web/coverage/coverage-final.json"))
 	}
 
 	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd shared"),
-		bk.Cmd("yarn -s run cover"),
-		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-		bk.Cmd("popd"),
+		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
 	if !isBextReleaseBranch {

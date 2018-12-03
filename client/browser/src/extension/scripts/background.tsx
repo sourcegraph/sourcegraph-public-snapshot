@@ -14,11 +14,14 @@ import storage, { defaultStorageItems } from '../../browser/storage'
 import * as tabs from '../../browser/tabs'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import initializeCli from '../../libs/cli'
+import { initSentry } from '../../libs/sentry'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
+
+initSentry('background')
 
 let customServerOrigins: string[] = []
 

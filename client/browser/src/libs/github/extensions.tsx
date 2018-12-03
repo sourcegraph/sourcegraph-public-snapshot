@@ -12,7 +12,7 @@ import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 export function getCommandPaletteMount(): HTMLElement {
     const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
     if (!headerElem) {
-        throw new Error('Unable to find command pallete mount')
+        throw new Error('Unable to find command palette mount')
     }
 
     const commandListClass = 'command-palette-button'
@@ -20,7 +20,7 @@ export function getCommandPaletteMount(): HTMLElement {
     const createCommandList = (): HTMLElement => {
         const commandListElem = document.createElement('div')
         commandListElem.className = commandListClass
-        headerElem!.appendChild(commandListElem)
+        headerElem!.insertAdjacentElement('afterbegin', commandListElem)
 
         return commandListElem
     }
@@ -53,6 +53,7 @@ export function injectExtensionsGlobalComponents(
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
                 platformContext={platformContext}
+                autoFocus={false}
                 location={location}
             />
         </ShortcutProvider>,
