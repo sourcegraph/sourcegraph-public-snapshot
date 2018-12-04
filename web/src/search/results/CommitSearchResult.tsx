@@ -3,15 +3,14 @@ import * as H from 'history'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { RepoLink } from '../../../../shared/src/components/RepoLink'
+import { ResultContainer } from '../../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { AbsoluteRepoFilePosition, RepoSpec, toPrettyBlobURL } from '../../../../shared/src/util/url'
 import { DecoratedTextLines } from '../../components/DecoratedTextLines'
-import { ResultContainer } from '../../components/ResultContainer'
-import { AbsoluteRepoFilePosition, RepoSpec } from '../../repo'
 import { GitRefTag } from '../../repo/GitRefTag'
-import { RepoLink } from '../../repo/RepoLink'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
-import { toPrettyBlobURL } from '../../util/url'
 
 interface Props {
     location: H.Location

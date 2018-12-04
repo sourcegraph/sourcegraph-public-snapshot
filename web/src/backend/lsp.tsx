@@ -4,7 +4,7 @@ import { catchError, map, tap } from 'rxjs/operators'
 import { Location } from '../../../shared/src/api/protocol/plainTypes'
 import { normalizeAjaxError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
+import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../../../shared/src/util/url'
 import { HoverMerged, ModeSpec } from './features'
 
 /**

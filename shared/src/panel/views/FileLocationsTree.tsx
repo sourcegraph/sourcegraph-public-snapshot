@@ -4,13 +4,14 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
-import { parseRepoURI } from '../..'
-import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { asError } from '../../../../../shared/src/util/errors'
-import { Resizable } from '../../../components/Resizable'
-import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
-import { RepoLink } from '../../RepoLink'
+import { Location } from '../../api/protocol/plainTypes'
+import { FetchFileCtx } from '../../components/CodeExcerpt'
+import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
+import { RepoLink } from '../../components/RepoLink'
+import { Resizable } from '../../components/Resizable'
+import { ErrorLike, isErrorLike } from '../../util/errors'
+import { asError } from '../../util/errors'
+import { parseRepoURI } from '../../util/url'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 
 interface Props {
@@ -51,6 +52,8 @@ interface Props {
     isLightTheme: boolean
 
     location: H.Location
+
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 interface State {
@@ -217,6 +220,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                     icon={RepositoryIcon}
                     pluralNoun={this.props.pluralNoun}
                     isLightTheme={this.props.isLightTheme}
+                    fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                 />
             </div>
         )

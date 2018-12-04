@@ -3,14 +3,19 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { AbsoluteRepoFile } from '.'
+import { FormatListBulletedIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { Resizable } from '../../../shared/src/components/Resizable'
+import {
+    Spacer,
+    Tab,
+    TabBorderClassName,
+    TabsWithLocalStorageViewStatePersistence,
+} from '../../../shared/src/components/Tabs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { Resizable } from '../components/Resizable'
-import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
+import { AbsoluteRepoFile } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
-import { FormatListBulletedIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'

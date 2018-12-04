@@ -1929,6 +1929,13 @@
     "@types/react" "*"
     "@types/stripe-v3" "*"
 
+"@types/react-visibility-sensor@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@types/react-visibility-sensor/-/react-visibility-sensor-5.0.0.tgz#23e3bf4a7e6bc15ad83ad1101bcd6856f7f06607"
+  integrity sha512-ABSiWdpApg0hxyGNkJvb5rBEFBP7xoy+ID9dGoA6TPBJlYpvfoRrtk82YO6IIBgHBJ/QNml+wJjSVsZ1otbATQ==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react@*", "@types/react@16.7.3":
   version "16.7.3"
   resolved "https://registry.npmjs.org/@types/react/-/react-16.7.3.tgz#dd96b19b21c450fab7d136f71d48f4b8fc72777e"

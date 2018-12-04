@@ -1,8 +1,8 @@
 import FolderIcon from 'mdi-react/FolderIcon'
 import * as React from 'react'
+import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { SymbolIcon } from '../../symbols/SymbolIcon'
-import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
+import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 import { basename, dirname } from '../../util/path'
 
 interface BaseSuggestion {

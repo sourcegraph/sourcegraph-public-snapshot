@@ -3,14 +3,14 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
+import { displayRepoPath } from '../../../shared/src/components/RepoFileLink'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
-import { displayRepoPath } from '../components/RepoFileLink'
 import { eventLogger } from '../tracking/eventLogger'
-import { CircleChevronLeftIcon } from '../util/icons'
 
 function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(
