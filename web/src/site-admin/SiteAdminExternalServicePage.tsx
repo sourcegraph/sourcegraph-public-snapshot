@@ -1,3 +1,5 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -44,8 +46,12 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 .pipe(
                     map(props => props.match.params.id),
                     distinctUntilChanged(),
-                    switchMap(id => fetchExternalService(id).pipe(startWith(LOADING))),
-                    catchError(err => [asError(err)]),
+                    switchMap(id =>
+                        fetchExternalService(id).pipe(
+                            startWith(LOADING),
+                            catchError(err => [asError(err)])
+                        )
+                    ),
                     map(result => ({ externalServiceOrError: result }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
@@ -84,13 +90,10 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         }
 
         let externalService: GQL.IExternalService | undefined
-        if (isErrorLike(this.state.externalServiceOrError)) {
-            error = this.state.externalServiceOrError
-        } else if (this.state.externalServiceOrError !== LOADING) {
+        if (!isErrorLike(this.state.externalServiceOrError) && this.state.externalServiceOrError !== LOADING) {
             externalService = this.state.externalServiceOrError
         }
 
-        const loading = this.state.updateOrError === LOADING || this.state.externalServiceOrError === LOADING
         return (
             <div className="site-admin-configuration-page">
                 {externalService ? (
@@ -99,12 +102,16 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     <PageTitle title="External service" />
                 )}
                 <h2>External Service</h2>
+                {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
+                {isErrorLike(this.state.externalServiceOrError) && (
+                    <p className="alert alert-danger">{upperFirst(this.state.externalServiceOrError.message)}</p>
+                )}
                 {externalService && (
                     <SiteAdminExternalServiceForm
                         input={externalService}
                         error={error}
                         mode="edit"
-                        loading={loading}
+                        loading={this.state.updateOrError === LOADING}
                         onSubmit={this.onSubmit}
                         onChange={this.onChange}
                         history={this.props.history}
