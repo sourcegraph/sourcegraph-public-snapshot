@@ -70,6 +70,10 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         )
     }
 
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className="add-external-service-page">
