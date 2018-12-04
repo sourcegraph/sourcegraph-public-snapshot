@@ -2,7 +2,6 @@ import {
     createHoverifier,
     findPositionsFromEvents,
     HoveredToken,
-    HoveredTokenContext,
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
@@ -22,10 +21,15 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     AbsoluteRepoFile,
+    FileSpec,
     LineOrPositionOrRange,
     parseHash,
     RenderMode,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
     toPositionOrRangeHash,
+    toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
@@ -155,7 +159,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        const hoverifier = createHoverifier({
+        const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>({
             closeButtonClicks: this.closeButtonClicks,
             goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -170,6 +174,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             logTelemetryEvent,
             fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             fetchJumpURL: position => getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props),
+            getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })
         this.subscriptions.add(hoverifier)
 
@@ -396,7 +401,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
     }
 
     private getLSPTextDocumentPositionParams(
-        position: HoveredToken & HoveredTokenContext
+        position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
             repoPath: position.repoPath,
