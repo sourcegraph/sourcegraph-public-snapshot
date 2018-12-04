@@ -838,6 +838,7 @@ type Search {
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository
 
+# An object representing a markdown string.
 type Markdown {
     # The raw markdown string.
     text: String!
