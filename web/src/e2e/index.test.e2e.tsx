@@ -481,7 +481,11 @@ describe('e2e test suite', () => {
                     await getHoverContents() // verify there is a hover
                 })
 
-                it('gets displayed when navigating to a URL with a token position', async () => {
+                // Skipped until the Go language server is capable of being run locally (without needing
+                // access to sourcegraph-frontend's internal API)
+                // TODO@ggilmore
+                // TODO@chrismwendt
+                it.skip('gets displayed when navigating to a URL with a token position', async () => {
                     await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
@@ -496,7 +500,11 @@ describe('e2e test suite', () => {
                     )
                 })
 
-                describe('jump to definition', () => {
+                // Skipped until the Go language server is capable of being run locally (without needing
+                // access to sourcegraph-frontend's internal API)
+                // TODO@ggilmore
+                // TODO@chrismwendt
+                describe.skip('jump to definition', () => {
                     it('noops when on the definition', async () => {
                         await page.goto(
                             baseURL +
@@ -549,7 +557,11 @@ describe('e2e test suite', () => {
                 })
 
                 describe('find references', () => {
-                    it('opens widget and fetches local references', async function(): Promise<void> {
+                    // Skipped until the Go language server is capable of being run locally (without needing
+                    // access to sourcegraph-frontend's internal API)
+                    // TODO@ggilmore
+                    // TODO@chrismwendt
+                    it.skip('opens widget and fetches local references', async function(): Promise<void> {
                         this.timeout(120000)
 
                         await page.goto(
