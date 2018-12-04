@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -62,7 +61,7 @@ func (c *externalServices) Update(ctx context.Context, id int64, update *Externa
 			return err
 		}
 		if affected == 0 {
-			return errors.New("no rows updated")
+			return externalServiceNotFound{id: id}
 		}
 		return nil
 	}
@@ -79,6 +78,36 @@ func (c *externalServices) Update(ctx context.Context, id int64, update *Externa
 		}
 		return nil
 	})
+}
+
+type externalServiceNotFound struct {
+	id int64
+}
+
+func (e externalServiceNotFound) Error() string {
+	return fmt.Sprintf("external service not found: %v", e.id)
+}
+
+func (e externalServiceNotFound) NotFound() bool {
+	return true
+}
+
+// Delete deletes an external service.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to read external services.
+func (*externalServices) Delete(ctx context.Context, id int64) error {
+	res, err := dbconn.Global.ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return externalServiceNotFound{id: id}
+	}
+	return nil
 }
 
 // GetByID returns the external service for id.

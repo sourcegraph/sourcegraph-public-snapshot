@@ -1,23 +1,33 @@
 import { AddIcon, SettingsIcon } from 'mdi-react'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
-import { queryGraphQL } from '../backend/graphql'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface ExternalServiceNodeProps {
     node: GQL.IExternalService
-    onDidUpdate?: () => void
+    onDidUpdate: () => void
 }
 
-class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, {}> {
+interface ExternalServiceNodeState {
+    loading: boolean
+    errorDescription?: string
+}
+
+class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, ExternalServiceNodeState> {
+    public state: ExternalServiceNodeState = {
+        loading: false,
+    }
+
     public render(): JSX.Element | null {
         return (
             <li className="external-service-node list-group-item py-2">
@@ -30,12 +40,63 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                             data-tooltip="External service settings"
                         >
                             <SettingsIcon className="icon-inline" /> Settings
-                        </Link>
+                        </Link>{' '}
+                        <button
+                            className="btn btn-sm btn-danger"
+                            onClick={this.deleteExternalService}
+                            disabled={this.state.loading}
+                            data-tooltip="Delete external service"
+                        >
+                            <DeleteIcon className="icon-inline" />
+                        </button>
                     </div>
                 </div>
             </li>
         )
     }
+
+    private deleteExternalService = () => {
+        if (!window.confirm(`Delete the external service ${this.props.node.displayName}?`)) {
+            return
+        }
+
+        this.setState({
+            errorDescription: undefined,
+            loading: true,
+        })
+
+        deleteExternalService(this.props.node.id)
+            .toPromise()
+            .then(
+                () => {
+                    this.setState({ loading: false })
+                    if (this.props.onDidUpdate) {
+                        this.props.onDidUpdate()
+                    }
+                },
+                err => this.setState({ loading: false, errorDescription: err.message })
+            )
+    }
+}
+
+export function deleteExternalService(externalService: GQL.ID): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DeleteExternalService($externalService: ID!) {
+                deleteExternalService(externalService: $externalService) {
+                    alwaysNil
+                }
+            }
+        `,
+        { externalService }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteExternalService) {
+                throw createInvalidGraphQLMutationResponseError('DeleteExternalService')
+            }
+        })
+    )
 }
 
 interface Props extends RouteComponentProps<{}> {}
