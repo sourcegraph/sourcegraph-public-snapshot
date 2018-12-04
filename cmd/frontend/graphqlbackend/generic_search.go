@@ -1,24 +1,28 @@
 package graphqlbackend
 
-import (
-	"context"
-)
+import "github.com/sourcegraph/sourcegraph/pkg/markdown"
 
 // A resolver for the GraphQL type GenericSearchMatch
-type GenericSearchMatchResolver struct {
+type genericSearchMatchResolver struct {
 	url        string
 	body       string
 	highlights []*highlightedRange
 }
 
-func (m *GenericSearchMatchResolver) URL() string {
+func (m *genericSearchMatchResolver) URL() string {
 	return m.url
 }
 
-func (m *GenericSearchMatchResolver) Body(ctx context.Context) string {
-	return m.body
+func (m *genericSearchMatchResolver) Body() (*markdownResolver, error) {
+	var md = markdownResolver{text: m.body}
+	html, err := markdown.Render(m.body, nil)
+	if err != nil {
+		return &md, err
+	}
+	md.html = &html
+	return &md, nil
 }
 
-func (m *GenericSearchMatchResolver) Highlights(ctx context.Context) []*highlightedRange {
+func (m *genericSearchMatchResolver) Highlights() []*highlightedRange {
 	return m.highlights
 }

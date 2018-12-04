@@ -272,7 +272,6 @@ export function updateComment(input: GQL.IDiscussionCommentUpdateInput): Observa
  *
  * @return Observable that emits the HTML string, which is already sanitized and escaped and thus is always safe to render.
  */
-// memoize this
 export const renderMarkdown = memoizeObservable(
     (ctx: { markdown: string; options?: GQL.IMarkdownOptions }): Observable<string> =>
         queryGraphQL(

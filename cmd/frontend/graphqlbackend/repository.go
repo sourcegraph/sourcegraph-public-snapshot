@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/pkg/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -29,7 +30,7 @@ type repositoryResolver struct {
 	repo        *types.Repo
 	redirectURL *string
 	icon        string
-	matches     []*GenericSearchMatchResolver
+	matches     []*genericSearchMatchResolver
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
@@ -202,16 +203,29 @@ func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.
 func (r *repositoryResolver) Icon() string {
 	return r.icon
 }
-func (r *repositoryResolver) Label() string {
-	return "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
+func (r *repositoryResolver) Label() (*markdownResolver, error) {
+	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
+	var m = markdownResolver{text: text}
+	html, err := markdown.Render(text, nil)
+	if err != nil {
+		return &m, err
+	}
+	m.html = &html
+	return &m, nil
 }
 
-func (r *repositoryResolver) Detail() *string {
-	str := "Repository name match"
-	return &str
+func (r *repositoryResolver) Detail() (*markdownResolver, error) {
+	text := "Repository name match"
+	html, err := markdown.Render(text, nil)
+	var m = markdownResolver{text: text}
+	if err != nil {
+		return &m, err
+	}
+	m.html = &html
+	return &m, nil
 }
 
-func (r *repositoryResolver) Matches() []*GenericSearchMatchResolver {
+func (r *repositoryResolver) Matches() []*genericSearchMatchResolver {
 	return r.matches
 }
 

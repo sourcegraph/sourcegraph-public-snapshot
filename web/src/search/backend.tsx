@@ -49,12 +49,21 @@ export function search(
                                         id
                                         name
                                         url
-                                        label
+                                        label {
+                                            text
+                                            html
+                                        }
                                         icon
-                                        detail
+                                        detail {
+                                            text
+                                            html
+                                        }
                                         matches {
                                             url
-                                            body
+                                            body {
+                                                text
+                                                html
+                                            }
                                             highlights {
                                                 line
                                                 character
@@ -82,23 +91,10 @@ export function search(
                                             url
                                             kind
                                         }
-                                        label
-                                        url
-                                        icon
-                                        detail
                                         lineMatches {
                                             preview
                                             lineNumber
                                             offsetAndLengths
-                                        }
-                                        matches {
-                                            url
-                                            body
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
                                         }
                                     }
                                     ... on CommitSearchResult {
@@ -140,13 +136,22 @@ export function search(
                                                 canonicalURL
                                             }
                                         }
-                                        label
+                                        label {
+                                            text
+                                            html
+                                        }
                                         url
                                         icon
-                                        detail
+                                        detail {
+                                            text
+                                            html
+                                        }
                                         matches {
                                             url
-                                            body
+                                            body {
+                                                text
+                                                html
+                                            }
                                             highlights {
                                                 line
                                                 character

@@ -838,16 +838,24 @@ type Search {
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository
 
+type Markdown {
+    # The raw markdown string.
+    text: String!
+    # HTML for the rendered markdown string, or null if there is no HTML representation provided.
+    # If specified, clients should render this directly.
+    html: String
+}
+
 # A search result. Every search result must implement this interface. A result can contain multiple matches.
 interface GenericSearchResult {
     # Base64 data URI to an icon that is displayed with every search result.
     icon: String!
     # A markdown string that is rendered prominently.
-    label: String!
+    label: Markdown!
     # The URL of the result.
     url: String!
-    # A markdown string that is rendered less prominently.
-    detail: String
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
     # A list of individual matches in a result.
     matches: [SearchMatch!]!
 }
@@ -856,12 +864,13 @@ interface GenericSearchResult {
 type SearchMatch {
     # URL for the individual result match.
     url: String!
-    # A markdown string containing the contents of the result match. Currently, code blocks will be rendered as code, and all other
-    # markdown syntax will not be rendered specially.
-    body: String!
+    # A markdown string containing the contents of the result match.
+    body: Markdown!
     # A list of objects containing the line, character, and length of matches in the result body.
-    # This is used to highlight matches in the match body. Currently, highlights will only be shown on matches that return code blocks
-    # This can be left as an empty list if these values are not given by the result provider.
+    # This is used to highlight matches in the match body. Currently, highlights will only be shown on
+    # match bodies that are code blocks. If the result body is a code block, exclude the code fence lines
+    # in the line number count. This can be left as an empty list if these values are not given by the
+    # result provider.
     highlights: [Highlight!]!
 }
 
@@ -1000,11 +1009,11 @@ type CommitSearchResult implements GenericSearchResult {
     # Base64 data uri to an icon.
     icon: String!
     # A markdown string that is rendered prominently.
-    label: String!
+    label: Markdown!
     # The URL of the result.
     url: String!
-    # Additional details that are rendered less prominently.
-    detail: String
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
     # The result previews of the result.
     matches: [SearchMatch!]!
     # The commit that matched the search query.
@@ -1244,9 +1253,9 @@ type Repository implements Node & GenericSearchResult {
     # Base64 data uri to an icon.
     icon: String!
     # A markdown string that is rendered prominently.
-    label: String!
-    # Additional details that are rendered less prominently.
-    detail: String
+    label: Markdown!
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
     # The result previews of the result.
     matches: [SearchMatch!]!
 }
@@ -2030,17 +2039,7 @@ type HighlightedFile {
 }
 
 # A file match.
-type FileMatch implements GenericSearchResult {
-    # Base64 data uri to an icon.
-    icon: String!
-    # A markdown string that is rendered prominently.
-    label: String!
-    # The URL of the result.
-    url: String!
-    # Additional details that are rendered less prominently.
-    detail: String
-    # The result previews of the result.
-    matches: [SearchMatch!]!
+type FileMatch {
     # The file containing the match.
     #
     # KNOWN ISSUE: This file's "commit" field contains incomplete data.

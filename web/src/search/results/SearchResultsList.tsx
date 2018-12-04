@@ -404,7 +404,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(result: GQL.GenericSearchResult, expanded: boolean): JSX.Element | undefined {
+    private renderResult(result: GQL.GenericSearchResult | GQL.IFileMatch, expanded: boolean): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
                 return (
@@ -421,7 +421,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     />
                 )
         }
-        return <SearchResult key={result.label} result={result} isLightTheme={this.props.isLightTheme} />
+        return <SearchResult key={result.url} result={result} isLightTheme={this.props.isLightTheme} />
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */

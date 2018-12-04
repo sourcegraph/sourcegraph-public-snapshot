@@ -813,22 +813,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 						m.JLineMatches = r.JLineMatches
 					} else {
 						fileMatches[key] = r
-						fileName := fmt.Sprintf("[%s](%s)", r.File().Name(), r.File().URL())
-						repoName := fmt.Sprintf("[%s](%s)", r.Repository().Name(), r.Repository().URL())
-						label := fmt.Sprintf("%s › %s", repoName, fileName)
-						var matches []*GenericSearchMatchResolver
-						for _, lm := range r.LineMatches() {
-							url := fmt.Sprintf("%s#L%d", r.File().URL(), lm.LineNumber()+1)
-							var highlights []*highlightedRange
-							for _, ol := range lm.OffsetAndLengths() {
-								highlights = append(highlights, &highlightedRange{line: lm.LineNumber(), character: ol[0], length: ol[1]})
-							}
-							matches = append(matches, &GenericSearchMatchResolver{url: url, body: lm.Preview(), highlights: highlights})
-						}
-						r.matches = matches
-						r.icon = repoIcon
-						r.label = label
-						r.url = r.File().URL()
 						resultsMu.Lock()
 						results = append(results, &searchResultResolver{fileMatch: r})
 						resultsMu.Unlock()

@@ -4,6 +4,8 @@ import React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ResultContainer } from './ResultContainer'
 import { SearchResultMatch } from './SearchResultMatch'
+import _ from 'lodash'
+import { decode } from 'he'
 
 export interface HighlightRange {
     /**
@@ -33,16 +35,22 @@ export class SearchResult extends React.Component<Props> {
     private renderTitle = () => (
         <div className="search-result__title">
             <span
+                // TODO @attfarhan: if label.html is not specified, render markdown for label.text.
                 dangerouslySetInnerHTML={{
-                    __html: marked(this.props.result.label, { gfm: true, breaks: true, sanitize: true }),
+                    __html: this.props.result.label.html
+                        ? decode(this.props.result.label.html)
+                        : marked(this.props.result.label.text, { gfm: true, breaks: true, sanitize: true }),
                 }}
             />
             {this.props.result.detail && (
                 <>
                     <span className="search-result__spacer" />
                     <small
+                        // TODO @attfarhan: if label.html is not specified, render markdown for label.text.
                         dangerouslySetInnerHTML={{
-                            __html: marked(this.props.result.detail, { gfm: true, breaks: true, sanitize: true }),
+                            __html: this.props.result.detail.html
+                                ? decode(this.props.result.detail.html)
+                                : marked(this.props.result.label.text, { gfm: true, breaks: true, sanitize: true }),
                         }}
                     />
                 </>
