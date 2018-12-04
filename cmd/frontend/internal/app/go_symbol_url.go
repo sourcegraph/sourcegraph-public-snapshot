@@ -7,12 +7,9 @@ import (
 	"go/ast"
 	"go/build"
 	"go/doc"
-	"go/parser"
 	"go/token"
-	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
 
@@ -22,7 +19,9 @@ import (
 
 	"github.com/sourcegraph/go-lsp"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/golangserverutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
@@ -100,7 +99,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	location, err := symbolLocation(r.Context(), vfs, commitID, importPath, receiver, symbolName)
+	location, err := symbolLocation(r.Context(), vfs, commitID, importPath, path.Join("/", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath, string(dir.ProjectRoot))), receiver, symbolName)
 	if err != nil {
 		return err
 	}
@@ -124,59 +123,56 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.CommitID, importPath string, receiver *string, symbol string) (*lsp.Location, error) {
+func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.CommitID, importPath string, path string, receiver *string, symbol string) (*lsp.Location, error) {
 	bctx := buildContextFromVFS(ctx, vfs)
 
 	fileSet := token.NewFileSet()
-	packages, err := parseDir(fileSet, &bctx, "/", nil, 0)
+	pkg, err := parseFiles(fileSet, &bctx, importPath, path)
 	if err != nil {
 		return nil, err
 	}
 
 	pos := (func() *token.Pos {
-		for _, pkg := range packages {
-			docPackage := doc.New(pkg, importPath, 0)
-			for _, docConst := range docPackage.Consts {
-				fmt.Printf("%#v", docConst.Decl.Specs)
-				for _, spec := range docConst.Decl.Specs {
-					if valueSpec, ok := spec.(*ast.ValueSpec); ok {
-						for _, ident := range valueSpec.Names {
-							if ident.Name == symbol {
-								return &ident.NamePos
-							}
+		docPackage := doc.New(pkg, importPath, doc.AllDecls)
+		for _, docConst := range docPackage.Consts {
+			for _, spec := range docConst.Decl.Specs {
+				if valueSpec, ok := spec.(*ast.ValueSpec); ok {
+					for _, ident := range valueSpec.Names {
+						if ident.Name == symbol {
+							return &ident.NamePos
 						}
 					}
 				}
 			}
-			for _, docType := range docPackage.Types {
-				if receiver != nil && docType.Name == *receiver {
-					for _, method := range docType.Methods {
-						if method.Name == symbol {
-							return &method.Decl.Name.NamePos
-						}
-					}
-				}
-				for _, spec := range docType.Decl.Specs {
-					if typeSpec, ok := spec.(*ast.TypeSpec); ok && typeSpec.Name.Name == symbol {
-						return &typeSpec.Name.NamePos
+		}
+		for _, docType := range docPackage.Types {
+			if receiver != nil && docType.Name == *receiver {
+				for _, method := range docType.Methods {
+					if method.Name == symbol {
+						return &method.Decl.Name.NamePos
 					}
 				}
 			}
-			for _, docVar := range docPackage.Vars {
-				for _, spec := range docVar.Decl.Specs {
-					if valueSpec, ok := spec.(*ast.ValueSpec); ok {
-						for _, ident := range valueSpec.Names {
-							if ident.Name == symbol {
-								return &ident.NamePos
-							}
+			for _, spec := range docType.Decl.Specs {
+				if typeSpec, ok := spec.(*ast.TypeSpec); ok && typeSpec.Name.Name == symbol {
+					return &typeSpec.Name.NamePos
+				}
+			}
+		}
+		for _, docVar := range docPackage.Vars {
+			for _, spec := range docVar.Decl.Specs {
+				if valueSpec, ok := spec.(*ast.ValueSpec); ok {
+					for _, ident := range valueSpec.Names {
+						if ident.Name == symbol {
+							return &ident.NamePos
 						}
 					}
 				}
 			}
-			for _, docFunc := range docPackage.Funcs {
-				if docFunc.Name == symbol {
-					return &docFunc.Decl.Name.NamePos
-				}
+		}
+		for _, docFunc := range docPackage.Funcs {
+			if docFunc.Name == symbol {
+				return &docFunc.Decl.Name.NamePos
 			}
 		}
 		return nil
@@ -206,16 +202,7 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.Com
 
 func buildContextFromVFS(ctx context.Context, vfs ctxvfs.FileSystem) build.Context {
 	bctx := build.Default
-	bctx.OpenFile = func(path string) (io.ReadCloser, error) {
-		return vfs.Open(ctx, path)
-	}
-	bctx.IsDir = func(path string) bool {
-		fi, err := vfs.Stat(ctx, path)
-		return err == nil && fi.Mode().IsDir()
-	}
-	bctx.ReadDir = func(path string) ([]os.FileInfo, error) {
-		return vfs.ReadDir(ctx, path)
-	}
+	golangserverutil.PrepareContext(&bctx, ctx, vfs)
 	return bctx
 }
 
@@ -228,34 +215,24 @@ func repoVFS(ctx context.Context, name api.RepoName, rev api.CommitID) (ctxvfs.F
 	return nil, fmt.Errorf("unable to fetch repo %s (only github.com repos are supported)", name)
 }
 
-// parseDir mirrors parser.ParseDir, but uses the passed in build context's VFS. In other words,
-// buildutil.parseFile : parser.ParseFile :: parseDir : parser.ParseDir
-func parseDir(fset *token.FileSet, bctx *build.Context, path string, filter func(os.FileInfo) bool, mode parser.Mode) (pkgs map[string]*ast.Package, first error) {
-	list, err := buildutil.ReadDir(bctx, path)
+func parseFiles(fset *token.FileSet, bctx *build.Context, importPath, srcDir string) (*ast.Package, error) {
+	bpkg, err := bctx.ImportDir(srcDir, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	pkgs = map[string]*ast.Package{}
-	for _, d := range list {
-		if strings.HasSuffix(d.Name(), ".go") && (filter == nil || filter(d)) {
-			filename := buildutil.JoinPath(bctx, path, d.Name())
-			if src, err := buildutil.ParseFile(fset, bctx, nil, buildutil.JoinPath(bctx, path, d.Name()), filename, mode); err == nil {
-				name := src.Name.Name
-				pkg, found := pkgs[name]
-				if !found {
-					pkg = &ast.Package{
-						Name:  name,
-						Files: map[string]*ast.File{},
-					}
-					pkgs[name] = pkg
-				}
-				pkg.Files[filename] = src
-			} else if first == nil {
-				first = err
-			}
+	pkg := &ast.Package{
+		Files: map[string]*ast.File{},
+	}
+	var errs error
+	for _, file := range append(bpkg.GoFiles, bpkg.TestGoFiles...) {
+		if src, err := buildutil.ParseFile(fset, bctx, nil, buildutil.JoinPath(bctx, srcDir), file, 0); err == nil {
+			pkg.Name = src.Name.Name
+			pkg.Files[file] = src
+		} else {
+			errs = multierror.Append(errs, err)
 		}
 	}
 
-	return
+	return pkg, errs
 }

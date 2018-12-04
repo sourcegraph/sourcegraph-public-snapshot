@@ -13,6 +13,7 @@ type symbolLocationArgs struct {
 	vfs        map[string]string
 	commitID   api.CommitID
 	importPath string
+	path       string
 	receiver   *string
 	symbol     string
 }
@@ -53,6 +54,7 @@ func TestSymbolLocation(t *testing.T) {
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
+				path:       "/",
 				receiver:   nil,
 				symbol:     "NonexistentSymbol",
 			},
@@ -63,6 +65,7 @@ func TestSymbolLocation(t *testing.T) {
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
+				path:       "/",
 				receiver:   nil,
 				symbol:     "Foo",
 			},
@@ -73,6 +76,7 @@ func TestSymbolLocation(t *testing.T) {
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
+				path:       "/",
 				receiver:   nil,
 				symbol:     "Bar",
 			},
@@ -83,6 +87,7 @@ func TestSymbolLocation(t *testing.T) {
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
+				path:       "/",
 				receiver:   strptr("Bar"),
 				symbol:     "Quux",
 			},
@@ -93,6 +98,7 @@ func TestSymbolLocation(t *testing.T) {
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				importPath: "github.com/gorilla/mux",
+				path:       "/",
 				receiver:   nil,
 				symbol:     "Floop",
 			},
@@ -100,7 +106,7 @@ func TestSymbolLocation(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		got, _ := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.commitID, test.args.importPath, test.args.receiver, test.args.symbol)
+		got, _ := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.commitID, test.args.importPath, test.args.path, test.args.receiver, test.args.symbol)
 		if got != test.want && (got == nil || test.want == nil || *got != *test.want) {
 			t.Errorf("Test #%d:\ngot  %#v\nwant %#v", i, got, test.want)
 		}
