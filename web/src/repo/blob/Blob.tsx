@@ -13,19 +13,24 @@ import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { AbsoluteRepoFile, RenderMode } from '..'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { TextDocumentDecoration } from '../../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import {
+    AbsoluteRepoFile,
+    LineOrPositionOrRange,
+    parseHash,
+    RenderMode,
+    toPositionOrRangeHash,
+} from '../../../../shared/src/util/url'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
 import { eventLogger } from '../../tracking/eventLogger'
-import { isDefined, propertyIsDefined } from '../../util/types'
-import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 

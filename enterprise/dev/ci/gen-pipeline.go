@@ -61,19 +61,10 @@ func main() {
 			bk.Cmd("./dev/check/all.sh"))
 	}
 
-	pipeline.AddStep(":lipstick:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier"))
+	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
+		bk.Cmd("dev/ci/yarn-run.sh prettier all:tslint all:stylelint all:typecheck graphql-lint"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("dev/ci/yarn-run.sh all:tslint"))
-
-	pipeline.AddStep(":stylelint:",
-		bk.Cmd("dev/ci/yarn-run.sh all:stylelint all:typecheck"))
-
-	pipeline.AddStep(":graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
-
-	pipeline.AddStep(":typescript:",
+	pipeline.AddStep(":ie:",
 		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
 	if !isBextReleaseBranch {

@@ -2,6 +2,7 @@ import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
+import { ResizablePanel } from '../../shared/src/panel/Panel'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
@@ -115,6 +116,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     )
                 })}
             </Switch>
+            <ResizablePanel
+                history={props.history}
+                location={props.location}
+                extensionsController={props.extensionsController}
+            />
             <GlobalDebug {...props} />
         </div>
     )

@@ -73,13 +73,13 @@ func TestResolveImportPath(t *testing.T) {
 			VCS:         "git",
 		}},
 		{"golang.org/x/foo", &Directory{
-			ImportPath:  "github.com/golang/foo",
+			ImportPath:  "golang.org/x/foo",
 			ProjectRoot: "golang.org/x/foo",
 			CloneURL:    "https://github.com/golang/foo",
 			VCS:         "git",
 		}},
 		{"golang.org/x/foo/bar", &Directory{
-			ImportPath:  "github.com/golang/foo/bar",
+			ImportPath:  "golang.org/x/foo/bar",
 			ProjectRoot: "golang.org/x/foo",
 			CloneURL:    "https://github.com/golang/foo",
 			VCS:         "git",

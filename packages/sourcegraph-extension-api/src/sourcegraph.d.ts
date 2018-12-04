@@ -17,8 +17,18 @@ declare module 'sourcegraph' {
         unsubscribe(): void
     }
 
+    /**
+     * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL)
+     */
     export class URI {
+        /**
+         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which does not contain this method.
+         */
         static parse(value: string): URI
+
+        /**
+         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which does not contain this method.
+         */
         static file(path: string): URI
 
         constructor(value: string)
@@ -28,7 +38,7 @@ declare module 'sourcegraph' {
         /**
          * Returns a JSON representation of this Uri.
          *
-         * @return An object.
+         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which returns a string instead of an object.
          */
         toJSON(): any
     }

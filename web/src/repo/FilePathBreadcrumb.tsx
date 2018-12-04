@@ -1,7 +1,8 @@
 import * as React from 'react'
-import { RepoRev } from '.'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { toPrettyBlobURL, toTreeURL } from '../util/url'
+import { toPrettyBlobURL } from '../../../shared/src/util/url'
+import { RepoRev } from '../../../shared/src/util/url'
+import { toTreeURL } from '../util/url'
 
 interface Props {
     path: string

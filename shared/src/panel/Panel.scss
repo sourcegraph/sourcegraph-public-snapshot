@@ -1,6 +1,4 @@
 @import '../components/Resizable';
-@import '../repo/blob/panel/BlobPanel';
-@import '../repo/blob/panel/FileLocations';
 
 .panel {
     flex: 1 1 50%;
@@ -16,8 +14,9 @@
     width: 100%;
 
     &--resizable {
-        min-height: 10rem;
-        max-height: 80%;
+        min-height: 6rem;
+        max-height: calc(100% - 3rem);
+        width: 100%;
     }
 
     &__empty {

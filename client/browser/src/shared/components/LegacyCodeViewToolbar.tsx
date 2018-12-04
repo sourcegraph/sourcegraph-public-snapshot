@@ -38,7 +38,7 @@ interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<Ex
 
     buttonProps: ButtonProps
     actionsNavItemClassProps?: {
-        listClass?: string
+        listItemClass?: string
         actionItemClass?: string
     }
     simpleProviderFns: SimpleProviderFns
@@ -75,7 +75,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                     menu={ContributableMenu.EditorTitle}
                                     extensionsController={this.props.extensionsController}
                                     platformContext={this.props.platformContext}
-                                    listClass="BtnGroup"
+                                    listItemClass="BtnGroup"
                                     actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
                                     location={this.props.location}
                                 />

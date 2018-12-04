@@ -138,6 +138,7 @@ func resolveStaticImportPath(importPath string) (*Directory, error) {
 		if err != nil {
 			return nil, err
 		}
+		d.ImportPath = strings.Replace(d.ImportPath, "github.com/golang/", "golang.org/x/", 1)
 		d.ProjectRoot = strings.Replace(d.ProjectRoot, "github.com/golang/", "golang.org/x/", 1)
 		return d, nil
 	}

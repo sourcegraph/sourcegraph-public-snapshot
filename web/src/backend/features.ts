@@ -4,8 +4,8 @@ import { forkJoin, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Definition, Location, TextDocumentDecoration } from '../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
-import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
+import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI, toPrettyBlobURL } from '../../../shared/src/util/url'
+import { toAbsoluteBlobURL } from '../util/url'
 import {
     fetchXdefinition,
     fetchXreferences,

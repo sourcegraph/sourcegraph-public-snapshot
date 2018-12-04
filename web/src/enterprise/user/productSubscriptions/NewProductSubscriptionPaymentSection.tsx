@@ -9,8 +9,8 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { numberWithCommas } from '../../../../../shared/src/util/strings'
 import { queryGraphQL } from '../../../backend/graphql'
-import { numberWithCommas } from '../../../util/strings'
 import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
 import { ProductSubscriptionBeforeAfterInvoiceItem } from './ProductSubscriptionBeforeAfterInvoiceItem'
 

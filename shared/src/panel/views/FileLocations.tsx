@@ -5,14 +5,14 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
-import { parseRepoURI } from '../..'
-import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
-import { asError } from '../../../../../shared/src/util/errors'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { FileMatch, IFileMatch, ILineMatch } from '../../../components/FileMatch'
-import { VirtualList } from '../../../components/VirtualList'
-import { propertyIsDefined } from '../../../util/types'
-import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
+import { Location } from '../../api/protocol/plainTypes'
+import { FetchFileCtx } from '../../components/CodeExcerpt'
+import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
+import { VirtualList } from '../../components/VirtualList'
+import { asError } from '../../util/errors'
+import { ErrorLike, isErrorLike } from '../../util/errors'
+import { propertyIsDefined } from '../../util/types'
+import { parseRepoURI, toPrettyBlobURL } from '../../util/url'
 
 export const FileLocationsError: React.FunctionComponent<{ pluralNoun: string; error: ErrorLike }> = ({
     pluralNoun,
@@ -62,6 +62,8 @@ interface Props {
     className: string
 
     isLightTheme: boolean
+
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 interface State {
@@ -189,6 +191,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                             onSelect={this.onSelect}
                             showAllMatches={true}
                             isLightTheme={this.props.isLightTheme}
+                            fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         />
                     ))}
                 />
@@ -237,4 +240,13 @@ function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[])
             })
         ),
     }
+}
+
+/**
+ * Returns the URL path for the given repository name.
+ *
+ * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
+ */
+function toRepoURL(repoName: string): string {
+    return `/${repoName}`
 }
