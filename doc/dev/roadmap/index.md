@@ -14,7 +14,6 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
-- [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
 - [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
 - [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
 - [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
@@ -31,6 +30,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ### 3.0 (2019-01-07)
 
+- [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
 - [Swift language support](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
