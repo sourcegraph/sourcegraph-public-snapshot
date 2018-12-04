@@ -1,8 +1,9 @@
 import H from 'history'
 import marked from 'marked'
 import React from 'react'
-import { fetchHighlightedFileLines } from '../../../../web/src/repo/backend'
+import { Observable } from 'rxjs'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
+import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { Markdown } from '../../components/Markdown'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { SettingsCascadeProps } from '../../settings/settings'
@@ -16,6 +17,7 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
     history: H.History
     location: H.Location
     isLightTheme: boolean
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 interface State {}
@@ -41,7 +43,7 @@ export class PanelView extends React.PureComponent<Props, State> {
                         locations={this.props.panelView.locationProvider}
                         defaultGroup={this.props.repoName}
                         isLightTheme={this.props.isLightTheme}
-                        fetchHighlightedFileLines={fetchHighlightedFileLines}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         extensionsController={this.props.extensionsController}
                         settingsCascade={this.props.settingsCascade}
                     />

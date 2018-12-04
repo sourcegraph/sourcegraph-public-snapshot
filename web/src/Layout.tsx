@@ -16,6 +16,7 @@ import { GlobalDebug } from './global/GlobalDebug'
 import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -127,6 +128,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     platformContext={props.platformContext}
                     settingsCascade={props.settingsCascade}
                     isLightTheme={props.isLightTheme}
+                    fetchHighlightedFileLines={fetchHighlightedFileLines}
                 />
             )}
             <GlobalDebug {...props} />

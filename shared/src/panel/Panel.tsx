@@ -1,12 +1,13 @@
 import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { Subscription } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../../shared/src/api/client/services/view'
 import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ActionsNavItems } from '../actions/ActionsNavItems'
+import { FetchFileCtx } from '../components/CodeExcerpt'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { PlatformContextProps } from '../platform/context'
@@ -19,6 +20,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps, Setting
     history: H.History
     repoName?: string
     isLightTheme: boolean
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 interface State {
@@ -82,6 +84,7 @@ export class Panel extends React.PureComponent<Props, State> {
                                       isLightTheme={this.props.isLightTheme}
                                       extensionsController={this.props.extensionsController}
                                       settingsCascade={this.props.settingsCascade}
+                                      fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                                   />
                               ),
                           } as PanelItem)
