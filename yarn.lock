@@ -1122,10 +1122,10 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^3.9.4":
-  version "3.9.4"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-3.9.4.tgz#e42d3db0776cb056259e6be5c8ddd16d165096c5"
-  integrity sha512-yVwE+D7NsIDr4g3kUJZxFwy9PQ9vlsmsuZchKiZHgOReG3wyUoDjktNfJ8tLPzAgC0ICqfHsBpIlpK9dZySODg==
+"@sourcegraph/codeintellify@^3.10.0":
+  version "3.10.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-3.10.0.tgz#4b25747bc545f2b02d4a44a5235bdb10da8c1347"
+  integrity sha512-Xg4YOXUEQ/+DjRpsoiA0w5av9+Xk5ki/fBVpxcUzEKsJQ+V4Fi55wn8iEg6sm8nwHWPB0CRlsftjRmuWtzIl6Q==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.0"
     "@sourcegraph/react-loading-spinner" "0.0.6"
