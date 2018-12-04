@@ -20,6 +20,8 @@ interface Props {
     onChange: (change: GQL.IAddExternalServiceInput) => void
 }
 
+const EXTRA_SCHEMAS = [siteSchemaJSON]
+
 export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
@@ -61,7 +63,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                     <DynamicallyImportedMonacoSettingsEditor
                         value={this.props.input.config}
                         jsonSchemaId={`site.schema.json#definitions/${getKindDefinitionId(this.props.input.kind)}`}
-                        extraSchemas={[siteSchemaJSON]}
+                        extraSchemas={EXTRA_SCHEMAS}
                         canEdit={false}
                         loading={this.props.loading}
                         height={300}
