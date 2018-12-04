@@ -274,6 +274,8 @@ func main() {
 
 	pipeline.AddWait()
 
+	// TODO@ggilmore: disabled until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976
+	// is completed.
 	// fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
 	// 	return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
 	// }
