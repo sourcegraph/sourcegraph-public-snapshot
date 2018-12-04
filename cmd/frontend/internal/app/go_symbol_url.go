@@ -153,6 +153,11 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.Com
 					}
 				}
 			}
+			for _, fun := range docType.Funcs {
+				if fun.Name == symbol {
+					return &fun.Decl.Name.NamePos
+				}
+			}
 			for _, spec := range docType.Decl.Specs {
 				if typeSpec, ok := spec.(*ast.TypeSpec); ok && typeSpec.Name.Name == symbol {
 					return &typeSpec.Name.NamePos
