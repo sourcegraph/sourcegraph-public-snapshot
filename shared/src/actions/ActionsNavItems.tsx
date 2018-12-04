@@ -14,6 +14,7 @@ interface Props extends ActionsProps {
      */
     wrapInList?: boolean
 
+    listClass?: string
     actionItemClass?: string
     listItemClass?: string
 }
@@ -66,7 +67,9 @@ export class ActionsNavItems extends React.PureComponent<Props, ActionsState> {
             </li>
         ))
         if (this.props.wrapInList) {
-            return actionItems.length > 0 ? <ul className="nav">{actionItems}</ul> : null
+            return actionItems.length > 0 ? (
+                <ul className={`nav ${this.props.listClass || ''}`}>{actionItems}</ul>
+            ) : null
         }
         return <>{actionItems}</>
     }

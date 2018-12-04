@@ -1,18 +1,21 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { Location } from '../../api/protocol/plainTypes'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../components/RepoLink'
 import { Resizable } from '../../components/Resizable'
+import { ExtensionsControllerProps } from '../../extensions/controller'
+import { SettingsCascadeProps } from '../../settings/settings'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { asError } from '../../util/errors'
 import { parseRepoURI } from '../../util/url'
+import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 
-interface Props {
+interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
     /**
      * The observable that emits the locations.
      */
@@ -78,12 +81,24 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                                 locationsOrError: LOADING,
                                 locationsComplete: false,
                             }),
+                            tap(({ locationsOrError }) => {
+                                this.props.extensionsController.services.context.data.next({
+                                    ...this.props.extensionsController.services.context.data.value,
+                                    'panel.locations.hasResults':
+                                        locationsOrError &&
+                                        !isErrorLike(locationsOrError) &&
+                                        locationsOrError !== LOADING &&
+                                        locationsOrError.length > 0,
+                                })
+                            }),
                             endWith({ locationsComplete: true })
                         )
                     )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )
+
+        this.subscriptions.add(registerPanelToolbarContributions(this.props))
 
         this.componentUpdates.next(this.props)
     }
@@ -121,11 +136,15 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                 key: (uri: string): string => parseRepoURI(uri).repoPath,
             },
         ]
-        if (localStorage.getItem('locationsByFile') !== null) {
+        const groupByFile =
+            this.props.settingsCascade.final &&
+            !isErrorLike(this.props.settingsCascade.final) &&
+            this.props.settingsCascade.final['panel.locations.groupByFile']
+        if (groupByFile) {
             GROUPS.push({
                 name: 'file',
                 defaultSize: 200,
-                key: (uri: string): string => parseRepoURI(uri).filePath || '.',
+                key: (uri: string): string => parseRepoURI(uri).filePath || '',
             })
         }
 
@@ -141,7 +160,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
             ({ key }, i) =>
                 this.state.selectedGroups && this.state.selectedGroups[i]
                     ? this.state.selectedGroups[i]
-                    : key(this.props.defaultGroup || locationsOrError[0].uri)
+                    : key(this.props.defaultGroup || locationsOrError[0].uri) || key(locationsOrError[0].uri)
         )
 
         if (selectedGroups) {
@@ -171,12 +190,19 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
             }
         }
 
+        // Ensure selected groups are valid.
+        for (const [i, group] of selectedGroups.entries()) {
+            if (!orderedGroups[i].includes(group)) {
+                selectedGroups[i] = orderedGroups[i][0]
+            }
+        }
+
         return (
             <div className={`hierarchical-locations-view ${this.props.className || ''}`}>
                 {selectedGroups &&
                     GROUPS.map(
                         (group, i) =>
-                            orderedGroups[i].length > 1 && (
+                            ((groupByFile && group.name === 'file') || orderedGroups[i].length > 1) && (
                                 <Resizable
                                     key={i}
                                     className="hierarchical-locations-view__resizable"

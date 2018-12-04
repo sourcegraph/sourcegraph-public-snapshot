@@ -26,9 +26,11 @@ export interface Context {
     [key: string]: string | number | boolean | Context | null
 }
 
-export interface ContributionScope extends Pick<ViewComponentData, 'type' | 'selections'> {
-    item: Pick<TextDocumentItem, 'uri' | 'languageId'>
-}
+export type ContributionScope =
+    | (Pick<ViewComponentData, 'type' | 'selections'> & {
+          item: Pick<TextDocumentItem, 'uri' | 'languageId'>
+      })
+    | { type: 'panelView'; id: string }
 
 /**
  * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
@@ -58,7 +60,7 @@ export function getComputedContextProperty(
         return !!component
     }
     if (key.startsWith('resource.')) {
-        if (!component) {
+        if (!component || component.type !== 'textEditor') {
             return null
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
@@ -81,7 +83,7 @@ export function getComputedContextProperty(
         }
     }
     if (key.startsWith('component.')) {
-        if (!component) {
+        if (!component || component.type !== 'textEditor') {
             return null
         }
         const prop = key.slice('component.'.length)
@@ -104,6 +106,16 @@ export function getComputedContextProperty(
                 return component.selections[0] ? component.selections[0].end.line : null
             case 'selection.end.character':
                 return component.selections[0] ? component.selections[0].end.character : null
+        }
+    }
+    if (key.startsWith('panel.activeView.')) {
+        if (!component || component.type !== 'panelView') {
+            return null
+        }
+        const prop = key.slice('panel.activeView.'.length)
+        switch (prop) {
+            case 'id':
+                return component.id
         }
     }
     if (key === 'context') {

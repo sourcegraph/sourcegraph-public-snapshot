@@ -4,11 +4,13 @@ import React from 'react'
 import { fetchHighlightedFileLines } from '../../../../web/src/repo/backend'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
 import { Markdown } from '../../components/Markdown'
+import { ExtensionsControllerProps } from '../../extensions/controller'
+import { SettingsCascadeProps } from '../../settings/settings'
 import { createLinkClickHandler } from '../../util/linkClickHandler'
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 
-interface Props {
+interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
     panelView: PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>
     repoName?: string
     history: H.History
@@ -40,6 +42,8 @@ export class PanelView extends React.PureComponent<Props, State> {
                         defaultGroup={this.props.repoName}
                         isLightTheme={this.props.isLightTheme}
                         fetchHighlightedFileLines={fetchHighlightedFileLines}
+                        extensionsController={this.props.extensionsController}
+                        settingsCascade={this.props.settingsCascade}
                     />
                 )}
                 {!this.props.panelView.content &&

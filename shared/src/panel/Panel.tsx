@@ -10,10 +10,11 @@ import { ActionsNavItems } from '../actions/ActionsNavItems'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { PlatformContextProps } from '../platform/context'
+import { SettingsCascadeProps } from '../settings/settings'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps, SettingsCascadeProps {
     location: H.Location
     history: H.History
     repoName?: string
@@ -79,6 +80,8 @@ export class Panel extends React.PureComponent<Props, State> {
                                       history={this.props.history}
                                       location={this.props.location}
                                       isLightTheme={this.props.isLightTheme}
+                                      extensionsController={this.props.extensionsController}
+                                      settingsCascade={this.props.settingsCascade}
                                   />
                               ),
                           } as PanelItem)
@@ -87,12 +90,13 @@ export class Panel extends React.PureComponent<Props, State> {
             : []
 
         const hasTabs = items.length > 0
+        const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(this.props.location, items)
 
         return (
             <div className="panel">
                 {hasTabs ? (
                     <TabsWithURLViewStatePersistence
-                        tabs={items || []}
+                        tabs={items}
                         tabBarEndFragment={
                             <>
                                 <Spacer />
@@ -107,10 +111,19 @@ export class Panel extends React.PureComponent<Props, State> {
                         }
                         toolbarFragment={
                             <ActionsNavItems
+                                listClass="w-100 justify-content-end"
                                 menu={ContributableMenu.PanelToolbar}
                                 extensionsController={this.props.extensionsController}
                                 platformContext={this.props.platformContext}
                                 location={this.props.location}
+                                scope={
+                                    activePanelViewID !== undefined
+                                        ? {
+                                              type: 'panelView',
+                                              id: activePanelViewID,
+                                          }
+                                        : undefined
+                                }
                                 wrapInList={true}
                             />
                         }

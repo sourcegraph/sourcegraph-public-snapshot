@@ -227,6 +227,23 @@ describe('getComputedContextProperty', () => {
         })
     })
 
+    describe('panel', () => {
+        it('provides panel.activeView.id', () =>
+            assert.strictEqual(
+                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id', {
+                    type: 'panelView',
+                    id: 'x',
+                }),
+                'x'
+            ))
+
+        it('returns null for panel.activeView.id when there is no panel', () =>
+            assert.strictEqual(
+                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id'),
+                null
+            ))
+    })
+
     it('falls back to the context entries', () => {
         assert.strictEqual(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, { x: 1 }, 'x'), 1)
         assert.strictEqual(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'y'), undefined)

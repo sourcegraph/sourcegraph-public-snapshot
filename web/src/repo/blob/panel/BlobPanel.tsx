@@ -182,6 +182,8 @@ export class BlobPanel extends React.PureComponent<Props> {
                                               )}
                                               isLightTheme={this.props.isLightTheme}
                                               fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                              settingsCascade={this.props.settingsCascade}
+                                              extensionsController={this.props.extensionsController}
                                           />
                                       ),
                                   }))

@@ -125,6 +125,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     location={props.location}
                     extensionsController={props.extensionsController}
                     platformContext={props.platformContext}
+                    settingsCascade={props.settingsCascade}
                     isLightTheme={props.isLightTheme}
                 />
             )}

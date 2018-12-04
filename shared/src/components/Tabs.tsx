@@ -239,7 +239,7 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
     constructor(props: TabsWithURLViewStatePersistenceProps<ID, T>) {
         super(props)
         this.state = {
-            activeTab: this.readFromURL(props.location, props.tabs),
+            activeTab: TabsWithURLViewStatePersistence.readFromURL(props.location, props.tabs),
         }
     }
 
@@ -258,7 +258,7 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         return { ...location, hash: hash.toString().replace(/%3A/g, ':') }
     }
 
-    private readFromURL(location: H.Location, tabs: T[]): ID | undefined {
+    public static readFromURL<ID extends string, T extends Tab<ID>>(location: H.Location, tabs: T[]): ID | undefined {
         const urlTabID = parseHash(location.hash).viewState
         if (urlTabID) {
             for (const tab of tabs) {
@@ -275,7 +275,9 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
 
     public componentWillReceiveProps(nextProps: TabsWithURLViewStatePersistenceProps<ID, T>): void {
         if (nextProps.location !== this.props.location || nextProps.tabs !== this.props.tabs) {
-            this.setState({ activeTab: this.readFromURL(nextProps.location, nextProps.tabs) })
+            this.setState({
+                activeTab: TabsWithURLViewStatePersistence.readFromURL(nextProps.location, nextProps.tabs),
+            })
         }
     }
 
