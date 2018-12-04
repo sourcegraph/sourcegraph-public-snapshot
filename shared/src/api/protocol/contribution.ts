@@ -15,6 +15,9 @@ export interface Contributions {
 
     /** Menu items contributed by the extension. */
     menus?: MenuContributions
+
+    /** Search filters contributed by the extension */
+    searchFilters?: SearchFilters[]
 }
 
 /**
@@ -233,6 +236,22 @@ export interface MenuItemContribution {
      * group sorting last. The client must not display the group value.
      */
     group?: string
+}
+
+/**
+ * A search filters interface with `name` and `value` to display on a filter chip
+ * in the search results filters bar.
+ */
+export interface SearchFilters {
+    /**
+     * The name to be displayed on the search filter chip.
+     */
+    name: string
+
+    /**
+     * The value of the search filter chip (i.e. the literal search query string).
+     */
+    value: string
 }
 
 /** The containers to which an extension can contribute views. */

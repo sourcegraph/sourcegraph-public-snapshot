@@ -1,11 +1,22 @@
+import H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ContributionScope } from '../api/client/context/context'
+import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
+import { ExtensionsControllerProps } from '../extensions/controller'
+import { PlatformContextProps } from '../platform/context'
 import { ActionItem, ActionItemProps } from './ActionItem'
-import { ActionsProps, ActionsState } from './actions'
+import { ActionsState } from './actions'
 
+export interface ActionsProps extends ExtensionsControllerProps, PlatformContextProps {
+    menu: ContributableMenu
+    scope?: ContributionScope
+    actionItemClass?: string
+    listClass?: string
+    location: H.Location
+}
 interface Props extends ActionsProps {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default

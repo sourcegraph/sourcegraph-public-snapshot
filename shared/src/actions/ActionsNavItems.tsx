@@ -4,7 +4,8 @@ import { switchMap } from 'rxjs/operators'
 import { ContributionScope } from '../api/client/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ActionItem } from './ActionItem'
-import { ActionsProps, ActionsState } from './actions'
+import { ActionsState } from './actions'
+import { ActionsProps } from './ActionsContainer'
 
 interface Props extends ActionsProps {
     /**

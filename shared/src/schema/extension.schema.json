@@ -180,6 +180,26 @@
             }
           },
           "type": "object"
+        },
+        "searchFilters": {
+          "type": "array",
+          "description": "Search filters contributed by the extension.",
+          "items": {
+            "additionalProperties": false,
+            "description":
+              "A search filters interface with `name` and `value` to display on a filter chip in the search results filters bar.",
+            "properties": {
+              "name": {
+                "description": "The name to be displayed on the search filter chip.",
+                "type": "string"
+              },
+              "value": {
+                "description": "The value of the search filter chip (i.e. the literal search query string).",
+                "type": "string"
+              }
+            },
+            "type": "array"
+          }
         }
       },
       "definitions": {

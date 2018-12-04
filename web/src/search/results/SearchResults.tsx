@@ -4,8 +4,10 @@ import * as React from 'react'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery, SearchOptions } from '..'
+import { SearchFiltersContainer } from '../../../../shared/src/actions/SearchFiltersContainer'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
@@ -21,7 +23,7 @@ import { SearchResultsListOld } from './SearchResultsListOld'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps {
+interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -141,28 +143,50 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public render(): JSX.Element | null {
         const searchOptions = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
+        const extensionFilters = (
+            <SearchFiltersContainer
+                // tslint:disable-next-line:jsx-no-lambda
+                render={items => (
+                    <>
+                        {items
+                            .filter(item => item.name && item.value)
+                            .map((item, i) => (
+                                <FilterChip
+                                    query={this.props.navbarSearchQuery}
+                                    onFilterChosen={this.onDynamicFilterClicked}
+                                    key={item.name + item.value}
+                                    value={item.value}
+                                    name={item.name}
+                                />
+                            ))}
+                    </>
+                )}
+                empty={null}
+                extensionsController={this.props.extensionsController}
+            />
+        )
         return (
             <div className="search-results">
                 <PageTitle key="page-title" title={searchOptions && searchOptions.query} />
-                {isSearchResults(this.state.resultsOrError) &&
-                    filters.length > 0 && (
-                        <div className="search-results__filters-bar">
-                            Filters:
-                            <div className="search-results__filters">
-                                {filters
-                                    .filter(filter => filter.value !== '')
-                                    .map((filter, i) => (
-                                        <FilterChip
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.onDynamicFilterClicked}
-                                            key={filter.value}
-                                            value={filter.value}
-                                            name={filter.name}
-                                        />
-                                    ))}
-                            </div>
+                {((isSearchResults(this.state.resultsOrError) && filters.length > 0) || extensionFilters) && (
+                    <div className="search-results__filters-bar">
+                        Filters:
+                        <div className="search-results__filters">
+                            {extensionFilters}
+                            {filters
+                                .filter(filter => filter.value !== '')
+                                .map((filter, i) => (
+                                    <FilterChip
+                                        query={this.props.navbarSearchQuery}
+                                        onFilterChosen={this.onDynamicFilterClicked}
+                                        key={filter.name + filter.value}
+                                        value={filter.value}
+                                        name={filter.name}
+                                    />
+                                ))}
                         </div>
-                    )}
+                    </div>
+                )}
                 {newRepoFilters &&
                     isSearchResults(this.state.resultsOrError) &&
                     this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
