@@ -40,6 +40,8 @@ enum ViewMode {
     Plain = 'plain',
 }
 
+const EXTRA_SCHEMAS = [extensionSchemaJSON]
+
 /** A page that displays an extension's manifest. */
 export class RegistryExtensionManifestPage extends React.PureComponent<Props, State> {
     private static STORAGE_KEY = 'RegistryExtensionManifestPage.viewMode'
@@ -99,7 +101,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             value={this.props.extension.rawManifest}
                             height={500}
                             jsonSchemaId="extension.schema.json#"
-                            extraSchemas={[extensionSchemaJSON]}
+                            extraSchemas={EXTRA_SCHEMAS}
                             readOnly={true}
                             isLightTheme={this.props.isLightTheme}
                             history={this.props.history}
