@@ -184,7 +184,7 @@ describe('e2e test suite', () => {
         await retry(async () => {
             assert.ok(
                 (await page.evaluate(
-                    () => document.querySelectorAll('.panel__tabs .file-locations-tree__item').length // get the external refs count
+                    () => document.querySelectorAll('.panel__tabs .hierarchical-locations-view__item').length // get the external refs count
                 )) > 0, // assert some external refs fetched
                 'expected some external references, got none'
             )
