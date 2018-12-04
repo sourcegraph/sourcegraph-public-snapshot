@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, filter, switchMap } from 'rxjs/operators'
-import sanitizeHtml = require('sanitize-html')
+import sanitizeHtml from 'sanitize-html'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
@@ -60,23 +60,30 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     filter(([, isVisible]) => isVisible),
                     switchMap(
                         ([props]) =>
-                            props.body.html ? of(props.body.html) : renderMarkdown({ markdown: props.body.text })
+                            props.body.html
+                                ? of(sanitizeHtml(props.body.html))
+                                : renderMarkdown({ markdown: props.body.text })
                     )
                 )
                 .pipe(
                     switchMap(markdownHTML => {
                         if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
                             const lang = this.getLanguage() || 'txt'
-                            const codeContent = /<code(?:.*)>([\s\S]*?)<\/code>/.exec(markdownHTML)
-                            if (codeContent && codeContent[1]) {
+                            const parser = new DOMParser()
+                            // Get content between the outermost code tags.
+                            const codeContent = parser
+                                .parseFromString('<pre><code>abcd<code>efgh</code></code></pre>', 'text/html')
+                                .querySelector('code')!
+                                .innerHTML.toString()
+                            if (codeContent) {
                                 return highlightCode({
-                                    code: decode(codeContent[1]),
+                                    code: decode(codeContent),
                                     path: 'file.' + lang,
                                     disableTimeout: false,
                                     isLightTheme: this.props.isLightTheme,
                                 }).pipe(
                                     switchMap(highlightedStr => {
-                                        const highlightedMarkdown = markdownHTML.replace(codeContent[1], highlightedStr)
+                                        const highlightedMarkdown = markdownHTML.replace(codeContent, highlightedStr)
                                         return of(highlightedMarkdown)
                                     }),
                                     // Return the rendered markdown if highlighting fails.

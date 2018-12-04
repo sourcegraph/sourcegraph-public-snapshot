@@ -1,11 +1,11 @@
+import { decode } from 'he'
+import _ from 'lodash'
 import marked from 'marked'
 import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ResultContainer } from './ResultContainer'
 import { SearchResultMatch } from './SearchResultMatch'
-import _ from 'lodash'
-import { decode } from 'he'
 
 export interface HighlightRange {
     /**
