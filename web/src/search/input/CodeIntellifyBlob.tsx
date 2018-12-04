@@ -209,11 +209,16 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         this.subscriptions.add(
             this.props.extensionsController.services.model.model.next({
                 ...this.props.extensionsController.services.model.model.value,
-                visibleTextDocuments: [
+                visibleViewComponents: [
                     {
-                        uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
-                        languageId: 'go',
-                        text: '',
+                        type: 'textEditor',
+                        item: {
+                            uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
+                            languageId: 'go',
+                            text: '',
+                        },
+                        selections: [],
+                        isActive: true,
                     },
                 ],
             })

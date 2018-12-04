@@ -31,6 +31,7 @@ import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/fe
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
 import { eventLogger } from '../../tracking/eventLogger'
+import { lprToSelectionsZeroIndexed } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
@@ -295,11 +296,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
                 this.props.extensionsController.services.model.model.next({
                     ...this.props.extensionsController.services.model.model.value,
-                    visibleTextDocuments: [
+                    visibleViewComponents: [
                         {
-                            uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
-                            languageId: model.mode,
-                            text: model.content,
+                            type: 'textEditor' as 'textEditor',
+                            item: {
+                                uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
+                                languageId: model.mode,
+                                text: model.content,
+                            },
+                            selections: lprToSelectionsZeroIndexed(pos),
+                            isActive: true,
                         },
                     ],
                 })

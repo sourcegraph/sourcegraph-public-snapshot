@@ -41,6 +41,3 @@ export interface TextDocumentDecoration
     extends Pick<sourcegraph.TextDocumentDecoration, Exclude<keyof sourcegraph.TextDocumentDecoration, 'range'>> {
     range: Range
 }
-
-/** The plain properties of a {@link module:sourcegraph.PanelView}, without methods. */
-export interface PanelView extends Pick<sourcegraph.PanelView, 'title' | 'content'> {}

@@ -1,31 +1,55 @@
 import { Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { ClientViewsAPI } from '../../client/api/views'
+import { ClientViewsAPI, PanelViewData } from '../../client/api/views'
 import { ProviderMap } from './common'
 
 /**
  * @internal
  */
 class ExtPanelView implements sourcegraph.PanelView {
-    private _title = ''
-    private _content = ''
+    private data: PanelViewData = {
+        title: '',
+        content: '',
+        priority: 0,
+        component: null,
+    }
 
     constructor(private proxy: ClientViewsAPI, private id: number, private subscription: Unsubscribable) {}
 
     public get title(): string {
-        return this._title
+        return this.data.title
     }
     public set title(value: string) {
-        this._title = value
-        this.proxy.$acceptPanelViewUpdate(this.id, { title: value })
+        this.data.title = value
+        this.sendData()
     }
 
     public get content(): string {
-        return this._content
+        return this.data.content
     }
     public set content(value: string) {
-        this._content = value
-        this.proxy.$acceptPanelViewUpdate(this.id, { content: value })
+        this.data.content = value
+        this.sendData()
+    }
+
+    public get priority(): number {
+        return this.data.priority
+    }
+    public set priority(value: number) {
+        this.data.priority = value
+        this.sendData()
+    }
+
+    public get component(): sourcegraph.PanelView['component'] {
+        return this.data.component
+    }
+    public set component(value: sourcegraph.PanelView['component']) {
+        this.data.component = value
+        this.sendData()
+    }
+
+    private sendData(): void {
+        this.proxy.$acceptPanelViewUpdate(this.id, this.data)
     }
 
     public unsubscribe(): void {

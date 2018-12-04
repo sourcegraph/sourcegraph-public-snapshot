@@ -2,23 +2,22 @@ import * as assert from 'assert'
 import { Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ContributableViewContainer } from '../../protocol'
-import * as plain from '../../protocol/plainTypes'
 import { Entry } from './registry'
-import { getView, getViews, ViewProviderRegistrationOptions } from './view'
+import { getView, getViews, PanelViewWithComponent, ViewProviderRegistrationOptions } from './view'
 
 const FIXTURE_CONTAINER = ContributableViewContainer.Panel
 
-const FIXTURE_ENTRY_1: Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>> = {
+const FIXTURE_ENTRY_1: Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>> = {
     registrationOptions: { container: FIXTURE_CONTAINER, id: '1' },
-    provider: of<plain.PanelView>({ title: 't1', content: 'c1' }),
+    provider: of<PanelViewWithComponent>({ title: 't1', content: 'c1', priority: 0 }),
 }
-const FIXTURE_RESULT_1 = { container: FIXTURE_CONTAINER, id: '1', title: 't1', content: 'c1' }
+const FIXTURE_RESULT_1 = { container: FIXTURE_CONTAINER, id: '1', title: 't1', content: 'c1', priority: 0 }
 
-const FIXTURE_ENTRY_2: Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>> = {
+const FIXTURE_ENTRY_2: Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>> = {
     registrationOptions: { container: FIXTURE_CONTAINER, id: '2' },
-    provider: of<plain.PanelView>({ title: 't2', content: 'c2' }),
+    provider: of<PanelViewWithComponent>({ title: 't2', content: 'c2', priority: 0 }),
 }
-const FIXTURE_RESULT_2 = { container: FIXTURE_CONTAINER, id: '2', title: 't2', content: 'c2' }
+const FIXTURE_RESULT_2 = { container: FIXTURE_CONTAINER, id: '2', title: 't2', content: 'c2', priority: 0 }
 
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 
@@ -28,7 +27,9 @@ describe('getView', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getView(
-                        cold<Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>>[]>('-a-|', { a: [] }),
+                        cold<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>('-a-|', {
+                            a: [],
+                        }),
                         '1'
                     )
                 ).toBe('-a-|', {
@@ -41,7 +42,7 @@ describe('getView', () => {
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 getView(
-                    cold<Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>>[]>('-a-|', {
+                    cold<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>('-a-|', {
                         a: [FIXTURE_ENTRY_1],
                     }),
                     '1'
@@ -56,7 +57,7 @@ describe('getView', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getView(
-                        cold<Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>>[]>('-a-b-|', {
+                        cold<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>('-a-b-|', {
                             a: [FIXTURE_ENTRY_1],
                             b: [FIXTURE_ENTRY_1, FIXTURE_ENTRY_2],
                         }),
@@ -76,11 +77,13 @@ describe('getViews', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getViews(
-                        cold<Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>>[]>('-a-|', { a: [] }),
+                        cold<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>('-a-|', {
+                            a: [],
+                        }),
                         FIXTURE_CONTAINER
                     )
                 ).toBe('-a-|', {
-                    a: null,
+                    a: [],
                 })
             ))
     })
@@ -89,7 +92,7 @@ describe('getViews', () => {
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 getViews(
-                    cold<Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>>[]>('-a-|', {
+                    cold<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>('-a-|', {
                         a: [FIXTURE_ENTRY_1],
                     }),
                     FIXTURE_CONTAINER
@@ -103,7 +106,7 @@ describe('getViews', () => {
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 getViews(
-                    cold<Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>>[]>('-a-|', {
+                    cold<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>('-a-|', {
                         a: [
                             {
                                 registrationOptions: { container: FIXTURE_CONTAINER, id: 'err' },
@@ -124,7 +127,7 @@ describe('getViews', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getViews(
-                        cold<Entry<ViewProviderRegistrationOptions, Observable<plain.PanelView>>[]>('-a-b-|', {
+                        cold<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>>[]>('-a-b-|', {
                             a: [FIXTURE_ENTRY_1],
                             b: [FIXTURE_ENTRY_1, FIXTURE_ENTRY_2],
                         }),

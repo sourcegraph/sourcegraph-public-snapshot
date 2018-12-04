@@ -67,8 +67,12 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                 actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
                                 location={this.props.location}
                                 scope={{
-                                    uri: toURIWithPath(this.props),
-                                    languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
+                                    type: 'textEditor',
+                                    item: {
+                                        uri: toURIWithPath(this.props),
+                                        languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
+                                    },
+                                    selections: [],
                                 }}
                             />
                         )}

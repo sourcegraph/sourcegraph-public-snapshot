@@ -1,6 +1,6 @@
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { Model } from '../model'
+import { Model, ViewComponentData } from '../model'
 import { TextDocumentItem } from '../types/textDocument'
 
 /**
@@ -26,7 +26,11 @@ export interface Context {
     [key: string]: string | number | boolean | Context | null
 }
 
-export interface ContributionScope extends Pick<TextDocumentItem, 'uri' | 'languageId'> {}
+export type ContributionScope =
+    | (Pick<ViewComponentData, 'type' | 'selections'> & {
+          item: Pick<TextDocumentItem, 'uri' | 'languageId'>
+      })
+    | { type: 'panelView'; id: string }
 
 /**
  * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
@@ -50,14 +54,14 @@ export function getComputedContextProperty(
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const textDocument: ContributionScope | null =
-        scope || (model.visibleTextDocuments && model.visibleTextDocuments[0])
+    const component: ContributionScope | null =
+        scope || (model.visibleViewComponents && model.visibleViewComponents.find(({ isActive }) => isActive)) || null
     if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
-        return !!textDocument
+        return !!component
     }
     if (key.startsWith('resource.')) {
-        if (!textDocument) {
-            return undefined
+        if (!component || component.type !== 'textEditor') {
+            return null
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
         // path relative to the repository's root? If it's a file on disk, then "path" could also mean the
@@ -65,27 +69,53 @@ export function getComputedContextProperty(
         const prop = key.slice('resource.'.length)
         switch (prop) {
             case 'uri':
-                return textDocument.uri
+                return component.item.uri
             case 'basename':
-                return basename(textDocument.uri)
+                return basename(component.item.uri)
             case 'dirname':
-                return dirname(textDocument.uri)
+                return dirname(component.item.uri)
             case 'extname':
-                return extname(textDocument.uri)
+                return extname(component.item.uri)
             case 'language':
-                return textDocument.languageId
+                return component.item.languageId
             case 'type':
                 return 'textDocument'
         }
     }
     if (key.startsWith('component.')) {
-        if (!textDocument) {
-            return undefined
+        if (!component || component.type !== 'textEditor') {
+            return null
         }
         const prop = key.slice('component.'.length)
         switch (prop) {
             case 'type':
                 return 'textEditor'
+            case 'selections':
+                return component.selections
+            case 'selection':
+                return component.selections[0] || null
+            case 'selection.start':
+                return component.selections[0] ? component.selections[0].start : null
+            case 'selection.end':
+                return component.selections[0] ? component.selections[0].end : null
+            case 'selection.start.line':
+                return component.selections[0] ? component.selections[0].start.line : null
+            case 'selection.start.character':
+                return component.selections[0] ? component.selections[0].start.character : null
+            case 'selection.end.line':
+                return component.selections[0] ? component.selections[0].end.line : null
+            case 'selection.end.character':
+                return component.selections[0] ? component.selections[0].end.character : null
+        }
+    }
+    if (key.startsWith('panel.activeView.')) {
+        if (!component || component.type !== 'panelView') {
+            return null
+        }
+        const prop = key.slice('panel.activeView.'.length)
+        switch (prop) {
+            case 'id':
+                return component.id
         }
     }
     if (key === 'context') {

@@ -1,31 +1,34 @@
-import { combineLatest, ReplaySubject, Subject, Subscription } from 'rxjs'
+import { ReplaySubject, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { PanelView } from 'sourcegraph'
 import { handleRequests } from '../../common/proxy'
-import { ContributableViewContainer } from '../../protocol'
+import { ContributableViewContainer, TextDocumentPositionParams } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
-import * as plain from '../../protocol/plainTypes'
-import { ViewProviderRegistry } from '../services/view'
+import { TextDocumentLocationProviderIDRegistry } from '../services/location'
+import { PanelViewWithComponent, ViewProviderRegistry } from '../services/view'
 import { SubscriptionMap } from './common'
+
+/** @internal */
+export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
 
 /** @internal */
 export interface ClientViewsAPI {
     $unregister(id: number): void
     $registerPanelViewProvider(id: number, provider: { id: string }): void
-    $acceptPanelViewUpdate(id: number, params: Partial<plain.PanelView>): void
-}
-
-interface PanelViewSubjects {
-    title: Subject<string>
-    content: Subject<string>
+    $acceptPanelViewUpdate(id: number, params: Partial<PanelViewData>): void
 }
 
 /** @internal */
 export class ClientViews implements ClientViewsAPI {
     private subscriptions = new Subscription()
-    private panelViews = new Map<number, Record<keyof plain.PanelView, Subject<string>>>()
+    private panelViews = new Map<number, Subject<PanelViewData>>()
     private registrations = new SubscriptionMap()
 
-    constructor(connection: Connection, private viewRegistry: ViewProviderRegistry) {
+    constructor(
+        connection: Connection,
+        private viewRegistry: ViewProviderRegistry,
+        private textDocumentLocations: TextDocumentLocationProviderIDRegistry
+    ) {
         this.subscriptions.add(this.registrations)
 
         handleRequests(connection, 'views', this)
@@ -36,14 +39,26 @@ export class ClientViews implements ClientViewsAPI {
     }
 
     public $registerPanelViewProvider(id: number, provider: { id: string }): void {
-        const panelView: PanelViewSubjects = {
-            title: new ReplaySubject<string>(1),
-            content: new ReplaySubject<string>(1),
-        }
+        // TODO(sqs): This will probably hang forever if an extension neglects to set any of the fields on a
+        // PanelView because this subject will never emit.
+        const panelView = new ReplaySubject<PanelViewData>(1)
         this.panelViews.set(id, panelView)
         const registryUnsubscribable = this.viewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
-            combineLatest(panelView.title, panelView.content).pipe(map(([title, content]) => ({ title, content })))
+            panelView.pipe(
+                map(
+                    ({ title, content, priority, component }) =>
+                        ({
+                            title,
+                            content,
+                            priority,
+                            locationProvider: component
+                                ? (params: TextDocumentPositionParams) =>
+                                      this.textDocumentLocations.getLocation(component.locationProvider, params)
+                                : undefined,
+                        } as PanelViewWithComponent)
+                )
+            )
         )
         this.registrations.add(id, {
             unsubscribe: () => {
@@ -53,17 +68,12 @@ export class ClientViews implements ClientViewsAPI {
         })
     }
 
-    public $acceptPanelViewUpdate(id: number, params: { title?: string; content?: string }): void {
+    public $acceptPanelViewUpdate(id: number, data: PanelViewData): void {
         const panelView = this.panelViews.get(id)
         if (panelView === undefined) {
             throw new Error(`no panel view with ID ${id}`)
         }
-        if (params.title !== undefined) {
-            panelView.title.next(params.title)
-        }
-        if (params.content !== undefined) {
-            panelView.content.next(params.content)
-        }
+        panelView.next(data)
     }
 
     public unsubscribe(): void {

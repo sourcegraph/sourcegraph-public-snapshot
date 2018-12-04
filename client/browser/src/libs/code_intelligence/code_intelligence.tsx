@@ -19,8 +19,7 @@ import { createPortal, render } from 'react-dom'
 import { animationFrameScheduler, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
-import { Model } from '../../../../../shared/src/api/client/model'
-import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
+import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -395,7 +394,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
     subscriptions.add(hoverifier)
 
     // Keeps track of all documents on the page since calling this function (should be once per page).
-    let visibleTextDocuments: TextDocumentItem[] = []
+    let visibleViewComponents: ViewComponentData[] = []
 
     subscriptions.add(
         of(document.body)
@@ -445,28 +444,42 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                             baseContent = contents.baseContent
                         }
 
-                        visibleTextDocuments = [
+                        visibleViewComponents = [
                             // Either a normal file, or HEAD when codeView is a diff
                             {
-                                uri: toURIWithPath(info),
-                                languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                text: content!,
+                                type: 'textEditor',
+                                item: {
+                                    uri: toURIWithPath(info),
+                                    languageId: getModeFromPath(info.filePath) || 'could not determine mode',
+                                    text: content!,
+                                },
+                                selections: [],
+                                isActive: true,
                             },
-                            // All the currently open documents
-                            ...visibleTextDocuments,
+                            // All the currently open documents, which are all now considered inactive.
+                            ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
                         ]
                         const roots: Model['roots'] = [{ uri: toRootURI(info) }]
 
                         // When codeView is a diff, add BASE too.
                         if (baseContent! && info.baseRepoPath && info.baseCommitID && info.baseFilePath) {
-                            visibleTextDocuments.push({
-                                uri: toURIWithPath({
-                                    repoPath: info.baseRepoPath,
-                                    commitID: info.baseCommitID,
-                                    filePath: info.baseFilePath,
-                                }),
-                                languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                text: baseContent!,
+                            visibleViewComponents.push({
+                                type: 'textEditor',
+                                item: {
+                                    uri: toURIWithPath({
+                                        repoPath: info.baseRepoPath,
+                                        commitID: info.baseCommitID,
+                                        filePath: info.baseFilePath,
+                                    }),
+                                    languageId: getModeFromPath(info.filePath) || 'could not determine mode',
+                                    text: baseContent!,
+                                },
+                                // There is no notion of a selection on code hosts yet, so this is empty.
+                                //
+                                // TODO: Support interpreting GitHub #L1-2, etc., URL fragments as selections (and
+                                // similar on other code hosts), or find some other way to get this info.
+                                selections: [],
+                                isActive: false,
                             })
                             roots.push({
                                 uri: toRootURI({
@@ -501,7 +514,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                 })
                         }
 
-                        extensionsController.services.model.model.next({ roots, visibleTextDocuments })
+                        extensionsController.services.model.model.next({ roots, visibleViewComponents })
                     }
 
                     const resolveContext: ContextResolver = ({ part }) => ({

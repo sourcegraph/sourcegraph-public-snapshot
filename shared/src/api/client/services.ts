@@ -5,7 +5,11 @@ import { ContributionRegistry } from './services/contribution'
 import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { ExtensionsService } from './services/extensionsService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
-import { TextDocumentLocationProviderRegistry, TextDocumentReferencesProviderRegistry } from './services/location'
+import {
+    TextDocumentLocationProviderIDRegistry,
+    TextDocumentLocationProviderRegistry,
+    TextDocumentReferencesProviderRegistry,
+} from './services/location'
 import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
@@ -34,6 +38,7 @@ export class Services {
     public readonly textDocumentImplementation = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentReferencesProviderRegistry()
     public readonly textDocumentTypeDefinition = new TextDocumentLocationProviderRegistry()
+    public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly queryTransformer = new QueryTransformerRegistry()

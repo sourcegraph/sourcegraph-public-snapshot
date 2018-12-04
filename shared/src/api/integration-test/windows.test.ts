@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { map } from 'rxjs/operators'
-import { Window } from 'sourcegraph'
+import { ViewComponent, Window } from 'sourcegraph'
 import { MessageType } from '../client/services/notifications'
 import { assertToJSON } from '../extension/types/common.test'
 import { collectSubscribableValues, integrationTestContext } from './helpers.test'
@@ -9,13 +9,13 @@ describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {
         it('returns the active window', async () => {
             const { extensionHost } = await integrationTestContext()
+            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+                type: 'CodeEditor' as 'CodeEditor',
+                document: { uri: 'file:///f', languageId: 'l', text: 't' },
+            }
             assertToJSON(extensionHost.app.activeWindow, {
-                visibleViewComponents: [
-                    {
-                        type: 'CodeEditor' as 'CodeEditor',
-                        document: { uri: 'file:///f', languageId: 'l', text: 't' },
-                    },
-                ],
+                visibleViewComponents: [viewComponent],
+                activeViewComponent: viewComponent,
             } as Window)
         })
     })
@@ -23,14 +23,14 @@ describe('Windows (integration)', () => {
     describe('app.windows', () => {
         it('lists windows', async () => {
             const { extensionHost } = await integrationTestContext()
+            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+                type: 'CodeEditor' as 'CodeEditor',
+                document: { uri: 'file:///f', languageId: 'l', text: 't' },
+            }
             assertToJSON(extensionHost.app.windows, [
                 {
-                    visibleViewComponents: [
-                        {
-                            type: 'CodeEditor' as 'CodeEditor',
-                            document: { uri: 'file:///f', languageId: 'l', text: 't' },
-                        },
-                    ],
+                    visibleViewComponents: [viewComponent],
+                    activeViewComponent: viewComponent,
                 },
             ] as Window[])
         })
@@ -40,24 +40,91 @@ describe('Windows (integration)', () => {
 
             model.next({
                 ...model.value,
-                visibleTextDocuments: [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }],
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
             })
             await extensionHost.internal.sync()
 
+            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+                type: 'CodeEditor' as 'CodeEditor',
+                document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+            }
             assertToJSON(extensionHost.app.windows, [
                 {
-                    visibleViewComponents: [
-                        {
-                            type: 'CodeEditor' as 'CodeEditor',
-                            document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                        },
-                    ],
+                    visibleViewComponents: [viewComponent],
+                    activeViewComponent: viewComponent,
                 },
             ] as Window[])
         })
     })
 
     describe('Window', () => {
+        it('Window#visibleViewComponent', async () => {
+            const { model, extensionHost } = await integrationTestContext()
+
+            model.next({
+                ...model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: {
+                            uri: 'file:///inactive',
+                            languageId: 'inactive',
+                            text: 'inactive',
+                        },
+                        selections: [],
+                        isActive: false,
+                    },
+                    ...(model.value.visibleViewComponents || []),
+                ],
+            })
+            await extensionHost.internal.sync()
+
+            assertToJSON(extensionHost.app.windows[0].visibleViewComponents, [
+                {
+                    type: 'CodeEditor' as 'CodeEditor',
+                    document: { uri: 'file:///inactive', languageId: 'inactive', text: 'inactive' },
+                },
+                {
+                    type: 'CodeEditor' as 'CodeEditor',
+                    document: { uri: 'file:///f', languageId: 'l', text: 't' },
+                },
+            ] as ViewComponent[])
+        })
+
+        it('Window#activeViewComponent', async () => {
+            const { model, extensionHost } = await integrationTestContext()
+
+            model.next({
+                ...model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: {
+                            uri: 'file:///inactive',
+                            languageId: 'inactive',
+                            text: 'inactive',
+                        },
+                        selections: [],
+                        isActive: false,
+                    },
+                    ...(model.value.visibleViewComponents || []),
+                ],
+            })
+            await extensionHost.internal.sync()
+
+            assertToJSON(extensionHost.app.windows[0].activeViewComponent, {
+                type: 'CodeEditor' as 'CodeEditor',
+                document: { uri: 'file:///f', languageId: 'l', text: 't' },
+            } as ViewComponent)
+        })
+
         it('Window#showNotification', async () => {
             const { extensionHost, services } = await integrationTestContext()
             const values = collectSubscribableValues(services.notifications.showMessages)

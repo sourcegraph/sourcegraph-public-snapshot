@@ -1,8 +1,10 @@
 import { isArray } from 'lodash-es'
-import { from, Subscription, Unsubscribable } from 'rxjs'
+import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
+import { first } from 'rxjs/operators'
 import { Services } from '../api/client/services'
 import { SettingsEdit } from '../api/client/services/settings'
 import { ActionContributionClientCommandUpdateConfiguration } from '../api/protocol'
+import { Position } from '../api/protocol/plainTypes'
 import { PlatformContext } from '../platform/context'
 
 /**
@@ -11,7 +13,7 @@ import { PlatformContext } from '../platform/context'
  * documentation.
  */
 export function registerBuiltinClientCommands(
-    { settings: settingsService, commands: commandRegistry }: Services,
+    { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
     context: Pick<PlatformContext, 'queryGraphQL' | 'queryLSP'>
 ): Unsubscribable {
     const subscription = new Subscription()
@@ -41,6 +43,24 @@ export function registerBuiltinClientCommands(
                 window.open(urlForOpenPanel(viewID, window.location.hash))
                 return Promise.resolve()
             },
+        })
+    )
+
+    /**
+     * Executes the location provider and returns its results.
+     */
+    subscription.add(
+        commandRegistry.registerCommand({
+            command: 'executeLocationProvider',
+            run: (id: string, uri: string, position: Position) =>
+                concat(
+                    textDocumentLocations.getLocation(id, { textDocument: { uri }, position }),
+                    // Concat with [] to avoid undefined promise value when the getLocation observable completes
+                    // without emitting. See https://github.com/ReactiveX/rxjs/issues/1736.
+                    of([])
+                )
+                    .pipe(first())
+                    .toPromise(),
         })
     )
 

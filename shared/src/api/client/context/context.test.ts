@@ -1,5 +1,8 @@
 import assert from 'assert'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
+import { Position } from '../../extension/types/position'
+import { Selection } from '../../extension/types/selection'
+import * as plain from '../../protocol/plainTypes'
 import { EMPTY_MODEL, Model } from '../model'
 import { applyContextUpdate, Context, getComputedContextProperty } from './context'
 
@@ -32,11 +35,26 @@ describe('getComputedContextProperty', () => {
     describe('model with component', () => {
         const model: Model = {
             ...EMPTY_MODEL,
-            visibleTextDocuments: [
+            visibleViewComponents: [
                 {
-                    uri: 'file:///a/b.c',
-                    languageId: 'l',
-                    text: 't',
+                    type: 'textEditor',
+                    item: {
+                        uri: 'file:///inactive',
+                        languageId: 'inactive',
+                        text: 'inactive',
+                    },
+                    selections: [new Selection(new Position(11, 22), new Position(33, 44)).toPlain()],
+                    isActive: false,
+                },
+                {
+                    type: 'textEditor',
+                    item: {
+                        uri: 'file:///a/b.c',
+                        languageId: 'l',
+                        text: 't',
+                    },
+                    selections: [new Selection(new Position(1, 2), new Position(3, 4)).toPlain()],
+                    isActive: true,
                 },
             ],
         }
@@ -73,10 +91,10 @@ describe('getComputedContextProperty', () => {
                     'textDocument'
                 ))
 
-            it('returns undefined when the model has no component', () =>
+            it('returns null when the model has no component', () =>
                 assert.strictEqual(
                     getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'resource.uri'),
-                    undefined
+                    null
                 ))
         })
 
@@ -87,12 +105,143 @@ describe('getComputedContextProperty', () => {
                     'textEditor'
                 ))
 
-            it('returns undefined when the model has no component', () =>
+            it('returns null when the model has no component', () =>
                 assert.strictEqual(
                     getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'component.type'),
+                    null
+                ))
+
+            function assertSelection(model: Model, expr: string, expected: plain.Selection): void {
+                assert.deepStrictEqual(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, expr), expected)
+                assert.deepStrictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start`),
+                    expected.start
+                )
+                assert.deepStrictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end`),
+                    expected.end
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start.line`),
+                    expected.start.line
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start.character`),
+                    expected.start.character
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end.line`),
+                    expected.end.line
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end.character`),
+                    expected.end.character
+                )
+            }
+
+            it('provides primary selection', () =>
+                assertSelection(model, 'component.selection', {
+                    start: { line: 1, character: 2 },
+                    end: { line: 3, character: 4 },
+                    isReversed: false,
+                }))
+
+            it('provides selections', () =>
+                assert.deepStrictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selections'),
+                    [
+                        {
+                            start: { line: 1, character: 2 },
+                            end: { line: 3, character: 4 },
+                            isReversed: false,
+                        },
+                    ]
+                ))
+
+            function assertNoSelection(model: Model): void {
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection'),
+                    null
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start'),
+                    null
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end'),
+                    null
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start.line'),
+                    null
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(
+                        model,
+                        EMPTY_SETTINGS_CASCADE,
+                        {},
+                        'component.selection.start.character'
+                    ),
+                    null
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end.line'),
+                    null
+                )
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end.character'),
+                    null
+                )
+            }
+
+            it('returns null when there is no selection', () => {
+                assertNoSelection({
+                    ...EMPTY_MODEL,
+                    visibleViewComponents: [
+                        {
+                            type: 'textEditor',
+                            item: {
+                                uri: 'file:///a/b.c',
+                                languageId: 'l',
+                                text: 't',
+                            },
+                            selections: [],
+                            isActive: true,
+                        },
+                    ],
+                })
+            })
+
+            it('returns null when there is no component', () => {
+                assertNoSelection({
+                    ...EMPTY_MODEL,
+                    visibleViewComponents: [],
+                })
+            })
+
+            it('returns undefined for out-of-bounds selection', () =>
+                assert.strictEqual(
+                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'get(component.selections, 1)'),
                     undefined
                 ))
         })
+    })
+
+    describe('panel', () => {
+        it('provides panel.activeView.id', () =>
+            assert.strictEqual(
+                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id', {
+                    type: 'panelView',
+                    id: 'x',
+                }),
+                'x'
+            ))
+
+        it('returns null for panel.activeView.id when there is no panel', () =>
+            assert.strictEqual(
+                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id'),
+                null
+            ))
     })
 
     it('falls back to the context entries', () => {

@@ -11,11 +11,16 @@ import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 
 const FIXTURE_MODEL: Model = {
     roots: [{ uri: 'file:///' }],
-    visibleTextDocuments: [
+    visibleViewComponents: [
         {
-            uri: 'file:///f',
-            languageId: 'l',
-            text: 't',
+            type: 'textEditor',
+            item: {
+                uri: 'file:///f',
+                languageId: 'l',
+                text: 't',
+            },
+            selections: [],
+            isActive: true,
         },
     ],
 }

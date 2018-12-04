@@ -70,7 +70,7 @@ export function createExtensionHostClientConnection(
         new ClientWindows(
             connection,
             from(services.model.model).pipe(
-                map(({ visibleTextDocuments }) => visibleTextDocuments),
+                map(({ visibleViewComponents }) => visibleViewComponents),
                 distinctUntilChanged()
             ),
             (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
@@ -84,13 +84,16 @@ export function createExtensionHostClientConnection(
                 })
         )
     )
-    subscription.add(new ClientViews(connection, services.views))
+    subscription.add(new ClientViews(connection, services.views, services.textDocumentLocations))
     subscription.add(new ClientCodeEditor(connection, services.textDocumentDecoration))
     subscription.add(
         new ClientDocuments(
             connection,
             from(services.model.model).pipe(
-                map(({ visibleTextDocuments }) => visibleTextDocuments),
+                map(
+                    ({ visibleViewComponents }) =>
+                        visibleViewComponents && visibleViewComponents.map(({ item }) => item)
+                ),
                 distinctUntilChanged()
             )
         )
@@ -102,7 +105,8 @@ export function createExtensionHostClientConnection(
             services.textDocumentDefinition,
             services.textDocumentTypeDefinition,
             services.textDocumentImplementation,
-            services.textDocumentReferences
+            services.textDocumentReferences,
+            services.textDocumentLocations
         )
     )
     subscription.add(new Search(connection, services.queryTransformer))

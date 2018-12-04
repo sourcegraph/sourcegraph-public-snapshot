@@ -3,6 +3,7 @@ import * as sourcegraph from 'sourcegraph'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtWindowsAPI } from '../../extension/api/windows'
 import { Connection } from '../../protocol/jsonrpc2/connection'
+import { ViewComponentData } from '../model'
 import {
     MessageActionItem,
     MessageType,
@@ -10,7 +11,6 @@ import {
     ShowMessageParams,
     ShowMessageRequestParams,
 } from '../services/notifications'
-import { TextDocumentItem } from '../types/textDocument'
 import { SubscriptionMap } from './common'
 
 /** @internal */
@@ -28,7 +28,7 @@ export class ClientWindows implements ClientWindowsAPI {
 
     constructor(
         connection: Connection,
-        modelTextDocuments: Observable<TextDocumentItem[] | null>,
+        modelVisibleViewComponents: Observable<ViewComponentData[] | null>,
         /** Called when the client receives a window/showMessage notification. */
         private showMessage: (params: ShowMessageParams) => void,
         /**
@@ -45,9 +45,19 @@ export class ClientWindows implements ClientWindowsAPI {
         this.proxy = createProxyAndHandleRequests('windows', connection, this)
 
         this.subscriptions.add(
-            modelTextDocuments.subscribe(textDocuments => {
+            modelVisibleViewComponents.subscribe(viewComponents => {
                 this.proxy.$acceptWindowData(
-                    textDocuments ? textDocuments.map(textDocument => ({ visibleTextDocument: textDocument.uri })) : []
+                    viewComponents
+                        ? [
+                              {
+                                  visibleViewComponents: viewComponents.map(viewComponent => ({
+                                      item: viewComponent.item,
+                                      selections: viewComponent.selections,
+                                      isActive: viewComponent.isActive,
+                                  })),
+                              },
+                          ]
+                        : []
                 )
             })
         )

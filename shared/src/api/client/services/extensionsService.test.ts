@@ -12,11 +12,11 @@ const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b)
 class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
-        model: Subscribable<Pick<Model, 'visibleTextDocuments'>>,
+        model: Subscribable<Pick<Model, 'visibleViewComponents'>>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
-            model: Pick<Model, 'visibleTextDocuments'>
+            model: Pick<Model, 'visibleViewComponents'>
         ) => ConfiguredExtension[]
     ) {
         super(
@@ -41,8 +41,8 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [],
-                        cold<Pick<Model, 'visibleTextDocuments'>>('-a-|', {
-                            a: { visibleTextDocuments: [] },
+                        cold<Pick<Model, 'visibleViewComponents'>>('-a-|', {
+                            a: { visibleViewComponents: [] },
                         }),
                         { data: cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }) },
                         enabledExtensions => enabledExtensions
@@ -60,9 +60,27 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
-                        cold<Pick<Model, 'visibleTextDocuments'>>('-a-b-|', {
-                            a: { visibleTextDocuments: [{ languageId: 'x', text: '', uri: '' }] },
-                            b: { visibleTextDocuments: [{ languageId: 'y', text: '', uri: '' }] },
+                        cold<Pick<Model, 'visibleViewComponents'>>('-a-b-|', {
+                            a: {
+                                visibleViewComponents: [
+                                    {
+                                        type: 'textEditor',
+                                        item: { languageId: 'x', text: '', uri: '' },
+                                        selections: [],
+                                        isActive: true,
+                                    },
+                                ],
+                            },
+                            b: {
+                                visibleViewComponents: [
+                                    {
+                                        type: 'textEditor',
+                                        item: { languageId: 'y', text: '', uri: '' },
+                                        selections: [],
+                                        isActive: true,
+                                    },
+                                ],
+                            },
                         }),
                         {
                             data: cold<SettingsCascadeOrError>('-a-b-|', {
@@ -70,9 +88,9 @@ describe('activeExtensions', () => {
                                 b: { final: { extensions: { x: true, y: true } }, subjects: [] },
                             }),
                         },
-                        (enabledExtensions, { visibleTextDocuments }) =>
+                        (enabledExtensions, { visibleViewComponents }) =>
                             enabledExtensions.filter(x =>
-                                (visibleTextDocuments || []).some(({ languageId }) => x.id === languageId)
+                                (visibleViewComponents || []).some(({ item: { languageId } }) => x.id === languageId)
                             )
                     ).activeExtensions
                 )

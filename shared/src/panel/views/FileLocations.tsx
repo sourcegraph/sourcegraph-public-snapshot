@@ -3,8 +3,8 @@ import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
-import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
+import { Observable, Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Location } from '../../api/protocol/plainTypes'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
@@ -14,41 +14,23 @@ import { ErrorLike, isErrorLike } from '../../util/errors'
 import { propertyIsDefined } from '../../util/types'
 import { parseRepoURI, toPrettyBlobURL } from '../../util/url'
 
-export const FileLocationsError: React.FunctionComponent<{ pluralNoun: string; error: ErrorLike }> = ({
-    pluralNoun,
-    error,
-}) => (
+export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="file-locations__error alert alert-danger m-2">
-        <AlertCircleIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
+        <AlertCircleIcon className="icon-inline" /> Error getting locations: {upperFirst(error.message)}
     </div>
 )
 
-export const FileLocationsNotFound: React.FunctionComponent<{ pluralNoun: string }> = ({ pluralNoun }) => (
+export const FileLocationsNotFound: React.FunctionComponent = () => (
     <div className="file-locations__not-found m-2">
-        <MapSearchIcon className="icon-inline" /> No {pluralNoun} found
+        <MapSearchIcon className="icon-inline" /> No locations found
     </div>
 )
 
 interface Props {
     /**
-     * The function called to query for file locations.
+     * The observable that emits the locations.
      */
-    query: () => Observable<{ loading: boolean; locations: Location[] }>
-
-    /** An observable that upon emission causes the connection to refresh the data (by calling queryConnection). */
-    updates?: Observable<void>
-
-    /**
-     * Used along with the "inputRevision" prop to preserve the original Git revision specifier for the current
-     * repository.
-     */
-    inputRepo?: string
-
-    /**
-     * If given, use this revision in the link URLs to the files (instead of empty) for locations whose repository
-     * matches the "inputRepo" prop.
-     */
-    inputRevision?: string
+    locations: Observable<Location[] | null>
 
     /** The icon to use for each location. */
     icon: React.ComponentType<{ className?: string }>
@@ -56,25 +38,21 @@ interface Props {
     /** Called when a location is selected. */
     onSelect?: () => void
 
-    /** The plural noun described by the locations, such as "references" or "implementations". */
-    pluralNoun: string
-
-    className: string
+    className?: string
 
     isLightTheme: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
+const LOADING: 'loading' = 'loading'
+
 interface State {
     /**
-     * Locations (inside files identified by LSP-style git:// URIs) to display, or an error if they failed to load.
-     * Undefined while loading.
+     * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
+     * to load.
      */
-    locationsOrError?: Location[] | ErrorLike
-
-    /** Whether to show a loading indicator. */
-    loading: boolean
+    locationsOrError: typeof LOADING | Location[] | null | ErrorLike
 
     itemsToShow: number
 }
@@ -84,54 +62,25 @@ interface State {
  */
 export class FileLocations extends React.PureComponent<Props, State> {
     public state: State = {
+        locationsOrError: LOADING,
         itemsToShow: 3,
-        loading: false,
     }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        // Manually requested refreshes.
-        const refreshRequests = new Subject<void>()
-
-        // Changes to the query callback function.
-        const queryFuncChanges = this.componentUpdates.pipe(
-            map(({ query }) => query),
+        const locationsChanges = this.componentUpdates.pipe(
+            map(({ locations }) => locations),
             distinctUntilChanged()
         )
 
-        // Force updates from parent component.
-        if (this.props.updates) {
-            this.subscriptions.add(this.props.updates.subscribe(c => refreshRequests.next()))
-        }
-
         this.subscriptions.add(
-            combineLatest(queryFuncChanges, refreshRequests.pipe(startWith<void>(void 0)))
+            locationsChanges
                 .pipe(
-                    switchMap(([query]) => {
-                        type PartialStateUpdate = Pick<State, 'locationsOrError' | 'loading'>
-                        const result = query().pipe(
-                            catchError(error => [asError(error) as ErrorLike]),
-                            map(
-                                c =>
-                                    ({
-                                        locationsOrError: isErrorLike(c) ? c : c.locations,
-                                        loading: isErrorLike(c) ? false : c.loading,
-                                    } as PartialStateUpdate)
-                            )
-                        )
-
-                        return merge(
-                            result,
-                            of({ loading: true }).pipe(
-                                delay(50),
-                                takeUntil(result)
-                            ) // delay loading spinner to reduce jitter
-                        ).pipe(
-                            startWith<PartialStateUpdate>({ locationsOrError: undefined, loading: false }) // clear old data immediately
-                        )
-                    })
+                    switchMap(query => query.pipe(catchError(error => [asError(error) as ErrorLike]))),
+                    startWith(LOADING),
+                    map(result => ({ locationsOrError: result }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )
@@ -149,10 +98,13 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         if (isErrorLike(this.state.locationsOrError)) {
-            return <FileLocationsError pluralNoun={this.props.pluralNoun} error={this.state.locationsOrError} />
+            return <FileLocationsError error={this.state.locationsOrError} />
         }
-        if (!this.state.loading && this.state.locationsOrError && this.state.locationsOrError.length === 0) {
-            return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
+        if (this.state.locationsOrError === LOADING) {
+            return <LoadingSpinner className="icon-inline m-1" />
+        }
+        if (this.state.locationsOrError === null || this.state.locationsOrError.length === 0) {
+            return <FileLocationsNotFound />
         }
 
         // Locations by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
@@ -174,7 +126,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className={`file-locations ${this.props.className}`}>
+            <div className={`file-locations ${this.props.className || ''}`}>
                 <VirtualList
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
@@ -182,11 +134,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         <FileMatch
                             key={i}
                             expanded={true}
-                            result={refsToFileMatch(
-                                uri,
-                                repo === this.props.inputRepo ? this.props.inputRevision : undefined,
-                                locationsByURI.get(uri)!
-                            )}
+                            result={refsToFileMatch(uri, locationsByURI.get(uri)!)}
                             icon={this.props.icon}
                             onSelect={this.onSelect}
                             showAllMatches={true}
@@ -195,7 +143,6 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         />
                     ))}
                 />
-                {this.state.loading && <LoadingSpinner className="icon-inline m-1" />}
             </div>
         )
     }
@@ -211,14 +158,14 @@ export class FileLocations extends React.PureComponent<Props, State> {
     }
 }
 
-function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[]): IFileMatch {
+function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
     const p = parseRepoURI(uri)
     return {
         file: {
             path: p.filePath || '',
-            url: toPrettyBlobURL({ repoPath: p.repoPath, filePath: p.filePath!, rev: rev || p.commitID || '' }),
+            url: toPrettyBlobURL({ repoPath: p.repoPath, filePath: p.filePath!, rev: p.commitID || '' }),
             commit: {
-                oid: p.commitID || p.rev || rev,
+                oid: p.commitID || p.rev,
             },
         },
         repository: {

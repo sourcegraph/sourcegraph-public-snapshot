@@ -15,7 +15,14 @@ describe('Documents (integration)', () => {
             const { model, extensionHost } = await integrationTestContext()
             model.next({
                 ...model.value,
-                visibleTextDocuments: [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }],
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
             })
             await extensionHost.internal.sync()
             assert.deepStrictEqual(extensionHost.workspace.textDocuments, [
@@ -34,7 +41,14 @@ describe('Documents (integration)', () => {
 
             model.next({
                 ...model.value,
-                visibleTextDocuments: [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }],
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
             })
             await extensionHost.internal.sync()
 

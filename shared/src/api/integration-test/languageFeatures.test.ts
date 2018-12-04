@@ -93,6 +93,28 @@ describe('LanguageFeatures (integration)', () => {
                 .pipe(take(1))
                 .toPromise()
     )
+    testLocationProvider<sourcegraph.LocationProvider>(
+        'registerLocationProvider',
+        extensionHost => (selector, provider) =>
+            extensionHost.languages.registerLocationProvider('x', selector, provider),
+        label =>
+            ({
+                provideLocations: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
+            } as sourcegraph.LocationProvider),
+        labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
+        run =>
+            ({
+                provideLocations: (doc, pos) => run(doc, pos),
+            } as sourcegraph.LocationProvider),
+        services =>
+            services.textDocumentLocations
+                .getLocation('x', {
+                    textDocument: { uri: 'file:///f' },
+                    position: { line: 1, character: 2 },
+                })
+                .pipe(take(1))
+                .toPromise()
+    )
 })
 
 /**

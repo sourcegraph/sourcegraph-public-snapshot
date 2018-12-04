@@ -1,4 +1,4 @@
-import { Position, Range } from '../../../shared/src/api/protocol/plainTypes'
+import { Position, Range, Selection } from '../../../shared/src/api/protocol/plainTypes'
 import {
     AbsoluteRepoFile,
     encodeRepoRev,
@@ -150,6 +150,20 @@ export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
             character: lpr.endCharacter || lpr.character || 0,
         },
     }
+}
+
+export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selection[] {
+    const range = lprToRange(lpr)
+    if (range === undefined) {
+        return []
+    }
+    return [
+        {
+            start: { line: range.start.line - 1, character: range.start.character - 1 },
+            end: { line: range.end.line - 1, character: range.end.character - 1 },
+            isReversed: false,
+        },
+    ]
 }
 
 /** The results of parsing a repo-rev string like "my/repo@my/rev". */
