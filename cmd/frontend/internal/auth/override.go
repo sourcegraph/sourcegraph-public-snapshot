@@ -38,7 +38,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetUserOp{
 				UserProps: db.NewUser{
 					Username:        username,
-					Email:           username + "+override@example.com", // TODO: change
+					Email:           username + "+override@example.com",
 					EmailIsVerified: true,
 				},
 				ExternalAccount: extsvc.ExternalAccountSpec{
