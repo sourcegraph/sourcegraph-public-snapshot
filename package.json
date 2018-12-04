@@ -170,7 +170,7 @@
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
     "typedoc": "^0.13.0",
-    "typescript": "^3.1.6",
+    "typescript": "^3.2.1",
     "uglifyjs-webpack-plugin": "^1.2.4",
     "utc-version": "^1.1.0",
     "webpack": "^4.23.1",
