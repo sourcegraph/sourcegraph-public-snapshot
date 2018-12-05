@@ -2,6 +2,8 @@
 
 set -x
 
+echo "--- require changelog"
+
 if [ "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" != "master" ]; then
     set +x
     echo "CHANGELOG.md entry not required since this isn't a pull request into master"
