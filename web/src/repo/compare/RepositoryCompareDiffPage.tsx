@@ -8,6 +8,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
@@ -101,7 +102,7 @@ interface RepositoryCompareDiffPageProps
 
     /** The head of the comparison. */
     head: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
-    hoverifier: Hoverifier
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 
 /** A page with the file diffs in the comparison. */
