@@ -22,6 +22,15 @@ interface Props {
 
 const EXTRA_SCHEMAS = [siteSchemaJSON]
 
+const ALL_EXTERNAL_SERVICES: { kind: GQL.ExternalServiceKind; displayName: string }[] = [
+    { kind: GQL.ExternalServiceKind.AWSCODECOMMIT, displayName: 'AWS CodeCommit' },
+    { kind: GQL.ExternalServiceKind.BITBUCKETSERVER, displayName: 'Bitbucket Server' },
+    { kind: GQL.ExternalServiceKind.GITHUB, displayName: 'GitHub' },
+    { kind: GQL.ExternalServiceKind.GITLAB, displayName: 'GitLab' },
+    { kind: GQL.ExternalServiceKind.GITOLITE, displayName: 'Gitolite' },
+    { kind: GQL.ExternalServiceKind.PHABRICATOR, displayName: 'Phabricator' },
+]
+
 export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
@@ -46,17 +55,21 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
 
                 <div className="form-group">
                     <label htmlFor="external-service-page-form-kind">Kind</label>
-                    <input
-                        id="external-service-page-form-kind"
-                        type="text"
+
+                    <select
                         className="form-control"
-                        placeholder="GITHUB"
-                        required={true}
-                        autoCorrect="off"
-                        value={this.props.input.kind}
+                        id="external-service-page-form-kind"
                         onChange={this.onKindChange}
+                        required={true}
                         disabled={this.props.loading || this.props.mode === 'edit'}
-                    />
+                        value={this.props.input.kind}
+                    >
+                        {ALL_EXTERNAL_SERVICES.map(s => (
+                            <option key={s.kind} value={s.kind}>
+                                {s.displayName}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 <div>
@@ -68,7 +81,6 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         loading={this.props.loading}
                         height={300}
                         isLightTheme={this.props.isLightTheme}
-                        onSave={this.onSave}
                         onChange={this.onConfigChange}
                         history={this.props.history}
                     />
@@ -92,16 +104,12 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
         this.props.onChange({ ...this.props.input, displayName: event.currentTarget.value })
     }
 
-    private onKindChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+    private onKindChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
         this.props.onChange({ ...this.props.input, kind: event.currentTarget.value as GQL.ExternalServiceKind })
     }
 
     private onConfigChange = (config: string) => {
         this.props.onChange({ ...this.props.input, config })
-    }
-
-    private onSave = () => {
-        this.props.onSubmit()
     }
 }
 
