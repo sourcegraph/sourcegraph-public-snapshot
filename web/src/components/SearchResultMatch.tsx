@@ -72,7 +72,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const parser = new DOMParser()
                             // Get content between the outermost code tags.
                             const codeContent = parser
-                                .parseFromString('<pre><code>abcd<code>efgh</code></code></pre>', 'text/html')
+                                .parseFromString(markdownHTML, 'text/html')
                                 .querySelector('code')!
                                 .innerHTML.toString()
                             if (codeContent) {

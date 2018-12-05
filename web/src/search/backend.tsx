@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs'
 import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
 import { SearchOptions } from '.'
-import { memoizeObservable } from '../../../client/browser/src/shared/util/memoize'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export function search(
