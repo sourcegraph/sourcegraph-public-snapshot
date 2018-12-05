@@ -156,50 +156,74 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
             { uri: this.props.defaultGroup }
         )
 
+        const groupsToDisplay = GROUPS.filter(({ name, key }, i) => {
+            if (!groups[i]) {
+                // No groups exist at this level. Don't display anything.
+                return false
+            }
+            if (groups[i].length > 1) {
+                // Always display when there is more than 1 group.
+                return true
+            }
+            if (groups[i].length === 1) {
+                if (selectedGroups[i] !== groups[i][0].key) {
+                    // When the only group is not the currently selected group, show it. This occurs when the
+                    // references list changes after the user made an initial selection. The group must be shown so
+                    // that the user can update their selection to the only available group; otherwise they would
+                    // be stuck viewing the (zero) results from the previously selected group that no longer
+                    // exists.
+                    return true
+                }
+                if (key({ uri: this.props.defaultGroup }) !== selectedGroups[i]) {
+                    // When the only group is other than the default group, show it. This is important because it
+                    // often indicates that the match comes from another repository. If it isn't shown, the user
+                    // would likely assume the match is from the current repository.
+                    return true
+                }
+            }
+            if (groupByFile && name === 'file') {
+                // Always display the file groups when group-by-file is enabled.
+                return true
+            }
+            return false
+        })
+
         return (
             <div className={`hierarchical-locations-view ${this.props.className || ''}`}>
                 {selectedGroups &&
-                    GROUPS.map(
-                        ({ name, defaultSize }, i) =>
-                            ((groupByFile && name === 'file') || groups[i].length > 1) && (
-                                <Resizable
-                                    key={i}
-                                    className="hierarchical-locations-view__resizable"
-                                    handlePosition="right"
-                                    storageKey={`hierarchical-locations-view-resizable:${name}`}
-                                    defaultSize={defaultSize}
-                                    element={
-                                        <div className="list-group list-group-flush hierarchical-locations-view__list">
-                                            {groups[i].map((group, j) => (
-                                                <span
-                                                    key={j}
-                                                    className={`list-group-item hierarchical-locations-view__item ${
-                                                        selectedGroups[i] === group.key ? 'active' : ''
-                                                    }`}
-                                                    // tslint:disable-next-line:jsx-no-lambda
-                                                    onClick={e => this.onSelectTree(e, selectedGroups, i, group.key)}
-                                                >
-                                                    <span
-                                                        className="hierarchical-locations-view__item-name"
-                                                        title={group.key}
-                                                    >
-                                                        <span className="hierarchical-locations-view__item-name-text">
-                                                            <RepoLink to={null} repoPath={group.key} />
-                                                        </span>
-                                                    </span>
-                                                    <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
-                                                        {group.count}
-                                                    </span>
+                    groupsToDisplay.map(({ name, defaultSize }, i) => (
+                        <Resizable
+                            key={i}
+                            className="hierarchical-locations-view__resizable"
+                            handlePosition="right"
+                            storageKey={`hierarchical-locations-view-resizable:${name}`}
+                            defaultSize={defaultSize}
+                            element={
+                                <div className="list-group list-group-flush hierarchical-locations-view__list">
+                                    {groups[i].map((group, j) => (
+                                        <span
+                                            key={j}
+                                            className={`list-group-item hierarchical-locations-view__item ${
+                                                selectedGroups[i] === group.key ? 'active' : ''
+                                            }`}
+                                            // tslint:disable-next-line:jsx-no-lambda
+                                            onClick={e => this.onSelectTree(e, selectedGroups, i, group.key)}
+                                        >
+                                            <span className="hierarchical-locations-view__item-name" title={group.key}>
+                                                <span className="hierarchical-locations-view__item-name-text">
+                                                    <RepoLink to={null} repoPath={group.key} />
                                                 </span>
-                                            ))}
-                                            {!this.state.locationsComplete && (
-                                                <LoadingSpinner className="icon-inline m-2" />
-                                            )}
-                                        </div>
-                                    }
-                                />
-                            )
-                    )}
+                                            </span>
+                                            <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
+                                                {group.count}
+                                            </span>
+                                        </span>
+                                    ))}
+                                    {!this.state.locationsComplete && <LoadingSpinner className="icon-inline m-2" />}
+                                </div>
+                            }
+                        />
+                    ))}
                 <FileLocations
                     className="hierarchical-locations-view__content"
                     locations={of(visibleLocations)}
