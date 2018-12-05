@@ -1,5 +1,5 @@
 import { combineLatest, from, Observable, of } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
 import { Model, modelToTextDocumentPositionParams } from '../model'
@@ -88,7 +88,16 @@ export function getLocations<
             if (providers.length === 0) {
                 return [null]
             }
-            return combineLatest(providers.map(provider => from(provider(params))))
+            return combineLatest(
+                providers.map(provider =>
+                    from(provider(params)).pipe(
+                        catchError(err => {
+                            console.error(err)
+                            return [null]
+                        })
+                    )
+                )
+            )
         }),
         map(flattenAndCompact)
     )
