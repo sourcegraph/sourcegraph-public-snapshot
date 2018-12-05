@@ -98,12 +98,6 @@ func main() {
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
-
-	foo()
-}
-
-func foo() error {
-	return nil
 }
 
 func shutdownOnSIGINT(s *http.Server) {
