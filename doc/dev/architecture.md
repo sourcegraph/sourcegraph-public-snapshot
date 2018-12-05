@@ -99,7 +99,7 @@ Provides on-demand search for repositories. It scans through a git archive fetch
 
 ### indexed-search/zoekt ([code](https://github.com/sourcegraph/zoekt))
 
-Provides search results for repositories that have been indexed. This is a paid feature.
+Provides search results for repositories that have been indexed.
 
 We forked https://github.com/google/zoekt.
 
