@@ -252,8 +252,6 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			}
 			addRepoFilter(string(result.fileMatch.repo.Name), rev, len(result.fileMatch.LineMatches()))
 			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
-			// Add `case:true` filter to offer easier access to case sensitive search results
-			add("case:true", "case:true", 1, result.fileMatch.JLimitHit, "case")
 
 			if len(result.fileMatch.symbols) > 0 {
 				add("type:symbol", "type:symbol", 1, result.fileMatch.JLimitHit, "symbol")
@@ -266,6 +264,10 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			// we shouldn't be getting any repositoy name matches back.
 			addRepoFilter(result.repo.URI(), "", 1)
 		}
+		// Add `case:yes` filter to offer easier access to search results matching with case sensitive set to yes
+		// We use count == 0 and limitHit == false since we can't determine that information without
+		// running the search query. This causes it to display as just `case:yes`.
+		add("case:yes", "case:yes", 0, false, "case")
 	}
 
 	filterSlice := make([]*searchFilterResolver, 0, len(filters))
