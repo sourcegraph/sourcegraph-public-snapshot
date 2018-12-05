@@ -18,6 +18,10 @@ const (
 	// be used.
 	FeatureExternalAuthProvider Feature = "sso-external-user-auth-provider"
 
+	// FeatureACLs is whether ACLs may be used, such as GitHub or GitLab repository permissions and
+	// integration with GitHub/GitLab for user authentication.
+	FeatureACLs Feature = "acls"
+
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance is
 	// allowed. If not, then extensions must be published to Sourcegraph.com. All instances may use
 	// extensions published to Sourcegraph.com.
@@ -36,6 +40,9 @@ func isFeatureEnabled(info license.Info, feature Feature) bool {
 		// Enterprise Starter and Enterprise both allow SSO. Core doesn't, but this func is only
 		// called when there is a valid license.
 		return true
+	case FeatureACLs:
+		// Enterprise Starter does not support ACLs.
+		return !info.HasTag(EnterpriseStarterTag)
 	case FeatureExtensionRegistry:
 		// Enterprise Starter does not support a local extension registry.
 		return !info.HasTag(EnterpriseStarterTag)

@@ -20,6 +20,11 @@ func TestIsFeatureEnabled(t *testing.T) {
 		check(t, FeatureExternalAuthProvider, EnterpriseTags, true)
 	})
 
+	t.Run(string(FeatureACLs), func(t *testing.T) {
+		check(t, FeatureACLs, EnterpriseStarterTags, false)
+		check(t, FeatureACLs, EnterpriseTags, true)
+	})
+
 	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
 		check(t, FeatureExtensionRegistry, EnterpriseStarterTags, false)
 		check(t, FeatureExtensionRegistry, EnterpriseTags, true)
