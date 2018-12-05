@@ -22,7 +22,7 @@ if [ -n "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" ]; then
     base="origin/${BUILDKITE_PULL_REQUEST_BASE_BRANCH}"
 else
     git fetch origin master
-    base="-HEAD~"
+    base="HEAD~"
 fi
 
 rev=$(git merge-base ${base} HEAD)
