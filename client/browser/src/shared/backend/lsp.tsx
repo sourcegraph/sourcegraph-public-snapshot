@@ -240,7 +240,7 @@ export type JumpURLLocation = RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & 
 export function createJumpURLFetcher(
     fetchDefinition: SimpleProviderFns['fetchDefinition'],
     buildURL: (pos: JumpURLLocation) => string
-): JumpURLFetcher {
+): JumpURLFetcher<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> {
     return ({ line, character, part, commitID, repoPath, ...rest }) =>
         fetchDefinition({ ...rest, commitID, repoPath, position: { line, character } }).pipe(
             map(def => {

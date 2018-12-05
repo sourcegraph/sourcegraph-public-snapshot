@@ -12,6 +12,8 @@
 conf/ @sqs
 /cmd/frontend/internal/auth/ @sqs
 /dev/config.json @sqs
+/dev/ @nicksnyder
+/enterprise/dev/ @nicksnyder
 /client/vscode/ @chrismwendt
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /packages/webapp/src/tracking/ @dadlerj
@@ -20,7 +22,7 @@ conf/ @sqs
 /cmd/gitserver/ @beyang
 /cmd/indexer/ @beyang
 /cmd/lsp-proxy/ @beyang
-/cmd/repo-updater/ @beyang
+/cmd/repo-updater/ @beyang @nicksnyder
 /cmd/searcher/ @beyang
 /cmd/server/ @beyang
 /cmd/symbols/ @beyang

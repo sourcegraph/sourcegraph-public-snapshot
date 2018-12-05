@@ -4,7 +4,7 @@ This is a high level overview of our architecture at Sourcegraph so you can unde
 
 ## Diagram
 
-To view this diagram in its rendered form on GitHub, install the Sourcegraph extension and enable Mermaid.js rendering in the experimental options menu.
+To view this diagram in its rendered form on GitHub, install the latest Sourcegraph extension for your browser.
 
 ```mermaid
 graph LR
@@ -99,7 +99,7 @@ Provides on-demand search for repositories. It scans through a git archive fetch
 
 ### indexed-search/zoekt ([code](https://github.com/sourcegraph/zoekt))
 
-Provides search results for repositories that have been indexed. This is a paid feature.
+Provides search results for repositories that have been indexed.
 
 We forked https://github.com/google/zoekt.
 

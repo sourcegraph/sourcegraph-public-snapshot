@@ -95,13 +95,24 @@ h1 {
 <div class=msg><h1>`+html.EscapeString(title)+`</h1><p>`+html.EscapeString(message)+`</p><p>See <a href="https://about.sourcegraph.com/pricing">about.sourcegraph.com</a> for more information.</p></div>`)
 }
 
+// noLicenseMaximumAllowedUserCount is the maximum number of user accounts that may exist on Sourcegraph Core
+// (i.e., when running without a license). Exceeding this number of user accounts requires a
+// license.
+var noLicenseMaximumAllowedUserCount int32 = 200
+
 // Enforce the license's max user count by preventing the creation of new users when the max is
 // reached.
 func init() {
 	db.Users.PreCreateUser = func(ctx context.Context) error {
 		info, err := GetConfiguredProductLicenseInfo()
-		if info == nil || err != nil {
+		if err != nil {
 			return err
+		}
+		var licensedUserCount int32
+		if info != nil {
+			licensedUserCount = int32(info.UserCount)
+		} else {
+			licensedUserCount = noLicenseMaximumAllowedUserCount
 		}
 
 		// Block creation of a new user beyond the licensed user count (unless true-up is allowed).
@@ -112,11 +123,17 @@ func init() {
 		// Be conservative and treat 0 as unlimited. We don't plan to intentionally generate
 		// licenses with UserCount == 0, but that might result from a bug in license decoding, and
 		// we don't want that to immediately disable Sourcegraph instances.
-		if info.UserCount > 0 && userCount >= int(info.UserCount) {
-			if info.HasTag(TrueUpUserCountTag) {
-				log15.Info("Licensed user count exceeded, but license supports true-up and will not block creation of new user. The new user will be retroactively charged for in the next billing period. Contact sales@sourcegraph.com for help.", "activeUserCount", userCount, "licensedUserCount", info.UserCount)
+		if licensedUserCount > 0 && int32(userCount) >= licensedUserCount {
+			if info != nil && info.HasTag(TrueUpUserCountTag) {
+				log15.Info("Licensed user count exceeded, but license supports true-up and will not block creation of new user. The new user will be retroactively charged for in the next billing period. Contact sales@sourcegraph.com for help.", "activeUserCount", userCount, "licensedUserCount", licensedUserCount)
 			} else {
-				return errcode.NewPresentationError("Unable to create user account: the Sourcegraph license's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users.")
+				message := "Unable to create user account: "
+				if info == nil {
+					message = fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users. A site admin must purchase a subscription at https://sourcegraph.com/user/subscriptions/new.", noLicenseMaximumAllowedUserCount)
+				} else {
+					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users."
+				}
+				return errcode.NewPresentationError(message)
 			}
 		}
 

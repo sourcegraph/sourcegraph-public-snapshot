@@ -64,7 +64,13 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             )
         }
 
-        const { productNameWithBrand, actualUserCount, actualUserCountDate, license } = this.state.statusOrError
+        const {
+            productNameWithBrand,
+            actualUserCount,
+            actualUserCountDate,
+            maximumAllowedUserCount,
+            license,
+        } = this.state.statusOrError
 
         // No license means Sourcegraph Core. For that, show the user that they can use this for free
         // forever, and show them how to upgrade.
@@ -105,7 +111,10 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                             ) : (
                                 <>
                                     <div className="mr-2">
-                                        Add a license key to activate Sourcegraph Enterprise features
+                                        Add a license key to activate Sourcegraph Enterprise features{' '}
+                                        {typeof maximumAllowedUserCount === 'number'
+                                            ? `or to exceed ${maximumAllowedUserCount} users`
+                                            : ''}
                                     </div>
                                     <div className="text-nowrap flex-wrap-reverse">
                                         <Link
@@ -161,6 +170,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                         productNameWithBrand
                         actualUserCount
                         actualUserCountDate
+                        maximumAllowedUserCount
                         license {
                             tags
                             userCount

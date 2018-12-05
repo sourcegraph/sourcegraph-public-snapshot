@@ -7,6 +7,7 @@ import { filter } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 
 const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -201,7 +202,7 @@ interface Props extends PlatformContextProps {
     className: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 
 interface State {}

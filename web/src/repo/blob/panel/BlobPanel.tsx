@@ -180,6 +180,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                                       []
                                                   )
                                               )}
+                                              defaultGroup={this.props.repoPath}
                                               isLightTheme={this.props.isLightTheme}
                                               fetchHighlightedFileLines={fetchHighlightedFileLines}
                                               settingsCascade={this.props.settingsCascade}

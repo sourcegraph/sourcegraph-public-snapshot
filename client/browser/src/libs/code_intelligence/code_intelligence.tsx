@@ -12,7 +12,6 @@ import {
 } from '@sourcegraph/codeintellify'
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
-import { toPrettyBlobURL } from '@sourcegraph/codeintellify/lib/url'
 import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
@@ -23,6 +22,7 @@ import { Model, ViewComponentData } from '../../../../../shared/src/api/client/m
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
@@ -31,7 +31,7 @@ import {
     toTextDocumentIdentifier,
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { toRootURI, toURIWithPath } from '../../shared/repo'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toRootURI, toURIWithPath } from '../../shared/repo'
 import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
@@ -66,7 +66,7 @@ export interface CodeView {
      * and coming out of codeintellify. For example, Phabricator converts tabs
      * to spaces in it's DOM.
      */
-    adjustPosition?: PositionAdjuster
+    adjustPosition?: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
     /** Props for styling the buttons in the `CodeViewToolbar`. */
     toolbarButtonProps?: ButtonProps
 
@@ -210,7 +210,7 @@ export interface FileInfo {
 function initCodeIntelligence(
     codeHost: CodeHost
 ): {
-    hoverifier: Hoverifier
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
     controllers: Partial<ExtensionsControllerProps & PlatformContextProps>
 } {
     const { platformContext, extensionsController }: Partial<ExtensionsControllerProps & PlatformContextProps> =
@@ -238,7 +238,7 @@ function initCodeIntelligence(
 
     const containerComponentUpdates = new Subject<void>()
 
-    const hoverifier = createHoverifier({
+    const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>({
         closeButtonClicks,
         goToDefinitionClicks,
         hoverOverlayElements,
@@ -255,6 +255,7 @@ function initCodeIntelligence(
                 .fetchHover({ ...rest, position: { line, character } })
                 .pipe(map(hover => (hover ? (hover as HoverMerged) : hover))),
         fetchJumpURL,
+        getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         logTelemetryEvent: () => eventLogger.logCodeIntelligenceEvent(),
     })
 
@@ -517,7 +518,9 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         extensionsController.services.model.model.next({ roots, visibleViewComponents })
                     }
 
-                    const resolveContext: ContextResolver = ({ part }) => ({
+                    const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+                        part,
+                    }) => ({
                         repoPath: part === 'base' ? info.baseRepoPath || info.repoPath : info.repoPath,
                         commitID: part === 'base' ? info.baseCommitID! : info.commitID,
                         filePath: part === 'base' ? info.baseFilePath || info.filePath : info.filePath,

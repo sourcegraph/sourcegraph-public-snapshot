@@ -205,6 +205,8 @@ storage.setSyncMigration(items => {
 
     newItems.featureFlags = featureFlags
 
+    newItems.featureFlags.renderMermaidGraphsEnabled = true
+
     if (typeof process.env.USE_EXTENSIONS !== 'undefined') {
         newItems.featureFlags.useExtensions = process.env.USE_EXTENSIONS === 'true'
     }

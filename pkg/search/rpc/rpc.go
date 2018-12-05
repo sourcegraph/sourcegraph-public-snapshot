@@ -20,11 +20,11 @@ const DefaultRPCPath = "/rpc"
 
 // Server returns an http.Handler for searcher which is the server side of the
 // RPC calls.
-func Server(searcher search.Searcher) http.Handler {
+func Server(searcher search.Searcher) (http.Handler, error) {
 	registerGob()
 	server := rpc.NewServer()
-	server.Register(&srv.Searcher{Searcher: searcher})
-	return server
+	err := server.Register(&srv.Searcher{Searcher: searcher})
+	return server, err
 }
 
 // Client connects to a Searcher HTTP RPC server at address (host:port) using
