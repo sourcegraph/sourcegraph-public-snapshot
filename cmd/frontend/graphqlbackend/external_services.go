@@ -88,7 +88,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	ExternalService graphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete orgs.
+	// 🚨 SECURITY: Only site admins can delete external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
