@@ -13,8 +13,8 @@ describe('Context (integration)', () => {
             extensionHost.internal.updateContext({ a: 1 })
             await extensionHost.internal.sync()
             assert.deepStrictEqual(values, [
-                { 'clientApplication.isSourcegraph': true },
-                { a: 1, 'clientApplication.isSourcegraph': true },
+                { 'clientApplication.isSourcegraph': true, 'clientApplication.extensionAPIVersion.major': 3 },
+                { a: 1, 'clientApplication.isSourcegraph': true, 'clientApplication.extensionAPIVersion.major': 3 },
             ] as ContextValues[])
         })
     })
