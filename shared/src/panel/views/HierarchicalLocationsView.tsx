@@ -182,10 +182,6 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                     }
                     locs.push(loc)
                     locationsByGroup[i].set(group, locs)
-
-                    if (selectedGroups[i] !== group) {
-                        break
-                    }
                 }
             }
         }
@@ -229,7 +225,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                                                         </span>
                                                     </span>
                                                     <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
-                                                        {locationsByGroup[i].get(groupName)!.length}
+                                                        {(locationsByGroup[i].get(groupName) || []).length}
                                                     </span>
                                                 </span>
                                             ))}
