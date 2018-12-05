@@ -4,7 +4,7 @@ This is a high level overview of our architecture at Sourcegraph so you can unde
 
 ## Diagram
 
-To view this diagram in its rendered form on GitHub, install the Sourcegraph extension and enable Mermaid.js rendering in the experimental options menu.
+To view this diagram in its rendered form on GitHub, install the latest Sourcegraph extension for your browser.
 
 ```mermaid
 graph LR
