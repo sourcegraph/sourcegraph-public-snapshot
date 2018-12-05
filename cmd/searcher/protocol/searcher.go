@@ -83,8 +83,8 @@ type PatternInfo struct {
 	// and IncludePatterns are case sensitive.
 	PathPatternsAreCaseSensitive bool
 
-	// IncludePattern is DEPRECATED. Use IncludePatterns instead. If specified,
-	// IncludePattern will be appended to IncludePatterns.
+	// IncludePattern, if specified, will be appended to IncludePatterns.
+	// Deprecated: Use IncludePatterns instead.
 	IncludePattern string
 
 	// FileMatchLimit limits the number of files with matches that are returned.
