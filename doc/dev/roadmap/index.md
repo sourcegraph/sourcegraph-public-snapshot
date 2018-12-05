@@ -50,7 +50,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981) (followup from 3.0)
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
 - Improved code host support for Sourcegraph extensions (followup from 3.0)
-- Support and documentation for testing Sourcegraph extensions
+- [Support and documentation for testing Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/733)
 - 3rd-party extensions: LightStep, Sentry, FOSSA, SonarQube, Datadog, LaunchDarkly, Figma
 - PHP language support via extension
 - Enhanced notification preferences
