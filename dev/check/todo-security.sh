@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "--- todo security"
+
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 set -euf -o pipefail

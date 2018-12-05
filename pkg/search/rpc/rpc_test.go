@@ -22,8 +22,11 @@ func TestClientServer(t *testing.T) {
 			},
 		},
 	}
-
-	ts := httptest.NewServer(rpc.Server(mock))
+	server, err := rpc.Server(mock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(server)
 	defer ts.Close()
 
 	u, err := url.Parse(ts.URL)

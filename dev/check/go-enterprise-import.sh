@@ -2,6 +2,8 @@
 
 # This script ensures OSS sourcegraph does not import enterprise sourcegraph.
 
+echo "--- go enterprise import"
+
 set -euxf -o pipefail
 
 prefix=github.com/sourcegraph/sourcegraph/enterprise
