@@ -95,8 +95,7 @@ func main() {
 	go shutdownOnSIGINT(server)
 
 	log15.Info("searcher: listening", "addr", server.Addr)
-	err := server.ListenAndServe()
-	if err != http.ErrServerClosed {
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
 }
