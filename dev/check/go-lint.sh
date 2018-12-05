@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 export GOBIN="$PWD/.bin"
@@ -14,4 +14,6 @@ echo "--- go install"
 go install -buildmode=archive ${pkgs}
 
 echo "--- lint"
-golangci-lint run -v ${pkgs}
+git fetch origin master
+rev="${BUILDKITE_PULL_REQUEST_BASE_BRANCH:-HEAD~}"
+golangci-lint run -v ${pkgs} --new-from-rev ${rev}
