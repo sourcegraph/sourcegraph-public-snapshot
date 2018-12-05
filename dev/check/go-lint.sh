@@ -6,8 +6,9 @@ export GOBIN="$PWD/.bin"
 export PATH=$GOBIN:$PATH
 export GO111MODULE=on
 
-go install github.com/golangci/golangci-lint/cmd/golangci-lint
 pkgs=${@:-./...}
+
+go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 echo "--- go install"
 go install -buildmode=archive ${pkgs}
