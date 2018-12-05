@@ -65,7 +65,10 @@ func main() {
 	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
-	rpcHandler := rpc.Server(&search.StoreSearcher{Store: service.Store})
+	rpcHandler, err := rpc.Server(&search.StoreSearcher{Store: service.Store})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	host := ""
 	if env.InsecureDev {
