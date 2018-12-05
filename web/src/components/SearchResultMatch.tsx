@@ -8,11 +8,11 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
+import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { highlightNode } from '../../../shared/src/util/dom'
 import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
-import { highlightNode } from '../util/dom'
-import { Markdown } from './Markdown'
 import { HighlightRange } from './SearchResult'
 
 interface SearchResultMatchProps {

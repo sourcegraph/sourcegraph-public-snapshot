@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { memoizeObservable } from '../../../client/browser/src/shared/util/memoize'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { memoizeObservable } from '../util/memoize'
 
 const discussionCommentFieldsFragment = gql`
     fragment DiscussionCommentFields on DiscussionComment {

@@ -3,8 +3,8 @@ import _ from 'lodash'
 import marked from 'marked'
 import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'
+import { ResultContainer } from '../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { ResultContainer } from './ResultContainer'
 import { SearchResultMatch } from './SearchResultMatch'
 
 export interface HighlightRange {
