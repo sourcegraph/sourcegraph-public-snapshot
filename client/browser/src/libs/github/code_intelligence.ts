@@ -1,6 +1,7 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { JumpURLLocation } from '../../shared/backend/lsp'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
@@ -47,7 +48,11 @@ const singleFileCodeView: CodeViewWithOutSelector = {
  * Some code snippets get leading white space trimmed. This adjusts based on
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
-const adjustPositionForSnippet: PositionAdjuster = ({ direction, codeView, position }) =>
+const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+    direction,
+    codeView,
+    position,
+}) =>
     fetchBlobContentLines(position).pipe(
         map(lines => {
             const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -24,6 +25,12 @@ func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Han
 		// next.
 		if actor.FromContext(r.Context()).IsAuthenticated() {
 			next.ServeHTTP(w, r)
+			return
+		}
+
+		// License check.
+		if !licensing.IsFeatureEnabledLenient(licensing.FeatureACLs) {
+			licensing.WriteSubscriptionErrorResponseForFeature(w, "integration with external service ACLs")
 			return
 		}
 

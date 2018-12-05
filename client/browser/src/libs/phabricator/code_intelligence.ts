@@ -2,6 +2,7 @@ import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/co
 import { map } from 'rxjs/operators'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { Position } from '../../../../../shared/src/api/protocol/plainTypes'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import storage from '../../browser/storage'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeView } from '../code_intelligence'
@@ -64,7 +65,11 @@ const adjustCharacter = (position: Position, adjustment: number): Position => ({
     character: position.character + adjustment,
 })
 
-const adjustPosition: PositionAdjuster = ({ direction, codeView, position }) =>
+const adjustPosition: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+    direction,
+    codeView,
+    position,
+}) =>
     fetchBlobContentLines(position).pipe(
         map(lines => {
             const codeElement = diffDomFunctions.getCodeElementFromLineNumber(codeView, position.line, position.part)
