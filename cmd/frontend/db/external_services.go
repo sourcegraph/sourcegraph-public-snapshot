@@ -115,6 +115,7 @@ func (c *externalServices) list(ctx context.Context, conds []*sqlf.Query, limitO
 	)
 
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
