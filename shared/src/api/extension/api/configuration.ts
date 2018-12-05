@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, PartialObserver, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
@@ -70,7 +70,9 @@ export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C
         return Object.freeze(new ExtConfigurationSection<C>(this.proxy, this.getData().value.final))
     }
 
-    public subscribe(next: () => void): sourcegraph.Unsubscribable {
-        return this.getData().subscribe(next)
+    public subscribe(observer?: PartialObserver<C>): Unsubscribable
+    public subscribe(next?: (value: C) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
+    public subscribe(...args: any[]): sourcegraph.Unsubscribable {
+        return this.getData().subscribe(...args)
     }
 }

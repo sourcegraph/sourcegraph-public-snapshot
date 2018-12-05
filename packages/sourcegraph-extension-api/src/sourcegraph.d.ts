@@ -1100,17 +1100,39 @@ declare module 'sourcegraph' {
         export const clientApplication: 'sourcegraph' | 'other'
     }
 
+    /** Support types for {@link Subscribable}. */
+    interface NextObserver<T> {
+        closed?: boolean
+        next: (value: T) => void
+        error?: (err: any) => void
+        complete?: () => void
+    }
+    interface ErrorObserver<T> {
+        closed?: boolean
+        next?: (value: T) => void
+        error: (err: any) => void
+        complete?: () => void
+    }
+    interface CompletionObserver<T> {
+        closed?: boolean
+        next?: (value: T) => void
+        error?: (err: any) => void
+        complete: () => void
+    }
+    type PartialObserver<T> = NextObserver<T> | ErrorObserver<T> | CompletionObserver<T>
+
     /**
      * A stream of values that may be subscribed to.
      */
     export interface Subscribable<T> {
         /**
-         * Subscribes to the stream of values, calling {@link next} for each value until unsubscribed.
+         * Subscribes to the stream of values.
          *
          * @returns An unsubscribable that, when its {@link Unsubscribable#unsubscribe} method is called, causes
-         *          the subscription to stop calling {@link next} with values.
+         * the subscription to stop reacting to the stream.
          */
-        subscribe(next: (value: T) => void): Unsubscribable
+        subscribe(observer?: PartialObserver<T>): Unsubscribable
+        subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
     }
 
     /**
