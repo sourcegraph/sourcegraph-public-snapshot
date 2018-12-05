@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { render } from 'react-dom'
-import { Unsubscribable } from 'rxjs'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
@@ -59,80 +58,77 @@ export function initializeExtensions(
     return { platformContext, extensionsController }
 }
 
-const combineUnsubscribables = (...unsubscribables: Unsubscribable[]): Unsubscribable => ({
-    unsubscribe: () => {
-        for (const unsubscribable of unsubscribables) {
-            unsubscribable.unsubscribe()
-        }
-    },
-})
-
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
+
+const groupByLine = (decorations: TextDocumentDecoration[]) => {
+    const grouped = new Map<number, TextDocumentDecoration[]>()
+    for (const d of decorations) {
+        const lineNumber = d.range.start.line + 1
+        const decorationsForLine = grouped.get(lineNumber)
+        if (!decorationsForLine) {
+            grouped.set(lineNumber, [d])
+        } else {
+            decorationsForLine.push(d)
+        }
+    }
+    return grouped
+}
 
 /**
  * Applies a decoration to a code view. This doesn't work with diff views yet.
  */
-export const applyDecoration = (
+export const applyDecorations = (
     dom: DOMFunctions,
-    {
-        codeView,
-        decoration,
-    }: {
-        codeView: HTMLElement
-        decoration: TextDocumentDecoration
-    }
-): Unsubscribable => {
-    const unsubscribables: Unsubscribable[] = []
-
-    const lineNumber = decoration.range.start.line + 1
-    const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
-    if (!codeElement) {
-        throw new Error(`Unable to find code element for line ${lineNumber}`)
-    }
-
-    const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
-    if (style.backgroundColor) {
-        codeElement.style.backgroundColor = style.backgroundColor
-        unsubscribables.push({
-            unsubscribe: () => {
-                codeElement.style.backgroundColor = null
-            },
-        })
-    }
-
-    if (decoration.after) {
-        const style = decorationAttachmentStyleForTheme(decoration.after, IS_LIGHT_THEME)
-
-        const linkTo = (url: string) => (e: HTMLElement): HTMLElement => {
-            const link = document.createElement('a')
-            link.setAttribute('href', url)
-
-            // External URLs should open in a new tab, whereas relative URLs
-            // should not.
-            link.setAttribute('target', /^https?:\/\//.test(url) ? '_blank' : '')
-
-            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-            link.setAttribute('rel', 'noreferrer noopener')
-
-            link.style.color = style.color || null
-            link.appendChild(e)
-            return link
+    codeView: HTMLElement,
+    decorations: TextDocumentDecoration[]
+): void => {
+    for (const [lineNumber, decorationsForLine] of groupByLine(decorations)) {
+        const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
+        if (!codeElement) {
+            throw new Error(`Unable to find code element for line ${lineNumber}`)
         }
 
-        const after = document.createElement('span')
-        after.style.backgroundColor = style.backgroundColor || null
-        after.textContent = decoration.after.contentText || null
-        after.title = decoration.after.hoverMessage || ''
+        // remove all previously existing declarations on this line
+        codeElement.style.backgroundColor = null
+        const previousDecorations = codeElement.querySelectorAll('.line-decoration-attachment')
+        for (const d of previousDecorations) {
+            d.remove()
+        }
 
-        const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
-        annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
-        codeElement.appendChild(annotation)
+        for (const decoration of decorationsForLine) {
+            const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
+            if (style.backgroundColor) {
+                codeElement.style.backgroundColor = style.backgroundColor
+            }
 
-        unsubscribables.push({
-            unsubscribe: () => {
-                annotation.remove()
-            },
-        })
+            if (decoration.after) {
+                const style = decorationAttachmentStyleForTheme(decoration.after, IS_LIGHT_THEME)
+
+                const linkTo = (url: string) => (e: HTMLElement): HTMLElement => {
+                    const link = document.createElement('a')
+                    link.setAttribute('href', url)
+
+                    // External URLs should open in a new tab, whereas relative URLs
+                    // should not.
+                    link.setAttribute('target', /^https?:\/\//.test(url) ? '_blank' : '')
+
+                    // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                    link.setAttribute('rel', 'noreferrer noopener')
+
+                    link.style.color = style.color || null
+                    link.appendChild(e)
+                    return link
+                }
+
+                const after = document.createElement('span')
+                after.style.backgroundColor = style.backgroundColor || null
+                after.textContent = decoration.after.contentText || null
+                after.title = decoration.after.hoverMessage || ''
+
+                const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
+                annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
+                codeElement.appendChild(annotation)
+            }
+        }
     }
-    return combineUnsubscribables(...unsubscribables)
 }
