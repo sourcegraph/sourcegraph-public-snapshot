@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -48,12 +47,6 @@ func getProvider(pcID string) *provider {
 
 func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) (p *provider, handled bool) {
 	handled = true // safer default
-
-	// License check.
-	if !licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
-		licensing.WriteSubscriptionErrorResponseForFeature(w, "SAML user authentication (SSO)")
-		return nil, true
-	}
 
 	p = getProvider(pcID)
 	if p == nil {

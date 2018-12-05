@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -28,12 +27,6 @@ func getProvider(id string) *provider {
 
 func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p *provider, handled bool) {
 	handled = true // safer default
-
-	// License check.
-	if !licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
-		licensing.WriteSubscriptionErrorResponseForFeature(w, "OpenID Connect user authentication (SSO)")
-		return nil, true
-	}
 
 	p = getProvider(id)
 	if p == nil {

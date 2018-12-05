@@ -31,6 +31,7 @@ func init() {
 	// GraphQL fields return the proper max user count and timestamp on the current license.
 	graphqlbackend.ActualUserCount = actualUserCount
 	graphqlbackend.ActualUserCountDate = actualUserCountDate
+	graphqlbackend.NoLicenseMaximumAllowedUserCount = &noLicenseMaximumAllowedUserCount
 }
 
 // setMaxUsers sets the max users associated with a license key if the new max count is greater than the previous max.

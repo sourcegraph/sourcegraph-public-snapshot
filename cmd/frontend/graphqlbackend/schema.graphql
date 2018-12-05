@@ -2973,6 +2973,9 @@ type ProductSubscriptionStatus {
     # The date and time when the max number of user accounts that have been active on this Sourcegraph site for
     # the current license was reached. If no license is in use, returns an empty string.
     actualUserCountDate: String!
+    # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
+    # it is the user limit for instances without a license, or null if there is no limit.
+    maximumAllowedUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
 }
