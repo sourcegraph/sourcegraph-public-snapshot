@@ -61,7 +61,7 @@ func (c *externalServices) Update(ctx context.Context, id int64, update *Externa
 			return err
 		}
 		if affected == 0 {
-			return externalServiceNotFound{id: id}
+			return externalServiceNotFoundError{id: id}
 		}
 		return nil
 	}
@@ -80,15 +80,15 @@ func (c *externalServices) Update(ctx context.Context, id int64, update *Externa
 	})
 }
 
-type externalServiceNotFound struct {
+type externalServiceNotFoundError struct {
 	id int64
 }
 
-func (e externalServiceNotFound) Error() string {
+func (e externalServiceNotFoundError) Error() string {
 	return fmt.Sprintf("external service not found: %v", e.id)
 }
 
-func (e externalServiceNotFound) NotFound() bool {
+func (e externalServiceNotFoundError) NotFound() bool {
 	return true
 }
 
@@ -105,7 +105,7 @@ func (*externalServices) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 	if nrows == 0 {
-		return externalServiceNotFound{id: id}
+		return externalServiceNotFoundError{id: id}
 	}
 	return nil
 }
