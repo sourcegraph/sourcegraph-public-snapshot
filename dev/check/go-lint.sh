@@ -18,5 +18,6 @@ go install -buildmode=archive ${pkgs}
 
 echo "--- lint"
 git fetch origin master
-rev="${BUILDKITE_PULL_REQUEST_BASE_BRANCH:-HEAD~}"
+base="${BUILDKITE_PULL_REQUEST_BASE_BRANCH:-HEAD~}"
+rev=$(git merge-base ${base} HEAD)
 golangci-lint run -v ${pkgs} --new-from-rev ${rev}
