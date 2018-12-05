@@ -252,6 +252,8 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			}
 			addRepoFilter(string(result.fileMatch.repo.Name), rev, len(result.fileMatch.LineMatches()))
 			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
+			// Add `case:true` filter to offer easier access to case sensitive search results
+			add("case:true", "case:true", 1, result.fileMatch.JLimitHit, "case")
 
 			if len(result.fileMatch.symbols) > 0 {
 				add("type:symbol", "type:symbol", 1, result.fileMatch.JLimitHit, "symbol")
