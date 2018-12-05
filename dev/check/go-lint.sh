@@ -1,4 +1,7 @@
 #!/bin/bash
+
+echo "--- lint dependencies"
+
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 

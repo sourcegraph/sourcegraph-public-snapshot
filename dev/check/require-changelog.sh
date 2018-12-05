@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -x
-
 echo "--- require changelog"
+
+set -x
 
 if [ "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" != "master" ]; then
     set +x

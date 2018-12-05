@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "--- bash syntax"
+
 set -e
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 
