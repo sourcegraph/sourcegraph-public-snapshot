@@ -48,7 +48,7 @@ export interface FeatureFlags {
 
 export const featureFlagDefaults: FeatureFlags = {
     newInject: false,
-    renderMermaidGraphsEnabled: false,
+    renderMermaidGraphsEnabled: true,
     useExtensions: false,
     inlineSymbolSearchEnabled: true,
     allowErrorReporting: false,
