@@ -1,14 +1,12 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { fromEvent, Observable, Subscription } from 'rxjs'
+import { from, fromEvent, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { SettingsSubject } from '../../../../shared/src/settings/settings'
+import { isSettingsValid, SettingsCascadeProps, SettingsSubject } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
-import { Settings } from '../../schema/settings.schema'
-import { parseJSON, settingsCascade } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 
 export interface SavedQueryFields {
@@ -20,7 +18,7 @@ export interface SavedQueryFields {
     notifySlack: boolean
 }
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
@@ -48,6 +46,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private handleNotifyChange = this.createInputChangeHandler('notify')
     private handleNotifySlackChange = this.createInputChangeHandler('notifySlack')
 
+    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -74,34 +73,39 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            settingsCascade.pipe(map(({ subjects }) => subjects)).subscribe(subjects => {
-                const subject = subjects.find(s => !!s.id)
+            from(this.componentUpdates)
+                .pipe(
+                    map(({ settingsCascade }) => settingsCascade),
+                    filter(isSettingsValid)
+                )
+                .subscribe(settingsCascade => {
+                    const subject = settingsCascade.subjects.find(s => !!s.subject.id)
 
-                this.setState(state => ({
-                    subjectOptions: subjects,
-                    values: {
-                        ...state.values,
-                        subject: state.values.subject || (subject && subject.id) || '',
-                    },
-                }))
+                    this.setState(state => ({
+                        subjectOptions: settingsCascade.subjects.map(({ subject }) => subject),
+                        values: {
+                            ...state.values,
+                            subject: state.values.subject || (subject && subject.subject.id) || '',
+                        },
+                    }))
 
-                subjects.map(subject => {
-                    if (subject.latestSettings) {
-                        let slackWebhookURL: string | null
-                        try {
-                            const settings = parseJSON(subject.latestSettings.contents) as Settings
-                            if (settings && settings['notifications.slack']) {
-                                slackWebhookURL = settings['notifications.slack']!.webhookURL
+                    settingsCascade.subjects.map(subject => {
+                        if (subject.settings) {
+                            let slackWebhookURL: string | null
+                            try {
+                                const settings = subject.settings
+                                if (settings && settings['notifications.slack']) {
+                                    slackWebhookURL = settings['notifications.slack']!.webhookURL
+                                }
+                            } catch {
+                                slackWebhookURL = null
                             }
-                        } catch {
-                            slackWebhookURL = null
+                            this.setState(state => ({
+                                slackWebhooks: state.slackWebhooks.set(subject.subject.id, slackWebhookURL),
+                            }))
                         }
-                        this.setState(state => ({
-                            slackWebhooks: state.slackWebhooks.set(subject.id, slackWebhookURL),
-                        }))
-                    }
+                    })
                 })
-            })
         )
 
         this.subscriptions.add(
@@ -109,6 +113,12 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 .pipe(filter(event => !this.state.isFocused && event.key === Key.Escape && !this.state.isSubmitting))
                 .subscribe(() => this.props.onDidCancel())
         )
+
+        this.componentUpdates.next(this.props)
+    }
+
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -327,11 +337,11 @@ export class SavedQueryForm extends React.Component<Props, State> {
         )
     }
 
-    private handleInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    private handleInputFocus = () => {
         this.setState(() => ({ isFocused: true }))
     }
 
-    private handleInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    private handleInputBlur = () => {
         this.setState(() => ({ isFocused: false }))
     }
 

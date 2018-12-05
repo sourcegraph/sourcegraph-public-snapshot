@@ -17,8 +17,18 @@ declare module 'sourcegraph' {
         unsubscribe(): void
     }
 
+    /**
+     * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL)
+     */
     export class URI {
+        /**
+         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which does not contain this method.
+         */
         static parse(value: string): URI
+
+        /**
+         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which does not contain this method.
+         */
         static file(path: string): URI
 
         constructor(value: string)
@@ -28,7 +38,7 @@ declare module 'sourcegraph' {
         /**
          * Returns a JSON representation of this Uri.
          *
-         * @return An object.
+         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which returns a string instead of an object.
          */
         toJSON(): any
     }
@@ -308,9 +318,23 @@ declare module 'sourcegraph' {
         constructor(uri: URI, rangeOrPosition?: Range | Position)
     }
 
+    /**
+     * A text document, such as a file in a repository.
+     */
     export interface TextDocument {
+        /**
+         * The URI of the text document.
+         */
         readonly uri: string
+
+        /**
+         * The language of the text document.
+         */
         readonly languageId: string
+
+        /**
+         * The text contents of the text document.
+         */
         readonly text: string
     }
 
@@ -378,6 +402,11 @@ declare module 'sourcegraph' {
          * The user interface view components that are visible in the window.
          */
         visibleViewComponents: ViewComponent[]
+
+        /**
+         * The currently active view component in the window.
+         */
+        activeViewComponent: ViewComponent | undefined
 
         /**
          * Show a notification message to the user that does not require interaction or steal focus.
@@ -499,9 +528,25 @@ declare module 'sourcegraph' {
         type: 'CodeEditor'
 
         /**
-         * The text document that is open in this editor.
+         * The text document that is open in this editor. The document remains the same for the entire lifetime of
+         * this editor.
          */
         readonly document: TextDocument
+
+        /**
+         * The primary selection in this text editor. This is equivalent to `CodeEditor.selections[0] || null`.
+         *
+         * @todo Make this non-readonly.
+         */
+        readonly selection: Selection | null
+
+        /**
+         * The selections in this text editor. A text editor has zero or more selections. The primary selection
+         * ({@link CodeEditor#selection}), if any selections exist, is always at index 0.
+         *
+         * @todo Make this non-readonly.
+         */
+        readonly selections: Selection[]
 
         /**
          * Draw decorations on this editor.
@@ -513,7 +558,7 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A panel view created by {@link app.registerPanelView}.
+     * A panel view created by {@link sourcegraph.app.createPanelView}.
      */
     export interface PanelView extends Unsubscribable {
         /**
@@ -525,6 +570,20 @@ declare module 'sourcegraph' {
          * The content to show in the panel view. Markdown is supported.
          */
         content: string
+
+        /**
+         * The priority of this panel view. A higher value means that the item is shown near the beginning (usually
+         * the left side).
+         */
+        priority: number
+
+        /**
+         * Display the results of the location provider (with the given ID) in this panel below the
+         * {@link PanelView#contents}.
+         *
+         * @internal Experimental. Subject to change or removal without notice.
+         */
+        component: { locationProvider: string } | null
     }
 
     /**
@@ -752,11 +811,15 @@ declare module 'sourcegraph' {
 
     /**
      * A type definition provider implements the "go-to-type-definition" feature.
+     *
+     * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider} instead.
      */
     export interface TypeDefinitionProvider {
         /**
          * Provide the type definition of the symbol at the given position and document.
          *
+         * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider}
+         * instead.
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          * @return A type definition location, or an array of definitions, or `null` if there is no type
@@ -767,11 +830,15 @@ declare module 'sourcegraph' {
 
     /**
      * An implementation provider implements the "go-to-implementations" and "go-to-interfaces" features.
+     *
+     * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider} instead.
      */
     export interface ImplementationProvider {
         /**
          * Provide the implementations of the symbol at the given position and document.
          *
+         * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider}
+         * instead.
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          * @return Implementation locations, or `null` if there are none.
@@ -807,7 +874,34 @@ declare module 'sourcegraph' {
         ): ProviderResult<Location[]>
     }
 
+    /**
+     * A location provider implements features such as "find implementations" and "find type definition". It is the
+     * general form of {@link DefinitionProvider} and {@link ReferenceProvider}.
+     */
+    export interface LocationProvider {
+        /**
+         * Provide related locations for the symbol at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @return Related locations, or `null` if there are none.
+         */
+        provideLocations(document: TextDocument, position: Position): ProviderResult<Location[]>
+    }
+
     export namespace languages {
+        /**
+         * Registers a hover provider, which returns a formatted hover message (intended for display in a tooltip)
+         * when the user hovers on code.
+         *
+         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
+         * operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A hover provider.
+         * @return An unsubscribable to unregister this provider.
+         */
         export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable
 
         /**
@@ -833,6 +927,7 @@ declare module 'sourcegraph' {
          * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
          * operation to fail.
          *
+         * @deprecated Use {@link LocationProvider} and {@link registerLocationProvider} instead.
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A type definition provider.
          * @return An unsubscribable to unregister this provider.
@@ -849,6 +944,7 @@ declare module 'sourcegraph' {
          * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
          * operation to fail.
          *
+         * @deprecated Use {@link LocationProvider} and {@link registerLocationProvider} instead.
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider An implementation provider.
          * @return An unsubscribable to unregister this provider.
@@ -872,6 +968,26 @@ declare module 'sourcegraph' {
         export function registerReferenceProvider(
             selector: DocumentSelector,
             provider: ReferenceProvider
+        ): Unsubscribable
+
+        /**
+         * Registers a generic provider of a list of locations. It is the general form of
+         * {@link registerDefinitionProvider} and {@link registerReferenceProvider}. It is intended for "find
+         * implementations", "find type definition", and other similar features.
+         *
+         * The provider can be executed with the `executeLocationProvider` builtin command, passing the {@link id}
+         * as the first argument. For more information, see
+         * https://docs.sourcegraph.com/extensions/authoring/builtin_commands#executeLocationProvider.
+         *
+         * @param id An identifier for this location provider that distinguishes it from other location providers.
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A location provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerLocationProvider(
+            id: string,
+            selector: DocumentSelector,
+            provider: LocationProvider
         ): Unsubscribable
     }
 
@@ -995,5 +1111,37 @@ declare module 'sourcegraph' {
          *          the subscription to stop calling {@link next} with values.
          */
         subscribe(next: (value: T) => void): Unsubscribable
+    }
+
+    /**
+     * The extension context is passed to the extension's activate function and contains utilities for the
+     * extension lifecycle.
+     *
+     * @since Sourcegraph 3.0-preview. Use `export function activate(ctx?: ExtensionContext) { ... }` for prior
+     * versions (to ensure your code handles the pre-3.0-preview case when `ctx` is undefined).
+     */
+    export interface ExtensionContext {
+        /**
+         * An object that maintains subscriptions to resources that should be freed when the extension is
+         * deactivated.
+         *
+         * When an extension is deactivated, first its exported `deactivate` function is called (if one exists).
+         * The `deactivate` function may be async, in which case deactivation blocks on it finishing. Next,
+         * regardless of whether the `deactivate` function finished successfully or rejected with an error, all
+         * unsubscribables passed to {@link ExtensionContext#subscriptions#add} are unsubscribed from.
+         *
+         * (An extension is deactivated when the user disables it, or after an arbitrary time period if its
+         * activationEvents no longer evaluate to true.)
+         */
+        subscriptions: {
+            /**
+             * Mark a resource's teardown function to be called when the extension is deactivated.
+             *
+             * @param unsubscribable An {@link Unsubscribable} that frees (unsubscribes from) a resource, or a
+             * plain function that does the same. Async functions are not supported. (If deactivation requires
+             * async operations, make the `deactivate` function async; that is supported.)
+             */
+            add: (unsubscribable: Unsubscribable | (() => void)) => void
+        }
     }
 }

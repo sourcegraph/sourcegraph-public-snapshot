@@ -5,8 +5,8 @@ import * as React from 'react'
 import { NEVER, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
-import { isDefined } from '../../util/types'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { isDefined } from '../../../../shared/src/util/types'
 
 const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -182,7 +182,7 @@ interface Part {
     filePath: string | null
 }
 
-interface Props extends ExtensionsProps {
+interface Props extends PlatformContextProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 

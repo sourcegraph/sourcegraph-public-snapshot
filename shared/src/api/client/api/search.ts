@@ -2,8 +2,8 @@ import { from, Observable, Subscription } from 'rxjs'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtSearch } from '../../extension/api/search'
 import { Connection } from '../../protocol/jsonrpc2/connection'
-import { TransformQuerySignature } from '../providers/queryTransformer'
-import { FeatureProviderRegistry } from '../providers/registry'
+import { TransformQuerySignature } from '../services/queryTransformer'
+import { FeatureProviderRegistry } from '../services/registry'
 import { SubscriptionMap } from './common'
 
 /** @internal */

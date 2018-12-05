@@ -3,10 +3,10 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { isDiscussionsEnabled } from '.'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorNotSupportedPage } from '../components/ErrorNotSupportedPage'
 import { PageTitle } from '../components/PageTitle'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { SettingsCascadeProps } from '../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends SettingsCascadeProps, RouteComponentProps<any> {

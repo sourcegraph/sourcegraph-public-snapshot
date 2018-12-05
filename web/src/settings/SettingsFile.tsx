@@ -18,9 +18,14 @@ interface Props {
     settings: GQL.ISettings | null
 
     /**
-     * The JSON Schema that describes the document.
+     * The id of the JSON schema for the document.
      */
-    jsonSchema: { $id: string }
+    jsonSchemaId: string
+
+    /**
+     * Extra schemas that are transitively referenced by jsonSchemaId.
+     */
+    extraSchemas?: { $id: string }[]
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -212,7 +217,8 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         />
                         <MonacoSettingsEditor
                             value={contents}
-                            jsonSchema={this.props.jsonSchema}
+                            jsonSchemaId={this.props.jsonSchemaId}
+                            extraSchemas={this.props.extraSchemas}
                             onChange={this.onEditorChange}
                             readOnly={this.state.saving}
                             monacoRef={this.monacoRef}

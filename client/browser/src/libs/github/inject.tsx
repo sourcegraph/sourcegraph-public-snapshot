@@ -80,7 +80,6 @@ function injectOpenOnSourcegraphButton(): void {
     storage.getSync(items => {
         const container = createOpenOnSourcegraphIfNotExists()
 
-        console.log('items.featureFlags.useExtensions', items.featureFlags.useExtensions)
         if (items.featureFlags.useExtensions) {
             container.classList.add('use-extensions')
         }

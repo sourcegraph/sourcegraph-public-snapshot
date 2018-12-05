@@ -13,9 +13,9 @@ import (
 
 	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 )
 
 func TestPkgs_update_delete(t *testing.T) {

@@ -1,12 +1,6 @@
 {
   "type": "object",
   "properties": {
-    "serverUrls": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
     "enterpriseUrls": {
       "type": "array",
       "items": {

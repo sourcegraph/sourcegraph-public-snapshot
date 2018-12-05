@@ -50,6 +50,13 @@ func UpdateScheduler2Enabled() bool {
 	return p != "disabled"
 }
 
+// ExternalServicesEnabled returns true if the ExternalService experiment is enabled.
+func ExternalServicesEnabled() bool {
+	p := Get().ExperimentalFeatures.ExternalServices
+	// default is disabled
+	return p == "enabled"
+}
+
 type AccessTokAllow string
 
 const (

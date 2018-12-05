@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 )
 
 // discussionMailReplyTokens provides access to the `discussion_mail_reply_tokens` table.

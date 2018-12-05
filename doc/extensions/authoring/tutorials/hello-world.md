@@ -20,7 +20,7 @@ Use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-ex
 ```shell
 mkdir hello-world-extension
 cd hello-world-extension
-npm init @sourcegraph/extension
+npm init sourcegraph-extension
 ```
 
 Follow the prompts and once complete, view the code for the extension in the `src` directory. That's all it takes to create a simple extension!

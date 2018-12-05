@@ -4,12 +4,13 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
-export interface FileDiffNodeProps extends ExtensionsProps, ExtensionsControllerProps {
+export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsControllerProps {
     node: GQL.IFileDiff
 
     /** The base repository and revision. */
@@ -101,7 +102,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             }}
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
-                            extensionsContext={this.props.extensionsContext}
+                            platformContext={this.props.platformContext}
                             history={this.props.history}
                             location={this.props.location}
                             hoverifier={this.props.hoverifier}

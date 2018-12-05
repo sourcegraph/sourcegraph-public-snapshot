@@ -14,16 +14,16 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { escapeRevspecForURL } from '../../../../shared/src/util/url'
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
-import { propertyIsDefined } from '../../util/types'
-import { escapeRevspecForURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -41,9 +41,8 @@ const NotFoundPage = () => (
 interface Props
     extends RouteComponentProps<{ spec: string }>,
         RepoHeaderContributionsLifecycleProps,
-        ExtensionsProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        PlatformContextProps,
+        ExtensionsControllerProps {
     repo: GQL.IRepository
 }
 
@@ -54,7 +53,7 @@ interface State extends HoverState {
 /**
  * Properties passed to all page components in the repository compare area.
  */
-export interface RepositoryCompareAreaPageProps extends ExtensionsProps {
+export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     /** The repository being compared. */
     repo: GQL.IRepository
 
@@ -167,7 +166,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
             base: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.base },
             head: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.head },
             routePrefix: this.props.match.url,
-            extensionsContext: this.props.extensionsContext,
+            platformContext: this.props.platformContext,
         }
 
         return (
@@ -199,10 +198,6 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                                             {...commonProps}
                                             hoverifier={this.hoverifier}
                                             extensionsController={this.props.extensionsController}
-                                            extensionsOnVisibleTextDocumentsChange={
-                                                this.props.extensionsOnVisibleTextDocumentsChange
-                                            }
-                                            extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                                         />
                                     )}
                                 />

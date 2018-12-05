@@ -3,13 +3,14 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { ExtensionsContextProps } from '../../../../../shared/src/context'
-import { ControllerProps } from '../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
-import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
+import { getModeFromPath } from '../../../../../shared/src/languages'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { FileInfo } from '../../libs/code_intelligence'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
+import { toURIWithPath } from '../repo'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
@@ -18,39 +19,29 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps extends Partial<ExtensionsContextProps>, Partial<ControllerProps>, FileInfo {
+interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<ExtensionsControllerProps>, FileInfo {
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps: ButtonProps
     actionsNavItemClassProps?: {
-        listClass?: string
+        listItemClass?: string
         actionItemClass?: string
     }
     simpleProviderFns: SimpleProviderFns
     location: H.Location
 }
 
-interface CodeViewToolbarState extends SettingsCascadeProps {
+interface CodeViewToolbarState {
     site?: ISite
     currentUser?: IUser
 }
 
 export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeViewToolbarState> {
-    public state: CodeViewToolbarState = {
-        settingsCascade: { subjects: [], final: {} },
-    }
+    public state: CodeViewToolbarState = {}
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        if (this.props.extensionsContext) {
-            this.subscriptions.add(
-                this.props.extensionsContext.settingsCascade.subscribe(
-                    settingsCascade => this.setState({ settingsCascade }),
-                    err => console.error(err)
-                )
-            )
-        }
         this.subscriptions.add(fetchSite().subscribe(site => this.setState(() => ({ site }))))
         this.subscriptions.add(fetchCurrentUser().subscribe(currentUser => this.setState(() => ({ currentUser }))))
     }
@@ -65,16 +56,24 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 className="code-view-toolbar"
                 style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}
             >
-                <ul className={`nav ${this.props.extensionsContext ? 'pr-1' : ''}`}>
+                <ul className={`nav ${this.props.platformContext ? 'pr-1' : ''}`}>
                     {this.props.extensionsController &&
-                        this.props.extensionsContext && (
+                        this.props.platformContext && (
                             <ActionsNavItems
                                 menu={ContributableMenu.EditorTitle}
                                 extensionsController={this.props.extensionsController}
-                                extensionsContext={this.props.extensionsContext}
-                                listClass="BtnGroup"
+                                platformContext={this.props.platformContext}
+                                listItemClass="BtnGroup"
                                 actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
                                 location={this.props.location}
+                                scope={{
+                                    type: 'textEditor',
+                                    item: {
+                                        uri: toURIWithPath(this.props),
+                                        languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
+                                    },
+                                    selections: [],
+                                }}
                             />
                         )}
                 </ul>

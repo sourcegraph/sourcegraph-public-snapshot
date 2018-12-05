@@ -7,7 +7,7 @@ export interface ExtSearchAPI {
     $transformQuery: (id: number, query: string) => Promise<string>
 }
 
-export class ExtSearch implements ExtSearchAPI {
+export class ExtSearch implements ExtSearchAPI, Unsubscribable {
     private registrations = new ProviderMap<QueryTransformer>(id => this.proxy.$unregister(id))
     constructor(private proxy: SearchAPI) {}
 
@@ -20,5 +20,9 @@ export class ExtSearch implements ExtSearchAPI {
     public $transformQuery(id: number, query: string): Promise<string> {
         const provider = this.registrations.get<QueryTransformer>(id)
         return Promise.resolve(provider.transformQuery(query))
+    }
+
+    public unsubscribe(): void {
+        this.registrations.unsubscribe()
     }
 }

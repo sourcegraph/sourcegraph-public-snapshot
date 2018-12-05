@@ -13,19 +13,19 @@ import { RouteComponentProps } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+import { propertyIsDefined } from '../../../../shared/src/util/types'
 import { getHover, getJumpURL } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
-import { memoizeObservable } from '../../util/memoize'
-import { propertyIsDefined } from '../../util/types'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffConnection } from '../compare/FileDiffConnection'
@@ -64,11 +64,7 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props
-    extends RouteComponentProps<{ revspec: string }>,
-        ExtensionsProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+interface Props extends RouteComponentProps<{ revspec: string }>, PlatformContextProps, ExtensionsControllerProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
@@ -243,7 +239,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                         commitID: this.state.commitOrError.oid,
                                     },
                                     lineNumbers: true,
-                                    extensionsContext: this.props.extensionsContext,
+                                    platformContext: this.props.platformContext,
                                     location: this.props.location,
                                     history: this.props.history,
                                     hoverifier: this.hoverifier,
@@ -255,10 +251,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 noSummaryIfAllNodesVisible={true}
                                 history={this.props.history}
                                 location={this.props.location}
-                                extensionsOnVisibleTextDocumentsChange={
-                                    this.props.extensionsOnVisibleTextDocumentsChange
-                                }
-                                extensionsOnRootsChange={this.props.extensionsOnRootsChange}
+                                extensionsController={this.props.extensionsController}
                             />
                         </>
                     )}

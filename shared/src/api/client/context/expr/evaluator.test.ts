@@ -25,6 +25,11 @@ describe('evaluate', () => {
         'a || b': 1,
         '(a + b) * 2': 4,
         'x == "y"': true,
+        // TODO: Support operator precedence. See ./parser.test.ts for a commented-out precedence test case.
+        //
+        // 'x == "y" || x == "z"': true,
+        'x == "y" && x == "z"': false,
+        'x == "y" && x != "z"': true,
         '`a`': 'a',
         '`${x}`': 'y',
         '`a${x}b`': 'ayb',

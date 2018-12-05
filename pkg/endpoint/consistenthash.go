@@ -91,3 +91,11 @@ func (m *hashMap) get(key string, exclude map[string]bool) string {
 	}
 	return ""
 }
+
+func (m *hashMap) values() map[string]struct{} {
+	values := map[string]struct{}{}
+	for _, v := range m.hashMap {
+		values[v] = struct{}{}
+	}
+	return values
+}

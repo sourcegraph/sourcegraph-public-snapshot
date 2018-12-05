@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+import "github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 
 // authProviderResolver resolves an auth provider.
 type authProviderResolver struct {

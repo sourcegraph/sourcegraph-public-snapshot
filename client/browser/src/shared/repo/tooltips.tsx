@@ -155,10 +155,6 @@ export function isTooltipVisible(ctx: AbsoluteRepoFile, isBase: boolean): boolea
     )
 }
 
-export function isTooltipDocked(): boolean {
-    return tooltip && tooltip.classList.contains('docked')
-}
-
 export function isOtherFileTooltipVisible(ctx: AbsoluteRepoFile): boolean {
     return !tooltip.classList.contains(ctx.filePath) && tooltip.style.visibility === 'visible'
 }
@@ -472,7 +468,7 @@ function consumeNextToken(txt: string): string {
     return txt[0]
 }
 
-export function getPreDataContainer(target: HTMLElement): HTMLPreElement | undefined {
+function getPreDataContainer(target: HTMLElement): HTMLPreElement | undefined {
     if (target.tagName === 'PRE') {
         return target as HTMLPreElement
     }
@@ -504,6 +500,6 @@ export function getTableDataCell(target: HTMLElement): HTMLTableDataCellElement 
     }
 }
 
-export function isInsideCodeContainer(target: HTMLElement): boolean {
+function isInsideCodeContainer(target: HTMLElement): boolean {
     return Boolean(getPreDataContainer(target) || getTableDataCell(target))
 }

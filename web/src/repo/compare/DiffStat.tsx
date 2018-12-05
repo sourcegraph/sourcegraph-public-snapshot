@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { pluralize } from '../../util/strings'
+import { pluralize } from '../../../../shared/src/util/strings'
 
 const NUM_SQUARES = 5
 

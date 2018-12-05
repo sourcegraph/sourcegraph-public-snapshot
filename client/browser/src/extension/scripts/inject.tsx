@@ -17,10 +17,13 @@ import { featureFlags } from '../../shared/util/featureFlags'
 import { injectCodeIntelligence } from '../../libs/code_intelligence'
 import { injectGitHubApplication } from '../../libs/github/inject'
 import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
+import { initSentry } from '../../libs/sentry'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('CONTENT')
+
+initSentry('content')
 
 /**
  * Main entry point into browser extension.

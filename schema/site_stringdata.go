@@ -87,6 +87,12 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "externalServices": {
+          "description": "Enables external service management UI",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "updateScheduler2": {
           "description": "Enables a new update scheduler algorithm",
           "type": "string",
@@ -96,6 +102,11 @@ const SiteSchemaJSON = `{
         "githubAuth": {
           "description":
             "Enables GitHub instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitHub instance to the ` + "`" + `auth.providers` + "`" + ` field.",
+          "type": "boolean"
+        },
+        "gitlabAuth": {
+          "description":
+            "Enables GitLab instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitLab instance to the ` + "`" + `auth.providers` + "`" + ` field.",
           "type": "boolean"
         }
       }
@@ -154,37 +165,7 @@ const SiteSchemaJSON = `{
         "JSON array of configuration for Phabricator hosts. See Phabricator Configuration section for more information.",
       "type": "array",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "url": {
-            "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
-            "type": "string"
-          },
-          "token": {
-            "description": "API token for the Phabricator instance.",
-            "type": "string"
-          },
-          "repos": {
-            "description": "The list of repositories available on Phabricator.",
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["path", "callsign"],
-              "properties": {
-                "path": {
-                  "description": "Display path for the url e.g. gitolite/my/repo",
-                  "type": "string"
-                },
-                "callsign": {
-                  "description": "The unique Phabricator identifier for the repository, like 'MUX'.",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
+        "$ref": "#/definitions/PhabricatorConnection"
       }
     },
     "git.cloneURLToRepositoryName": {
@@ -373,7 +354,8 @@ const SiteSchemaJSON = `{
           { "$ref": "#/definitions/SAMLAuthProvider" },
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
-          { "$ref": "#/definitions/GitHubAuthProvider" }
+          { "$ref": "#/definitions/GitHubAuthProvider" },
+          { "$ref": "#/definitions/GitLabAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -577,6 +559,39 @@ const SiteSchemaJSON = `{
     }
   },
   "definitions": {
+    "PhabricatorConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
+          "type": "string"
+        },
+        "token": {
+          "description": "API token for the Phabricator instance.",
+          "type": "string"
+        },
+        "repos": {
+          "description": "The list of repositories available on Phabricator.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "callsign"],
+            "properties": {
+              "path": {
+                "description": "Display path for the url e.g. gitolite/my/repo",
+                "type": "string"
+              },
+              "callsign": {
+                "description": "The unique Phabricator identifier for the repository, like 'MUX'.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
     "GitHubConnection": {
       "type": "object",
       "additionalProperties": false,
@@ -648,6 +663,12 @@ const SiteSchemaJSON = `{
           "description": "The TTL of the repository permissions data cache.",
           "type": "string",
           "default": "3h"
+        },
+        "organizations": {
+          "description":
+            "A list of GitHub organization names. If specified, only GitHub users that are members of the specified orgs will be allowed to authenticate",
+          "type": "array",
+          "items": { "type": "string" }
         }
       }
     },
@@ -1145,6 +1166,35 @@ const SiteSchemaJSON = `{
           "type": "string",
           "description":
             "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
+      }
+    },
+    "GitLabAuthProvider": {
+      "description":
+        "Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have ` + "`" + `api` + "`" + ` and ` + "`" + `read_user` + "`" + ` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/gitlab/callback\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gitlab"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
+          "default": "https://gitlab.com/"
+        },
+        "clientID": {
+          "type": "string",
+          "description":
+            "The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description":
+            "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
         },
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
       }

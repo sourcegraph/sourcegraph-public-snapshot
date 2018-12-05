@@ -36,7 +36,8 @@ export const OrgAccountArea: React.FunctionComponent<Props> = props => {
         authenticatedUser: props.authenticatedUser,
         org: props.org,
         onOrganizationUpdate: props.onOrganizationUpdate,
-        extensionsContext: props.extensionsContext,
+        platformContext: props.platformContext,
+        settingsCascade: props.settingsCascade,
     }
     return (
         <div className="org-settings-area area">

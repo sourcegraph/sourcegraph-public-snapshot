@@ -3,12 +3,12 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -94,9 +94,8 @@ export function queryRepositoryComparisonFileDiffs(args: {
 interface RepositoryCompareDiffPageProps
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
-        ExtensionsProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        PlatformContextProps,
+        ExtensionsControllerProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
 
@@ -120,7 +119,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
                         head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
                         lineNumbers: true,
-                        extensionsContext: this.props.extensionsContext,
+                        platformContext: this.props.platformContext,
                         location: this.props.location,
                         history: this.props.history,
                         hoverifier: this.props.hoverifier,
@@ -131,8 +130,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
-                    extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
-                    extensionsOnRootsChange={this.props.extensionsOnRootsChange}
+                    extensionsController={this.props.extensionsController}
                 />
             </div>
         )

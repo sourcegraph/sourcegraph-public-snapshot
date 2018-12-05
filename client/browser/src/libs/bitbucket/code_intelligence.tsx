@@ -97,7 +97,7 @@ const codeViewResolver: CodeViewResolver = {
 function getCommandPaletteMount(): HTMLElement {
     const headerElem = document.querySelector('.aui-header-primary .aui-nav')
     if (!headerElem) {
-        throw new Error('Unable to find command pallete mount')
+        throw new Error('Unable to find command palette mount')
     }
 
     const commandListClass = 'command-palette-button command-palette-button__bitbucket-server'

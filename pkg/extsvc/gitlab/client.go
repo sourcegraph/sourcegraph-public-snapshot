@@ -24,8 +24,11 @@ var requestCounter = metrics.NewRequestCounter("gitlab", "Total number of reques
 
 // Client is a GitLab API client.
 type Client struct {
-	baseURL    *url.URL     // base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
-	token      string       // a personal access token to authenticate requests, if set
+	baseURL *url.URL // base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
+
+	personalAccessToken string // a personal access token to authenticate requests, if set
+	oauthToken          string // an OAuth bearer token, if set
+
 	httpClient *http.Client // the HTTP client to use
 
 	RateLimit *ratelimit.Monitor // the API rate limit monitor
@@ -37,7 +40,7 @@ type Client struct {
 //
 // The URL must point to the base URL of the GitLab instance. This is https://gitlab.com for GitLab.com and
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
-func NewClient(baseURL *url.URL, token string, transport http.RoundTripper) *Client {
+func NewClient(baseURL *url.URL, personalAccessToken, oauthToken string, transport http.RoundTripper) *Client {
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
@@ -52,22 +55,23 @@ func NewClient(baseURL *url.URL, token string, transport http.RoundTripper) *Cli
 	})
 
 	var cacheTTL time.Duration
-	if isGitLabDotComURL(baseURL) && token == "" {
+	if isGitLabDotComURL(baseURL) && personalAccessToken == "" && oauthToken == "" {
 		cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
 	} else {
 		cacheTTL = 30 * time.Second
 	}
 
 	// Cache for GitLab project metadata.
-	key := sha256.Sum256([]byte(token + ":" + baseURL.String()))
+	key := sha256.Sum256([]byte(personalAccessToken + ":" + oauthToken + ":" + baseURL.String()))
 	projCache := rcache.NewWithTTL("gl_proj:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
 	return &Client{
-		baseURL:    baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		token:      token,
-		httpClient: &http.Client{Transport: transport},
-		RateLimit:  &ratelimit.Monitor{},
-		projCache:  projCache,
+		baseURL:             baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		personalAccessToken: personalAccessToken,
+		oauthToken:          oauthToken,
+		httpClient:          &http.Client{Transport: transport},
+		RateLimit:           &ratelimit.Monitor{},
+		projCache:           projCache,
 	}
 }
 
@@ -79,8 +83,11 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.token != "" {
-		req.Header.Set("Private-Token", c.token) // https://docs.gitlab.com/ee/api/README.html#personal-access-tokens
+	if c.personalAccessToken != "" {
+		req.Header.Set("Private-Token", c.personalAccessToken) // https://docs.gitlab.com/ee/api/README.html#personal-access-tokens
+	}
+	if c.oauthToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.oauthToken))
 	}
 
 	var resp *http.Response

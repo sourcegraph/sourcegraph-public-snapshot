@@ -25,6 +25,10 @@
     .signin-signup-form {
         width: 100%;
         max-width: inherit;
+
+        &__checkbox-label {
+            line-height: 20px;
+        }
     }
 
     .signin-signup-form__input {

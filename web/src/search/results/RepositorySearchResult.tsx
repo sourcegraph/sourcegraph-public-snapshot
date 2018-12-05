@@ -1,9 +1,9 @@
 import * as React from 'react'
+import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { RepoLink } from '../../../../shared/src/components/RepoLink'
+import { ResultContainer } from '../../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { ResultContainer } from '../../components/ResultContainer'
-import { RepoLink } from '../../repo/RepoLink'
 import { eventLogger } from '../../tracking/eventLogger'
-import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 
 interface Props {
     /**

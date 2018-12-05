@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -83,7 +83,7 @@ type GitLabAuthzProviderOp struct {
 
 func NewProvider(op GitLabAuthzProviderOp) *GitLabAuthzProvider {
 	p := &GitLabAuthzProvider{
-		client:            gitlab.NewClient(op.BaseURL, op.SudoToken, nil),
+		client:            gitlab.NewClient(op.BaseURL, op.SudoToken, "", nil),
 		clientURL:         op.BaseURL,
 		codeHost:          gitlab.NewCodeHost(op.BaseURL),
 		cache:             op.MockCache,

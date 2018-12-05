@@ -2,10 +2,10 @@ import WrapIcon from 'mdi-react/WrapIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+import { WrapDisabledIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { WrapDisabledIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 
 /**
  * A repository header action that toggles the line wrapping behavior for long lines in code files.

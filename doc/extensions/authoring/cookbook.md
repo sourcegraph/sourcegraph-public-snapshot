@@ -7,11 +7,11 @@
 import * as sourcegraph from "sourcegraph"
 
 // Called by Sourcegraph when the extension is enabled by the user
-export function activate(): void {
+export function activate(ctx: sourcegraph.ExtensionContext): void {
   // Shows a hello world message in a tooltip when the user hovers over code
-  sourcegraph.languages.registerHoverProvider(["*"], {
+  ctx.subscriptions.add(sourcegraph.languages.registerHoverProvider(["*"], {
     provideHover: () => ({ contents: { value: "Hello, world! 🎉🎉🎉" } })
-  })
+  }))
 }
 ```
 
@@ -20,10 +20,10 @@ export function activate(): void {
 ```typescript
 import * as sourcegraph from "sourcegraph"
 
-export function activate(): void {
-  sourcegraph.languages.registerHoverProvider(["*"], {
+export function activate(ctx: sourcegraph.ExtensionContext): void {
+  ctx.subscriptions.add(sourcegraph.languages.registerHoverProvider(["*"], {
     provideHover: doc => ({ contents: { value: "Document size: " + doc.text.length } })
-  })
+  }))
 }
 ```
 
@@ -32,8 +32,8 @@ export function activate(): void {
 ```typescript
 import * as sourcegraph from "sourcegraph";
 
-export function activate(): void {
-  sourcegraph.workspace.onDidOpenTextDocument.subscribe(doc => {
+export function activate(ctx: sourcegraph.ExtensionContext): void {
+  ctx.subscriptions.add(sourcegraph.workspace.onDidOpenTextDocument.subscribe(doc => {
     if (
       sourcegraph.app.activeWindow &&
       sourcegraph.app.activeWindow.visibleViewComponents.length > 0
@@ -52,7 +52,7 @@ export function activate(): void {
         ]
       );
     }
-  });
+  }));
 }
 ```
 
@@ -61,8 +61,8 @@ export function activate(): void {
 ```typescript
 import * as sourcegraph from "sourcegraph";
 
-export function activate(): void {
-  sourcegraph.workspace.onDidOpenTextDocument.subscribe(doc => {
+export function activate(ctx: sourcegraph.ExtensionContext): void {
+  ctx.subscriptions.add(sourcegraph.workspace.onDidOpenTextDocument.subscribe(doc => {
     if (
       sourcegraph.app.activeWindow &&
       sourcegraph.app.activeWindow.visibleViewComponents.length > 0
@@ -85,7 +85,7 @@ export function activate(): void {
         ]
       );
     }
-  });
+  }));
 }
 ```
 
@@ -95,20 +95,11 @@ export function activate(): void {
 import * as sourcegraph from "sourcegraph";
 
 export function activate(): void {
-  function afterActivate() {
-    const address = sourcegraph.configuration.get().get("graphql.langserver-address");
-    if (!address) {
-      console.log("No graphql.langserver-address was set, exiting.");
-      return;
-    }
-    // ...
+  const address = sourcegraph.configuration.get().get("graphql.langserver-address");
+  if (!address) {
+    console.log("No graphql.langserver-address was set, exiting.");
+    return;
   }
-
-  // Error creating extension host: Error: Configuration is not yet available.
-  // `sourcegraph.configuration.get` is not usable until after the extension
-  // `activate` function is finished executing. This is a known issue and will
-  // be fixed before the beta release of Sourcegraph extensions. In the
-  // meantime, work around this limitation by deferring calls to `get`.
-  setTimeout(afterActivate, 0);
+  // ...
 }
 ```
