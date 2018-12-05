@@ -314,6 +314,13 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`case:yes`:                struct{}{},
 			},
 		},
+
+		// If there are no search results, no filters should be displayed.
+		testCase{
+			descr:                     "no results",
+			searchResults:             []*searchResultResolver{},
+			expectedDynamicFilterStrs: map[string]struct{}{},
+		},
 	}
 
 	for _, test := range tests {
