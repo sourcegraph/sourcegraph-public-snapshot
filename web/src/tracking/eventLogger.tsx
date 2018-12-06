@@ -151,8 +151,8 @@ class EventLogger {
      *
      * Only used on Sourcegraph.com, not on self-hosted Sourcegraph instances.
      */
-    private getTelligentDuid(): string {
-        return telligent.getTelligentDuid() || ''
+    private getTelligentDuid(): string | null {
+        return telligent.getTelligentDuid()
     }
 
     /**
@@ -177,7 +177,7 @@ class EventLogger {
         }
 
         let id = localStorage.getItem(uidKey)
-        if (id === null) {
+        if (id === null || id === '') {
             id = this.generateAnonUserID()
             localStorage.setItem(uidKey, id)
         }
