@@ -33,7 +33,7 @@ func TestParseCloneURL(t *testing.T) {
 				Host:   "github.com",
 				Path:   "/gorilla/mux.git",
 			},
-		}, {}, {
+		}, {
 			input: "https://github.com/gorilla/mux.git",
 			output: &url.URL{
 				Scheme: "https",
