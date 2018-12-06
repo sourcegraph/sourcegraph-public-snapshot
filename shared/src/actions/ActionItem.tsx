@@ -139,7 +139,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
         )
     }
 
-    public runAction = (e: React.MouseEvent | React.KeyboardEvent) => {
+    public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
         const action = (isAltEvent(e) && this.props.altAction) || this.props.action
         if (urlForClientCommandOpen(action, this.props.location)) {
             if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {
@@ -161,6 +161,9 @@ export class ActionItem extends React.PureComponent<Props, State> {
         // If the action we're running is *not* opening a URL by using the event target's default handler, then
         // ensure the default event handler for the <LinkOrButton> doesn't run (which might open the URL).
         e.preventDefault()
+
+        // Do not show focus ring on element after running action.
+        e.currentTarget.blur()
 
         this.commandExecutions.next({
             command: this.props.action.command,
