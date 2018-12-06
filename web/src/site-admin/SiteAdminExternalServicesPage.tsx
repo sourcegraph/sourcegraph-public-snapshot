@@ -51,6 +51,9 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                         </button>
                     </div>
                 </div>
+                {this.state.errorDescription && (
+                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
+                )}
             </li>
         )
     }
