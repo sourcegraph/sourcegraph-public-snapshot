@@ -1,5 +1,6 @@
 import * as assert from 'assert'
-import { take } from 'rxjs/operators'
+import { MonoTypeOperatorFunction } from 'rxjs'
+import { debounceTime, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
@@ -7,6 +8,14 @@ import { assertToJSON } from '../extension/types/common.test'
 import { URI } from '../extension/types/uri'
 import { Definition } from '../protocol/plainTypes'
 import { createBarrier, integrationTestContext } from './helpers.test'
+
+// HACK: In getLocations and getHover, we need to have all providers first emit INITIAL to avoid having
+// combineLatest wait for the slowest provider to emit. This means that in these tests, we need to wait an
+// arbitrary amount of time until we know we've gotten the final result. (The first emission may be the result from
+// just one of the providers.)
+//
+// If 35 msec is not enough time, the tests here will fail flakily. :(
+const WAIT_FOR_RESULT: <T>() => MonoTypeOperatorFunction<T> = () => debounceTime(35)
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider(
@@ -23,7 +32,10 @@ describe('LanguageFeatures (integration)', () => {
         services =>
             services.textDocumentHover
                 .getHover({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(take(1))
+                .pipe(
+                    WAIT_FOR_RESULT(),
+                    take(1)
+                )
                 .toPromise()
     )
     testLocationProvider(
@@ -38,7 +50,10 @@ describe('LanguageFeatures (integration)', () => {
         services =>
             services.textDocumentDefinition
                 .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(take(1))
+                .pipe(
+                    WAIT_FOR_RESULT(),
+                    take(1)
+                )
                 .toPromise()
     )
     testLocationProvider(
@@ -53,7 +68,10 @@ describe('LanguageFeatures (integration)', () => {
         services =>
             services.textDocumentTypeDefinition
                 .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(take(1))
+                .pipe(
+                    WAIT_FOR_RESULT(),
+                    take(1)
+                )
                 .toPromise()
     )
     testLocationProvider(
@@ -68,7 +86,10 @@ describe('LanguageFeatures (integration)', () => {
         services =>
             services.textDocumentImplementation
                 .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(take(1))
+                .pipe(
+                    WAIT_FOR_RESULT(),
+                    take(1)
+                )
                 .toPromise()
     )
     testLocationProvider(
@@ -90,7 +111,10 @@ describe('LanguageFeatures (integration)', () => {
                     position: { line: 1, character: 2 },
                     context: { includeDeclaration: true },
                 })
-                .pipe(take(1))
+                .pipe(
+                    WAIT_FOR_RESULT(),
+                    take(1)
+                )
                 .toPromise()
     )
     testLocationProvider<sourcegraph.LocationProvider>(
@@ -112,7 +136,10 @@ describe('LanguageFeatures (integration)', () => {
                     textDocument: { uri: 'file:///f' },
                     position: { line: 1, character: 2 },
                 })
-                .pipe(take(1))
+                .pipe(
+                    WAIT_FOR_RESULT(),
+                    take(1)
+                )
                 .toPromise()
     )
 })
@@ -145,7 +172,7 @@ function testLocationProvider<P>(
             assert.deepStrictEqual(await getResult(services), null)
         })
 
-        it('supplies params to the provideHover method', async () => {
+        it('supplies params to the provideXyz method', async () => {
             const { services, extensionHost } = await integrationTestContext()
             const { wait, done } = createBarrier()
             registerProvider(extensionHost)(

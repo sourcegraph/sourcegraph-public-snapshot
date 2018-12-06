@@ -1,5 +1,5 @@
 import { combineLatest, from, Observable, of } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { catchError, defaultIfEmpty, distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
 import { Model, modelToTextDocumentPositionParams } from '../model'
@@ -76,6 +76,8 @@ export function getLocation<
     )
 }
 
+const INITIAL = Symbol('INITIAL')
+
 /**
  * Like getLocation, except the returned observable never emits singular values, always either an array or null.
  */
@@ -91,6 +93,10 @@ export function getLocations<
             return combineLatest(
                 providers.map(provider =>
                     from(provider(params)).pipe(
+                        // combineLatest waits to emit until all observables have emitted. Make all
+                        // observables emit immediately to avoid waiting for the slowest observable.
+                        startWith(INITIAL),
+
                         catchError(err => {
                             console.error(err)
                             return [null]
@@ -99,7 +105,18 @@ export function getLocations<
                 )
             )
         }),
-        map(flattenAndCompact)
+        filter(results => results === null || !results.every(result => result === INITIAL)),
+        map(results => results && results.filter((result): result is L | L[] | null => result !== INITIAL)),
+        map(flattenAndCompact),
+        defaultIfEmpty(null as L[] | null),
+
+        // Only compare element-wise, not deeply, for efficiency. The results can get quite large, and we only need
+        // this to prevent unwanted emissions when the only change is that a provider went from INITIAL to null.
+        distinctUntilChanged(
+            (a, b) =>
+                (a === null && b === null) ||
+                (a !== null && b !== null && a.length === b.length && a.every((e, i) => e === b[i]))
+        )
     )
 }
 
