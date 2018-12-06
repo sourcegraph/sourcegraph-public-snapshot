@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,41 +26,51 @@ import (
 var githubConnections = atomicvalue.New()
 
 func init() {
-	conf.Watch(func() {
+	t := time.NewTicker(10 * time.Second)
+	defer t.Stop()
+
+	var lastGitHubConf []*schema.GitHubConnection
+	for {
+		<-t.C
+		githubConf := conf.Get().Github
+		if reflect.DeepEqual(githubConf, lastGitHubConf) {
+			continue
+		}
+		lastGitHubConf = githubConf
+
+		var hasGitHubDotComConnection bool
+		for _, c := range githubConf {
+			u, _ := url.Parse(c.Url)
+			if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
+				hasGitHubDotComConnection = true
+				break
+			}
+		}
+		if !hasGitHubDotComConnection {
+			// Add a GitHub.com entry by default, to support navigating to URL paths like
+			// /github.com/foo/bar to auto-add that repository.
+			githubConf = append(githubConf, &schema.GitHubConnection{
+				RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
+				Url:                         "https://github.com",
+				InitialRepositoryEnablement: true,
+			})
+		}
+
+		var conns []*githubConnection
+		for _, c := range githubConf {
+			conn, err := newGitHubConnection(c)
+			if err != nil {
+				log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
+				continue
+			}
+			conns = append(conns, conn)
+		}
+
 		githubConnections.Set(func() interface{} {
-			githubConf := conf.Get().Github
-
-			var hasGitHubDotComConnection bool
-			for _, c := range githubConf {
-				u, _ := url.Parse(c.Url)
-				if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
-					hasGitHubDotComConnection = true
-					break
-				}
-			}
-			if !hasGitHubDotComConnection {
-				// Add a GitHub.com entry by default, to support navigating to URL paths like
-				// /github.com/foo/bar to auto-add that repository.
-				githubConf = append(githubConf, &schema.GitHubConnection{
-					RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
-					Url:                         "https://github.com",
-					InitialRepositoryEnablement: true,
-				})
-			}
-
-			var conns []*githubConnection
-			for _, c := range githubConf {
-				conn, err := newGitHubConnection(c)
-				if err != nil {
-					log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
-					continue
-				}
-				conns = append(conns, conn)
-			}
 			return conns
 		})
 		gitHubRepositorySyncWorker.restart()
-	})
+	}
 }
 
 // getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
