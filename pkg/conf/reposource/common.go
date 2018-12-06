@@ -3,6 +3,7 @@ package reposource
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -87,10 +88,12 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
+var nonSCPURLRegex = regexp.MustCompile(`^(git\+)?(https?|ssh|rsync|file|git)://`)
+
 // parseCloneURL parses a git clone URL into a URL struct. It supports the SCP-style git@host:path
 // syntax that is common among code hosts.
 func parseCloneURL(cloneURL string) (*url.URL, error) {
-	if strings.HasPrefix(cloneURL, "https://") || strings.HasPrefix(cloneURL, "http://") || strings.HasPrefix(cloneURL, "ssh://") || strings.HasPrefix(cloneURL, "git://") || strings.HasPrefix(cloneURL, "rsync://") || strings.HasPrefix(cloneURL, "file://") {
+	if nonSCPURLRegex.MatchString(cloneURL) {
 		return url.Parse(cloneURL)
 	}
 
