@@ -32,8 +32,6 @@ func init() {
 
 	go func() {
 		t := time.NewTicker(time.Second)
-		defer t.Stop()
-
 		var lastGitHubConf []*schema.GitHubConnection
 		for range t.C {
 			githubConf := conf.Get().Github
@@ -73,6 +71,7 @@ func init() {
 			githubConnections.Set(func() interface{} {
 				return conns
 			})
+
 			gitHubRepositorySyncWorker.restart()
 		}
 	}()
