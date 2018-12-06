@@ -85,6 +85,25 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	return &externalServiceResolver{externalService: externalService}, nil
 }
 
+func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
+	ExternalService graphql.ID
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can delete external services.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalExternalServiceID(args.ExternalService)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.ExternalServices.Delete(ctx, id); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}
+
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*externalServiceConnectionResolver, error) {
