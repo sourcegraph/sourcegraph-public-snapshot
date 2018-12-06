@@ -113,6 +113,28 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
+	var req api.ExternalServicesQueryRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		return err
+	}
+	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{Kind: req.Kind})
+	if err != nil {
+		return err
+	}
+
+	var configs []map[string]interface{}
+	for _, service := range services {
+		var config map[string]interface{}
+		if err := json.Unmarshal([]byte(service.Config), &config); err != nil {
+			return err
+		}
+		configs = append(configs, config)
+	}
+	return json.NewEncoder(w).Encode(configs)
+}
+
 func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 	var req api.ReposGetInventoryUncachedRequest
 	err := json.NewDecoder(r.Body).Decode(&req)

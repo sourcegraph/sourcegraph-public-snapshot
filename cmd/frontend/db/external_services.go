@@ -101,12 +101,12 @@ func (c *externalServices) GetByID(ctx context.Context, id int64) (*types.Extern
 
 // List returns all external services.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to list external services.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return c.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to list external services.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
 	if !conf.ExternalServicesEnabled() {
 		return conf.Get().Phabricator, nil

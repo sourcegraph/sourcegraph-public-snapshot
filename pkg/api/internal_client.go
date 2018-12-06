@@ -338,6 +338,17 @@ func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoNam
 	}, nil)
 }
 
+func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result interface{}) error {
+	var raw json.RawMessage
+	err := c.postInternal(ctx, "external-services/configs", ExternalServiceConfigsRequest{
+		Kind: kind,
+	}, &raw)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(raw, result)
+}
+
 func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody interface{}) error {
 	return c.postInternal(ctx, "telemetry/log/v1/"+env, reqBody, nil)
 }
@@ -369,10 +380,21 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 		return err
 	}
 
-	if respBody != nil {
-		return json.NewDecoder(resp.Body).Decode(respBody)
+	if respBody == nil {
+		return nil
 	}
-	return nil
+
+	// Caller wants the unparsed JSON.
+	if raw, ok := respBody.(*json.RawMessage); ok {
+		buf, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		*raw = buf
+		return nil
+	}
+
+	return json.NewDecoder(resp.Body).Decode(respBody)
 }
 
 func checkAPIResponse(resp *http.Response) error {
