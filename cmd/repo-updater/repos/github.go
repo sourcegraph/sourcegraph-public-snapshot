@@ -30,8 +30,7 @@ func init() {
 	defer t.Stop()
 
 	var lastGitHubConf []*schema.GitHubConnection
-	for {
-		<-t.C
+	for range t.C {
 		githubConf := conf.Get().Github
 		if reflect.DeepEqual(githubConf, lastGitHubConf) {
 			continue
