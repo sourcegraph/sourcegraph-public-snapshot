@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -59,7 +60,7 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 	DisableTimeout bool
 	IsLightTheme   bool
 }) (string, error) {
-	language := highlight.SyntectLanguageMap[args.FuzzyLanguage]
+	language := highlight.SyntectLanguageMap[strings.ToLower(args.FuzzyLanguage)]
 	filePath := "file." + language
 	html, _, err := highlight.Code(ctx, []byte(args.Code), filePath, args.DisableTimeout, args.IsLightTheme)
 	if err != nil {
