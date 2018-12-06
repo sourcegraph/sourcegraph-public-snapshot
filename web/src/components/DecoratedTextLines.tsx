@@ -3,7 +3,7 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
-
+import { HighlightRange } from './SearchResult'
 interface Props {
     /**
      * A CSS class name to add to this component's element.
@@ -29,21 +29,6 @@ interface Props {
      * Called when the mousedown event is triggered on the element.
      */
     onMouseDown?: () => void
-}
-
-interface HighlightRange {
-    /**
-     * The 0-based line number that this highlight appears in
-     */
-    line: number
-    /**
-     * The 0-based character offset to start highlighting at
-     */
-    character: number
-    /**
-     * The number of characters to highlight
-     */
-    length: number
 }
 
 interface DecoratedLine {

@@ -63,9 +63,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             props.body.html
                                 ? of(sanitizeHtml(props.body.html))
                                 : renderMarkdown({ markdown: props.body.text })
-                    )
-                )
-                .pipe(
+                    ),
                     switchMap(markdownHTML => {
                         if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
                             const lang = this.getLanguage() || 'txt'
