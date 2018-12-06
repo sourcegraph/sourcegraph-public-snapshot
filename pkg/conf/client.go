@@ -187,7 +187,7 @@ type fetcher interface {
 type httpFetcher struct{}
 
 func (h httpFetcher) FetchConfig() (string, error) {
-	rawJSON, err := api.InternalClient.ConfigurationRawJSON(context.Background())
+	rawJSON, err := api.InternalClient.Configuration(context.Background())
 	return rawJSON, err
 }
 
@@ -201,5 +201,7 @@ func (h httpFetcher) FetchConfig() (string, error) {
 type passthroughFetcherFrontendOnly struct{}
 
 func (p passthroughFetcherFrontendOnly) FetchConfig() (string, error) {
+	<-configurationServerFrontendOnlyInitialized
+
 	return configurationServerFrontendOnly.Raw(), nil
 }

@@ -10,11 +10,11 @@ import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
+import { pluralize } from '../../../../shared/src/util/strings'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
-import { pluralize } from '../../util/strings'
 
 /**
  * Fetches a repository's text search index information.

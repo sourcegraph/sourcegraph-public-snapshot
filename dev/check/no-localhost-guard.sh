@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "--- no localhost guard"
+
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 path_filter() {

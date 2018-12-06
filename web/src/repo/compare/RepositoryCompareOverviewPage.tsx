@@ -10,9 +10,9 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
@@ -75,14 +75,13 @@ interface Props
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        ExtensionsControllerProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
     head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
-    hoverifier: Hoverifier
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 
 interface State {
@@ -166,7 +165,6 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                                 commitID: this.state.rangeOrError.headRevSpec.object!.oid,
                             }}
                             extensionsController={this.props.extensionsController}
-                            extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                         />
                     </>
                 )}

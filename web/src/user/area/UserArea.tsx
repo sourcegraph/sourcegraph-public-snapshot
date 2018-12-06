@@ -8,6 +8,7 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
@@ -61,7 +62,7 @@ const NotFoundPage = () => (
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
 
-interface UserAreaProps extends RouteComponentProps<{ username: string }>, PlatformContextProps {
+interface UserAreaProps extends RouteComponentProps<{ username: string }>, PlatformContextProps, SettingsCascadeProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
     userAccountSideBarItems: UserAccountSidebarItems
@@ -87,7 +88,7 @@ interface UserAreaState {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaRouteContext extends PlatformContextProps {
+export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -177,6 +178,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             onDidUpdateUser: this.onDidUpdateUser,
             authenticatedUser: this.props.authenticatedUser,
             platformContext: this.props.platformContext,
+            settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             userAccountAreaRoutes: this.props.userAccountAreaRoutes,
             userAccountSideBarItems: this.props.userAccountSideBarItems,

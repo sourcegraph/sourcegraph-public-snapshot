@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-// DEPRECATED: The GraphQL type Configuration is deprecated.
+// Deprecated: The GraphQL type Configuration is deprecated.
 type configurationResolver struct {
 	contents string
 	messages []string // error and warning messages

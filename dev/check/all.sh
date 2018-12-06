@@ -20,3 +20,5 @@ go env
 # downtime, not from broken URLs.
 #
 # ./broken-urls.bash
+
+echo "--- done"

@@ -6,11 +6,11 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
+import { pluralize } from '../../../../../../shared/src/util/strings'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { Form } from '../../../../components/Form'
 import { PageTitle } from '../../../../components/PageTitle'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { pluralize } from '../../../../util/strings'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 
 interface Props extends RouteComponentProps<{}> {

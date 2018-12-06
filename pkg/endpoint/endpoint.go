@@ -22,10 +22,11 @@ import (
 // the endpoints for a service and update the map when they change. It can
 // also fallback to static URLs if not configured for kubernetes.
 type Map struct {
-	mu   sync.Mutex
-	init func() (*hashMap, error)
-	err  error
-	urls *hashMap
+	mu      sync.Mutex
+	init    func() (*hashMap, error)
+	err     error
+	urls    *hashMap
+	urlspec string
 }
 
 // New creates a new Map for the URL specifier.
@@ -47,10 +48,13 @@ type Map struct {
 //
 func New(urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
-		return &Map{urls: newConsistentHashMap(strings.Split(urlspec, " "))}
+		return &Map{
+			urlspec: urlspec,
+			urls:    newConsistentHashMap(strings.Split(urlspec, " ")),
+		}
 	}
 
-	m := &Map{}
+	m := &Map{urlspec: urlspec}
 
 	// Kick off setting the initial urls or err on first access. We don't rely
 	// just on inform since it may not communicate updates.
@@ -86,6 +90,10 @@ func New(urlspec string) *Map {
 	return m
 }
 
+func (m *Map) String() string {
+	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
+}
+
 // Get the closest URL in the hash to the provided key that is not in
 // exclude. If no URL is found, "" is returned.
 //
@@ -93,6 +101,40 @@ func New(urlspec string) *Map {
 // endpoint may not actually be available yet / at the moment. So users of the
 // URL should implement a retry strategy.
 func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
+	urls, err := m.getUrls()
+	if err != nil {
+		return "", err
+	}
+
+	return urls.get(key, exclude), nil
+}
+
+// GetAll returns a slice of values such that m[keys[i]] == values[i]. It is a
+// more efficient implementation than calling Get on each key.
+func (m *Map) GetAll(keys []string, exclude map[string]bool) ([]string, error) {
+	urls, err := m.getUrls()
+	if err != nil {
+		return nil, err
+	}
+
+	v := make([]string, len(keys))
+	for i, key := range keys {
+		v[i] = urls.get(key, exclude)
+	}
+	return v, nil
+}
+
+// Endpoints returns a set of all addresses.
+func (m *Map) Endpoints() (map[string]struct{}, error) {
+	urls, err := m.getUrls()
+	if err != nil {
+		return nil, err
+	}
+
+	return urls.values(), nil
+}
+
+func (m *Map) getUrls() (*hashMap, error) {
 	m.mu.Lock()
 	if m.init != nil {
 		m.urls, m.err = m.init()
@@ -100,11 +142,7 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	}
 	urls, err := m.urls, m.err
 	m.mu.Unlock()
-
-	if err != nil {
-		return "", err
-	}
-	return urls.get(key, exclude), nil
+	return urls, err
 }
 
 func inform(client *k8s.Client, m *Map, u *k8sURL) error {

@@ -1,26 +1,25 @@
 import { isArray } from 'lodash-es'
-import { from, Subscription, throwError, Unsubscribable } from 'rxjs'
-import { switchMap, take } from 'rxjs/operators'
-import { Controller } from '../api/client/controller'
-import { Extension } from '../api/client/extension'
-import { ActionContributionClientCommandUpdateConfiguration, ConfigurationUpdateParams } from '../api/protocol'
+import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
+import { first } from 'rxjs/operators'
+import { Services } from '../api/client/services'
+import { KeyPath, SettingsEdit } from '../api/client/services/settings'
+import { ActionContributionClientCommandUpdateConfiguration } from '../api/protocol'
+import { Position } from '../api/protocol/plainTypes'
 import { PlatformContext } from '../platform/context'
-import { SettingsCascade } from '../settings/settings'
-import { isErrorLike } from '../util/errors'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See
  * {@link module:sourcegraph.module/protocol/contribution.ActionContribution#command} for
  * documentation.
  */
-export function registerBuiltinClientCommands<E extends Extension>(
-    context: Pick<PlatformContext, 'settingsCascade' | 'updateSettings' | 'queryGraphQL' | 'queryLSP'>,
-    controller: Controller<E, SettingsCascade>
+export function registerBuiltinClientCommands(
+    { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
+    context: Pick<PlatformContext, 'queryGraphQL' | 'queryLSP'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
     subscription.add(
-        controller.services.commands.registerCommand({
+        commandRegistry.registerCommand({
             command: 'open',
             run: (url: string) => {
                 // The `open` client command is usually implemented by ActionItem rendering the action with the
@@ -36,7 +35,7 @@ export function registerBuiltinClientCommands<E extends Extension>(
     )
 
     subscription.add(
-        controller.services.commands.registerCommand({
+        commandRegistry.registerCommand({
             command: 'openPanel',
             run: (viewID: string) => {
                 // As above for `open`, the `openPanel` client command is usually implemented by an HTML <a>
@@ -47,12 +46,30 @@ export function registerBuiltinClientCommands<E extends Extension>(
         })
     )
 
+    /**
+     * Executes the location provider and returns its results.
+     */
     subscription.add(
-        controller.services.commands.registerCommand({
+        commandRegistry.registerCommand({
+            command: 'executeLocationProvider',
+            run: (id: string, uri: string, position: Position) =>
+                concat(
+                    textDocumentLocations.getLocation(id, { textDocument: { uri }, position }),
+                    // Concat with [] to avoid undefined promise value when the getLocation observable completes
+                    // without emitting. See https://github.com/ReactiveX/rxjs/issues/1736.
+                    of([])
+                )
+                    .pipe(first())
+                    .toPromise(),
+        })
+    )
+
+    subscription.add(
+        commandRegistry.registerCommand({
             command: 'updateConfiguration',
             run: (...anyArgs: any[]): Promise<void> => {
                 const args = anyArgs as ActionContributionClientCommandUpdateConfiguration['commandArguments']
-                return updateConfiguration(context, convertUpdateConfigurationCommandArgs(args))
+                return settingsService.update(convertUpdateConfigurationCommandArgs(args))
             },
         })
     )
@@ -62,7 +79,7 @@ export function registerBuiltinClientCommands<E extends Extension>(
      * with the privileges of the current user.
      */
     subscription.add(
-        controller.services.commands.registerCommand({
+        commandRegistry.registerCommand({
             command: 'queryGraphQL',
             run: (query: string, variables: { [name: string]: any }): Promise<any> =>
                 // 🚨 SECURITY: The request might contain private info (such as
@@ -79,7 +96,7 @@ export function registerBuiltinClientCommands<E extends Extension>(
      * performed with the privileges of the current user.
      */
     subscription.add(
-        controller.services.commands.registerCommand({
+        commandRegistry.registerCommand({
             command: 'queryLSP',
             run: requests => from(context.queryLSP(requests)).toPromise(),
         })
@@ -109,51 +126,40 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
 }
 
 /**
- * Applies an edit to the settings of the highest-precedence subject.
- */
-export function updateConfiguration(
-    context: Pick<PlatformContext, 'settingsCascade' | 'updateSettings'>,
-    params: ConfigurationUpdateParams
-): Promise<void> {
-    // TODO(sqs): Allow extensions to specify which subject's settings to update
-    // (instead of always updating the highest-precedence subject's settings).
-    return from(context.settingsCascade)
-        .pipe(
-            take(1),
-            switchMap(x => {
-                if (!x.subjects) {
-                    return throwError(new Error('unable to update settings: no settings subjects available'))
-                }
-                if (isErrorLike(x.subjects)) {
-                    return throwError(
-                        new Error(
-                            `unable to update settings: error retrieving settings subjects: ${x.subjects.message}`
-                        )
-                    )
-                }
-                const subject = x.subjects[x.subjects.length - 1].subject
-                return context.updateSettings(subject.id, { edit: params })
-            })
-        )
-        .toPromise()
-}
-
-/**
  * Converts the arguments for the `updateConfiguration` client command (as documented in
  * {@link ActionContributionClientCommandUpdateConfiguration#commandArguments})
- * to {@link ConfigurationUpdateParams}.
+ * to {@link SettingsUpdate}.
  */
 export function convertUpdateConfigurationCommandArgs(
     args: ActionContributionClientCommandUpdateConfiguration['commandArguments']
-): ConfigurationUpdateParams {
-    if (
-        !isArray(args) ||
-        !(args.length >= 2 && args.length <= 4) ||
-        !isArray(args[0]) ||
-        !(args[2] === undefined || args[2] === null)
-    ) {
-        throw new Error(`invalid updateConfiguration arguments: ${JSON.stringify(args)}`)
+): SettingsEdit {
+    if (!isArray(args) || !(args.length >= 2 && args.length <= 4)) {
+        throw new Error(
+            `invalid updateConfiguration arguments: ${JSON.stringify(
+                args
+            )} (must be an array with either 2 or 4 elements)`
+        )
     }
+
+    let keyPath: KeyPath
+    if (isArray(args[0])) {
+        keyPath = args[0]
+    } else if (typeof args[0] === 'string') {
+        // For convenience, allow the 1st arg (the key path) to be a string, and interpret this as referring to the
+        // object property.
+        keyPath = [args[0]]
+    } else {
+        throw new Error(
+            `invalid updateConfiguration arguments: ${JSON.stringify(
+                args
+            )} (1st element, the key path, must be a string (referring to a settings property) or an array of type (string|number)[] (referring to a deeply nested settings property))`
+        )
+    }
+
+    if (!(args[2] === undefined || args[2] === null)) {
+        throw new Error(`invalid updateConfiguration arguments: ${JSON.stringify(args)} (3rd element must be null)`)
+    }
+
     const valueIsJSONEncoded = args.length === 4 && args[3] === 'json'
-    return { path: args[0], value: valueIsJSONEncoded ? JSON.parse(args[1]) : args[1] }
+    return { path: keyPath, value: valueIsJSONEncoded ? JSON.parse(args[1]) : args[1] }
 }

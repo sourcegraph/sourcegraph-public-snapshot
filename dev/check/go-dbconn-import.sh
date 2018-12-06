@@ -3,6 +3,8 @@
 # This script ensures pkg/dbconn is only imported by services allowed to
 # directly speak with the database.
 
+echo "--- go dbconn import"
+
 set -euf -o pipefail
 
 allowed='^github.com/sourcegraph/sourcegraph/cmd/frontend|github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend|github.com/sourcegraph/sourcegraph/cmd/management-console'

@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -64,12 +63,6 @@ func middleware(next http.Handler) http.Handler {
 		// identity to assume.
 		if rawUsername == "" || actor.FromContext(r.Context()).IsAuthenticated() {
 			next.ServeHTTP(w, r)
-			return
-		}
-
-		// License check.
-		if !licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
-			licensing.WriteSubscriptionErrorResponseForFeature(w, "http-header user authentication (SSO)")
 			return
 		}
 

@@ -56,7 +56,6 @@ func (r *schemaResolver) Search(args *struct {
 		return nil, err
 	}
 	return &searchResolver{
-		root:  r,
 		query: query,
 	}, nil
 }
@@ -74,8 +73,6 @@ func asString(v *searchquerytypes.Value) string {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	root *schemaResolver
-
 	query *query.Query // the parsed search query
 
 	// Cached resolveRepositories results.

@@ -47,7 +47,10 @@ type Repository struct {
 }
 
 func (r *Repository) String() string {
-	return string(r.Name) + "@" + string(r.Commit)
+	if r.Commit != "" {
+		return string(r.Name) + "@" + string(r.Commit)
+	}
+	return string(r.Name)
 }
 
 // Result contains search matches and extra data

@@ -1,54 +1,57 @@
 import { from, Observable, of, throwError } from 'rxjs'
-import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
+import {
+    catchError,
+    distinctUntilChanged,
+    filter,
+    map,
+    publishReplay,
+    refCount,
+    startWith,
+    switchMap,
+} from 'rxjs/operators'
+import { isEqual } from '../api/util'
 import { gql, graphQLContent } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
-import { SettingsCascadeOrError } from '../settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
-import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from './extension'
+import { ConfiguredRegistryExtension, extensionIDsFromSettings, toConfiguredRegistryExtension } from './extension'
 
 const LOADING: 'loading' = 'loading'
 
+/**
+ * @returns An observable that emits the list of extensions configured in the viewer's final settings upon
+ * subscription and each time it changes.
+ */
 export function viewerConfiguredExtensions({
-    settingsCascade,
+    settings,
     queryGraphQL,
-}: Pick<PlatformContext, 'settingsCascade' | 'queryGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
-    return viewerConfiguredExtensionsOrLoading({ settingsCascade, queryGraphQL }).pipe(
+}: Pick<PlatformContext, 'settings' | 'queryGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
+    return from(settings).pipe(
+        map(settings => extensionIDsFromSettings(settings)),
+        distinctUntilChanged((a, b) => isEqual(a, b)),
+        switchMap(extensionIDs =>
+            queryConfiguredRegistryExtensions({ queryGraphQL }, extensionIDs).pipe(startWith(LOADING))
+        ),
+        catchError(error => [asError(error) as ErrorLike]),
         filter((extensions): extensions is ConfiguredRegistryExtension[] | ErrorLike => extensions !== LOADING),
-        switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions]))
+        switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions])),
+        publishReplay(),
+        refCount()
     )
 }
 
-function viewerConfiguredExtensionsOrLoading({
-    settingsCascade,
-    queryGraphQL,
-}: Pick<PlatformContext, 'settingsCascade' | 'queryGraphQL'>): Observable<
-    typeof LOADING | ConfiguredRegistryExtension[] | ErrorLike
-> {
-    return from(settingsCascade).pipe(
-        switchMap(
-            cascade =>
-                isErrorLike(cascade.final)
-                    ? [cascade.final]
-                    : queryConfiguredExtensions({ queryGraphQL }, cascade).pipe(
-                          catchError(error => [asError(error) as ErrorLike]),
-                          startWith(LOADING)
-                      )
-        )
-    )
-}
-
-export function queryConfiguredExtensions(
+/**
+ * Query the GraphQL API for registry metadata about the extensions given in {@link extensionIDs}.
+ *
+ * @returns An observable that emits once with the results.
+ */
+export function queryConfiguredRegistryExtensions(
     { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
-    cascade: SettingsCascadeOrError
+    extensionIDs: string[]
 ): Observable<ConfiguredRegistryExtension[]> {
-    if (isErrorLike(cascade.final)) {
-        return throwError(cascade.final)
-    }
-    if (!cascade.final || !cascade.final.extensions) {
+    if (extensionIDs.length === 0) {
         return of([])
     }
-    const extensionIDs = Object.keys(cascade.final.extensions)
     return from(
         queryGraphQL<GQL.IQuery>(
             gql`
@@ -71,7 +74,7 @@ export function queryConfiguredExtensions(
             {
                 first: extensionIDs.length,
                 prioritizeExtensionIDs: extensionIDs,
-            },
+            } as GQL.IExtensionsOnExtensionRegistryArguments,
             false
         )
     ).pipe(

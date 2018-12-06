@@ -1,4 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
+import * as plain from '../../protocol/plainTypes'
 import { Position } from './position'
 import { Range } from './range'
 
@@ -75,5 +76,18 @@ export class Selection extends Range implements sourcegraph.Selection {
             active: this.active,
             anchor: this.anchor,
         }
+    }
+
+    public toPlain(): plain.Selection {
+        return {
+            ...super.toPlain(),
+            isReversed: this.isReversed,
+        }
+    }
+
+    public static fromPlain(data: plain.Selection): Selection {
+        return data.isReversed
+            ? new Selection(data.end.line, data.end.character, data.start.line, data.start.character)
+            : new Selection(data.start.line, data.start.character, data.end.line, data.end.character)
     }
 }

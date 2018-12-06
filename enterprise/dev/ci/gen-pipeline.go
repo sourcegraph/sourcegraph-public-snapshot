@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -46,6 +47,8 @@ func main() {
 	}
 	releaseBranch := regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch)
 
+	isBextReleaseBranch := branch == "bext/release"
+
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
@@ -53,83 +56,57 @@ func main() {
 		bk.Env("ENTERPRISE", "1"),
 	)
 
-	pipeline.AddStep(":white_check_mark:",
-		bk.Cmd("./dev/check/all.sh"))
+	if !isBextReleaseBranch {
+		pipeline.AddStep(":white_check_mark:",
+			bk.Cmd("./dev/check/all.sh"))
+	}
 
-	pipeline.AddStep(":lipstick:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run prettier"))
+	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
+		bk.Cmd("dev/ci/yarn-run.sh prettier all:tslint all:stylelint all:typecheck graphql-lint"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run all:tslint"))
+	pipeline.AddStep(":ie:",
+		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
-	pipeline.AddStep(":stylelint:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn -s run all:stylelint"),
-		bk.Cmd("yarn run all:typecheck"))
+	if !isBextReleaseBranch {
+		pipeline.AddStep(":webpack:",
+			bk.Cmd("dev/ci/yarn-build.sh web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", "0"))
 
-	pipeline.AddStep(":graphql:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn run graphql-lint"))
+		pipeline.AddStep(":webpack: :moneybag:",
+			bk.Cmd("dev/ci/yarn-build.sh web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", "1"))
 
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("yarn -s run build"),
-		bk.Cmd("popd"))
-
-	pipeline.AddStep(":webpack:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("NODE_ENV=production yarn -s run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-		bk.Cmd("popd"))
-
-	pipeline.AddStep(":webpack: :moneybag:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run browserslist"),
-		bk.Cmd("ENTERPRISE=1 NODE_ENV=production yarn -s run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn -s run bundlesize"),
-		bk.Cmd("popd"))
+		pipeline.AddStep(":typescript:",
+			bk.Cmd("dev/ci/yarn-test.sh web"),
+			bk.ArtifactPaths("web/coverage/coverage-final.json"))
+	}
 
 	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn -s run cover"),
-		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-		bk.Cmd("popd"),
-		bk.ArtifactPaths("web/coverage/coverage-final.json"))
-
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd shared"),
-		bk.Cmd("yarn -s run cover"),
-		bk.Cmd("yarn -s run nyc report -r json --report-dir coverage"),
-		bk.Cmd("popd"),
+		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
-	// TODO(sqs): reenable the DB backcompat test
-	//
-	// pipeline.AddStep(":postgres:",
-	// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+	if !isBextReleaseBranch {
+		// TODO(sqs): reenable the DB backcompat test
+		//
+		// pipeline.AddStep(":postgres:",
+		// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go generate ./..."),
-		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
-		bk.ArtifactPaths("coverage.txt"))
+		pipeline.AddStep(":go:",
+			bk.Cmd("go generate ./..."),
+			bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+			bk.ArtifactPaths("coverage.txt"))
 
-	pipeline.AddStep(":go:",
-		bk.Cmd("go generate ./..."),
-		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
-	)
+		pipeline.AddStep(":go:",
+			bk.Cmd("go generate ./..."),
+			bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
+		)
 
-	pipeline.AddStep(":docker:",
-		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+		pipeline.AddStep(":docker:",
+			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+			bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+	}
 
 	pipeline.AddWait()
 
@@ -143,7 +120,7 @@ func main() {
 	addDockerImageStep := func(app string, insiders bool) {
 		cmdDir := "cmd/" + app
 		var pkgPath string
-		if _, err := os.Stat(cmdDir); err != nil {
+		if _, err := os.Stat(filepath.Join("enterprise", cmdDir)); err != nil {
 			fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
 			pkgPath = "github.com/sourcegraph/sourcegraph/cmd/" + app
 		} else {
@@ -258,43 +235,49 @@ func main() {
 			bk.Cmd("popd"))
 	}
 
-	if branch == "bext/release" {
+	if isBextReleaseBranch {
 		addBrowserExtensionReleaseSteps()
 		return
 	}
 
 	pipeline.AddWait()
 
-	fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
-		return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
-	}
+	// TODO@ggilmore: disabled until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976
+	// is completed.
+	// fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
+	// 	return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
+	// }
 
 	addDeploySteps := func() {
 		// Deploy to dogfood
-		pipeline.AddStep(":dog:",
-			// Protect against concurrent/out-of-order deploys
-			bk.ConcurrencyGroup("deploy"),
-			bk.Concurrency(1),
-			bk.Env("VERSION", version),
-			bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
-			bk.Env("NAMESPACE", "default"),
-			fetchClusterCredentials("dogfood-cluster-7", "us-central1-a", "sourcegraph-dev"),
-			bk.Cmd("./dev/ci/deploy-dogfood.sh"))
-		pipeline.AddWait()
+		// TODO@ggilmore: disabled until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976
+		// is completed.
+		// pipeline.AddStep(":dog:",
+		// 	// Protect against concurrent/out-of-order deploys
+		// 	bk.ConcurrencyGroup("deploy"),
+		// 	bk.Concurrency(1),
+		// 	bk.Env("VERSION", version),
+		// 	bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
+		// 	bk.Env("NAMESPACE", "default"),
+		// 	fetchClusterCredentials("dogfood-cluster-7", "us-central1-a", "sourcegraph-dev"),
+		// 	bk.Cmd("./dev/ci/deploy-dogfood.sh"))
+		// pipeline.AddWait()
 
 		// Run e2e tests against dogfood
-		pipeline.AddStep(":chromium:",
-			// Protect against deploys while tests are running
-			bk.ConcurrencyGroup("deploy"),
-			bk.Concurrency(1),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("yarn cache clean puppeteer"), // ensure it's downloaded even if the package was cached w/o downloading
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd web"),
-			bk.Cmd("yarn -s run test-e2e-sgdev --retries 5"),
-			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
-		pipeline.AddWait()
+		// TODO@ggilmore: disabled until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976
+		// is completed.
+		// pipeline.AddStep(":chromium:",
+		// 	// Protect against deploys while tests are running
+		// 	bk.ConcurrencyGroup("deploy"),
+		// 	bk.Concurrency(1),
+		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		// 	bk.Cmd("yarn cache clean puppeteer"), // ensure it's downloaded even if the package was cached w/o downloading
+		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		// 	bk.Cmd("pushd web"),
+		// 	bk.Cmd("yarn -s run test-e2e-sgdev --retries 5"),
+		// 	bk.Cmd("popd"),
+		// 	bk.ArtifactPaths("./puppeteer/*.png"))
+		// pipeline.AddWait()
 
 		// Deploy to prod
 		pipeline.AddStep(":rocket:",

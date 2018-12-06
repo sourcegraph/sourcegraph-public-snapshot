@@ -1,8 +1,6 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { tap } from 'rxjs/operators'
-import { overwriteSettings } from '../configuration/backend'
-import { settingsRefreshes } from '../user/settings/backend'
+import { overwriteSettings } from '../../../shared/src/settings/edit'
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
@@ -38,20 +36,31 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidCommit = (lastID: number | null, contents: string) => {
+    private onDidCommit = async (lastID: number | null, contents: string) => {
         this.setState({ commitError: undefined })
-        overwriteSettings(this.props.subject.id, lastID, contents)
-            .pipe(tap(() => settingsRefreshes.next()))
-            .subscribe(
-                () => {
-                    this.setState({ commitError: undefined })
-                    this.props.onUpdate()
-                },
-                err => {
-                    this.setState({ commitError: err })
-                    console.error(err)
-                }
-            )
+
+        // When updating settings for a settings subject that is in the viewer's settings cascade (i.e., if the
+        // update will affect the viewer's settings), perform the update by calling through the shared
+        // {@link PlatformContext#updateSettings} so that the update is seen by all settings observers.
+        //
+        // If the settings update is for some other subject that is unrelated to the viewer, then this is not
+        // necessary.
+        const isSubjectInViewerSettingsCascade =
+            this.props.settingsCascade.subjects &&
+            this.props.settingsCascade.subjects.some(({ subject }) => subject.id === this.props.subject.id)
+
+        try {
+            if (isSubjectInViewerSettingsCascade) {
+                await this.props.platformContext.updateSettings(this.props.subject.id, contents)
+            } else {
+                await overwriteSettings(this.props.platformContext, this.props.subject.id, lastID, contents)
+            }
+            this.setState({ commitError: undefined })
+            this.props.onUpdate()
+        } catch (err) {
+            this.setState({ commitError: err })
+            console.error(err)
+        }
     }
 
     private onDidDiscard = (): void => {

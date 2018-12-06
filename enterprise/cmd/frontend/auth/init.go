@@ -58,28 +58,29 @@ func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) (signOutURLs []ap
 }
 
 func init() {
-	// Warn about usage of auth providers that are not enabled by the license.
+	// Warn about usage of user auth providers (those that integrate with external services' ACLs,
+	// such as GitHub or GitLab repository permissions) that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.
 		if !args.IsSiteAdmin {
 			return nil
 		}
 
-		if licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
+		if licensing.IsFeatureEnabledLenient(licensing.FeatureACLs) {
 			return nil
 		}
 
-		var externalAuthProviderTypes []string
+		var disallowedAuthProviderTypes []string
 		for _, p := range conf.Get().AuthProviders {
-			if p.Builtin == nil {
-				externalAuthProviderTypes = append(externalAuthProviderTypes, conf.AuthProviderType(p))
+			if p.Github != nil || p.Gitlab != nil {
+				disallowedAuthProviderTypes = append(disallowedAuthProviderTypes, conf.AuthProviderType(p))
 			}
 		}
-		if len(externalAuthProviderTypes) > 0 {
+		if len(disallowedAuthProviderTypes) > 0 {
 			return []*graphqlbackend.Alert{
 				{
 					TypeValue:    graphqlbackend.AlertTypeError,
-					MessageValue: fmt.Sprintf("A Sourcegraph license is required for user authentication providers (SSO): %s. [**Get a license.**](/site-admin/license)", strings.Join(externalAuthProviderTypes, ", ")),
+					MessageValue: fmt.Sprintf("A Sourcegraph license is required for the following user authentication providers (which integrate with ACLs/permissions on external services): %s. [**Get a license.**](/site-admin/license)", strings.Join(disallowedAuthProviderTypes, ", ")),
 				},
 			}
 		}

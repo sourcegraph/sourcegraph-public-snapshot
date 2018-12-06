@@ -6,10 +6,10 @@ import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { numberWithCommas } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
-import { memoizeObservable } from '../util/memoize'
-import { numberWithCommas } from '../util/strings'
 
 interface GitRefNodeProps {
     node: GQL.IGitRef

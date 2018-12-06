@@ -106,10 +106,11 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	// Install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
 	defaultClient.fetcher = passthroughFetcherFrontendOnly{}
 
+	configurationServerFrontendOnly = server
 	close(configurationServerFrontendOnlyInitialized)
 
 	go defaultClient.continuouslyUpdate()
-	configurationServerFrontendOnly = server
+
 	return server
 }
 

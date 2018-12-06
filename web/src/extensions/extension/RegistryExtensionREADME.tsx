@@ -1,9 +1,9 @@
 import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { Markdown } from '../../../../shared/src/components/Markdown'
 import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
 import { isErrorLike } from '../../../../shared/src/util/errors'
-import { Markdown } from '../../components/Markdown'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
 const PublishNewManifestAlert: React.FunctionComponent<{

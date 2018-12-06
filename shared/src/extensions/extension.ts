@@ -1,6 +1,6 @@
 import * as GQL from '../graphql/schema'
-import { Settings } from '../settings/settings'
-import { ErrorLike, isErrorLike } from '../util/errors'
+import { Settings, SettingsCascadeOrError } from '../settings/settings'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionManifest, parseExtensionManifestOrError } from './extensionManifest'
 
 /**
@@ -60,4 +60,38 @@ export function toConfiguredRegistryExtension<X extends MinimalRegistryExtension
 /** Reports whether the given extension is enabled in the settings. */
 export function isExtensionEnabled(settings: Settings | ErrorLike | null, extensionID: string): boolean {
     return !!settings && !isErrorLike(settings) && !!settings.extensions && !!settings.extensions[extensionID]
+}
+
+/**
+ * Returns the extension's script URL from its manifest.
+ *
+ * @param extension The extension whose script URL to get.
+ * @throws If the script URL can't be determined.
+ * @returns The extension's script URL.
+ */
+export function getScriptURLFromExtensionManifest(extension: ConfiguredExtension): string {
+    if (!extension.manifest) {
+        throw new Error(`extension ${JSON.stringify(extension.id)}: no manifest found`)
+    }
+    if (isErrorLike(extension.manifest)) {
+        throw new Error(`extension ${JSON.stringify(extension.id)}: invalid manifest: ${extension.manifest.message}`)
+    }
+    if (!extension.manifest.url) {
+        throw new Error(`extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
+    }
+    return extension.manifest.url
+}
+
+/**
+ * @throws An error if the final settings has an error.
+ * @returns An array of extension IDs configured in the settings.
+ */
+export function extensionIDsFromSettings(settings: SettingsCascadeOrError): string[] {
+    if (isErrorLike(settings.final)) {
+        throw asError(settings.final)
+    }
+    if (!settings.final || !settings.final.extensions) {
+        return []
+    }
+    return Object.keys(settings.final.extensions)
 }

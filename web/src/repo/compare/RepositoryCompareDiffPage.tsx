@@ -8,8 +8,8 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -96,14 +96,13 @@ interface RepositoryCompareDiffPageProps
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        ExtensionsControllerProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
 
     /** The head of the comparison. */
     head: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
-    hoverifier: Hoverifier
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 
 /** A page with the file diffs in the comparison. */
@@ -132,8 +131,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
-                    extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
-                    extensionsOnRootsChange={this.props.extensionsOnRootsChange}
+                    extensionsController={this.props.extensionsController}
                 />
             </div>
         )

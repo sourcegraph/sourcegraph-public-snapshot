@@ -2,8 +2,10 @@ package endpoint
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
+	"testing/quick"
 )
 
 func TestStatic(t *testing.T) {
@@ -48,5 +50,43 @@ func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ..
 		if c == 0 {
 			t.Fatalf("map never returned %v", e)
 		}
+	}
+}
+
+func TestGetAll(t *testing.T) {
+	m := New("http://test-1 http://test-2 http://test-3 http://test-4")
+	f := func(keys []string) bool {
+		values, err := m.GetAll(keys, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i := range keys {
+			if v, err := m.Get(keys[i], nil); err != nil {
+				t.Fatal(err)
+			} else if v != values[i] {
+				return false
+			}
+		}
+		return len(keys) == len(values)
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestEndpoints(t *testing.T) {
+	eps := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
+	want := map[string]struct{}{}
+	for _, addr := range eps {
+		want[addr] = struct{}{}
+	}
+
+	m := New(strings.Join(eps, " "))
+	got, err := m.Endpoints()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
 	}
 }

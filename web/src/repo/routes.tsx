@@ -1,8 +1,8 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
-import { ResizablePanel } from '../panel/Panel'
-import { formatHash, isLegacyFragment, parseHash } from '../util/url'
+import { isLegacyFragment, parseHash } from '../../../shared/src/util/url'
+import { formatHash } from '../util/url'
 import { BlobPage } from './blob/BlobPage'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
@@ -88,10 +88,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     }
                                     settingsCascade={context.settingsCascade}
                                     platformContext={context.platformContext}
-                                    extensionsOnRootsChange={context.extensionsOnRootsChange}
-                                    extensionsOnVisibleTextDocumentsChange={
-                                        context.extensionsOnVisibleTextDocumentsChange
-                                    }
                                     extensionsController={context.extensionsController}
                                     location={context.location}
                                     history={context.history}
@@ -114,7 +110,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     isLightTheme={context.isLightTheme}
                                 />
                             )}
-                            <ResizablePanel {...context} />
                         </div>
                     )}
                 </>
