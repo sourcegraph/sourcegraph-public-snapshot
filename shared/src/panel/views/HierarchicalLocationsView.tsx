@@ -133,7 +133,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
         }[] = [
             {
                 name: 'repo',
-                defaultSize: 100,
+                defaultSize: 175,
                 key: loc => parseRepoURI(loc.uri).repoPath,
             },
         ]
