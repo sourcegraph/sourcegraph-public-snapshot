@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -25,10 +26,22 @@ import (
 var bitbucketServerConnections = atomicvalue.New()
 
 func init() {
-	conf.Watch(func() {
-		bitbucketServerConnections.Set(func() interface{} {
+	bitbucketServerConnections.Set(func() interface{} {
+		return []*bitbucketServerConnection{}
+	})
+
+	go func() {
+		t := time.NewTicker(10 * time.Second)
+		var lastConfig []*schema.BitbucketServerConnection
+		for range t.C {
+			config := conf.Get().BitbucketServer
+			if !reflect.DeepEqual(config, lastConfig) {
+				continue
+			}
+			lastConfig = config
+
 			var conns []*bitbucketServerConnection
-			for _, c := range conf.Get().BitbucketServer {
+			for _, c := range config {
 				conn, err := newBitbucketServerConnection(c)
 				if err != nil {
 					log15.Error("Error processing configured Bitbucket Server connection. Skipping it.", "url", c.Url, "error", err)
@@ -36,10 +49,14 @@ func init() {
 				}
 				conns = append(conns, conn)
 			}
-			return conns
-		})
-		bitbucketServerWorker.restart()
-	})
+
+			bitbucketServerConnections.Set(func() interface{} {
+				return conns
+			})
+
+			bitbucketServerWorker.restart()
+		}
+	}()
 }
 
 // getBitbucketServerConnection returns the BitbucketServer connection (config + API client) that is responsible for
