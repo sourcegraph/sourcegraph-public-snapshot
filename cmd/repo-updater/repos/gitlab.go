@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -22,9 +23,19 @@ import (
 var gitlabConnections = atomicvalue.New()
 
 func init() {
-	conf.Watch(func() {
-		gitlabConnections.Set(func() interface{} {
+	gitlabConnections.Set(func() interface{} {
+		return []*gitlabConnection{}
+	})
+
+	go func() {
+		t := time.NewTicker(10 * time.Second)
+		var lastConfig []*schema.GitLabConnection
+		for range t.C {
 			gitlabConf := conf.Get().Gitlab
+			if !reflect.DeepEqual(gitlabConf, lastConfig) {
+				continue
+			}
+			lastConfig = gitlabConf
 
 			var hasGitLabDotComConnection bool
 			for _, c := range gitlabConf {
@@ -53,10 +64,14 @@ func init() {
 				}
 				conns = append(conns, conn)
 			}
-			return conns
-		})
-		gitLabRepositorySyncWorker.restart()
-	})
+
+			gitlabConnections.Set(func() interface{} {
+				return conns
+			})
+
+			gitLabRepositorySyncWorker.restart()
+		}
+	}()
 }
 
 // getGitLabConnection returns the GitLab connection (config + API client) that is responsible for
