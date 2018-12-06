@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"io/ioutil"
 	"net/url"
 	"strings"
@@ -62,9 +63,12 @@ type phabAPIResponse struct {
 func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	for {
 		var phabs []*schema.PhabricatorConnection
-		err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &phabs)
-		if err != nil {
-			log15.Error("unable to fetch Phabricator connections", "err", err)
+		if conf.ExternalServicesEnabled() {
+			if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &phabs); err != nil {
+				log15.Error("unable to fetch Phabricator connections", "err", err)
+			}
+		} else {
+			phabs = conf.Get().Phabricator
 		}
 
 		for i, c := range phabs {

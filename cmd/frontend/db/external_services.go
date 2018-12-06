@@ -106,23 +106,36 @@ func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOpt
 	return c.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
+// ListConfigs decodes the list configs into result.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListConfigs(ctx context.Context, kind string, result interface{}) error {
+	services, err := c.List(ctx, ExternalServicesListOptions{Kind: kind})
+	if err != nil {
+		return err
+	}
+	var configs []json.RawMessage
+	for _, service := range services {
+		configs = append(configs, json.RawMessage(service.Config))
+	}
+	buf, err := json.Marshal(configs)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(buf, result)
+}
+
+// ListPhabricatorConnections returns a list of PhabricatorConnection configs.
+//
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
 	if !conf.ExternalServicesEnabled() {
 		return conf.Get().Phabricator, nil
 	}
 
-	externalServices, err := c.List(ctx, ExternalServicesListOptions{Kind: "PHABRICATOR"})
-	if err != nil {
-		return nil, err
-	}
 	var connections []*schema.PhabricatorConnection
-	for _, externalService := range externalServices {
-		var connection schema.PhabricatorConnection
-		if err := json.Unmarshal([]byte(externalService.Config), &connection); err != nil {
-			return nil, err
-		}
-		connections = append(connections, &connection)
+	if err := c.ListConfigs(ctx, "PHABRICATOR", &connections); err != nil {
+		return nil, err
 	}
 	return connections, nil
 }
