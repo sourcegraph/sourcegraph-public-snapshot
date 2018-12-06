@@ -46,7 +46,6 @@ export class SearchResult extends React.Component<Props> {
                 <>
                     <span className="search-result__spacer" />
                     <small
-                        // TODO @attfarhan: if label.html is not specified, render markdown for label.text.
                         dangerouslySetInnerHTML={{
                             __html: this.props.result.detail.html
                                 ? decode(this.props.result.detail.html)

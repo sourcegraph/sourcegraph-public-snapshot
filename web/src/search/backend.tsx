@@ -50,25 +50,11 @@ export function search(
                                         name
                                         url
                                         label {
-                                            text
                                             html
                                         }
                                         icon
                                         detail {
-                                            text
                                             html
-                                        }
-                                        matches {
-                                            url
-                                            body {
-                                                text
-                                                html
-                                            }
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
                                         }
                                     }
                                     ... on FileMatch {
@@ -99,51 +85,12 @@ export function search(
                                     }
                                     ... on CommitSearchResult {
                                         __typename
-                                        refs {
-                                            name
-                                            displayName
-                                            prefix
-                                            repository {
-                                                name
-                                            }
-                                        }
-                                        sourceRefs {
-                                            name
-                                            displayName
-                                            prefix
-                                            repository {
-                                                name
-                                            }
-                                        }
-                                        commit {
-                                            id
-                                            repository {
-                                                name
-                                                url
-                                            }
-                                            oid
-                                            abbreviatedOID
-                                            author {
-                                                person {
-                                                    displayName
-                                                    avatarURL
-                                                }
-                                                date
-                                            }
-                                            message
-                                            url
-                                            tree(path: "") {
-                                                canonicalURL
-                                            }
-                                        }
                                         label {
-                                            text
                                             html
                                         }
                                         url
                                         icon
                                         detail {
-                                            text
                                             html
                                         }
                                         matches {
