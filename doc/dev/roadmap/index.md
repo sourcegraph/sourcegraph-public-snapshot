@@ -32,7 +32,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
-- [Thrift "Find generated code" and "Find callers"](https://github.com/sourcegraph/sourcegraph/issues/669)
+- [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 - [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - Improved code host support for Sourcegraph extensions
