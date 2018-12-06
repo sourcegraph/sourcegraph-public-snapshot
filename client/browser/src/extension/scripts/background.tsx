@@ -213,7 +213,7 @@ storage.setSyncMigration(items => {
 
     // TODO: Remove this block after a few releases
     const clientSettings = JSON.parse(items.clientSettings || '{}')
-    if (clientSettings['codecov.endpoints']) {
+    if (clientSettings['codecov.endpoints'] || typeof clientSettings['codecov.showCoverage'] !== 'undefined') {
         if (typeof clientSettings.extensions === 'undefined') {
             clientSettings.extensions = clientSettings.extensions || {}
         }
