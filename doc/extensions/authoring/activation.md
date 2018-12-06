@@ -64,7 +64,7 @@ import * as sourcegraph from 'sourcegraph'
 // No-op for Sourcegraph versions prior to 3.0-preview
 const DUMMY_CTX = { subscriptions: { add: (_unsubscribable: any) => void 0 } }
 
-export function activate(ctx: sourcegraph.ExtensionContext = DUMMY_CTX) {
+export function activate(ctx: sourcegraph.ExtensionContext = DUMMY_CTX): void {
   ctx.subscriptions.add(/* ... */)
 }
 ```
