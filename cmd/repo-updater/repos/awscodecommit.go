@@ -35,7 +35,7 @@ func init() {
 	})
 
 	go func() {
-		t := time.NewTimer(10 * time.Second)
+		t := time.NewTimer(configWatchInterval)
 		var lastConfig []*schema.AWSCodeCommitConnection
 		for range t.C {
 			config := conf.Get().AwsCodeCommit

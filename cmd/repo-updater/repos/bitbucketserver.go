@@ -31,7 +31,7 @@ func init() {
 	})
 
 	go func() {
-		t := time.NewTicker(10 * time.Second)
+		t := time.NewTicker(configWatchInterval)
 		var lastConfig []*schema.BitbucketServerConnection
 		for range t.C {
 			config := conf.Get().BitbucketServer
