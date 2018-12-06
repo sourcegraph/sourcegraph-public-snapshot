@@ -114,7 +114,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServicesQueryRequest
+	var req api.ExternalServiceConfigsRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return err
