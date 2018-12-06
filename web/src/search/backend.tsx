@@ -469,18 +469,23 @@ export function deleteSavedQuery(
 }
 
 export const highlightCode = memoizeObservable(
-    (ctx: { code: string; path: string; disableTimeout: boolean; isLightTheme: boolean }): Observable<string> =>
+    (ctx: {
+        code: string
+        fuzzyLanguage: string
+        disableTimeout: boolean
+        isLightTheme: boolean
+    }): Observable<string> =>
         queryGraphQL(
             gql`
                 query highlightCode(
                     $code: String!
-                    $path: String!
+                    $fuzzyLanguage: String!
                     $disableTimeout: Boolean!
                     $isLightTheme: Boolean!
                 ) {
                     highlightCode(
                         code: $code
-                        path: $path
+                        fuzzyLanguage: $fuzzyLanguage
                         disableTimeout: $disableTimeout
                         isLightTheme: $isLightTheme
                     )
@@ -495,5 +500,5 @@ export const highlightCode = memoizeObservable(
                 return data.highlightCode
             })
         ),
-    ctx => `${ctx.code}:${ctx.path}:${ctx.disableTimeout}:${ctx.isLightTheme}`
+    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${ctx.disableTimeout}:${ctx.isLightTheme}`
 )

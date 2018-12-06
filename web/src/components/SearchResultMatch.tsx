@@ -76,7 +76,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             if (codeContent) {
                                 return highlightCode({
                                     code: decode(codeContent),
-                                    path: 'file.' + lang,
+                                    fuzzyLanguage: lang,
                                     disableTimeout: false,
                                     isLightTheme: this.props.isLightTheme,
                                 }).pipe(

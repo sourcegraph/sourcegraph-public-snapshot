@@ -55,11 +55,13 @@ func (*schemaResolver) RenderMarkdown(args *struct {
 
 func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 	Code           string
-	Path           string
+	FuzzyLanguage  string
 	DisableTimeout bool
 	IsLightTheme   bool
 }) (string, error) {
-	html, _, err := highlight.Code(ctx, []byte(args.Code), args.Path, args.DisableTimeout, args.IsLightTheme)
+	language := highlight.SyntectLanguageMap[args.FuzzyLanguage]
+	filePath := "file." + language
+	html, _, err := highlight.Code(ctx, []byte(args.Code), filePath, args.DisableTimeout, args.IsLightTheme)
 	if err != nil {
 		return args.Code, err
 	}
