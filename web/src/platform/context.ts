@@ -30,7 +30,7 @@ export function createPlatformContext(): PlatformContext {
             // extension is why this logic lives here and not in shared/.)
             if (!window.context.isAuthenticatedUser) {
                 const editDescription =
-                    typeof edit === 'string' ? 'edit settings' : `update setting` + '`' + edit.path.join('.') + '`'
+                    typeof edit === 'string' ? 'edit settings' : `update setting ` + '`' + edit.path.join('.') + '`'
                 const u = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
