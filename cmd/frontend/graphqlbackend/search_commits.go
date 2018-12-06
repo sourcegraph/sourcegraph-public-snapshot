@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -44,30 +43,16 @@ func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { retur
 func (r *commitSearchResultResolver) Icon() string {
 	return r.icon
 }
-func (r *commitSearchResultResolver) Label() (*markdownResolver, error) {
-	var m markdownResolver
-	m.text = r.label
-	html, err := markdown.Render(r.label, nil)
-	if err != nil {
-		return &m, err
-	}
-	m.html = &html
-	return &m, nil
+func (r *commitSearchResultResolver) Label() *markdownResolver {
+	return &markdownResolver{text: r.label}
 }
 
 func (r *commitSearchResultResolver) URL() string {
 	return r.url
 }
 
-func (r *commitSearchResultResolver) Detail() (*markdownResolver, error) {
-	var m markdownResolver
-	m.text = r.detail
-	html, err := markdown.Render(r.detail, nil)
-	if err != nil {
-		return &m, err
-	}
-	m.html = &html
-	return &m, nil
+func (r *commitSearchResultResolver) Detail() *markdownResolver {
+	return &markdownResolver{text: r.detail}
 }
 
 func (r *commitSearchResultResolver) Matches() []*genericSearchMatchResolver {

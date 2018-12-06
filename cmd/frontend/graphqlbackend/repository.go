@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/pkg/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -205,24 +204,11 @@ func (r *repositoryResolver) Icon() string {
 }
 func (r *repositoryResolver) Label() (*markdownResolver, error) {
 	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
-	var m = markdownResolver{text: text}
-	html, err := markdown.Render(text, nil)
-	if err != nil {
-		return &m, err
-	}
-	m.html = &html
-	return &m, nil
+	return &markdownResolver{text: text}, nil
 }
 
-func (r *repositoryResolver) Detail() (*markdownResolver, error) {
-	text := "Repository name match"
-	html, err := markdown.Render(text, nil)
-	var m = markdownResolver{text: text}
-	if err != nil {
-		return &m, err
-	}
-	m.html = &html
-	return &m, nil
+func (r *repositoryResolver) Detail() *markdownResolver {
+	return &markdownResolver{text: "Repository name match"}
 }
 
 func (r *repositoryResolver) Matches() []*genericSearchMatchResolver {

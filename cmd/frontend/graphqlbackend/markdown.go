@@ -1,8 +1,9 @@
 package graphqlbackend
 
+import "github.com/sourcegraph/sourcegraph/pkg/markdown"
+
 type markdownResolver struct {
 	text string
-	html *string
 }
 
 func (m *markdownResolver) Text() string {
@@ -10,5 +11,9 @@ func (m *markdownResolver) Text() string {
 }
 
 func (m *markdownResolver) HTML() *string {
-	return m.html
+	html, err := markdown.Render(m.text, nil)
+	if err != nil {
+		return nil
+	}
+	return &html
 }
