@@ -89,10 +89,11 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
             error = this.state.updateOrError
         }
 
-        let externalService: GQL.IExternalService | undefined
-        if (!isErrorLike(this.state.externalServiceOrError) && this.state.externalServiceOrError !== LOADING) {
-            externalService = this.state.externalServiceOrError
-        }
+        const externalService =
+            (!isErrorLike(this.state.externalServiceOrError) &&
+                this.state.externalServiceOrError !== LOADING &&
+                this.state.externalServiceOrError) ||
+            undefined
 
         return (
             <div className="site-admin-configuration-page">
