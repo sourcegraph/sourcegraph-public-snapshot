@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The filters bar in the search results page can now display filters from extensions.
 - Extensions' `activate` functions now receive a `sourcegraph.ExtensionContext` parameter (i.e., `export function activate(ctx: sourcegraph.ExtensionContext): void { ... }`) to support deactivation and running multiple extensions in the same process.
 - Users can now request an Enterprise trial license from the site init page.
+- When searching, a filter button `case:yes` will now appear when relevant. This helps discovery and makes it easier to use our case-sensitive search syntax.
 
 ### Changed
 
