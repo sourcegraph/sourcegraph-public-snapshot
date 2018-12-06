@@ -213,8 +213,11 @@ function initCodeIntelligence(
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
     controllers: Partial<ExtensionsControllerProps & PlatformContextProps>
 } {
+    const shouldUseExtensions = useExtensions || sourcegraphUrl === 'https://sourcegraph.com'
     const { platformContext, extensionsController }: Partial<ExtensionsControllerProps & PlatformContextProps> =
-        useExtensions && codeHost.getCommandPaletteMount ? initializeExtensions(codeHost.getCommandPaletteMount) : {}
+        shouldUseExtensions && codeHost.getCommandPaletteMount
+            ? initializeExtensions(codeHost.getCommandPaletteMount)
+            : {}
     const simpleProviderFns = extensionsController ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
 
     /** Emits when the go to definition button was clicked */
