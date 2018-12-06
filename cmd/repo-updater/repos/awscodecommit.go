@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -29,10 +30,22 @@ import (
 var awsCodeCommitConnections = atomicvalue.New()
 
 func init() {
-	conf.Watch(func() {
-		awsCodeCommitConnections.Set(func() interface{} {
+	awsCodeCommitConnections.Set(func() interface{} {
+		return []*awsCodeCommitConnection{}
+	})
+
+	go func() {
+		t := time.NewTimer(10 * time.Second)
+		var lastConfig []*schema.AWSCodeCommitConnection
+		for range t.C {
+			config := conf.Get().AwsCodeCommit
+			if !reflect.DeepEqual(config, lastConfig) {
+				continue
+			}
+			lastConfig = config
+
 			var conns []*awsCodeCommitConnection
-			for _, c := range conf.Get().AwsCodeCommit {
+			for _, c := range config {
 				conn, err := newAWSCodeCommitConnection(c)
 				if err != nil {
 					log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)
@@ -40,10 +53,14 @@ func init() {
 				}
 				conns = append(conns, conn)
 			}
-			return conns
-		})
-		awsCodeCommitRepositorySyncWorker.restart()
-	})
+
+			awsCodeCommitConnections.Set(func() interface{} {
+				return conns
+			})
+
+			awsCodeCommitRepositorySyncWorker.restart()
+		}
+	}()
 }
 
 // GetAWSCodeCommitRepositoryMock is set by tests that need to mock GetAWSCodeCommitRepository.

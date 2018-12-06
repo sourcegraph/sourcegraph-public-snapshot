@@ -41,10 +41,12 @@ type Mutation {
     updateOrganization(id: ID!, displayName: String): Org!
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
-    # Adds a external service.
+    # Adds a external service. Only site admins may perform this mutation.
     addExternalService(input: AddExternalServiceInput!): ExternalService!
-    # Updates a external service
+    # Updates a external service. Only site admins may perform this mutation.
     updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
+    # Delete an external service. Only site admins may perform this mutation.
+    deleteExternalService(externalService: ID!): EmptyResponse!
     # Adds a repository on a code host that is already present in the site configuration. The name (which may
     # consist of one or more path components) of the repository must be recognized by an already configured code
     # host, or else Sourcegraph won't know how to clone it.

@@ -2,7 +2,7 @@ import * as jsonc from '@sqs/jsonc-parser'
 import * as monaco from 'monaco-editor'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../schema/settings.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
@@ -66,6 +66,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     }
                 })
         )
+
         this.subscriptions.add(
             componentUpdates
                 .pipe(
@@ -78,6 +79,14 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                         this.monaco.editor.setTheme(monacoTheme)
                     }
                 })
+        )
+
+        this.subscriptions.add(
+            componentUpdates.pipe(distinctUntilKeyChanged('jsonSchemaId')).subscribe(props => {
+                if (this.monaco) {
+                    setDiagnosticsOptions(this.monaco, props)
+                }
+            })
         )
     }
 
@@ -143,34 +152,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         }
 
-        const extraSchemas = (this.props.extraSchemas || []).map(schema => ({
-            uri: schema.$id,
-            schema,
-        }))
-
-        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
-            validate: true,
-            allowComments: true,
-            schemas: [
-                {
-                    uri: 'root#', // doesn't matter as long as it doesn't collide
-                    schema: {
-                        $ref: this.props.jsonSchemaId,
-                    },
-                    fileMatch: ['*'],
-                },
-
-                // Include these schemas because they are referenced by other schemas.
-                {
-                    uri: 'http://json-schema.org/draft-07/schema',
-                    schema: jsonSchemaMetaSchema,
-                },
-                {
-                    uri: 'settings.schema.json#',
-                    schema: settingsSchema,
-                },
-            ].concat(extraSchemas),
-        })
+        setDiagnosticsOptions(monaco, this.props)
 
         monaco.editor.defineTheme('sourcegraph-dark', {
             base: 'vs-dark',
@@ -219,6 +201,37 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         )
     }
+}
+
+function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
+    const extraSchemas = (props.extraSchemas || []).map(schema => ({
+        uri: schema.$id,
+        schema,
+    }))
+
+    m.languages.json.jsonDefaults.setDiagnosticsOptions({
+        validate: true,
+        allowComments: true,
+        schemas: [
+            {
+                uri: 'root#', // doesn't matter as long as it doesn't collide
+                schema: {
+                    $ref: props.jsonSchemaId,
+                },
+                fileMatch: ['*'],
+            },
+
+            // Include these schemas because they are referenced by other schemas.
+            {
+                uri: 'http://json-schema.org/draft-07/schema',
+                schema: jsonSchemaMetaSchema,
+            },
+            {
+                uri: 'settings.schema.json#',
+                schema: settingsSchema,
+            },
+        ].concat(extraSchemas),
+    })
 }
 
 export function isStandaloneCodeEditor(

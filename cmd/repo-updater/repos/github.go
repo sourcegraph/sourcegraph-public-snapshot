@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,9 +26,19 @@ import (
 var githubConnections = atomicvalue.New()
 
 func init() {
-	conf.Watch(func() {
-		githubConnections.Set(func() interface{} {
+	githubConnections.Set(func() interface{} {
+		return []*githubConnection{}
+	})
+
+	go func() {
+		t := time.NewTicker(time.Second)
+		var lastGitHubConf []*schema.GitHubConnection
+		for range t.C {
 			githubConf := conf.Get().Github
+			if reflect.DeepEqual(githubConf, lastGitHubConf) {
+				continue
+			}
+			lastGitHubConf = githubConf
 
 			var hasGitHubDotComConnection bool
 			for _, c := range githubConf {
@@ -56,10 +67,14 @@ func init() {
 				}
 				conns = append(conns, conn)
 			}
-			return conns
-		})
-		gitHubRepositorySyncWorker.restart()
-	})
+
+			githubConnections.Set(func() interface{} {
+				return conns
+			})
+
+			gitHubRepositorySyncWorker.restart()
+		}
+	}()
 }
 
 // getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
