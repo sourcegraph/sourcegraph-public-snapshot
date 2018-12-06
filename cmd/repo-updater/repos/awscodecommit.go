@@ -60,7 +60,6 @@ func init() {
 
 			awsCodeCommitRepositorySyncWorker.restart()
 		}
-
 	}()
 }
 
