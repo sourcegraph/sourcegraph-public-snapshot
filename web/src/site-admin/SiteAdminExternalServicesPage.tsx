@@ -79,7 +79,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
     }
 }
 
-export function deleteExternalService(externalService: GQL.ID): Observable<void> {
+function deleteExternalService(externalService: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteExternalService($externalService: ID!) {
