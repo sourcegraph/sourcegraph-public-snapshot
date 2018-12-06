@@ -65,7 +65,6 @@ export function createExtensionHostClientConnection(
             services.context.data.next(applyContextUpdate(services.context.data.value, updates))
         )
     )
-    subscription.add(new ClientExtensions(connection, services.extensions))
     subscription.add(
         new ClientWindows(
             connection,
@@ -120,6 +119,7 @@ export function createExtensionHostClientConnection(
             )
         )
     )
+    subscription.add(new ClientExtensions(connection, services.extensions))
 
     return {
         setTracer: tracer => {
