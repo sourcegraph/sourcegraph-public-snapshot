@@ -44,10 +44,6 @@ func init() {
 				githubConf = conf.Get().Github
 			}
 
-			if reflect.DeepEqual(githubConf, lastGitHubConf) {
-				continue
-			}
-
 			var hasGitHubDotComConnection bool
 			for _, c := range githubConf {
 				u, _ := url.Parse(c.Url)
@@ -66,6 +62,9 @@ func init() {
 				})
 			}
 
+			if reflect.DeepEqual(githubConf, lastGitHubConf) {
+				continue
+			}
 			lastGitHubConf = githubConf
 
 			var conns []*githubConnection

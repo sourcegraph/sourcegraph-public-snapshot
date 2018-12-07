@@ -13,6 +13,5 @@ func main() {
 	if debug {
 		log.Println("enterprise edition")
 	}
-	shared.SrcProfServices = append(shared.SrcProfServices, map[string]string{"Name": "xlang-go", "Host": "127.0.0.1:6062"})
 	shared.Main()
 }

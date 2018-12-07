@@ -3,13 +3,11 @@ package githuboauth
 import (
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/dghubble/gologin"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -24,50 +22,31 @@ func init() {
 		return
 	}
 
-	var (
-		mu  sync.Mutex
-		cur = map[schema.GitHubAuthProvider]auth.Provider{} // tracks current mapping of valid config to auth.Provider
-	)
-	auth.ConfWatch(func() {
-		mu.Lock()
-		defer mu.Unlock()
+	const pkgName = "githuboauth"
+	go func() {
+		conf.Watch(func() {
+			if !conf.Get().ExperimentalFeatures.GithubAuth {
+				auth.UpdateProviders(pkgName, nil)
+				return
+			}
 
-		if !conf.Get().ExperimentalFeatures.GithubAuth {
-			new := map[schema.GitHubAuthProvider]auth.Provider{}
-			updates := make(map[auth.Provider]bool)
-			for c, p := range cur {
-				if _, ok := new[c]; !ok {
-					updates[p] = false
+			newProviders, _ := parseConfig(conf.Get())
+			if len(newProviders) == 0 {
+				auth.UpdateProviders(pkgName, nil)
+			} else {
+				newProvidersList := make([]auth.Provider, 0, len(newProviders))
+				for _, p := range newProviders {
+					newProvidersList = append(newProvidersList, p)
 				}
+				auth.UpdateProviders(pkgName, newProvidersList)
 			}
-			auth.UpdateProviders(updates)
-			cur = new
-			ffIsEnabled = false
-			return
-		}
-
-		log15.Info("Reloading changed GitHub OAuth authentication provider configuration.")
-
-		new, _ := parseConfig(conf.Get())
-		updates := make(map[auth.Provider]bool)
-		for c, p := range cur {
-			if _, ok := new[c]; !ok {
-				updates[p] = false
-			}
-		}
-		for c, p := range new {
-			if _, ok := cur[c]; !ok {
-				updates[p] = true
-			}
-		}
-		auth.UpdateProviders(updates)
-		cur = new
-		ffIsEnabled = true
-	})
-	conf.ContributeValidator(func(cfg schema.SiteConfiguration) (problems []string) {
-		_, problems = parseConfig(&cfg)
-		return problems
-	})
+			ffIsEnabled = true
+		})
+		conf.ContributeValidator(func(cfg schema.SiteConfiguration) (problems []string) {
+			_, problems = parseConfig(&cfg)
+			return problems
+		})
+	}()
 }
 
 func parseConfig(cfg *schema.SiteConfiguration) (providers map[schema.GitHubAuthProvider]auth.Provider, problems []string) {

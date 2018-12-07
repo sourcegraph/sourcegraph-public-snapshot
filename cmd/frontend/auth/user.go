@@ -8,104 +8,122 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// MockCreateOrUpdateUser is used in tests to mock CreateOrUpdateUser.
-var MockCreateOrUpdateUser func(db.NewUser, extsvc.ExternalAccountSpec) (int32, error)
+var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)
 
-// CreateOrUpdateUser creates or updates a user using the provided information, looking up a user by
-// the external account provided.
+type GetAndSaveUserOp struct {
+	UserProps           db.NewUser
+	ExternalAccount     extsvc.ExternalAccountSpec
+	ExternalAccountData extsvc.ExternalAccountData
+	CreateIfNotExist    bool
+}
+
+// GetAndSaveUser accepts authentication information associated with a given user, validates and applies
+// the necessary updates to the DB, and returns the user ID after the updates have been applied.
+//
+// At a high level, it does the following:
+// 1. Determine the identity of the user by applying the following rules in order:
+//    a. If ctx contains an authenticated Actor, the Actor's identity is the user identity.
+//    b. Look up the user by external account ID.
+//    c. If the email specified in op.UserProps is verified, Look up the user by verified email.
+//    d. If op.CreateIfNotExist is true, attempt to create a new user with the properties
+//       specified in op.UserProps. This may fail if the desired username is already taken.
+// 2. Ensure that the user is associated with the external account information. This means
+//    creating the external account if it does not already exist or updating it if it
+//    already does.
+// 3. Update any user props that have changed.
+// 4. Return the user ID.
+//
+// 🚨 SECURITY: It is the caller's responsibility to ensure the veracity of the information that
+// op contains (e.g., by receiving it from the appropriate authentication mechanism). It must
+// also ensure that the user identity implied by op is consistent. Specifically, the values used
+// in step 1 above must be consistent:
+// * The authenticated Actor, if it exists
+// * op.ExternalAccount
+// * op.UserProps, especially op.UserProps.Email
 //
 // 🚨 SECURITY: The safeErrMsg is an error message that can be shown to unauthenticated users to
 // describe the problem. The err may contain sensitive information and should only be written to the
 // server error logs, not to the HTTP response to shown to unauthenticated users.
-func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, externalAccount extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) (userID int32, safeErrMsg string, err error) {
-	if MockCreateOrUpdateUser != nil {
-		userID, err = MockCreateOrUpdateUser(newOrUpdatedUser, externalAccount)
-		return userID, "", err
+func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+	if MockGetAndSaveUser != nil {
+		return MockGetAndSaveUser(ctx, op)
 	}
-
-	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
-		// There is already an authenticated actor, so this external account will be added to
-		// the existing user account.
-		userID = actor.UID
-
-		if err := db.ExternalAccounts.AssociateUserAndSave(ctx, userID, externalAccount, data); err != nil {
-			safeErrMsg = "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem."
-			return 0, safeErrMsg, err
+	userID, userSaved, extAcctSaved, safeErrMsg, err := func() (int32, bool, bool, string, error) {
+		if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+			return actor.UID, false, false, "", nil
 		}
-	} else {
-		userID, err = db.ExternalAccounts.LookupUserAndSave(ctx, externalAccount, data)
-		if err != nil && !errcode.IsNotFound(err) {
-			return 0, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", err
-		}
-		if errcode.IsNotFound(err) {
-			// Looser requirements: if the external auth provider returns a username or email that
-			// already exists, just use that user instead of refusing.
-			const allowMatchOnUsernameOrEmailOnly = true
-			associateUser := false
 
-			userID, err = db.ExternalAccounts.CreateUserAndSave(ctx, newOrUpdatedUser, externalAccount, data)
-			switch {
-			case db.IsUsernameExists(err):
-				if allowMatchOnUsernameOrEmailOnly {
-					user, err2 := db.Users.GetByUsername(ctx, newOrUpdatedUser.Username)
-					if err2 == nil {
-						userID = user.ID
-						err = nil
-						associateUser = true
-					} else {
-						log15.Error("Unable to reuse user account with username for authentication via external provider.", "username", newOrUpdatedUser.Username, "err", err)
-					}
-				}
-				safeErrMsg = fmt.Sprintf("The Sourcegraph username %q already exists and is not linked to this external account. If possible, sign using the external account you used previously. If that's not possible, a site admin can unlink or delete the Sourcegraph account with that username to fix this problem.", newOrUpdatedUser.Username)
-			case db.IsEmailExists(err):
-				if allowMatchOnUsernameOrEmailOnly {
-					user, err2 := db.Users.GetByVerifiedEmail(ctx, newOrUpdatedUser.Email)
-					if err2 == nil {
-						userID = user.ID
-						err = nil
-						associateUser = true
-					} else {
-						log15.Error("Unable to reuse user account with email for authentication via external provider.", "email", newOrUpdatedUser.Email, "err", err)
-					}
-				}
-				safeErrMsg = fmt.Sprintf("The email address %q already exists and is associated with a different Sourcegraph user. A site admin can remove the email address from that Sourcegraph user to fix this problem.", newOrUpdatedUser.Email)
-			case errcode.PresentationMessage(err) != "":
-				safeErrMsg = errcode.PresentationMessage(err)
-			case err != nil:
-				safeErrMsg = "Unable to create a new user account due to a conflict or other unexpected error. Ask a site admin for help."
+		uid, lookupByExternalErr := db.ExternalAccounts.LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
+		if lookupByExternalErr == nil {
+			return uid, false, true, "", nil
+		}
+		if lookupByExternalErr != nil && !errcode.IsNotFound(lookupByExternalErr) {
+			return 0, false, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", lookupByExternalErr
+		}
+
+		if op.UserProps.EmailIsVerified {
+			user, getByVerifiedEmailErr := db.Users.GetByVerifiedEmail(ctx, op.UserProps.Email)
+			if getByVerifiedEmailErr == nil {
+				return user.ID, false, false, "", nil
 			}
-
-			if associateUser {
-				if err := db.ExternalAccounts.AssociateUserAndSave(ctx, userID, externalAccount, data); err != nil {
-					safeErrMsg = "Unexpected error associating the external account with the existing Sourcegraph user with the same username or email address."
-					return 0, safeErrMsg, err
-				}
+			if getByVerifiedEmailErr != nil && !errcode.IsNotFound(getByVerifiedEmailErr) {
+				return 0, false, false, "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help.", getByVerifiedEmailErr
 			}
-
-			return userID, safeErrMsg, err
+			if !op.CreateIfNotExist {
+				return 0, false, false, fmt.Sprintf("User account with verified email %q does not exist. Ask a site admin to create your account and then verify your email.", op.UserProps.Email), getByVerifiedEmailErr
+			}
 		}
-	}
+		if !op.CreateIfNotExist {
+			return 0, false, false, "It looks like this is your first time signing in with this external identity. Sourcegraph couldn't link it to an existing user, because no verified email was provided. Ask your site admin to configure the auth provider to include the user's verified email on sign-in.", lookupByExternalErr
+		}
 
-	// Update user in our DB if their profile info changed on the issuer. (Except username,
-	// which the user is somewhat likely to want to control separately on Sourcegraph.)
-	user, err := db.Users.GetByID(ctx, userID)
+		// If CreateIfNotExist is true, create the new user, regardless of whether the email was verified or not.
+		userID, err := db.ExternalAccounts.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+		switch {
+		case db.IsUsernameExists(err):
+			return 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
+		case errcode.PresentationMessage(err) != "":
+			return 0, false, false, errcode.PresentationMessage(err), err
+		case err != nil:
+			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", err
+		}
+		return userID, true, true, "", nil
+	}()
 	if err != nil {
-		return 0, "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.", err
+		return 0, safeErrMsg, err
 	}
-	var userUpdate db.UserUpdate
-	if user.DisplayName != newOrUpdatedUser.DisplayName {
-		userUpdate.DisplayName = &newOrUpdatedUser.DisplayName
-	}
-	if user.AvatarURL != newOrUpdatedUser.AvatarURL {
-		userUpdate.AvatarURL = &newOrUpdatedUser.AvatarURL
-	}
-	if userUpdate != (db.UserUpdate{}) {
-		if err := db.Users.Update(ctx, user.ID, userUpdate); err != nil {
-			return 0, "Unexpected error updating the Sourcegraph user account with new user profile information from the external account. Ask a site admin for help.", err
+
+	// Update user properties, if they've changed
+	if !userSaved {
+		// Update user in our DB if their profile info changed on the issuer. (Except username and
+		// email, which the user is somewhat likely to want to control separately on Sourcegraph.)
+		user, err := db.Users.GetByID(ctx, userID)
+		if err != nil {
+			return 0, "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.", err
+		}
+		var userUpdate db.UserUpdate
+		if user.DisplayName != op.UserProps.DisplayName {
+			userUpdate.DisplayName = &op.UserProps.DisplayName
+		}
+		if user.AvatarURL != op.UserProps.AvatarURL {
+			userUpdate.AvatarURL = &op.UserProps.AvatarURL
+		}
+		if userUpdate != (db.UserUpdate{}) {
+			if err := db.Users.Update(ctx, user.ID, userUpdate); err != nil {
+				return 0, "Unexpected error updating the Sourcegraph user account with new user profile information from the external account. Ask a site admin for help.", err
+			}
 		}
 	}
-	return user.ID, "", nil
+
+	// Create/update the external account and ensure it's associated with the user ID
+	if !extAcctSaved {
+		err := db.ExternalAccounts.AssociateUserAndSave(ctx, userID, op.ExternalAccount, op.ExternalAccountData)
+		if err != nil {
+			return 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
+		}
+	}
+
+	return userID, "", nil
 }

@@ -250,20 +250,6 @@ func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message)
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
-func (c *internalClient) DefsRefreshIndex(ctx context.Context, repo RepoName, commitID CommitID) error {
-	return c.postInternal(ctx, "defs/refresh-index", &DefsRefreshIndexRequest{
-		RepoName: repo,
-		CommitID: commitID,
-	}, nil)
-}
-
-func (c *internalClient) PkgsRefreshIndex(ctx context.Context, repo RepoName, commitID CommitID) error {
-	return c.postInternal(ctx, "pkgs/refresh-index", &PkgsRefreshIndexRequest{
-		RepoName: repo,
-		CommitID: commitID,
-	}, nil)
-}
-
 func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCreateOrUpdateRequest) (*Repo, error) {
 	var repo Repo
 	err := c.postInternal(ctx, "repos/create-if-not-exists", op, &repo)
@@ -292,14 +278,6 @@ func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName,
 		Description: description,
 		Fork:        fork,
 		Archived:    archived,
-	}, nil)
-}
-
-func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, commitID CommitID, lang string) error {
-	return c.postInternal(ctx, "repos/update-index", RepoUpdateIndexRequest{
-		RepoID:   repo,
-		CommitID: commitID,
-		Language: lang,
 	}, nil)
 }
 

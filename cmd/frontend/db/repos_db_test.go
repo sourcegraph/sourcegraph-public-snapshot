@@ -270,56 +270,6 @@ func TestRepos_List_query2(t *testing.T) {
 	}
 }
 
-// Test indexed_revision
-func TestRepos_List_indexedRevision(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := dbtesting.TestContext(t)
-
-	ctx = actor.WithActor(ctx, &actor.Actor{})
-
-	createdRepos := []*types.Repo{
-		{Name: "a/def", IndexedRevision: (*api.CommitID)(strptr("aaaaaa"))},
-		{Name: "b/def"},
-	}
-	for _, repo := range createdRepos {
-		createRepo(ctx, t, repo)
-		gotRepo, err := Repos.GetByName(ctx, repo.Name)
-		if err != nil {
-			panic(err)
-		}
-		if repo.IndexedRevision != nil {
-			if err := Repos.UpdateIndexedRevision(ctx, gotRepo.ID, *repo.IndexedRevision); err != nil {
-				panic(err)
-			}
-		}
-	}
-	tests := []struct {
-		hasIndexedRevision *bool
-		want               []api.RepoName
-	}{
-		{nil, []api.RepoName{"a/def", "b/def"}},
-		{boolptr(true), []api.RepoName{"a/def"}},
-		{boolptr(false), []api.RepoName{"b/def"}},
-	}
-
-	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{HasIndexedRevision: test.hasIndexedRevision, Enabled: true})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
-			if test.hasIndexedRevision == nil {
-				t.Errorf("Unexpected repo result for hasIndexedRevision %v:\ngot:  %q\nwant: %q", test.hasIndexedRevision, got, test.want)
-			} else {
-				t.Errorf("Unexpected repo result for hasIndexedRevision %v:\ngot:  %q\nwant: %q", *test.hasIndexedRevision, got, test.want)
-			}
-		}
-	}
-}
-
 // Test sort
 func TestRepos_List_sort(t *testing.T) {
 	if testing.Short() {
@@ -628,8 +578,4 @@ func TestRepos_Create_dupe(t *testing.T) {
 
 	// Add another repo with the same name.
 	createRepo(ctx, t, &types.Repo{Name: "a/b"})
-}
-
-func boolptr(b bool) *bool {
-	return &b
 }

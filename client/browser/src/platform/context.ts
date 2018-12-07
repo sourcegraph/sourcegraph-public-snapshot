@@ -79,7 +79,7 @@ export function createPlatformContext(): PlatformContext {
                     })
                 )
             ),
-        queryLSP: canFetchForURL(sourcegraphUrl)
+        backcompatQueryLSP: canFetchForURL(sourcegraphUrl)
             ? requests => sendLSPHTTPRequests(requests)
             : () =>
                   throwError(
