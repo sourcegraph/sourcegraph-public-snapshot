@@ -16,7 +16,7 @@ import { highlightCode } from '../search/backend'
 import { HighlightRange } from './SearchResult'
 
 interface SearchResultMatchProps {
-    item: GQL.ISearchMatch
+    item: GQL.ISearchResultMatch
     highlightRanges: HighlightRange[]
     isLightTheme: boolean
 }
