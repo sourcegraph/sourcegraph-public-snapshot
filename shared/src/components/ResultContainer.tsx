@@ -60,6 +60,7 @@ export interface Props {
 
     /** Expand all results */
     allExpanded?: boolean
+    stringIcon?: string
 }
 
 interface State {
@@ -90,6 +91,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const Icon = this.props.icon
+        const stringIcon = this.props.stringIcon ? this.props.stringIcon : undefined
         return (
             <div className="result-container">
                 <div
@@ -99,7 +101,11 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     }
                     onClick={this.toggle}
                 >
-                    <Icon className="icon-inline" />
+                    {!!stringIcon ? (
+                        <img src={stringIcon} className="icon-inline icon-inline__filtered" />
+                    ) : (
+                        <Icon className="icon-inline" />
+                    )}
                     <div className={`result-container__header-title ${this.props.titleClassName || ''}`}>
                         {this.props.collapsible ? (
                             <span onClick={blockExpandAndCollapse}>{this.props.title}</span>

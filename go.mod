@@ -70,6 +70,7 @@ require (
 	github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8
 	github.com/kevinburke/go-bindata v3.12.0+incompatible
 	github.com/kr/text v0.1.0
+	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348
 	github.com/lib/pq v1.0.0
 	github.com/lightstep/lightstep-tracer-go v0.15.4
 	github.com/mattn/goreman v0.2.1-0.20180930133601-738cf1257bd3

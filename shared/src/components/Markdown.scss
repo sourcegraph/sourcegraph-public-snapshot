@@ -70,6 +70,20 @@
     img {
         max-width: 100%;
     }
+
+    &.search-result-match__markdown {
+        table,
+        th,
+        td {
+            border: none;
+        }
+
+        code,
+        pre {
+            background-color: transparent;
+            padding: 0;
+        }
+    }
 }
 
 .theme-light {
@@ -97,6 +111,14 @@
         blockquote {
             color: #6a737d;
             border-left-color: #dfe2e5;
+        }
+
+        &.search-result-match__markdown {
+            code,
+            pre {
+                background-color: transparent;
+                padding: 0;
+            }
         }
     }
 }

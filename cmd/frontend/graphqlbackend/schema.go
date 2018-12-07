@@ -762,6 +762,8 @@ type Query {
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
+    # EXPERIMENTAL: Syntax highlights a code string.
+    highlightCode(code: String!, fuzzyLanguage: String!, disableTimeout: Boolean!, isLightTheme: Boolean!): String!
     # Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
     # be a site (which has global settings), an organization, or a user.
     settingsSubject(id: ID!): SettingsSubject
@@ -830,6 +832,42 @@ type Search {
 
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository
+
+# An object representing a markdown string.
+type Markdown {
+    # The raw markdown string.
+    text: String!
+    # HTML for the rendered markdown string, or null if there is no HTML representation provided.
+    # If specified, clients should render this directly.
+    html: String!
+}
+
+# A search result. Every type of search result, except FileMatch, must implement this interface.
+interface GenericSearchResultInterface {
+    # URL to an icon that is displayed with every search result.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string that is rendered less prominently.
+    detail: Markdown!
+    # A list of matches in this search result.
+    matches: [SearchResultMatch!]!
+}
+
+# A match in a search result. Matches make up the body content of a search result.
+type SearchResultMatch {
+    # URL for the individual result match.
+    url: String!
+    # A markdown string containing the preview contents of the result match.
+    body: Markdown!
+    # A list of highlights that specify locations of matches of the query in the body. Each highlight is
+    # a line number, character offset, and length. Currently, highlights are only displayed on match bodies
+    # that are code blocks. If the result body is a code block, exclude the markdown code fence lines in
+    # the line and character count. Leave as an empty list if no highlights are available.
+    highlights: [Highlight!]!
+}
 
 # Search results.
 type SearchResults {
@@ -962,7 +1000,17 @@ type Diff {
 }
 
 # A search result that is a Git commit.
-type CommitSearchResult {
+type CommitSearchResult implements GenericSearchResultInterface {
+    # Base64 data uri to an icon.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
+    # The result previews of the result.
+    matches: [SearchResultMatch!]!
     # The commit that matched the search query.
     commit: GitCommit!
     # The ref names of the commit.
@@ -1088,7 +1136,7 @@ type RepositoryConnection {
 }
 
 # A repository is a Git source control repository that is mirrored from some origin code host.
-type Repository implements Node {
+type Repository implements Node & GenericSearchResultInterface {
     # The repository's unique ID.
     id: ID!
     # The repository's name, as a path with one or more components. It conventionally consists of
@@ -1197,6 +1245,14 @@ type Repository implements Node {
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
+    # Base64 data uri to an icon.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
+    # The result previews of the result.
+    matches: [SearchResultMatch!]!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.

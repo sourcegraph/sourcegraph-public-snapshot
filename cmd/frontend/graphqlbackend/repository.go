@@ -28,6 +28,8 @@ import (
 type repositoryResolver struct {
 	repo        *types.Repo
 	redirectURL *string
+	icon        string
+	matches     []*searchResultMatchResolver
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
@@ -195,6 +197,22 @@ func (r *repositoryResolver) URL() string { return "/" + string(r.repo.Name) }
 
 func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Repository(ctx, r.repo)
+}
+
+func (r *repositoryResolver) Icon() string {
+	return r.icon
+}
+func (r *repositoryResolver) Label() (*markdownResolver, error) {
+	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
+	return &markdownResolver{text: text}, nil
+}
+
+func (r *repositoryResolver) Detail() *markdownResolver {
+	return &markdownResolver{text: "Repository name match"}
+}
+
+func (r *repositoryResolver) Matches() []*searchResultMatchResolver {
+	return r.matches
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

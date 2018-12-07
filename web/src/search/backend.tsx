@@ -5,6 +5,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export function search(
@@ -48,6 +49,25 @@ export function search(
                                         id
                                         name
                                         url
+                                        label {
+                                            html
+                                        }
+                                        icon
+                                        detail {
+                                            html
+                                        }
+                                        matches {
+                                            url
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
                                     }
                                     ... on FileMatch {
                                         __typename
@@ -77,57 +97,24 @@ export function search(
                                     }
                                     ... on CommitSearchResult {
                                         __typename
-                                        refs {
-                                            name
-                                            displayName
-                                            prefix
-                                            repository {
-                                                name
-                                            }
+                                        label {
+                                            html
                                         }
-                                        sourceRefs {
-                                            name
-                                            displayName
-                                            prefix
-                                            repository {
-                                                name
-                                            }
+                                        url
+                                        icon
+                                        detail {
+                                            html
                                         }
-                                        messagePreview {
-                                            value
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        diffPreview {
-                                            value
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        commit {
-                                            id
-                                            repository {
-                                                name
-                                                url
-                                            }
-                                            oid
-                                            abbreviatedOID
-                                            author {
-                                                person {
-                                                    displayName
-                                                    avatarURL
-                                                }
-                                                date
-                                            }
-                                            message
+                                        matches {
                                             url
-                                            tree(path: "") {
-                                                canonicalURL
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
                                             }
                                         }
                                     }
@@ -439,3 +426,38 @@ export function deleteSavedQuery(
         })
     )
 }
+
+export const highlightCode = memoizeObservable(
+    (ctx: {
+        code: string
+        fuzzyLanguage: string
+        disableTimeout: boolean
+        isLightTheme: boolean
+    }): Observable<string> =>
+        queryGraphQL(
+            gql`
+                query highlightCode(
+                    $code: String!
+                    $fuzzyLanguage: String!
+                    $disableTimeout: Boolean!
+                    $isLightTheme: Boolean!
+                ) {
+                    highlightCode(
+                        code: $code
+                        fuzzyLanguage: $fuzzyLanguage
+                        disableTimeout: $disableTimeout
+                        isLightTheme: $isLightTheme
+                    )
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.highlightCode) {
+                    throw createAggregateError(errors)
+                }
+                return data.highlightCode
+            })
+        ),
+    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${ctx.disableTimeout}:${ctx.isLightTheme}`
+)
