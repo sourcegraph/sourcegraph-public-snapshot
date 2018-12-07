@@ -848,7 +848,7 @@ interface GenericSearchResultInterface {
     label: Markdown!
     # The URL of the result.
     url: String!
-    # A markdown string of that is rendered less prominently.
+    # A markdown string that is rendered less prominently.
     detail: Markdown!
     # A list of individual matches in a result.
     matches: [SearchMatch!]!
