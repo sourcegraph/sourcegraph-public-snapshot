@@ -3,7 +3,6 @@ package backend_test
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
@@ -298,11 +298,19 @@ func (m *mockZoekt) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.Sear
 	m.LastSearchQ = q
 	m.LastSearchOpts = opts
 
+	if m.SearchResult == nil && m.SearchError == nil {
+		return nil, errors.Errorf("mockZoekt.Search not set for %v", q)
+	}
+
 	return m.SearchResult, m.SearchError
 }
 
 func (m *mockZoekt) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
 	m.LastListQ = q
+
+	if m.ListResult == nil && m.ListError == nil {
+		return nil, errors.Errorf("mockZoekt.List not set for %v", q)
+	}
 
 	return m.ListResult, m.ListError
 }

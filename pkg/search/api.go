@@ -20,6 +20,11 @@ type FileMatch struct {
 	LineMatches []LineMatch
 }
 
+// IsPathMatch returns true if the FileMatch is a match for Path.
+func (f *FileMatch) IsPathMatch() bool {
+	return len(f.LineMatches) == 0
+}
+
 // LineMatch holds the matches within a single line in a file.
 type LineMatch struct {
 	// The line in which a match was found.
@@ -99,14 +104,20 @@ const (
 	// RepositoryStatusMissing indicates the search failed for the repository
 	// since the repository or commit does not exist.
 	RepositoryStatusMissing RepositoryStatusType = "missing"
+
+	// RepositoryStatusError indicates the search failed for the repository
+	// due to an unexpected error. Implementations of Searcher should not use
+	// this type. Rather this type can be used in aggregators to indicate
+	// partial failure.
+	RepositoryStatusError RepositoryStatusType = "error"
 )
 
 // Stats contains statistics aggregated during searching.
 type Stats struct {
 	// MatchCount is the number of non-overlapping matches found. The match
 	// count is decided by each Searcher. For example in text search each
-	// LineFragmentMatch contributes to this count, but if its a match just on
-	// the FileName, then that also contributes one.
+	// LineMatch contributes to this count, but if its a match just on the
+	// FileName, then that also contributes one.
 	MatchCount int
 
 	// RepositoryStatus explains the status of searching each repository
@@ -132,6 +143,12 @@ type Result struct {
 
 	// TODO this can probably be generalised to support result types other
 	// than Files.
+}
+
+// Add combines the results from o into r.
+func (r *Result) Add(o *Result) {
+	r.Stats.Add(&o.Stats)
+	r.Files = append(r.Files, o.Files...)
 }
 
 // Searcher provides an interface to Searching.

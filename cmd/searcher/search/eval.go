@@ -25,6 +25,7 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	api "github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/matchtree"
@@ -47,6 +48,8 @@ const (
 	costMax = costContentRegexp
 )
 
+const source = api.Source("textjit")
+
 // StoreSearcher provides a pkg/search.Searcher which searches over a search
 // store.
 type StoreSearcher struct {
@@ -60,40 +63,33 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 	}
 
 	var res api.Result
+	repo := opts.Repositories[0]
+	status := api.RepositoryStatusSearched
 
-	select {
-	case <-ctx.Done():
-		return &res, nil
-	default:
-	}
-
-	{
-		var name string
-		switch len(opts.Repositories) {
-		case 0:
-			name = "none"
-		case 1:
-			name = opts.Repositories[0].String()
-		default:
-			name = "many"
+	tr := trace.New("search", repo.String())
+	tr.LazyPrintf("query: %s", q)
+	tr.LazyPrintf("opts:  %+v", opts)
+	defer func() {
+		if sr != nil {
+			tr.LazyPrintf("num files: %d", len(sr.Files))
 		}
+		if err != nil {
+			if status == api.RepositoryStatusSearched {
+				status = api.RepositoryStatusError
+			}
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		}
+		tr.LazyPrintf("status: %s", status)
+		tr.Finish()
+		if err != nil {
+			err = errors.Wrapf(err, "failed to search %s for %s", repo, q)
+		}
+	}()
 
-		tr := trace.New("search", name)
-		tr.LazyPrintf("query: %s", q)
-		tr.LazyPrintf("opts:  %+v", opts)
-		defer func() {
-			if sr != nil {
-				tr.LazyPrintf("num files: %d", len(sr.Files))
-			}
-			if err != nil {
-				tr.LazyPrintf("error: %v", err)
-				tr.SetError()
-			}
-			tr.Finish()
-			if err != nil {
-				err = errors.Wrapf(err, "failed to search %s for %s", name, q)
-			}
-		}()
+	emptyResultWithStatus := func(s api.RepositoryStatusType) *api.Result {
+		status = s
+		return &api.Result{Stats: api.Stats{Status: []api.RepositoryStatus{{Repository: repo, Source: source, Status: s}}}}
 	}
 
 	if c, ok := q.(*query.Const); ok && !c.Value {
@@ -106,6 +102,7 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 	if err != nil {
 		return nil, err
 	}
+	tr.LazyPrintf("matchtree: %s", mt)
 
 	// Fetch/Open the zip file
 	prepareCtx := ctx
@@ -116,6 +113,11 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 	}
 	path, err := s.Store.prepareZip(prepareCtx, gitserver.Repo{Name: opts.Repositories[0].Name}, opts.Repositories[0].Commit)
 	if err != nil {
+		if errcode.IsTimeout(err) {
+			return emptyResultWithStatus(api.RepositoryStatusTimedOut), nil
+		} else if errcode.IsNotFound(err) {
+			return emptyResultWithStatus(api.RepositoryStatusMissing), nil
+		}
 		return nil, err
 	}
 	zf, err := s.Store.zipCache.get(path)
@@ -132,6 +134,9 @@ nextFileMatch:
 	for {
 		select {
 		case <-ctx.Done():
+			if ctx.Err() == context.DeadlineExceeded {
+				status = api.RepositoryStatusTimedOut
+			}
 			break nextFileMatch
 		default:
 		}
@@ -170,8 +175,14 @@ nextFileMatch:
 		})
 
 		if opts.TotalMaxMatchCount > 0 && len(res.Files) > opts.TotalMaxMatchCount {
+			status = api.RepositoryStatusLimitHit
 			break
 		}
+	}
+
+	res.Stats = api.Stats{
+		MatchCount: matchCount(res.Files),
+		Status:     []api.RepositoryStatus{{Repository: repo, Source: source, Status: status}},
 	}
 
 	return &res, nil
@@ -185,6 +196,17 @@ func (s *StoreSearcher) Close() {
 
 func (s *StoreSearcher) String() string {
 	return "StoreSearcher(" + s.Store.String() + ")"
+}
+
+func matchCount(files []api.FileMatch) int {
+	count := 0
+	for _, f := range files {
+		if f.IsPathMatch() {
+			count++
+		}
+		count += len(f.LineMatches)
+	}
+	return count
 }
 
 type regexpMatchTree struct {

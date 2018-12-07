@@ -71,7 +71,7 @@ func shardedSearch(ctx context.Context, shards <-chan shard) (*search.Result, er
 			}
 			return nil, r.error
 		}
-		all.Files = append(all.Files, r.Result.Files...)
+		all.Add(r.Result)
 	}
 
 	return &all, nil
