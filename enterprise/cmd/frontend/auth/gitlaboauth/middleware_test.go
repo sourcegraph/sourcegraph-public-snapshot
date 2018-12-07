@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,11 +24,6 @@ import (
 func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
-
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
-	}
-	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
 	const mockUserID = 123
 
