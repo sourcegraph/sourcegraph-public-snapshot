@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 )
 
 // pkgs provides access to the `pkgs` table.
@@ -25,7 +26,7 @@ import (
 type pkgs struct{}
 
 func (p *pkgs) UpdateIndexForLanguage(ctx context.Context, language string, repo api.RepoID, pks []lspext.PackageInformation) (err error) {
-	err = db.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
+	err = dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		// Update the pkgs table.
 		err = p.update(ctx, tx, repo, language, pks)
 		if err != nil {
