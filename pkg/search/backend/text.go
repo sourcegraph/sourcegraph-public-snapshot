@@ -222,88 +222,13 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 		tr.Finish()
 	}()
 
-	// If we're only searching a small number of repositories, return more
-	// comprehensive results. This is arbitrary.
-	defaultMaxSearchResults := 30
-	k := 1
-	switch {
-	case len(repos) <= 500:
-		k = 2
-	case len(repos) <= 100:
-		k = 3
-	case len(repos) <= 50:
-		k = 5
-	case len(repos) <= 25:
-		k = 8
-	case len(repos) <= 10:
-		k = 10
-	case len(repos) <= 5:
-		k = 100
-	}
-	if opts.TotalMaxMatchCount > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(opts.TotalMaxMatchCount) / float64(defaultMaxSearchResults))
-	}
-
-	searchOpts := zoekt.SearchOptions{
-		MaxWallTime:            opts.MaxWallTime,
-		ShardMaxMatchCount:     100 * k,
-		TotalMaxMatchCount:     100 * k,
-		ShardMaxImportantMatch: 15 * k,
-		TotalMaxImportantMatch: 25 * k,
-		MaxDocDisplayCount:     opts.MaxDocDisplayCount,
-	}
-
-	// We want zoekt to return more than TotalMaxMatchCount results since we
-	// use the extra results to populate reposLimitHit. Additionally the
-	// defaults are very low, so we always want to return at least 2000.
-	if opts.TotalMaxMatchCount > defaultMaxSearchResults {
-		searchOpts.MaxDocDisplayCount = 2 * int(opts.TotalMaxMatchCount)
-	}
-	if searchOpts.MaxDocDisplayCount < 2000 {
-		searchOpts.MaxDocDisplayCount = 2000
-	}
-
-	if userProbablyWantsToWaitLonger := opts.TotalMaxMatchCount > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(opts.TotalMaxMatchCount) / float64(defaultMaxSearchResults))
-	}
+	searchOpts := mapOptionsToZoekt(opts)
 	tr.LazyPrintf("options: %+v", &searchOpts)
 
 	start := time.Now()
-	resp, err := c.Client.Search(ctx, zq, &searchOpts)
+	resp, err := c.Client.Search(ctx, zq, searchOpts)
 	if err != nil {
 		return nil, err
-	}
-
-	files := make([]search.FileMatch, len(resp.Files))
-	for i, fm := range resp.Files {
-		lines := make([]search.LineMatch, 0, len(fm.LineMatches))
-		for _, lm := range fm.LineMatches {
-			if lm.FileName {
-				continue
-			}
-
-			frags := make([]search.LineFragmentMatch, len(lm.LineFragments))
-			for i, f := range lm.LineFragments {
-				frags[i] = search.LineFragmentMatch{
-					LineOffset:  f.LineOffset,
-					MatchLength: f.MatchLength,
-				}
-			}
-
-			lines = append(lines, search.LineMatch{
-				Line:          lm.Line,
-				LineStart:     lm.LineStart,
-				LineEnd:       lm.LineEnd,
-				LineNumber:    lm.LineNumber,
-				LineFragments: frags,
-			})
-		}
-
-		files[i] = search.FileMatch{
-			Path:        fm.FileName,
-			Repository:  search.Repository{Name: api.RepoName(fm.Repository)}, // Branch? Safe to case RepoName?
-			LineMatches: lines,
-		}
 	}
 
 	// We don't have info on which shards are skipped / timedout. So if we
@@ -332,8 +257,60 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 			MatchCount: resp.Stats.MatchCount,
 			Status:     statuses,
 		},
-		Files: files,
+		Files: mapZoektFileMatch(resp.Files),
 	}, nil
+}
+
+// mapOptionsToZoekt translates our search options into Zoekts.
+func mapOptionsToZoekt(opts *search.Options) *zoekt.SearchOptions {
+	repos := opts.Repositories
+
+	// If we're only searching a small number of repositories, return more
+	// comprehensive results. This is arbitrary.
+	defaultMaxSearchResults := 30
+	k := 1
+	switch {
+	case len(repos) <= 500:
+		k = 2
+	case len(repos) <= 100:
+		k = 3
+	case len(repos) <= 50:
+		k = 5
+	case len(repos) <= 25:
+		k = 8
+	case len(repos) <= 10:
+		k = 10
+	case len(repos) <= 5:
+		k = 100
+	}
+	if opts.TotalMaxMatchCount > defaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(opts.TotalMaxMatchCount) / float64(defaultMaxSearchResults))
+	}
+
+	searchOpts := &zoekt.SearchOptions{
+		MaxWallTime:            opts.MaxWallTime,
+		ShardMaxMatchCount:     100 * k,
+		TotalMaxMatchCount:     100 * k,
+		ShardMaxImportantMatch: 15 * k,
+		TotalMaxImportantMatch: 25 * k,
+		MaxDocDisplayCount:     opts.MaxDocDisplayCount,
+	}
+
+	// We want zoekt to return more than TotalMaxMatchCount results since we
+	// use the extra results to populate reposLimitHit. Additionally the
+	// defaults are very low, so we always want to return at least 2000.
+	if opts.TotalMaxMatchCount > defaultMaxSearchResults {
+		searchOpts.MaxDocDisplayCount = 2 * int(opts.TotalMaxMatchCount)
+	}
+	if searchOpts.MaxDocDisplayCount < 2000 {
+		searchOpts.MaxDocDisplayCount = 2000
+	}
+
+	if userProbablyWantsToWaitLonger := opts.TotalMaxMatchCount > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(opts.TotalMaxMatchCount) / float64(defaultMaxSearchResults))
+	}
+
+	return searchOpts
 }
 
 // mapQueryToZoekt translates q to a zoektquery.Q. Additionally we treat any
@@ -414,6 +391,41 @@ func mapQueriesToZoekt(qs []query.Q) ([]zoektquery.Q, error) {
 		}
 	}
 	return r, nil
+}
+
+func mapZoektFileMatch(zf []zoekt.FileMatch) []search.FileMatch {
+	files := make([]search.FileMatch, len(zf))
+	for i, fm := range zf {
+		lines := make([]search.LineMatch, 0, len(fm.LineMatches))
+		for _, lm := range fm.LineMatches {
+			if lm.FileName {
+				continue
+			}
+
+			frags := make([]search.LineFragmentMatch, len(lm.LineFragments))
+			for i, f := range lm.LineFragments {
+				frags[i] = search.LineFragmentMatch{
+					LineOffset:  f.LineOffset,
+					MatchLength: f.MatchLength,
+				}
+			}
+
+			lines = append(lines, search.LineMatch{
+				Line:          lm.Line,
+				LineStart:     lm.LineStart,
+				LineEnd:       lm.LineEnd,
+				LineNumber:    lm.LineNumber,
+				LineFragments: frags,
+			})
+		}
+
+		files[i] = search.FileMatch{
+			Path:        fm.FileName,
+			Repository:  search.Repository{Name: api.RepoName(fm.Repository)}, // Branch? Safe to case RepoName?
+			LineMatches: lines,
+		}
+	}
+	return files
 }
 
 func (c *Zoekt) String() string {
