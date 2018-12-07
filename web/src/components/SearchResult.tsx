@@ -59,9 +59,9 @@ export class SearchResult extends React.Component<Props> {
 
     private renderBody = () => (
         <>
-            {this.props.result.matches.map(item => {
+            {this.props.result.matches.map((match, index) => {
                 const highlightRanges: HighlightRange[] = []
-                item.highlights.map(highlight =>
+                match.highlights.map(highlight =>
                     highlightRanges.push({
                         line: highlight.line,
                         character: highlight.character,
@@ -71,10 +71,8 @@ export class SearchResult extends React.Component<Props> {
 
                 return (
                     <SearchResultMatch
-                        key={item.url}
-                        item={item}
-                        body={item.body}
-                        url={item.url}
+                        key={`item.url#${index}`}
+                        item={match}
                         highlightRanges={highlightRanges}
                         isLightTheme={this.props.isLightTheme}
                     />
