@@ -306,25 +306,18 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 		}
 	}
 
-	// Partially mark repositories if zoekt had to skip some.
-	unseenStatus := search.RepositoryStatusSearched
+	// We don't have info on which shards are skipped / timedout. So if we
+	// skipped any files, we conservatily mark every repository as having
+	// skipped files.
+	status := search.RepositoryStatusSearched
 	if resp.Stats.FilesSkipped+resp.Stats.ShardsSkipped > 0 {
-		unseenStatus = search.RepositoryStatusLimitHit
+		status = search.RepositoryStatusLimitHit
 		if time.Since(start) >= searchOpts.MaxWallTime {
-			unseenStatus = search.RepositoryStatusTimedOut
+			status = search.RepositoryStatusTimedOut
 		}
-	}
-
-	seen := map[string]struct{}{}
-	for _, fm := range resp.Files {
-		seen[fm.Repository] = struct{}{}
 	}
 	statuses := make([]search.RepositoryStatus, len(repos))
 	for i, r := range repos {
-		status := search.RepositoryStatusSearched
-		if _, ok := seen[string(r.Name)]; !ok {
-			status = unseenStatus
-		}
 		statuses[i] = search.RepositoryStatus{
 			Repository: r,
 			Source:     SourceZoekt,
