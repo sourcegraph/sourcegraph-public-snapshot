@@ -844,7 +844,7 @@ type Markdown {
     text: String!
     # HTML for the rendered markdown string, or null if there is no HTML representation provided.
     # If specified, clients should render this directly.
-    html: String
+    html: String!
 }
 
 # A search result. Every search result must implement this interface. A result can contain multiple matches.

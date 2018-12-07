@@ -10,10 +10,10 @@ func (m *markdownResolver) Text() string {
 	return m.text
 }
 
-func (m *markdownResolver) HTML() *string {
+func (m *markdownResolver) HTML() string {
 	html, err := markdown.Render(m.text, nil)
 	if err != nil {
-		return nil
+		return ""
 	}
-	return &html
+	return html
 }
