@@ -211,6 +211,16 @@ storage.setSyncMigration(items => {
         newItems.featureFlags.useExtensions = process.env.USE_EXTENSIONS === 'true'
     }
 
+    // TODO: Remove this block after a few releases
+    const clientSettings = JSON.parse(items.clientSettings || '{}')
+    if (clientSettings['codecov.endpoints'] || typeof clientSettings['codecov.showCoverage'] !== 'undefined') {
+        if (typeof clientSettings.extensions === 'undefined') {
+            clientSettings.extensions = clientSettings.extensions || {}
+        }
+        clientSettings.extensions['souercegraph/codecov'] = true
+        newItems.clientSettings = JSON.stringify(clientSettings, null, 4)
+    }
+
     return { newItems, keysToRemove }
 })
 
