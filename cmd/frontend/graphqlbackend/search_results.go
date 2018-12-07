@@ -146,9 +146,8 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 type searchResultsResolver struct {
 	results []*searchResultResolver
 	searchResultsCommon
-	alert            *searchAlert
-	start            time.Time // when the results started being computed
-	repoToMatchCount map[string]int
+	alert *searchAlert
+	start time.Time // when the results started being computed
 }
 
 func (sr *searchResultsResolver) Results() []*searchResultResolver {
@@ -202,7 +201,7 @@ var commonFileFilters = []struct {
 
 func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	filters := map[string]*searchFilterResolver{}
-	sr.repoToMatchCount = make(map[string]int)
+	repoToMatchCount := make(map[string]int)
 	add := func(value string, label string, count int, limitHit bool, kind string) {
 		sf, ok := filters[value]
 		if !ok {
@@ -227,10 +226,9 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			filter = filter + fmt.Sprintf(`@%s`, regexp.QuoteMeta(rev))
 		}
 		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
-		// Increment number of matches per repo.
-		sr.repoToMatchCount[uri] += lineMatchCount
-		repoCount := sr.repoToMatchCount[uri]
-		add(filter, uri, repoCount, limitHit, "repo")
+		// Increment number of matches per repo. Add will override previous entry for uri
+		repoToMatchCount[uri] += lineMatchCount
+		add(filter, uri, repoToMatchCount[uri], limitHit, "repo")
 	}
 	addFileFilter := func(filematchPath string, lineMatchCount int, limitHit bool) {
 		if ext := path.Ext(filematchPath); ext != "" {
