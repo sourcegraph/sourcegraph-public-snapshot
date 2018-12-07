@@ -991,6 +991,38 @@ declare module 'sourcegraph' {
         ): Unsubscribable
     }
 
+    export interface Highlight {
+        line: number
+        character: number
+        length: number
+    }
+
+    /** A search result from an issue provider */
+    export interface SearchMatch {
+        url: string
+        body: Markdown
+        highlights: Highlight[]
+    }
+
+    export interface IssueResult {
+        __typename: string
+        icon: string
+        label: Markdown
+        url: string
+        detail: Markdown
+        matches: SearchMatch[]
+    }
+
+    export interface Markdown {
+        text: string
+        html: string
+    }
+
+    /** A search result provider takes in a user's query and returns a list of issue results */
+    export interface IssueResultsProvider {
+        provideIssueResults(query: string): IssueResult[] | Promise<IssueResult[]>
+    }
+
     /**
      * A query transformer alters a user's search query before executing a search.
      *
@@ -1021,6 +1053,7 @@ declare module 'sourcegraph' {
          * @param provider A query transformer.
          */
         export function registerQueryTransformer(provider: QueryTransformer): Unsubscribable
+        export function registerIssueResultsProvider(provider: IssueResultsProvider): Unsubscribable
     }
 
     /**

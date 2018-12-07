@@ -41,3 +41,26 @@ export interface TextDocumentDecoration
     extends Pick<sourcegraph.TextDocumentDecoration, Exclude<keyof sourcegraph.TextDocumentDecoration, 'range'>> {
     range: Range
 }
+
+export interface Markdown {
+    text: string
+    html: string
+}
+
+export interface IssueResult {
+    icon: string
+    label: Markdown
+    url: string
+    detail: Markdown
+    match: SearchMatch[]
+}
+export interface SearchMatch {
+    url: string
+    body: Markdown
+    highlights: Highlight[]
+}
+export interface Highlight {
+    line: number
+    character: number
+    length: number
+}

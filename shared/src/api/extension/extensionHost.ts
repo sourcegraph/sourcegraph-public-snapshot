@@ -225,6 +225,7 @@ function createExtensionAPI(
 
         search: {
             registerQueryTransformer: provider => search.registerQueryTransformer(provider),
+            registerIssueResultsProvider: provider => search.registerIssueResultsProvider(provider),
         },
 
         commands: {

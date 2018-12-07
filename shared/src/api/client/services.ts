@@ -5,6 +5,7 @@ import { ContributionRegistry } from './services/contribution'
 import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { ExtensionsService } from './services/extensionsService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
+import { IssueResultsProviderRegistry } from './services/issueResults'
 import {
     TextDocumentLocationProviderIDRegistry,
     TextDocumentLocationProviderRegistry,
@@ -42,5 +43,6 @@ export class Services {
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly queryTransformer = new QueryTransformerRegistry()
+    public readonly issuesResultsProvider = new IssueResultsProviderRegistry()
     public readonly views = new ViewProviderRegistry()
 }
