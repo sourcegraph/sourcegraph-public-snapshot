@@ -29,7 +29,7 @@ type repositoryResolver struct {
 	repo        *types.Repo
 	redirectURL *string
 	icon        string
-	matches     []*genericSearchMatchResolver
+	matches     []*searchResultMatchResolver
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
@@ -211,7 +211,7 @@ func (r *repositoryResolver) Detail() *markdownResolver {
 	return &markdownResolver{text: "Repository name match"}
 }
 
-func (r *repositoryResolver) Matches() []*genericSearchMatchResolver {
+func (r *repositoryResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }
 

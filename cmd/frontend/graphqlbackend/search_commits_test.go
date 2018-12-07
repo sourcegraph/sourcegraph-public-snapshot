@@ -73,7 +73,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			label:       "[repo](/repo) &nbsp; [](/repo/-/commit/c1) &nbsp; [](/repo/-/commit/c1)",
 			url:         "/repo/-/commit/c1",
 			detail:      "c1",
-			matches:     []*genericSearchMatchResolver{&genericSearchMatchResolver{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
+			matches:     []*searchResultMatchResolver{&searchResultMatchResolver{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
 		},
 	}; !reflect.DeepEqual(results, want) {
 		t.Errorf("results\ngot  %v\nwant %v\ndiff: %v", results, want, pretty.Compare(results, want))
