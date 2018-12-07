@@ -126,7 +126,7 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var configs []map[string]interface{}
+	configs := make([]map[string]interface{}, 0, len(services))
 	for _, service := range services {
 		var config map[string]interface{}
 		// Raw configs may have comments in them so we have to use a json parser
