@@ -1,7 +1,7 @@
 export function getCommandPaletteMount(): HTMLElement {
     const headerElem = document.querySelector('.navbar-collapse')
     if (!headerElem) {
-        throw new Error('Unable to find command pallete mount')
+        throw new Error('Unable to find command palette mount')
     }
 
     const commandListClass = 'command-palette-button'

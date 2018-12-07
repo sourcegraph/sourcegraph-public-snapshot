@@ -80,7 +80,6 @@ function injectOpenOnSourcegraphButton(): void {
     storage.getSync(items => {
         const container = createOpenOnSourcegraphIfNotExists()
 
-        console.log('items.featureFlags.useExtensions', items.featureFlags.useExtensions)
         if (items.featureFlags.useExtensions) {
             container.classList.add('use-extensions')
         }
@@ -163,7 +162,7 @@ function injectMermaid(): void {
         clearTimeout(timeout)
         // Need to use window.setTimeout because:
         // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/21310#issuecomment-367919251
-        timeout = window.setTimeout(() => renderMermaidCharts(), 100)
+        timeout = window.setTimeout(() => renderMermaidCharts(), 200)
     }
 
     const observer = new MutationObserver(() => handleDomChange())

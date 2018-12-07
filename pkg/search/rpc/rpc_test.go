@@ -18,12 +18,15 @@ func TestClientServer(t *testing.T) {
 		wantSearch: query.NewAnd(mustParse("hello world|universe"), query.NewRepoSet("foo/bar", "baz/bam")),
 		searchResult: &search.Result{
 			Files: []search.FileMatch{
-				{FileName: "bin.go"},
+				{Path: "bin.go"},
 			},
 		},
 	}
-
-	ts := httptest.NewServer(rpc.Server(mock))
+	server, err := rpc.Server(mock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(server)
 	defer ts.Close()
 
 	u, err := url.Parse(ts.URL)

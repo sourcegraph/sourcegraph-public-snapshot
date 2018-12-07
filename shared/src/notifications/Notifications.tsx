@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { ControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from '../extensions/controller'
 import { Notification } from './notification'
 import { NotificationItem } from './NotificationItem'
 
-interface Props extends ControllerProps {}
+interface Props extends ExtensionsControllerProps {}
 
 interface State {
     notifications: Notification[]

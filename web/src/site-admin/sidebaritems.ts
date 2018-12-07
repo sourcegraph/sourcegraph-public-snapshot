@@ -18,6 +18,12 @@ export const primaryGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/configuration',
         },
         {
+            label: 'External Services',
+            to: '/site-admin/external-services',
+            // Temporarily hide the UX since the backend isn't wired up yet.
+            condition: () => window.localStorage.getItem('externalServices') === 'enabled',
+        },
+        {
             label: 'Repositories',
             to: '/site-admin/repositories',
         },

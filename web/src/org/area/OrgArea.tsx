@@ -7,10 +7,11 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAccountArea } from '../account/OrgAccountArea'
@@ -61,7 +62,7 @@ const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-interface Props extends RouteComponentProps<{ name: string }>, ExtensionsProps {
+interface Props extends RouteComponentProps<{ name: string }>, PlatformContextProps, SettingsCascadeProps {
     /**
      * The currently authenticated user.
      */
@@ -80,7 +81,7 @@ interface State {
 /**
  * Properties passed to all page components in the org area.
  */
-export interface OrgAreaPageProps extends ExtensionsProps {
+export interface OrgAreaPageProps extends PlatformContextProps, SettingsCascadeProps {
     /** The org that is the subject of the page. */
     org: GQL.IOrg
 
@@ -154,7 +155,8 @@ export class OrgArea extends React.Component<Props> {
             authenticatedUser: this.props.authenticatedUser,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
-            extensionsContext: this.props.extensionsContext,
+            platformContext: this.props.platformContext,
+            settingsCascade: this.props.settingsCascade,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

@@ -283,6 +283,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: struct{}{},
+				`case:yes`:        struct{}{},
 			},
 		},
 
@@ -296,6 +297,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: struct{}{},
 				`file:\.md$`:      struct{}{},
+				`case:yes`:        struct{}{},
 			},
 		},
 
@@ -309,7 +311,15 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$@develop`: struct{}{},
 				`file:\.md$`:              struct{}{},
+				`case:yes`:                struct{}{},
 			},
+		},
+
+		// If there are no search results, no filters should be displayed.
+		testCase{
+			descr:                     "no results",
+			searchResults:             []*searchResultResolver{},
+			expectedDynamicFilterStrs: map[string]struct{}{},
 		},
 	}
 

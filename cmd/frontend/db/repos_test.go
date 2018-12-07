@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/go-lsp/lspext"
-	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 

@@ -13,7 +13,7 @@ interface Props {
     /**
      * Called when the user clicks or presses enter on this element.
      */
-    onSelect?: (event: React.MouseEvent | React.KeyboardEvent) => void
+    onSelect?: (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
 
     /** A tooltip to display when the user hovers or focuses this element. */
     ['data-tooltip']?: string

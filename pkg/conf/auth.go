@@ -15,6 +15,10 @@ func AuthProviderType(p schema.AuthProviders) string {
 		return p.Saml.Type
 	case p.HttpHeader != nil:
 		return p.HttpHeader.Type
+	case p.Github != nil:
+		return p.Github.Type
+	case p.Gitlab != nil:
+		return p.Gitlab.Type
 	default:
 		return ""
 	}

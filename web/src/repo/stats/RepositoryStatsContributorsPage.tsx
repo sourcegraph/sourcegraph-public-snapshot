@@ -6,6 +6,8 @@ import { map } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { Form } from '../../components/Form'
@@ -15,8 +17,6 @@ import { buildSearchURLQuery, quoteIfNeeded, searchQueryForRepoRev } from '../..
 import { eventLogger } from '../../tracking/eventLogger'
 import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
-import { memoizeObservable } from '../../util/memoize'
-import { numberWithCommas, pluralize } from '../../util/strings'
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 
 interface QuerySpec {

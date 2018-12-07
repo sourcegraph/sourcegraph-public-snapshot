@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -31,7 +31,7 @@ func init() {
 		cur []*schema.OpenIDConnectAuthProvider
 		reg = map[schema.OpenIDConnectAuthProvider]auth.Provider{}
 	)
-	conf.Watch(func() {
+	auth.ConfWatch(func() {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -64,8 +64,8 @@ func init() {
 		}
 		auth.UpdateProviders(updates)
 		cur = new
+		init = false
 	})
-	init = false
 }
 
 func diffProviderConfig(old, new []*schema.OpenIDConnectAuthProvider) map[schema.OpenIDConnectAuthProvider]bool {

@@ -1,21 +1,7 @@
 import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser'
-import { Observable, ReplaySubject } from 'rxjs'
-import { map } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { isSettingsValid, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { createAggregateError } from '../../../shared/src/util/errors'
-import { Settings } from '../schema/settings.schema'
-
-/**
- * Represents the settings from various subjects from GraphQL (user, orgs, and global).
- */
-export const settingsCascade = new ReplaySubject<GQL.ISettingsCascade>(1)
-
-/**
- * Always represents the final settings for the current user or visitor.
- */
-export const viewerSettings: Observable<Settings> = settingsCascade.pipe(
-    map(cascade => parseJSON(cascade.final) as Settings)
-)
 
 /**
  * Parses the JSON input using the error-tolerant parser used for site config and settings.
@@ -37,4 +23,17 @@ export function parseJSON(text: string): any {
 
 export function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
     return keyPath.map(v => (typeof v === 'string' ? { property: v } : { index: v }))
+}
+
+export function getLastIDForSubject(settingsCascade: SettingsCascadeOrError, subject: GQL.ID): number | null {
+    if (!isSettingsValid(settingsCascade)) {
+        throw new Error('invalid settings')
+    }
+
+    // Find the settings lastID so we can update the settings.
+    const subjectInfo = settingsCascade.subjects.find(s => s.subject.id === subject)
+    if (!subjectInfo) {
+        throw new Error('unable to find owner (settings subject) of saved search')
+    }
+    return subjectInfo.lastID
 }

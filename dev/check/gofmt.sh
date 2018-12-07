@@ -1,4 +1,7 @@
 #!/bin/bash
+
+echo "--- gofmt"
+
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 # Check if all code is gofmt'd

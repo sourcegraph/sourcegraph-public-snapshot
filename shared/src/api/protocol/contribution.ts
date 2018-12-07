@@ -1,6 +1,7 @@
-import { KeyPath } from './configuration'
+import { KeyPath } from '../client/services/settings'
 
-// NOTE: You must manually keep this file in sync with contribution.schema.json.
+// NOTE: You must manually keep this file in sync with extension.schema.json#/properties/contributes (and possibly
+// extension_schema.go, if your changes are relevant to the subset of this schema used by our Go code).
 //
 // The available tools for automatically generating the JSON Schema from this file add more complexity than it's
 // worth.
@@ -14,6 +15,9 @@ export interface Contributions {
 
     /** Menu items contributed by the extension. */
     menus?: MenuContributions
+
+    /** Search filters contributed by the extension */
+    searchFilters?: SearchFilters[]
 }
 
 /**
@@ -33,26 +37,17 @@ export interface ActionContribution {
      * The command that this action invokes. It can refer to a command registered by the same extension or any
      * other extension, or to a builtin command.
      *
+     * See "[Builtin commands](../../../../doc/extensions/authoring/builtin_commands.md)" (online at
+     * https://docs.sourcegraph.com/extensions/authoring/builtin_commands) for documentation on builtin client
+     * commands.
+     *
      * Extensions: The command must be registered (unless it is a builtin command). Extensions can register
-     * commands in the `initialize` response or via `client/registerCapability`.
+     * commands using {@link sourcegraph.commands.registerCommand}.
      *
-     * ## Builtin client commands
+     * Clients: All clients must implement the builtin commands as specified in the documentation above.
      *
-     * Clients: All clients must handle the following commands as specified.
-     *
-     * ### `open` {@link ActionContributionClientCommandOpen}
-     *
-     * The builtin command `open` causes the client to open a URL (specified as a string in the first element of
-     * commandArguments) using the default URL handler, instead of invoking the command on the extension.
-     *
-     * Clients: The client should treat the first element of commandArguments as a URL (string) to open with the
-     * default URL handler (instead of sending a request to the extension to execute this command). If the client
-     * is running in a web browser, the client should render the action as an HTML <a> element so that it behaves
-     * like a link.
-     *
-     * ### `updateConfiguration` {@link ActionContributionClientCommandUpdateConfiguration}
-     *
-     * The builtin command `updateConfiguration` causes the client to apply an update to the configuration settings.
+     * @see ActionContributionClientCommandOpen
+     * @see ActionContributionClientCommandUpdateConfiguration
      */
     command: string
 
@@ -202,6 +197,9 @@ export enum ContributableMenu {
     /** A directory page (including for the root directory of a repository). */
     DirectoryPage = 'directory/page',
 
+    /** The panel toolbar. */
+    PanelToolbar = 'panel/toolbar',
+
     /** The help menu in the application. */
     Help = 'help',
 }
@@ -241,6 +239,22 @@ export interface MenuItemContribution {
      * group sorting last. The client must not display the group value.
      */
     group?: string
+}
+
+/**
+ * A search filters interface with `name` and `value` to display on a filter chip
+ * in the search results filters bar.
+ */
+export interface SearchFilters {
+    /**
+     * The name to be displayed on the search filter chip.
+     */
+    name: string
+
+    /**
+     * The value of the search filter chip (i.e. the literal search query string).
+     */
+    value: string
 }
 
 /** The containers to which an extension can contribute views. */

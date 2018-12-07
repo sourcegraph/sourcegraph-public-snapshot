@@ -1,6 +1,6 @@
 package productsubscription
 
-import dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
+import "github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 
 func init() {
 	dbtesting.DBNameSuffix = "productsubscription"

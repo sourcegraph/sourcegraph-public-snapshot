@@ -1,6 +1,7 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { JumpURLLocation } from '../../shared/backend/lsp'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
@@ -29,6 +30,11 @@ const diffCodeView: CodeViewWithOutSelector = {
     isDiff: true,
 }
 
+const diffConversationCodeView: CodeViewWithOutSelector = {
+    ...diffCodeView,
+    getToolbarMount: undefined,
+}
+
 const singleFileCodeView: CodeViewWithOutSelector = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createCodeViewToolbarMount,
@@ -42,7 +48,11 @@ const singleFileCodeView: CodeViewWithOutSelector = {
  * Some code snippets get leading white space trimmed. This adjusts based on
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
-const adjustPositionForSnippet: PositionAdjuster = ({ direction, codeView, position }) =>
+const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+    direction,
+    codeView,
+    position,
+}) =>
     fetchBlobContentLines(position).pipe(
         map(lines => {
             const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
@@ -95,7 +105,15 @@ const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector => {
     const { filePath } = parseURL()
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
-    return isSingleCodeFile ? singleFileCodeView : diffCodeView
+    if (isSingleCodeFile) {
+        return singleFileCodeView
+    }
+
+    if (elem.closest('.discussion-item-body')) {
+        return diffConversationCodeView
+    }
+
+    return diffCodeView
 }
 
 const codeViewResolver: CodeViewResolver = {
@@ -113,11 +131,24 @@ function checkIsGithub(): boolean {
     return isGithub || isGitHubEnterprise
 }
 
+const getOverlayMount = () => {
+    const container = document.querySelector('#js-repo-pjax-container')
+    if (!container) {
+        throw new Error('unable to find repo pjax container')
+    }
+
+    const mount = document.createElement('div')
+    container.appendChild(mount)
+
+    return mount
+}
+
 export const githubCodeHost: CodeHost = {
     name: 'github',
     codeViews: [searchResultCodeView, commentSnippetCodeView],
     codeViewResolver,
     check: checkIsGithub,
+    getOverlayMount,
     getCommandPaletteMount,
     getGlobalDebugMount,
     buildJumpURLLocation: (def: JumpURLLocation) => {

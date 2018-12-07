@@ -2,8 +2,9 @@ import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { Observable, of } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 
-import { fetchBlobContentLines, resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
+import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
+import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { getBaseCommit, getCommitsForPR } from './api'
 import { getFileInfoFromCodeView, getPRInfoFromCodeView } from './scrape'
 
@@ -14,12 +15,7 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
         map(getFileInfoFromCodeView),
         filter(propertyIsDefined('filePath')),
-        switchMap(({ repoPath, rev, ...rest }) =>
-            resolveRev({ repoPath, rev }).pipe(
-                retryWhenCloneInProgressError(),
-                map(commitID => ({ ...rest, repoPath, commitID, rev: rev || commitID }))
-            )
-        )
+        ensureRevisionsAreCloned
     )
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>

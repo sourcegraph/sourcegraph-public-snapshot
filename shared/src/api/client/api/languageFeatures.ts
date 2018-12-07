@@ -6,9 +6,13 @@ import { ExtLanguageFeaturesAPI } from '../../extension/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
 import { Definition, Hover, Location } from '../../protocol/plainTypes'
-import { ProvideTextDocumentHoverSignature } from '../providers/hover'
-import { ProvideTextDocumentLocationSignature, TextDocumentReferencesProviderRegistry } from '../providers/location'
-import { FeatureProviderRegistry } from '../providers/registry'
+import { ProvideTextDocumentHoverSignature } from '../services/hover'
+import {
+    ProvideTextDocumentLocationSignature,
+    TextDocumentLocationProviderIDRegistry,
+    TextDocumentReferencesProviderRegistry,
+} from '../services/location'
+import { FeatureProviderRegistry } from '../services/registry'
 import { SubscriptionMap } from './common'
 
 /** @internal */
@@ -19,6 +23,12 @@ export interface ClientLanguageFeaturesAPI {
     $registerTypeDefinitionProvider(id: number, selector: DocumentSelector): void
     $registerImplementationProvider(id: number, selector: DocumentSelector): void
     $registerReferenceProvider(id: number, selector: DocumentSelector): void
+
+    /**
+     * @param idStr The `id` argument in the extension's {@link sourcegraph.languages.registerLocationProvider}
+     * call.
+     */
+    $registerLocationProvider(id: number, idStr: string, selector: DocumentSelector): void
 }
 
 /** @internal */
@@ -45,7 +55,8 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
             TextDocumentRegistrationOptions,
             ProvideTextDocumentLocationSignature
         >,
-        private referencesRegistry: TextDocumentReferencesProviderRegistry
+        private referencesRegistry: TextDocumentReferencesProviderRegistry,
+        private locationRegistry: TextDocumentLocationProviderIDRegistry
     ) {
         this.subscriptions.add(this.registrations)
 
@@ -115,6 +126,19 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
                     from(
                         this.proxy.$observeReferences(id, params.textDocument.uri, params.position, params.context)
                     ).pipe(map(result => result || []))
+            )
+        )
+    }
+
+    public $registerLocationProvider(id: number, idStr: string, selector: DocumentSelector): void {
+        this.registrations.add(
+            id,
+            this.locationRegistry.registerProvider(
+                { id: idStr, documentSelector: selector },
+                (params: TextDocumentPositionParams): Observable<Location[]> =>
+                    from(this.proxy.$observeLocations(id, params.textDocument.uri, params.position)).pipe(
+                        map(result => result || [])
+                    )
             )
         )
     }

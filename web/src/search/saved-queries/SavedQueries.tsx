@@ -7,17 +7,18 @@ import * as React from 'react'
 import { Redirect } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { siteFlags } from '../../site/backend'
 import { eventLogger } from '../../tracking/eventLogger'
-import { observeSavedQueries } from '../backend'
+import { fetchSavedQueries } from '../backend'
 import { ExampleSearches } from './ExampleSearches'
 import { SavedQuery } from './SavedQuery'
 import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SavedQueryFields } from './SavedQueryForm'
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     isLightTheme: boolean
@@ -55,15 +56,17 @@ export class SavedQueries extends React.Component<Props, State> {
         disableBuiltInSearches: false,
     }
 
-    private componentUpdates = new Subject<Props>()
+    private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         const isHomepage = this.props.location.pathname === '/search'
 
         this.subscriptions.add(
-            observeSavedQueries()
+            this.refreshRequests
                 .pipe(
+                    startWith(void 0),
+                    switchMap(fetchSavedQueries),
                     map(savedQueries => ({
                         savedQueries: savedQueries.filter(query => !isHomepage || query.showOnHomepage).sort((a, b) => {
                             if (a.description < b.description) {
@@ -90,10 +93,6 @@ export class SavedQueries extends React.Component<Props, State> {
                     })
                 })
         )
-    }
-
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
     }
 
     public componentWillUnmount(): void {
@@ -160,6 +159,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                     onDidCreate={this.onDidCreateSavedQuery}
                                     onDidCancel={this.toggleCreating}
                                     values={this.state.exampleQuery || {}}
+                                    settingsCascade={this.props.settingsCascade}
                                 />
                             )}
                         </div>
@@ -190,6 +190,8 @@ export class SavedQueries extends React.Component<Props, State> {
                             key={`${savedQuery.query}-${i}`}
                             savedQuery={savedQuery}
                             onDidDuplicate={this.onDidDuplicateSavedQuery}
+                            onDidUpdate={this.onDidUpdate}
+                            settingsCascade={this.props.settingsCascade}
                             isLightTheme={this.props.isLightTheme}
                         />
                     ))}
@@ -241,7 +243,7 @@ export class SavedQueries extends React.Component<Props, State> {
 
     private onDidCreateSavedQuery = () => {
         eventLogger.log('SavedQueryCreated')
-        this.setState({ isCreating: false, exampleQuery: null })
+        this.setState({ isCreating: false, exampleQuery: null }, () => this.onDidUpdate())
     }
 
     private onDidDuplicateSavedQuery = () => {
@@ -251,6 +253,8 @@ export class SavedQueries extends React.Component<Props, State> {
     private onDidClickQueryHelp = () => {
         eventLogger.log('SavedQueriesHelpButtonClicked')
     }
+
+    private onDidUpdate = () => this.refreshRequests.next()
 }
 
 export class SavedQueriesPage extends SavedQueries {

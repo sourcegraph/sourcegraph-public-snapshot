@@ -3,8 +3,8 @@ import uuid from 'uuid'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { getPathExtension } from '../../../shared/src/languages'
 import { authenticatedUser } from '../auth'
-import { parseBrowserRepoURL } from '../repo'
 import { repoRevRoute } from '../routes'
+import { parseBrowserRepoURL } from '../util/url'
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
 import { telligent } from './services/telligentWrapper'
@@ -151,8 +151,8 @@ class EventLogger {
      *
      * Only used on Sourcegraph.com, not on self-hosted Sourcegraph instances.
      */
-    private getTelligentDuid(): string {
-        return telligent.getTelligentDuid() || ''
+    private getTelligentDuid(): string | null {
+        return telligent.getTelligentDuid()
     }
 
     /**
@@ -177,7 +177,7 @@ class EventLogger {
         }
 
         let id = localStorage.getItem(uidKey)
-        if (id === null) {
+        if (id === null || id === '') {
             id = this.generateAnonUserID()
             localStorage.setItem(uidKey, id)
         }

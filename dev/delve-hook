@@ -29,6 +29,7 @@ for COMPONENT in "${COMPONENTS[@]}"; do
             *"github-proxy"*) run 2351 "$COMPONENT";;
             *"lsp-proxy"*) run 2352 "$COMPONENT";;
             *"frontend"*) run 2354 "$COMPONENT";;
+            *"management-console"*) run 2355 "$COMPONENT";;
         esac
     fi
 done

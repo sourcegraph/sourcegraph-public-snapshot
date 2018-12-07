@@ -1,52 +1,57 @@
 import { from, Observable, of, throwError } from 'rxjs'
-import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
-import { Context } from '../context'
+import {
+    catchError,
+    distinctUntilChanged,
+    filter,
+    map,
+    publishReplay,
+    refCount,
+    startWith,
+    switchMap,
+} from 'rxjs/operators'
+import { isEqual } from '../api/util'
 import { gql, graphQLContent } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
-import { SettingsCascadeOrError } from '../settings/settings'
+import { PlatformContext } from '../platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
-import { ConfiguredExtension, toConfiguredExtension } from './extension'
+import { ConfiguredRegistryExtension, extensionIDsFromSettings, toConfiguredRegistryExtension } from './extension'
 
 const LOADING: 'loading' = 'loading'
 
+/**
+ * @returns An observable that emits the list of extensions configured in the viewer's final settings upon
+ * subscription and each time it changes.
+ */
 export function viewerConfiguredExtensions({
-    settingsCascade,
+    settings,
     queryGraphQL,
-}: Pick<Context, 'settingsCascade' | 'queryGraphQL'>): Observable<ConfiguredExtension[]> {
-    return viewerConfiguredExtensionsOrLoading({ settingsCascade, queryGraphQL }).pipe(
-        filter((extensions): extensions is ConfiguredExtension[] | ErrorLike => extensions !== LOADING),
-        switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions]))
+}: Pick<PlatformContext, 'settings' | 'queryGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
+    return from(settings).pipe(
+        map(settings => extensionIDsFromSettings(settings)),
+        distinctUntilChanged((a, b) => isEqual(a, b)),
+        switchMap(extensionIDs =>
+            queryConfiguredRegistryExtensions({ queryGraphQL }, extensionIDs).pipe(startWith(LOADING))
+        ),
+        catchError(error => [asError(error) as ErrorLike]),
+        filter((extensions): extensions is ConfiguredRegistryExtension[] | ErrorLike => extensions !== LOADING),
+        switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions])),
+        publishReplay(),
+        refCount()
     )
 }
 
-function viewerConfiguredExtensionsOrLoading({
-    settingsCascade,
-    queryGraphQL,
-}: Pick<Context, 'settingsCascade' | 'queryGraphQL'>): Observable<typeof LOADING | ConfiguredExtension[] | ErrorLike> {
-    return from(settingsCascade).pipe(
-        switchMap(
-            cascade =>
-                isErrorLike(cascade.final)
-                    ? [cascade.final]
-                    : queryConfiguredExtensions({ queryGraphQL }, cascade).pipe(
-                          catchError(error => [asError(error) as ErrorLike]),
-                          startWith(LOADING)
-                      )
-        )
-    )
-}
-
-export function queryConfiguredExtensions(
-    { queryGraphQL }: Pick<Context, 'queryGraphQL'>,
-    cascade: SettingsCascadeOrError
-): Observable<ConfiguredExtension[]> {
-    if (isErrorLike(cascade.final)) {
-        return throwError(cascade.final)
-    }
-    if (!cascade.final || !cascade.final.extensions) {
+/**
+ * Query the GraphQL API for registry metadata about the extensions given in {@link extensionIDs}.
+ *
+ * @returns An observable that emits once with the results.
+ */
+export function queryConfiguredRegistryExtensions(
+    { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
+    extensionIDs: string[]
+): Observable<ConfiguredRegistryExtension[]> {
+    if (extensionIDs.length === 0) {
         return of([])
     }
-    const extensionIDs = Object.keys(cascade.final.extensions)
     return from(
         queryGraphQL<GQL.IQuery>(
             gql`
@@ -69,7 +74,7 @@ export function queryConfiguredExtensions(
             {
                 first: extensionIDs.length,
                 prioritizeExtensionIDs: extensionIDs,
-            },
+            } as GQL.IExtensionsOnExtensionRegistryArguments,
             false
         )
     ).pipe(
@@ -93,12 +98,12 @@ export function queryConfiguredExtensions(
             )
         }),
         map(registryExtensions => {
-            const configuredExtensions: ConfiguredExtension[] = []
+            const configuredExtensions: ConfiguredRegistryExtension[] = []
             for (const extensionID of extensionIDs) {
                 const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
                 configuredExtensions.push(
                     registryExtension
-                        ? toConfiguredExtension(registryExtension)
+                        ? toConfiguredRegistryExtension(registryExtension)
                         : { id: extensionID, manifest: null, rawManifest: null, registryExtension: undefined }
                 )
             }

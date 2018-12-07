@@ -4,21 +4,18 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { merge, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { parseBrowserRepoURL } from '.'
-import { makeRepoURI, ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
+import { redirectToExternalHost } from '.'
 import { WorkspaceRoot } from '../../../shared/src/api/protocol/plainTypes'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { makeRepoURI } from '../../../shared/src/util/url'
 import { HeroPage } from '../components/HeroPage'
-import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
-import { refreshSettings } from '../user/settings/backend'
+import { parseBrowserRepoURL, ParsedRepoRev, parseRepoRev } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError, ResolvedRev } from './backend'
 import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
@@ -40,8 +37,7 @@ const RepoPageNotFound: React.FunctionComponent = () => (
 export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         SettingsCascadeProps,
-        ExtensionsProps,
-        ExtensionsDocumentsProps,
+        PlatformContextProps,
         ExtensionsControllerProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
@@ -91,13 +87,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     public componentDidMount(): void {
-        // Refresh the list of Sourcegraph extensions to use. This helps when a
-        // language server gets automatically enabled after the first repository
-        // in that language is added.
-        refreshSettings()
-            .toPromise()
-            .catch(err => console.error(err))
-
         const parsedRouteChanges = this.routeMatchChanges.pipe(
             map(({ repoRevAndRest }) => parseURLPath(repoRevAndRest))
         )
@@ -162,7 +151,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             )
         )
 
-        // Update the Sourcegraph extensions environment to reflect the current workspace root.
+        // Update the Sourcegraph extensions model to reflect the current workspace root.
         this.subscriptions.add(
             this.revResolves
                 .pipe(
@@ -178,13 +167,21 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                 },
                             ]
                         }
-                        this.props.extensionsOnRootsChange(roots)
+                        this.props.extensionsController.services.model.model.next({
+                            ...this.props.extensionsController.services.model.model.value,
+                            roots,
+                        })
                     })
                 )
                 .subscribe()
         )
-        // Clear the Sourcegraph extensions environment's roots when navigating away.
-        this.subscriptions.add(() => this.props.extensionsOnRootsChange(null))
+        // Clear the Sourcegraph extensions model's roots when navigating away.
+        this.subscriptions.add(() =>
+            this.props.extensionsController.services.model.model.next({
+                ...this.props.extensionsController.services.model.model.value,
+                roots: null,
+            })
+        )
     }
 
     public componentWillReceiveProps(props: RepoContainerProps): void {
@@ -234,9 +231,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
             settingsCascade: this.props.settingsCascade,
-            extensionsContext: this.props.extensionsContext,
-            extensionsOnRootsChange: this.props.extensionsOnRootsChange,
-            extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
+            platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
             ...this.state.repoHeaderContributionsLifecycleProps,
         }
@@ -252,7 +247,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     rev={this.state.rev}
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     extensionsController={this.props.extensionsController}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
                     location={this.props.location}

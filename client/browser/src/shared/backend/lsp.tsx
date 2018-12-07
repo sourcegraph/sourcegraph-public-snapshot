@@ -240,7 +240,7 @@ export type JumpURLLocation = RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & 
 export function createJumpURLFetcher(
     fetchDefinition: SimpleProviderFns['fetchDefinition'],
     buildURL: (pos: JumpURLLocation) => string
-): JumpURLFetcher {
+): JumpURLFetcher<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> {
     return ({ line, character, part, commitID, repoPath, ...rest }) =>
         fetchDefinition({ ...rest, commitID, repoPath, position: { line, character } }).pipe(
             map(def => {
@@ -294,11 +294,11 @@ export const createLSPFromExtensions = (extensionsController: Controller): Simpl
     // Use from() to suppress rxjs type incompatibilities between different minor versions of rxjs in
     // node_modules/.
     fetchHover: pos =>
-        from(extensionsController.registries.textDocumentHover.getHover(toTextDocumentPositionParams(pos))).pipe(
+        from(extensionsController.services.textDocumentHover.getHover(toTextDocumentPositionParams(pos))).pipe(
             map(hover => (hover === null ? HoverMerged.from([]) : hover))
         ),
     fetchDefinition: pos =>
         from(
-            extensionsController.registries.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))
+            extensionsController.services.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))
         ) as Observable<Definition>,
 })

@@ -10,9 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -25,6 +27,11 @@ func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
+	}
+	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+
 	const mockUserID = 123
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -36,8 +43,8 @@ func TestMiddleware(t *testing.T) {
 
 	mockGitHubCom := newMockProvider(t, "github-com-client", "github-com-secret", "https://github.com/")
 	mockGHE := newMockProvider(t, "github-enterprise-client", "github-enterprise-secret", "https://mycompany.com/")
-	auth.SetMockProviders([]auth.Provider{mockGitHubCom.Provider})
-	defer auth.SetMockProviders(nil)
+	auth.MockProviders = []auth.Provider{mockGitHubCom.Provider}
+	defer func() { auth.MockProviders = nil }()
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -85,7 +92,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	// Add 2 GitHub auth providers
-	auth.SetMockProviders([]auth.Provider{mockGHE.Provider, mockGitHubCom.Provider})
+	auth.MockProviders = []auth.Provider{mockGHE.Provider, mockGitHubCom.Provider}
 
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false)

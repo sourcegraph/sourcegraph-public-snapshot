@@ -12,10 +12,9 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { ExtensionsContextProps } from '../../../../../shared/src/context'
-import { ControllerProps } from '../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
-import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
@@ -26,7 +25,7 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps extends Partial<ExtensionsContextProps>, Partial<ControllerProps> {
+interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<ExtensionsControllerProps> {
     repoPath: string
     filePath: string
 
@@ -39,34 +38,24 @@ interface CodeViewToolbarProps extends Partial<ExtensionsContextProps>, Partial<
 
     buttonProps: ButtonProps
     actionsNavItemClassProps?: {
-        listClass?: string
+        listItemClass?: string
         actionItemClass?: string
     }
     simpleProviderFns: SimpleProviderFns
     location: H.Location
 }
 
-interface CodeViewToolbarState extends SettingsCascadeProps {
+interface CodeViewToolbarState {
     site?: ISite
     currentUser?: IUser
 }
 
 export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeViewToolbarState> {
-    public state: CodeViewToolbarState = {
-        settingsCascade: { subjects: [], final: {} },
-    }
+    public state: CodeViewToolbarState = {}
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        if (this.props.extensionsContext) {
-            this.subscriptions.add(
-                this.props.extensionsContext.settingsCascade.subscribe(
-                    settingsCascade => this.setState({ settingsCascade }),
-                    err => console.error(err)
-                )
-            )
-        }
         this.subscriptions.add(fetchSite().subscribe(site => this.setState(() => ({ site }))))
         this.subscriptions.add(fetchCurrentUser().subscribe(currentUser => this.setState(() => ({ currentUser }))))
     }
@@ -78,15 +67,15 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     public render(): JSX.Element | null {
         return (
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
-                <ul className={`nav ${this.props.extensionsContext ? 'pr-1' : ''}`}>
+                <ul className={`nav ${this.props.platformContext ? 'pr-1' : ''}`}>
                     {this.props.extensionsController &&
-                        this.props.extensionsContext && (
+                        this.props.platformContext && (
                             <div className="BtnGroup">
                                 <ActionsNavItems
                                     menu={ContributableMenu.EditorTitle}
                                     extensionsController={this.props.extensionsController}
-                                    extensionsContext={this.props.extensionsContext}
-                                    listClass="BtnGroup"
+                                    platformContext={this.props.platformContext}
+                                    listItemClass="BtnGroup"
                                     actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
                                     location={this.props.location}
                                 />

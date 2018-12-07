@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,9 +26,18 @@ import (
 var githubConnections = atomicvalue.New()
 
 func init() {
-	conf.Watch(func() {
-		githubConnections.Set(func() interface{} {
+	githubConnections.Set(func() interface{} {
+		return []*githubConnection{}
+	})
+
+	go func() {
+		t := time.NewTicker(configWatchInterval)
+		var lastGitHubConf []*schema.GitHubConnection
+		for range t.C {
 			githubConf := conf.Get().Github
+			if reflect.DeepEqual(githubConf, lastGitHubConf) {
+				continue
+			}
 
 			var hasGitHubDotComConnection bool
 			for _, c := range githubConf {
@@ -47,6 +57,8 @@ func init() {
 				})
 			}
 
+			lastGitHubConf = githubConf
+
 			var conns []*githubConnection
 			for _, c := range githubConf {
 				conn, err := newGitHubConnection(c)
@@ -56,10 +68,14 @@ func init() {
 				}
 				conns = append(conns, conn)
 			}
-			return conns
-		})
-		gitHubRepositorySyncWorker.restart()
-	})
+
+			githubConnections.Set(func() interface{} {
+				return conns
+			})
+
+			gitHubRepositorySyncWorker.restart()
+		}
+	}()
 }
 
 // getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
@@ -359,16 +375,17 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 
 	var wg sync.WaitGroup
 
-	if len(c.config.RepositoryQuery) == 0 {
+	repositoryQueries := c.config.RepositoryQuery
+	if len(repositoryQueries) == 0 {
 		// Users need to specify ["none"] to disable mirroring.
 		if c.githubDotCom {
 			// Doesn't make sense to try to enumerate all public repos on github.com
-			c.config.RepositoryQuery = []string{"affiliated"}
+			repositoryQueries = []string{"affiliated"}
 		} else {
-			c.config.RepositoryQuery = []string{"public", "affiliated"}
+			repositoryQueries = []string{"public", "affiliated"}
 		}
 	}
-	for _, repositoryQuery := range c.config.RepositoryQuery {
+	for _, repositoryQuery := range repositoryQueries {
 		wg.Add(1)
 		go func(repositoryQuery string) {
 			defer wg.Done()

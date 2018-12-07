@@ -3,9 +3,9 @@ import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { SymbolIcon } from '../../../shared/src/symbols/SymbolIcon'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { fetchSymbols } from '../symbols/backend'
-import { SymbolIcon } from '../symbols/SymbolIcon'
 
 function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
     const currentHash = currentLocation.hash.replace('$references:external', '').replace('$references', '')

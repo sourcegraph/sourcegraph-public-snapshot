@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
-	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 /*
@@ -291,7 +291,9 @@ func TestRepos_List_indexedRevision(t *testing.T) {
 			panic(err)
 		}
 		if repo.IndexedRevision != nil {
-			Repos.UpdateIndexedRevision(ctx, gotRepo.ID, *repo.IndexedRevision)
+			if err := Repos.UpdateIndexedRevision(ctx, gotRepo.ID, *repo.IndexedRevision); err != nil {
+				panic(err)
+			}
 		}
 	}
 	tests := []struct {

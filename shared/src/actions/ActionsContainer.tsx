@@ -1,12 +1,23 @@
+import H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { TextDocumentItem } from '../api/client/types/textDocument'
+import { ContributionScope } from '../api/client/context/context'
+import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
+import { ExtensionsControllerProps } from '../extensions/controller'
+import { PlatformContextProps } from '../platform/context'
 import { ActionItem, ActionItemProps } from './ActionItem'
-import { ActionsProps, ActionsState } from './actions'
+import { ActionsState } from './actions'
 
-interface ActionsContainerProps extends ActionsProps {
+export interface ActionsProps extends ExtensionsControllerProps, PlatformContextProps {
+    menu: ContributableMenu
+    scope?: ContributionScope
+    actionItemClass?: string
+    listClass?: string
+    location: H.Location
+}
+interface Props extends ActionsProps {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
@@ -20,27 +31,23 @@ interface ActionsContainerProps extends ActionsProps {
     empty?: React.ReactElement<any> | null
 }
 
-interface ActionsContainerState extends ActionsState {}
-
 /** Displays the actions in a container, with a wrapper and/or empty element. */
-export class ActionsContainer extends React.PureComponent<ActionsContainerProps, ActionsContainerState> {
+export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
     public state: ActionsState = {}
 
-    private scopeChanges = new Subject<TextDocumentItem | undefined>()
+    private scopeChanges = new Subject<ContributionScope | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
             this.scopeChanges
-                .pipe(
-                    switchMap(scope => this.props.extensionsController.registries.contribution.getContributions(scope))
-                )
+                .pipe(switchMap(scope => this.props.extensionsController.services.contribution.getContributions(scope)))
                 .subscribe(contributions => this.setState({ contributions }))
         )
         this.scopeChanges.next(this.props.scope)
     }
 
-    public componentDidUpdate(prevProps: ActionsContainerProps): void {
+    public componentDidUpdate(prevProps: Props): void {
         if (prevProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
         }
@@ -71,7 +78,7 @@ export class ActionsContainer extends React.PureComponent<ActionsContainerProps,
                     key={i}
                     {...item}
                     extensionsController={this.props.extensionsController}
-                    extensionsContext={this.props.extensionsContext}
+                    platformContext={this.props.platformContext}
                     location={this.props.location}
                 />
             ))}

@@ -6,14 +6,14 @@ import (
 	"time"
 
 	goauth2 "github.com/dghubble/gologin/oauth2"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-type sessionData struct {
+type SessionData struct {
 	ID auth.ProviderConfigID
 
 	// Store only the oauth2.Token fields we need, to avoid hitting the ~4096-byte session data
@@ -22,11 +22,13 @@ type sessionData struct {
 	TokenType   string
 }
 
-func SessionIssuer(
-	sessionKey, serviceType, serviceID, clientID string,
-	getOrCreateUser func(ctx context.Context, serviceType, serviceID, clientID string, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error),
-	deleteStateCookie func(w http.ResponseWriter),
-) http.Handler {
+type SessionIssuerHelper interface {
+	GetOrCreateUser(ctx context.Context, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error)
+	DeleteStateCookie(w http.ResponseWriter)
+	SessionData(token *oauth2.Token) SessionData
+}
+
+func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -37,7 +39,7 @@ func SessionIssuer(
 			return
 		}
 
-		actr, safeErrMsg, err := getOrCreateUser(ctx, serviceType, serviceID, clientID, token)
+		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token)
 		if err != nil {
 			log15.Error("OAuth failed: error looking up or creating user from OAuth token.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -72,24 +74,14 @@ func SessionIssuer(
 			return
 		}
 
-		// Set session data, which can be used by logout handler
-		data := sessionData{
-			ID: auth.ProviderConfigID{
-				ID:   serviceID,
-				Type: serviceType,
-			},
-			AccessToken: token.AccessToken,
-			TokenType:   token.Type(),
-			// TODO(beyang): store and use refresh token to auto-refresh sessions
-		}
-		if err := session.SetData(w, r, sessionKey, data); err != nil {
+		if err := session.SetData(w, r, sessionKey, s.SessionData(token)); err != nil {
 			// It's not fatal if this fails. It just means we won't be able to sign the user out of
 			// the OP.
 			log15.Warn("Failed to set OAuth session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", "error", err)
 		}
 
 		// Delete state cookie (no longer needed, while be stale if user logs out and logs back in within 120s)
-		deleteStateCookie(w)
+		s.DeleteStateCookie(w)
 
 		http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 	})

@@ -2,9 +2,11 @@ package ui
 
 import (
 	"fmt"
+	"html"
 	"io"
 	"mime"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"text/template"
@@ -181,6 +183,10 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		defer archiveFS.Close()
 		fi, err := archiveFS.Lstat(r.Context(), requestedPath)
 		if err != nil {
+			if os.IsNotExist(err) {
+				http.Error(w, html.EscapeString(err.Error()), http.StatusNotFound)
+				return nil // request handled
+			}
 			return err
 		}
 		if fi.IsDir() {

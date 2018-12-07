@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "--- go generate"
+
 set -eo pipefail
 
 main() {

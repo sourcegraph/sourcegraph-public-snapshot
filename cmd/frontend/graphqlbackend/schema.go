@@ -41,10 +41,12 @@ type Mutation {
     updateOrganization(id: ID!, displayName: String): Org!
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
-    # Adds a external service.
+    # Adds a external service. Only site admins may perform this mutation.
     addExternalService(input: AddExternalServiceInput!): ExternalService!
-    # Updates a external service
+    # Updates a external service. Only site admins may perform this mutation.
     updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
+    # Delete an external service. Only site admins may perform this mutation.
+    deleteExternalService(externalService: ID!): EmptyResponse!
     # Adds a repository on a code host that is already present in the site configuration. The name (which may
     # consist of one or more path components) of the repository must be recognized by an already configured code
     # host, or else Sourcegraph won't know how to clone it.
@@ -304,6 +306,8 @@ type Mutation {
     reloadSite: EmptyResponse
     # Submits a user satisfaction (NPS) survey.
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
+    # Submits a request for a Sourcegraph Enterprise trial license.
+    requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
     # Mutations that are only used on Sourcegraph.com.
@@ -643,10 +647,14 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
-    # Looks up a repository by name.
+    # Looks up a repository by either name or cloneURL.
     repository(
-        # The name, for example "github.com/gorilla/mux".
+        # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
+        # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
+        # by checking if there exists a code host configuration that matches the clone URL.
+        # Will not actually check the code host to see if the repository actually exists.
+        cloneURL: String
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
@@ -1050,7 +1058,7 @@ enum ExternalServiceKind {
 }
 
 # A configured external service.
-type ExternalService {
+type ExternalService implements Node {
     # The external service's unique ID.
     id: ID!
     # The kind of external service.
@@ -2960,6 +2968,9 @@ type ProductSubscriptionStatus {
     # The date and time when the max number of user accounts that have been active on this Sourcegraph site for
     # the current license was reached. If no license is in use, returns an empty string.
     actualUserCountDate: String!
+    # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
+    # it is the user limit for instances without a license, or null if there is no limit.
+    maximumAllowedUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
 }
@@ -3485,6 +3496,8 @@ type PlanTier {
     unitAmount: Int!
     # The maximum number of users that this tier applies to.
     upTo: Int!
+    # The base fee that this tier applies to.
+    flatAmount: Int!
 }
 
 # The information about a product subscription that determines its price.

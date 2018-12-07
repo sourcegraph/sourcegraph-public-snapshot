@@ -2,7 +2,6 @@ import {
     createHoverifier,
     findPositionsFromEvents,
     HoveredToken,
-    HoveredTokenContext,
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
@@ -13,17 +12,17 @@ import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
 import { Position } from '../../../../shared/src/api/protocol/plainTypes'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toPrettyBlobURL } from '../../../../shared/src/util/url'
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
 import { fetchBlob } from '../../repo/blob/BlobPage'
-import { isDefined, propertyIsDefined } from '../../util/types'
 
-interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
+interface Props extends ExtensionsControllerProps {
     history: H.History
     className: string
     startLine: number
@@ -121,7 +120,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         super(props)
         this.state = {}
 
-        const hoverifier = createHoverifier({
+        const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>({
             closeButtonClicks: this.closeButtonClicks,
             goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -143,6 +142,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
             ),
             fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })
 
         this.subscriptions.add(hoverifier)
@@ -208,13 +208,21 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         this.componentUpdates.next()
 
         this.subscriptions.add(
-            this.props.extensionsOnVisibleTextDocumentsChange([
-                {
-                    uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
-                    languageId: 'go',
-                    text: '',
-                },
-            ])
+            this.props.extensionsController.services.model.model.next({
+                ...this.props.extensionsController.services.model.model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: {
+                            uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
+                            languageId: 'go',
+                            text: '',
+                        },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
+            })
         )
     }
 
@@ -223,7 +231,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     }
 
     private getLSPTextDocumentPositionParams(
-        position: HoveredToken & HoveredTokenContext
+        position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
             repoPath: position.repoPath,

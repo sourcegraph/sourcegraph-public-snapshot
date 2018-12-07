@@ -8,10 +8,10 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxj
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { memoizeObservable } from '../../util/memoize'
 import { gitRefFragment, GitRefNode } from '../GitRef'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 

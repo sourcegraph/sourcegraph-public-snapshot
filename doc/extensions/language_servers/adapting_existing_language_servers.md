@@ -1,4 +1,4 @@
-# Adapting an existing language server for use with Sourcegraph'
+# Adapting an existing language server for use with Sourcegraph
 
 This documentation page is intended for language server developers who are adapting an existing language server (or building a new language server) to provide code intelligence on Sourcegraph.
 

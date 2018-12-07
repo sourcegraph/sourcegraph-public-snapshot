@@ -1,9 +1,6 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { concat } from 'rxjs'
-import { mergeMap } from 'rxjs/operators'
-import { overwriteSettings } from '../configuration/backend'
-import { refreshSettings } from '../user/settings/backend'
+import { overwriteSettings } from '../../../shared/src/settings/edit'
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
@@ -24,11 +21,14 @@ interface State {
 export class SettingsPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
+    private extraSchemas = [this.props.data.settingsJSONSchema]
+
     public render(): JSX.Element | null {
         return (
             <SettingsFile
                 settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
-                jsonSchema={this.props.data.settingsJSONSchema}
+                jsonSchemaId="settings.schema.json#"
+                extraSchemas={this.extraSchemas}
                 commitError={this.state.commitError}
                 onDidCommit={this.onDidCommit}
                 onDidDiscard={this.onDidDiscard}
@@ -38,20 +38,31 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidCommit = (lastID: number | null, contents: string) => {
+    private onDidCommit = async (lastID: number | null, contents: string) => {
         this.setState({ commitError: undefined })
-        overwriteSettings(this.props.subject.id, lastID, contents)
-            .pipe(mergeMap(() => concat(refreshSettings(), [null])))
-            .subscribe(
-                () => {
-                    this.setState({ commitError: undefined })
-                    this.props.onUpdate()
-                },
-                err => {
-                    this.setState({ commitError: err })
-                    console.error(err)
-                }
-            )
+
+        // When updating settings for a settings subject that is in the viewer's settings cascade (i.e., if the
+        // update will affect the viewer's settings), perform the update by calling through the shared
+        // {@link PlatformContext#updateSettings} so that the update is seen by all settings observers.
+        //
+        // If the settings update is for some other subject that is unrelated to the viewer, then this is not
+        // necessary.
+        const isSubjectInViewerSettingsCascade =
+            this.props.settingsCascade.subjects &&
+            this.props.settingsCascade.subjects.some(({ subject }) => subject.id === this.props.subject.id)
+
+        try {
+            if (isSubjectInViewerSettingsCascade) {
+                await this.props.platformContext.updateSettings(this.props.subject.id, contents)
+            } else {
+                await overwriteSettings(this.props.platformContext, this.props.subject.id, lastID, contents)
+            }
+            this.setState({ commitError: undefined })
+            this.props.onUpdate()
+        } catch (err) {
+            this.setState({ commitError: err })
+            console.error(err)
+        }
     }
 
     private onDidDiscard = (): void => {

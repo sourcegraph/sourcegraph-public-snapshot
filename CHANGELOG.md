@@ -9,6 +9,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Repositories can now be queried by a git clone URL through the GraphQL API.
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
 - Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`.
 - Authentication via GitLab is now supported. To enable, add an item to the `auth.providers` list with `type: "gitlab"`.
@@ -20,6 +21,10 @@ All notable changes to Sourcegraph are documented in this file.
 - Sourcegraph extensions whose title begins with `WIP:` or `[WIP]` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/creating_and_publishing#work-in-progress-wip-extensions) and are indicated as such to avoid users accidentally using them.
 - Information about user survey submissions and a chart showing weekly active users is now displayed on the site admin Overview page.
 - A new GraphQL API field `UserEmail.isPrimary` was added that indicates whether an email is the user's primary email.
+- The filters bar in the search results page can now display filters from extensions.
+- Extensions' `activate` functions now receive a `sourcegraph.ExtensionContext` parameter (i.e., `export function activate(ctx: sourcegraph.ExtensionContext): void { ... }`) to support deactivation and running multiple extensions in the same process.
+- Users can now request an Enterprise trial license from the site init page.
+- When searching, a filter button `case:yes` will now appear when relevant. This helps discovery and makes it easier to use our case-sensitive search syntax.
 
 ### Changed
 
@@ -31,12 +36,24 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
+- Fixed number formatting issues on site admin Overview and Survey Response pages.
+- Fixed resolving of git clone URLs with `git+` prefix through the GraphQL API
 
 ### Removed
 
 - The `siteID` site configuration option was removed because it is no longer needed. If you previously specified this in site configuration, a new, random site ID will be generated upon server startup. You can safely remove the existing `siteID` value from your site configuration after upgrading.
+- The **Info** panel was removed. The information it presented can be viewed in the hover.
 
 ### Removed
+
+## 2.13.6
+
+### Added
+
+- The `/-/editor` endpoint now accepts a `hostname_patterns` URL parameter, which specifies a JSON
+  object mapping from hostname to repository name pattern. This serves as a hint to Sourcegraph when
+  resolving git clone URLs to repository names. The name pattern is the same style as is used in
+  code host configurations. The default value is `{hostname}/{path}`.
 
 ## 2.13.5
 

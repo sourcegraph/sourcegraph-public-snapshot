@@ -13,7 +13,7 @@ interface CommandEntry {
 }
 
 /** @internal */
-export class ExtCommands implements ExtCommandsAPI {
+export class ExtCommands implements ExtCommandsAPI, Unsubscribable {
     private registrations = new ProviderMap<CommandEntry>(id => this.proxy.$unregister(id))
 
     constructor(private proxy: ClientCommandsAPI) {}
@@ -37,5 +37,9 @@ export class ExtCommands implements ExtCommandsAPI {
         const { id, subscription } = this.registrations.add(entry)
         this.proxy.$registerCommand(id, entry.command)
         return subscription
+    }
+
+    public unsubscribe(): void {
+        this.registrations.unsubscribe()
     }
 }

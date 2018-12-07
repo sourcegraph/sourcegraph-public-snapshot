@@ -37,13 +37,21 @@ export interface FeatureFlags {
      * @duration temporary - needs feedback from users.
      */
     inlineSymbolSearchEnabled: boolean
+
+    /**
+     * Allow error reporting.
+     *
+     * @duration permanent
+     */
+    allowErrorReporting: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
     newInject: false,
-    renderMermaidGraphsEnabled: false,
+    renderMermaidGraphsEnabled: true,
     useExtensions: false,
     inlineSymbolSearchEnabled: true,
+    allowErrorReporting: false,
 }
 
 export interface AccessToken {

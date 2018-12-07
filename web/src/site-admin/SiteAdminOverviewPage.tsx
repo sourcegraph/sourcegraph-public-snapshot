@@ -12,14 +12,14 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { numberWithCommas, pluralize } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
 import { OverviewItem, OverviewList } from '../components/Overview'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
-import { numberWithCommas, pluralize } from '../util/strings'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 
 interface Props {
@@ -188,15 +188,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     </Link>
                                 }
                                 title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
-                                    'survey response',
+                                    'user survey response',
                                     this.state.info.surveyResponses.totalCount
-                                )} ${
-                                    this.state.info.surveyResponses.totalCount >= 5
-                                        ? `, ${numberWithCommas(
-                                              this.state.info.surveyResponses.averageScore
-                                          )} average in last 30 days (from 0–10)`
-                                        : ''
-                                }`}
+                                )}`}
                             />
                         </>
                     )}
