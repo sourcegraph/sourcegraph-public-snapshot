@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 )
 
 type externalServices struct{}
@@ -65,7 +66,7 @@ func (c *externalServices) Update(ctx context.Context, id int64, update *Externa
 		}
 		return nil
 	}
-	return Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
+	return dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		if update.DisplayName != nil {
 			if err := execUpdate(ctx, tx, sqlf.Sprintf("display_name=%s", update.DisplayName)); err != nil {
 				return err
