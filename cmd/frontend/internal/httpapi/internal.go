@@ -113,6 +113,8 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+// serveExternalServiceConfigs serves a JSON response that is an array of all
+// external service configs that match the requested kind.
 func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 	var req api.ExternalServiceConfigsRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -127,7 +129,9 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 	var configs []map[string]interface{}
 	for _, service := range services {
 		var config map[string]interface{}
-		if err := json.Unmarshal([]byte(service.Config), &config); err != nil {
+		// Raw configs may have comments in them so we have to use a json parser
+		// that supports comments in json.
+		if err := jsonc.Unmarshal(service.Config, &config); err != nil {
 			return err
 		}
 		configs = append(configs, config)

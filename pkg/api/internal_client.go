@@ -338,8 +338,10 @@ func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoNam
 	}, nil)
 }
 
+// ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
+// which should be a slice of the expected config type.
 func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result interface{}) error {
-	var raw json.RawMessage
+	var raw rawJson
 	err := c.postInternal(ctx, "external-services/configs", ExternalServiceConfigsRequest{
 		Kind: kind,
 	}, &raw)
@@ -358,9 +360,12 @@ func (c *internalClient) postInternal(ctx context.Context, route string, reqBody
 	return c.post(ctx, "/.internal/"+route, reqBody, respBody)
 }
 
-// post sends an HTTP post request to the provided route. If reqBody is
-// non-nil it will Marshal it as JSON and set that as the Request body. If
-// respBody is non-nil the response body will be JSON unmarshalled to resp.
+type rawJson []byte
+
+// post sends an HTTP post request to the provided route.
+// If reqBody is non-nil it will Marshal it as JSON and set that as the Request body.
+// If respBody is of type rawJson, then it will be populated with the raw response.
+// If respBody is non-nil, then the response body will be JSON unmarshalled into respBody.
 func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody interface{}) error {
 	var data []byte
 	if reqBody != nil {
@@ -385,7 +390,7 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 	}
 
 	// Caller wants the unparsed JSON.
-	if raw, ok := respBody.(*json.RawMessage); ok {
+	if raw, ok := respBody.(*rawJson); ok {
 		buf, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
