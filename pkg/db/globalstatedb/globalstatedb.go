@@ -11,22 +11,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-type globalState struct{}
+type State struct {
+	SiteID      string
+	Initialized bool // whether the initial site admin account has been created
+}
 
-func (o *globalState) Get(ctx context.Context) (*types.GlobalState, error) {
-	if Mocks.GlobalState.Get != nil {
-		return Mocks.GlobalState.Get(ctx)
+func Get(ctx context.Context) (*globalstatedb.State, error) {
+	if Mocks.Get != nil {
+		return Mocks.Get(ctx)
 	}
 
-	configuration, err := o.getConfiguration(ctx)
+	configuration, err := getConfiguration(ctx)
 	if err == nil {
 		return configuration, nil
 	}
-	err = o.tryInsertNew(ctx, dbconn.Global)
+	err = tryInsertNew(ctx, dbconn.Global)
 	if err != nil {
 		return nil, err
 	}
-	return o.getConfiguration(ctx)
+	return getConfiguration(ctx)
 }
 
 func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
@@ -39,7 +42,7 @@ func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 	return alreadyInitialized, err
 }
 
-// ensureInitialized ensures the site is marked as having been initialized. If the site was already
+// EnsureInitialized ensures the site is marked as having been initialized. If the site was already
 // initialized, it does nothing. It returns whether the site was already initialized prior to the
 // call.
 //
@@ -49,11 +52,11 @@ func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 // privileges (even if all other users are deleted). This reduces the risk of (1) a site admin
 // accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 // admin and (2) a bug in user account creation code letting attackers create site admin accounts.
-func (o *globalState) ensureInitialized(ctx context.Context, dbh interface {
+func EnsureInitialized(ctx context.Context, dbh interface {
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }) (alreadyInitialized bool, err error) {
-	if err := o.tryInsertNew(ctx, dbh); err != nil {
+	if err := tryInsertNew(ctx, dbh); err != nil {
 		return false, err
 	}
 
@@ -70,8 +73,8 @@ func (o *globalState) ensureInitialized(ctx context.Context, dbh interface {
 	return alreadyInitialized, err
 }
 
-func (o *globalState) getConfiguration(ctx context.Context) (*types.GlobalState, error) {
-	configuration := &types.GlobalState{}
+func getConfiguration(ctx context.Context) (*globalstatedb.State, error) {
+	configuration := &globalstatedb.State{}
 	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM global_state LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.Initialized,
@@ -79,7 +82,7 @@ func (o *globalState) getConfiguration(ctx context.Context) (*types.GlobalState,
 	return configuration, err
 }
 
-func (o *globalState) tryInsertNew(ctx context.Context, dbh interface {
+func tryInsertNew(ctx context.Context, dbh interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }) error {
 	siteID, err := uuid.NewRandom()

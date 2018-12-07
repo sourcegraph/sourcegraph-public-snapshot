@@ -6,6 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-type MockGlobalState struct {
-	Get func(ctx context.Context) (*types.GlobalState, error)
+type Mocks struct {
+	Get func(ctx context.Context) (*globalstatedb.State, error)
 }
+
+var Mock = Mocks{}

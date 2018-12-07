@@ -6,12 +6,12 @@ import (
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 )
 
-func TestGlobalState_Get(t *testing.T) {
+func TestGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := dbtesting.TestContext(t)
-	config, err := GlobalState.Get(ctx)
+	config, err := Get(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
