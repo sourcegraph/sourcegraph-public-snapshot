@@ -33,7 +33,7 @@ func UpdateProviders(label string, providers []Provider) {
 	for _, p := range providers {
 		k, err := json.Marshal(p.Config())
 		if err != nil {
-			log15.Error("Omitting auth provider, because could not JSON-marshal its config", "error", err, "configID", p.ConfigID())
+			log15.Error("Omitting auth provider (failed to marshal its JSON config)", "error", err, "configID", p.ConfigID())
 			continue
 		}
 		newLabelProviders[string(k)] = p
