@@ -36,18 +36,23 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	data.SetAccountData(gUser)
 	data.SetAuthData(token)
 
-	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		Username:        login,
-		Email:           gUser.Email,
-		EmailIsVerified: gUser.Email != "",
-		DisplayName:     gUser.Name,
-		AvatarURL:       gUser.AvatarURL,
-	}, extsvc.ExternalAccountSpec{
-		ServiceType: s.ServiceType(),
-		ServiceID:   s.ServiceID(),
-		ClientID:    s.clientID,
-		AccountID:   strconv.FormatInt(int64(gUser.ID), 10),
-	}, data)
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
+		UserProps: db.NewUser{
+			Username:        login,
+			Email:           gUser.Email,
+			EmailIsVerified: gUser.Email != "",
+			DisplayName:     gUser.Name,
+			AvatarURL:       gUser.AvatarURL,
+		},
+		ExternalAccount: extsvc.ExternalAccountSpec{
+			ServiceType: s.ServiceType(),
+			ServiceID:   s.ServiceID(),
+			ClientID:    s.clientID,
+			AccountID:   strconv.FormatInt(int64(gUser.ID), 10),
+		},
+		ExternalAccountData: data,
+		CreateIfNotExist:    true,
+	})
 	if err != nil {
 		return nil, safeErrMsg, err
 	}

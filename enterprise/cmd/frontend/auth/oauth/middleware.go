@@ -58,6 +58,7 @@ func NewOAuthFlowHandler(serviceType string) http.Handler {
 		if p == nil {
 			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
 			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
+			return
 		}
 		p.Login.ServeHTTP(w, req)
 	}))

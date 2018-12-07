@@ -1162,7 +1162,13 @@
           "description":
             "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
         },
-        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "allowSignup": {
+          "description":
+            "Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.",
+          "default": false,
+          "type": "boolean"
+        }
       }
     },
     "GitLabAuthProvider": {

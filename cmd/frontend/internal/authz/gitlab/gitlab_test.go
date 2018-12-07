@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/gitlaboauth"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
@@ -193,11 +194,7 @@ type GitLab_FetchAccount_Test_call struct {
 func (g GitLab_FetchAccount_Test) run(t *testing.T) {
 	t.Logf("Test case %q", g.description)
 
-	provs := make(map[auth.Provider]bool)
-	for _, p := range g.authnProviders {
-		provs[p] = true
-	}
-	auth.UpdateProviders(provs)
+	auth.UpdateProviders(gitlaboauth.PkgName, g.authnProviders)
 
 	ctx := context.Background()
 	authzProvider := NewProvider(g.op)
@@ -808,7 +805,12 @@ func (m mockAuthnProvider) ConfigID() auth.ProviderConfigID {
 }
 
 func (m mockAuthnProvider) Config() schema.AuthProviders {
-	panic("should not be called")
+	return schema.AuthProviders{
+		Gitlab: &schema.GitLabAuthProvider{
+			Type: m.configID.Type,
+			Url:  m.configID.ID,
+		},
+	}
 }
 
 func (m mockAuthnProvider) CachedInfo() *auth.ProviderInfo {

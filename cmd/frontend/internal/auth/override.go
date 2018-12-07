@@ -35,11 +35,18 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 				username = defaultUsername
 			}
 
-			userID, safeErrMsg, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{
-				Username:        username,
-				Email:           username + "+override@example.com",
-				EmailIsVerified: true,
-			}, extsvc.ExternalAccountSpec{ServiceType: "override", AccountID: username}, extsvc.ExternalAccountData{})
+			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
+				UserProps: db.NewUser{
+					Username:        username,
+					Email:           username + "+override@example.com",
+					EmailIsVerified: true,
+				},
+				ExternalAccount: extsvc.ExternalAccountSpec{
+					ServiceType: "override",
+					AccountID:   username,
+				},
+				CreateIfNotExist: true,
+			})
 			if err != nil {
 				log15.Error("Error getting/creating auth-override user.", "error", err, "userErr", safeErrMsg)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)

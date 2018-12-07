@@ -9,16 +9,14 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/lib/pq"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // users provides access to the `users` table.
@@ -545,6 +543,9 @@ func (u *users) GetByID(ctx context.Context, id int32) (*types.User, error) {
 // has a matching *unverified* email address, they will not be returned by this method. At most one
 // user may have any given verified email address.
 func (u *users) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
+	if Mocks.Users.GetByVerifiedEmail != nil {
+		return Mocks.Users.GetByVerifiedEmail(ctx, email)
+	}
 	return u.getOneBySQL(ctx, "WHERE id=(SELECT user_id FROM user_emails WHERE email=$1 AND verified_at IS NOT NULL) AND deleted_at IS NULL LIMIT 1", email)
 }
 
