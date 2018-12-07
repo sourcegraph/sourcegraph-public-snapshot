@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
-	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -83,7 +84,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if _, err := GlobalState.Get(ctx); err != nil {
+	if _, err := globalstatedb.Get(ctx); err != nil {
 		t.Fatal(err)
 	}
 

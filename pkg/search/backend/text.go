@@ -50,6 +50,7 @@ func (t *Text) Search(ctx context.Context, q query.Q, opts *search.Options) (res
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	isIndexAvailable := true
 	shards := make(chan shard)
 	go func() {
 		defer close(shards)
@@ -58,6 +59,7 @@ func (t *Text) Search(ctx context.Context, q query.Q, opts *search.Options) (res
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
+			isIndexAvailable = false
 			err = nil
 			index = nil
 			fallback = opts.Repositories
@@ -76,7 +78,11 @@ func (t *Text) Search(ctx context.Context, q query.Q, opts *search.Options) (res
 		}
 	}()
 
-	return shardedSearch(ctx, shards)
+	res, err = shardedSearch(ctx, shards)
+	if res != nil && !isIndexAvailable {
+		res.Stats.Unavailable = append(res.Stats.Unavailable, SourceZoekt)
+	}
+	return res, err
 }
 
 func (t *Text) Close() {}
@@ -121,7 +127,7 @@ func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (
 			return all, err
 		}
 
-		all.Files = append(all.Files, result.Files...)
+		all.Add(result)
 	}
 
 	return all, nil
@@ -159,6 +165,9 @@ func (t *TextJIT) client(r search.Repository) (search.Searcher, error) {
 	return client, nil
 }
 
+// SourceZoekt is the source name used by Zoekt.
+const SourceZoekt = search.Source("textindexed")
+
 // Zoekt is Searcher which wraps a zoekt.Searcher.
 //
 // Note: Zoekt starts up background goroutines, so call Close when done using
@@ -183,6 +192,7 @@ func (c *Zoekt) Close() {
 	c.mu.Unlock()
 }
 
+// Search implements Searcher.Search
 func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (res *search.Result, err error) {
 	repos := opts.Repositories
 	if len(repos) == 0 {
@@ -212,6 +222,49 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 		tr.Finish()
 	}()
 
+	searchOpts := mapOptionsToZoekt(opts)
+	tr.LazyPrintf("options: %+v", &searchOpts)
+
+	start := time.Now()
+	resp, err := c.Client.Search(ctx, zq, searchOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// We don't have info on which shards are skipped / timedout. So if we
+	// skipped any files, we conservatily mark every repository as having
+	// skipped files.
+	status := search.RepositoryStatusSearched
+	if resp.Stats.FilesSkipped+resp.Stats.ShardsSkipped > 0 {
+		status = search.RepositoryStatusLimitHit
+		if time.Since(start) >= searchOpts.MaxWallTime {
+			status = search.RepositoryStatusTimedOut
+		}
+	}
+	statuses := make([]search.RepositoryStatus, len(repos))
+	for i, r := range repos {
+		statuses[i] = search.RepositoryStatus{
+			Repository: r,
+			Source:     SourceZoekt,
+			Status:     status,
+		}
+	}
+
+	return &search.Result{
+		Stats: search.Stats{
+			// NOTE: This is different to TextJIT. Zoekt MatchCount is the
+			// number of non-overlapping matches.
+			MatchCount: resp.Stats.MatchCount,
+			Status:     statuses,
+		},
+		Files: mapZoektFileMatch(resp.Files),
+	}, nil
+}
+
+// mapOptionsToZoekt translates our search options into Zoekts.
+func mapOptionsToZoekt(opts *search.Options) *zoekt.SearchOptions {
+	repos := opts.Repositories
+
 	// If we're only searching a small number of repositories, return more
 	// comprehensive results. This is arbitrary.
 	defaultMaxSearchResults := 30
@@ -234,7 +287,7 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 		k = int(float64(k) * 3 * float64(opts.TotalMaxMatchCount) / float64(defaultMaxSearchResults))
 	}
 
-	searchOpts := zoekt.SearchOptions{
+	searchOpts := &zoekt.SearchOptions{
 		MaxWallTime:            opts.MaxWallTime,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
@@ -257,44 +310,7 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 		searchOpts.MaxWallTime *= time.Duration(3 * float64(opts.TotalMaxMatchCount) / float64(defaultMaxSearchResults))
 	}
 
-	resp, err := c.Client.Search(ctx, zq, &searchOpts)
-	if err != nil {
-		return nil, err
-	}
-
-	files := make([]search.FileMatch, len(resp.Files))
-	for i, fm := range resp.Files {
-		lines := make([]search.LineMatch, 0, len(fm.LineMatches))
-		for _, lm := range fm.LineMatches {
-			if lm.FileName {
-				continue
-			}
-
-			frags := make([]search.LineFragmentMatch, len(lm.LineFragments))
-			for i, f := range lm.LineFragments {
-				frags[i] = search.LineFragmentMatch{
-					LineOffset:  f.LineOffset,
-					MatchLength: f.MatchLength,
-				}
-			}
-
-			lines = append(lines, search.LineMatch{
-				Line:          lm.Line,
-				LineStart:     lm.LineStart,
-				LineEnd:       lm.LineEnd,
-				LineNumber:    lm.LineNumber,
-				LineFragments: frags,
-			})
-		}
-
-		files[i] = search.FileMatch{
-			Path:        fm.FileName,
-			Repository:  search.Repository{Name: api.RepoName(fm.Repository)}, // Branch? Safe to case RepoName?
-			LineMatches: lines,
-		}
-	}
-
-	return &search.Result{Files: files}, nil
+	return searchOpts
 }
 
 // mapQueryToZoekt translates q to a zoektquery.Q. Additionally we treat any
@@ -377,10 +393,48 @@ func mapQueriesToZoekt(qs []query.Q) ([]zoektquery.Q, error) {
 	return r, nil
 }
 
+func mapZoektFileMatch(zf []zoekt.FileMatch) []search.FileMatch {
+	files := make([]search.FileMatch, len(zf))
+	for i, fm := range zf {
+		lines := make([]search.LineMatch, 0, len(fm.LineMatches))
+		for _, lm := range fm.LineMatches {
+			if lm.FileName {
+				continue
+			}
+
+			frags := make([]search.LineFragmentMatch, len(lm.LineFragments))
+			for i, f := range lm.LineFragments {
+				frags[i] = search.LineFragmentMatch{
+					LineOffset:  f.LineOffset,
+					MatchLength: f.MatchLength,
+				}
+			}
+
+			lines = append(lines, search.LineMatch{
+				Line:          lm.Line,
+				LineStart:     lm.LineStart,
+				LineEnd:       lm.LineEnd,
+				LineNumber:    lm.LineNumber,
+				LineFragments: frags,
+			})
+		}
+
+		files[i] = search.FileMatch{
+			Path:        fm.FileName,
+			Repository:  search.Repository{Name: api.RepoName(fm.Repository)}, // Branch? Safe to case RepoName?
+			LineMatches: lines,
+		}
+	}
+	return files
+}
+
 func (c *Zoekt) String() string {
 	return fmt.Sprintf("zoekt(%v)", c.Client)
 }
 
+// SplitRepositories splits repos into two lists: indexed contains
+// repositories that can be searched by zoekt, unindexed contains everything
+// else.
 func (c *Zoekt) SplitRepositories(ctx context.Context, repos []search.Repository) (indexed, unindexed []search.Repository, err error) {
 	for _, r := range repos {
 		// TODO is this how we decide default branch?

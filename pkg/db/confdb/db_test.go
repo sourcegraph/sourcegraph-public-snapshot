@@ -1,7 +1,7 @@
 package confdb
 
 import (
-	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 func init() {

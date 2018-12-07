@@ -1,5 +1,5 @@
-// Package testing provides database test helpers.
-package testing
+// Package dbtesting provides database test helpers.
+package dbtesting
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
 // MockHashPassword if non-nil is used instead of db.hashPassword. This is useful

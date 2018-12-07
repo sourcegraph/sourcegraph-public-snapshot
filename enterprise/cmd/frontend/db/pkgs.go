@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
 // pkgs provides access to the `pkgs` table.
