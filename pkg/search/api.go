@@ -53,8 +53,81 @@ func (r *Repository) String() string {
 	return string(r.Name)
 }
 
+// RepositoryStatus is the status of searching a repository with an
+// attribution source.
+type RepositoryStatus struct {
+	// Repository is the repository searched.
+	Repository Repository
+
+	// Source is a short description of the searcher.
+	Source Source
+
+	// Status is the status of searching Repository for Source.
+	Status RepositoryStatusType
+}
+
+func (r *RepositoryStatus) String() string {
+	return fmt.Sprintf("RepositoryStatus(%s,%s)=%s", r.Source, r.Repository, r.Status)
+}
+
+// Source is a short description of a Searcher. eg: textjit, textindexed,
+// symbol, ...
+type Source string
+
+// RepositoryStatusType is the status of searching a repository.
+type RepositoryStatusType string
+
+const (
+	// RepositoryStatusSearched indicates the repository was successfully
+	// searched. Note: If we hit match limits or timeouts while searching the
+	// repository, its state will be limithit or timedout. So this can occur
+	// even when we have results from the repository.
+	RepositoryStatusSearched RepositoryStatusType = "searched"
+
+	// RepositoryStatusLimitHit indicates the repository was not searched
+	// since a match limit was reached.
+	RepositoryStatusLimitHit RepositoryStatusType = "limithit"
+
+	// RepositoryStatusTimedOut indicates that the search on the repository
+	// timed out before finishing searching it.
+	RepositoryStatusTimedOut RepositoryStatusType = "timedout"
+
+	// RepositoryStatusCloning indicates the search failed for the repository
+	// due to it still being cloned.
+	RepositoryStatusCloning RepositoryStatusType = "cloning"
+
+	// RepositoryStatusMissing indicates the search failed for the repository
+	// since the repository or commit does not exist.
+	RepositoryStatusMissing RepositoryStatusType = "missing"
+)
+
+// Stats contains statistics aggregated during searching.
+type Stats struct {
+	// MatchCount is the number of non-overlapping matches found. The match
+	// count is decided by each Searcher. For example in text search each
+	// LineFragmentMatch contributes to this count, but if its a match just on
+	// the FileName, then that also contributes one.
+	MatchCount int
+
+	// RepositoryStatus explains the status of searching each repository
+	// listed in Options.Repositories.
+	Status []RepositoryStatus
+
+	// Unavailable is a list of search sources which we wanted to use, but
+	// were not available.
+	Unavailable []Source
+}
+
+func (s *Stats) Add(o *Stats) {
+	s.MatchCount += o.MatchCount
+	s.Status = append(s.Status, o.Status...)
+	s.Unavailable = append(s.Unavailable, o.Unavailable...)
+}
+
 // Result contains search matches and extra data
 type Result struct {
+	Stats
+
 	Files []FileMatch
 
 	// TODO this can probably be generalised to support result types other
