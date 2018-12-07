@@ -58,7 +58,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     filter(([, isVisible]) => isVisible),
                     switchMap(
                         ([props]) =>
-                            props.item.body.html !== ''
+                            props.item.body.html
                                 ? of(sanitizeHtml(props.item.body.html))
                                 : renderMarkdown({ markdown: props.item.body.text })
                     ),
