@@ -136,10 +136,10 @@ func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOpt
 	return c.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-// ListConfigs decodes the list configs into result.
+// listConfigs decodes the list configs into result.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *externalServices) ListConfigs(ctx context.Context, kind string, result interface{}) error {
+func (c *externalServices) listConfigs(ctx context.Context, kind string, result interface{}) error {
 	services, err := c.List(ctx, ExternalServicesListOptions{Kind: kind})
 	if err != nil {
 		return err
