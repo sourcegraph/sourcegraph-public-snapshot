@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/xlang"
 )
@@ -339,7 +340,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]ap
 }
 
 func (g *globalDeps) UpdateIndexForLanguage(ctx context.Context, language string, repo api.RepoID, deps []lspext.DependencyReference) (err error) {
-	err = db.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
+	err = dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		// Update the table.
 		err = g.update(ctx, tx, language, deps, repo)
 		if err != nil {

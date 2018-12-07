@@ -15,7 +15,7 @@ import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
-import { animationFrameScheduler, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
 import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
@@ -38,7 +38,7 @@ import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews, getContentOfCodeView } from './code_views'
-import { applyDecoration, initializeExtensions } from './extensions'
+import { applyDecorations, initializeExtensions } from './extensions'
 
 /**
  * Defines a type of code view a given code host can have. It tells us how to
@@ -494,27 +494,10 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         }
 
                         if (extensionsController && !info.baseCommitID) {
-                            let oldDecorations: Unsubscribable[] = []
-
                             extensionsController.services.textDocumentDecoration
                                 .getDecorations(toTextDocumentIdentifier(info))
                                 .subscribe(decorations => {
-                                    for (const old of oldDecorations) {
-                                        old.unsubscribe()
-                                    }
-                                    oldDecorations = []
-                                    for (const decoration of decorations || []) {
-                                        try {
-                                            oldDecorations.push(
-                                                applyDecoration(dom, {
-                                                    codeView,
-                                                    decoration,
-                                                })
-                                            )
-                                        } catch (e) {
-                                            console.warn(e)
-                                        }
-                                    }
+                                    applyDecorations(dom, codeView, decorations || [])
                                 })
                         }
 

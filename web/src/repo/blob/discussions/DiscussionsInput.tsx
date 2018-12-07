@@ -136,7 +136,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     mergeMap(([, { textAreaValue }]) =>
                         concat(
                             of<Update>(state => ({ ...state, previewHTML: undefined, previewLoading: true })),
-                            renderMarkdown(this.trimImplicitTitle(textAreaValue)).pipe(
+                            renderMarkdown({ markdown: this.trimImplicitTitle(textAreaValue) }).pipe(
                                 map(
                                     (previewHTML): Update => state => ({
                                         ...state,

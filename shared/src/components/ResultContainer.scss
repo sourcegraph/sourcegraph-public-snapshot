@@ -1,4 +1,5 @@
 .result-container {
+    position: relative;
     margin-bottom: 0.5rem;
     border-radius: 2px;
 
@@ -26,10 +27,18 @@
         &:hover {
             background-color: darken($background-color, 0.05);
         }
+
+        p {
+            margin-bottom: 0;
+        }
     }
 
     &__toggle-matches-container {
         display: flex;
+    }
+
+    .icon-inline__filtered {
+        filter: contrast(0) saturate(700%) grayscale(100%) sepia(70%) hue-rotate(180deg) brightness(120%);
     }
 }
 
@@ -43,5 +52,9 @@
                 background-color: $color-light-bg-4;
             }
         }
+    }
+
+    .icon-inline__filtered {
+        filter: brightness(0%);
     }
 }

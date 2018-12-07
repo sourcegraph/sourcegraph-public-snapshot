@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 )
 
 func TestPkgs_update_delete(t *testing.T) {
@@ -40,7 +41,7 @@ func TestPkgs_update_delete(t *testing.T) {
 	}}
 
 	t.Log("update")
-	if err := db.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
+	if err := dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		if err := Pkgs.update(ctx, tx, rp.ID, "go", pks); err != nil {
 			return err
 		}
@@ -155,7 +156,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 
 	createdAt := time.Now()
 	for repo, pks := range repoToPkgs {
-		if err := db.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
+		if err := dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id, uri, created_at) VALUES ($1, $2, $3)`, repo, strconv.Itoa(int(repo)), createdAt); err != nil {
 				return err
 			}

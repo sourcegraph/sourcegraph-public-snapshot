@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -51,6 +52,21 @@ func (*schemaResolver) RenderMarkdown(args *struct {
 	Options  *markdownOptions
 }) (string, error) {
 	return markdown.Render(args.Markdown, nil)
+}
+
+func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
+	Code           string
+	FuzzyLanguage  string
+	DisableTimeout bool
+	IsLightTheme   bool
+}) (string, error) {
+	language := highlight.SyntectLanguageMap[strings.ToLower(args.FuzzyLanguage)]
+	filePath := "file." + language
+	html, _, err := highlight.Code(ctx, []byte(args.Code), filePath, args.DisableTimeout, args.IsLightTheme)
+	if err != nil {
+		return args.Code, err
+	}
+	return string(html), nil
 }
 
 func (r *gitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
