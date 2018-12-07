@@ -854,6 +854,20 @@ interface GenericSearchResultInterface {
     matches: [SearchMatch!]!
 }
 
+# A search result.
+type GenericSearchResult implements GenericSearchResultInterface {
+    # Base64 data URI to an icon that is displayed with every search result.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
+    # A list of individual matches in a result.
+    matches: [SearchMatch!]!
+}
+
 # An individual search result match. Matches make up the body content of a search result.
 type SearchMatch {
     # URL for the individual result match.

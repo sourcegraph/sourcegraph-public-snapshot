@@ -1004,8 +1004,7 @@ declare module 'sourcegraph' {
         highlights: Highlight[]
     }
 
-    export interface IssueResult {
-        __typename: string
+    export interface GenericSearchResult {
         icon: string
         label: Markdown
         url: string
@@ -1019,8 +1018,8 @@ declare module 'sourcegraph' {
     }
 
     /** A search result provider takes in a user's query and returns a list of issue results */
-    export interface IssueResultsProvider {
-        provideIssueResults(query: string): IssueResult[] | Promise<IssueResult[]>
+    export interface SearchResultsProvider {
+        provideSearchResults(query: string): GenericSearchResult[] | Promise<GenericSearchResult[]>
     }
 
     /**
@@ -1053,7 +1052,7 @@ declare module 'sourcegraph' {
          * @param provider A query transformer.
          */
         export function registerQueryTransformer(provider: QueryTransformer): Unsubscribable
-        export function registerIssueResultsProvider(provider: IssueResultsProvider): Unsubscribable
+        export function registerSearchResultsProvider(provider: SearchResultsProvider): Unsubscribable
     }
 
     /**

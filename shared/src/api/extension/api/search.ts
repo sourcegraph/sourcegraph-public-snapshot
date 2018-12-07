@@ -1,16 +1,16 @@
 import { Unsubscribable } from 'rxjs'
-import { IssueResultsProvider, QueryTransformer } from 'sourcegraph'
+import { QueryTransformer, SearchResultsProvider } from 'sourcegraph'
 import { SearchAPI } from '../../client/api/search'
-import { IssueResult } from '../../protocol/plainTypes'
+import { GenericSearchResult } from '../../protocol/plainTypes'
 import { ProviderMap } from './common'
 
 export interface ExtSearchAPI {
     $transformQuery: (id: number, query: string) => Promise<string>
-    $provideIssueResults: (id: number, query: string) => Promise<IssueResult[] | null>
+    $provideIssueResults: (id: number, query: string) => Promise<GenericSearchResult[] | null>
 }
 
 export class ExtSearch implements ExtSearchAPI, Unsubscribable {
-    private registrations = new ProviderMap<QueryTransformer | IssueResultsProvider>(id => this.proxy.$unregister(id))
+    private registrations = new ProviderMap<QueryTransformer | SearchResultsProvider>(id => this.proxy.$unregister(id))
     constructor(private proxy: SearchAPI) {}
 
     public registerQueryTransformer(provider: QueryTransformer): Unsubscribable {
@@ -24,14 +24,14 @@ export class ExtSearch implements ExtSearchAPI, Unsubscribable {
         return Promise.resolve(provider.transformQuery(query))
     }
 
-    public registerIssueResultsProvider(provider: IssueResultsProvider): Unsubscribable {
+    public registerSearchResultsProvider(provider: SearchResultsProvider): Unsubscribable {
         const { id, subscription } = this.registrations.add(provider)
-        this.proxy.$registerIssueResultsProvider(id)
+        this.proxy.$registerSearchResultsProvider(id)
         return subscription
     }
-    public $provideIssueResults(id: number, query: string): Promise<IssueResult[]> {
-        const provider = this.registrations.get<IssueResultsProvider>(id)
-        return Promise.resolve(provider.provideIssueResults(query))
+    public $provideIssueResults(id: number, query: string): Promise<GenericSearchResult[]> {
+        const provider = this.registrations.get<SearchResultsProvider>(id)
+        return Promise.resolve(provider.provideSearchResults(query))
     }
 
     public unsubscribe(): void {

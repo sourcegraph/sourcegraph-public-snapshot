@@ -2,7 +2,7 @@ import { from, Observable, Subscription } from 'rxjs'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtSearch } from '../../extension/api/search'
 import { Connection } from '../../protocol/jsonrpc2/connection'
-import { IssueResult } from '../../protocol/plainTypes'
+import { GenericSearchResult } from '../../protocol/plainTypes'
 import { ProvideIssueResultsSignature } from '../services/issueResults'
 import { TransformQuerySignature } from '../services/queryTransformer'
 import { FeatureProviderRegistry } from '../services/registry'
@@ -11,7 +11,7 @@ import { SubscriptionMap } from './common'
 /** @internal */
 export interface SearchAPI {
     $registerQueryTransformer(id: number): void
-    $registerIssueResultsProvider(id: number): void
+    $registerSearchResultsProvider(id: number): void
     $unregister(id: number): void
 }
 
@@ -41,12 +41,13 @@ export class Search implements SearchAPI {
         )
     }
 
-    public $registerIssueResultsProvider(id: number): void {
+    public $registerSearchResultsProvider(id: number): void {
         this.registrations.add(
             id,
             this.issueResultsProviderRegistry.registerProvider(
                 {},
-                (query: string): Observable<IssueResult[] | null> => from(this.proxy.$provideIssueResults(id, query))
+                (query: string): Observable<GenericSearchResult[] | null> =>
+                    from(this.proxy.$provideIssueResults(id, query))
             )
         )
     }

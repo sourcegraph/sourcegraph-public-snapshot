@@ -49,7 +49,7 @@ export class SearchResult extends React.Component<Props> {
                         dangerouslySetInnerHTML={{
                             __html: this.props.result.detail.html
                                 ? decode(this.props.result.detail.html)
-                                : marked(this.props.result.label.text, { gfm: true, breaks: true, sanitize: true }),
+                                : marked(this.props.result.detail.text, { gfm: true, breaks: true, sanitize: true }),
                         }}
                     />
                 </>
