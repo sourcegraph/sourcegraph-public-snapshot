@@ -101,7 +101,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 
 	srv := httptest.NewServer(s)
 
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 		if op.ExternalAccount.ServiceType == "openidconnect" && op.ExternalAccount.ServiceID == oidcProvider.Issuer && op.ExternalAccount.ClientID == testClientID && op.ExternalAccount.AccountID == testOIDCUser {
 			return 123, "", nil
 		}

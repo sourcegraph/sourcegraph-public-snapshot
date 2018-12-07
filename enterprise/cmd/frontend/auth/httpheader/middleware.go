@@ -73,7 +73,7 @@ func middleware(next http.Handler) http.Handler {
 			http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 			return
 		}
-		userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetUserOp{
+		userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
 			UserProps: db.NewUser{Username: username},
 			ExternalAccount: extsvc.ExternalAccountSpec{
 				ServiceType: providerType,

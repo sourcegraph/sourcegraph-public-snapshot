@@ -60,7 +60,7 @@ func TestMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(headerName, "alice")
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice" {
 				return 1, "", nil
@@ -94,7 +94,7 @@ func TestMiddleware(t *testing.T) {
 		req.Header.Set(headerName, "alice.zhao")
 		const wantNormalizedUsername = "alice-zhao"
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if op.UserProps.Username != wantNormalizedUsername {
 				t.Errorf("got %q, want %q", op.UserProps.Username, wantNormalizedUsername)
@@ -148,7 +148,7 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(headerName, "accounts.google.com:alice")
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice" {
 				return 1, "", nil

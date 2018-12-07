@@ -49,7 +49,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	var data extsvc.ExternalAccountData
 	data.SetAccountData(ghUser)
 	data.SetAuthData(token)
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetUserOp{
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
 		UserProps: db.NewUser{
 			Username:        login,
 			Email:           verifiedEmail,

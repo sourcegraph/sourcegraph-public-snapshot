@@ -36,7 +36,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	data.SetAccountData(gUser)
 	data.SetAuthData(token)
 
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetUserOp{
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
 		UserProps: db.NewUser{
 			Username:        login,
 			Email:           gUser.Email,

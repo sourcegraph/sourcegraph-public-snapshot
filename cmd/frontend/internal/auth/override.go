@@ -35,7 +35,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 				username = defaultUsername
 			}
 
-			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetUserOp{
+			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
 				UserProps: db.NewUser{
 					Username:        username,
 					Email:           username + "+override@example.com",

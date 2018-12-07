@@ -48,7 +48,7 @@ func TestGetOrCreateUser(t *testing.T) {
 		inputs        []input
 		expActor      *actor.Actor
 		expErr        bool
-		expAuthUserOp *auth.GetUserOp
+		expAuthUserOp *auth.GetAndSaveUserOp
 	}{
 		{
 			inputs: []input{{
@@ -61,7 +61,7 @@ func TestGetOrCreateUser(t *testing.T) {
 				}},
 			}},
 			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetUserOp{
+			expAuthUserOp: &auth.GetAndSaveUserOp{
 				UserProps:       u("alice", "alice@example.com", true),
 				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
 			},
@@ -106,8 +106,8 @@ func TestGetOrCreateUser(t *testing.T) {
 				githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context, token string) ([]*githubsvc.UserEmail, error) {
 					return ci.ghUserEmails, ci.ghUserEmailsErr
 				}
-				var gotAuthUserOp *auth.GetUserOp
-				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
+				var gotAuthUserOp *auth.GetAndSaveUserOp
+				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 					if gotAuthUserOp != nil {
 						t.Fatal("GetAndSaveUser called more than once")
 					}

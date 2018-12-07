@@ -30,7 +30,7 @@ func TestGetAndSaveUser(t *testing.T) {
 	type innerCase struct {
 		description string
 		actorUID    int32
-		op          GetUserOp
+		op          GetAndSaveUserOp
 
 		// if true, then will expect same output if op.CreateIfNotExist is true or false
 		createIfNotExistIrrelevant bool
@@ -60,11 +60,11 @@ func TestGetAndSaveUser(t *testing.T) {
 		},
 		emails: []string{"u1@example.com"},
 	}}
-	getOneUserOp := GetUserOp{
+	getOneUserOp := GetAndSaveUserOp{
 		ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
 		UserProps:       userProps("u1", "u1@example.com", true),
 	}
-	getNonExistentUserCreateIfNotExistOp := GetUserOp{
+	getNonExistentUserCreateIfNotExistOp := GetAndSaveUserOp{
 		ExternalAccount:  ext("st1", "s1", "c1", "nonexistent"),
 		UserProps:        userProps("nonexistent", "nonexistent@example.com", true),
 		CreateIfNotExist: true,
@@ -99,7 +99,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		innerCases: []innerCase{
 			{
 				description: "ext acct exists, user has same username and email",
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
 					UserProps:       userProps("u1", "u1@example.com", true),
 				},
@@ -113,7 +113,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct exists, username and email don't exist",
 				// Note: for now, we drop the non-matching email; in the future, we may want to
 				// save this as a new verified user email
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
 					UserProps:       userProps("doesnotexist", "doesnotexist@example.com", true),
 				},
@@ -127,7 +127,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct exists, email belongs to another user",
 				// In this case, the external account is already mapped, so we ignore the email
 				// inconsistency
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
 					UserProps:       userProps("u1", "u2@example.com", true),
 				},
@@ -139,7 +139,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 			{
 				description: "ext acct doesn't exist, user with username and email exists",
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
 					UserProps:       userProps("u1", "u1@example.com", true),
 				},
@@ -152,7 +152,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			{
 				description: "ext acct doesn't exist, user with username exists but email doesn't exist",
 				// Note: if the email doesn't match, the user effectively doesn't exist from our POV
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s-new", "c1", "s-new/u1"),
 					UserProps:        userProps("u1", "doesnotmatch@example.com", true),
 					CreateIfNotExist: true,
@@ -163,7 +163,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			{
 				description: "ext acct doesn't exist, user with email exists but username doesn't exist",
 				// We treat this as a resolved user and ignore the non-matching username
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
 					UserProps:       userProps("doesnotmatch", "u1@example.com", true),
 				},
@@ -175,7 +175,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should create user",
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s1", "c1", "s1/u-new"),
 					UserProps:        userProps("u-new", "u-new@example.com", true),
 					CreateIfNotExist: true,
@@ -190,7 +190,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should NOT create user",
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s1", "c1", "s1/u-new"),
 					UserProps:        userProps("u-new", "u-new@example.com", true),
 					CreateIfNotExist: false,
@@ -200,7 +200,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 			{
 				description: "ext acct exists, (ignore username and email), authenticated",
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u2"),
 					UserProps:       userProps("ignore", "ignore", true),
 				},
@@ -214,7 +214,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			{
 				description: "ext acct doesn't exist, email and username match, authenticated",
 				actorUID:    1,
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
 					UserProps:       userProps("u1", "u1@example.com", true),
 				},
@@ -228,7 +228,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct doesn't exist, email matches but username doesn't, authenticated",
 				// The non-matching username is ignored
 				actorUID: 1,
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
 					UserProps:       userProps("doesnotmatch", "u1@example.com", true),
 				},
@@ -245,7 +245,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				// might be associated with an existing user (in which case the authentication
 				// should fail).
 				actorUID: 1,
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
 					UserProps:       userProps("u1", "doesnotmatch@example.com", true),
 				},
@@ -281,7 +281,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			description: "associateUserAndSaveErr",
 			mock:        mockParams{associateUserAndSaveErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
 					UserProps:       userProps("u1", "u1@example.com", true),
 				},
@@ -293,7 +293,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			description: "getByVerifiedEmailErr",
 			mock:        mockParams{getByVerifiedEmailErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
 					UserProps:       userProps("u1", "u1@example.com", true),
 				},
@@ -306,7 +306,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			description: "getByIDErr",
 			mock:        mockParams{getByIDErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
 					UserProps:       userProps("u1", "u1@example.com", true),
 				},
@@ -319,7 +319,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			description: "updateErr",
 			mock:        mockParams{updateErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
-				op: GetUserOp{
+				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
 					UserProps: db.NewUser{
 						Email:           "u1@example.com",

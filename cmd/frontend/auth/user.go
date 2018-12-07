@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
-var MockGetAndSaveUser func(ctx context.Context, op GetUserOp) (userID int32, safeErrMsg string, err error)
+var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)
 
-type GetUserOp struct {
+type GetAndSaveUserOp struct {
 	UserProps           db.NewUser
 	ExternalAccount     extsvc.ExternalAccountSpec
 	ExternalAccountData extsvc.ExternalAccountData
@@ -46,7 +46,7 @@ type GetUserOp struct {
 // 🚨 SECURITY: The safeErrMsg is an error message that can be shown to unauthenticated users to
 // describe the problem. The err may contain sensitive information and should only be written to the
 // server error logs, not to the HTTP response to shown to unauthenticated users.
-func GetAndSaveUser(ctx context.Context, op GetUserOp) (userID int32, safeErrMsg string, err error) {
+func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 	if MockGetAndSaveUser != nil {
 		return MockGetAndSaveUser(ctx, op)
 	}

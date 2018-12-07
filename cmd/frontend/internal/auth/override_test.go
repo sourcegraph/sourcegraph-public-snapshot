@@ -68,7 +68,7 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(overrideSecretHeader, overrideSecret)
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if want := defaultUsername; op.UserProps.Username != want {
 				t.Errorf("got %q, want %q", op.UserProps.Username, want)
@@ -95,7 +95,7 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		req.Header.Set(overrideSecretHeader, overrideSecret)
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if op.ExternalAccount.ServiceType == "override" && op.ExternalAccount.AccountID == defaultUsername {
 				return 1, "", nil
