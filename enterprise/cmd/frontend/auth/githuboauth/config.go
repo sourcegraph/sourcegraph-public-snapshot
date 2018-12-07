@@ -22,23 +22,23 @@ func init() {
 		return
 	}
 
-	const authLabel = "githuboauth"
+	const pkgName = "githuboauth"
 	go func() {
 		conf.Watch(func() {
 			if !conf.Get().ExperimentalFeatures.GithubAuth {
-				auth.UpdateProviders(authLabel, nil)
+				auth.UpdateProviders(pkgName, nil)
 				return
 			}
 
 			newProviders, _ := parseConfig(conf.Get())
 			if len(newProviders) == 0 {
-				auth.UpdateProviders(authLabel, nil)
+				auth.UpdateProviders(pkgName, nil)
 			} else {
 				newProvidersList := make([]auth.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
 					newProvidersList = append(newProvidersList, p)
 				}
-				auth.UpdateProviders(authLabel, newProvidersList)
+				auth.UpdateProviders(pkgName, newProvidersList)
 			}
 			ffIsEnabled = true
 		})

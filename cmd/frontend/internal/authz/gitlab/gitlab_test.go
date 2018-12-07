@@ -194,7 +194,7 @@ type GitLab_FetchAccount_Test_call struct {
 func (g GitLab_FetchAccount_Test) run(t *testing.T) {
 	t.Logf("Test case %q", g.description)
 
-	auth.UpdateProviders(gitlaboauth.AuthLabel, g.authnProviders)
+	auth.UpdateProviders(gitlaboauth.PkgName, g.authnProviders)
 
 	ctx := context.Background()
 	authzProvider := NewProvider(g.op)

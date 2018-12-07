@@ -19,26 +19,26 @@ var (
 )
 
 // UpdateProviders updates the set of active authentication provider instances. It replaces the
-// current set of Providers under the specified label with the new set.
-func UpdateProviders(label string, providers []Provider) {
+// current set of Providers under the specified pkgName with the new set.
+func UpdateProviders(pkgName string, providers []Provider) {
 	curProvidersMu.Lock()
 	defer curProvidersMu.Unlock()
 
 	if providers == nil {
-		delete(curProviders, label)
+		delete(curProviders, pkgName)
 		return
 	}
 
-	newLabelProviders := map[string]Provider{}
+	newPkgProviders := map[string]Provider{}
 	for _, p := range providers {
 		k, err := json.Marshal(p.Config())
 		if err != nil {
 			log15.Error("Omitting auth provider (failed to marshal its JSON config)", "error", err, "configID", p.ConfigID())
 			continue
 		}
-		newLabelProviders[string(k)] = p
+		newPkgProviders[string(k)] = p
 	}
-	curProviders[label] = newLabelProviders
+	curProviders[pkgName] = newPkgProviders
 }
 
 func Providers() []Provider {

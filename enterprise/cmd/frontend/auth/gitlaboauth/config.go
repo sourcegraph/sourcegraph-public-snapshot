@@ -15,7 +15,7 @@ var (
 	ffIsEnabled bool
 )
 
-const AuthLabel = "gitlaboauth"
+const PkgName = "gitlaboauth"
 
 func init() {
 	// HACK: don't run this watch loop in tests, because it results in a race condition.
@@ -28,19 +28,19 @@ func init() {
 	go func() {
 		conf.Watch(func() {
 			if !conf.Get().ExperimentalFeatures.GitlabAuth {
-				auth.UpdateProviders(AuthLabel, nil)
+				auth.UpdateProviders(PkgName, nil)
 				return
 			}
 
 			newProviders, _ := parseConfig(conf.Get())
 			if len(newProviders) == 0 {
-				auth.UpdateProviders(AuthLabel, nil)
+				auth.UpdateProviders(PkgName, nil)
 			} else {
 				newProvidersList := make([]auth.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
 					newProvidersList = append(newProvidersList, p)
 				}
-				auth.UpdateProviders(AuthLabel, newProvidersList)
+				auth.UpdateProviders(PkgName, newProvidersList)
 			}
 			ffIsEnabled = true
 		})
