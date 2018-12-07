@@ -9,9 +9,11 @@ import (
 )
 
 var (
-	// curProviders is a map (label -> (config string -> Provider)). The first key is the label
-	// under which the provider was registered. The second key is the normalized JSON serialization
-	// of Provider.Config().
+	// curProviders is a map (package name -> (config string -> Provider)). The first key is the
+	// package name under which the provider was registered (this should be unique among
+	// packages). The second key is the normalized JSON serialization of Provider.Config().  We keep
+	// track of providers by package, so that when a given package updates its set of registered
+	// providers, we can easily remove its providers that are no longer present.
 	curProviders   = map[string]map[string]Provider{}
 	curProvidersMu sync.RWMutex
 
@@ -41,6 +43,8 @@ func UpdateProviders(pkgName string, providers []Provider) {
 	curProviders[pkgName] = newPkgProviders
 }
 
+// Providers returns the set of currently registered authentication providers. When no providers are
+// registered, returns nil (and sign-in is effectively disabled).
 func Providers() []Provider {
 	if MockProviders != nil {
 		return MockProviders
@@ -54,16 +58,17 @@ func Providers() []Provider {
 	}
 
 	ct := 0
-	for _, lp := range curProviders {
-		ct += len(lp)
+	for _, pkgProviders := range curProviders {
+		ct += len(pkgProviders)
 	}
 	providers := make([]Provider, 0, ct)
-	for _, lp := range curProviders {
-		for _, p := range lp {
+	for _, pkgProviders := range curProviders {
+		for _, p := range pkgProviders {
 			providers = append(providers, p)
 		}
 	}
 
+	// Sort the providers to ensure a stable ordering (this is for the UI display order).
 	sort.Sort(sortProviders(providers))
 
 	return providers
@@ -74,6 +79,8 @@ type sortProviders []Provider
 func (p sortProviders) Len() int {
 	return len(p)
 }
+
+// Less puts the builtin provider first and sorts the others alphabetically by type and then ID.
 func (p sortProviders) Less(i, j int) bool {
 	if p[i].ConfigID().Type == "builtin" && p[j].ConfigID().Type != "builtin" {
 		return true
@@ -103,8 +110,8 @@ func GetProviderByConfigID(id ProviderConfigID) Provider {
 	curProvidersMu.RLock()
 	defer curProvidersMu.RUnlock()
 
-	for _, lp := range curProviders {
-		for _, p := range lp {
+	for _, pkgProviders := range curProviders {
+		for _, p := range pkgProviders {
 			if p.ConfigID() == id {
 				return p
 			}
