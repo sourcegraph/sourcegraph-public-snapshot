@@ -42,7 +42,6 @@ export class Search implements SearchAPI {
     }
 
     public $registerIssueResultsProvider(id: number): void {
-        console.log('proxy register')
         this.registrations.add(
             id,
             this.issueResultsProviderRegistry.registerProvider(

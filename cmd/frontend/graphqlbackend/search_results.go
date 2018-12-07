@@ -927,9 +927,10 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type searchResultResolver struct {
-	repo      *repositoryResolver         // repo name match
-	fileMatch *fileMatchResolver          // text match
-	diff      *commitSearchResultResolver // diff or commit match
+	repo      *repositoryResolver          // repo name match
+	fileMatch *fileMatchResolver           // text match
+	diff      *commitSearchResultResolver  // diff or commit match
+	generic   *genericSearchResultResolver // generic match
 }
 
 // getSearchResultURIs returns the repo name and file uri respectiveley
@@ -971,6 +972,10 @@ func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
 }
 func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return g.diff, g.diff != nil
+}
+
+func (g *searchResultResolver) ToGenericSearchResult() (*genericSearchResultResolver, bool) {
+	return g.generic, g.generic != nil
 }
 
 func (g *searchResultResolver) resultCount() int32 {

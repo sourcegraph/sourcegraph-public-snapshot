@@ -829,7 +829,7 @@ type Search {
 }
 
 # A search result.
-union SearchResult = FileMatch | CommitSearchResult | Repository
+union SearchResult = FileMatch | CommitSearchResult | Repository | GenericSearchResult
 
 # An object representing a markdown string.
 type Markdown {

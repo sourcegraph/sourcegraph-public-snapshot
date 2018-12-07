@@ -34,7 +34,6 @@ interface SearchResultsListProps extends SettingsCascadeProps {
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
-    resultMatches?: (GQL.IGenericSearchResult | GQL.IFileMatch)[]
     onShowMoreResultsClick: () => void
 
     // Expand all feature
@@ -290,15 +289,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         itemsToShow={this.state.resultsShown}
                                         onShowMoreItems={this.onBottomHit(results.results.length)}
                                         onVisibilityChange={this.nextItemVisibilityChange}
-                                        items={
-                                            this.props.resultMatches
-                                                ? this.props.resultMatches
-                                                      .map((result, i) => this.renderResult(result, i <= 15))
-                                                      .filter(isDefined)
-                                                : results.results
-                                                      .map((result, i) => this.renderResult(result, i <= 15))
-                                                      .filter(isDefined)
-                                        }
+                                        items={results.results
+                                            .map((result, i) => this.renderResult(result, i <= 15))
+                                            .filter(isDefined)}
                                         containment={this.scrollableElementRef || undefined}
                                         onRef={this.nextVirtualListContainerElement}
                                     />

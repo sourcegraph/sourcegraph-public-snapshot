@@ -21,20 +21,16 @@ export class ExtSearch implements ExtSearchAPI, Unsubscribable {
 
     public $transformQuery(id: number, query: string): Promise<string> {
         const provider = this.registrations.get<QueryTransformer>(id)
-        console.log('transform provider', provider, provider.transformQuery('query'))
         return Promise.resolve(provider.transformQuery(query))
     }
 
     public registerIssueResultsProvider(provider: IssueResultsProvider): Unsubscribable {
-        console.log('register issue results provider in extension api')
         const { id, subscription } = this.registrations.add(provider)
         this.proxy.$registerIssueResultsProvider(id)
         return subscription
     }
     public $provideIssueResults(id: number, query: string): Promise<IssueResult[]> {
-        console.log('id', id)
         const provider = this.registrations.get<IssueResultsProvider>(id)
-        console.log('provider', provider, provider.provideIssueResults('query'))
         return Promise.resolve(provider.provideIssueResults(query))
     }
 

@@ -126,10 +126,16 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     private getFirstLine(): number {
+        if (this.props.highlightRanges.length === 0) {
+            return 0
+        }
         return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - 1)
     }
 
     private getLastLine(): number {
+        if (this.props.highlightRanges.length === 0) {
+            return 1
+        }
         const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + 1
         return this.props.highlightRanges ? Math.min(lastLine, this.props.highlightRanges.length) : lastLine
     }
@@ -166,7 +172,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             <LoadingSpinner className="icon-inline search-result-match__loader" />
                             <table>
                                 <tbody>
-                                    {range(0, 5).map(i => (
+                                    {range(firstLine, lastLine).map(i => (
                                         <tr key={i}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                             <td className="line search-result-match__line--hidden">

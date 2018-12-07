@@ -43,18 +43,21 @@ export interface TextDocumentDecoration
 }
 
 export interface Markdown {
+    __typename: 'Markdown'
     text: string
     html: string
 }
 
 export interface IssueResult {
+    __typename: 'GenericSearchResult'
     icon: string
     label: Markdown
     url: string
     detail: Markdown
-    match: SearchMatch[]
+    matches: SearchMatch[]
 }
 export interface SearchMatch {
+    __typename: 'SearchMatch'
     url: string
     body: Markdown
     highlights: Highlight[]

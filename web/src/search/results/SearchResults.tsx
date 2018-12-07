@@ -38,7 +38,6 @@ interface SearchScope {
 interface SearchResultsState {
     /** The loaded search results, error or undefined while loading */
     resultsOrError?: GQL.ISearchResults
-    resultMatches?: (GQL.IGenericSearchResult | GQL.IFileMatch)[]
     allExpanded: boolean
 
     // TODO: Remove when newSearchResultsList is removed
@@ -67,22 +66,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SearchResults')
-
-        const searchProviders = this.props.extensionsController.services.issuesResultsProvider
-        const searchResultsProviders = this.componentUpdates.pipe(
-            map(props => parseSearchURLQuery(props.location.search)),
-            filter((searchOptions): searchOptions is SearchOptions => !!searchOptions),
-            map(searchOptions => {
-                concat(
-                    searchProviders.provideIssueResults(searchOptions.query).pipe(
-                        tap(res => {
-                            console.log('from search results', res)
-                        }),
-                        map(res => res)
-                    )
-                )
-            })
-        )
 
         this.subscriptions.add(
             this.componentUpdates
@@ -133,12 +116,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 ),
                                 // Update view with results or error
                                 map(([results, extensionsResults]) => {
-                                    let resultMatches = []
                                     if (extensionsResults && !isErrorLike(results)) {
                                         // if empty, it's not iterable.
-                                        console.log('EXTENSIONS RESULTS', extensionsResults)
-                                        resultMatches = [...results.results, ...extensionsResults]
-                                        return { resultsOrError: results, resultMatches }
+                                        results.results = [
+                                            ...results.results,
+                                            ...(extensionsResults as GQL.IGenericSearchResult[]),
+                                        ]
+                                        return { resultsOrError: results }
                                     }
 
                                     return { resultsOrError: results }
@@ -258,7 +242,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 {newSearchResultsList ? (
                     <SearchResultsList
                         resultsOrError={this.state.resultsOrError}
-                        resultMatches={this.state.resultMatches}
                         onShowMoreResultsClick={this.showMoreResults}
                         onExpandAllResultsToggle={this.onExpandAllResultsToggle}
                         allExpanded={this.state.allExpanded}
