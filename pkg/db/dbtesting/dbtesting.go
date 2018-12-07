@@ -1,5 +1,5 @@
-// Package testing provides database test helpers.
-package testing
+// Package dbtesting provides database test helpers.
+package dbtesting
 
 import (
 	"context"
