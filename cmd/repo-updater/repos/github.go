@@ -38,7 +38,6 @@ func init() {
 			if reflect.DeepEqual(githubConf, lastGitHubConf) {
 				continue
 			}
-			lastGitHubConf = githubConf
 
 			var hasGitHubDotComConnection bool
 			for _, c := range githubConf {
@@ -57,6 +56,8 @@ func init() {
 					InitialRepositoryEnablement: true,
 				})
 			}
+
+			lastGitHubConf = githubConf
 
 			var conns []*githubConnection
 			for _, c := range githubConf {
@@ -375,7 +376,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 	var wg sync.WaitGroup
 
 	repositoryQueries := c.config.RepositoryQuery
-	if len(c.config.RepositoryQuery) == 0 {
+	if len(repositoryQueries) == 0 {
 		// Users need to specify ["none"] to disable mirroring.
 		if c.githubDotCom {
 			// Doesn't make sense to try to enumerate all public repos on github.com

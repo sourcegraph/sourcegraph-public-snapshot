@@ -35,7 +35,6 @@ func init() {
 			if reflect.DeepEqual(gitlabConf, lastConfig) {
 				continue
 			}
-			lastConfig = gitlabConf
 
 			var hasGitLabDotComConnection bool
 			for _, c := range gitlabConf {
@@ -54,6 +53,8 @@ func init() {
 					InitialRepositoryEnablement: true,
 				})
 			}
+
+			lastConfig = gitlabConf
 
 			var conns []*gitlabConnection
 			for _, c := range gitlabConf {
@@ -271,8 +272,9 @@ func (c *gitlabConnection) authenticatedRemoteURL(proj *gitlab.Project) string {
 }
 
 func (c *gitlabConnection) listAllProjects(ctx context.Context) <-chan *gitlab.Project {
-	if len(c.config.ProjectQuery) == 0 {
-		c.config.ProjectQuery = []string{"?membership=true"}
+	configProjectQuery := c.config.ProjectQuery
+	if len(configProjectQuery) == 0 {
+		configProjectQuery = []string{"?membership=true"}
 	}
 
 	normalizeQuery := func(projectQuery string) (url.Values, error) {
@@ -291,7 +293,7 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) <-chan *gitlab.P
 	ch := make(chan *gitlab.Project, perPage)
 	go func() {
 	projectsQueries:
-		for _, projectQuery := range c.config.ProjectQuery {
+		for _, projectQuery := range configProjectQuery {
 			if projectQuery == "none" {
 				continue
 			}
