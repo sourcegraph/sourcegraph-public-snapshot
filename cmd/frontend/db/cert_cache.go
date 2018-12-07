@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"golang.org/x/crypto/acme/autocert"
 )
 

@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
 // dbExtension describes an extension in the extension registry.

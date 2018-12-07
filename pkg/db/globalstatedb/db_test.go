@@ -1,9 +1,9 @@
-package registry
+package globalstatedb
 
 import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "registry"
+	dbtesting.DBNameSuffix = "globalstatedb"
 }

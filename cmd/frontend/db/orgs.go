@@ -8,7 +8,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"

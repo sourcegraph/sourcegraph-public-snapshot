@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 )
 
 // UserEmail represents a row in the `user_emails` table.
@@ -42,7 +43,7 @@ type userEmails struct{}
 //
 // If the site has not yet been initialized, returns an empty string.
 func (*userEmails) GetInitialSiteAdminEmail(ctx context.Context) (email string, err error) {
-	if init, err := siteInitialized(ctx); err != nil || !init {
+	if init, err := globalstatedb.SiteInitialized(ctx); err != nil || !init {
 		return "", err
 	}
 	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email); err != nil {

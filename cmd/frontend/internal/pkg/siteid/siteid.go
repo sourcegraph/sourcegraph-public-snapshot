@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 )
 
 var (
@@ -41,7 +41,7 @@ func Init() {
 		// if it doesn't yet exist.)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		globalState, err := db.GlobalState.Get(ctx)
+		globalState, err := globalstatedb.Get(ctx)
 		if err != nil {
 			fatalln("Error initializing global state:", err)
 		}
