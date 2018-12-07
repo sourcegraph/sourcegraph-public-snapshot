@@ -35,7 +35,7 @@ func init() {
 		var lastConfig []*schema.BitbucketServerConnection
 		for range t.C {
 			config := conf.Get().BitbucketServer
-			if !reflect.DeepEqual(config, lastConfig) {
+			if reflect.DeepEqual(config, lastConfig) {
 				continue
 			}
 			lastConfig = config
