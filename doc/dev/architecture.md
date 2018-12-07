@@ -23,26 +23,18 @@ graph LR
     Frontend-->redis-cache["Redis (cache)"]
     Frontend-- SQL -->db[Postgresql Database]
     Frontend-->redis["Redis (session data)"]
-    indexer-->lsp-proxy
     Frontend-- HTTP -->searcher
-    Frontend-- LSP over TCP -->lsp-proxy
-    Frontend-- HTTP ---indexer
     Frontend-- HTTP ---repo-updater
     Frontend-- net/rpc -->indexed-search
     indexed-search[indexed-search/zoekt]-- HTTP -->Frontend
 
-    indexer-- HTTP -->gitserver
     repo-updater-- HTTP -->gitserver
 
-    lsp-proxy-->redis-cache
-
-    lsp-proxy-- LSP over TCP -->langservers[Language servers: Go, Java, etc.]
-
     react[React App]-- Graphql -->Frontend
-    react[React App]-- LSP over HTTP -->Frontend
+    react[React App]-- Sourcegraph extensions -->Frontend
 
     browser_extensions[Browser Extensions]-- Graphql -->Frontend
-    browser_extensions[Browser Extensions]-- LSP over HTTP -->Frontend
+    browser_extensions[Browser Extensions]-- Sourcegraph extensions -->Frontend
 ```
 
 ## Services
@@ -65,25 +57,9 @@ Proxies all requests to github.com to keep track of rate limits and prevent trig
 
 Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, should go through repo-updater.
 
-### indexer ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/indexer))
+### Sourcegraph extensions
 
-The indexer has a few responsibilities:
-
-- It keeps the cross-repo code intelligence indexes for repositories up to date.
-- It makes sure the appropriate language servers are enabled (when a Docker socket is available, such as when using `sourcegraph/server` with the default `docker run` command).
-- It is how the frontend enqueues repositories for updating when (e.g. a user visits a repository).
-
-### lsp-proxy ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsp-proxy))
-
-[Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
-
-Handles all LSP requests and routes them to the appropriate language server.
-
-### Language servers
-
-Language servers implement the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) to provide code intelligence (hover tooltips, jump to definition, find references).
-
-We have built some language servers ourself ([Go](https://github.com/sourcegraph/go-langserver), [Java](https://github.com/sourcegraph/java-langserver), [TypeScript/JavaScript](https://github.com/sourcegraph/javascript-typescript-langserver), [Python](https://github.com/sourcegraph/python-langserver), [PHP](https://github.com/felixfbecker/php-language-server)), and we can also integrate language servers built by the community by wrapping them with [lsp-adapter](https://github.com/sourcegraph/lsp-adapter).
+[Sourcegraph extensions](../extensions/index.md) add features to Sourcegraph, including language support. Many extensions rely, in turn, on language servers (implementing the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)) to provide code intelligence (hover tooltips, jump to definition, find references).
 
 ### query-runner ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/query-runner))
 

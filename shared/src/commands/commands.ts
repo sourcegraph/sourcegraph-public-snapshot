@@ -14,7 +14,7 @@ import { PlatformContext } from '../platform/context'
  */
 export function registerBuiltinClientCommands(
     { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
-    context: Pick<PlatformContext, 'queryGraphQL' | 'queryLSP'>
+    context: Pick<PlatformContext, 'queryGraphQL' | 'backcompatQueryLSP'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -98,7 +98,7 @@ export function registerBuiltinClientCommands(
     subscription.add(
         commandRegistry.registerCommand({
             command: 'queryLSP',
-            run: requests => from(context.queryLSP(requests)).toPromise(),
+            run: requests => from(context.backcompatQueryLSP(requests)).toPromise(),
         })
     )
 

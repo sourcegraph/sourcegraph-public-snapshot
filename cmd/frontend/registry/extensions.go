@@ -100,8 +100,6 @@ var GetLocalExtensionByExtensionID func(ctx context.Context, extensionIDWithoutP
 // to the remote registry specified in site configuration (usually sourcegraph.com). The host must
 // be specified to refer to a local extension on the current Sourcegraph site (e.g.,
 // sourcegraph.example.com/publisher/name).
-//
-// BACKCOMPAT: It also synthesizes registry extensions from known language servers.
 func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local graphqlbackend.RegistryExtension, remote *registry.Extension, err error) {
 	_, extensionIDWithoutPrefix, isLocal, err := ParseExtensionID(extensionID)
 	if err != nil {
@@ -109,11 +107,6 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local g
 	}
 
 	if isLocal {
-		// BACKCOMPAT: First, look up among extensions synthesized from known language servers.
-		if x, err := getSynthesizedRegistryExtension(ctx, "extensionID", extensionID); x != nil || err != nil {
-			return nil, x, err
-		}
-
 		if GetLocalExtensionByExtensionID != nil {
 			x, err := GetLocalExtensionByExtensionID(ctx, extensionIDWithoutPrefix)
 			return x, nil, err
@@ -177,11 +170,6 @@ var mockGetRemoteRegistryExtension func(field, value string) (*registry.Extensio
 func getRemoteRegistryExtension(ctx context.Context, field, value string) (*registry.Extension, error) {
 	if mockGetRemoteRegistryExtension != nil {
 		return mockGetRemoteRegistryExtension(field, value)
-	}
-
-	// BACKCOMPAT: First, look up among extensions synthesized from known language servers.
-	if x, err := getSynthesizedRegistryExtension(ctx, field, value); x != nil || err != nil {
-		return x, err
 	}
 
 	registryURL, err := getRemoteRegistryURL()

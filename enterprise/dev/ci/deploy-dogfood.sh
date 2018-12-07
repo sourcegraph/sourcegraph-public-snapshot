@@ -12,14 +12,6 @@ case "$BUILDKITE_BRANCH" in
         CONTAINER="gitserver-1"
         ;;
 
-    docker-images/xlang-*)
-        DEPLOYMENT=$(echo $BUILDKITE_BRANCH | awk -F '/' '{printf $2}')
-        CONTAINER=$DEPLOYMENT
-        # All of the language servers managed in this repo have a background deployment.
-        DEPLOYMENT_BG=$DEPLOYMENT-bg
-        CONTAINER_BG=$DEPLOYMENT_BG
-        ;;
-
     docker-images/*)
         DEPLOYMENT=$(echo $BUILDKITE_BRANCH | awk -F '/' '{printf $2}')
         CONTAINER=$DEPLOYMENT

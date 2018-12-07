@@ -20,8 +20,6 @@ conf/ @sqs
 /enterprise/ @beyang
 /cmd/frontend/ @beyang
 /cmd/gitserver/ @beyang
-/cmd/indexer/ @beyang
-/cmd/lsp-proxy/ @beyang
 /cmd/repo-updater/ @beyang @nicksnyder
 /cmd/searcher/ @beyang
 /cmd/server/ @beyang

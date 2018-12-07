@@ -8,12 +8,19 @@ import (
 	"go/build"
 	"go/doc"
 	"go/token"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
+	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	"golang.org/x/tools/go/buildutil"
 
@@ -21,10 +28,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/golangserverutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 )
@@ -85,14 +90,12 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := backend.Repos.RefreshIndex(ctx, repo); err != nil {
-		return err
-	}
 
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return err
 	}
+	_ = commitID
 
 	vfs, err := repoVFS(r.Context(), repoName, commitID)
 	if err != nil {
@@ -207,7 +210,7 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.Com
 
 func buildContextFromVFS(ctx context.Context, vfs ctxvfs.FileSystem) build.Context {
 	bctx := build.Default
-	golangserverutil.PrepareContext(&bctx, ctx, vfs)
+	PrepareContext(&bctx, ctx, vfs)
 	return bctx
 }
 
@@ -240,4 +243,171 @@ func parseFiles(fset *token.FileSet, bctx *build.Context, importPath, srcDir str
 	}
 
 	return pkg, errs
+}
+
+func PrepareContext(bctx *build.Context, ctx context.Context, fs ctxvfs.FileSystem) {
+	// HACK: in the all Context's methods below we are trying to convert path to virtual one (/foo/bar/..)
+	// because some code may pass OS-specific arguments.
+	// See golang.org/x/tools/go/buildutil/allpackages.go which uses `filepath` for example
+
+	bctx.OpenFile = func(path string) (io.ReadCloser, error) {
+		path = filepath.ToSlash(path)
+		return fs.Open(ctx, path)
+	}
+	bctx.IsDir = func(path string) bool {
+		path = filepath.ToSlash(path)
+		fi, err := fs.Stat(ctx, path)
+		return err == nil && fi.Mode().IsDir()
+	}
+	bctx.HasSubdir = func(root, dir string) (rel string, ok bool) {
+		if !bctx.IsDir(dir) {
+			return "", false
+		}
+		if !PathHasPrefix(dir, root) {
+			return "", false
+		}
+		return PathTrimPrefix(dir, root), true
+	}
+	bctx.ReadDir = func(path string) ([]os.FileInfo, error) {
+		path = filepath.ToSlash(path)
+		return fs.ReadDir(ctx, path)
+	}
+	bctx.IsAbsPath = func(path string) bool {
+		path = filepath.ToSlash(path)
+		return IsAbs(path)
+	}
+	bctx.JoinPath = func(elem ...string) string {
+		// convert all backslashes to slashes to avoid
+		// weird paths like C:\mygopath\/src/github.com/...
+		for i, el := range elem {
+			elem[i] = filepath.ToSlash(el)
+		}
+		return path.Join(elem...)
+	}
+}
+
+func trimFilePrefix(s string) string {
+	return strings.TrimPrefix(s, "file://")
+}
+
+func normalizePath(s string) string {
+	if isURI(s) {
+		return UriToPath(lsp.DocumentURI(s))
+	}
+	s = filepath.ToSlash(s)
+	if !strings.HasPrefix(s, "/") {
+		s = "/" + s
+	}
+	return s
+}
+
+// PathHasPrefix returns true if s is starts with the given prefix
+func PathHasPrefix(s, prefix string) bool {
+	s = normalizePath(s)
+	prefix = normalizePath(prefix)
+	if s == prefix {
+		return true
+	}
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	return s == prefix || strings.HasPrefix(s, prefix)
+}
+
+// PathTrimPrefix removes the prefix from s
+func PathTrimPrefix(s, prefix string) string {
+	s = normalizePath(s)
+	prefix = normalizePath(prefix)
+	if s == prefix {
+		return ""
+	}
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	return strings.TrimPrefix(s, prefix)
+}
+
+// PathEqual returns true if both a and b are equal
+func PathEqual(a, b string) bool {
+	return PathTrimPrefix(a, b) == ""
+}
+
+// IsVendorDir tells if the specified directory is a vendor directory.
+func IsVendorDir(dir string) bool {
+	return strings.HasPrefix(dir, "vendor/") || strings.Contains(dir, "/vendor/")
+}
+
+// IsURI tells if s denotes an URI
+func IsURI(s lsp.DocumentURI) bool {
+	return isURI(string(s))
+}
+
+func isURI(s string) bool {
+	return strings.HasPrefix(s, "file://")
+}
+
+// PathToURI converts given absolute path to file URI
+func PathToURI(path string) lsp.DocumentURI {
+	path = filepath.ToSlash(path)
+	parts := strings.SplitN(path, "/", 2)
+
+	// If the first segment is a Windows drive letter, prefix with a slash and skip encoding
+	head := parts[0]
+	if head != "" {
+		head = "/" + head
+	}
+
+	rest := ""
+	if len(parts) > 1 {
+		rest = "/" + parts[1]
+	}
+
+	return lsp.DocumentURI("file://" + head + rest)
+}
+
+// UriToPath converts given file URI to path
+func UriToPath(uri lsp.DocumentURI) string {
+	u, err := url.Parse(string(uri))
+	if err != nil {
+		return trimFilePrefix(string(uri))
+	}
+	return u.Path
+}
+
+var regDriveLetter = regexp.MustCompile("^/[a-zA-Z]:")
+
+// UriToRealPath converts the given file URI to the platform specific path
+func UriToRealPath(uri lsp.DocumentURI) string {
+	path := UriToPath(uri)
+
+	if regDriveLetter.MatchString(path) {
+		// remove the leading slash if it starts with a drive letter
+		// and convert to back slashes
+		path = filepath.FromSlash(path[1:])
+	}
+
+	return path
+}
+
+// IsAbs returns true if the given path is absolute
+func IsAbs(path string) bool {
+	// Windows implementation accepts path-like and filepath-like arguments
+	return strings.HasPrefix(path, "/") || filepath.IsAbs(path)
+}
+
+// Panicf takes the return value of recover() and outputs data to the log with
+// the stack trace appended. Arguments are handled in the manner of
+// fmt.Printf. Arguments should format to a string which identifies what the
+// panic code was doing. Returns a non-nil error if it recovered from a panic.
+func Panicf(r interface{}, format string, v ...interface{}) error {
+	if r != nil {
+		// Same as net/http
+		const size = 64 << 10
+		buf := make([]byte, size)
+		buf = buf[:runtime.Stack(buf, false)]
+		id := fmt.Sprintf(format, v...)
+		log.Printf("panic serving %s: %v\n%s", id, r, string(buf))
+		return fmt.Errorf("unexpected panic: %v", r)
+	}
+	return nil
 }

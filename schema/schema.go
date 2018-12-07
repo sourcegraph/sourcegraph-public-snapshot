@@ -122,7 +122,6 @@ type ExperimentalFeatures struct {
 	ExternalServices     string `json:"externalServices,omitempty"`
 	GithubAuth           bool   `json:"githubAuth,omitempty"`
 	GitlabAuth           bool   `json:"gitlabAuth,omitempty"`
-	JumpToDefOSSIndex    string `json:"jumpToDefOSSIndex,omitempty"`
 	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
 }
 
@@ -204,13 +203,6 @@ type IMAPServerConfig struct {
 	Port     int    `json:"port"`
 	Username string `json:"username,omitempty"`
 }
-type Langservers struct {
-	Address               string                 `json:"address,omitempty"`
-	Disabled              bool                   `json:"disabled,omitempty"`
-	InitializationOptions map[string]interface{} `json:"initializationOptions,omitempty"`
-	Language              string                 `json:"language"`
-	Metadata              *Metadata              `json:"metadata,omitempty"`
-}
 type Links struct {
 	Blob       string `json:"blob,omitempty"`
 	Commit     string `json:"commit,omitempty"`
@@ -221,14 +213,6 @@ type Links struct {
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
-}
-
-// Metadata description: Language server metadata. Used to populate various UI elements.
-type Metadata struct {
-	DocsURL      string `json:"docsURL,omitempty"`
-	Experimental bool   `json:"experimental,omitempty"`
-	HomepageURL  string `json:"homepageURL,omitempty"`
-	IssuesURL    string `json:"issuesURL,omitempty"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -331,7 +315,6 @@ type SiteConfiguration struct {
 	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
 	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
 	BitbucketServer                   []*BitbucketServerConnection `json:"bitbucketServer,omitempty"`
-	BlacklistGoGet                    []string                     `json:"blacklistGoGet,omitempty"`
 	CorsOrigin                        string                       `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                         `json:"disableAutoGitUpdates,omitempty"`
 	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
@@ -342,7 +325,6 @@ type SiteConfiguration struct {
 	EmailAddress                      string                       `json:"email.address,omitempty"`
 	EmailImap                         *IMAPServerConfig            `json:"email.imap,omitempty"`
 	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
-	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
 	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
 	Extensions                        *Extensions                  `json:"extensions,omitempty"`
 	ExternalURL                       string                       `json:"externalURL,omitempty"`
@@ -359,19 +341,13 @@ type SiteConfiguration struct {
 	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
 	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
 	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
-	Langservers                       []*Langservers               `json:"langservers,omitempty"`
 	LicenseKey                        string                       `json:"licenseKey,omitempty"`
 	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
 	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
 	Log                               *Log                         `json:"log,omitempty"`
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
-	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
 	Phabricator                       []*PhabricatorConnection     `json:"phabricator,omitempty"`
-	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
-	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
-	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`
-	PrivateArtifactRepoUsername       string                       `json:"privateArtifactRepoUsername,omitempty"`
 	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
 	ReposList                         []*Repository                `json:"repos.list,omitempty"`
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`

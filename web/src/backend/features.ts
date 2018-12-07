@@ -1,20 +1,11 @@
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
-import { flatten } from 'lodash'
-import { forkJoin, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Definition, Location, TextDocumentDecoration } from '../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI, toPrettyBlobURL } from '../../../shared/src/util/url'
+import { AbsoluteRepoFile, parseRepoURI, toPrettyBlobURL } from '../../../shared/src/util/url'
 import { toAbsoluteBlobURL } from '../util/url'
-import {
-    fetchXdefinition,
-    fetchXreferences,
-    LSPReferencesParams,
-    LSPSelector,
-    LSPTextDocumentPositionParams,
-    SymbolLocationInformation,
-    XReferenceOptions,
-} from './lsp'
+import { LSPSelector, LSPTextDocumentPositionParams } from './lsp'
 
 /**
  * Specifies an LSP mode.
@@ -102,20 +93,6 @@ export function getJumpURL(
 }
 
 /**
- * Fetches the repository-independent symbol descriptor for the given location.
- *
- * Only the first result is returned, even if there are results from multiple providers.
- *
- * @param ctx the location
- * @return information about the symbol at the location
- */
-export function getXdefinition(ctx: LSPTextDocumentPositionParams): Observable<SymbolLocationInformation | undefined> {
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchXdefinition({ ...ctx, mode }))).pipe(
-        map(results => results.find(v => !!v))
-    )
-}
-
-/**
  * Wrap the value in an array. Unlike Lodash's castArray, it maps null to [] (not [null]).
  */
 function castArray<T>(value: null | T | T[]): T[] {
@@ -135,7 +112,7 @@ function castArray<T>(value: null | T | T[]): T[] {
  * @return references to the symbol at the location
  */
 export function getReferences(
-    ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
+    ctx: LSPTextDocumentPositionParams & { includeDeclaration?: boolean },
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[]> {
     return extensionsController.services.textDocumentReferences
@@ -174,18 +151,6 @@ export function getImplementations(
 }
 
 /**
- * Fetches references in the repository to the symbol described by the repository-independent symbol descriptor.
- *
- * @param ctx the symbol descriptor and repository to search in
- * @return references to the symbol
- */
-export function getXreferences(ctx: XReferenceOptions & AbsoluteRepo & LSPSelector): Observable<Location[]> {
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchXreferences({ ...ctx, mode }))).pipe(
-        map(results => flatten(results))
-    )
-}
-
-/**
  * Fetches decorations for the given file.
  *
  * @param ctx the file
@@ -198,9 +163,4 @@ export function getDecorations(
     return extensionsController.services.textDocumentDecoration.getDecorations({
         uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
     })
-}
-
-/** Computes the set of LSP modes to use. */
-function getModes(ctx: ModeSpec): { mode: string }[] {
-    return [{ mode: ctx.mode }]
 }

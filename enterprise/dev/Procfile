@@ -1,14 +1,11 @@
 # Note: This file is ran relative to the repo root.
 # delve-hook is for debugging Go processes
 gitserver: ./enterprise/dev/delve-hook gitserver
-indexer: ./enterprise/dev/delve-hook indexer
 query-runner: ./enterprise/dev/delve-hook query-runner
 repo-updater: ./enterprise/dev/delve-hook repo-updater
 searcher: ./enterprise/dev/delve-hook searcher
 symbols: ./enterprise/dev/delve-hook symbols
 github-proxy: ./enterprise/dev/delve-hook github-proxy
-lsp-proxy: ./enterprise/dev/delve-hook lsp-proxy
-xlang-go: ./enterprise/dev/delve-hook xlang-go -mode=tcp -addr=:4389
 frontend: env CONFIGURATION_MODE=server ./enterprise/dev/delve-hook frontend
 watch: ./enterprise/dev/changewatch.sh
 web: ENTERPRISE=1 ./node_modules/.bin/gulp --color watch
