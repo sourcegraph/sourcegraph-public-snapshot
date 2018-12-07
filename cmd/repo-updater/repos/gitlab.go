@@ -32,9 +32,6 @@ func init() {
 		var lastConfig []*schema.GitLabConnection
 		for range t.C {
 			gitlabConf := conf.Get().Gitlab
-			if reflect.DeepEqual(gitlabConf, lastConfig) {
-				continue
-			}
 
 			var hasGitLabDotComConnection bool
 			for _, c := range gitlabConf {
@@ -54,6 +51,9 @@ func init() {
 				})
 			}
 
+			if reflect.DeepEqual(gitlabConf, lastConfig) {
+				continue
+			}
 			lastConfig = gitlabConf
 
 			var conns []*gitlabConnection
