@@ -29,7 +29,17 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 	phabricatorMetadataCounter := 0
 	for {
 		log15.Debug("RunGitoliteRepositorySyncWorker:GitoliteUpdateRepos")
-		for _, gconf := range conf.Get().Gitolite {
+		var config []*schema.GitoliteConnection
+		if conf.ExternalServicesEnabled() {
+			if err := api.InternalClient.ExternalServiceConfigs(context.Background(), "GITOLITE", &config); err != nil {
+				log15.Error("unable to fetch Gitolite configs", "err", err)
+				continue
+			}
+		} else {
+			config = conf.Get().Gitolite
+		}
+
+		for _, gconf := range config {
 			if err := gitoliteUpdateRepos(ctx, gconf, (phabricatorMetadataCounter%10) == 0); err != nil {
 				log15.Error("error updating Gitolite repositories", "err", err, "prefix", gconf.Prefix)
 			} else {
