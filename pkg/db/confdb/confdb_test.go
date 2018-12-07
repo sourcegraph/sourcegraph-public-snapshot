@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 func TestCriticalGetLatestDefault(t *testing.T) {

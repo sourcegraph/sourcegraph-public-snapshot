@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/go-lsp/lspext"
-	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -46,7 +46,7 @@ func TestParseIncludePattern(t *testing.T) {
 
 		// Avoid DoS when there are too many possible matches to enumerate.
 		`^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`: {regexp: `^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`},
-		`^[0-a]$`:                               {regexp: `^[0-a]$`},
+		`^[0-a]$`: {regexp: `^[0-a]$`},
 	}
 	for pattern, want := range tests {
 		t.Run(pattern, func(t *testing.T) {
