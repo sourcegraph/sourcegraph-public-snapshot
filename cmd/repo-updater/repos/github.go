@@ -31,7 +31,7 @@ func init() {
 	})
 
 	go func() {
-		t := time.NewTicker(time.Second)
+		t := time.NewTicker(configWatchInterval)
 		var lastGitHubConf []*schema.GitHubConnection
 		for range t.C {
 			githubConf := conf.Get().Github

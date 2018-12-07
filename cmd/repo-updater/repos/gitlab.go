@@ -28,7 +28,7 @@ func init() {
 	})
 
 	go func() {
-		t := time.NewTicker(10 * time.Second)
+		t := time.NewTicker(configWatchInterval)
 		var lastConfig []*schema.GitLabConnection
 		for range t.C {
 			gitlabConf := conf.Get().Gitlab

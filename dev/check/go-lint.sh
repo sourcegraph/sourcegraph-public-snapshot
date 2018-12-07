@@ -26,4 +26,4 @@ else
 fi
 
 rev=$(git merge-base ${base} HEAD)
-golangci-lint run -v ${pkgs} --new-from-rev ${rev}
+golangci-lint run -v ${pkgs} --new-from-rev ${rev} --deadline 5m
