@@ -17,6 +17,7 @@ export interface Message {
         | 'openOptionsPage'
         | 'fetched-files'
         | 'repo-closed'
+        | 'createBlobURL'
     payload?: any
 }
 
