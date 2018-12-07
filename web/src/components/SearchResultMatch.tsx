@@ -107,6 +107,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         this.highlightNodes()
     }
 
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     private highlightNodes(): void {
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
