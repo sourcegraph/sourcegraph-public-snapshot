@@ -141,18 +141,6 @@
       "args": []
     },
     {
-      "name": "Attach to lsp-proxy",
-      "type": "go",
-      "request": "launch",
-      "mode": "remote",
-      "remotePath": "${workspaceRoot}",
-      "port": 2352,
-      "host": "127.0.0.1",
-      "program": "${workspaceRoot}",
-      "env": {},
-      "args": []
-    },
-    {
       "name": "Attach to frontend",
       "type": "go",
       "request": "launch",
