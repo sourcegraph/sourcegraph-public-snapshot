@@ -1,12 +1,12 @@
-package shared
+package authz
 
 import (
 	"fmt"
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
-	permgh "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	permgh "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
