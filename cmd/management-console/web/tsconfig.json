@@ -1,0 +1,6 @@
+{
+  "extends": "../../../tsconfig.json",
+  "parcel-plugin-typescript": {
+    "transpileOnly": false
+  }
+}
