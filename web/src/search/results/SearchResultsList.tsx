@@ -404,7 +404,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(result: GQL.GenericSearchResult | GQL.IFileMatch, expanded: boolean): JSX.Element | undefined {
+    private renderResult(
+        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
+        expanded: boolean
+    ): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
                 return (

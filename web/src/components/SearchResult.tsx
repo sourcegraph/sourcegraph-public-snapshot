@@ -23,7 +23,7 @@ export interface HighlightRange {
 }
 
 interface Props {
-    result: GQL.GenericSearchResult
+    result: GQL.GenericSearchResultInterface
     isLightTheme: boolean
 }
 

@@ -841,7 +841,7 @@ type Markdown {
 }
 
 # A search result. Every search result must implement this interface. A result can contain multiple matches.
-interface GenericSearchResult {
+interface GenericSearchResultInterface {
     # Base64 data URI to an icon that is displayed with every search result.
     icon: String!
     # A markdown string that is rendered prominently.
@@ -999,7 +999,7 @@ type Diff {
 }
 
 # A search result that is a Git commit.
-type CommitSearchResult implements GenericSearchResult {
+type CommitSearchResult implements GenericSearchResultInterface {
     # Base64 data uri to an icon.
     icon: String!
     # A markdown string that is rendered prominently.
@@ -1135,7 +1135,7 @@ type RepositoryConnection {
 }
 
 # A repository is a Git source control repository that is mirrored from some origin code host.
-type Repository implements Node & GenericSearchResult {
+type Repository implements Node & GenericSearchResultInterface {
     # The repository's unique ID.
     id: ID!
     # The repository's name, as a path with one or more components. It conventionally consists of

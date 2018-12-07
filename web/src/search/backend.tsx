@@ -56,6 +56,18 @@ export function search(
                                         detail {
                                             html
                                         }
+                                        matches {
+                                            url
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
                                     }
                                     ... on FileMatch {
                                         __typename
