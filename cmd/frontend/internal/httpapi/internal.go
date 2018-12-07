@@ -126,6 +126,10 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	// Instead of returning an intermediate response type, we directly return
+	// the array of configs (which are themselves JSON objects).
+	// This makes it possible for the caller to directly unmarshal the response into
+	// a slice of connection configurations for this external service kind.
 	configs := make([]map[string]interface{}, 0, len(services))
 	for _, service := range services {
 		var config map[string]interface{}
