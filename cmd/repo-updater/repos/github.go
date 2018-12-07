@@ -35,9 +35,6 @@ func init() {
 		var lastGitHubConf []*schema.GitHubConnection
 		for range t.C {
 			githubConf := conf.Get().Github
-			if reflect.DeepEqual(githubConf, lastGitHubConf) {
-				continue
-			}
 
 			var hasGitHubDotComConnection bool
 			for _, c := range githubConf {
@@ -57,6 +54,9 @@ func init() {
 				})
 			}
 
+			if reflect.DeepEqual(githubConf, lastGitHubConf) {
+				continue
+			}
 			lastGitHubConf = githubConf
 
 			var conns []*githubConnection
