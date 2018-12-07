@@ -39,7 +39,7 @@ func init() {
 		var lastConfig []*schema.AWSCodeCommitConnection
 		for range t.C {
 			config := conf.Get().AwsCodeCommit
-			if !reflect.DeepEqual(config, lastConfig) {
+			if reflect.DeepEqual(config, lastConfig) {
 				continue
 			}
 			lastConfig = config

@@ -32,7 +32,7 @@ func init() {
 		var lastConfig []*schema.GitLabConnection
 		for range t.C {
 			gitlabConf := conf.Get().Gitlab
-			if !reflect.DeepEqual(gitlabConf, lastConfig) {
+			if reflect.DeepEqual(gitlabConf, lastConfig) {
 				continue
 			}
 			lastConfig = gitlabConf
