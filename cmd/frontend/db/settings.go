@@ -9,7 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 

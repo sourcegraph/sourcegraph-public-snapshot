@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
 func TestMigrations(t *testing.T) {
