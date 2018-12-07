@@ -145,8 +145,7 @@ type GitHubAuthProvider struct {
 
 // GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
 type GitHubAuthorization struct {
-	Organizations []string `json:"organizations,omitempty"`
-	Ttl           string   `json:"ttl,omitempty"`
+	Ttl string `json:"ttl,omitempty"`
 }
 type GitHubConnection struct {
 	Authorization               *GitHubAuthorization `json:"authorization,omitempty"`
