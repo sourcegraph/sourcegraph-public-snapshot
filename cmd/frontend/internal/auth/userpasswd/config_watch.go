@@ -12,9 +12,9 @@ func init() {
 			newPC, _ := getProviderConfig()
 			if newPC == nil {
 				auth.UpdateProviders("builtin", nil)
-			} else {
-				auth.UpdateProviders("builtin", []auth.Provider{&provider{c: newPC}})
+				return
 			}
+			auth.UpdateProviders("builtin", []auth.Provider{&provider{c: newPC}})
 		})
 	}()
 }

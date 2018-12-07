@@ -7,12 +7,14 @@ import (
 
 // Watch for configuration changes related to the http-header auth provider.
 func init() {
-	conf.Watch(func() {
-		newPC, _ := getProviderConfig()
-		if newPC == nil {
-			auth.UpdateProviders("httpheader", nil)
-		} else {
+	go func() {
+		conf.Watch(func() {
+			newPC, _ := getProviderConfig()
+			if newPC == nil {
+				auth.UpdateProviders("httpheader", nil)
+				return
+			}
 			auth.UpdateProviders("httpheader", []auth.Provider{&provider{c: newPC}})
-		}
-	})
+		})
+	}()
 }
