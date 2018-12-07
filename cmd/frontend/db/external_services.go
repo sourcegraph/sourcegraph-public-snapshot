@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/dbconn"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -164,7 +163,7 @@ func (c *externalServices) ListPhabricatorConnections(ctx context.Context) ([]*s
 	}
 
 	var connections []*schema.PhabricatorConnection
-	if err := c.ListConfigs(ctx, "PHABRICATOR", &connections); err != nil {
+	if err := c.listConfigs(ctx, "PHABRICATOR", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
