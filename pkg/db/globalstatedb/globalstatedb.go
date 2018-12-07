@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -16,9 +15,9 @@ type State struct {
 	Initialized bool // whether the initial site admin account has been created
 }
 
-func Get(ctx context.Context) (*globalstatedb.State, error) {
-	if Mocks.Get != nil {
-		return Mocks.Get(ctx)
+func Get(ctx context.Context) (*State, error) {
+	if Mock.Get != nil {
+		return Mock.Get(ctx)
 	}
 
 	configuration, err := getConfiguration(ctx)
@@ -32,7 +31,7 @@ func Get(ctx context.Context) (*globalstatedb.State, error) {
 	return getConfiguration(ctx)
 }
 
-func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
+func SiteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 	if err := dbconn.Global.QueryRowContext(ctx, `SELECT initialized FROM global_state LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
@@ -73,8 +72,8 @@ func EnsureInitialized(ctx context.Context, dbh interface {
 	return alreadyInitialized, err
 }
 
-func getConfiguration(ctx context.Context) (*globalstatedb.State, error) {
-	configuration := &globalstatedb.State{}
+func getConfiguration(ctx context.Context) (*State, error) {
+	configuration := &State{}
 	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM global_state LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.Initialized,
