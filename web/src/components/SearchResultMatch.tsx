@@ -151,7 +151,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             >
                 <>
                     {this.state.HTML && (
-                        <Link key={this.props.url} to={this.props.url} className="search-result-match">
+                        <a key={this.props.url} href={this.props.url} className="search-result-match">
                             <Markdown
                                 refFn={this.setTableContainerElement}
                                 className={`search-result-match__markdown ${
@@ -159,14 +159,14 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                 }`}
                                 dangerousInnerHTML={this.state.HTML}
                             />
-                        </Link>
+                        </a>
                     )}
                     {!this.state.HTML && (
                         <>
                             <LoadingSpinner className="icon-inline search-result-match__loader" />
                             <table>
                                 <tbody>
-                                    {range(firstLine, lastLine).map(i => (
+                                    {range(0, 5).map(i => (
                                         <tr key={i}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                             <td className="line search-result-match__line--hidden">
