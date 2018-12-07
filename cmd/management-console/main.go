@@ -20,15 +20,19 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
+	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -59,7 +63,11 @@ func main() {
 		log.Fatalf("Fatal error connecting to Postgres DB: %s", err)
 	}
 
-	// TODO: register HTTP handlers here!
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(assets.Assets))
+	mux.HandleFunc("/get", serveGet)
+	mux.HandleFunc("/update", serveUpdate)
+	http.Handle("/", mux)
 
 	host := ""
 	if env.InsecureDev {
@@ -68,4 +76,63 @@ func main() {
 	addr := net.JoinHostPort(host, port)
 	log15.Info("management-console: listening", "addr", addr)
 	log.Fatalf("Fatal error serving: %s", http.ListenAndServe(addr, nil))
+}
+
+func serveGet(w http.ResponseWriter, r *http.Request) {
+	logger := log15.New("route", "get")
+
+	critical, err := confdb.CriticalGetLatest(r.Context())
+	if err != nil {
+		logger.Error("confdb.CriticalGetLatest failed", "error", err)
+		http.Error(w, "Error retrieving latest critical configuration.", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(&struct {
+		ID       string
+		Contents string
+	}{
+		ID:       strconv.Itoa(int(critical.ID)),
+		Contents: critical.Contents,
+	})
+	if err != nil {
+		logger.Error("json response encoding failed", "error", err)
+		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+	}
+}
+
+func serveUpdate(w http.ResponseWriter, r *http.Request) {
+	logger := log15.New("route", "update")
+
+	var args struct {
+		LastID   string `json:"lastID"`
+		Contents string `json:"contents"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&args)
+	if err != nil {
+		logger.Error("json argument decoding failed", "error", err)
+		http.Error(w, "Unexpected error when decoding arguments.", http.StatusBadRequest)
+		return
+	}
+
+	lastID, err := strconv.Atoi(args.LastID)
+	lastIDInt32 := int32(lastID)
+	if err != nil {
+		logger.Error("argument LastID decoding failed", "error", err)
+		http.Error(w, "Unexpected error when decoding LastID argument.", http.StatusBadRequest)
+		return
+	}
+
+	critical, err := confdb.CriticalCreateIfUpToDate(r.Context(), &lastIDInt32, args.Contents)
+	if err != nil {
+		logger.Error("confdb.CriticalCreateIfUpToDate failed", "error", err)
+		http.Error(w, "Error updating latest critical configuration.", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(critical)
+	if err != nil {
+		logger.Error("json response encoding failed", "error", err)
+		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+	}
 }
