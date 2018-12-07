@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"io/ioutil"
 	"net/url"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
