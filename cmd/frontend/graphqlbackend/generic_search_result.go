@@ -6,7 +6,7 @@ type genericSearchResultResolver struct {
 	label   string
 	url     string
 	detail  string
-	matches []*genericSearchMatchResolver
+	matches []*searchResultMatchResolver
 }
 
 func (r *genericSearchResultResolver) Icon() string {
@@ -23,6 +23,6 @@ func (r *genericSearchResultResolver) URL() string {
 func (r *genericSearchResultResolver) Detail() *markdownResolver {
 	return &markdownResolver{text: r.detail}
 }
-func (r *genericSearchResultResolver) Matches() []*genericSearchMatchResolver {
+func (r *genericSearchResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }

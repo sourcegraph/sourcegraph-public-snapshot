@@ -17,8 +17,6 @@ import { HighlightRange } from './SearchResult'
 
 interface SearchResultMatchProps {
     item: GQL.ISearchMatch
-    body: GQL.IMarkdown
-    url: string
     highlightRanges: HighlightRange[]
     isLightTheme: boolean
 }
@@ -37,7 +35,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     private propsChanges = new Subject<SearchResultMatchProps>()
 
     private getLanguage(): string | undefined {
-        const matches = /(?:```)([^\s]+)\s/.exec(this.props.body.text)
+        const matches = /(?:```)([^\s]+)\s/.exec(this.props.item.body.text)
         if (!matches) {
             return undefined
         }
@@ -45,7 +43,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     private bodyIsCode(): boolean {
-        return this.props.body.text.startsWith('```') && this.props.body.text.endsWith('```')
+        return this.props.item.body.text.startsWith('```') && this.props.item.body.text.endsWith('```')
     }
 
     public constructor(props: SearchResultMatchProps) {
@@ -60,9 +58,9 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     filter(([, isVisible]) => isVisible),
                     switchMap(
                         ([props]) =>
-                            props.body.html !== ''
-                                ? of(sanitizeHtml(props.body.html))
-                                : renderMarkdown({ markdown: props.body.text })
+                            props.item.body.html
+                                ? of(sanitizeHtml(props.item.body.html))
+                                : renderMarkdown({ markdown: props.item.body.text })
                     ),
                     switchMap(markdownHTML => {
                         if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
@@ -92,7 +90,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                         return of(markdownHTML)
                     }),
                     // Return the raw body if markdown rendering fails, maintaing the text structure.
-                    catchError(() => of('<pre>' + sanitizeHtml(props.body.text) + '</pre>'))
+                    catchError(() => of('<pre>' + sanitizeHtml(props.item.body.text) + '</pre>'))
                 )
                 .subscribe(str => this.setState({ HTML: str }), error => console.error(error))
         )
@@ -161,7 +159,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             >
                 <>
                     {this.state.HTML && (
-                        <a key={this.props.url} href={this.props.url} className="search-result-match">
+                        <a key={this.props.item.url} href={this.props.item.url} className="search-result-match">
                             <Markdown
                                 refFn={this.setTableContainerElement}
                                 className={`search-result-match__markdown ${
@@ -177,7 +175,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             <table>
                                 <tbody>
                                     {range(firstLine, lastLine).map(i => (
-                                        <tr key={i}>
+                                        <tr key={`this.props.item.url#${i}`}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                             <td className="line search-result-match__line--hidden">
                                                 <code>{i}</code>
