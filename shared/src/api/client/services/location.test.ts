@@ -103,7 +103,7 @@ describe('getLocations', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocations(
-                        cold<ProvideTextDocumentLocationSignature[]>('-a----|', {
+                        cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
                             a: [
                                 () =>
                                     of({
@@ -119,16 +119,7 @@ describe('getLocations', () => {
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-(ia)-|', {
-                    // TODO: We don't actually *want* this "i" emission, but it is tricky to skip it because we
-                    // need to use the INITIAL emission from combineLatest to avoid blocking on the slowest
-                    // provider.
-                    i: [
-                        {
-                            uri: 'file:///f1',
-                            range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        },
-                    ],
+                ).toBe('-a-|', {
                     a: [
                         {
                             uri: 'file:///f1',
