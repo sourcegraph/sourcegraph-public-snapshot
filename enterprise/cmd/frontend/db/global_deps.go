@@ -165,7 +165,7 @@ func repoNameToGoPathPrefixes(repoName api.RepoName) []string {
 		if len(split) >= 3 && strings.HasPrefix(split[1], "go-") {
 			// Four possibilities
 			return []string{
-				string(repoName),                                      // github.com/go-foo/foo
+				string(repoName), // github.com/go-foo/foo
 				"gopkg.in/" + strings.TrimPrefix(split[1], "go-"),     // gopkg.in/foo
 				"labix.org/v1/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v1/foo
 				"labix.org/v2/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v2/foo
