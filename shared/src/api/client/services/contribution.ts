@@ -136,7 +136,6 @@ export class ContributionRegistry {
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
     }
-
     /**
      * All contribution entries, emitted whenever the set of registered contributions changes.
      *
@@ -180,6 +179,13 @@ export function mergeContributions(contributions: Contributions[]): Contribution
                         merged.menus[menu] = [...merged.menus[menu]!, ...items]
                     }
                 }
+            }
+        }
+        if (c.searchFilters) {
+            if (!merged.searchFilters) {
+                merged.searchFilters = [...c.searchFilters]
+            } else {
+                merged.searchFilters = [...merged.searchFilters, ...c.searchFilters]
             }
         }
     }
