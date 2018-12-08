@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -31,12 +32,25 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
+func validateConfig(config string) error {
+	// All configs must be valid JSON.
+	// If this requirement is ever changed, you will need to update
+	// serveExternalServiceConfigs to handle this case.
+	_, err := jsonc.Parse(config)
+	return err
+}
+
 // Create creates a external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Create(ctx context.Context, externalService *types.ExternalService) error {
+	if err := validateConfig(externalService.Config); err != nil {
+		return err
+	}
+
 	externalService.CreatedAt = time.Now()
 	externalService.UpdatedAt = externalService.CreatedAt
+
 	return dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
@@ -54,6 +68,12 @@ type ExternalServiceUpdate struct {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Update(ctx context.Context, id int64, update *ExternalServiceUpdate) error {
+	if update.Config != nil {
+		if err := validateConfig(*update.Config); err != nil {
+			return err
+		}
+	}
+
 	execUpdate := func(ctx context.Context, tx *sql.Tx, update *sqlf.Query) error {
 		q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at=now() WHERE id=%d AND deleted_at IS NULL", update, id)
 		res, err := tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
