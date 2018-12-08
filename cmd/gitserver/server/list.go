@@ -103,8 +103,15 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func blacklistRegexp(gconf *schema.GitoliteConnection) (*regexp.Regexp, error) {
+	if gconf.Blacklist == "" {
+		return nil, nil
+	}
+	return regexp.Compile(gconf.Blacklist)
+}
+
 func listGitoliteRepos(ctx context.Context, gconf *schema.GitoliteConnection) ([]string, error) {
-	blacklist, err := regexp.Compile(gconf.Blacklist)
+	blacklist, err := blacklistRegexp(gconf)
 	if err != nil {
 		log15.Error("Invalid regexp for Gitolite blacklist", "expr", gconf.Blacklist, "err", err)
 		return nil, err
