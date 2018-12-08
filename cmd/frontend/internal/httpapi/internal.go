@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -121,7 +123,14 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 		// Raw configs may have comments in them so we have to use a json parser
 		// that supports comments in json.
 		if err := jsonc.Unmarshal(service.Config, &config); err != nil {
-			return err
+			log15.Error(
+				"ignoring external service config that has invalid json",
+				"id", service.ID,
+				"displayName", service.DisplayName,
+				"config", service.Config,
+				"err", err,
+			)
+			continue
 		}
 		configs = append(configs, config)
 	}
