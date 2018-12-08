@@ -38,15 +38,11 @@ func badgeValueFmt(totalRefs int) string {
 }
 
 func serveRepoShield(w http.ResponseWriter, r *http.Request) error {
-	value, err := badgeValue(r)
-	if err != nil {
-		return err
-	}
 	return writeJSON(w, &struct {
 		// Note: Named lowercase because the JSON is consumed by shields.io JS
 		// code.
 		Value string `json:"value"`
 	}{
-		Value: badgeValueFmt(value),
+		Value: "?",
 	})
 }
