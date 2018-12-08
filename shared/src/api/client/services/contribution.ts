@@ -136,6 +136,7 @@ export class ContributionRegistry {
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
     }
+
     /**
      * All contribution entries, emitted whenever the set of registered contributions changes.
      *
