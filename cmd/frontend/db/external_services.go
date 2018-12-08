@@ -175,6 +175,36 @@ func (c *externalServices) listConfigs(ctx context.Context, kind string, result 
 	return json.Unmarshal(buf, result)
 }
 
+// ListGitHubConnections returns a list of GitHubConnection configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListGitHubConnections(ctx context.Context) ([]*schema.GitHubConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().Github, nil
+	}
+
+	var connections []*schema.GitHubConnection
+	if err := c.listConfigs(ctx, "GITHUB", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
+// ListGitLabConnections returns a list of GitLabConnection configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListGitLabConnections(ctx context.Context) ([]*schema.GitLabConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().Gitlab, nil
+	}
+
+	var connections []*schema.GitLabConnection
+	if err := c.listConfigs(ctx, "GITLAB", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
 // ListPhabricatorConnections returns a list of PhabricatorConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.

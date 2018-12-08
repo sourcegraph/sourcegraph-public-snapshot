@@ -2,16 +2,16 @@ package backend
 
 import (
 	"context"
+	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -22,8 +22,8 @@ import (
 // knowing the remote URL is necessary to perform any operations (from method calls on the return
 // value), those operations will fail. This occurs when the repository isn't cloned on gitserver or
 // when an update is needed (eg in ResolveRevision).
-func CachedGitRepo(repo *types.Repo) gitserver.Repo {
-	if r := quickGitserverRepo(repo.Name); r != nil {
+func CachedGitRepo(ctx context.Context, repo *types.Repo) gitserver.Repo {
+	if r := quickGitserverRepo(ctx, repo.Name); r != nil {
 		return *r
 	}
 	return gitserver.Repo{Name: repo.Name}
@@ -32,7 +32,7 @@ func CachedGitRepo(repo *types.Repo) gitserver.Repo {
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
 func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	if gitserverRepo := quickGitserverRepo(repo.Name); gitserverRepo != nil {
+	if gitserverRepo := quickGitserverRepo(ctx, repo.Name); gitserverRepo != nil {
 		return *gitserverRepo, nil
 	}
 
@@ -49,7 +49,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
 
-func quickGitserverRepo(repo api.RepoName) *gitserver.Repo {
+func quickGitserverRepo(ctx context.Context, repo api.RepoName) *gitserver.Repo {
 	// If it is possible to 100% correctly determine it statically, use a fast path. This is
 	// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories
 	// (especially on Sourcegraph.com), which reduces rate limit pressure significantly.
@@ -58,18 +58,60 @@ func quickGitserverRepo(repo api.RepoName) *gitserver.Repo {
 
 	switch {
 	case strings.HasPrefix(strings.ToLower(string(repo)), "github.com/"):
-		if envvar.SourcegraphDotComMode() || !conf.HasGitHubDotComToken() {
+		if envvar.SourcegraphDotComMode() || !hasGitHubDotComToken(ctx) {
 			return &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
 		}
 
 	case strings.HasPrefix(strings.ToLower(string(repo)), "gitlab.com/"):
-		if envvar.SourcegraphDotComMode() || !conf.HasGitLabDotComToken() {
+		if envvar.SourcegraphDotComMode() || !hasGitLabDotComToken(ctx) {
 			return &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
 		}
 	}
 
 	// Fall back to performing full RepoLookup, which will hit the code host.
 	return nil
+}
+
+// hasGitHubDotComToken reports whether there are any personal access tokens configured for
+// github.com.
+func hasGitHubDotComToken(ctx context.Context) bool {
+	conns, err := db.ExternalServices.ListGitHubConnections(ctx)
+	if err != nil {
+		// TODO: log error or propogate it up the stack?
+		return false
+	}
+	for _, c := range conns {
+		u, err := url.Parse(c.Url)
+		if err != nil {
+			continue
+		}
+		hostname := strings.ToLower(u.Hostname())
+		if (hostname == "github.com" || hostname == "api.github.com") && c.Token != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// hasGitLabDotComToken reports whether there are any personal access tokens configured for
+// github.com.
+func hasGitLabDotComToken(ctx context.Context) bool {
+	conns, err := db.ExternalServices.ListGitLabConnections(ctx)
+	if err != nil {
+		// TODO: log error or propogate it up the stack?
+		return false
+	}
+	for _, c := range conns {
+		u, err := url.Parse(c.Url)
+		if err != nil {
+			continue
+		}
+		hostname := strings.ToLower(u.Hostname())
+		if hostname == "gitlab.com" && c.Token != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.

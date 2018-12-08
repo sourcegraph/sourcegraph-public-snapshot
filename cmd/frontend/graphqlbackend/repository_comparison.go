@@ -57,7 +57,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		return toGitCommitResolver(r, commit), nil
 	}
 
-	grepo := backend.CachedGitRepo(r.repo)
+	grepo := backend.CachedGitRepo(ctx, r.repo)
 	base, err := getCommit(ctx, grepo, baseRevspec)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
 
-		rdr, err := git.ExecReader(ctx, backend.CachedGitRepo(r.cmp.repo.repo), []string{
+		rdr, err := git.ExecReader(ctx, backend.CachedGitRepo(ctx, r.cmp.repo.repo), []string{
 			"diff",
 			"--find-renames",
 			"--find-copies",
