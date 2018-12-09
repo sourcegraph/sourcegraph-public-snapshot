@@ -1,11 +1,11 @@
 import { combineLatest, merge, ReplaySubject, throwError } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
 import { map, mergeMap, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../../shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '../../../../shared/src/settings/settings'
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
+import * as runtime from '../browser/runtime'
 import storage from '../browser/storage'
 import { getContext } from '../shared/backend/context'
 import { requestGraphQL } from '../shared/backend/graphql'
@@ -95,12 +95,15 @@ export function createPlatformContext(): PlatformContext {
             // with a CSP that allowlists https://* in script-src (see
             // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
             // add-ons have an even stricter restriction.)
-            const req = await ajax({
-                url: bundleURL,
-                crossDomain: true,
-                responseType: 'blob',
-            }).toPromise()
-            const blobURL = window.URL.createObjectURL(req.response)
+            const blobURL = await new Promise<string>(resolve =>
+                runtime.sendMessage(
+                    {
+                        type: 'createBlobURL',
+                        payload: bundleURL,
+                    },
+                    resolve
+                )
+            )
             return blobURL
         },
         sourcegraphURL: sourcegraphUrl,

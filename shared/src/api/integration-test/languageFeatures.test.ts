@@ -56,6 +56,7 @@ describe('LanguageFeatures (integration)', () => {
                 )
                 .toPromise()
     )
+    // tslint:disable deprecation The tests must remain until they are removed.
     testLocationProvider(
         'registerTypeDefinitionProvider',
         extensionHost => extensionHost.languages.registerTypeDefinitionProvider,
@@ -92,6 +93,7 @@ describe('LanguageFeatures (integration)', () => {
                 )
                 .toPromise()
     )
+    // tslint:enable deprecation
     testLocationProvider(
         'registerReferenceProvider',
         extensionHost => extensionHost.languages.registerReferenceProvider,

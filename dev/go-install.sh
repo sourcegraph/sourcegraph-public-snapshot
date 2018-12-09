@@ -64,6 +64,7 @@ export GO111MODULE=on
 
 if ! go install \
 	github.com/mattn/goreman \
+	github.com/derekparker/delve/cmd/dlv \
 	github.com/google/zoekt/cmd/zoekt-archive-index \
 	github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
 	github.com/google/zoekt/cmd/zoekt-webserver; then
