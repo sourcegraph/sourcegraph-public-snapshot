@@ -4,19 +4,13 @@
 
 *git*/* @keegancsmith
 /cmd/searcher/ @keegancsmith
-/packages/webapp/src/ @felixfbecker
+/web/src/ @felixfbecker
 /xlang/ @keegancsmith @beyang
-/schema/ @sqs
-/packages/webapp/src/site-admin/ @sqs
-/packages/webapp/src/settings/ @sqs
-conf/ @sqs
-/cmd/frontend/internal/auth/ @sqs
-/dev/config.json @sqs
 /dev/ @nicksnyder
 /enterprise/dev/ @nicksnyder
 /client/vscode/ @chrismwendt
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
-/packages/webapp/src/tracking/ @dadlerj
+/web/src/tracking/ @dadlerj
 /enterprise/ @beyang
 /cmd/frontend/ @beyang
 /cmd/gitserver/ @beyang
@@ -27,14 +21,14 @@ conf/ @sqs
 /pkg/ @beyang
 
 # Browser extensions
-/packages/browser-extensions/ @ijsnow
+/client/browser/ @ijsnow
 # Adding permissions to the manifest will disable the extension for all users
 # upon update!
-/packages/browser-extensions/src/extension/manifest.spec.json @chrismwendt @ijsnow @nicksnyder
+/client/browser/src/extension/manifest.spec.json @chrismwendt @ijsnow @nicksnyder
 
 # Sourcegraph extension API
-/packages/sourcegraph-extension-api/ @chrismwendt
-/packages/extensions-client-common/ @chrismwendt
+/packages/sourcegraph-extension-api/ @chrismwendt @lguychard
+/shared/ @chrismwendt @lguychard
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)
