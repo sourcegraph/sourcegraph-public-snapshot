@@ -1,6 +1,6 @@
+import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import * as plain from '../../protocol/plainTypes'
 import { Range } from '../types/range'
 import { Selection } from '../types/selection'
 import { ExtDocuments } from './documents'
@@ -9,7 +9,7 @@ import { ExtDocuments } from './documents'
 export class ExtCodeEditor implements sourcegraph.CodeEditor {
     constructor(
         private resource: string,
-        public _selections: plain.Selection[],
+        public _selections: clientType.Selection[],
         public readonly isActive: boolean,
         private proxy: ClientCodeEditorAPI,
         private documents: ExtDocuments
@@ -38,7 +38,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
     }
 }
 
-function fromTextDocumentDecoration(decoration: sourcegraph.TextDocumentDecoration): plain.TextDocumentDecoration {
+function fromTextDocumentDecoration(decoration: sourcegraph.TextDocumentDecoration): clientType.TextDocumentDecoration {
     return {
         ...decoration,
         range: (decoration.range as Range).toJSON(),

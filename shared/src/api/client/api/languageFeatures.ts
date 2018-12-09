@@ -1,3 +1,4 @@
+import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { from, Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { DocumentSelector } from 'sourcegraph'
@@ -5,7 +6,6 @@ import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtLanguageFeaturesAPI } from '../../extension/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
-import { Definition, Hover, Location } from '../../protocol/plainTypes'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import {
     ProvideTextDocumentLocationSignature,
@@ -83,7 +83,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
             id,
             this.definitionRegistry.registerProvider(
                 { documentSelector: selector },
-                (params: TextDocumentPositionParams): Observable<Definition> =>
+                (params: TextDocumentPositionParams): Observable<Location | Location[]> =>
                     from(this.proxy.$observeDefinition(id, params.textDocument.uri, params.position)).pipe(
                         map(result => result || [])
                     )
@@ -96,7 +96,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
             id,
             this.typeDefinitionRegistry.registerProvider(
                 { documentSelector: selector },
-                (params: TextDocumentPositionParams): Observable<Definition> =>
+                (params: TextDocumentPositionParams): Observable<Location | Location[]> =>
                     from(this.proxy.$observeTypeDefinition(id, params.textDocument.uri, params.position)).pipe(
                         map(result => result || [])
                     )
@@ -109,7 +109,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
             id,
             this.implementationRegistry.registerProvider(
                 { documentSelector: selector },
-                (params: TextDocumentPositionParams): Observable<Definition> =>
+                (params: TextDocumentPositionParams): Observable<Location | Location[]> =>
                     from(this.proxy.$observeImplementation(id, params.textDocument.uri, params.position)).pipe(
                         map(result => result || [])
                     )

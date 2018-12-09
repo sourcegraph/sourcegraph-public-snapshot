@@ -1,8 +1,8 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { Location } from '../../api/protocol/plainTypes'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../components/RepoLink'

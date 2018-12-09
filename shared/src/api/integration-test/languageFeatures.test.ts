@@ -1,3 +1,4 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import * as assert from 'assert'
 import { MonoTypeOperatorFunction } from 'rxjs'
 import { debounceTime, take } from 'rxjs/operators'
@@ -6,7 +7,6 @@ import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
 import { assertToJSON } from '../extension/types/common.test'
 import { URI } from '../extension/types/uri'
-import { Definition } from '../protocol/plainTypes'
 import { createBarrier, integrationTestContext } from './helpers.test'
 
 // HACK: In getLocations and getHover, we need to have all providers first emit INITIAL to avoid having
@@ -49,7 +49,7 @@ describe('LanguageFeatures (integration)', () => {
         run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
         services =>
             services.textDocumentDefinition
-                .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
+                .getLocations({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
                 .pipe(
                     WAIT_FOR_RESULT(),
                     take(1)
@@ -68,7 +68,7 @@ describe('LanguageFeatures (integration)', () => {
         run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
         services =>
             services.textDocumentTypeDefinition
-                .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
+                .getLocations({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
                 .pipe(
                     WAIT_FOR_RESULT(),
                     take(1)
@@ -86,7 +86,7 @@ describe('LanguageFeatures (integration)', () => {
         run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
         services =>
             services.textDocumentImplementation
-                .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
+                .getLocations({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
                 .pipe(
                     WAIT_FOR_RESULT(),
                     take(1)
@@ -108,7 +108,7 @@ describe('LanguageFeatures (integration)', () => {
             } as sourcegraph.ReferenceProvider),
         services =>
             services.textDocumentReferences
-                .getLocation({
+                .getLocations({
                     textDocument: { uri: 'file:///f' },
                     position: { line: 1, character: 2 },
                     context: { includeDeclaration: true },
@@ -134,7 +134,7 @@ describe('LanguageFeatures (integration)', () => {
             } as sourcegraph.LocationProvider),
         services =>
             services.textDocumentLocations
-                .getLocation('x', {
+                .getLocations('x', {
                     textDocument: { uri: 'file:///f' },
                     position: { line: 1, character: 2 },
                 })
@@ -203,7 +203,6 @@ function testLocationProvider<P>(
     })
 }
 
-function labeledDefinitionResults(labels: string[]): Definition {
-    const results = labels.map(label => ({ uri: `file:///${label}`, range: undefined }))
-    return labels.length <= 1 ? results[0] : results
+function labeledDefinitionResults(labels: string[]): Location | Location[] {
+    return labels.map(label => ({ uri: `file:///${label}`, range: undefined }))
 }

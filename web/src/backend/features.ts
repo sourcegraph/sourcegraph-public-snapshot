@@ -1,7 +1,7 @@
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
+import { Location, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { Definition, Location, TextDocumentDecoration } from '../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { AbsoluteRepoFile, parseRepoURI, toPrettyBlobURL } from '../../../shared/src/util/url'
 import { toAbsoluteBlobURL } from '../util/url'
@@ -47,8 +47,8 @@ export function getHover(
 export function getDefinition(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
-): Observable<Definition> {
-    return extensionsController.services.textDocumentDefinition.getLocation({
+): Observable<Location[] | null> {
+    return extensionsController.services.textDocumentDefinition.getLocations({
         textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
         position: {
             character: ctx.position.character - 1,
@@ -71,12 +71,11 @@ export function getJumpURL(
     extensions: ExtensionsControllerProps
 ): Observable<string | null> {
     return getDefinition(ctx, extensions).pipe(
-        map(def => {
-            const defArray = Array.isArray(def) ? def : [def]
-            def = defArray[0]
-            if (!def) {
+        map(defs => {
+            if (!defs || defs.length === 0) {
                 return null
             }
+            const def = defs[0]
 
             const uri = parseRepoURI(def.uri) as LSPTextDocumentPositionParams
             if (def.range) {
@@ -93,19 +92,6 @@ export function getJumpURL(
 }
 
 /**
- * Wrap the value in an array. Unlike Lodash's castArray, it maps null to [] (not [null]).
- */
-function castArray<T>(value: null | T | T[]): T[] {
-    if (value === null) {
-        return []
-    }
-    if (!Array.isArray(value)) {
-        return [value]
-    }
-    return value
-}
-
-/**
  * Fetches references (in the same repository) to the symbol at the given location.
  *
  * @param ctx the location
@@ -114,19 +100,17 @@ function castArray<T>(value: null | T | T[]): T[] {
 export function getReferences(
     ctx: LSPTextDocumentPositionParams & { includeDeclaration?: boolean },
     { extensionsController }: ExtensionsControllerProps
-): Observable<Location[]> {
-    return extensionsController.services.textDocumentReferences
-        .getLocation({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-            position: {
-                character: ctx.position.character - 1,
-                line: ctx.position.line - 1,
-            },
-            context: {
-                includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
-            },
-        })
-        .pipe(map(castArray))
+): Observable<Location[] | null> {
+    return extensionsController.services.textDocumentReferences.getLocations({
+        textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        position: {
+            character: ctx.position.character - 1,
+            line: ctx.position.line - 1,
+        },
+        context: {
+            includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
+        },
+    })
 }
 
 /**
@@ -138,16 +122,14 @@ export function getReferences(
 export function getImplementations(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
-): Observable<Location[]> {
-    return extensionsController.services.textDocumentImplementation
-        .getLocation({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-            position: {
-                character: ctx.position.character - 1,
-                line: ctx.position.line - 1,
-            },
-        })
-        .pipe(map(castArray))
+): Observable<Location[] | null> {
+    return extensionsController.services.textDocumentImplementation.getLocations({
+        textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        position: {
+            character: ctx.position.character - 1,
+            line: ctx.position.line - 1,
+        },
+    })
 }
 
 /**

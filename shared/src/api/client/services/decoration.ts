@@ -1,3 +1,4 @@
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { combineLatest, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import {
@@ -6,7 +7,6 @@ import {
     ThemableDecorationStyle,
 } from 'sourcegraph'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'
-import { TextDocumentDecoration } from '../../protocol/plainTypes'
 import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 

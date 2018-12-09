@@ -1,4 +1,4 @@
-import { Location } from '../../api/protocol/plainTypes'
+import { Location } from '@sourcegraph/extension-api-types'
 
 /**
  * Grouped locations returned by {@link groupLocations}.

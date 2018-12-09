@@ -1,11 +1,11 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
+import { Location } from '@sourcegraph/extension-api-types'
 import { from, Observable, of, OperatorFunction, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { TextDocumentIdentifier } from '../../../../../shared/src/api/client/types/textDocument'
 import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
-import { Definition } from '../../../../../shared/src/api/protocol/plainTypes'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import {
@@ -182,7 +182,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
     return request(url, 'textDocument/hover', body).pipe(extractLSPResponse)
 }, makeRepoURI)
 
-const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Definition> => {
+const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Location | Location[] | null> => {
     const mode = getModeFromPath(pos.filePath)
     if (!mode || unsupportedModes.has(mode)) {
         return of([])
@@ -270,7 +270,7 @@ export function createJumpURLFetcher(
 
 export interface SimpleProviderFns {
     fetchHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
-    fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Definition>
+    fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Location | Location[] | null>
 }
 
 export const lspViaAPIXlang: SimpleProviderFns = {
@@ -299,6 +299,6 @@ export const createLSPFromExtensions = (extensionsController: Controller): Simpl
         ),
     fetchDefinition: pos =>
         from(
-            extensionsController.services.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))
-        ) as Observable<Definition>,
+            extensionsController.services.textDocumentDefinition.getLocations(toTextDocumentPositionParams(pos))
+        ) as Observable<Location | Location[] | null>,
 })

@@ -1,7 +1,7 @@
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { BehaviorSubject, Observable, Subscription } from 'rxjs'
 import { handleRequests } from '../../common/proxy'
 import { Connection } from '../../protocol/jsonrpc2/connection'
-import { TextDocumentDecoration } from '../../protocol/plainTypes'
 import { ProvideTextDocumentDecorationSignature } from '../services/decoration'
 import { FeatureProviderRegistry } from '../services/registry'
 import { TextDocumentIdentifier } from '../types/textDocument'

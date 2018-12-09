@@ -1,9 +1,9 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import React from 'react'
 import { combineLatest, Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
-import * as plain from '../../protocol/plainTypes'
 import { Entry, FeatureProviderRegistry } from './registry'
 
 export interface ViewProviderRegistrationOptions {
@@ -15,7 +15,7 @@ export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'tit
     /**
      * The location provider whose results to render in the panel view.
      */
-    locationProvider?: Observable<plain.Location[] | null>
+    locationProvider?: Observable<Location[] | null>
 
     /**
      * The React element to render in the panel view.
