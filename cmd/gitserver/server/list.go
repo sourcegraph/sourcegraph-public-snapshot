@@ -10,40 +10,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-var (
-	gitoliteBlacklists   map[string]*regexp.Regexp
-	gitoliteBlacklistErr error
-	gitoliteBlacklistMu  sync.Mutex
-)
-
-func init() {
-	conf.Watch(func() {
-		newBlacklists := make(map[string]*regexp.Regexp)
-		for _, gconf := range conf.Get().Gitolite {
-			if gconf.Blacklist == "" {
-				continue
-			}
-
-			var err error
-			newBlacklists[gconf.Host], err = regexp.Compile(gconf.Blacklist)
-			if err != nil {
-				gitoliteBlacklistErr = err
-				log15.Error("Invalid regexp for Gitolite blacklist", "expr", gconf.Blacklist, "err", err)
-				return
-			}
-		}
-		gitoliteBlacklistMu.Lock()
-		gitoliteBlacklists, gitoliteBlacklistErr = newBlacklists, nil
-		gitoliteBlacklistMu.Unlock()
-	})
-}
 
 func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -132,12 +103,19 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func listGitoliteRepos(ctx context.Context, gconf *schema.GitoliteConnection) ([]string, error) {
-	if gitoliteBlacklistErr != nil {
-		return nil, gitoliteBlacklistErr
+func blacklistRegexp(gconf *schema.GitoliteConnection) (*regexp.Regexp, error) {
+	if gconf.Blacklist == "" {
+		return nil, nil
 	}
+	return regexp.Compile(gconf.Blacklist)
+}
 
-	blacklist := gitoliteBlacklists[gconf.Host]
+func listGitoliteRepos(ctx context.Context, gconf *schema.GitoliteConnection) ([]string, error) {
+	blacklist, err := blacklistRegexp(gconf)
+	if err != nil {
+		log15.Error("Invalid regexp for Gitolite blacklist", "expr", gconf.Blacklist, "err", err)
+		return nil, err
+	}
 
 	out, err := exec.CommandContext(ctx, "ssh", gconf.Host, "info").CombinedOutput()
 	if err != nil {
