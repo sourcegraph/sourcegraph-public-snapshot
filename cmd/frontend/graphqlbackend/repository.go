@@ -140,12 +140,17 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 		return nil, nil
 	}
 
-	refBytes, _, exitCode, err := git.ExecSafe(ctx, backend.CachedGitRepo(ctx, r.repo), []string{"symbolic-ref", "HEAD"})
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
+	if err != nil {
+		return nil, err
+	}
+
+	refBytes, _, exitCode, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "HEAD"})
 	refName := string(bytes.TrimSpace(refBytes))
 
 	if err == nil && exitCode == 0 {
 		// Check that our repo is not empty
-		_, err = git.ResolveRevision(ctx, backend.CachedGitRepo(ctx, r.repo), nil, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
+		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
 	}
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -237,7 +242,11 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		// NoEnsureRevision. We do this, otherwise repositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err := git.ResolveRevision(ctx, backend.CachedGitRepo(ctx, repo), nil, targetRef, &git.ResolveRevisionOptions{
+		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
+		if err != nil {
+			return nil, err
+		}
+		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, targetRef, &git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
