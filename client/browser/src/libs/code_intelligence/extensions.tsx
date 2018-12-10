@@ -1,7 +1,7 @@
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
 import { Notifications } from '../../../../../shared/src/notifications/Notifications'
 

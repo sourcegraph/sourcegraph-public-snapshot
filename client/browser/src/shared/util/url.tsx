@@ -1,4 +1,4 @@
-import { Position } from '../../../../../shared/src/api/protocol/plainTypes'
+import { Position } from '@sourcegraph/extension-api-types'
 import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec } from '../repo'
 import { repoUrlCache, sourcegraphUrl } from './context'
 

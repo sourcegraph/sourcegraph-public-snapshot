@@ -1,10 +1,10 @@
+import { Position, Range } from '@sourcegraph/extension-api-types'
 import { upperFirst } from 'lodash'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { Position, Range } from '../../../../shared/src/api/protocol/plainTypes'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'

@@ -1,4 +1,4 @@
-import { Position, Range } from '../api/protocol/plainTypes'
+import { Position, Range } from '@sourcegraph/extension-api-types'
 
 export interface RepoSpec {
     /**

@@ -1,8 +1,8 @@
+import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { Observable, Subscription } from 'rxjs'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtRootsAPI } from '../../extension/api/roots'
 import { Connection } from '../../protocol/jsonrpc2/connection'
-import { WorkspaceRoot } from '../../protocol/plainTypes'
 
 /** @internal */
 export class ClientRoots {

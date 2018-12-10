@@ -1,5 +1,5 @@
+import { Selection, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { TextDocumentPositionParams } from '../protocol'
-import { Selection, WorkspaceRoot } from '../protocol/plainTypes'
 import { TextDocumentItem } from './types/textDocument'
 
 /**

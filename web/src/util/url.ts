@@ -1,4 +1,4 @@
-import { Position, Range, Selection } from '../../../shared/src/api/protocol/plainTypes'
+import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import {
     AbsoluteRepoFile,
     encodeRepoRev,
@@ -157,10 +157,14 @@ export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selectio
     if (range === undefined) {
         return []
     }
+    const start: Position = { line: range.start.line - 1, character: range.start.character - 1 }
+    const end: Position = { line: range.end.line - 1, character: range.end.character - 1 }
     return [
         {
-            start: { line: range.start.line - 1, character: range.start.character - 1 },
-            end: { line: range.end.line - 1, character: range.end.character - 1 },
+            start,
+            end,
+            anchor: start,
+            active: end,
             isReversed: false,
         },
     ]

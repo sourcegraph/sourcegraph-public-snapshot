@@ -1,8 +1,8 @@
+import { Hover } from '@sourcegraph/extension-api-types'
 import { combineLatest, from, Observable } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { HoverMerged } from '../../client/types/hover'
 import { TextDocumentPositionParams } from '../../protocol'
-import { Hover } from '../../protocol/plainTypes'
 import { isEqual } from '../../util'
 import { DocumentFeatureProviderRegistry } from './registry'
 

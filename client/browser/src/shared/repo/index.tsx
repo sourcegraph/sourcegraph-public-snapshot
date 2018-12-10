@@ -1,4 +1,4 @@
-import { Position, Range } from '../../../../../shared/src/api/protocol/plainTypes'
+import { Position, Range } from '@sourcegraph/extension-api-types'
 import { sourcegraphUrl } from '../util/context'
 import { parseHash } from '../util/url'
 

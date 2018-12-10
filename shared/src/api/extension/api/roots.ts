@@ -1,11 +1,11 @@
+import * as clientType from '@sourcegraph/extension-api-types'
 import { Observable, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { WorkspaceRoot as PlainWorkspaceRoot } from '../../protocol/plainTypes'
 import { URI } from '../types/uri'
 
 /** @internal */
 export interface ExtRootsAPI {
-    $acceptRoots(roots: PlainWorkspaceRoot[]): void
+    $acceptRoots(roots: clientType.WorkspaceRoot[]): void
 }
 
 /** @internal */
@@ -24,7 +24,7 @@ export class ExtRoots implements ExtRootsAPI {
     private changes = new Subject<void>()
     public readonly onDidChange: Observable<void> = this.changes
 
-    public $acceptRoots(roots: PlainWorkspaceRoot[]): void {
+    public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
         this.roots = Object.freeze(
             roots.map(plain => ({ ...plain, uri: new URI(plain.uri) } as sourcegraph.WorkspaceRoot))
         )
