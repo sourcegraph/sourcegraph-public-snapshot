@@ -5,5 +5,6 @@ import (
 )
 
 var Mock = struct {
-	Get func(ctx context.Context) (*State, error)
+	Get                           func(ctx context.Context) (*State, error)
+	AuthenticateManagementConsole func(ctx context.Context, password string) error
 }{}
