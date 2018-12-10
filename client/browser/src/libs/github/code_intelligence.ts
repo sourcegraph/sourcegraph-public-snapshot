@@ -100,7 +100,11 @@ const commentSnippetCodeView: CodeView = {
     isDiff: false,
 }
 
-const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector => {
+const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
+    if (elem.querySelector('.markdown-body')) {
+        return null
+    }
+
     const files = document.getElementsByClassName('file')
     const { filePath } = parseURL()
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
