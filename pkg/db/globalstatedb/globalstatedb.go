@@ -116,6 +116,25 @@ func tryInsertNew(ctx context.Context, dbh interface {
 	return err
 }
 
+// With N=80 unique characters, and K=128 character slots (string length),
+// there are exactly n^k possible strings of length K. Assuming our attacker
+// knows this is the most optimal attack vector (strings of length 128 with
+// our chosen set of 80 characters), there are 80^128 possible password
+// combinations. We choose a bcrypt cost which takes roughly ~1s on a modern
+// machine.
+//
+// This means that even though we do not rate limit authentication attempts, it
+// would in the worst case take roughly 80^128 seconds, or:
+//
+// 	124,860,090,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000
+//
+// _millenia_ for someone to brute force guess the password. So we assume this
+// is secure enough to protect us against brute force guessing and do not
+// enforce any rate limiting (even with work divided across a trillion machines
+// which our management console service could never handle, that number is
+// still astronomical).
+const bcryptCost = 14
+
 // ManagementConsoleState describes state regarding the management console.
 type ManagementConsoleState struct {
 	// PasswordPlaintext is the plaintext version of the management console
@@ -218,7 +237,7 @@ func getManagementConsoleState(ctx context.Context) (*ManagementConsoleState, er
 		if err != nil {
 			return errors.Wrap(err, "generateRandomPassword")
 		}
-		passwordBcrypt, err := bcrypt.GenerateFromPassword([]byte(passwordPlaintext), 15)
+		passwordBcrypt, err := bcrypt.GenerateFromPassword([]byte(passwordPlaintext), bcryptCost)
 		if err != nil {
 			return errors.Wrap(err, "bcrypt")
 		}
