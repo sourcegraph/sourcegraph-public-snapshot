@@ -7,6 +7,7 @@ const FIXTURE_CONTEXT = new Map<string, any>(
         b: 1,
         c: 2,
         x: 'y',
+        o: { k: 'v' },
     })
 )
 
@@ -25,6 +26,7 @@ describe('evaluate', () => {
         'a || b': 1,
         '(a + b) * 2': 4,
         'x == "y"': true,
+        'json(o)': '{"k":"v"}',
         // TODO: Support operator precedence. See ./parser.test.ts for a commented-out precedence test case.
         //
         // 'x == "y" || x == "z"': true,
@@ -41,7 +43,7 @@ describe('evaluate', () => {
     for (const [expr, want] of Object.entries(TESTS)) {
         it(expr, () => {
             const value = evaluate(expr, FIXTURE_CONTEXT)
-            assert.strictEqual(value, want)
+            assert.deepStrictEqual(value, want)
         })
     }
 })
