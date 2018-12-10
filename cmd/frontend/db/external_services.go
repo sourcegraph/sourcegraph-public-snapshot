@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -36,19 +37,51 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
-func validateConfig(config string) error {
+func validateConfig(kind, config string) error {
 	// All configs must be valid JSON.
 	// If this requirement is ever changed, you will need to update
 	// serveExternalServiceConfigs to handle this case.
-	_, err := jsonc.Parse(config)
-	return err
+
+	switch kind {
+	case "PHABRICATOR":
+		var cfg schema.PhabricatorConnection
+		if err := jsonc.Unmarshal(config, &cfg); err != nil {
+			return err
+		}
+		if len(cfg.Repos) == 0 && cfg.Token == "" {
+			return errors.New(`Either "token" or "repos" must be set`)
+		}
+	case "BITBUCKETSERVER":
+		var cfg schema.BitbucketServerConnection
+		if err := jsonc.Unmarshal(config, &cfg); err != nil {
+			return err
+		}
+		if cfg.Token != "" && cfg.Password != "" {
+			return errors.New("Specify either a token or a username/password, but not both")
+		} else if cfg.Token == "" && cfg.Username == "" && cfg.Password == "" {
+			return errors.New("Specify either a token or a username/password to authenticate")
+		}
+	case "GITLAB":
+		var cfg schema.GitLabConnection
+		if err := jsonc.Unmarshal(config, &cfg); err != nil {
+			return err
+		}
+		if strings.Contains(cfg.Url, "example.com") {
+			return fmt.Errorf(`invalid GitLab URL detected: %s (did you forget to remove "example.com"?)`, cfg.Url)
+		}
+	default:
+		if _, err := jsonc.Parse(config); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Create creates a external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Create(ctx context.Context, externalService *types.ExternalService) error {
-	if err := validateConfig(externalService.Config); err != nil {
+	if err := validateConfig(externalService.Kind, externalService.Config); err != nil {
 		return err
 	}
 
@@ -73,7 +106,13 @@ type ExternalServiceUpdate struct {
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Update(ctx context.Context, id int64, update *ExternalServiceUpdate) error {
 	if update.Config != nil {
-		if err := validateConfig(*update.Config); err != nil {
+		// Query to get the kind (which is immutable) so we can validate the new config.
+		externalService, err := c.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if err := validateConfig(externalService.Kind, *update.Config); err != nil {
 			return err
 		}
 	}
