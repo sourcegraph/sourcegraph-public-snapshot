@@ -36,7 +36,7 @@ export function getDecorations(
     params: TextDocumentIdentifier
 ): Observable<TextDocumentDecoration[] | null> {
     return providers
-        .pipe(switchMap(providers => combineLatestOrDefault(providers.map(provider => provider(params)), null)))
+        .pipe(switchMap(providers => combineLatestOrDefault(providers.map(provider => provider(params)))))
         .pipe(map(flattenAndCompact))
 }
 

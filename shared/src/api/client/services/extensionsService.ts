@@ -100,8 +100,7 @@ export class ExtensionsService {
                                           }
                             )
                         )
-                    ),
-                    null
+                    )
                 )
             ),
             map(extensions => extensions.filter((x): x is ExecutableExtension => x !== null))

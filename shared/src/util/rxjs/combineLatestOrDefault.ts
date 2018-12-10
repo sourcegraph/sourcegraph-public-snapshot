@@ -1,4 +1,4 @@
-import { Observable, ObservableInput, Operator, PartialObserver, Subscriber, TeardownLogic } from 'rxjs'
+import { Observable, ObservableInput, of, Operator, PartialObserver, Subscriber, TeardownLogic, zip } from 'rxjs'
 import { fromArray } from 'rxjs/internal/observable/fromArray'
 import { OuterSubscriber } from 'rxjs/internal/OuterSubscriber'
 import { asap } from 'rxjs/internal/scheduler/asap'
@@ -8,8 +8,11 @@ import { subscribeToResult } from 'rxjs/internal/util/subscribeToResult'
 
 /**
  * Like {@link combineLatest}, except that it does not wait for all Observables to emit before emitting an initial
- * value. It emits whenever any of the source Observables emit. In the emitted value (an array), any source
- * Observables that have not yet emitted are represented by {@link defaultValue}.
+ * value. It emits whenever any of the source Observables emit.
+ *
+ * If {@link defaultValue} is provided, it will be used to represent any source Observables
+ * that have not yet emitted in the emitted array. If it is not provided, source Observables
+ * that have not yet emitted will not be represented in the emitted array.
  *
  * Also unlike {@link combineLatest}, if the source Observables array is empty, it emits an empty array and
  * completes.
@@ -29,62 +32,59 @@ import { subscribeToResult } from 'rxjs/internal/util/subscribeToResult'
  * @return {Observable} An Observable of an array of the most recent values from each input Observable (or
  * {@link defaultValue}).
  */
-export function combineLatestOrDefault<T, D>(
-    observables: ObservableInput<T>[],
-    defaultValue: D
-): Observable<(T | D)[]> {
-    return fromArray(observables).lift(new CombineLatestOperator<T, T[], D>(defaultValue))
-}
-
-class CombineLatestOperator<T, R, D> implements Operator<T, R> {
-    public constructor(private defaultValue: D) {}
-
-    public call(subscriber: Subscriber<R>, source: any): TeardownLogic {
-        return source.subscribe(new CombineLatestSubscriber<T, R, D>(subscriber, this.defaultValue))
+export function combineLatestOrDefault<T>(observables: ObservableInput<T>[], defaultValue?: T): Observable<T[]> {
+    switch (observables.length) {
+        case 0:
+            // No source observables: emit an empty array and complete
+            return of([])
+        case 1:
+            // Only one source observable: no need to handle emission accumulation or default values
+            return zip(...observables)
+        default:
+            return fromArray(observables).lift(new CombineLatestOperator(defaultValue))
     }
 }
 
-class CombineLatestSubscriber<T, R, D> extends OuterSubscriber<T, R> {
+class CombineLatestOperator<T> implements Operator<T, T[]> {
+    public constructor(private defaultValue?: T) {}
+
+    public call(subscriber: Subscriber<T[]>, source: any): TeardownLogic {
+        return source.subscribe(new CombineLatestSubscriber(subscriber, this.defaultValue))
+    }
+}
+
+class CombineLatestSubscriber<T> extends OuterSubscriber<T, T[]> {
     private activeObservables = 0
     private values: any[] = []
     private observables: Observable<any>[] = []
     private scheduled = false
 
-    constructor(observer: PartialObserver<any>, private defaultValue: D) {
+    constructor(observer: PartialObserver<T[]>, private defaultValue?: T) {
         super(observer)
     }
 
     protected _next(observable: any): void {
-        this.values.push(this.defaultValue)
+        if (this.defaultValue !== undefined) {
+            this.values.push(this.defaultValue)
+        }
         this.observables.push(observable)
     }
 
     protected _complete(): void {
-        if (this.observables.length === 0) {
-            if (this.destination.next) {
-                this.destination.next([])
-            }
-            if (this.destination.complete) {
-                this.destination.complete()
-            }
-        } else {
-            this.activeObservables = this.observables.length
-            for (let i = 0; i < this.observables.length; i++) {
-                this.add(subscribeToResult(this, this.observables[i], this.observables[i], i))
-            }
+        this.activeObservables = this.observables.length
+        for (let i = 0; i < this.observables.length; i++) {
+            this.add(subscribeToResult(this, this.observables[i], this.observables[i], i))
         }
     }
 
     public notifyComplete(): void {
         this.activeObservables--
-        if (this.activeObservables === 0) {
-            if (this.destination.complete) {
-                this.destination.complete()
-            }
+        if (this.activeObservables === 0 && this.destination.complete) {
+            this.destination.complete()
         }
     }
 
-    public notifyNext(_outerValue: T, innerValue: R, outerIndex: number): void {
+    public notifyNext(_outerValue: T, innerValue: T[], outerIndex: number): void {
         const values = this.values
         values[outerIndex] = innerValue
 

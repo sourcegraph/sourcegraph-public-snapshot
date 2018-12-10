@@ -49,8 +49,7 @@ export function getHover(
                             })
                         )
                     )
-                ),
-                null
+                )
             ).pipe(
                 map(HoverMerged.from),
                 defaultIfEmpty(null as HoverMerged | null),

@@ -78,8 +78,7 @@ export function getLocations<
                             return [null]
                         })
                     )
-                ),
-                null
+                )
             )
         ),
         map(flattenAndCompact)

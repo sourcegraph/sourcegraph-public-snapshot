@@ -87,8 +87,7 @@ export function getViews(
                             return [null]
                         })
                     )
-                ),
-                null
+                )
             ).pipe(
                 map(entries =>
                     entries.filter(
