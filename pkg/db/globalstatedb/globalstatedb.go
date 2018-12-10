@@ -165,6 +165,9 @@ var ErrCannotUseManagementConsole = errors.New("cannot use management console un
 // 🚨 SECURITY: This method MUST be called before granting anyone access to the
 // management console (it is the only form of authentication).
 func AuthenticateManagementConsole(ctx context.Context, password string) error {
+	if Mock.AuthenticateManagementConsole != nil {
+		return Mock.AuthenticateManagementConsole(ctx, password)
+	}
 	mgmt, err := getManagementConsoleState(ctx)
 	if err != nil {
 		return err
