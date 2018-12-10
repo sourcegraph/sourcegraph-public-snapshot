@@ -596,10 +596,20 @@ func IsAtom(q Q) bool {
 
 // VisitAtoms runs `v` on all atom queries within `q`.
 func VisitAtoms(q Q, v func(q Q)) {
-	Map(q, nil, func(iQ Q) Q {
-		if IsAtom(iQ) {
-			v(iQ)
+	switch s := q.(type) {
+	case *And:
+		for _, c := range s.Children {
+			VisitAtoms(c, v)
 		}
-		return iQ
-	})
+	case *Or:
+		for _, c := range s.Children {
+			VisitAtoms(c, v)
+		}
+	case *Not:
+		VisitAtoms(s.Child, v)
+	case *Type:
+		VisitAtoms(s.Child, v)
+	default:
+		v(q)
+	}
 }
