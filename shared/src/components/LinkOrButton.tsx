@@ -37,7 +37,10 @@ export class LinkOrButton extends React.PureComponent<Props> {
             this.props.disabled ? 'disabled' : ''
         }`
 
-        const commonProps = {
+        const commonProps: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+            'data-tooltip': string | undefined
+            onAuxClick?: React.MouseEventHandler<HTMLAnchorElement>
+        } = {
             className,
             'data-tooltip': this.props['data-tooltip'],
             'aria-label': this.props['data-tooltip'],
@@ -47,6 +50,9 @@ export class LinkOrButton extends React.PureComponent<Props> {
         }
 
         if (!this.props.to) {
+            // Use onAuxClick so that middle-clicks are caught.
+            commonProps.onAuxClick = this.onAnchorClick
+
             // Render using an <a> with no href, so that we get a focus ring (when using Bootstrap).
             // We need to set up a keypress listener because <a onclick> doesn't get triggered by
             // enter.
