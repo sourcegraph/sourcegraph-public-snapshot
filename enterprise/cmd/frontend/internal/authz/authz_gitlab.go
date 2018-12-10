@@ -1,4 +1,4 @@
-package shared
+package authz
 
 import (
 	"fmt"
@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
-	permgl "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	permgl "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
