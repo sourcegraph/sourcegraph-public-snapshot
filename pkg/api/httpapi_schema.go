@@ -58,3 +58,7 @@ type PhabricatorRepoCreateRequest struct {
 	Callsign string `json:"callsign"`
 	URL      string `json:"url"`
 }
+
+type ExternalServiceConfigsRequest struct {
+	Kind string `json:"kind"`
+}

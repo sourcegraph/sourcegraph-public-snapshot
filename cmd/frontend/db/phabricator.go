@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -107,7 +106,12 @@ func (p *phabricator) GetByName(ctx context.Context, name api.RepoName) (*types.
 		return Mocks.Phabricator.GetByName(name)
 	}
 
-	for _, config := range conf.Get().Phabricator {
+	connections, err := ExternalServices.ListPhabricatorConnections(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, config := range connections {
 		for _, repo := range config.Repos {
 			if api.RepoName(repo.Path) == name {
 				return &types.PhabricatorRepo{

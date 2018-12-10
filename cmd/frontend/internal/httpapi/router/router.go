@@ -42,6 +42,7 @@ const (
 	ReposListEnabled       = "internal.repos.list-enabled"
 	ReposUpdateMetadata    = "internal.repos.update-metadata"
 	Configuration          = "internal.configuration"
+	ExternalServiceConfigs = "internal.external-services.configs"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -96,6 +97,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/git/{RepoName:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
+	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/repos/create-if-not-exists").Methods("POST").Name(ReposCreateIfNotExists)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)

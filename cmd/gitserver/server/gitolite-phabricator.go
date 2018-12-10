@@ -12,9 +12,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -28,8 +27,15 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 	case query("gitolite"):
 		gitoliteHost := q.Get("gitolite")
 		repoName := q.Get("repo")
+
+		var config []*schema.GitoliteConnection
+		if err := api.InternalClient.ExternalServiceConfigs(r.Context(), "GITOLITE", &config); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		// Iterate through Gitolite hosts, searching for one that will return the Phabricator mapping
-		for _, gconf := range conf.Get().Gitolite {
+		for _, gconf := range config {
 			if gconf.Host != gitoliteHost {
 				continue
 			}

@@ -98,7 +98,11 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	if gitserverRepo := quickGitserverRepo(name); gitserverRepo != nil {
+	gitserverRepo, err := quickGitserverRepo(ctx, name)
+	if err != nil {
+		return err
+	}
+	if gitserverRepo != nil {
 		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
 			return err
 		}
@@ -200,7 +204,12 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, comm
 	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
-	files, err := git.ReadDir(ctx, CachedGitRepo(repo), commitID, "", true)
+	cachedRepo, err := CachedGitRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := git.ReadDir(ctx, *cachedRepo, commitID, "", true)
 	if err != nil {
 		return nil, err
 	}

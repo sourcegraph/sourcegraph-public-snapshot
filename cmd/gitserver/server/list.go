@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -27,7 +27,14 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		fallthrough // treat same as if the URL query was "gitolite" for backcompat
 	case query("gitolite"):
 		gitoliteHost := q.Get("gitolite")
-		for _, gconf := range conf.Get().Gitolite {
+
+		var config []*schema.GitoliteConnection
+		if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		for _, gconf := range config {
 			if gconf.Host != gitoliteHost {
 				continue
 			}

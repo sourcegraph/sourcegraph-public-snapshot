@@ -18,7 +18,12 @@ func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	contents, err := git.ReadFile(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+	if err != nil {
+		return "", err
+	}
+
+	contents, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +95,12 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	content, err := git.ReadFile(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return nil, err
 	}

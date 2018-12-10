@@ -316,6 +316,19 @@ func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoNam
 	}, nil)
 }
 
+var MockExternalServiceConfigs func(kind string, result interface{}) error
+
+// ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
+// which should be a slice of the expected config type.
+func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result interface{}) error {
+	if MockExternalServiceConfigs != nil {
+		return MockExternalServiceConfigs(kind, result)
+	}
+	return c.postInternal(ctx, "external-services/configs", ExternalServiceConfigsRequest{
+		Kind: kind,
+	}, &result)
+}
+
 func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody interface{}) error {
 	return c.postInternal(ctx, "telemetry/log/v1/"+env, reqBody, nil)
 }

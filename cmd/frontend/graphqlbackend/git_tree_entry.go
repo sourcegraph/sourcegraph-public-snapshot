@@ -102,7 +102,11 @@ func (r *gitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if !r.IsDirectory() {
 		return false, nil
 	}
-	entries, err := git.ReadDir(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), filepath.Dir(r.path), false)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+	if err != nil {
+		return false, err
+	}
+	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.oid), filepath.Dir(r.path), false)
 	if err != nil {
 		return false, err
 	}
