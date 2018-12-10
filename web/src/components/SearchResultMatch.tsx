@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { decode } from 'he'
-import _, { isEqual } from 'lodash'
+import { isEqual } from 'lodash'
 import { range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
