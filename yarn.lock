@@ -9436,15 +9436,15 @@ mdast-util-compact@^1.0.0:
   dependencies:
     unist-util-visit "^1.1.0"
 
-mdi-react@^4.0.0:
-  version "4.4.0"
-  resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-4.4.0.tgz#5901a3eda1f0dc5eacec1b13f2e2ee40e883b791"
-  integrity sha512-IxWW/10EHSYSDz5Hce1JzgvBiNtUHWERVDRWY6S+Bc07zUjWcRvQFDQND8GIgXG2Mnr/7uQFk25MBtSgLHQ0Gw==
-
 "mdi-react@^4.0.0 || ^5.0.0":
   version "5.0.0"
   resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-5.0.0.tgz#38d5e0ac15e9322c7e0ff1e1dc5e1d65748e06db"
   integrity sha512-26rbkxWW7yHBJrdZm9J06R3/4SzkqEVyYi/e0vjuWgpv4G7s64XDRjizKry98pnkjtAkktc0/roq6oUo9KbTYQ==
+
+mdi-react@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-5.1.0.tgz#22f26540731a2cdb2a39b22b4ea51a069a025d07"
+  integrity sha512-oAZW4/kJVd7iK5pVUsBjiRn4hpc3hUjHt6vgjyXzUAYjvLfYCJkUZqeqOYeFFiEO3ktf/IvSq3+XinojcpkCmg==
 
 mdurl@^1.0.1:
   version "1.0.1"
@@ -13372,7 +13372,8 @@ source-map@^0.7.2:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "19.4.0"
+  version "0.0.0"
+  uid ""
 
 sparkles@^1.0.0:
   version "1.0.1"
