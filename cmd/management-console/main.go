@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -47,8 +48,8 @@ import (
 const port = "2633"
 
 var (
-	tlsCert   = env.Get("TLS_CERT", "cert.pem", "TLS certificate (automatically generated if file does not exist)")
-	tlsKey    = env.Get("TLS_KEY", "key.pem", "TLS key (automatically generated if file does not exist)")
+	tlsCert   = env.Get("TLS_CERT", "/etc/sourcegraph/management/cert.pem", "TLS certificate (automatically generated if file does not exist)")
+	tlsKey    = env.Get("TLS_KEY", "/etc/sourcegraph/management/key.pem", "TLS key (automatically generated if file does not exist)")
 	customTLS = env.Get("CUSTOM_TLS", "false", "When true, disable TLS cert/key generation to prevent accidents.")
 )
 
@@ -77,6 +78,13 @@ func configureTLS() error {
 		return nil // cert files exist
 	}
 
+	if err := os.MkdirAll(filepath.Dir(tlsCert), 0700); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(tlsKey), 0700); err != nil {
+		return err
+	}
+
 	// Generate a TLS cert.
 	certOut, err := os.Create(tlsCert)
 	if err != nil {
@@ -84,7 +92,7 @@ func configureTLS() error {
 	}
 	defer certOut.Close()
 
-	keyOut, err := os.OpenFile("key.pem", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	keyOut, err := os.OpenFile(tlsKey, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return errors.Wrap(err, "failed to open key.pem for writing")
 	}
