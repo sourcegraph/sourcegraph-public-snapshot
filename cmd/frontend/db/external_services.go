@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
@@ -242,13 +243,16 @@ func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Conte
 	migrateOnce.Do(func() {
 		// Run in a transaction because we are racing with other frontend replicas.
 		err := dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
-			var count int
-			if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM external_services`).Scan(&count); err != nil {
+			now := time.Now()
+
+			// Attempt to insert a fake config into the DB with id 0.
+			// This will fail if the migration has already run.
+			if _, err := tx.ExecContext(
+				ctx,
+				"INSERT INTO external_services(id, kind, display_name, config, created_at, updated_at, deleted_at) VALUES($1, $2, $3, $4, $5, $6, $7)",
+				0, "migration", "", "{}", now, now, now,
+			); err != nil {
 				return err
-			}
-			if count > 0 {
-				// Migration already done
-				return nil
 			}
 
 			migrate := func(config interface{}, name string) error {
@@ -268,11 +272,14 @@ func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Conte
 					if err != nil {
 						return err
 					}
-					if err := c.Create(ctx, &types.ExternalService{
-						Kind:        strings.ToUpper(name),
-						DisplayName: fmt.Sprintf("Migrated %s %d", name, i+1),
-						Config:      string(jsonConfig),
-					}); err != nil {
+
+					kind := strings.ToUpper(name)
+					displayName := fmt.Sprintf("Migrated %s %d", name, i+1)
+					if _, err := tx.ExecContext(
+						ctx,
+						"INSERT INTO external_services(kind, display_name, config, created_at, updated_at) VALUES($1, $2, $3, $4, $5)",
+						kind, displayName, string(jsonConfig), now, now,
+					); err != nil {
 						return err
 					}
 				}
@@ -307,6 +314,13 @@ func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Conte
 		})
 
 		if err != nil {
+			if pqErr, ok := err.(*pq.Error); ok {
+				if pqErr.Constraint == "external_services_pkey" {
+					// This is expected when multiple frontend attempt to migrate concurrently.
+					// Only one will win.
+					return
+				}
+			}
 			log15.Error("migrate transaction failed", "err", err)
 		}
 	})
