@@ -1,11 +1,12 @@
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { combineLatest, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import {
     DecorationAttachmentRenderOptions,
     ThemableDecorationAttachmentStyle,
     ThemableDecorationStyle,
 } from 'sourcegraph'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'
 import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
@@ -35,14 +36,7 @@ export function getDecorations(
     params: TextDocumentIdentifier
 ): Observable<TextDocumentDecoration[] | null> {
     return providers
-        .pipe(
-            switchMap(providers => {
-                if (providers.length === 0) {
-                    return [null]
-                }
-                return combineLatest(providers.map(provider => provider(params)))
-            })
-        )
+        .pipe(switchMap(providers => combineLatestOrDefault(providers.map(provider => provider(params)))))
         .pipe(map(flattenAndCompact))
 }
 

@@ -9,6 +9,7 @@ import { viewerConfiguredExtensions } from '../../../extensions/helpers'
 import { PlatformContext } from '../../../platform/context'
 import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isEqual } from '../../util'
 import { Model } from '../model'
 import { SettingsService } from './settings'
@@ -84,26 +85,23 @@ export class ExtensionsService {
             }),
             map(([, extensions]) => (extensions ? extensions.filter(x => activatedExtensionIDs.includes(x.id)) : [])),
             distinctUntilChanged((a, b) => isEqual(a, b)),
-            switchMap(
-                extensions =>
-                    extensions.length === 0
-                        ? [[]]
-                        : combineLatest(
-                              extensions.map(x =>
-                                  this.memoizedGetScriptURLForExtension(getScriptURLFromExtensionManifest(x)).pipe(
-                                      map(
-                                          scriptURL =>
-                                              scriptURL === null
-                                                  ? null
-                                                  : {
-                                                        id: x.id,
-                                                        manifest: x.manifest,
-                                                        scriptURL,
-                                                    }
-                                      )
-                                  )
-                              )
-                          )
+            switchMap(extensions =>
+                combineLatestOrDefault(
+                    extensions.map(x =>
+                        this.memoizedGetScriptURLForExtension(getScriptURLFromExtensionManifest(x)).pipe(
+                            map(
+                                scriptURL =>
+                                    scriptURL === null
+                                        ? null
+                                        : {
+                                              id: x.id,
+                                              manifest: x.manifest,
+                                              scriptURL,
+                                          }
+                            )
+                        )
+                    )
+                )
             ),
             map(extensions => extensions.filter((x): x is ExecutableExtension => x !== null))
         )

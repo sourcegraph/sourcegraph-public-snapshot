@@ -1,6 +1,7 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { combineLatest, from, Observable, of } from 'rxjs'
-import { catchError, defaultIfEmpty, distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Model, modelToTextDocumentPositionParams } from '../model'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
@@ -56,8 +57,6 @@ export class TextDocumentLocationProviderRegistry<
     }
 }
 
-const INITIAL = Symbol('INITIAL')
-
 /**
  * Returns an observable that emits the providers' location results whenever any of the last-emitted set of
  * providers emits hovers.
@@ -70,17 +69,10 @@ export function getLocations<
     L extends Location = Location
 >(providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>, params: P): Observable<L[] | null> {
     return providers.pipe(
-        switchMap(providers => {
-            if (providers.length === 0) {
-                return [null]
-            }
-            return combineLatest(
+        switchMap(providers =>
+            combineLatestOrDefault(
                 providers.map(provider =>
                     from(provider(params)).pipe(
-                        // combineLatest waits to emit until all observables have emitted. Make all
-                        // observables emit immediately to avoid waiting for the slowest observable.
-                        startWith(INITIAL),
-
                         catchError(err => {
                             console.error(err)
                             return [null]
@@ -88,19 +80,8 @@ export function getLocations<
                     )
                 )
             )
-        }),
-        filter(results => results === null || !results.every(result => result === INITIAL)),
-        map(results => results && results.filter((result): result is L | L[] | null => result !== INITIAL)),
-        map(flattenAndCompact),
-        defaultIfEmpty(null as L[] | null),
-
-        // Only compare element-wise, not deeply, for efficiency. The results can get quite large, and we only need
-        // this to prevent unwanted emissions when the only change is that a provider went from INITIAL to null.
-        distinctUntilChanged(
-            (a, b) =>
-                (a === null && b === null) ||
-                (a !== null && b !== null && a.length === b.length && a.every((e, i) => e === b[i]))
-        )
+        ),
+        map(flattenAndCompact)
     )
 }
 

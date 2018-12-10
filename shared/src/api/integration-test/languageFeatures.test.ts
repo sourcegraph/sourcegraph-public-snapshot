@@ -1,21 +1,13 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import * as assert from 'assert'
-import { MonoTypeOperatorFunction } from 'rxjs'
-import { debounceTime, take } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { bufferCount, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
 import { assertToJSON } from '../extension/types/common.test'
 import { URI } from '../extension/types/uri'
 import { createBarrier, integrationTestContext } from './helpers.test'
-
-// HACK: In getLocations and getHover, we need to have all providers first emit INITIAL to avoid having
-// combineLatest wait for the slowest provider to emit. This means that in these tests, we need to wait an
-// arbitrary amount of time until we know we've gotten the final result. (The first emission may be the result from
-// just one of the providers.)
-//
-// If 35 msec is not enough time, the tests here will fail flakily. :(
-const WAIT_FOR_RESULT: <T>() => MonoTypeOperatorFunction<T> = () => debounceTime(35)
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider(
@@ -30,13 +22,10 @@ describe('LanguageFeatures (integration)', () => {
         }),
         run => ({ provideHover: run } as sourcegraph.HoverProvider),
         services =>
-            services.textDocumentHover
-                .getHover({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(
-                    WAIT_FOR_RESULT(),
-                    take(1)
-                )
-                .toPromise()
+            services.textDocumentHover.getHover({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
     testLocationProvider(
         'registerDefinitionProvider',
@@ -48,13 +37,10 @@ describe('LanguageFeatures (integration)', () => {
         labeledDefinitionResults,
         run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
         services =>
-            services.textDocumentDefinition
-                .getLocations({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(
-                    WAIT_FOR_RESULT(),
-                    take(1)
-                )
-                .toPromise()
+            services.textDocumentDefinition.getLocations({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
     // tslint:disable deprecation The tests must remain until they are removed.
     testLocationProvider(
@@ -67,13 +53,10 @@ describe('LanguageFeatures (integration)', () => {
         labeledDefinitionResults,
         run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
         services =>
-            services.textDocumentTypeDefinition
-                .getLocations({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(
-                    WAIT_FOR_RESULT(),
-                    take(1)
-                )
-                .toPromise()
+            services.textDocumentTypeDefinition.getLocations({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
     testLocationProvider(
         'registerImplementationProvider',
@@ -85,13 +68,10 @@ describe('LanguageFeatures (integration)', () => {
         labeledDefinitionResults,
         run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
         services =>
-            services.textDocumentImplementation
-                .getLocations({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(
-                    WAIT_FOR_RESULT(),
-                    take(1)
-                )
-                .toPromise()
+            services.textDocumentImplementation.getLocations({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
     // tslint:enable deprecation
     testLocationProvider(
@@ -107,17 +87,11 @@ describe('LanguageFeatures (integration)', () => {
                 provideReferences: (doc, pos, _context: sourcegraph.ReferenceContext) => run(doc, pos),
             } as sourcegraph.ReferenceProvider),
         services =>
-            services.textDocumentReferences
-                .getLocations({
-                    textDocument: { uri: 'file:///f' },
-                    position: { line: 1, character: 2 },
-                    context: { includeDeclaration: true },
-                })
-                .pipe(
-                    WAIT_FOR_RESULT(),
-                    take(1)
-                )
-                .toPromise()
+            services.textDocumentReferences.getLocations({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+                context: { includeDeclaration: true },
+            })
     )
     testLocationProvider<sourcegraph.LocationProvider>(
         'registerLocationProvider',
@@ -133,16 +107,10 @@ describe('LanguageFeatures (integration)', () => {
                 provideLocations: (doc, pos) => run(doc, pos),
             } as sourcegraph.LocationProvider),
         services =>
-            services.textDocumentLocations
-                .getLocations('x', {
-                    textDocument: { uri: 'file:///f' },
-                    position: { line: 1, character: 2 },
-                })
-                .pipe(
-                    WAIT_FOR_RESULT(),
-                    take(1)
-                )
-                .toPromise()
+            services.textDocumentLocations.getLocations('x', {
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
 })
 
@@ -158,7 +126,7 @@ function testLocationProvider<P>(
     labeledProvider: (label: string) => P,
     labeledProviderResults: (labels: string[]) => any,
     providerWithImpl: (run: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => void) => P,
-    getResult: (services: Services) => Promise<any>
+    getResult: (services: Services) => Observable<any>
 ): void {
     describe(`languages.${name}`, () => {
         it('registers and unregisters a single provider', async () => {
@@ -167,11 +135,21 @@ function testLocationProvider<P>(
             // Register the provider and call it.
             const unsubscribe = registerProvider(extensionHost)(['*'], labeledProvider('a'))
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(await getResult(services), labeledProviderResults(['a']))
+            assert.deepStrictEqual(
+                await getResult(services)
+                    .pipe(take(1))
+                    .toPromise(),
+                labeledProviderResults(['a'])
+            )
 
             // Unregister the provider and ensure it's removed.
             unsubscribe.unsubscribe()
-            assert.deepStrictEqual(await getResult(services), null)
+            assert.deepStrictEqual(
+                await getResult(services)
+                    .pipe(take(1))
+                    .toPromise(),
+                null
+            )
         })
 
         it('supplies params to the provideXyz method', async () => {
@@ -187,6 +165,8 @@ function testLocationProvider<P>(
             )
             await extensionHost.internal.sync()
             await getResult(services)
+                .pipe(take(1))
+                .toPromise()
             await wait
         })
 
@@ -198,7 +178,16 @@ function testLocationProvider<P>(
             registerProvider(extensionHost)(['*'], labeledProvider('b'))
             await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(await getResult(services), labeledProviderResults(['a', 'b']))
+            // Expect it to emit the first provider's result first (and not block on both providers being ready).
+            assert.deepStrictEqual(
+                await getResult(services)
+                    .pipe(
+                        take(2),
+                        bufferCount(2)
+                    )
+                    .toPromise(),
+                [labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])]
+            )
         })
     })
 }

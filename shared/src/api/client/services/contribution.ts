@@ -1,14 +1,6 @@
-import {
-    BehaviorSubject,
-    combineLatest,
-    isObservable,
-    Observable,
-    ObservableInput,
-    of,
-    Subscribable,
-    Unsubscribable,
-} from 'rxjs'
+import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import {
     ActionContribution,
     ActionItem,
@@ -33,7 +25,7 @@ export interface ContributionsEntry {
      * subscription. The {@link ContributionRegistry#contributions} observable blocks until all observables have
      * emitted.
      */
-    contributions: Contributions | ObservableInput<Contributions | Contributions[]>
+    contributions: Contributions | Observable<Contributions | Contributions[]>
 }
 
 /**
@@ -99,10 +91,14 @@ export class ContributionRegistry {
         return combineLatest(
             entries.pipe(
                 switchMap(entries =>
-                    combineLatest(
-                        ...entries.map(
-                            entry => (isObservable(entry.contributions) ? entry.contributions : of(entry.contributions))
-                        )
+                    combineLatestOrDefault(
+                        entries.map(
+                            entry =>
+                                isObservable<Contributions | Contributions[]>(entry.contributions)
+                                    ? entry.contributions
+                                    : of<Contributions>(entry.contributions)
+                        ),
+                        []
                     )
                 )
             ),
