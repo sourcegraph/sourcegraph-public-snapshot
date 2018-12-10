@@ -120,7 +120,7 @@ const CriticalSchemaJSON = `{
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
           }
         },
         "oneOf": [
