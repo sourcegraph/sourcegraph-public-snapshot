@@ -37,6 +37,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - Codecov extension
 - Java language support via extension
 - [Use nginx as HTTP proxy](https://github.com/sourcegraph/sourcegraph/pull/929)
+- [Add Datadog metrics extension](https://github.com/sourcegraph/sourcegraph/issues/655)
 
 ---
 
@@ -104,7 +105,6 @@ See [previous Sourcegraph releases](previous_releases.md).
 [felixfbecker]: https://github.com/felixfbecker
 [slimsag]: https://github.com/slimsag
 [kattmingming]: https://github.com/kattmingming
-
 
 <!--
 
