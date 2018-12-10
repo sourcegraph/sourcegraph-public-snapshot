@@ -126,9 +126,9 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
 
         return (
             <div className="site-admin-external-services-page">
-                <PageTitle title="External Services - Admin" />
+                <PageTitle title="External services - Admin" />
                 <div className="d-flex justify-content-between align-items-center">
-                    <h2>External Services</h2>
+                    <h2>External services</h2>
                     <Link className="btn btn-primary ml-2" to="/site-admin/external-services/add">
                         <AddIcon className="icon-inline" /> Add external service
                     </Link>
