@@ -11,6 +11,9 @@ interface Props {
 
     /** The size of the input element. */
     size?: number
+
+    /** Whether or not the text to be copied is a password. */
+    password?: boolean
 }
 
 interface State {
@@ -31,7 +34,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
             <div className={`copyable-text form-inline ${this.props.className || ''}`}>
                 <div className="input-group">
                     <input
-                        type="text"
+                        type={this.props.password ? 'password' : 'text'}
                         className="copyable-text__input form-control"
                         value={this.props.text}
                         size={this.props.size}
