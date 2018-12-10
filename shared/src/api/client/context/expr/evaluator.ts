@@ -30,6 +30,7 @@ export function evaluateTemplate(template: string, context: ComputedContext): an
 
 const FUNCS: { [name: string]: (...args: any[]) => any } = {
     get: (obj: any, key: string): any => obj[key],
+    json: (obj: any): string => JSON.stringify(obj),
 }
 
 function exec(node: Expression, context: ComputedContext): any {
