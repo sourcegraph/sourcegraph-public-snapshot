@@ -1,6 +1,7 @@
 @import '../bitbucket/style.scss';
 @import '../gitlab/style.scss';
 @import '../../shared/global-styles/variables.scss';
+@import '../../../../../shared/src/hover/HoverOverlay.scss';
 
 .hover-overlay-mount__phabricator {
     .hover-overlay {

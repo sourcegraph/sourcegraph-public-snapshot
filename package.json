@@ -165,7 +165,7 @@
   "dependencies": {
     "@sentry/browser": "^4.4.2",
     "@slimsag/react-shortcuts": "^1.2.1",
-    "@sourcegraph/codeintellify": "^5.1.0",
+    "@sourcegraph/codeintellify": "^6.0.2",
     "@sourcegraph/extension-api-types": "link:packages/@sourcegraph/extension-api-types",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",
@@ -200,6 +200,7 @@
     "react-visibility-sensor": "^5.0.2",
     "reactstrap": "https://registry.npmjs.org/@sqs/reactstrap/-/reactstrap-6.5.0-tmp1.tgz",
     "rxjs": "^6.3.3",
+    "sanitize-html": "^1.20.0",
     "sourcegraph": "link:packages/sourcegraph-extension-api",
     "string-score": "^1.0.1",
     "textarea-caret": "3.1.0",

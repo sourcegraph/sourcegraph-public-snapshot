@@ -197,6 +197,9 @@ export enum ContributableMenu {
     /** A directory page (including for the root directory of a repository). */
     DirectoryPage = 'directory/page',
 
+    /** The hover tooltip. */
+    Hover = 'hover',
+
     /** The panel toolbar. */
     PanelToolbar = 'panel/toolbar',
 
