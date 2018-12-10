@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
@@ -33,6 +34,11 @@ export interface ActionItemProps {
      * Whether to set the disabled attribute on the element when execution is started and not yet finished.
      */
     disabledDuringExecution?: boolean
+
+    /**
+     * Whether to show an animated loading spinner when execution is started and not yet finished.
+     */
+    showLoadingSpinnerDuringExecution?: boolean
 
     /** Instead of showing the icon and/or title, show this element. */
     title?: React.ReactElement<any>
@@ -125,11 +131,15 @@ export class ActionItem extends React.PureComponent<Props, State> {
             tooltip = this.props.action.description
         }
 
+        const showLoadingSpinner = this.props.showLoadingSpinnerDuringExecution && this.state.actionOrError === LOADING
+
         return (
             <LinkOrButton
                 data-tooltip={tooltip}
                 disabled={this.props.disabledDuringExecution && this.state.actionOrError === LOADING}
-                className={this.props.className}
+                className={`action-item ${this.props.className || ''} ${
+                    showLoadingSpinner ? 'action-item--loading' : ''
+                }`}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
                 to={
@@ -138,7 +148,18 @@ export class ActionItem extends React.PureComponent<Props, State> {
                 }
                 onSelect={this.runAction}
             >
-                {content}
+                <div
+                    className={`action-item__content d-flex align-items-center ${
+                        this.props.variant === 'actionItem' ? 'justify-content-center' : ''
+                    }`}
+                >
+                    {content}
+                </div>
+                {showLoadingSpinner && (
+                    <div className="action-item__loader">
+                        <LoadingSpinner className="icon-inline" />
+                    </div>
+                )}
             </LinkOrButton>
         )
     }
