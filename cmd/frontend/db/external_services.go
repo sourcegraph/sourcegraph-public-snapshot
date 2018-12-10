@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -13,7 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type externalServices struct{}
@@ -220,7 +223,97 @@ func (c *externalServices) ListPhabricatorConnections(ctx context.Context) ([]*s
 	return connections, nil
 }
 
+// migrateOnce ensures that the migration is only attempted
+// once per frontend instance (to avoid unnecessary queries).
+var migrateOnce sync.Once
+
+// migrateJsonConfigToExternalServices performs a one time migration to populate
+// the new external_services database table with relavant entries in the site config.
+// It is idempotent.
+//
+// This migration can be deleted as soon as (whichever happens first):
+//   - All customers have updated to 3.0 or newer.
+//   - 3 months after 3.0 is released.
+func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Context) {
+	if !conf.ExternalServicesEnabled() {
+		return
+	}
+
+	migrateOnce.Do(func() {
+		// Run in a transaction because we are racing with other frontend replicas.
+		err := dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
+			var count int
+			if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM external_services`).Scan(&count); err != nil {
+				return err
+			}
+			if count > 0 {
+				// Migration already done
+				return nil
+			}
+
+			migrate := func(config interface{}, name string) error {
+				// Marshaling and unmarshaling is a lazy way to get around
+				// Go's lack of covariance for slice types.
+				buf, err := json.Marshal(config)
+				if err != nil {
+					return err
+				}
+				var configs []interface{}
+				if err := json.Unmarshal(buf, &configs); err != nil {
+					return nil
+				}
+
+				for i, config := range configs {
+					jsonConfig, err := json.MarshalIndent(config, "", "  ")
+					if err != nil {
+						return err
+					}
+					if err := c.Create(ctx, &types.ExternalService{
+						Kind:        strings.ToUpper(name),
+						DisplayName: fmt.Sprintf("Migrated %s %d", name, i+1),
+						Config:      string(jsonConfig),
+					}); err != nil {
+						return err
+					}
+				}
+				return nil
+			}
+
+			if err := migrate(conf.Get().AwsCodeCommit, "AWSCodeCommit"); err != nil {
+				return err
+			}
+
+			if err := migrate(conf.Get().BitbucketServer, "BitbucketServer"); err != nil {
+				return err
+			}
+
+			if err := migrate(conf.Get().Github, "GitHub"); err != nil {
+				return err
+			}
+
+			if err := migrate(conf.Get().Gitlab, "GitLab"); err != nil {
+				return err
+			}
+
+			if err := migrate(conf.Get().Gitolite, "Gitolite"); err != nil {
+				return err
+			}
+
+			if err := migrate(conf.Get().Phabricator, "Phabricator"); err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			log15.Error("migrate transaction failed", "err", err)
+		}
+	})
+}
+
 func (c *externalServices) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
+	c.migrateJsonConfigToExternalServices(ctx)
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at
 		FROM external_services
