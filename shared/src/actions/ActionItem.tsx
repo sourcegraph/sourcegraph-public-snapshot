@@ -9,7 +9,7 @@ import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
-import { asError, ErrorLike } from '../util/errors'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
 export interface ActionItemProps {
     /**
@@ -40,6 +40,20 @@ export interface ActionItemProps {
      */
     showLoadingSpinnerDuringExecution?: boolean
 
+    /**
+     * Whether to show the error (if any) from executing the command inline on this component and NOT in the global
+     * notifications UI component.
+     *
+     * This inline error display behavior is intended for actions that are scoped to a particular component. If the
+     * error were displayed in the global notifications UI component, it might not be clear which of the many
+     * possible scopes the error applies to.
+     *
+     * For example, the hover actions ("Go to definition", "Find references", etc.) use showInlineError == true
+     * because those actions are scoped to a specific token in a file. The command palette uses showInlineError ==
+     * false because it is a global UI component (and because showing tooltips on menu items would look strange).
+     */
+    showInlineError?: boolean
+
     /** Instead of showing the icon and/or title, show this element. */
     title?: React.ReactElement<any>
 }
@@ -66,7 +80,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
             this.commandExecutions
                 .pipe(
                     mergeMap(params =>
-                        from(this.props.extensionsController.executeCommand(params)).pipe(
+                        from(this.props.extensionsController.executeCommand(params, this.props.showInlineError)).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
                             map(c => ({ actionOrError: c })),
@@ -87,7 +101,16 @@ export class ActionItem extends React.PureComponent<Props, State> {
         // If the tooltip changes while it's visible, we need to force-update it to show the new value.
         const prevTooltip = prevProps.action.actionItem && prevProps.action.actionItem.description
         const tooltip = this.props.action.actionItem && this.props.action.actionItem.description
-        if (prevTooltip !== tooltip) {
+        const descriptionTooltipChanged = prevTooltip !== tooltip
+
+        const errorTooltipChanged =
+            this.props.showInlineError &&
+            (isErrorLike(prevState.actionOrError) !== isErrorLike(this.state.actionOrError) ||
+                (isErrorLike(prevState.actionOrError) &&
+                    isErrorLike(this.state.actionOrError) &&
+                    prevState.actionOrError.message !== this.state.actionOrError.message))
+
+        if (descriptionTooltipChanged || errorTooltipChanged) {
             this.props.platformContext.forceUpdateTooltip()
         }
     }
@@ -131,11 +154,15 @@ export class ActionItem extends React.PureComponent<Props, State> {
 
         return (
             <LinkOrButton
-                data-tooltip={tooltip}
+                data-tooltip={
+                    this.props.showInlineError && isErrorLike(this.state.actionOrError)
+                        ? `Error: ${this.state.actionOrError.message}`
+                        : tooltip
+                }
                 disabled={this.props.disabledDuringExecution && this.state.actionOrError === LOADING}
                 className={`action-item ${this.props.className || ''} ${
                     showLoadingSpinner ? 'action-item--loading' : ''
-                }`}
+                } ${this.props.variant === 'actionItem' ? 'action-item--variant-action-item' : ''}`}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
                 to={
@@ -144,13 +171,9 @@ export class ActionItem extends React.PureComponent<Props, State> {
                 }
                 onSelect={this.runAction}
             >
-                <div
-                    className={`action-item__content d-flex align-items-center ${
-                        this.props.variant === 'actionItem' ? 'justify-content-center' : ''
-                    }`}
-                >
-                    {content}
-                </div>
+                {/* Use custom CSS classes instead of Bootstrap CSS classes because this component is also
+                 used in the browser extension, which doesn't necessarily have Bootstrap CSS classes defined. */}
+                <div className="action-item__content">{content}</div>
                 {showLoadingSpinner && (
                     <div className="action-item__loader">
                         <LoadingSpinner className="icon-inline" />
