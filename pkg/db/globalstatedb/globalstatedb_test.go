@@ -1,10 +1,14 @@
 package globalstatedb
 
 import (
+	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestGet(t *testing.T) {
@@ -36,6 +40,26 @@ func TestGenerateRandomPassword(t *testing.T) {
 	}
 	if pw == pw2 {
 		t.Fatal("generated passwords must be random")
+	}
+}
+
+func TestBcryptHashTime(t *testing.T) {
+	plaintext, err := generateRandomPassword()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	passwordBcrypt, err := bcrypt.GenerateFromPassword([]byte(plaintext), bcryptCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	attempt := strings.Repeat("h", 128)
+	start := time.Now()
+	err = bcrypt.CompareHashAndPassword(passwordBcrypt, []byte(attempt))
+	fmt.Println(time.Since(start))
+	if err == nil {
+		t.Fatal("expected error since password is not correct")
 	}
 }
 
