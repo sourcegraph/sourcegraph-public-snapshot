@@ -101,6 +101,7 @@ export class MonacoEditor extends React.Component<Props, {}> {
         const model = monaco.editor.createModel('', 'json', modelUri)
 
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+            allowComments: true,
             validate: true,
             schemas: [
                 {

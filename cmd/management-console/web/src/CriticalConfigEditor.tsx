@@ -54,7 +54,7 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
 
         // Load the initial critical config.
         this.subscriptions.add(
-            ajax('/get')
+            ajax('/api/get')
                 .pipe(delay(DEBUG_LOADING_STATE_DELAY))
                 .subscribe(resp => {
                     this.setState({
@@ -97,7 +97,7 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
     private onDidSave = () => {
         this.subscriptions.add(
             ajax({
-                url: '/update',
+                url: '/api/update',
                 method: 'POST',
                 body: JSON.stringify({
                     LastID: this.state.criticalConfig.ID,
