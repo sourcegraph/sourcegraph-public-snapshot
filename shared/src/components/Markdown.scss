@@ -72,16 +72,18 @@
     }
 
     &.search-result-match__markdown {
-        table,
-        th,
-        td {
-            border: none;
-        }
-
-        code,
-        pre {
-            background-color: transparent;
-            padding: 0;
+        &.markdown {
+            table,
+            th,
+            td {
+                border: none;
+                padding: 0;
+            }
+            code,
+            pre {
+                background-color: transparent;
+                padding: 0;
+            }
         }
     }
 }
@@ -111,14 +113,6 @@
         blockquote {
             color: #6a737d;
             border-left-color: #dfe2e5;
-        }
-
-        &.search-result-match__markdown {
-            code,
-            pre {
-                background-color: transparent;
-                padding: 0;
-            }
         }
     }
 }

@@ -1,5 +1,4 @@
 import { decode } from 'he'
-import _ from 'lodash'
 import marked from 'marked'
 import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'

@@ -1,12 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { decode } from 'he'
-import _ from 'lodash'
+import { isEqual } from 'lodash'
 import { range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
-import { catchError, filter, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -56,6 +56,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             combineLatest(this.propsChanges, this.visibilityChanges)
                 .pipe(
                     filter(([, isVisible]) => isVisible),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
                     switchMap(
                         ([props]) =>
                             props.item.body.html
@@ -102,6 +103,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     public componentDidUpdate(): void {
+        this.propsChanges.next(this.props)
         this.highlightNodes()
     }
 
