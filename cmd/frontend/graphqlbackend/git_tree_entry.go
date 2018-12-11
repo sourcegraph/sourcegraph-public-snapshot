@@ -113,7 +113,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range githubs {
-		repoSources = append(repoSources, reposource.GitHub{c})
+		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c})
 	}
 
 	gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
@@ -121,7 +121,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range gitlabs {
-		repoSources = append(repoSources, reposource.GitLab{c})
+		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c})
 	}
 
 	bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
@@ -129,7 +129,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range bitbuckets {
-		repoSources = append(repoSources, reposource.BitbucketServer{c})
+		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c})
 	}
 
 	awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
@@ -137,7 +137,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range awscodecommits {
-		repoSources = append(repoSources, reposource.AWS{c})
+		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c})
 	}
 
 	repoSources = append(repoSources, reposource.GetReposListInstance())
@@ -147,11 +147,13 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range gitolites {
-		repoSources = append(repoSources, reposource.Gitolite{c})
+		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c})
 	}
 
 	// Fallback for github.com
-	repoSources = append(repoSources, reposource.GitHub{&schema.GitHubConnection{Url: "https://github.com"}})
+	repoSources = append(repoSources, reposource.GitHub{
+		GitHubConnection: &schema.GitHubConnection{Url: "https://github.com"},
+	})
 	for _, ch := range repoSources {
 		repoName, err := ch.CloneURLToRepoName(cloneURL)
 		if err != nil {
