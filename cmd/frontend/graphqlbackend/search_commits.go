@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/xeonx/timeago"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -295,13 +295,12 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 
 		commitIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4="
 		results[i].label = createLabel(rawResult, commitResolver)
-		date := rawResult.Commit.Author.Date
+		commitHash := string(rawResult.Commit.ID)
 		if len(rawResult.Commit.ID) > 7 {
-			results[i].detail += string(rawResult.Commit.ID)[:7]
-		} else {
-			results[i].detail += string(rawResult.Commit.ID)
+			commitHash = string(rawResult.Commit.ID)[:7]
 		}
-		results[i].detail = "[`" + results[i].detail + "` " + approximateTimeSinceCommit(date) + "](" + commitResolver.URL() + ")"
+		timeagoConfig := timeago.NoMax(timeago.English)
+		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), commitResolver.URL())
 		results[i].url = commitResolver.URL()
 		results[i].icon = commitIcon
 		match := &searchResultMatchResolver{body: matchBody, highlights: highlights, url: commitResolver.URL()}
@@ -357,93 +356,6 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) stri
 	}
 
 	return strings.Join(finalLines, "\n")
-}
-
-// Returns a string with the apporximate time since the commit was created.
-// Implementation adapted from https://stackoverflow.com/a/36531443.
-func approximateTimeSinceCommit(t time.Time) string {
-	now := time.Now()
-
-	if t.Location() != now.Location() {
-		now = now.In(t.Location())
-	}
-	if t.After(now) {
-		t, now = now, t
-	}
-	yearCommit, monthCommit, dayCommit := t.Date()
-	yearNow, monthNow, dayNow := now.Date()
-
-	hourCommit, minuteCommitt, secondCommit := t.Clock()
-	hourNow, minuteNow, secondNow := now.Clock()
-
-	year := yearNow - yearCommit
-	month := monthNow - monthCommit
-	day := dayNow - dayCommit
-	hour := hourNow - hourCommit
-	min := minuteNow - minuteCommitt
-	sec := secondNow - secondCommit
-
-	// Normalize negative values
-	if sec < 0 {
-		sec += 60
-		min--
-	}
-	if min < 0 {
-		min += 60
-		hour--
-	}
-	if hour < 0 {
-		hour += 24
-		day--
-	}
-	if day < 0 {
-		// Days in month
-		t := time.Date(yearCommit, monthCommit, 32, 0, 0, 0, 0, time.UTC)
-		day += 32 - t.Day()
-		month--
-	}
-	if month < 0 {
-		month += 12
-		year--
-	}
-
-	plural := ""
-	if year >= 1 {
-		if year > 1 {
-			plural = "s"
-		}
-		return fmt.Sprintf("over %v year%s ago", year, plural)
-	} else if month >= 1 {
-		if day >= 1 {
-			month++
-		}
-		if month > 1 {
-			plural = "s"
-		}
-		return fmt.Sprintf("%v month%s ago", month, plural)
-	} else if day >= 1 {
-		if day > 1 {
-			plural = "s"
-		}
-		return fmt.Sprintf("%v day%s ago", day, plural)
-	} else if hour >= 1 {
-		if min >= 1 {
-			hour++
-		}
-		if hour > 1 {
-			plural = "s"
-		}
-		return fmt.Sprintf("about %v hour%s ago", hour, plural)
-	} else if min >= 1 {
-		if sec >= 1 {
-			min++
-		}
-		if min > 1 {
-			plural = "s"
-		}
-		return fmt.Sprintf("%v minute%s ago", min, plural)
-	}
-	return "just now"
 }
 
 func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) string {
