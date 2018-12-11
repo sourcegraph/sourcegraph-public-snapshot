@@ -60,9 +60,9 @@ type cloneURLResolver struct {
 	to   string
 }
 
-// customCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
+// CustomCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
-func customCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
+func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
 	<-cloneURLResolversReady
 	for _, r := range cloneURLResolvers.Load().([]*cloneURLResolver) {
 		if name := mapString(r.from, cloneURL, r.to); name != "" {

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -62,7 +61,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		}
 		return repositoryByIDInt32(ctx, repo.ID)
 	case gitCloneURL != nil:
-		repositoryName, err := reposource.CloneURLToRepoName(*gitCloneURL)
+		repositoryName, err := cloneURLToRepoName(ctx, *gitCloneURL)
 		if err != nil {
 			return nil, err
 		}

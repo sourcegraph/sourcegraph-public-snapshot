@@ -222,6 +222,36 @@ func (c *externalServices) listConfigs(ctx context.Context, kind string, result 
 	return json.Unmarshal(buf, result)
 }
 
+// ListAWSCodeCommitConnections returns a list of AWSCodeCommit configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListAWSCodeCommitConnections(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().AwsCodeCommit, nil
+	}
+
+	var connections []*schema.AWSCodeCommitConnection
+	if err := c.listConfigs(ctx, "AWSCODECOMMIT", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
+// ListBitbucketServerConnections returns a list of BitbucketServer configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().BitbucketServer, nil
+	}
+
+	var connections []*schema.BitbucketServerConnection
+	if err := c.listConfigs(ctx, "BITBUCKET", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
 // ListGitHubConnections returns a list of GitHubConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
@@ -247,6 +277,21 @@ func (c *externalServices) ListGitLabConnections(ctx context.Context) ([]*schema
 
 	var connections []*schema.GitLabConnection
 	if err := c.listConfigs(ctx, "GITLAB", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
+// ListGitoliteConnections returns a list of GitoliteConnection configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListGitoliteConnections(ctx context.Context) ([]*schema.GitoliteConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().Gitolite, nil
+	}
+
+	var connections []*schema.GitoliteConnection
+	if err := c.listConfigs(ctx, "GITOLITE", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil

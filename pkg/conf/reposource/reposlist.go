@@ -32,7 +32,7 @@ func init() {
 	}()
 }
 
-func getReposListInstance() *reposList {
+func GetReposListInstance() *reposList {
 	<-reposListInstanceReady
 	return reposListInstance.Load().(*reposList)
 }
@@ -43,7 +43,7 @@ type reposList struct {
 	cloneURLToName map[string]string
 }
 
-var _ repoSource = (*reposList)(nil)
+var _ RepoSource = (*reposList)(nil)
 
 func newReposList(repos []*schema.Repository) *reposList {
 	cloneURLToName := map[string]string{}
@@ -55,7 +55,7 @@ func newReposList(repos []*schema.Repository) *reposList {
 	}
 }
 
-func (c *reposList) cloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+func (c *reposList) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
 	return api.RepoName(c.cloneURLToName[normalizeCloneURL(cloneURL)]), nil
 }
 

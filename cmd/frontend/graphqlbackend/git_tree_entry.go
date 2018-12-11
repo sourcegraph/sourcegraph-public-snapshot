@@ -8,13 +8,14 @@ import (
 	"path/filepath"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // gitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
@@ -40,9 +41,9 @@ func (r *gitTreeEntryResolver) Repository() *repositoryResolver { return r.commi
 
 func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
-func (r *gitTreeEntryResolver) URL() string {
+func (r *gitTreeEntryResolver) URL(ctx context.Context) string {
 	if submodule := r.Submodule(); submodule != nil {
-		repoName, err := cloneURLToRepoName(submodule.URL())
+		repoName, err := cloneURLToRepoName(ctx, submodule.URL())
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL())
 			return ""
@@ -83,8 +84,8 @@ func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 	return nil
 }
 
-func cloneURLToRepoName(cloneURL string) (string, error) {
-	repoName, err := reposource.CloneURLToRepoName(cloneURL)
+func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
+	repoName, err := reposourceCloneURLToRepoName(ctx, cloneURL)
 	if err != nil {
 		return "", err
 	}
@@ -94,6 +95,75 @@ func cloneURLToRepoName(cloneURL string) (string, error) {
 	return string(repoName), nil
 }
 
+// reposourceCloneURLToRepoName maps a Git clone URL (format documented here:
+// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
+// exists a code host configuration that matches the clone URL. Implicitly, it includes a code host
+// configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
+// error if a matching code host could not be found. This function does not actually check the code
+// host to see if the repository actually exists.
+func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoName api.RepoName, err error) {
+	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
+		return repoName, nil
+	}
+
+	var repoSources []reposource.RepoSource
+
+	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, c := range githubs {
+		repoSources = append(repoSources, reposource.GitHub{c})
+	}
+
+	gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, c := range gitlabs {
+		repoSources = append(repoSources, reposource.GitLab{c})
+	}
+
+	bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, c := range bitbuckets {
+		repoSources = append(repoSources, reposource.BitbucketServer{c})
+	}
+
+	awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, c := range awscodecommits {
+		repoSources = append(repoSources, reposource.AWS{c})
+	}
+
+	repoSources = append(repoSources, reposource.GetReposListInstance())
+
+	gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, c := range gitolites {
+		repoSources = append(repoSources, reposource.Gitolite{c})
+	}
+
+	// Fallback for github.com
+	repoSources = append(repoSources, reposource.GitHub{&schema.GitHubConnection{Url: "https://github.com"}})
+	for _, ch := range repoSources {
+		repoName, err := ch.CloneURLToRepoName(cloneURL)
+		if err != nil {
+			return "", err
+		}
+		if repoName != "" {
+			return repoName, nil
+		}
+	}
+
+	return "", nil
+}
 func createFileInfo(path string, isDir bool) os.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
