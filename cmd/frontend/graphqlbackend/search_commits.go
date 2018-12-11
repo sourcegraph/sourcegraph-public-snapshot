@@ -443,7 +443,7 @@ func approximateTimeSinceCommit(t time.Time) string {
 		}
 		return fmt.Sprintf("%v minute%s ago", min, plural)
 	}
-	return "Just now"
+	return "just now"
 }
 
 func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) string {
