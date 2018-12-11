@@ -178,6 +178,13 @@ export function mergeContributions(contributions: Contributions[]): Contribution
                 }
             }
         }
+        if (c.searchFilters) {
+            if (!merged.searchFilters) {
+                merged.searchFilters = [...c.searchFilters]
+            } else {
+                merged.searchFilters = [...merged.searchFilters, ...c.searchFilters]
+            }
+        }
     }
     return merged
 }
