@@ -3,6 +3,7 @@ package confdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -176,20 +177,19 @@ func createIfUpToDate(ctx context.Context, tx queryable, configType configType, 
 	if err != nil {
 		return nil, err
 	}
-
-	creatorIsUpToDate := latest != nil && lastID != nil && latest.ID == *lastID
-	if latest == nil || creatorIsUpToDate {
-		err := tx.QueryRowContext(
-			ctx,
-			"INSERT INTO critical_and_site_config(type, contents) VALUES($1, $2) RETURNING id, created_at, updated_at",
-			configType, new.Contents,
-		).Scan(&new.ID, &new.CreatedAt, &new.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		latest = &new
+	if latest != nil && lastID != nil && latest.ID != *lastID {
+		return nil, errors.New("someone else has already applied a newer edit")
 	}
-	return latest, nil
+
+	err = tx.QueryRowContext(
+		ctx,
+		"INSERT INTO critical_and_site_config(type, contents) VALUES($1, $2) RETURNING id, created_at, updated_at",
+		configType, new.Contents,
+	).Scan(&new.ID, &new.CreatedAt, &new.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &new, nil
 }
 
 func getLatest(ctx context.Context, tx queryable, configType configType) (*Config, error) {
