@@ -123,7 +123,7 @@ require (
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
 	golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
-	golang.org/x/tools v0.0.0-20181017151246-e94054f4104a
+	golang.org/x/tools v0.0.0-20181211222715-59cd96f77e7e
 	google.golang.org/appengine v1.2.0 // indirect
 	google.golang.org/grpc v1.15.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
