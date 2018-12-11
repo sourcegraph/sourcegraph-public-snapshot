@@ -108,6 +108,12 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 
 	var repoSources []reposource.RepoSource
 
+	// The following code makes serial database calls.
+	// Ideally these could be done in parallel, but the table is small
+	// and I don't think real world perf is going to be bad.
+	// It is also unclear to me if deterministic order is important here (it seems like it might be),
+	// so if this is parallalized in the future, consider whether order is important.
+
 	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
 	if err != nil {
 		return "", err
