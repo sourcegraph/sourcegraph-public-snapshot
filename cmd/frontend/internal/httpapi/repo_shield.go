@@ -16,7 +16,7 @@ func badgeValue(r *http.Request) (int, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "GetRepoAndRev")
 	}
-	totalRefs, err := backend.Defs.TotalRefs(r.Context(), repo.Name)
+	totalRefs, err := backend.BackcompatBackendDefsTotalRefs(r.Context(), repo.Name)
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}
@@ -38,15 +38,11 @@ func badgeValueFmt(totalRefs int) string {
 }
 
 func serveRepoShield(w http.ResponseWriter, r *http.Request) error {
-	value, err := badgeValue(r)
-	if err != nil {
-		return err
-	}
 	return writeJSON(w, &struct {
 		// Note: Named lowercase because the JSON is consumed by shields.io JS
 		// code.
 		Value string `json:"value"`
 	}{
-		Value: badgeValueFmt(value),
+		Value: "?",
 	})
 }

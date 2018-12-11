@@ -43,6 +43,12 @@ type Mutation {
     updateOrganization(id: ID!, displayName: String): Org!
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
+    # Adds a external service. Only site admins may perform this mutation.
+    addExternalService(input: AddExternalServiceInput!): ExternalService!
+    # Updates a external service. Only site admins may perform this mutation.
+    updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
+    # Delete an external service. Only site admins may perform this mutation.
+    deleteExternalService(externalService: ID!): EmptyResponse!
     # Enables or disables a repository. A disabled repository is only
     # accessible to site admins and never appears in search results.
     #
@@ -288,12 +294,37 @@ type Mutation {
     reloadSite: EmptyResponse
     # Submits a user satisfaction (NPS) survey.
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
+    # Submits a request for a Sourcegraph Enterprise trial license.
+    requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
+    # Clears the management console plaintext password forever. Only site
+    # admins can perform this action.
+    clearManagementConsolePlaintextPassword: EmptyResponse
     # Mutations that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomMutation!
+}
+
+# A new external service.
+input AddExternalServiceInput {
+    # The kind of the external service.
+    kind: ExternalServiceKind!
+    # The display name of the external service.
+    displayName: String!
+    # The JSON configuration of the external service.
+    config: String!
+}
+
+# Fields to update for an existing external service.
+input UpdateExternalServiceInput {
+    # The id of the external service to update.
+    id: ID!
+    # The updated display name, if provided.
+    displayName: String
+    # The updated config, if provided.
+    config: String
 }
 
 # A selection within a file.
@@ -607,13 +638,22 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
-    # Looks up a repository by name.
+    # Looks up a repository by either name or cloneURL.
     repository(
-        # The name, for example "github.com/gorilla/mux".
+        # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
+        # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
+        # by checking if there exists a code host configuration that matches the clone URL.
+        # Will not actually check the code host to see if the repository actually exists.
+        cloneURL: String
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
+    # Lists all external services.
+    externalServices(
+        # Returns the first n repositories from the list.
+        first: Int
+    ): ExternalServiceConnection!
     # List all repositories.
     repositories(
         # Returns the first n repositories from the list.
@@ -636,10 +676,6 @@ type Query {
         indexed: Boolean = true
         # Include repositories that do not have a text search index.
         notIndexed: Boolean = true
-        # Filter for repositories that have been indexed for cross-repository code intelligence.
-        ciIndexed: Boolean = false
-        # Filter for repositories that have not been indexed for cross-repository code intelligence.
-        notCIIndexed: Boolean = false
         # Sort field.
         orderBy: RepositoryOrderBy = REPOSITORY_NAME
         # Sort direction.
@@ -713,6 +749,8 @@ type Query {
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
+    # EXPERIMENTAL: Syntax highlights a code string.
+    highlightCode(code: String!, fuzzyLanguage: String!, disableTimeout: Boolean!, isLightTheme: Boolean!): String!
     # Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
     # be a site (which has global settings), an organization, or a user.
     settingsSubject(id: ID!): SettingsSubject
@@ -781,6 +819,42 @@ type Search {
 
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository
+
+# An object representing a markdown string.
+type Markdown {
+    # The raw markdown string.
+    text: String!
+    # HTML for the rendered markdown string, or null if there is no HTML representation provided.
+    # If specified, clients should render this directly.
+    html: String!
+}
+
+# A search result. Every type of search result, except FileMatch, must implement this interface.
+interface GenericSearchResultInterface {
+    # URL to an icon that is displayed with every search result.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string that is rendered less prominently.
+    detail: Markdown!
+    # A list of matches in this search result.
+    matches: [SearchResultMatch!]!
+}
+
+# A match in a search result. Matches make up the body content of a search result.
+type SearchResultMatch {
+    # URL for the individual result match.
+    url: String!
+    # A markdown string containing the preview contents of the result match.
+    body: Markdown!
+    # A list of highlights that specify locations of matches of the query in the body. Each highlight is
+    # a line number, character offset, and length. Currently, highlights are only displayed on match bodies
+    # that are code blocks. If the result body is a code block, exclude the markdown code fence lines in
+    # the line and character count. Leave as an empty list if no highlights are available.
+    highlights: [Highlight!]!
+}
 
 # Search results.
 type SearchResults {
@@ -913,7 +987,17 @@ type Diff {
 }
 
 # A search result that is a Git commit.
-type CommitSearchResult {
+type CommitSearchResult implements GenericSearchResultInterface {
+    # Base64 data uri to an icon.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
+    # The result previews of the result.
+    matches: [SearchResultMatch!]!
     # The commit that matched the search query.
     commit: GitCommit!
     # The ref names of the commit.
@@ -952,38 +1036,42 @@ type Highlight {
     length: Int!
 }
 
-# Ref fields.
-type RefFields {
-    # The ref location.
-    refLocation: RefLocation
-    # The URI.
-    uri: URI
+# A list of external services.
+type ExternalServiceConnection {
+    # A list of external services.
+    nodes: [ExternalService!]!
+
+    # The total number of external services in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
-# A URI.
-type URI {
-    # The host.
-    host: String!
-    # The fragment.
-    fragment: String!
-    # The path.
-    path: String!
-    # The query.
-    query: String!
-    # The scheme.
-    scheme: String!
+# A specific kind of external service.
+enum ExternalServiceKind {
+    AWSCODECOMMIT
+    BITBUCKETSERVER
+    GITHUB
+    GITLAB
+    GITOLITE
+    PHABRICATOR
 }
 
-# A ref location.
-type RefLocation {
-    # The starting line number.
-    startLineNumber: Int!
-    # The starting column.
-    startColumn: Int!
-    # The ending line number.
-    endLineNumber: Int!
-    # The ending column.
-    endColumn: Int!
+# A configured external service.
+type ExternalService implements Node {
+    # The external service's unique ID.
+    id: ID!
+    # The kind of external service.
+    kind: ExternalServiceKind!
+    # The display name of the external service.
+    displayName: String!
+    # The JSON configuration of the external service.
+    config: String!
+    # When the external service was created.
+    createdAt: String!
+    # When the external service was last updated.
+    updatedAt: String!
 }
 
 # A list of repositories.
@@ -1001,7 +1089,7 @@ type RepositoryConnection {
 }
 
 # A repository is a Git source control repository that is mirrored from some origin code host.
-type Repository implements Node {
+type Repository implements Node & GenericSearchResultInterface {
     # The repository's unique ID.
     id: ID!
     # The repository's name, as a path with one or more components. It conventionally consists of
@@ -1046,8 +1134,6 @@ type Repository implements Node {
     externalRepository: ExternalRepository
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
-    # The commit that was last indexed for cross-references, if any.
-    lastIndexedRevOrLatest: GitCommit
     # Information about the text search index for this repository, or null if text search indexing
     # is not enabled or supported for this repository.
     textSearchIndex: RepositoryTextSearchIndex
@@ -1110,6 +1196,14 @@ type Repository implements Node {
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
+    # Base64 data uri to an icon.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
+    # The result previews of the result.
+    matches: [SearchResultMatch!]!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -1804,8 +1898,6 @@ interface File2 {
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Returns dependency references for the file.
-    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Symbols defined in this file.
     symbols(
         # Returns the first n symbols from the list.
@@ -1860,8 +1952,6 @@ type GitBlob implements TreeEntry & File2 {
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Returns dependency references for the blob.
-    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # Symbols defined in this blob.
@@ -1922,48 +2012,6 @@ type LineMatch {
     limitHit: Boolean!
 }
 
-# Dependency references.
-type DependencyReferences {
-    # The dependency reference data.
-    dependencyReferenceData: DependencyReferencesData!
-    # The repository data.
-    repoData: RepoDataMap!
-}
-
-# A repository data map.
-type RepoDataMap {
-    # The repositories.
-    repos: [Repository!]!
-    # The repository IDs.
-    repoIds: [Int!]!
-}
-
-# Dependency references data.
-type DependencyReferencesData {
-    # The references.
-    references: [DependencyReference!]!
-    # The location.
-    location: DepLocation!
-}
-
-# A dependency reference.
-type DependencyReference {
-    # The dependency data.
-    dependencyData: String!
-    # The repository ID.
-    repoId: Int!
-    # The hints.
-    hints: String!
-}
-
-# A dependency location.
-type DepLocation {
-    # The location.
-    location: String!
-    # The symbol.
-    symbol: String!
-}
-
 # A hunk.
 type Hunk {
     # The startLine.
@@ -2001,8 +2049,6 @@ type User implements Node & SettingsSubject {
     id: ID!
     # The user's username.
     username: String!
-    # The unique numeric ID for the user.
-    sourcegraphID: Int! @deprecated(reason: "use id instead")
     # The user's primary email address.
     #
     # Only the user and site admins can access this field.
@@ -2082,6 +2128,10 @@ type User implements Node & SettingsSubject {
     #
     # FOR INTERNAL USE ONLY.
     urlForSiteAdminBilling: String
+    # The unique numeric ID for the user.
+    #
+    # FOR INTERNAL USE ONLY.
+    databaseID: Int!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2211,6 +2261,9 @@ type OrganizationMembershipConnection {
 type UserEmail {
     # The email address.
     email: String!
+    # Whether the email address is the user's primary email address. Currently this is defined as the earliest
+    # email address associated with the user, preferring verified emails to unverified emails.
+    isPrimary: Boolean!
     # Whether the email address has been verified by the user.
     verified: Boolean!
     # Whether the email address is pending verification.
@@ -2634,6 +2687,20 @@ type Site implements SettingsSubject {
         # Months of history.
         months: Int
     ): SiteUsageStatistics!
+    # Information about this site's management console.
+    #
+    # Only site admins may retrieve this information.
+    managementConsoleState: ManagementConsoleState!
+}
+
+# Information about this site's management console.
+#
+# Only site admins may retrieve this information.
+type ManagementConsoleState {
+    # The plaintext password of the management console, which is automatically
+    # generated. This can only be retrieved until the admin clears it, after
+    # which it is impossible to retrieve.
+    plaintextPassword: String
 }
 
 # The configuration for a site.
@@ -2876,6 +2943,9 @@ type ProductSubscriptionStatus {
     # The date and time when the max number of user accounts that have been active on this Sourcegraph site for
     # the current license was reached. If no license is in use, returns an empty string.
     actualUserCountDate: String!
+    # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
+    # it is the user limit for instances without a license, or null if there is no limit.
+    maximumAllowedUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
 }
@@ -3401,6 +3471,8 @@ type PlanTier {
     unitAmount: Int!
     # The maximum number of users that this tier applies to.
     upTo: Int!
+    # The base fee that this tier applies to.
+    flatAmount: Int!
 }
 
 # The information about a product subscription that determines its price.

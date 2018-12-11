@@ -6,11 +6,11 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, switchMap, withLatestFrom } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage, HeroPageProps } from '../components/HeroPage'
 import { checkMirrorRepositoryConnection, setRepositoryEnabled } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
 interface Props {
     /** The name of the repository. */

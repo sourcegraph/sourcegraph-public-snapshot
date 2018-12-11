@@ -1,10 +1,11 @@
 import { concat, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import { refreshAuthenticatedUser } from '../auth'
-import { gql, mutateGraphQL } from '../backend/graphql'
+import { mutateGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
-import { createAggregateError } from '../util/errors'
 
 /**
  * Sends a GraphQL mutation to create an organization and returns an Observable that emits the new organization,

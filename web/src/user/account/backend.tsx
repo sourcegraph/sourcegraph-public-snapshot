@@ -1,9 +1,10 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL } from '../../backend/graphql'
+import { gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../../shared/src/util/errors'
+import { mutateGraphQL } from '../../backend/graphql'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createAggregateError } from '../../util/errors'
 
 interface UpdateUserOptions {
     username: string | null

@@ -14,7 +14,7 @@ import {
     take,
     toArray,
 } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { getContext } from './context'
 import { createAggregateError } from './errors'
 import { queryGraphQL } from './graphql'
@@ -149,7 +149,7 @@ export interface SearchOptions {
     query: string
 }
 
-export const fetchSuggestions = (options: SearchOptions, first: number) =>
+const fetchSuggestions = (options: SearchOptions, first: number) =>
     queryGraphQL({
         ctx: getContext({ repoKey: '', isRepoSpecific: false }),
         request: `
@@ -184,6 +184,7 @@ export const fetchSuggestions = (options: SearchOptions, first: number) =>
             // The browser extension API only takes 5 suggestions
             first,
         },
+        retry: false,
     }).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.search || !data.search.suggestions) {
@@ -253,6 +254,7 @@ export const fetchSymbols = (options: SearchOptions): Observable<GQL.ISymbol[]> 
         variables: {
             query: options.query,
         },
+        retry: false,
     }).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results || !data.search.results.results) {

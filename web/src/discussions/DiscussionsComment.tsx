@@ -8,12 +8,12 @@ import SecurityLockIcon from 'mdi-react/SecurityLockIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { Markdown } from '../components/Markdown'
+import { Markdown } from '../../../shared/src/components/Markdown'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { asError } from '../../../shared/src/util/errors'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
-import { asError } from '../util/errors'
 
 interface Props {
     comment: GQL.IDiscussionComment

@@ -17,13 +17,14 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
-import * as GQL from '../../../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
+import { gql } from '../../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
+import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../util/errors'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'

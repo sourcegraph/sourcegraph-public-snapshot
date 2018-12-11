@@ -1,8 +1,8 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { ResizablePanel } from '../panel/Panel'
-import { getModeFromPath } from '../util'
-import { formatHash, isLegacyFragment, parseHash } from '../util/url'
+import { getModeFromPath } from '../../../shared/src/languages'
+import { isLegacyFragment, parseHash } from '../../../shared/src/util/url'
+import { formatHash } from '../util/url'
 import { BlobPage } from './blob/BlobPage'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
@@ -87,11 +87,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                         context.repoHeaderContributionsLifecycleProps
                                     }
                                     settingsCascade={context.settingsCascade}
-                                    extensions={context.extensions}
-                                    extensionsOnRootsChange={context.extensionsOnRootsChange}
-                                    extensionsOnVisibleTextDocumentsChange={
-                                        context.extensionsOnVisibleTextDocumentsChange
-                                    }
+                                    platformContext={context.platformContext}
                                     extensionsController={context.extensionsController}
                                     location={context.location}
                                     history={context.history}
@@ -108,13 +104,12 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     filePath={context.match.params.filePath || ''}
                                     settingsCascade={context.settingsCascade}
                                     extensionsController={context.extensionsController}
-                                    extensions={context.extensions}
+                                    platformContext={context.platformContext}
                                     location={context.location}
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
                                 />
                             )}
-                            <ResizablePanel {...context} />
                         </div>
                     )}
                 </>

@@ -1,13 +1,11 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { ExtensionStatusPopover } from '../../../shared/src/app/ExtensionStatus'
-import { ExtensionsEnvironmentProps } from '../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { ExtensionStatusPopover } from '../../../shared/src/extensions/ExtensionStatus'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
 
-interface Props extends ExtensionsEnvironmentProps, ExtensionsControllerProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     location: H.Location
 }
 
@@ -28,9 +26,8 @@ export const GlobalDebug: React.FunctionComponent<Props> = props =>
                     <ExtensionStatusPopover
                         link={ExtensionLink}
                         location={props.location}
-                        loaderIcon={LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>}
-                        caretIcon={MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>}
                         extensionsController={props.extensionsController}
+                        platformContext={props.platformContext}
                     />
                 </li>
             </ul>

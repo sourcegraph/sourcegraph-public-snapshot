@@ -8,8 +8,8 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -130,7 +130,7 @@ func createCustomerID(ctx context.Context, userID int32) (string, error) {
 	}
 	custParams := &stripe.CustomerParams{
 		Params:      stripe.Params{Context: ctx},
-		Description: stripe.String(fmt.Sprintf("%s (%d)", user.Username(), user.SourcegraphID())),
+		Description: stripe.String(fmt.Sprintf("%s (%d)", user.Username(), user.DatabaseID())),
 	}
 
 	// Use the user's first verified email (if any).

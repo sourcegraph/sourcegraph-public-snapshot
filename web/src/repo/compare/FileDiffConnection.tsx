@@ -1,10 +1,10 @@
 import * as React from 'react'
-import { TextDocumentItem } from '../../../../shared/src/api/client/types/textDocument'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import { ViewComponentData } from '../../../../shared/src/api/client/model'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { getModeFromPath } from '../../../../shared/src/languages'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { Connection, FilteredConnection } from '../../components/FilteredConnection'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { getModeFromPath } from '../../util'
-import { ErrorLike, isErrorLike } from '../../util/errors'
 import { FileDiffNodeProps } from './FileDiffNode'
 
 class FilteredFileDiffConnection extends FilteredConnection<
@@ -15,7 +15,7 @@ class FilteredFileDiffConnection extends FilteredConnection<
         | 'head'
         | 'lineNumbers'
         | 'className'
-        | 'extensions'
+        | 'platformContext'
         | 'location'
         | 'history'
         | 'hoverifier'
@@ -23,7 +23,7 @@ class FilteredFileDiffConnection extends FilteredConnection<
     >
 > {}
 
-type Props = FilteredFileDiffConnection['props'] & ExtensionsDocumentsProps
+type Props = FilteredFileDiffConnection['props'] & ExtensionsControllerProps
 
 /**
  * Displays a list of file diffs.
@@ -41,25 +41,38 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         // API's support for diffs.
         const dummyText = ''
 
-        const visibleTextDocuments: TextDocumentItem[] = []
+        const visibleViewComponents: ViewComponentData[] = []
         if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
             for (const fileDiff of fileDiffsOrError.nodes) {
                 if (fileDiff.oldPath) {
-                    visibleTextDocuments.push({
-                        uri: `git://${nodeProps.base.repoPath}?${nodeProps.base.commitID}#${fileDiff.oldPath}`,
-                        languageId: getModeFromPath(fileDiff.oldPath),
-                        text: dummyText,
+                    visibleViewComponents.push({
+                        type: 'textEditor',
+                        item: {
+                            uri: `git://${nodeProps.base.repoPath}?${nodeProps.base.commitID}#${fileDiff.oldPath}`,
+                            languageId: getModeFromPath(fileDiff.oldPath),
+                            text: dummyText,
+                        },
+                        selections: [],
+                        isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
                     })
                 }
                 if (fileDiff.newPath) {
-                    visibleTextDocuments.push({
-                        uri: `git://${nodeProps.head.repoPath}?${nodeProps.head.commitID}#${fileDiff.newPath}`,
-                        languageId: getModeFromPath(fileDiff.newPath),
-                        text: dummyText,
+                    visibleViewComponents.push({
+                        type: 'textEditor',
+                        item: {
+                            uri: `git://${nodeProps.head.repoPath}?${nodeProps.head.commitID}#${fileDiff.newPath}`,
+                            languageId: getModeFromPath(fileDiff.newPath),
+                            text: dummyText,
+                        },
+                        selections: [],
+                        isActive: true,
                     })
                 }
             }
         }
-        this.props.extensionsOnVisibleTextDocumentsChange(visibleTextDocuments)
+        this.props.extensionsController.services.model.model.next({
+            ...this.props.extensionsController.services.model.model.value,
+            visibleViewComponents,
+        })
     }
 }

@@ -1,16 +1,15 @@
+import * as clientType from '@sourcegraph/extension-api-types'
 import * as assert from 'assert'
 import { take } from 'rxjs/operators'
 import { Range } from '../extension/types/range'
-import * as plain from '../protocol/plainTypes'
 import { integrationTestContext } from './helpers.test'
 
 describe('CodeEditor (integration)', () => {
     describe('setDecorations', () => {
         it('adds decorations', async () => {
-            const { clientController, extensionHost, ready } = await integrationTestContext()
+            const { services, extensionHost } = await integrationTestContext()
 
             // Set some decorations and check they are present on the client.
-            await ready
             const codeEditor = extensionHost.app.windows[0].visibleViewComponents[0]
             codeEditor.setDecorations(null, [
                 {
@@ -20,7 +19,7 @@ describe('CodeEditor (integration)', () => {
             ])
             await extensionHost.internal.sync()
             assert.deepStrictEqual(
-                await clientController.registries.textDocumentDecoration
+                await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
                     .toPromise(),
@@ -29,14 +28,14 @@ describe('CodeEditor (integration)', () => {
                         range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
                         backgroundColor: 'red',
                     },
-                ] as plain.TextDocumentDecoration[]
+                ] as clientType.TextDocumentDecoration[]
             )
 
             // Clear the decorations and ensure they are removed.
             codeEditor.setDecorations(null, [])
             await extensionHost.internal.sync()
             assert.deepStrictEqual(
-                await clientController.registries.textDocumentDecoration
+                await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
                     .toPromise(),

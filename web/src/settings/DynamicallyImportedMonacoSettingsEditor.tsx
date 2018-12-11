@@ -5,10 +5,10 @@ import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { from as fromPromise, Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { SaveToolbar } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -16,7 +16,10 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props
-    extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'isLightTheme'> {
+    extends Pick<
+            _monacoSettingsEditorModule.Props,
+            'id' | 'readOnly' | 'height' | 'jsonSchemaId' | 'extraSchemas' | 'isLightTheme'
+        > {
     value: string
 
     actions?: EditorAction[]

@@ -1,5 +1,5 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { formatUserCount } from '../../productSubscription/helpers'
 
 /**
@@ -18,11 +18,11 @@ export const ProductSubscriptionLabel: React.FunctionComponent<{
     planField?: 'name' | 'nameWithBrand'
 
     className?: string
-}> = ({ productSubscription, planField = 'nameWithBrand', className = '' }) => (
+}> = ({ productSubscription, planField, className = '' }) => (
     <span className={className}>
         {productSubscription.invoiceItem ? (
             <>
-                {productSubscription.invoiceItem.plan[planField]} (
+                {productSubscription.invoiceItem.plan[planField || 'nameWithBrand']} (
                 {formatUserCount(productSubscription.invoiceItem.userCount)})
             </>
         ) : productSubscription.activeLicense && productSubscription.activeLicense.info ? (

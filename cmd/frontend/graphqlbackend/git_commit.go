@@ -114,7 +114,12 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*gitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, backend.CachedGitRepo(r.repo.repo), api.CommitID(r.oid), args.Path)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	if err != nil {
+		return nil, err
+	}
+
+	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +137,12 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *gitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*gitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, backend.CachedGitRepo(r.repo.repo), api.CommitID(r.oid), args.Path)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	if err != nil {
+		return nil, err
+	}
+
+	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +192,12 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 func (r *gitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := git.GetBehindAhead(ctx, backend.CachedGitRepo(r.repo.repo), args.Revspec, string(r.oid))
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	if err != nil {
+		return nil, err
+	}
+
+	counts, err := git.GetBehindAhead(ctx, *cachedRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}

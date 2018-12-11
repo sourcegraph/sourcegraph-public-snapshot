@@ -1,8 +1,7 @@
-import { BehaviorSubject } from 'rxjs'
-import { filter } from 'rxjs/operators'
+import { BehaviorSubject, PartialObserver, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
+import { SettingsCascade } from '../../../settings/settings'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
-import { SettingsCascade } from '../../protocol'
 
 /**
  * @internal
@@ -36,35 +35,44 @@ class ExtConfigurationSection<C extends object> implements sourcegraph.Configura
  * @template C - The configuration schema.
  */
 export interface ExtConfigurationAPI<C> {
-    $acceptConfigurationData(data: Readonly<C>): Promise<void>
+    $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): Promise<void>
 }
 
 /**
  * @internal
  * @template C - The configuration schema.
  */
-export class ExtConfiguration<C extends SettingsCascade<any>> implements ExtConfigurationAPI<C> {
-    private data = new BehaviorSubject<Readonly<C> | null>(null)
+export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C> {
+    /**
+     * The settings data observable, assigned when the initial data is received from the client. Extensions should
+     * never be able to call {@link ExtConfiguration}'s methods before the initial data is received.
+     */
+    private data?: BehaviorSubject<Readonly<SettingsCascade<C>>>
 
     constructor(private proxy: ClientConfigurationAPI) {}
 
-    public $acceptConfigurationData(data: Readonly<C>): Promise<void> {
-        this.data.next(Object.freeze(data))
-        return Promise.resolve()
+    public async $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): Promise<void> {
+        if (!this.data) {
+            this.data = new BehaviorSubject(data)
+        } else {
+            this.data.next(Object.freeze(data))
+        }
+    }
+
+    private getData(): BehaviorSubject<Readonly<SettingsCascade<C>>> {
+        if (!this.data) {
+            throw new Error('unexpected internal error: settings data is not yet available')
+        }
+        return this.data
     }
 
     public get(): sourcegraph.Configuration<C> {
-        const data = this.data.value
-        if (data === null) {
-            throw new Error(
-                'Configuration is not yet available. `sourcegraph.configuration.get` is not usable until after the extension `activate` function is finished executing. This is a known issue and will be fixed before the beta release of Sourcegraph extensions. In the meantime, work around this limitation by deferring calls to `get`.'
-            )
-        }
-        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, data.final))
+        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, this.getData().value.final))
     }
 
-    public subscribe(next: () => void): sourcegraph.Unsubscribable {
-        // Do not emit until the configuration is available.
-        return this.data.pipe(filter(data => data !== null)).subscribe(next)
+    public subscribe(observer?: PartialObserver<C>): Unsubscribable
+    public subscribe(next?: (value: C) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
+    public subscribe(...args: any[]): sourcegraph.Unsubscribable {
+        return this.getData().subscribe(...args)
     }
 }

@@ -2,15 +2,16 @@ import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
+import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { ActionsNavItems } from '../../../shared/src/app/actions/ActionsNavItems'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { displayRepoPath, splitPath } from '../../../shared/src/components/RepoFileLink'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { ActionItem } from '../components/ActionItem'
 import { PopoverButton } from '../components/PopoverButton'
-import { displayRepoPath, splitPath } from '../components/RepoFileLink'
-import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { ActionButtonDescriptor } from '../util/contributions'
-import { ErrorLike, isErrorLike } from '../util/errors'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
 
@@ -119,7 +120,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props extends ExtensionsProps, ExtensionsControllerProps {
+interface Props extends PlatformContextProps, ExtensionsControllerProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -239,7 +240,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     <ActionsNavItems
                         menu={ContributableMenu.EditorTitle}
                         extensionsController={this.props.extensionsController}
-                        extensions={this.props.extensions}
+                        platformContext={this.props.platformContext}
                         location={this.props.location}
                     />
                     {this.props.actionButtons.map(

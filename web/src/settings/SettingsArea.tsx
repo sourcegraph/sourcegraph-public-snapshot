@@ -6,19 +6,22 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import settingsSchemaJSON from '../../../schema/settings.schema.json'
-import { ISettingsCascade } from '../../../shared/src/graphqlschema'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { gqlToCascade } from '../../../shared/src/settings'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { extensionIDsFromSettings } from '../../../shared/src/extensions/extension'
+import { queryConfiguredRegistryExtensions } from '../../../shared/src/extensions/helpers'
+import { gql } from '../../../shared/src/graphql/graphql'
+import { ISettingsCascade } from '../../../shared/src/graphql/schema'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { gqlToCascade, SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
-import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
-import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { SettingsPage } from './SettingsPage'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends ExtensionsProps {
+interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps {
     /** The subject whose settings to edit. */
     subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
 
@@ -136,7 +139,8 @@ export class SettingsArea extends React.Component<Props, State> {
             authenticatedUser: this.props.authenticatedUser,
             onUpdate: this.onUpdate,
             isLightTheme: this.props.isLightTheme,
-            extensions: this.props.extensions,
+            platformContext: this.props.platformContext,
+            settingsCascade: this.props.settingsCascade,
         }
 
         return (
@@ -160,7 +164,10 @@ export class SettingsArea extends React.Component<Props, State> {
     private onUpdate = () => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
-        return this.props.extensions.withRegistryMetadata(gqlToCascade(cascade)).pipe(
+        return queryConfiguredRegistryExtensions(
+            this.props.platformContext,
+            extensionIDsFromSettings(gqlToCascade(cascade))
+        ).pipe(
             map(configuredExtensions => ({
                 $id: 'settings.schema.json',
                 allOf: [

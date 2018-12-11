@@ -596,10 +596,69 @@ func IsAtom(q Q) bool {
 
 // VisitAtoms runs `v` on all atom queries within `q`.
 func VisitAtoms(q Q, v func(q Q)) {
-	Map(q, nil, func(iQ Q) Q {
-		if IsAtom(iQ) {
-			v(iQ)
+	switch s := q.(type) {
+	case *And:
+		for _, c := range s.Children {
+			VisitAtoms(c, v)
 		}
-		return iQ
-	})
+	case *Or:
+		for _, c := range s.Children {
+			VisitAtoms(c, v)
+		}
+	case *Not:
+		VisitAtoms(s.Child, v)
+	case *Type:
+		VisitAtoms(s.Child, v)
+	default:
+		v(q)
+	}
+}
+
+// EvalConstant evaluates q to a constant by visiting each atom with eval. If
+// the query simplifies to a constant ok is true.
+//
+// This is equivalent to combining Map with Simplify, and then checking if the
+// resulting query is a Const.
+func EvalConstant(q Q, eval func(q Q) (value, ok bool)) (value, ok bool) {
+	switch s := q.(type) {
+	case *And:
+		// We can only return true if every child is sure it is true. If we
+		// get one sure false, we can be sure we are false. Otherwise we can't
+		// be sure.
+		allTrue := true
+		for _, c := range s.Children {
+			v, ok := EvalConstant(c, eval)
+			if ok && !v {
+				return false, true
+			}
+			if !ok {
+				allTrue = false
+			}
+		}
+		return allTrue, allTrue
+	case *Or:
+		// We can return true if one child is sure it is true. We can return
+		// false if every child is sure it is false. Otherwise we can't be
+		// sure.
+		allFalse := true
+		for _, c := range s.Children {
+			v, ok := EvalConstant(c, eval)
+			if ok && v {
+				return true, true
+			}
+			if !ok {
+				allFalse = false
+			}
+		}
+		return false, allFalse
+	case *Not:
+		v, ok := EvalConstant(s.Child, eval)
+		return !v, ok
+	case *Type:
+		return EvalConstant(s.Child, eval)
+	case *Const:
+		return s.Value, true
+	default:
+		return eval(q)
+	}
 }

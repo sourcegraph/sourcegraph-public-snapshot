@@ -50,7 +50,7 @@ const emitWhenIntersecting = (margin: number) => {
 }
 
 /**
- * findCodeViews finds all the code views on a page given a CodeHost. It emits code views
+ * Find all the code views on a page given a CodeHost. It emits code views
  * that are lazily loaded as well.
  */
 export const findCodeViews = (codeHost: CodeHost, watchChildrenModifications = true) => (
@@ -124,10 +124,7 @@ export const findCodeViews = (codeHost: CodeHost, watchChildrenModifications = t
         obs.push(lazilyLoadedCodeViews)
     }
 
-    return merge(...obs).pipe(
-        emitWhenIntersecting(250),
-        filter(({ codeView }) => !codeView.classList.contains('sg-mounted'))
-    )
+    return merge(...obs).pipe(emitWhenIntersecting(250))
 }
 
 export interface CodeViewContent {

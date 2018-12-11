@@ -2,33 +2,40 @@ import {
     createHoverifier,
     findPositionsFromEvents,
     HoveredToken,
-    HoveredTokenContext,
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { AbsoluteRepoFile, RenderMode } from '..'
-import { decorationStyleForTheme } from '../../../../shared/src/api/client/providers/decoration'
-import { TextDocumentDecoration } from '../../../../shared/src/api/protocol/plainTypes'
+import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import {
+    AbsoluteRepoFile,
+    FileSpec,
+    LineOrPositionOrRange,
+    parseHash,
+    RenderMode,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPositionOrRangeHash,
+    toPrettyBlobURL,
+} from '../../../../shared/src/util/url'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
-import { isDefined, propertyIsDefined } from '../../util/types'
-import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
+import { lprToSelectionsZeroIndexed } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
@@ -41,8 +48,7 @@ interface BlobProps
     extends AbsoluteRepoFile,
         ModeSpec,
         SettingsCascadeProps,
-        ExtensionsProps,
-        ExtensionsDocumentsProps,
+        PlatformContextProps,
         ExtensionsControllerProps {
     /** The raw content of the blob. */
     content: string
@@ -153,7 +159,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        const hoverifier = createHoverifier({
+        const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>({
             closeButtonClicks: this.closeButtonClicks,
             goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -168,6 +174,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             logTelemetryEvent,
             fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             fetchJumpURL: position => getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props),
+            getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })
         this.subscriptions.add(hoverifier)
 
@@ -289,20 +296,26 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        // Update the Sourcegraph extensions environment to reflect the current file.
+        // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
-                this.props.extensionsOnVisibleTextDocumentsChange([
-                    {
-                        uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
-                        languageId: model.mode,
-                        text: model.content,
-                    },
-                ])
+                this.props.extensionsController.services.model.model.next({
+                    ...this.props.extensionsController.services.model.model.value,
+                    visibleViewComponents: [
+                        {
+                            type: 'textEditor' as 'textEditor',
+                            item: {
+                                uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
+                                languageId: model.mode,
+                                text: model.content,
+                            },
+                            selections: lprToSelectionsZeroIndexed(pos),
+                            isActive: true,
+                        },
+                    ],
+                })
             })
         )
-        // Clear the Sourcegraph extensions environment's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.extensionsOnVisibleTextDocumentsChange(null))
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
@@ -388,7 +401,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
     }
 
     private getLSPTextDocumentPositionParams(
-        position: HoveredToken & HoveredTokenContext
+        position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
             repoPath: position.repoPath,

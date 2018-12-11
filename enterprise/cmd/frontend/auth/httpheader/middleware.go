@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -30,7 +29,7 @@ var Middleware = &auth.Middleware{
 // site config.
 //
 // TESTING: Use the testproxy test program to test HTTP auth proxy behavior. For example, run `go
-// run cmd/frontend/external/auth/httpheader/testproxy.go -username=alice` then go to
+// run cmd/frontend/auth/httpheader/testproxy.go -username=alice` then go to
 // http://localhost:4080. See `-h` for flag help.
 //
 // 🚨 SECURITY
@@ -67,12 +66,6 @@ func middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// License check.
-		if !licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
-			licensing.WriteSubscriptionErrorResponseForFeature(w, "http-header user authentication (SSO)")
-			return
-		}
-
 		// Otherwise, get or create the user and proceed with the authenticated request.
 		username, err := auth.NormalizeUsername(rawUsername)
 		if err != nil {
@@ -80,14 +73,17 @@ func middleware(next http.Handler) http.Handler {
 			http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 			return
 		}
-		userID, safeErrMsg, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{Username: username}, extsvc.ExternalAccountSpec{
-			ServiceType: providerType,
-
-			// Store rawUsername, not normalized username, to prevent two users with distinct
-			// pre-normalization usernames from being merged into the same normalized username
-			// (and therefore letting them each impersonate the other).
-			AccountID: rawUsername,
-		}, extsvc.ExternalAccountData{})
+		userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
+			UserProps: db.NewUser{Username: username},
+			ExternalAccount: extsvc.ExternalAccountSpec{
+				ServiceType: providerType,
+				// Store rawUsername, not normalized username, to prevent two users with distinct
+				// pre-normalization usernames from being merged into the same normalized username
+				// (and therefore letting them each impersonate the other).
+				AccountID: rawUsername,
+			},
+			CreateIfNotExist: true,
+		})
 		if err != nil {
 			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "rawUsername", rawUsername, "err", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)

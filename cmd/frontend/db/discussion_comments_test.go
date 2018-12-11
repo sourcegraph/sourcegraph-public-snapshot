@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 // TODO(slimsag:discussions): future: test that DiscussionCommentsListOptions.AuthorUserID works

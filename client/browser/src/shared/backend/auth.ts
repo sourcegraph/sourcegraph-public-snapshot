@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { AccessToken } from '../../browser/types'
 import { getPlatformName } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
@@ -53,6 +53,7 @@ export const fetchAccessTokenIDs = memoizeObservable(
             `,
             variables: { userID, scopes: ['user:all'], note: `sourcegraph-${getPlatformName()}` },
             useAccessToken: false,
+            retry: false,
         }).pipe(
             map(({ data, errors }) => {
                 if (

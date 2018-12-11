@@ -53,14 +53,11 @@ func ParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
 // Experimental features are special in that they are denoted individually
 // via e.g. "experimentalFeatures::myFeatureFlag".
 var requireRestart = []string{
-	"executeGradleOriginalRootPaths",
 	"lightstepAccessToken",
 	"lightstepProject",
 	"auth.accessTokens",
-	"privateArtifactRepoURL",
 	"auth.userOrgMap",
 	"auth.sessionExpiry",
-	"noGoGetDomains",
 	"auth.disableAccessTokens",
 	"auth.providers",
 	"externalURL",
@@ -72,11 +69,7 @@ var requireRestart = []string{
 	"tlsCert",
 	"update.channel",
 	"useJaeger",
-	"privateArtifactRepoPassword",
 	"disablePublicRepoRedirects",
-	"privateArtifactRepoUsername",
-	"blacklistGoGet",
-	"privateArtifactRepoID",
 	"tlsKey",
 }
 

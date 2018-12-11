@@ -1,13 +1,12 @@
-import { isEqual } from 'lodash'
 import { Observable } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs/operators'
+import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
 import { SearchOptions } from '.'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../backend/graphql'
-import { mutateSettingsGraphQL } from '../configuration/backend'
-import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
-import { viewerSettings } from '../settings/configuration'
-import { asError, createAggregateError, ErrorLike } from '../util/errors'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export function search(
     options: SearchOptions,
@@ -16,7 +15,7 @@ export function search(
     /**
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
-    return extensionsController.registries.queryTransformer.transformQuery(options.query).pipe(
+    return extensionsController.services.queryTransformer.transformQuery(options.query).pipe(
         switchMap(query =>
             queryGraphQL(
                 gql`
@@ -50,6 +49,25 @@ export function search(
                                         id
                                         name
                                         url
+                                        label {
+                                            html
+                                        }
+                                        icon
+                                        detail {
+                                            html
+                                        }
+                                        matches {
+                                            url
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
                                     }
                                     ... on FileMatch {
                                         __typename
@@ -79,57 +97,24 @@ export function search(
                                     }
                                     ... on CommitSearchResult {
                                         __typename
-                                        refs {
-                                            name
-                                            displayName
-                                            prefix
-                                            repository {
-                                                name
-                                            }
+                                        label {
+                                            html
                                         }
-                                        sourceRefs {
-                                            name
-                                            displayName
-                                            prefix
-                                            repository {
-                                                name
-                                            }
+                                        url
+                                        icon
+                                        detail {
+                                            html
                                         }
-                                        messagePreview {
-                                            value
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        diffPreview {
-                                            value
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        commit {
-                                            id
-                                            repository {
-                                                name
-                                                url
-                                            }
-                                            oid
-                                            abbreviatedOID
-                                            author {
-                                                person {
-                                                    displayName
-                                                    avatarURL
-                                                }
-                                                date
-                                            }
-                                            message
+                                        matches {
                                             url
-                                            tree(path: "") {
-                                                canonicalURL
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
                                             }
                                         }
                                     }
@@ -283,15 +268,7 @@ const savedQueryFragment = gql`
     }
 `
 
-export function observeSavedQueries(): Observable<GQL.ISavedQuery[]> {
-    return viewerSettings.pipe(
-        map(config => config['search.savedQueries']),
-        distinctUntilChanged((a, b) => isEqual(a, b)),
-        mergeMap(fetchSavedQueries)
-    )
-}
-
-function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
+export function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
     return queryGraphQL(gql`
         query SavedQueries {
             savedQueries {
@@ -311,6 +288,7 @@ function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
 
 export function createSavedQuery(
     subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
+    settingsLastID: number | null,
     description: string,
     query: string,
     showOnHomepage: boolean,
@@ -318,8 +296,7 @@ export function createSavedQuery(
     notifySlack: boolean,
     disableSubscriptionNotifications?: boolean
 ): Observable<GQL.ISavedQuery> {
-    return mutateSettingsGraphQL(
-        subject,
+    return mutateGraphQL(
         gql`
             mutation CreateSavedQuery(
                 $subject: ID!
@@ -331,7 +308,7 @@ export function createSavedQuery(
                 $notifySlack: Boolean
                 $disableSubscriptionNotifications: Boolean
             ) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                     createSavedQuery(
                         description: $description
                         query: $query
@@ -353,19 +330,22 @@ export function createSavedQuery(
             notify,
             notifySlack,
             disableSubscriptionNotifications: disableSubscriptionNotifications || false,
+            subject: subject.id,
+            lastID: settingsLastID,
         }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
+            if (!data || !data.settingsMutation || !data.settingsMutation.createSavedQuery) {
                 throw createAggregateError(errors)
             }
-            return data.configurationMutation.createSavedQuery
+            return data.settingsMutation.createSavedQuery
         })
     )
 }
 
 export function updateSavedQuery(
     subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
+    settingsLastID: number | null,
     id: GQL.ID,
     description: string,
     query: string,
@@ -373,8 +353,7 @@ export function updateSavedQuery(
     notify: boolean,
     notifySlack: boolean
 ): Observable<GQL.ISavedQuery> {
-    return mutateSettingsGraphQL(
-        subject,
+    return mutateGraphQL(
         gql`
             mutation UpdateSavedQuery(
                 $subject: ID!
@@ -386,7 +365,7 @@ export function updateSavedQuery(
                 $notify: Boolean
                 $notifySlack: Boolean
             ) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                     updateSavedQuery(
                         id: $id
                         description: $description
@@ -401,24 +380,24 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, showOnHomepage, notify, notifySlack }
+        { id, description, query, showOnHomepage, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {
+            if (!data || !data.settingsMutation || !data.settingsMutation.updateSavedQuery) {
                 throw createAggregateError(errors)
             }
-            return data.configurationMutation.updateSavedQuery
+            return data.settingsMutation.updateSavedQuery
         })
     )
 }
 
 export function deleteSavedQuery(
     subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
+    settingsLastID: number | null,
     id: GQL.ID,
     disableSubscriptionNotifications?: boolean
 ): Observable<void> {
-    return mutateSettingsGraphQL(
-        subject,
+    return mutateGraphQL(
         gql`
             mutation DeleteSavedQuery(
                 $subject: ID!
@@ -426,19 +405,59 @@ export function deleteSavedQuery(
                 $id: ID!
                 $disableSubscriptionNotifications: Boolean
             ) {
-                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                     deleteSavedQuery(id: $id, disableSubscriptionNotifications: $disableSubscriptionNotifications) {
                         alwaysNil
                     }
                 }
             }
         `,
-        { id, disableSubscriptionNotifications: disableSubscriptionNotifications || false }
+        {
+            id,
+            disableSubscriptionNotifications: disableSubscriptionNotifications || false,
+            subject: subject.id,
+            lastID: settingsLastID,
+        }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configurationMutation || !data.configurationMutation.deleteSavedQuery) {
+            if (!data || !data.settingsMutation || !data.settingsMutation.deleteSavedQuery) {
                 throw createAggregateError(errors)
             }
         })
     )
 }
+
+export const highlightCode = memoizeObservable(
+    (ctx: {
+        code: string
+        fuzzyLanguage: string
+        disableTimeout: boolean
+        isLightTheme: boolean
+    }): Observable<string> =>
+        queryGraphQL(
+            gql`
+                query highlightCode(
+                    $code: String!
+                    $fuzzyLanguage: String!
+                    $disableTimeout: Boolean!
+                    $isLightTheme: Boolean!
+                ) {
+                    highlightCode(
+                        code: $code
+                        fuzzyLanguage: $fuzzyLanguage
+                        disableTimeout: $disableTimeout
+                        isLightTheme: $isLightTheme
+                    )
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.highlightCode) {
+                    throw createAggregateError(errors)
+                }
+                return data.highlightCode
+            })
+        ),
+    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${ctx.disableTimeout}:${ctx.isLightTheme}`
+)

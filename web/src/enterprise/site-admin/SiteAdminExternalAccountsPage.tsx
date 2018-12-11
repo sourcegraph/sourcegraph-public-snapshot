@@ -3,12 +3,13 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../../backend/graphql'
+import { gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../../shared/src/util/errors'
+import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createAggregateError } from '../../util/errors'
 import {
     externalAccountFragment,
     ExternalAccountNode,

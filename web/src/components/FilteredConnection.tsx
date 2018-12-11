@@ -18,9 +18,10 @@ import {
     takeUntil,
     tap,
 } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
-import { pluralize } from '../util/strings'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { pluralize } from '../../../shared/src/util/strings'
+import { parseHash } from '../../../shared/src/util/url'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
 
@@ -130,7 +131,9 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
     public componentDidMount(): void {
-        if (this.props.location.hash) {
+        // Scroll to hash. But if the hash is a line number in a blob (or any viewState), then do not scroll,
+        // because the hash is handled separately by the Blob component.
+        if (this.props.location.hash && !parseHash(this.props.location.hash).viewState) {
             this.scrollToHash(this.props.location.hash)
         }
     }
@@ -144,7 +147,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
 
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
-        const ListComponent = this.props.listComponent || 'ul'
+        const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
 
@@ -218,7 +221,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         }
 
         const nodes = this.props.connection.nodes.map((node, i) => (
-            <NodeComponent key={hasID(node) ? node.id : i} node={node} {...this.props.nodeComponentProps} />
+            <NodeComponent key={hasID(node) ? node.id : i} node={node} {...this.props.nodeComponentProps!} />
         ))
 
         return (

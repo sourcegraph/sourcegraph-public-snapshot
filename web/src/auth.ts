@@ -1,7 +1,8 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
-import * as GQL from '../../shared/src/graphqlschema'
-import { dataOrThrowErrors, gql, queryGraphQL } from './backend/graphql'
+import { dataOrThrowErrors, gql } from '../../shared/src/graphql/graphql'
+import * as GQL from '../../shared/src/graphql/schema'
+import { queryGraphQL } from './backend/graphql'
 
 /**
  * Always represents the latest state of the currently authenticated user.
@@ -20,7 +21,7 @@ export function refreshAuthenticatedUser(): Observable<never> {
             currentUser {
                 __typename
                 id
-                sourcegraphID
+                databaseID
                 username
                 avatarURL
                 email

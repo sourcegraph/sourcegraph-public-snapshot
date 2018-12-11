@@ -1,10 +1,6 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-import * as GQL from '../../../shared/src/graphqlschema'
-
-type WithOptionalAuthenticatedUser<P extends object> = Pick<P, Exclude<keyof P, 'authenticatedUser'>> & {
-    authenticatedUser: GQL.IUser | null
-}
+import * as GQL from '../../../shared/src/graphql/schema'
 
 /**
  * Wraps a React component and requires an authenticated user. If the viewer is not authenticated, it redirects to
@@ -12,8 +8,10 @@ type WithOptionalAuthenticatedUser<P extends object> = Pick<P, Exclude<keyof P, 
  */
 export const withAuthenticatedUser = <P extends object & { authenticatedUser: GQL.IUser }>(
     Component: React.ComponentType<P>
-): React.ComponentType<WithOptionalAuthenticatedUser<P>> => props => {
-    const { authenticatedUser } = props
+): React.ComponentType<Pick<P, Exclude<keyof P, 'authenticatedUser'>> & { authenticatedUser: GQL.IUser | null }> => ({
+    authenticatedUser,
+    ...props
+}) => {
     // If not logged in, redirect to sign in.
     if (!authenticatedUser) {
         const newUrl = new URL(window.location.href)
@@ -22,5 +20,5 @@ export const withAuthenticatedUser = <P extends object & { authenticatedUser: GQ
         newUrl.searchParams.set('returnTo', window.location.href)
         return <Redirect to={newUrl.pathname + newUrl.search} />
     }
-    return <Component {...props} authenticatedUser={authenticatedUser} />
+    return <Component {...{ ...props, authenticatedUser } as P} />
 }

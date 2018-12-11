@@ -60,7 +60,7 @@ func (ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(ct
 		if err != nil {
 			return nil, err
 		}
-		tmp := accountUser.SourcegraphID()
+		tmp := accountUser.DatabaseID()
 		accountUserID = &tmp
 		custID, err = billing.GetOrAssignUserCustomerID(ctx, *accountUserID)
 		if err != nil {

@@ -1,9 +1,6 @@
 @import './CommitSearchResult';
-@import '../../components/FileMatch';
 @import './RepositorySearchResult';
-@import '../../components/ResultContainer';
 @import '../../components/ModalContainer';
-@import '../../symbols/SymbolIcon';
 
 .search-results-list {
     overflow-y: auto;

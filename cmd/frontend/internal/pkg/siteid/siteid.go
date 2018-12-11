@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 )
 
 var (
@@ -41,11 +41,11 @@ func Init() {
 		// if it doesn't yet exist.)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		config, err := db.SiteConfig.Get(ctx)
+		globalState, err := globalstatedb.Get(ctx)
 		if err != nil {
-			fatalln("Error initializing site configuration:", err)
+			fatalln("Error initializing global state:", err)
 		}
-		siteID = config.SiteID
+		siteID = globalState.SiteID
 	}
 
 	inited = true

@@ -15,11 +15,12 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {

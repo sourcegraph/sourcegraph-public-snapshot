@@ -2,14 +2,16 @@ import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL } from '../../../backend/graphql'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike } from '../../../util/errors'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 
@@ -93,6 +95,15 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
                     afterPrimaryButton={
                         <small className="form-text text-muted">
                             Your license key will be available immediately after payment.
+                            <br />
+                            <br />
+                            <Link to="/terms" target="_blank">
+                                Terms of Service
+                            </Link>{' '}
+                            |{' '}
+                            <Link to="/privacy" target="_blank">
+                                Privacy Policy
+                            </Link>
                         </small>
                     }
                 />

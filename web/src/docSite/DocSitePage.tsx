@@ -5,17 +5,17 @@ import React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { isError } from 'util'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { LinkOrSpan } from '../../../shared/src/ui/generic/LinkOrSpan'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import { Markdown } from '../../../shared/src/components/Markdown'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { createLinkClickHandler } from '../../../shared/src/util/linkClickHandler'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
-import { Markdown } from '../components/Markdown'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
-import { createLinkClickHandler } from '../util/linkClickHandler'
-import { memoizeObservable } from '../util/memoize'
 
 const queryDocPage = memoizeObservable(
     (path: string): Observable<GQL.IDocSitePage | null> =>
@@ -74,12 +74,12 @@ export class DocSitePage extends React.PureComponent<Props, State> {
                 .pipe(
                     switchMap(path =>
                         queryDocPage(path).pipe(
-                            catchError(err => [asError(err)]),
+                            catchError(err => [asError(err) as ErrorLike]),
                             startWith(LOADING)
                         )
                     ),
                     tap(result => {
-                        if (result !== null && result !== LOADING && !isError(result)) {
+                        if (result !== null && result !== LOADING && !isErrorLike(result)) {
                             eventLogger.logViewEvent('Docs', { docs_title: result.title })
                         }
                     }),

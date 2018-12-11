@@ -1,5 +1,5 @@
+import { Hover as PlainHover, Range } from '@sourcegraph/extension-api-types'
 import { Hover, MarkupContent, MarkupKind } from 'sourcegraph'
-import { Hover as PlainHover, Range } from '../../protocol/plainTypes'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {

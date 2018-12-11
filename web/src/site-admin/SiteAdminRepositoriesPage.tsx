@@ -7,14 +7,14 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { RepoLink } from '../../../shared/src/components/RepoLink'
+import * as GQL from '../../../shared/src/graphql/schema'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArgs,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { RepoLink } from '../repo/RepoLink'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import {

@@ -5,11 +5,44 @@
 Sourcegraph supports the following ways for users to sign in:
 
 - [Builtin](#builtin-authentication)
+- [GitHub OAuth](#github)
+- [GitLab OAuth](#gitlab)
 - [OpenID Connect](#openid-connect) (including [Google accounts on G Suite](#g-suite-google-accounts))
 - [SAML](#saml)
 - [HTTP authentication proxies](#http-authentication-proxies)
 
 The authentication provider is configured in the [`auth.providers`](../site_config/all.md#authproviders-array) site configuration option.
+
+### Guidance
+
+If you are unsure which auth provider is right for you, we recommend applying the following rules in
+order:
+
+- If you have no external identity providers (i.e., not SSO) or are just trying to spin Sourcegraph
+  up as quickly as possible to try, use [`builtin`](#builtin-authentication) authentication. You can
+  always change the auth configuration later, and user identities from external providers will be
+  linked automatically to existing Sourcegraph accounts using verified email addresses.
+- If you are deploying Sourcegraph behind a HTTP authentication proxy service, use the
+  [`http-header`](#http-authentication-proxies) provider type. The proxy service should handle
+  authentication and session management and, in turn, set a HTTP header that indicates the user
+  identity to Sourcegraph.
+- If you are configuring Sourcegraph to index a GitHub or GitLab instance, we recommend using the
+  OAuth provider for that code host. This applies even if the code host itself uses an external
+  identity provider (e.g., SAML, OpenID Connect, LDAP, etc.). Sourcegraph will redirect to your code
+  host on sign-in and the code host will perform the required sign-in flow before redirecting to
+  Sourcegraph on success.
+- If you are using an identity provider that supports SAML use the [SAML auth provider](#saml).
+- If you are using an identity provider that supports OpenID Connect (including Google accounts),
+  use the [OpenID Connect provider](#openid-connect).
+- If you wish to use LDAP and cannot use the GitHub/GitLab OAuth provider as described above, or if
+  you wish to use another authentication mechanism that is not yet supported, please [contact
+  us](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md) (we respond
+  promptly).
+
+Most users will use only one auth provider, but you can use multiple auth providers if desired to
+enable sign-in via multiple services. Identities from different providers will be mapped to a
+Sourcegraph user by comparing the user's verified email address to the email address from the
+external identity provider.
 
 ## Builtin authentication
 
@@ -25,6 +58,88 @@ Site configuration example:
 ```
 
 The top-level [`auth.public`](../site_config/all.md#authpublic-boolean) (default `false`) site configuration option controls whether anonymous users are allowed to access and use the site without being signed in .
+
+## GitHub
+
+> NOTE: GitHub authentication is currently experimental. To enable it, add the following to your site configuration:
+```json
+{
+  // ...
+  "experimentalFeatures": {
+    "githubAuth": true
+  }
+}
+```
+
+[Create a GitHub OAuth
+application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) (if using
+GitHub Enterprise, create one on your instance, not GitHub.com). Set the following values, replacing
+`sourcegraph.example.com` with the IP or hostname of your Sourcegraph instance:
+
+- Homepage URL: `https://sourcegraph.example.com`
+- Authorization callback URL: `https://sourcegraph.example.com/.auth/github/callback`
+
+Then add the following lines to your site configuration:
+
+```json
+{
+  // ...
+  "auth.providers": [
+    {
+      "type": "github",
+      "url": "https://github.example.com",  // URL of your GitHub instance; can leave empty for github.com
+      "displayName": "GitHub",
+      "clientID": "replace-with-the-oauth-client-id",
+      "clientSecret": "replace-with-the-oauth-client-secret",
+      "allowSignup": false  // Set to true to enable anyone with a GitHub account to sign up without invitation
+    }
+  ]
+}
+```
+
+Replace the `clientID` and `clientSecret` values with the values from your GitHub OAuth app
+configuration.
+
+Leave the `url` field empty for GitHub.com.
+
+Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up without invitation
+(typically done only for GitHub Enterprise). If `allowSignup` is `false`, a user can sign in through
+GitHub only if an account with the same verified email already exists. If none exists, a site admin
+must create one explicitly.
+
+## GitLab
+
+> NOTE: GitLab authentication is currently experimental. To enable it, add the following to your site configuration:
+```json
+{
+  // ...
+  "experimentalFeatures": {
+    "gitlabAuth": true
+  }
+}
+```
+
+[Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
+the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
+Sourcegraph instance:
+
+- Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
+- Scopes: `api`, `read_user`
+
+```json
+{
+    // ...
+    {
+      "type": "gitlab",
+      "displayName": "GitLab",
+      "clientID": "replace-with-the-oauth-application-id",
+      "clientSecret": "replace-with-the-oauth-secret",
+      "url": "https://gitlab.example.com"
+    }
+```
+
+Replace the `clientID` and `clientSecret` values with the values from your GitLab OAuth app
+configuration.
 
 ## OpenID Connect
 

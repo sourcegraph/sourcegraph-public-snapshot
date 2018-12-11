@@ -2,11 +2,10 @@
 
 The Sourcegraph GraphQL API is a rich API that exposes data related to the code available on a Sourcegraph instance.
 
-The GraphQL API supports the following types of queries:
+The Sourcegraph GraphQL API supports the following types of queries:
 
 - Full-text and regexp code search
 - Rich git-level metadata, including commits, branches, blame information, and file tree data
-- Dependency graph queries ("Which repositories use library X?")
 - Repository and user metadata
 
 > NOTE: The API is under active development, so it may change in backward incompatible ways. These types of changes will be documented in our changelog.

@@ -32,12 +32,12 @@ export const OrgAccountArea: React.FunctionComponent<Props> = props => {
         return null
     }
 
-    const transferProps = {
+    const transferProps: OrgAreaPageProps = {
         authenticatedUser: props.authenticatedUser,
         org: props.org,
         onOrganizationUpdate: props.onOrganizationUpdate,
-        isLightTheme: props.isLightTheme,
-        extensions: props.extensions,
+        platformContext: props.platformContext,
+        settingsCascade: props.settingsCascade,
     }
     return (
         <div className="org-settings-area area">

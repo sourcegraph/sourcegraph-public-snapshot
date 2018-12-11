@@ -1,7 +1,7 @@
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'

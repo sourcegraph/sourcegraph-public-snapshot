@@ -1,11 +1,4 @@
-import {
-    createHoverifier,
-    HoveredToken,
-    HoveredTokenContext,
-    Hoverifier,
-    HoverOverlay,
-    HoverState,
-} from '@sourcegraph/codeintellify'
+import { createHoverifier, HoveredToken, Hoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
 import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -14,16 +7,23 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { getModeFromPath } from '../../../../shared/src/languages'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { propertyIsDefined } from '../../../../shared/src/util/types'
+import {
+    escapeRevspecForURL,
+    FileSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+} from '../../../../shared/src/util/url'
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
-import { getModeFromPath } from '../../util'
-import { propertyIsDefined } from '../../util/types'
-import { escapeRevspecForURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -41,9 +41,8 @@ const NotFoundPage = () => (
 interface Props
     extends RouteComponentProps<{ spec: string }>,
         RepoHeaderContributionsLifecycleProps,
-        ExtensionsProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        PlatformContextProps,
+        ExtensionsControllerProps {
     repo: GQL.IRepository
 }
 
@@ -54,7 +53,7 @@ interface State extends HoverState {
 /**
  * Properties passed to all page components in the repository compare area.
  */
-export interface RepositoryCompareAreaPageProps extends ExtensionsProps {
+export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     /** The repository being compared. */
     repo: GQL.IRepository
 
@@ -95,11 +94,11 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier
+    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 
     constructor(props: Props) {
         super(props)
-        this.hoverifier = createHoverifier({
+        this.hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>({
             closeButtonClicks: this.closeButtonClicks,
             goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -117,6 +116,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
             logTelemetryEvent,
             fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -124,7 +124,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
     }
 
     private getLSPTextDocumentPositionParams(
-        hoveredToken: HoveredToken & HoveredTokenContext
+        hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
             repoPath: hoveredToken.repoPath,
@@ -167,7 +167,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
             base: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.base },
             head: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.head },
             routePrefix: this.props.match.url,
-            extensions: this.props.extensions,
+            platformContext: this.props.platformContext,
         }
 
         return (
@@ -199,10 +199,6 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                                             {...commonProps}
                                             hoverifier={this.hoverifier}
                                             extensionsController={this.props.extensionsController}
-                                            extensionsOnVisibleTextDocumentsChange={
-                                                this.props.extensionsOnVisibleTextDocumentsChange
-                                            }
-                                            extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                                         />
                                     )}
                                 />

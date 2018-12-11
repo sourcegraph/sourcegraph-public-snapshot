@@ -7,25 +7,26 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Subject, Subscription } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
 import { buildSearchURLQuery, parseSearchURLQuery } from '..'
-import * as GQL from '../../../../shared/src/graphqlschema'
-import { FileMatch } from '../../components/FileMatch'
+import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
+import { FileMatch } from '../../../../shared/src/components/FileMatch'
+import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { VirtualList } from '../../../../shared/src/components/VirtualList'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { isDefined } from '../../../../shared/src/util/types'
 import { ModalContainer } from '../../components/ModalContainer'
-import { VirtualList } from '../../components/VirtualList'
+import { SearchResult } from '../../components/SearchResult'
 import { eventLogger } from '../../tracking/eventLogger'
-import { ErrorLike, isErrorLike } from '../../util/errors'
-import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
-import { isDefined } from '../../util/types'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
-import { CommitSearchResult } from './CommitSearchResult'
-import { RepositorySearchResult } from './RepositorySearchResult'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
-interface SearchResultsListProps {
+interface SearchResultsListProps extends SettingsCascadeProps {
     isLightTheme: boolean
     location: H.Location
     history: H.History
@@ -45,6 +46,8 @@ interface SearchResultsListProps {
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
+
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 interface State {
@@ -248,6 +251,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     values={{ query: parsedQuery ? parsedQuery.query : '' }}
                                     onDidCancel={this.props.onSavedQueryModalClose}
                                     onDidCreate={this.props.onDidCreateSavedQuery}
+                                    settingsCascade={this.props.settingsCascade}
                                 />
                             }
                         />
@@ -400,10 +404,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(result: GQL.SearchResult, expanded: boolean): JSX.Element | undefined {
+    private renderResult(
+        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
+        expanded: boolean
+    ): JSX.Element | undefined {
         switch (result.__typename) {
-            case 'Repository':
-                return <RepositorySearchResult key={'repo:' + result.id} result={result} onSelect={this.logEvent} />
             case 'FileMatch':
                 return (
                     <FileMatch
@@ -415,21 +420,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         showAllMatches={false}
                         isLightTheme={this.props.isLightTheme}
                         allExpanded={this.props.allExpanded}
-                    />
-                )
-            case 'CommitSearchResult':
-                return (
-                    <CommitSearchResult
-                        key={'commit:' + result.commit.id}
-                        location={this.props.location}
-                        result={result}
-                        onSelect={this.logEvent}
-                        expanded={expanded}
-                        allExpanded={this.props.allExpanded}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                     />
                 )
         }
-        return undefined
+        return <SearchResult key={result.url} result={result} isLightTheme={this.props.isLightTheme} />
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */

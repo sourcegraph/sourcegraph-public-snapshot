@@ -1,6 +1,6 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphqlschema'
-import { numberWithCommas } from '../../../util/strings'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { numberWithCommas } from '../../../../../shared/src/util/strings'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 
 /**

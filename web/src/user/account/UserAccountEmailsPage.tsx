@@ -3,14 +3,15 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
+import { gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../../shared/src/util/errors'
+import { mutateGraphQL, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { SiteFlags } from '../../site'
 import { siteFlags } from '../../site/backend'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createAggregateError } from '../../util/errors'
 import { AddUserEmailForm } from './AddUserEmailForm'
 import { setUserEmailVerified } from './backend'
 
@@ -32,20 +33,21 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
     }
 
     public render(): JSX.Element | null {
-        let statusFragment: React.ReactFragment
+        let verifiedFragment: React.ReactFragment
         if (this.props.node.verified) {
-            statusFragment = <span className="badge badge-success">Verified</span>
+            verifiedFragment = <span className="badge badge-success">Verified</span>
         } else if (this.props.node.verificationPending) {
-            statusFragment = <span className="badge badge-info">Verification pending</span>
+            verifiedFragment = <span className="badge badge-info">Verification pending</span>
         } else {
-            statusFragment = <span className="badge badge-secondary">Not verified</span>
+            verifiedFragment = <span className="badge badge-secondary">Not verified</span>
         }
 
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <strong>{this.props.node.email}</strong> &nbsp;{statusFragment}
+                        <strong>{this.props.node.email}</strong> &nbsp;{verifiedFragment}&nbsp;
+                        {this.props.node.isPrimary && <span className="badge badge-primary">Primary</span>}
                     </div>
                     <div>
                         <button
@@ -212,6 +214,7 @@ export class UserAccountEmailsPage extends React.Component<Props, State> {
                         ... on User {
                             emails {
                                 email
+                                isPrimary
                                 verified
                                 verificationPending
                                 viewerCanManuallyVerify

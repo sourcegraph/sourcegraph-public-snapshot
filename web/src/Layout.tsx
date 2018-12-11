@@ -1,23 +1,22 @@
 import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
-import * as GQL from '../../shared/src/graphqlschema'
+import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
+import * as GQL from '../../shared/src/graphql/schema'
+import { ResizablePanel } from '../../shared/src/panel/Panel'
+import { PlatformContextProps } from '../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../shared/src/settings/settings'
+import { parseHash } from '../../shared/src/util/url'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
-import { LinkExtension } from './extension/Link'
-import { ExtensionsDocumentsProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from './extensions/ExtensionsClientCommonContext'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -28,14 +27,13 @@ import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
         SettingsCascadeProps,
-        ExtensionsProps,
-        ExtensionsEnvironmentProps,
+        PlatformContextProps,
         ExtensionsControllerProps,
-        ExtensionsDocumentsProps,
         KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
@@ -89,7 +87,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     return (
         <div className="layout">
-            <GlobalAlerts isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin} />
+            <GlobalAlerts
+                isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
+                settingsCascade={props.settingsCascade}
+            />
             {!needsSiteInit &&
                 !isSiteInit &&
                 !!props.authenticatedUser && <IntegrationsToast history={props.history} />}
@@ -112,15 +113,24 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                     ].join(' ')}
                                 >
                                     {route.render({ ...props, ...routeComponentProps })}
-                                    {!!props.authenticatedUser && (
-                                        <LinkExtension authenticatedUser={props.authenticatedUser} />
-                                    )}
                                 </div>
                             )}
                         />
                     )
                 })}
             </Switch>
+            {parseHash(props.location.hash).viewState && (
+                <ResizablePanel
+                    repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoPath}`}
+                    history={props.history}
+                    location={props.location}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    settingsCascade={props.settingsCascade}
+                    isLightTheme={props.isLightTheme}
+                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                />
+            )}
             <GlobalDebug {...props} />
         </div>
     )

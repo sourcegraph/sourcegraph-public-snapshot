@@ -2,11 +2,11 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { Tab, TabsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/Tabs'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { SingleValueCard } from '../components/SingleValueCard'
-import { Tab, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { Timestamp } from '../components/time/Timestamp'
 import {
     fetchAllSurveyResponses,
@@ -221,7 +221,7 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
         if (this.state.summary.netPromoterScore > 0) {
             npsText = `+${npsText}`
         } else if (this.state.summary.netPromoterScore < 0) {
-            npsText = `-${npsText}`
+            npsText = `${npsText}`
         }
         const npsClass =
             this.state.summary.netPromoterScore > 0

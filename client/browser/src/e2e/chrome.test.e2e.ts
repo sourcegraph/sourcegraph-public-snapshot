@@ -1,7 +1,11 @@
+import { mkdirp } from 'fs-extra'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
 
 const chromeExtensionPath = path.resolve(__dirname, '..', '..', 'build/chrome')
+
+const repoRoot = path.resolve(__dirname, '..', '..', '..', '..')
+const screenshotDirectory = path.resolve(__dirname, '..', '..', '..', 'puppeteer')
 
 async function getTokenWithSelector(
     page: puppeteer.Page,
@@ -45,7 +49,7 @@ describe('Sourcegraph Chrome extension', () => {
 
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
-    before(async function(): Promise<void> {
+    before('Open Browser', async function(): Promise<void> {
         this.timeout(90 * 1000)
 
         let args: string[] = [
@@ -61,20 +65,40 @@ describe('Sourcegraph Chrome extension', () => {
 
         browser = await puppeteer.launch({
             headless: false,
-            // args: [`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`],
             args,
         })
-    })
-
-    after(async () => {
-        if (browser) {
-            await browser.close()
-        }
     })
 
     beforeEach('Open page', async () => {
         page = await browser.newPage()
         await authenticate(page)
+    })
+
+    afterEach('Close page', async function(): Promise<void> {
+        if (page) {
+            if (this.currentTest && this.currentTest.state === 'failed') {
+                await mkdirp(screenshotDirectory)
+                const filePath = path.join(
+                    screenshotDirectory,
+                    this.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
+                )
+                await page.screenshot({ path: filePath })
+                if (process.env.CI) {
+                    // Print image with ANSI escape code for Buildkite
+                    // https://buildkite.com/docs/builds/images-in-log-output
+                    const relativePath = path.relative(repoRoot, filePath)
+                    console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
+                }
+            }
+
+            await page.close()
+        }
+    })
+
+    after('Close browser', async () => {
+        if (browser) {
+            await browser.close()
+        }
     })
 
     const repoBaseURL = 'https://github.com/gorilla/mux'

@@ -5,7 +5,10 @@ import rxPaths from 'rxjs/_esm5/path-mapping'
 import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
 import * as webpack from 'webpack'
 
-const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
+console.log('Using mode', mode)
+
+const devtool = mode === 'production' ? undefined : 'cheap-module-eval-source-map'
 
 const rootDir = path.resolve(__dirname, '..')
 const nodeModulesPath = path.resolve(__dirname, '..', 'node_modules')
@@ -38,9 +41,9 @@ const sourceRoots = [path.resolve(__dirname, 'src'), path.resolve(rootDir, 'shar
 
 const config: webpack.Configuration = {
     context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
-    mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    mode,
     optimization: {
-        minimize: process.env.NODE_ENV === 'production',
+        minimize: mode === 'production',
         minimizer: [
             new UglifyJsPlugin({
                 uglifyOptions: {
@@ -79,7 +82,7 @@ const config: webpack.Configuration = {
         // Needed for React
         new webpack.DefinePlugin({
             'process.env': {
-                NODE_ENV: JSON.stringify(process.env.NODE_ENV === 'production' ? 'production' : 'development'),
+                NODE_ENV: JSON.stringify(mode),
             },
         }),
         new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
@@ -130,7 +133,7 @@ const config: webpack.Configuration = {
                     {
                         loader: 'css-loader',
                         options: {
-                            minimize: process.env.NODE_ENV === 'production',
+                            minimize: mode === 'production',
                         },
                     },
                     {

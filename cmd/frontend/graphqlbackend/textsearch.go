@@ -33,9 +33,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	zoektpkg "github.com/sourcegraph/sourcegraph/pkg/zoekt"
 )
 
 var (
@@ -65,7 +65,6 @@ type fileMatchResolver struct {
 	uri          string
 	repo         *types.Repo
 	commitID     api.CommitID // or empty for default branch
-
 	// inputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
@@ -341,12 +340,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
-	var workspace string
-	if rev != "" {
-		workspace = "git://" + string(repo.Name) + "?" + url.QueryEscape(rev) + "#"
-	} else {
-		workspace = "git://" + string(repo.Name) + "#"
-	}
+	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
 		fm.repo = repo
@@ -355,6 +349,21 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	}
 
 	return matches, limitHit, err
+}
+
+func fileMatchURI(name api.RepoName, ref, path string) string {
+	var b strings.Builder
+	ref = url.QueryEscape(ref)
+	b.Grow(len(name) + len(ref) + len(path) + len("git://?#"))
+	b.WriteString("git://")
+	b.WriteString(string(name))
+	if ref != "" {
+		b.WriteByte('?')
+		b.WriteString(ref)
+	}
+	b.WriteByte('#')
+	b.WriteString(path)
+	return b.String()
 }
 
 func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
@@ -525,12 +534,13 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 				})
 			}
 		}
+		repo := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
 		matches[i] = &fileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
-			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
-			repo:         repoMap[api.RepoName(strings.ToLower(string(file.Repository)))],
+			uri:          fileMatchURI(repo.Name, "", file.FileName),
+			repo:         repo,
 			commitID:     "", // zoekt only searches default branch
 		}
 	}
@@ -927,7 +937,7 @@ func (sem semaphore) Release() {
 }
 
 var zoektCl zoekt.Searcher
-var zoektCache *zoektpkg.Cache
+var zoektCache *backend.Zoekt
 var searcherURLs *endpoint.Map
 
 func init() {
@@ -939,7 +949,7 @@ func init() {
 	zoektHost := env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
 	if zoektHost != "" {
 		zoektCl = zoektrpc.Client(zoektHost)
-		zoektCache = &zoektpkg.Cache{Client: zoektCl}
+		zoektCache = &backend.Zoekt{Client: zoektCl}
 	}
 }
 

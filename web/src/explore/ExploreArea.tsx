@@ -1,9 +1,9 @@
 import H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { Settings, SettingsCascadeOrError, SettingsSubject } from '../../../shared/src/settings'
-import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { ComponentDescriptor } from '../util/contributions'
 
 /**
@@ -17,7 +17,7 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
     /** The viewer's settings. */
-    settingsCascade: SettingsCascadeOrError<SettingsSubject, Settings>
+    settingsCascade: SettingsCascadeOrError
 
     isLightTheme: boolean
     location: H.Location

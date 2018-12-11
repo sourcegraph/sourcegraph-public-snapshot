@@ -1,18 +1,17 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
-import { from, Observable, of, OperatorFunction, throwError, throwError as error } from 'rxjs'
+import { Location } from '@sourcegraph/extension-api-types'
+import { from, Observable, of, OperatorFunction, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
-import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
-import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { TextDocumentIdentifier } from '../../../../../shared/src/api/client/types/textDocument'
 import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
-import { Controller } from '../../../../../shared/src/client/controller'
-import { Settings, SettingsSubject } from '../../../../../shared/src/settings'
+import { Controller } from '../../../../../shared/src/extensions/controller'
+import { getModeFromPath } from '../../../../../shared/src/languages'
 import {
     AbsoluteRepo,
     AbsoluteRepoFile,
     AbsoluteRepoFilePosition,
-    AbsoluteRepoLanguageFile,
     FileSpec,
     makeRepoURI,
     parseRepoURI,
@@ -21,7 +20,7 @@ import {
     ResolvedRevSpec,
     RevSpec,
 } from '../repo'
-import { canFetchForURL, DEFAULT_SOURCEGRAPH_URL, getModeFromPath, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { canFetchForURL, DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL } from '../util/url'
 import { normalizeAjaxError, NoSourcegraphURLError } from './errors'
@@ -183,7 +182,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
     return request(url, 'textDocument/hover', body).pipe(extractLSPResponse)
 }, makeRepoURI)
 
-const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Definition> => {
+const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Location | Location[] | null> => {
     const mode = getModeFromPath(pos.filePath)
     if (!mode || unsupportedModes.has(mode)) {
         return of([])
@@ -223,13 +222,15 @@ export function fetchJumpURL(
     return fetchDefinition(pos).pipe(
         map(def => {
             const defArray = Array.isArray(def) ? def : [def]
-            def = defArray[0]
-            if (!def) {
+            const firstDef = defArray[0]
+            if (!firstDef) {
                 return null
             }
 
-            const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
-            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            const uri = parseRepoURI(firstDef.uri) as AbsoluteRepoFilePosition
+            if (firstDef.range) {
+                uri.position = { line: firstDef.range.start.line + 1, character: firstDef.range.start.character + 1 }
+            }
             return toAbsoluteBlobURL(uri)
         })
     )
@@ -239,7 +240,7 @@ export type JumpURLLocation = RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & 
 export function createJumpURLFetcher(
     fetchDefinition: SimpleProviderFns['fetchDefinition'],
     buildURL: (pos: JumpURLLocation) => string
-): JumpURLFetcher {
+): JumpURLFetcher<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> {
     return ({ line, character, part, commitID, repoPath, ...rest }) =>
         fetchDefinition({ ...rest, commitID, repoPath, position: { line, character } }).pipe(
             map(def => {
@@ -255,81 +256,26 @@ export function createJumpURLFetcher(
                     commitID: uri.commitID!, // LSP proxy always includes a commitID in the URI.
                     rev: uri.repoPath === repoPath && uri.commitID === commitID ? rest.rev : uri.rev!, // If the commitID is the same, keep the rev.
                     filePath: uri.filePath!, // There's never going to be a definition without a file.
-                    position: {
-                        line: def.range.start.line + 1,
-                        character: def.range.start.character + 1,
-                    },
+                    position: def.range
+                        ? {
+                              line: def.range.start.line + 1,
+                              character: def.range.start.character + 1,
+                          }
+                        : { line: 0, character: 0 },
                     part,
                 })
             })
         )
 }
 
-const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<ServerCapabilities | undefined> => {
-    // Check if mode is known to not be supported
-    const mode = getModeFromPath(pos.filePath)
-    if (!mode || unsupportedModes.has(mode)) {
-        return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
-    }
-    const url = repoUrlCache[pos.repoPath] || sourcegraphUrl
-    if (!url) {
-        throw new Error('Error fetching server capabilities. No URL found.')
-    }
-    if (!canFetchForURL(url)) {
-        return of(undefined)
-    }
-    return request(
-        url,
-        'initialize',
-        [
-            {
-                id: 0,
-                method: 'initialize',
-                params: {
-                    rootUri: `git://${pos.repoPath}?${pos.commitID}`,
-                    initializationOptions: { mode },
-                },
-            },
-            { id: 1, method: 'shutdown' },
-            { method: 'exit' },
-        ].filter(m => m !== null)
-    ).pipe(
-        tap(response => {
-            if (response.status === 0) {
-                throw Object.assign(new Error('Ajax status 0'), response)
-            }
-        }),
-        catchError<AjaxResponse, never>(err => {
-            normalizeAjaxError(err)
-            throw err
-        }),
-        map(({ response }) => response),
-        map(results => {
-            for (const result of results) {
-                if (result && result.error) {
-                    if (result.error.code === EMODENOTFOUND) {
-                        unsupportedModes.add(mode)
-                    }
-                    throw Object.assign(new Error(result.error.message), result.error)
-                }
-            }
-
-            return results.map((result: any) => result && result.result)
-        }),
-        map(results => (results[0] as InitializeResult).capabilities)
-    )
-}
-
 export interface SimpleProviderFns {
     fetchHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
-    fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Definition>
-    fetchServerCapabilities: (pos: AbsoluteRepoLanguageFile) => Observable<ServerCapabilities | undefined>
+    fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Location | Location[] | null>
 }
 
 export const lspViaAPIXlang: SimpleProviderFns = {
     fetchHover,
     fetchDefinition,
-    fetchServerCapabilities,
 }
 
 export const toTextDocumentIdentifier = (pos: AbsoluteRepoFile): TextDocumentIdentifier => ({
@@ -344,18 +290,15 @@ const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocume
     },
 })
 
-export const createLSPFromExtensions = (
-    extensionsController: Controller<SettingsSubject, Settings>
-): SimpleProviderFns => ({
+export const createLSPFromExtensions = (extensionsController: Controller): SimpleProviderFns => ({
     // Use from() to suppress rxjs type incompatibilities between different minor versions of rxjs in
     // node_modules/.
     fetchHover: pos =>
-        from(extensionsController.registries.textDocumentHover.getHover(toTextDocumentPositionParams(pos))).pipe(
+        from(extensionsController.services.textDocumentHover.getHover(toTextDocumentPositionParams(pos))).pipe(
             map(hover => (hover === null ? HoverMerged.from([]) : hover))
         ),
     fetchDefinition: pos =>
         from(
-            extensionsController.registries.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))
-        ) as Observable<Definition>,
-    fetchServerCapabilities,
+            extensionsController.services.textDocumentDefinition.getLocations(toTextDocumentPositionParams(pos))
+        ) as Observable<Location | Location[] | null>,
 })

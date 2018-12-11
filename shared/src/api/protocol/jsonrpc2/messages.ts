@@ -6,13 +6,18 @@ export interface Message {
 }
 
 /**
+ * The request ID.
+ */
+export type RequestID = number | string
+
+/**
  * Request message
  */
 export interface RequestMessage extends Message {
     /**
-     * The request id.
+     * The request ID.
      */
-    id: number | string
+    id: RequestID
 
     /**
      * The method to be invoked.
@@ -40,12 +45,10 @@ export namespace ErrorCodes {
     export const ServerNotInitialized = -32002
     export const UnknownErrorCode = -32001
 
-    // Defined by the protocol.
-    export const RequestCancelled = -32800
-
     // Defined by this library.
     export const MessageWriteError = 1
     export const MessageReadError = 2
+    export const RequestAborted = -32800
 }
 
 interface ResponseErrorLiteral<D> {
@@ -109,6 +112,11 @@ export interface ResponseMessage extends Message {
      * The error object in case a request fails.
      */
     error?: ResponseErrorLiteral<any>
+
+    /**
+     * Whether the request is completed (no more values will be emitted).
+     */
+    complete?: boolean
 }
 
 /**
@@ -153,7 +161,7 @@ export function isResponseMessage(message: Message | undefined): message is Resp
     const candidate = message as ResponseMessage
     return (
         candidate &&
-        (candidate.result !== void 0 || !!candidate.error) &&
+        (candidate.result !== void 0 || !!candidate.error || !!candidate.complete) &&
         (typeof candidate.id === 'string' || typeof candidate.id === 'number' || candidate.id === null)
     )
 }

@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -79,21 +81,6 @@ func serveReposUpdateMetadata(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposUpdateIndex(w http.ResponseWriter, r *http.Request) error {
-	var repo api.RepoUpdateIndexRequest
-	err := json.NewDecoder(r.Body).Decode(&repo)
-	if err != nil {
-		return err
-	}
-	if err := db.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.CommitID); err != nil {
-		return errors.Wrap(err, "Repos.UpdateIndexedRevision failed")
-	}
-	if err := db.Repos.UpdateLanguage(r.Context(), repo.RepoID, repo.Language); err != nil {
-		return fmt.Errorf("Repos.UpdateLanguage failed: %s", err)
-	}
-	return nil
-}
-
 func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	var repo api.PhabricatorRepoCreateRequest
 	err := json.NewDecoder(r.Body).Decode(&repo)
@@ -111,6 +98,45 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 	return nil
+}
+
+// serveExternalServiceConfigs serves a JSON response that is an array of all
+// external service configs that match the requested kind.
+func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
+	var req api.ExternalServiceConfigsRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		return err
+	}
+	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
+		Kinds: []string{req.Kind},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Instead of returning an intermediate response type, we directly return
+	// the array of configs (which are themselves JSON objects).
+	// This makes it possible for the caller to directly unmarshal the response into
+	// a slice of connection configurations for this external service kind.
+	configs := make([]map[string]interface{}, 0, len(services))
+	for _, service := range services {
+		var config map[string]interface{}
+		// Raw configs may have comments in them so we have to use a json parser
+		// that supports comments in json.
+		if err := jsonc.Unmarshal(service.Config, &config); err != nil {
+			log15.Error(
+				"ignoring external service config that has invalid json",
+				"id", service.ID,
+				"displayName", service.DisplayName,
+				"config", service.Config,
+				"err", err,
+			)
+			continue
+		}
+		configs = append(configs, config)
+	}
+	return json.NewEncoder(w).Encode(configs)
 }
 
 func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
@@ -159,13 +185,12 @@ func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveConfigurationRawJSON(w http.ResponseWriter, r *http.Request) error {
-	rawJSON := globals.ConfigurationServerFrontendOnly.Raw()
-	err := json.NewEncoder(w).Encode(rawJSON)
+func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
+	raw := globals.ConfigurationServerFrontendOnly.Raw()
+	err := json.NewEncoder(w).Encode(raw)
 	if err != nil {
 		return errors.Wrap(err, "Encode")
 	}
-
 	return nil
 }
 
@@ -401,44 +426,6 @@ func serveSendEmail(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return txemail.Send(r.Context(), msg)
-}
-
-func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
-	var args api.DefsRefreshIndexRequest
-	err := json.NewDecoder(r.Body).Decode(&args)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.GetByName(r.Context(), args.RepoName)
-	if err != nil {
-		return err
-	}
-	err = backend.Dependencies.RefreshIndex(r.Context(), repo, args.CommitID)
-	if err != nil {
-		return nil
-	}
-	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte("OK"))
-	return nil
-}
-
-func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
-	var args api.PkgsRefreshIndexRequest
-	err := json.NewDecoder(r.Body).Decode(&args)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.GetByName(r.Context(), args.RepoName)
-	if err != nil {
-		return err
-	}
-	err = backend.Packages.RefreshIndex(r.Context(), repo, args.CommitID)
-	if err != nil {
-		return nil
-	}
-	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte("OK"))
-	return nil
 }
 
 func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {

@@ -13,14 +13,16 @@ import {
     takeUntil,
     withLatestFrom,
 } from 'rxjs/operators'
-import { ConfiguredExtension } from '../../../shared/src/extensions/extension'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { SettingsSubject } from '../../../shared/src/settings'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
+import { viewerConfiguredExtensions } from '../../../shared/src/extensions/helpers'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { queryGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionCard } from './ExtensionCard'
-import { ExtensionsProps, SettingsCascadeProps } from './ExtensionsClientCommonContext'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -59,7 +61,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-interface Props extends SettingsCascadeProps, ExtensionsProps, RouteComponentProps<{}> {
+interface Props extends SettingsCascadeProps, PlatformContextProps, RouteComponentProps<{}> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     emptyElement?: React.ReactFragment
 }
@@ -68,7 +70,7 @@ const LOADING: 'loading' = 'loading'
 
 interface ExtensionsResult {
     /** The configured extensions. */
-    extensions: ConfiguredExtension<GQL.IRegistryExtension>[]
+    extensions: ConfiguredRegistryExtension<GQL.IRegistryExtension>[]
 
     /** An error message that should be displayed to the user (in addition to the configured extensions). */
     error: string | null
@@ -109,7 +111,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     }
 
     private getQueryFromProps(props: Pick<Props, 'location'>): string {
-        const params = new URLSearchParams(location.search)
+        const params = new URLSearchParams(props.location.search)
         return params.get(ExtensionsList.URL_QUERY_PARAM) || ''
     }
 
@@ -229,7 +231,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                         node={e}
                                         onDidUpdate={this.onDidUpdateExtension}
                                         settingsCascade={this.props.settingsCascade}
-                                        extensions={this.props.extensions}
+                                        platformContext={this.props.platformContext}
                                     />
                                 ))}
                             </div>
@@ -245,7 +247,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     private onQueryChange: React.FormEventHandler<HTMLInputElement> = e => this.queryChanges.next(e.currentTarget.value)
 
     private queryRegistryExtensions = (args: { query?: string }): Observable<ExtensionsResult> =>
-        this.props.extensions.viewerConfiguredExtensions.pipe(
+        viewerConfiguredExtensions(this.props.platformContext).pipe(
             // Avoid refreshing (and changing order) when the user merely interacts with an extension (e.g.,
             // toggling its enablement), to reduce UI jitter.
             take(1),
@@ -288,7 +290,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 )
             ),
             map(({ registryExtensions, error }) => ({
-                extensions: this.props.extensions.withConfiguration(registryExtensions),
+                extensions: registryExtensions.map(x => toConfiguredRegistryExtension(x)),
                 error,
             }))
         )

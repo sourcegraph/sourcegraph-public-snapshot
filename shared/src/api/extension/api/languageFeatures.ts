@@ -1,59 +1,85 @@
-import { Unsubscribable } from 'rxjs'
+import * as clientType from '@sourcegraph/extension-api-types'
+import { Observable, Unsubscribable } from 'rxjs'
 import {
     DefinitionProvider,
     DocumentSelector,
+    Hover,
     HoverProvider,
     ImplementationProvider,
     Location,
+    LocationProvider,
     ReferenceContext,
     ReferenceProvider,
+    Subscribable,
     TypeDefinitionProvider,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
-import * as plain from '../../protocol/plainTypes'
-import { ProviderMap } from './common'
+import { ProviderMap, toProviderResultObservable } from './common'
 import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
 
 /** @internal */
 export interface ExtLanguageFeaturesAPI {
-    $provideHover(id: number, resource: string, position: plain.Position): Promise<plain.Hover | null | undefined>
-    $provideDefinition(id: number, resource: string, position: plain.Position): Promise<plain.Definition | undefined>
-    $provideTypeDefinition(
+    $observeHover(
         id: number,
         resource: string,
-        position: plain.Position
-    ): Promise<plain.Definition | undefined>
-    $provideImplementation(
+        position: clientType.Position
+    ): Observable<clientType.Hover | null | undefined>
+    $observeDefinition(
         id: number,
         resource: string,
-        position: plain.Position
-    ): Promise<plain.Definition | undefined>
-    $provideReferences(
+        position: clientType.Position
+    ): Observable<clientType.Location[] | null | undefined>
+    $observeTypeDefinition(
         id: number,
         resource: string,
-        position: plain.Position,
+        position: clientType.Position
+    ): Observable<clientType.Location[] | null | undefined>
+    $observeImplementation(
+        id: number,
+        resource: string,
+        position: clientType.Position
+    ): Observable<clientType.Location[] | null | undefined>
+    $observeReferences(
+        id: number,
+        resource: string,
+        position: clientType.Position,
         context: ReferenceContext
-    ): Promise<plain.Location[] | null | undefined>
+    ): Observable<clientType.Location[] | null | undefined>
+    $observeLocations(
+        id: number,
+        resource: string,
+        position: clientType.Position
+    ): Observable<clientType.Location[] | null | undefined>
 }
 
 /** @internal */
-export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI {
+export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, Unsubscribable {
     private registrations = new ProviderMap<
-        HoverProvider | DefinitionProvider | TypeDefinitionProvider | ImplementationProvider | ReferenceProvider
+        | HoverProvider
+        | DefinitionProvider
+        | TypeDefinitionProvider
+        | ImplementationProvider
+        | ReferenceProvider
+        | LocationProvider
     >(id => this.proxy.$unregister(id))
 
     constructor(private proxy: ClientLanguageFeaturesAPI, private documents: ExtDocuments) {}
 
-    public async $provideHover(
+    public $observeHover(
         id: number,
         resource: string,
-        position: plain.Position
-    ): Promise<plain.Hover | null | undefined> {
+        position: clientType.Position
+    ): Observable<clientType.Hover | null | undefined> {
         const provider = this.registrations.get<HoverProvider>(id)
-        return Promise.resolve(
-            provider.provideHover(await this.documents.getSync(resource), toPosition(position))
-        ).then(result => (result ? fromHover(result) : result))
+        return toProviderResultObservable(
+            this.documents
+                .getSync(resource)
+                .then<Hover | undefined | null | Subscribable<Hover | undefined | null>>(document =>
+                    provider.provideHover(document, toPosition(position))
+                ),
+            hover => (hover ? fromHover(hover) : hover)
+        )
     }
 
     public registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable {
@@ -62,15 +88,20 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI {
         return subscription
     }
 
-    public async $provideDefinition(
+    public $observeDefinition(
         id: number,
         resource: string,
-        position: plain.Position
-    ): Promise<plain.Definition | null | undefined> {
+        position: clientType.Position
+    ): Observable<clientType.Location[] | null | undefined> {
         const provider = this.registrations.get<DefinitionProvider>(id)
-        return Promise.resolve(
-            provider.provideDefinition(await this.documents.getSync(resource), toPosition(position))
-        ).then(toDefinition)
+        return toProviderResultObservable(
+            this.documents
+                .getSync(resource)
+                .then<
+                    Location | Location[] | null | undefined | Subscribable<Location | Location[] | null | undefined>
+                >(document => provider.provideDefinition(document, toPosition(position))),
+            toDefinition
+        )
     }
 
     public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
@@ -79,15 +110,20 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI {
         return subscription
     }
 
-    public async $provideTypeDefinition(
+    public $observeTypeDefinition(
         id: number,
         resource: string,
-        position: plain.Position
-    ): Promise<plain.Definition | null | undefined> {
+        position: clientType.Position
+    ): Observable<clientType.Location[] | null | undefined> {
         const provider = this.registrations.get<TypeDefinitionProvider>(id)
-        return Promise.resolve(
-            provider.provideTypeDefinition(await this.documents.getSync(resource), toPosition(position))
-        ).then(toDefinition)
+        return toProviderResultObservable(
+            this.documents
+                .getSync(resource)
+                .then<
+                    Location | Location[] | null | undefined | Subscribable<Location | Location[] | null | undefined>
+                >(document => provider.provideTypeDefinition(document, toPosition(position))),
+            toDefinition
+        )
     }
 
     public registerTypeDefinitionProvider(
@@ -99,15 +135,20 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI {
         return subscription
     }
 
-    public async $provideImplementation(
+    public $observeImplementation(
         id: number,
         resource: string,
-        position: plain.Position
-    ): Promise<plain.Definition | undefined> {
+        position: clientType.Position
+    ): Observable<clientType.Location[] | null | undefined> {
         const provider = this.registrations.get<ImplementationProvider>(id)
-        return Promise.resolve(
-            provider.provideImplementation(await this.documents.getSync(resource), toPosition(position))
-        ).then(toDefinition)
+        return toProviderResultObservable(
+            this.documents
+                .getSync(resource)
+                .then<
+                    Location | Location[] | null | undefined | Subscribable<Location | Location[] | null | undefined>
+                >(document => provider.provideImplementation(document, toPosition(position))),
+            toDefinition
+        )
     }
 
     public registerImplementationProvider(
@@ -119,16 +160,21 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI {
         return subscription
     }
 
-    public async $provideReferences(
+    public $observeReferences(
         id: number,
         resource: string,
-        position: plain.Position,
+        position: clientType.Position,
         context: ReferenceContext
-    ): Promise<plain.Location[] | null | undefined> {
+    ): Observable<clientType.Location[] | null | undefined> {
         const provider = this.registrations.get<ReferenceProvider>(id)
-        return Promise.resolve(
-            provider.provideReferences(await this.documents.getSync(resource), toPosition(position), context)
-        ).then(toLocations)
+        return toProviderResultObservable(
+            this.documents
+                .getSync(resource)
+                .then<Location[] | null | undefined | Subscribable<Location[] | null | undefined>>(document =>
+                    provider.provideReferences(document, toPosition(position), context)
+                ),
+            toLocations
+        )
     }
 
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
@@ -136,16 +182,47 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI {
         this.proxy.$registerReferenceProvider(id, selector)
         return subscription
     }
+
+    public $observeLocations(
+        id: number,
+        resource: string,
+        position: clientType.Position
+    ): Observable<clientType.Location[] | null | undefined> {
+        const provider = this.registrations.get<LocationProvider>(id)
+        return toProviderResultObservable(
+            this.documents
+                .getSync(resource)
+                .then<Location[] | null | undefined | Subscribable<Location[] | null | undefined>>(document =>
+                    provider.provideLocations(document, toPosition(position))
+                ),
+            toLocations
+        )
+    }
+
+    public registerLocationProvider(
+        idStr: string,
+        selector: DocumentSelector,
+        provider: LocationProvider
+    ): Unsubscribable {
+        /**
+         * {@link idStr} is the `id` parameter to {@link sourcegraph.languages.registerLocationProvider} that
+         * identifies the provider and is chosen by the extension. {@link id} is an internal implementation detail:
+         * the numeric registry ID used to identify this provider solely between the client and extension host.
+         */
+        const { id, subscription } = this.registrations.add(provider)
+        this.proxy.$registerLocationProvider(id, idStr, selector)
+        return subscription
+    }
+
+    public unsubscribe(): void {
+        this.registrations.unsubscribe()
+    }
 }
 
-function toLocations(result: Location[] | null | undefined): plain.Location[] | null | undefined {
+function toLocations(result: Location[] | null | undefined): clientType.Location[] | null | undefined {
     return result ? result.map(location => fromLocation(location)) : result
 }
 
-function toDefinition(result: Location[] | Location | null | undefined): plain.Definition | undefined {
-    return result
-        ? Array.isArray(result)
-            ? result.map(location => fromLocation(location))
-            : fromLocation(result)
-        : result
+function toDefinition(result: Location[] | Location | null | undefined): clientType.Location[] | null | undefined {
+    return result ? (Array.isArray(result) ? result : [result]).map(location => fromLocation(location)) : result
 }

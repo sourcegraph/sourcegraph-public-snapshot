@@ -1,20 +1,11 @@
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
-import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
-import { flatten } from 'lodash'
-import { forkJoin, Observable } from 'rxjs'
+import { Location, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { Definition, Location, TextDocumentDecoration } from '../../../shared/src/api/protocol/plainTypes'
-import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
-import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
-import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
-import {
-    fetchXdefinition,
-    fetchXreferences,
-    LSPReferencesParams,
-    LSPSelector,
-    LSPTextDocumentPositionParams,
-    XReferenceOptions,
-} from './lsp'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { AbsoluteRepoFile, parseRepoURI, toPrettyBlobURL } from '../../../shared/src/util/url'
+import { toAbsoluteBlobURL } from '../util/url'
+import { LSPSelector, LSPTextDocumentPositionParams } from './lsp'
 
 /**
  * Specifies an LSP mode.
@@ -36,7 +27,7 @@ export function getHover(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<HoverMerged | null> {
-    return extensionsController.registries.textDocumentHover
+    return extensionsController.services.textDocumentHover
         .getHover({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
@@ -56,8 +47,8 @@ export function getHover(
 export function getDefinition(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
-): Observable<Definition> {
-    return extensionsController.registries.textDocumentDefinition.getLocation({
+): Observable<Location[] | null> {
+    return extensionsController.services.textDocumentDefinition.getLocations({
         textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
         position: {
             character: ctx.position.character - 1,
@@ -80,12 +71,11 @@ export function getJumpURL(
     extensions: ExtensionsControllerProps
 ): Observable<string | null> {
     return getDefinition(ctx, extensions).pipe(
-        map(def => {
-            const defArray = Array.isArray(def) ? def : [def]
-            def = defArray[0]
-            if (!def) {
+        map(defs => {
+            if (!defs || defs.length === 0) {
                 return null
             }
+            const def = defs[0]
 
             const uri = parseRepoURI(def.uri) as LSPTextDocumentPositionParams
             if (def.range) {
@@ -102,54 +92,25 @@ export function getJumpURL(
 }
 
 /**
- * Fetches the repository-independent symbol descriptor for the given location.
- *
- * Only the first result is returned, even if there are results from multiple providers.
- *
- * @param ctx the location
- * @return information about the symbol at the location
- */
-export function getXdefinition(ctx: LSPTextDocumentPositionParams): Observable<SymbolLocationInformation | undefined> {
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchXdefinition({ ...ctx, mode }))).pipe(
-        map(results => results.find(v => !!v))
-    )
-}
-
-/**
- * Wrap the value in an array. Unlike Lodash's castArray, it maps null to [] (not [null]).
- */
-function castArray<T>(value: null | T | T[]): T[] {
-    if (value === null) {
-        return []
-    }
-    if (!Array.isArray(value)) {
-        return [value]
-    }
-    return value
-}
-
-/**
  * Fetches references (in the same repository) to the symbol at the given location.
  *
  * @param ctx the location
  * @return references to the symbol at the location
  */
 export function getReferences(
-    ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
+    ctx: LSPTextDocumentPositionParams & { includeDeclaration?: boolean },
     { extensionsController }: ExtensionsControllerProps
-): Observable<Location[]> {
-    return extensionsController.registries.textDocumentReferences
-        .getLocation({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-            position: {
-                character: ctx.position.character - 1,
-                line: ctx.position.line - 1,
-            },
-            context: {
-                includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
-            },
-        })
-        .pipe(map(castArray))
+): Observable<Location[] | null> {
+    return extensionsController.services.textDocumentReferences.getLocations({
+        textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        position: {
+            character: ctx.position.character - 1,
+            line: ctx.position.line - 1,
+        },
+        context: {
+            includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
+        },
+    })
 }
 
 /**
@@ -161,28 +122,14 @@ export function getReferences(
 export function getImplementations(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
-): Observable<Location[]> {
-    return extensionsController.registries.textDocumentImplementation
-        .getLocation({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-            position: {
-                character: ctx.position.character - 1,
-                line: ctx.position.line - 1,
-            },
-        })
-        .pipe(map(castArray))
-}
-
-/**
- * Fetches references in the repository to the symbol described by the repository-independent symbol descriptor.
- *
- * @param ctx the symbol descriptor and repository to search in
- * @return references to the symbol
- */
-export function getXreferences(ctx: XReferenceOptions & AbsoluteRepo & LSPSelector): Observable<Location[]> {
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchXreferences({ ...ctx, mode }))).pipe(
-        map(results => flatten(results))
-    )
+): Observable<Location[] | null> {
+    return extensionsController.services.textDocumentImplementation.getLocations({
+        textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        position: {
+            character: ctx.position.character - 1,
+            line: ctx.position.line - 1,
+        },
+    })
 }
 
 /**
@@ -195,12 +142,7 @@ export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
-    return extensionsController.registries.textDocumentDecoration.getDecorations({
+    return extensionsController.services.textDocumentDecoration.getDecorations({
         uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
     })
-}
-
-/** Computes the set of LSP modes to use. */
-function getModes(ctx: ModeSpec): { mode: string }[] {
-    return [{ mode: ctx.mode }]
 }

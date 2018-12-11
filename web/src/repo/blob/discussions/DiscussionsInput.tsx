@@ -2,14 +2,18 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
-import { merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, concat, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
+import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { catchError, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
+import { Markdown } from '../../../../../shared/src/components/Markdown'
+import {
+    Spacer,
+    TabBorderClassName,
+    TabsWithLocalStorageViewStatePersistence,
+} from '../../../../../shared/src/components/Tabs'
+import { asError } from '../../../../../shared/src/util/errors'
 import { Form } from '../../../components/Form'
-import { Markdown } from '../../../components/Markdown'
-import { Spacer, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../../../components/Tabs'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { asError } from '../../../util/errors'
 import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
 
 /**
@@ -130,28 +134,27 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     filter(tab => tab === 'preview'),
                     withLatestFrom(this.textAreaChanges),
                     mergeMap(([, { textAreaValue }]) =>
-                        of<Update>(state => ({ ...state, previewHTML: undefined, previewLoading: true })).pipe(
-                            concat(
-                                renderMarkdown(this.trimImplicitTitle(textAreaValue)).pipe(
-                                    map(
-                                        (previewHTML): Update => state => ({
-                                            ...state,
-                                            previewHTML,
-                                            previewLoading: false,
-                                        })
-                                    ),
-                                    catchError(
-                                        (error): Update[] => {
-                                            console.error(error)
-                                            return [
-                                                state => ({
-                                                    ...state,
-                                                    error: new Error('Error rendering markdown: ' + error.message),
-                                                    previewLoading: false,
-                                                }),
-                                            ]
-                                        }
-                                    )
+                        concat(
+                            of<Update>(state => ({ ...state, previewHTML: undefined, previewLoading: true })),
+                            renderMarkdown({ markdown: this.trimImplicitTitle(textAreaValue) }).pipe(
+                                map(
+                                    (previewHTML): Update => state => ({
+                                        ...state,
+                                        previewHTML,
+                                        previewLoading: false,
+                                    })
+                                ),
+                                catchError(
+                                    (error): Update[] => {
+                                        console.error(error)
+                                        return [
+                                            state => ({
+                                                ...state,
+                                                error: new Error('Error rendering markdown: ' + error.message),
+                                                previewLoading: false,
+                                            }),
+                                        ]
+                                    }
                                 )
                             )
                         )
@@ -173,30 +176,29 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         this.componentUpdates.pipe(startWith(this.props))
                     ),
                     mergeMap(([, { textAreaValue }, titleInputValue, props]) =>
-                        // Start with setting submitting: true
-                        of<Update>(state => ({ ...state, submitting: true })).pipe(
-                            concat(
-                                props.onSubmit(titleInputValue, this.trimImplicitTitle(textAreaValue)).pipe(
-                                    map(
-                                        (): Update => state => ({
-                                            ...state,
-                                            submitting: false,
-                                            titleInputValue: '',
-                                            textArea: { ...state, textAreaValue: '', selectionStart: 0 },
-                                        })
-                                    ),
-                                    catchError(
-                                        (error): Update[] => {
-                                            console.error(error)
-                                            return [
-                                                state => ({
-                                                    ...state,
-                                                    error: asError(error),
-                                                    submitting: false,
-                                                }),
-                                            ]
-                                        }
-                                    )
+                        concat(
+                            // Start with setting submitting: true
+                            of<Update>(state => ({ ...state, submitting: true })),
+                            props.onSubmit(titleInputValue, this.trimImplicitTitle(textAreaValue)).pipe(
+                                map(
+                                    (): Update => state => ({
+                                        ...state,
+                                        submitting: false,
+                                        titleInputValue: '',
+                                        textArea: { ...state, textAreaValue: '', selectionStart: 0 },
+                                    })
+                                ),
+                                catchError(
+                                    (error): Update[] => {
+                                        console.error(error)
+                                        return [
+                                            state => ({
+                                                ...state,
+                                                error: asError(error),
+                                                submitting: false,
+                                            }),
+                                        ]
+                                    }
                                 )
                             )
                         )

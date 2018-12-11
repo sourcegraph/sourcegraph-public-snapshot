@@ -18,6 +18,11 @@ export const primaryGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/configuration',
         },
         {
+            label: 'External services',
+            to: '/site-admin/external-services',
+            condition: () => window.context.externalServicesEnabled,
+        },
+        {
             label: 'Repositories',
             to: '/site-admin/repositories',
         },

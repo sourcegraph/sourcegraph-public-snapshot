@@ -37,10 +37,14 @@ class WebWorkerMessageReader extends AbstractMessageReader implements MessageRea
                 this.fireError(err)
             }
         })
-        worker.addEventListener('error', err => {
+        worker.addEventListener('error', (err: ErrorEvent) => {
             this.fireError(err)
-            terminateWorker(worker)
-            this.fireClose()
+            if (err.cancelable) {
+                err.preventDefault()
+            } else {
+                terminateWorker(worker)
+                this.fireClose()
+            }
         })
     }
 
@@ -106,9 +110,13 @@ function terminateWorker(worker: Worker): void {
  *               `self`) if the current execution context is in a Worker. Defaults to the global scope.
  */
 export function createWebWorkerMessageTransports(worker: Worker = globalWorkerScope()): MessageTransports {
+    const reader = new WebWorkerMessageReader(worker)
+    const writer = new WebWorkerMessageWriter(worker)
+    reader.onError(err => console.error(err))
+    writer.onError(err => console.error(err))
     return {
-        reader: new WebWorkerMessageReader(worker),
-        writer: new WebWorkerMessageWriter(worker),
+        reader,
+        writer,
     }
 }
 

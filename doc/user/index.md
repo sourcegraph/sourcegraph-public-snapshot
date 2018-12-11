@@ -23,6 +23,7 @@ All features:
 
 - [Usage statistics](usage_statistics.md)
 - [User surveys](user_surveys.md)
+- [Color themes](themes.md)
 
 ## What is Sourcegraph?
 

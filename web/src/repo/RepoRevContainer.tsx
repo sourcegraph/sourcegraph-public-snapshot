@@ -5,20 +5,17 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphqlschema'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
-import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../extensions/ExtensionsClientCommonContext'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
 import { RouteDescriptor } from '../util/contributions'
-import { ErrorLike, isErrorLike } from '../util/errors'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
@@ -31,8 +28,7 @@ export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        ExtensionsDocumentsProps,
-        ExtensionsProps {
+        PlatformContextProps {
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
@@ -47,8 +43,7 @@ interface RepoRevContainerProps
     extends RouteComponentProps<{}>,
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
-        ExtensionsProps,
-        ExtensionsDocumentsProps,
+        PlatformContextProps,
         ExtensionsControllerProps {
     routes: ReadonlyArray<RepoRevContainerRoute>
     repo: GQL.IRepository
@@ -193,10 +188,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         }
 
         const context: RepoRevContainerContext = {
-            extensions: this.props.extensions,
+            platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
-            extensionsOnRootsChange: this.props.extensionsOnRootsChange,
-            extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             isLightTheme: this.props.isLightTheme,
             repo: this.props.repo,
             repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,

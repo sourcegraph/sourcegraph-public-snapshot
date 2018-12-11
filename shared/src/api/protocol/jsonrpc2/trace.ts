@@ -2,12 +2,6 @@ import { NotificationMessage, RequestMessage, ResponseMessage } from './messages
 
 // Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
 
-export enum Trace {
-    Off = 'off',
-    Messages = 'messages',
-    Verbose = 'verbose',
-}
-
 /** Records messages sent and received on a JSON-RPC 2.0 connection. */
 export interface Tracer {
     log(message: string, details?: string): void
@@ -16,7 +10,7 @@ export interface Tracer {
     notificationSent(message: NotificationMessage): void
     notificationReceived(message: NotificationMessage): void
     responseSent(message: ResponseMessage, request: RequestMessage, startTime: number): void
-    responseCanceled(message: ResponseMessage, request: RequestMessage, cancelMessage: NotificationMessage): void
+    responseAborted(message: ResponseMessage, request: RequestMessage, abortMessage: NotificationMessage): void
     responseReceived(message: ResponseMessage, request: RequestMessage | string, startTime: number): void
     unknownResponseReceived(message: ResponseMessage): void
 }
@@ -29,7 +23,7 @@ export const noopTracer: Tracer = {
     notificationSent: () => void 0,
     notificationReceived: () => void 0,
     responseSent: () => void 0,
-    responseCanceled: () => void 0,
+    responseAborted: () => void 0,
     responseReceived: () => void 0,
     unknownResponseReceived: () => void 0,
 }
@@ -93,22 +87,18 @@ export class BrowserConsoleTracer implements Tracer {
             typeof request === 'string' ? request : request.method
         )
         ;(console.groupCollapsed as any)(...prefix)
-        if (message.error) {
-            console.log('Error:', message.error)
-        } else {
-            console.log('Result:', message.result)
-        }
+        console.log('Response:', message)
         console.log('Request:', request)
         console.log('Duration: %d msec', Date.now() - startTime)
         console.groupEnd()
     }
 
-    public responseCanceled(
+    public responseAborted(
         _message: ResponseMessage,
         request: RequestMessage,
-        _cancelMessage: NotificationMessage
+        _abortMessage: NotificationMessage
     ): void {
-        console.log(...this.prefix('info', '× cancel: ', request.method))
+        console.log(...this.prefix('info', '× abort: ', request.method))
     }
 
     public responseReceived(message: ResponseMessage, request: RequestMessage | string, startTime: number): void {
@@ -121,11 +111,7 @@ export class BrowserConsoleTracer implements Tracer {
             console.log(...prefix, message.error || message.result)
         } else {
             ;(console.groupCollapsed as any)(...prefix)
-            if (message.error) {
-                console.log('Error:', message.error)
-            } else {
-                console.log('Result:', message.result)
-            }
+            console.log('Response:', message)
             console.log('Request:', request)
             console.log('Duration: %d msec', Date.now() - startTime)
             console.groupEnd()

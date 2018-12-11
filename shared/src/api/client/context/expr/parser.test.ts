@@ -107,6 +107,58 @@ describe('Parser', () => {
                 right: { Identifier: 'b' },
             },
         },
+
+        // TODO: The template language currently does not support operator precedence. You must use parentheses to
+        // be explicit. This commented-out (failing) test case is the desired parse tree for this expression:
+        //
+        // 'a == b && c == d': {
+        //     Binary: {
+        //         left: {
+        //             Binary: {
+        //                 left: { Identifier: 'a' },
+        //                 operator: '==',
+        //                 right: {
+        //                     Identifier: 'b',
+        //                 },
+        //             },
+        //         },
+        //         operator: '&&',
+        //         right: {
+        //             Binary: {
+        //                 left: { Identifier: 'c' },
+        //                 operator: '==',
+        //                 right: { Identifier: 'd' },
+        //             },
+        //         },
+        //     },
+        // },
+        //
+        // This is the undesirable parse tree for the expression. When the commented-out test case passes, this
+        // undesirable test case should be removed.
+        'a == b && c == d': {
+            Binary: {
+                left: {
+                    Binary: {
+                        left: {
+                            Binary: {
+                                left: { Identifier: 'a' },
+                                operator: '==',
+                                right: { Identifier: 'b' },
+                            },
+                        },
+                        operator: '&&',
+                        right: {
+                            Identifier: 'c',
+                        },
+                    },
+                },
+                operator: '==',
+                right: {
+                    Identifier: 'd',
+                },
+            },
+        },
+
         '(a + b) * c': {
             Binary: {
                 left: {

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 import siteSchemaJSON from '../../../schema/site.schema.json'
-import * as GQL from '../../../shared/src/graphqlschema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
@@ -29,6 +29,8 @@ interface State {
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
+
+const EXTRA_SCHEMAS = [siteSchemaJSON]
 
 /**
  * A page displaying the site configuration.
@@ -260,7 +262,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             <DynamicallyImportedMonacoSettingsEditor
                                 value={contents || ''}
                                 actions={siteConfigActions}
-                                jsonSchema={siteSchemaJSON}
+                                jsonSchemaId="site.schema.json#"
+                                extraSchemas={EXTRA_SCHEMAS}
                                 onDirtyChange={this.onDirtyChange}
                                 canEdit={this.state.site.configuration.canUpdate}
                                 saving={this.state.saving}

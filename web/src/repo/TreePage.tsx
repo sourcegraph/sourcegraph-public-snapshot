@@ -11,30 +11,29 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { ActionItem } from '../../../shared/src/actions/ActionItem'
+import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { ActionItem } from '../../../shared/src/app/actions/ActionItem'
-import { ActionsContainer } from '../../../shared/src/app/actions/ActionsContainer'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { displayRepoPath } from '../../../shared/src/components/RepoFileLink'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
-import { displayRepoPath } from '../components/RepoFileLink'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import {
-    ExtensionsControllerProps,
-    ExtensionsProps,
-    SettingsCascadeProps,
-} from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger } from '../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
-import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
-import { memoizeObservable } from '../util/memoize'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
@@ -98,7 +97,7 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends SettingsCascadeProps, ExtensionsControllerProps, ExtensionsProps {
+interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps {
     repoPath: string
     repoID: GQL.ID
     repoDescription: string
@@ -323,7 +322,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                                 {...item}
                                                 className="btn btn-secondary mr-1 mb-1"
                                                 extensionsController={this.props.extensionsController}
-                                                extensions={this.props.extensions}
+                                                platformContext={this.props.platformContext}
                                                 location={this.props.location}
                                             />
                                         ))}
@@ -331,7 +330,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 )}
                                 empty={null}
                                 extensionsController={this.props.extensionsController}
-                                extensions={this.props.extensions}
+                                platformContext={this.props.platformContext}
                                 location={this.props.location}
                             />
                             <div className="tree-page__section">

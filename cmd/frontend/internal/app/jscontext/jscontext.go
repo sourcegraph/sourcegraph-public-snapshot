@@ -10,17 +10,16 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -80,6 +79,8 @@ type JSContext struct {
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
 	UpdateScheduler2Enabled bool `json:"updateScheduler2Enabled"`
+
+	ExternalServicesEnabled bool `json:"externalServicesEnabled"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -111,8 +112,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	siteConfig, err := db.SiteConfig.Get(req.Context())
-	showOnboarding := err == nil && !siteConfig.Initialized
+	globalState, err := globalstatedb.Get(req.Context())
+	showOnboarding := err == nil && !globalState.Initialized
 
 	// Auth providers
 	var authProviders []authProviderInfo
@@ -168,6 +169,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AuthProviders: authProviders,
 
 		UpdateScheduler2Enabled: conf.UpdateScheduler2Enabled(),
+
+		ExternalServicesEnabled: conf.ExternalServicesEnabled(),
 	}
 }
 

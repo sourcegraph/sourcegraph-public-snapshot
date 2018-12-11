@@ -1,7 +1,7 @@
 import * as React from 'react'
-import * as GQL from '../../../../../../shared/src/graphqlschema'
-import { LinkOrSpan } from '../../../../../../shared/src/ui/generic/LinkOrSpan'
-import { gql } from '../../../../backend/graphql'
+import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
+import { gql } from '../../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 

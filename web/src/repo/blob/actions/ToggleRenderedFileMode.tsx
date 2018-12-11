@@ -1,7 +1,7 @@
 import * as H from 'history'
 import EyeIcon from 'mdi-react/EyeIcon'
 import * as React from 'react'
-import { RenderMode } from '../..'
+import { RenderMode } from '../../../../../shared/src/util/url'
 import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 

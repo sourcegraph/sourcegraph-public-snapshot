@@ -3,15 +3,18 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { combineLatest, merge, of, Subject, Subscription } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
-import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
-import * as GQL from '../../../../shared/src/graphqlschema'
-import { gql, graphQLContent } from '../../backend/graphql'
+import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
+import { gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { createAggregateError } from '../../../../shared/src/util/errors'
+import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsProps, SettingsCascadeProps } from '../../extensions/ExtensionsClientCommonContext'
 import { RouteDescriptor } from '../../util/contributions'
-import { ErrorLike, isErrorLike } from '../../util/errors'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
 
@@ -65,18 +68,18 @@ export interface ExtensionAreaProps extends ExtensionsAreaRouteContext, RouteCom
 
 interface ExtensionAreaState {
     /** The registry extension, undefined while loading, or an error.  */
-    extensionOrError?: ConfiguredExtension<GQL.IRegistryExtension> | ErrorLike
+    extensionOrError?: ConfiguredRegistryExtension<GQL.IRegistryExtension> | ErrorLike
 }
 
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface ExtensionAreaRouteContext extends SettingsCascadeProps, ExtensionsProps {
+export interface ExtensionAreaRouteContext extends SettingsCascadeProps, PlatformContextProps {
     /** The extension registry area main URL. */
     url: string
 
     /** The extension that is the subject of the page. */
-    extension: ConfiguredExtension<GQL.IRegistryExtension>
+    extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
 
     /** Called when the component updates the extension and it should be refreshed here. */
     onDidUpdateExtension: () => void
@@ -110,7 +113,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
 
         // Changes to the global extensions settings.
         const globalExtensionsSettingsChanges = this.componentUpdates.pipe(
-            map(({ extensions }) => extensions),
+            map(({ platformContext }) => platformContext),
             distinctUntilChanged()
         )
 
@@ -127,16 +130,14 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                 .pipe(
                     switchMap(([extensionID, forceRefresh]) => {
                         type PartialStateUpdate = Pick<ExtensionAreaState, 'extensionOrError'>
-                        return this.props.extensions
-                            .forExtensionID(extensionID, registryExtensionFragment[graphQLContent])
-                            .pipe(
-                                catchError(error => [error]),
-                                map(c => ({ extensionOrError: c } as PartialStateUpdate)),
+                        return queryExtension(extensionID).pipe(
+                            catchError(error => [error]),
+                            map(c => ({ extensionOrError: c } as PartialStateUpdate)),
 
-                                // Don't clear old data while we reload, to avoid unmounting all components during
-                                // loading.
-                                startWith<PartialStateUpdate>(forceRefresh ? { extensionOrError: undefined } : {})
-                            )
+                            // Don't clear old data while we reload, to avoid unmounting all components during
+                            // loading.
+                            startWith<PartialStateUpdate>(forceRefresh ? { extensionOrError: undefined } : {})
+                        )
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
@@ -176,7 +177,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
             onDidUpdateExtension: this.onDidUpdateExtension,
             settingsCascade: this.props.settingsCascade,
             extension: this.state.extensionOrError,
-            extensions: this.props.extensions,
+            platformContext: this.props.platformContext,
             isLightTheme: this.props.isLightTheme,
         }
 
@@ -205,4 +206,28 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
     }
 
     private onDidUpdateExtension = () => this.refreshRequests.next()
+}
+
+function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension> {
+    return queryGraphQL(
+        gql`
+            query RegistryExtension($extensionID: String!) {
+                extensionRegistry {
+                    extension(extensionID: $extensionID) {
+                        ...RegistryExtensionFields
+                    }
+                }
+            }
+            ${registryExtensionFragment}
+        `,
+        { extensionID }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.extensionRegistry || !data.extensionRegistry.extension) {
+                throw createAggregateError(errors)
+            }
+            return data.extensionRegistry.extension
+        }),
+        map(registryExtension => toConfiguredRegistryExtension(registryExtension))
+    )
 }

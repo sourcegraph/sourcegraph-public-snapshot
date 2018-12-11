@@ -3,9 +3,10 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../../../backend/graphql'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../util/errors'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { queryGraphQL } from '../../../backend/graphql'
 import { ProductPlanPrice } from './ProductPlanPrice'
 import { ProductPlanTiered } from './ProductPlanTiered'
 
@@ -135,6 +136,7 @@ function queryProductPlans(): Observable<GQL.IProductPlan[]> {
                         planTiers {
                             unitAmount
                             upTo
+                            flatAmount
                         }
                     }
                 }

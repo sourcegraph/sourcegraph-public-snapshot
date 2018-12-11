@@ -34,7 +34,7 @@ func TestRepoShield(t *testing.T) {
 	c := newTest()
 
 	wantResp := map[string]interface{}{
-		"value": " 200 projects",
+		"value": "?",
 	}
 
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
@@ -51,7 +51,7 @@ func TestRepoShield(t *testing.T) {
 		}
 		return "aed", nil
 	}
-	backend.Mocks.Defs.TotalRefs = func(ctx context.Context, source api.RepoName) (int, error) {
+	backend.MockBackcompatBackendDefsTotalRefs = func(ctx context.Context, source api.RepoName) (int, error) {
 		if source != "github.com/gorilla/mux" {
 			t.Error("wrong repo source to TotalRefs")
 		}

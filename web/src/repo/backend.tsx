@@ -1,10 +1,12 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '.'
-import * as GQL from '../../../shared/src/graphqlschema'
-import { gql, queryGraphQL } from '../backend/graphql'
-import { createAggregateError } from '../util/errors'
-import { memoizeObservable } from '../util/memoize'
+import { FetchFileCtx } from '../../../shared/src/components/CodeExcerpt'
+import { gql } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '../../../shared/src/util/url'
+import { queryGraphQL } from '../backend/graphql'
 
 // We don't subclass Error because Error is not subclassable in ES5.
 // Use the internal factory functions and check for the error code on callsites.
@@ -152,14 +154,6 @@ export const resolveRev = memoizeObservable(
         ),
     makeRepoURI
 )
-
-interface FetchFileCtx {
-    repoPath: string
-    commitID: string
-    filePath: string
-    disableTimeout?: boolean
-    isLightTheme: boolean
-}
 
 interface HighlightedFileResult {
     isDirectory: boolean

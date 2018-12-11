@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
@@ -93,16 +93,18 @@ func getOrCreateUser(ctx context.Context, info *authnResponseInfo) (_ *actor.Act
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", info.unnormalizedUsername), err
 	}
 
-	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		Username:        username,
-		Email:           info.email,
-		EmailIsVerified: info.email != "", // TODO(sqs): https://github.com/sourcegraph/sourcegraph/issues/10118
-		DisplayName:     info.displayName,
-		// SAML has no standard way of providing an avatar URL.
-	},
-		info.spec,
-		data,
-	)
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
+		UserProps: db.NewUser{
+			Username:        username,
+			Email:           info.email,
+			EmailIsVerified: info.email != "", // SAML emails are assumed to be verified
+			DisplayName:     info.displayName,
+			// SAML has no standard way of providing an avatar URL.
+		},
+		ExternalAccount:     info.spec,
+		ExternalAccountData: data,
+		CreateIfNotExist:    true,
+	})
 	if err != nil {
 		return nil, safeErrMsg, err
 	}

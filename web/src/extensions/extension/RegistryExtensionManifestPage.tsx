@@ -3,7 +3,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { ConfiguredExtension } from '../../../../shared/src/extensions/extension'
+import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
 import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -11,7 +11,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
-    extension: ConfiguredExtension
+    extension: ConfiguredRegistryExtension
 }> = ({ extension }) => (
     <div className="alert alert-info">
         This extension is not yet published.
@@ -39,6 +39,8 @@ enum ViewMode {
     Rich = 'rich',
     Plain = 'plain',
 }
+
+const EXTRA_SCHEMAS = [extensionSchemaJSON]
 
 /** A page that displays an extension's manifest. */
 export class RegistryExtensionManifestPage extends React.PureComponent<Props, State> {
@@ -98,7 +100,8 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             id="registry-extension-edit-page__data"
                             value={this.props.extension.rawManifest}
                             height={500}
-                            jsonSchema={extensionSchemaJSON}
+                            jsonSchemaId="extension.schema.json#"
+                            extraSchemas={EXTRA_SCHEMAS}
                             readOnly={true}
                             isLightTheme={this.props.isLightTheme}
                             history={this.props.history}

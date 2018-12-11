@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
@@ -113,6 +114,39 @@ func (r *siteResolver) HasCodeIntelligence() bool {
 
 func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 	return &productSubscriptionStatus{}
+}
+
+func (r *siteResolver) ManagementConsoleState(ctx context.Context) (*managementConsoleStateResolver, error) {
+	// 🚨 SECURITY: Only site admins may view this information.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	return &managementConsoleStateResolver{}, nil
+}
+
+type managementConsoleStateResolver struct{}
+
+func (m *managementConsoleStateResolver) PlaintextPassword(ctx context.Context) (*string, error) {
+	// 🚨 SECURITY: Only site admins may view this information.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	password, err := globalstatedb.GetManagementConsolePlaintextPassword(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if password == "" {
+		return nil, nil
+	}
+	return &password, nil
+}
+
+func (r *schemaResolver) ClearManagementConsolePlaintextPassword(ctx context.Context) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may view this information.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return &EmptyResponse{}, nil
+	}
+	return &EmptyResponse{}, globalstatedb.ClearManagementConsolePlaintextPassword(ctx)
 }
 
 type siteConfigurationResolver struct{}

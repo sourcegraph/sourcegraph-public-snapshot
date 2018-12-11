@@ -4,12 +4,11 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
@@ -17,7 +16,7 @@ import { CodeIntellifyBlob } from './CodeIntellifyBlob'
 import { QueryInputForModal } from './QueryInputForModal'
 import { SearchButton } from './SearchButton'
 
-interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
+interface Props extends ExtensionsControllerProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -367,8 +366,8 @@ export class MainPage extends React.Component<Props, State> {
                                     <p>
                                         Solve problems before they exist, commit by commit. Code intelligence makes
                                         browsing code easier, with IDE-like hovers, go-to-definition, and
-                                        find-references on your code, powered by language servers based on the
-                                        open-source Language Server Protocol.
+                                        find-references on your code, powered by Sourcegraph extensions and language
+                                        servers based on the open-source Language Server Protocol.
                                     </p>
                                     <p>
                                         It even works in code review diffs on GitHub and GitLab with our browser

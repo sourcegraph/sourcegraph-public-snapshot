@@ -3,15 +3,14 @@ import * as H from 'history'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import { RepoLink } from '../../../../shared/src/components/RepoLink'
+import { ResultContainer } from '../../../../shared/src/components/ResultContainer'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { AbsoluteRepoFilePosition, RepoSpec, toPrettyBlobURL } from '../../../../shared/src/util/url'
 import { DecoratedTextLines } from '../../components/DecoratedTextLines'
-import { ResultContainer } from '../../components/ResultContainer'
-import { AbsoluteRepoFilePosition, RepoSpec } from '../../repo'
 import { GitRefTag } from '../../repo/GitRefTag'
-import { RepoLink } from '../../repo/RepoLink'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
-import { toPrettyBlobURL } from '../../util/url'
 
 interface Props {
     location: H.Location
@@ -133,18 +132,24 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
         const commonCtx: RepoSpec = {
             repoPath: props.result.commit.repository.name,
         }
+
+        interface AbsoluteRepoFilePositionNonReadonly
+            extends Pick<AbsoluteRepoFilePosition, Exclude<keyof AbsoluteRepoFilePosition, 'position'>> {
+            position: { line: number; character: number }
+        }
+
         // lhsCtx and rhsCtx need the cast because their values at const init time lack
         // the filePath field, which is assigned as we iterate over the lines below.
         const lhsCtx = {
             ...commonCtx,
             commitID: props.result.commit.oid + '~',
             rev: props.result.commit.oid + '~',
-        } as AbsoluteRepoFilePosition
+        } as AbsoluteRepoFilePositionNonReadonly
         const rhsCtx = {
             ...commonCtx,
             commitID: props.result.commit.oid,
             rev: props.result.commit.oid,
-        } as AbsoluteRepoFilePosition
+        } as AbsoluteRepoFilePositionNonReadonly
 
         // Omit "index ", "--- file", and "+++ file" lines.
         const lines = props.result.diffPreview.value.split('\n')

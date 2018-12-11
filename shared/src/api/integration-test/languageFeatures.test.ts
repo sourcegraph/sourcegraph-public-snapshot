@@ -1,11 +1,12 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import * as assert from 'assert'
-import { take } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { bufferCount, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
-import { Controller } from '../client/controller'
+import { Services } from '../client/services'
 import { assertToJSON } from '../extension/types/common.test'
 import { URI } from '../extension/types/uri'
-import { Definition } from '../protocol/plainTypes'
 import { createBarrier, integrationTestContext } from './helpers.test'
 
 describe('LanguageFeatures (integration)', () => {
@@ -20,11 +21,11 @@ describe('LanguageFeatures (integration)', () => {
             contents: labels.map(label => ({ value: label, kind: sourcegraph.MarkupKind.PlainText })),
         }),
         run => ({ provideHover: run } as sourcegraph.HoverProvider),
-        clientController =>
-            clientController.registries.textDocumentHover
-                .getHover({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(take(1))
-                .toPromise()
+        services =>
+            services.textDocumentHover.getHover({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
     testLocationProvider(
         'registerDefinitionProvider',
@@ -35,12 +36,13 @@ describe('LanguageFeatures (integration)', () => {
             } as sourcegraph.DefinitionProvider),
         labeledDefinitionResults,
         run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
-        clientController =>
-            clientController.registries.textDocumentDefinition
-                .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(take(1))
-                .toPromise()
+        services =>
+            services.textDocumentDefinition.getLocations({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
+    // tslint:disable deprecation The tests must remain until they are removed.
     testLocationProvider(
         'registerTypeDefinitionProvider',
         extensionHost => extensionHost.languages.registerTypeDefinitionProvider,
@@ -50,11 +52,11 @@ describe('LanguageFeatures (integration)', () => {
             } as sourcegraph.TypeDefinitionProvider),
         labeledDefinitionResults,
         run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
-        clientController =>
-            clientController.registries.textDocumentTypeDefinition
-                .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(take(1))
-                .toPromise()
+        services =>
+            services.textDocumentTypeDefinition.getLocations({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
     testLocationProvider(
         'registerImplementationProvider',
@@ -65,12 +67,13 @@ describe('LanguageFeatures (integration)', () => {
             } as sourcegraph.ImplementationProvider),
         labeledDefinitionResults,
         run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
-        clientController =>
-            clientController.registries.textDocumentImplementation
-                .getLocation({ textDocument: { uri: 'file:///f' }, position: { line: 1, character: 2 } })
-                .pipe(take(1))
-                .toPromise()
+        services =>
+            services.textDocumentImplementation.getLocations({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
+    // tslint:enable deprecation
     testLocationProvider(
         'registerReferenceProvider',
         extensionHost => extensionHost.languages.registerReferenceProvider,
@@ -83,15 +86,31 @@ describe('LanguageFeatures (integration)', () => {
             ({
                 provideReferences: (doc, pos, _context: sourcegraph.ReferenceContext) => run(doc, pos),
             } as sourcegraph.ReferenceProvider),
-        clientController =>
-            clientController.registries.textDocumentReferences
-                .getLocation({
-                    textDocument: { uri: 'file:///f' },
-                    position: { line: 1, character: 2 },
-                    context: { includeDeclaration: true },
-                })
-                .pipe(take(1))
-                .toPromise()
+        services =>
+            services.textDocumentReferences.getLocations({
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+                context: { includeDeclaration: true },
+            })
+    )
+    testLocationProvider<sourcegraph.LocationProvider>(
+        'registerLocationProvider',
+        extensionHost => (selector, provider) =>
+            extensionHost.languages.registerLocationProvider('x', selector, provider),
+        label =>
+            ({
+                provideLocations: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
+            } as sourcegraph.LocationProvider),
+        labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
+        run =>
+            ({
+                provideLocations: (doc, pos) => run(doc, pos),
+            } as sourcegraph.LocationProvider),
+        services =>
+            services.textDocumentLocations.getLocations('x', {
+                textDocument: { uri: 'file:///f' },
+                position: { line: 1, character: 2 },
+            })
     )
 })
 
@@ -107,24 +126,34 @@ function testLocationProvider<P>(
     labeledProvider: (label: string) => P,
     labeledProviderResults: (labels: string[]) => any,
     providerWithImpl: (run: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => void) => P,
-    getResult: (clientController: Controller<any, any>) => Promise<any>
+    getResult: (services: Services) => Observable<any>
 ): void {
     describe(`languages.${name}`, () => {
         it('registers and unregisters a single provider', async () => {
-            const { clientController, extensionHost, ready } = await integrationTestContext()
+            const { services, extensionHost } = await integrationTestContext()
 
             // Register the provider and call it.
             const unsubscribe = registerProvider(extensionHost)(['*'], labeledProvider('a'))
-            await ready
-            assert.deepStrictEqual(await getResult(clientController), labeledProviderResults(['a']))
+            await extensionHost.internal.sync()
+            assert.deepStrictEqual(
+                await getResult(services)
+                    .pipe(take(1))
+                    .toPromise(),
+                labeledProviderResults(['a'])
+            )
 
             // Unregister the provider and ensure it's removed.
             unsubscribe.unsubscribe()
-            assert.deepStrictEqual(await getResult(clientController), null)
+            assert.deepStrictEqual(
+                await getResult(services)
+                    .pipe(take(1))
+                    .toPromise(),
+                null
+            )
         })
 
-        it('supplies params to the provideHover method', async () => {
-            const { clientController, extensionHost, ready } = await integrationTestContext()
+        it('supplies params to the provideXyz method', async () => {
+            const { services, extensionHost } = await integrationTestContext()
             const { wait, done } = createBarrier()
             registerProvider(extensionHost)(
                 ['*'],
@@ -134,25 +163,35 @@ function testLocationProvider<P>(
                     done()
                 })
             )
-            await ready
-            await getResult(clientController)
+            await extensionHost.internal.sync()
+            await getResult(services)
+                .pipe(take(1))
+                .toPromise()
             await wait
         })
 
         it('supports multiple providers', async () => {
-            const { clientController, extensionHost, ready } = await integrationTestContext()
+            const { services, extensionHost } = await integrationTestContext()
 
             // Register 2 providers with different results.
             registerProvider(extensionHost)(['*'], labeledProvider('a'))
             registerProvider(extensionHost)(['*'], labeledProvider('b'))
-            await ready
+            await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(await getResult(clientController), labeledProviderResults(['a', 'b']))
+            // Expect it to emit the first provider's result first (and not block on both providers being ready).
+            assert.deepStrictEqual(
+                await getResult(services)
+                    .pipe(
+                        take(2),
+                        bufferCount(2)
+                    )
+                    .toPromise(),
+                [labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])]
+            )
         })
     })
 }
 
-function labeledDefinitionResults(labels: string[]): Definition {
-    const results = labels.map(label => ({ uri: `file:///${label}`, range: undefined }))
-    return labels.length <= 1 ? results[0] : results
+function labeledDefinitionResults(labels: string[]): Location | Location[] {
+    return labels.map(label => ({ uri: `file:///${label}`, range: undefined }))
 }

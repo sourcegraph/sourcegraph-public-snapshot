@@ -62,14 +62,19 @@ type phabAPIResponse struct {
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	for {
-		for i, c := range conf.Get().Phabricator {
+		phabs, err := conf.PhabricatorConfigs(ctx)
+		if err != nil {
+			log15.Error("unable to fetch Phabricator connections", "err", err)
+		}
+
+		for i, c := range phabs {
 			if c.Token == "" {
 				continue
 			}
 
 			after := ""
 			for {
-				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(conf.Get().Phabricator))
+				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(phabs))
 				res, err := fetchPhabRepos(ctx, c, after)
 				if err != nil {
 					log15.Error("Error fetching Phabricator repos", "err", err)
@@ -92,7 +97,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	}
 }
 
-func fetchPhabRepos(ctx context.Context, cfg *schema.Phabricator, after string) (*phabRepoLookupResponse, error) {
+func fetchPhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, after string) (*phabRepoLookupResponse, error) {
 	form := url.Values{}
 	form.Add("output", "json")
 	form.Add("params[__conduit__]", `{"token": "`+cfg.Token+`"}`)
@@ -124,7 +129,7 @@ func fetchPhabRepos(ctx context.Context, cfg *schema.Phabricator, after string) 
 }
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, cfg *schema.Phabricator, repos []*phabRepo) error {
+func updatePhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, repos []*phabRepo) error {
 	for _, repo := range repos {
 		if repo.Fields.VCS != "git" {
 			continue

@@ -1,5 +1,3 @@
-import { first } from 'lodash'
-
 import storage from '../../browser/storage'
 import * as tabs from '../../browser/tabs'
 
@@ -42,8 +40,7 @@ class SearchCommand {
         })
 
     public action = (query: string, disposition?: string): void => {
-        storage.getSync(({ serverUrls, sourcegraphURL }) => {
-            const url = sourcegraphURL || first(serverUrls)
+        storage.getSync(({ sourcegraphURL: url }) => {
             const props = {
                 url: isURL.test(query) ? query : `${url}/search?${buildSearchURLQuery(query)}&utm_source=omnibox`,
             }

@@ -2,6 +2,7 @@ package db
 
 var (
 	AccessTokens              = &accessTokens{}
+	ExternalServices          = &externalServices{}
 	DiscussionThreads         = &discussionThreads{}
 	DiscussionComments        = &discussionComments{}
 	DiscussionMailReplyTokens = &discussionMailReplyTokens{}
@@ -13,7 +14,6 @@ var (
 	Settings                  = &settings{}
 	Users                     = &users{}
 	UserEmails                = &userEmails{}
-	SiteConfig                = &siteConfig{}
 	CertCache                 = &certCache{}
 
 	SurveyResponses = &surveyResponses{}
@@ -21,10 +21,4 @@ var (
 	ExternalAccounts = &userExternalAccounts{}
 
 	OrgInvitations = &orgInvitations{}
-
-	// GlobalDeps is a stub implementation of a global dependency index
-	GlobalDeps GlobalDepsProvider = &globalDeps{}
-
-	// Pkgs is a stub implementation of a global package metadata index
-	Pkgs PkgsProvider = &pkgs{}
 )

@@ -7,10 +7,10 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
-import * as GQL from '../../../../shared/src/graphqlschema'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { pluralize } from '../../../../shared/src/util/strings'
 import { ServerBanner } from '../../marketing/ServerBanner'
 import { showDotComMarketing } from '../../util/features'
-import { pluralize } from '../../util/strings'
 
 interface SearchResultsInfoBarProps {
     /** The currently authenticated user or null */

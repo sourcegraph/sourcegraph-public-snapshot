@@ -1,13 +1,14 @@
 package conf
 
 import (
+	"context"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -36,18 +37,87 @@ func HTTPStrictTransportSecurity() string {
 	}
 }
 
-// JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
-func JumpToDefOSSIndexEnabled() bool {
-	p := Get().ExperimentalFeatures.JumpToDefOSSIndex
-	// default is disabled
-	return p == "enabled"
-}
-
 // UpdateScheduler2Enabled returns true if UpdateScheduler2 experiment is enabled.
 func UpdateScheduler2Enabled() bool {
 	p := Get().ExperimentalFeatures.UpdateScheduler2
 	// default is enabled
 	return p != "disabled"
+}
+
+// ExternalServicesEnabled returns true if the ExternalService experiment is enabled.
+func ExternalServicesEnabled() bool {
+	var v string
+	if ef := Get().ExperimentalFeatures; ef != nil {
+		v = ef.ExternalServices
+	}
+	// default is disabled
+	return v == "enabled"
+}
+
+func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
+	if !ExternalServicesEnabled() {
+		return Get().AwsCodeCommit, nil
+	}
+	var config []*schema.AWSCodeCommitConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
+	if !ExternalServicesEnabled() {
+		return Get().BitbucketServer, nil
+	}
+	var config []*schema.BitbucketServerConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
+	if !ExternalServicesEnabled() {
+		return Get().Github, nil
+	}
+	var config []*schema.GitHubConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITHUB", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
+	if !ExternalServicesEnabled() {
+		return Get().Gitlab, nil
+	}
+	var config []*schema.GitLabConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITLAB", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
+	if !ExternalServicesEnabled() {
+		return Get().Gitolite, nil
+	}
+	var config []*schema.GitoliteConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
+	if !ExternalServicesEnabled() {
+		return Get().Phabricator, nil
+	}
+	var config []*schema.PhabricatorConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
 }
 
 type AccessTokAllow string
@@ -101,51 +171,6 @@ func CanSendEmail() bool {
 // CanReadEmail tells if an IMAP server is configured and reading email is possible.
 func CanReadEmail() bool {
 	return Get().EmailImap != nil
-}
-
-// HasGitHubDotComToken reports whether there are any personal access tokens configured for
-// github.com.
-func HasGitHubDotComToken() bool {
-	for _, c := range Get().Github {
-		u, err := url.Parse(c.Url)
-		if err != nil {
-			continue
-		}
-		hostname := strings.ToLower(u.Hostname())
-		if (hostname == "github.com" || hostname == "api.github.com") && c.Token != "" {
-			return true
-		}
-	}
-	return false
-}
-
-// HasGitLabDotComToken reports whether there are any personal access tokens configured for
-// github.com.
-func HasGitLabDotComToken() bool {
-	for _, c := range Get().Gitlab {
-		u, err := url.Parse(c.Url)
-		if err != nil {
-			continue
-		}
-		hostname := strings.ToLower(u.Hostname())
-		if hostname == "gitlab.com" && c.Token != "" {
-			return true
-		}
-	}
-	return false
-}
-
-// EnabledLangservers returns the langservers that are not disabled.
-func EnabledLangservers() []*schema.Langservers {
-	all := Get().Langservers
-	results := make([]*schema.Langservers, 0, len(all))
-	for _, langserver := range all {
-		if langserver.Disabled {
-			continue
-		}
-		results = append(results, langserver)
-	}
-	return results
 }
 
 const (

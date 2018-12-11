@@ -3,6 +3,8 @@
 package main
 
 import (
+	_ "github.com/derekparker/delve"
+	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/zoekt/cmd/zoekt-archive-index"
 	_ "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
 	_ "github.com/google/zoekt/cmd/zoekt-webserver"
@@ -12,5 +14,4 @@ import (
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
 	_ "github.com/sourcegraph/godockerize"
 	_ "golang.org/x/tools/cmd/stringer"
-	_ "honnef.co/go/tools/cmd/staticcheck"
 )

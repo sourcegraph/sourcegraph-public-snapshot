@@ -7,19 +7,22 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { Observable } from 'rxjs'
 import { buildSearchURLQuery, parseSearchURLQuery } from '..'
-import * as GQL from '../../../../shared/src/graphqlschema'
-import { FileMatch } from '../../components/FileMatch'
+import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
+import { FileMatch } from '../../../../shared/src/components/FileMatch'
+import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ModalContainer } from '../../components/ModalContainer'
 import { eventLogger } from '../../tracking/eventLogger'
-import { ErrorLike, isErrorLike } from '../../util/errors'
-import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
-interface SearchResultsListProps {
+interface SearchResultsListProps extends SettingsCascadeProps {
     isLightTheme: boolean
     location: H.Location
     authenticatedUser: GQL.IUser | null
@@ -39,6 +42,8 @@ interface SearchResultsListProps {
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
+
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 export class SearchResultsListOld extends React.PureComponent<SearchResultsListProps, {}> {
@@ -57,6 +62,7 @@ export class SearchResultsListOld extends React.PureComponent<SearchResultsListP
                                 values={{ query: parsedQuery ? parsedQuery.query : '' }}
                                 onDidCancel={this.props.onSavedQueryModalClose}
                                 onDidCreate={this.props.onDidCreateSavedQuery}
+                                settingsCascade={this.props.settingsCascade}
                             />
                         }
                     />
@@ -214,6 +220,7 @@ export class SearchResultsListOld extends React.PureComponent<SearchResultsListP
                         showAllMatches={false}
                         isLightTheme={this.props.isLightTheme}
                         allExpanded={this.props.allExpanded}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                     />
                 )
             case 'CommitSearchResult':
