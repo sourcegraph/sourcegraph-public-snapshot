@@ -1,4 +1,3 @@
-//go:generate bash -c "cd ../web && npm install && npm run build"
 //go:generate vfsgendev -source="github.com/sourcegraph/sourcegraph/cmd/management-console/assets".Assets
 
 package assets
