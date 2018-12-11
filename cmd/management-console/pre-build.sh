@@ -1,4 +1,7 @@
 set -ex
 
-cd web/
+pushd web/
 npm install
+npm run build
+popd
+go generate ./assets
