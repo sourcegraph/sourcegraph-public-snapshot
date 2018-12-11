@@ -53,6 +53,9 @@ var DockerContainer = conftypes.RawUnified{
 // Sourcegraph.
 var Cluster = conftypes.RawUnified{
 	Critical: `{
+	// Publicly accessible URL to web app (e.g., what you type into your browser).
+	"externalURL": "http://localhost:3080",
+
 	// The authentication provider to use for identifying and signing in users.
 	// Only one entry is supported.
 	//
@@ -68,10 +71,7 @@ var Cluster = conftypes.RawUnified{
 		}
 	]
 }`,
-	Site: `{
-	// Publicly accessible URL to web app (e.g., what you type into your browser).
-	"externalURL": "http://localhost:3080",
-}`,
+	Site: `{}`,
 }
 
 // Default is the default for *this* deployment type. It is populated by
