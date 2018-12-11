@@ -11,9 +11,9 @@ type Gitolite struct {
 	*schema.GitoliteConnection
 }
 
-var _ repoSource = Gitolite{}
+var _ RepoSource = Gitolite{}
 
-func (c Gitolite) cloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+func (c Gitolite) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
 	parsedCloneURL, err := parseCloneURL(cloneURL)
 	if err != nil {
 		return "", err

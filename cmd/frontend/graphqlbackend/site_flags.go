@@ -21,12 +21,23 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 		return false, err
 	}
 
-	return needsRepositoryConfiguration(), nil
+	return needsRepositoryConfiguration(ctx)
 }
 
-func needsRepositoryConfiguration() bool {
-	cfg := conf.Get()
-	return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && len(cfg.AwsCodeCommit) == 0 && len(cfg.Gitolite) == 0 && len(cfg.BitbucketServer) == 0
+func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
+	count, err := db.ExternalServices.Count(ctx, db.ExternalServicesListOptions{
+		Kinds: []string{
+			"AWSCODECOMMIT",
+			"BITBUCKETSERVER",
+			"GITHUB",
+			"GITLAB",
+			"GITOLITE",
+		},
+	})
+	if err != nil {
+		return false, err
+	}
+	return count == 0 && len(conf.Get().ReposList) == 0, nil
 }
 
 func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {

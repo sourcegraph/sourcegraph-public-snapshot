@@ -160,7 +160,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if !envvar.SourcegraphDotComMode() {
 			if noRepositoriesEnabled, err := noRepositoriesEnabled(ctx); err == nil && noRepositoriesEnabled {
 				proposeQueries = false
-				if needsRepositoryConfiguration() {
+				ok, err := needsRepositoryConfiguration(ctx)
+				if err != nil {
+					return nil, err
+				}
+				if ok {
 					a.title = "No repositories or code hosts configured"
 					a.description = "To start searching code, "
 					if isSiteAdmin {

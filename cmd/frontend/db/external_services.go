@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -24,31 +25,67 @@ type externalServices struct{}
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
-	Kind string
+	Kinds []string
 	*LimitOffset
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
-	if o.Kind != "" {
-		conds = append(conds, sqlf.Sprintf("kind=%s", o.Kind))
+	if len(o.Kinds) > 0 {
+		kinds := []*sqlf.Query{}
+		for _, kind := range o.Kinds {
+			kinds = append(kinds, sqlf.Sprintf("%s", kind))
+		}
+		conds = append(conds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ", ")))
 	}
 	return conds
 }
 
-func validateConfig(config string) error {
+func validateConfig(kind, config string) error {
 	// All configs must be valid JSON.
 	// If this requirement is ever changed, you will need to update
 	// serveExternalServiceConfigs to handle this case.
-	_, err := jsonc.Parse(config)
-	return err
+
+	switch kind {
+	case "PHABRICATOR":
+		var cfg schema.PhabricatorConnection
+		if err := jsonc.Unmarshal(config, &cfg); err != nil {
+			return err
+		}
+		if len(cfg.Repos) == 0 && cfg.Token == "" {
+			return errors.New(`Either "token" or "repos" must be set`)
+		}
+	case "BITBUCKETSERVER":
+		var cfg schema.BitbucketServerConnection
+		if err := jsonc.Unmarshal(config, &cfg); err != nil {
+			return err
+		}
+		if cfg.Token != "" && cfg.Password != "" {
+			return errors.New("Specify either a token or a username/password, but not both")
+		} else if cfg.Token == "" && cfg.Username == "" && cfg.Password == "" {
+			return errors.New("Specify either a token or a username/password to authenticate")
+		}
+	case "GITLAB":
+		var cfg schema.GitLabConnection
+		if err := jsonc.Unmarshal(config, &cfg); err != nil {
+			return err
+		}
+		if strings.Contains(cfg.Url, "example.com") {
+			return fmt.Errorf(`invalid GitLab URL detected: %s (did you forget to remove "example.com"?)`, cfg.Url)
+		}
+	default:
+		if _, err := jsonc.Parse(config); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Create creates a external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Create(ctx context.Context, externalService *types.ExternalService) error {
-	if err := validateConfig(externalService.Config); err != nil {
+	if err := validateConfig(externalService.Kind, externalService.Config); err != nil {
 		return err
 	}
 
@@ -73,7 +110,13 @@ type ExternalServiceUpdate struct {
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Update(ctx context.Context, id int64, update *ExternalServiceUpdate) error {
 	if update.Config != nil {
-		if err := validateConfig(*update.Config); err != nil {
+		// Query to get the kind (which is immutable) so we can validate the new config.
+		externalService, err := c.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if err := validateConfig(externalService.Kind, *update.Config); err != nil {
 			return err
 		}
 	}
@@ -164,7 +207,7 @@ func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOpt
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) listConfigs(ctx context.Context, kind string, result interface{}) error {
-	services, err := c.List(ctx, ExternalServicesListOptions{Kind: kind})
+	services, err := c.List(ctx, ExternalServicesListOptions{Kinds: []string{kind}})
 	if err != nil {
 		return err
 	}
@@ -177,6 +220,36 @@ func (c *externalServices) listConfigs(ctx context.Context, kind string, result 
 		return err
 	}
 	return json.Unmarshal(buf, result)
+}
+
+// ListAWSCodeCommitConnections returns a list of AWSCodeCommit configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListAWSCodeCommitConnections(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().AwsCodeCommit, nil
+	}
+
+	var connections []*schema.AWSCodeCommitConnection
+	if err := c.listConfigs(ctx, "AWSCODECOMMIT", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
+// ListBitbucketServerConnections returns a list of BitbucketServer configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().BitbucketServer, nil
+	}
+
+	var connections []*schema.BitbucketServerConnection
+	if err := c.listConfigs(ctx, "BITBUCKET", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
 }
 
 // ListGitHubConnections returns a list of GitHubConnection configs.
@@ -204,6 +277,21 @@ func (c *externalServices) ListGitLabConnections(ctx context.Context) ([]*schema
 
 	var connections []*schema.GitLabConnection
 	if err := c.listConfigs(ctx, "GITLAB", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
+// ListGitoliteConnections returns a list of GitoliteConnection configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListGitoliteConnections(ctx context.Context) ([]*schema.GitoliteConnection, error) {
+	if !conf.ExternalServicesEnabled() {
+		return conf.Get().Gitolite, nil
+	}
+
+	var connections []*schema.GitoliteConnection
+	if err := c.listConfigs(ctx, "GITOLITE", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil

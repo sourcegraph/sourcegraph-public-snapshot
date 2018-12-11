@@ -10,11 +10,10 @@ import (
 	"regexp"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // handleGetGitolitePhabricatorMetadata serves the Gitolite
@@ -28,8 +27,8 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 		gitoliteHost := q.Get("gitolite")
 		repoName := q.Get("repo")
 
-		var config []*schema.GitoliteConnection
-		if err := api.InternalClient.ExternalServiceConfigs(r.Context(), "GITOLITE", &config); err != nil {
+		config, err := conf.GitoliteConfigs(r.Context())
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

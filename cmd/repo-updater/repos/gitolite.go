@@ -29,14 +29,10 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 	phabricatorMetadataCounter := 0
 	for {
 		log15.Debug("RunGitoliteRepositorySyncWorker:GitoliteUpdateRepos")
-		var config []*schema.GitoliteConnection
-		if conf.ExternalServicesEnabled() {
-			if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
-				log15.Error("unable to fetch Gitolite configs", "err", err)
-				continue
-			}
-		} else {
-			config = conf.Get().Gitolite
+		config, err := conf.GitoliteConfigs(context.Background())
+		if err != nil {
+			log15.Error("unable to fetch Gitolite configs", "err", err)
+			continue
 		}
 
 		for _, gconf := range config {
@@ -59,8 +55,8 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 // existence). We return a dummy response, because if we don't, callers will interpret the response as "repository not
 // found".
 func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-	var config []*schema.GitoliteConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
+	config, err := conf.GitoliteConfigs(ctx)
+	if err != nil {
 		return nil, false, err
 	}
 

@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -28,8 +28,8 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	case query("gitolite"):
 		gitoliteHost := q.Get("gitolite")
 
-		var config []*schema.GitoliteConnection
-		if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
+		config, err := conf.GitoliteConfigs(ctx)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

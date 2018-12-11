@@ -7,13 +7,11 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// repoSource is a wrapper around a repository source (typically a code host config) that provides a
+// RepoSource is a wrapper around a repository source (typically a code host config) that provides a
 // method to map clone URLs to repo names using only the configuration (i.e., no network requests).
-type repoSource interface {
+type RepoSource interface {
 	// cloneURLToRepoName maps a Git clone URL (format documented here:
 	// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the expected repo name for the
 	// repository on the code host.  It does not actually check if the repository exists in the code
@@ -22,58 +20,7 @@ type repoSource interface {
 	// If the clone URL does not correspond to a repository that could exist on the code host, the
 	// empty string is returned and err is nil. If there is an unrelated error, an error is
 	// returned.
-	cloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error)
-}
-
-// CloneURLToRepoName maps a Git clone URL (format documented here:
-// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
-// exists a code host configuration that matches the clone URL. Implicitly, it includes a code host
-// configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
-// error if a matching code host could not be found. This function does not actually check the code
-// host to see if the repository actually exists.
-func CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
-	cfg := conf.Get()
-
-	if repoName := customCloneURLToRepoName(cloneURL); repoName != "" {
-		return repoName, nil
-	}
-
-	repoSources := make([]repoSource, 0, len(cfg.Github)+
-		len(cfg.Gitlab)+
-		len(cfg.BitbucketServer)+
-		len(cfg.AwsCodeCommit)+
-		2+ /* for repos.list and fallback GitHub.com */
-		len(cfg.Gitolite))
-
-	for _, c := range cfg.Github {
-		repoSources = append(repoSources, GitHub{c})
-	}
-	for _, c := range cfg.Gitlab {
-		repoSources = append(repoSources, GitLab{c})
-	}
-	for _, c := range cfg.BitbucketServer {
-		repoSources = append(repoSources, BitbucketServer{c})
-	}
-	for _, c := range cfg.AwsCodeCommit {
-		repoSources = append(repoSources, AWS{c})
-	}
-	repoSources = append(repoSources, getReposListInstance())
-	for _, c := range cfg.Gitolite {
-		repoSources = append(repoSources, Gitolite{c})
-	}
-	// Fallback for github.com
-	repoSources = append(repoSources, GitHub{&schema.GitHubConnection{Url: "https://github.com"}})
-	for _, ch := range repoSources {
-		repoName, err := ch.cloneURLToRepoName(cloneURL)
-		if err != nil {
-			return "", err
-		}
-		if repoName != "" {
-			return repoName, nil
-		}
-	}
-
-	return "", nil
+	CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error)
 }
 
 // NormalizeBaseURL modifies the input and returns a normalized form of the base URL with insignificant

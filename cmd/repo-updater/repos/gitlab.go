@@ -31,14 +31,10 @@ func init() {
 		t := time.NewTicker(configWatchInterval)
 		var lastConfig []*schema.GitLabConnection
 		for range t.C {
-			var gitlabConf []*schema.GitLabConnection
-			if conf.ExternalServicesEnabled() {
-				if err := api.InternalClient.ExternalServiceConfigs(context.Background(), "GITLAB", &gitlabConf); err != nil {
-					log15.Error("unable to fetch Gitlab configs", "err", err)
-					continue
-				}
-			} else {
-				gitlabConf = conf.Get().Gitlab
+			gitlabConf, err := conf.GitLabConfigs(context.Background())
+			if err != nil {
+				log15.Error("unable to fetch Gitlab configs", "err", err)
+				continue
 			}
 
 			var hasGitLabDotComConnection bool

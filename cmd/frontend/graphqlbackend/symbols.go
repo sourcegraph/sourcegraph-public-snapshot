@@ -141,6 +141,6 @@ func (r *symbolResolver) Language() string { return r.language }
 
 func (r *symbolResolver) Location() *locationResolver { return r.location }
 
-func (r *symbolResolver) URL() string { return r.location.URL() }
+func (r *symbolResolver) URL(ctx context.Context) string { return r.location.URL(ctx) }
 
 func (r *symbolResolver) CanonicalURL() string { return r.location.CanonicalURL() }
