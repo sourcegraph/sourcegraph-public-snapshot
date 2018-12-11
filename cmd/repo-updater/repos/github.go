@@ -34,14 +34,10 @@ func init() {
 		t := time.NewTicker(configWatchInterval)
 		var lastGitHubConf []*schema.GitHubConnection
 		for range t.C {
-			var githubConf []*schema.GitHubConnection
-			if conf.ExternalServicesEnabled() {
-				if err := api.InternalClient.ExternalServiceConfigs(context.Background(), "GITHUB", &githubConf); err != nil {
-					log15.Error("unable to fetch GitHub configs", "err", err)
-					continue
-				}
-			} else {
-				githubConf = conf.Get().Github
+			githubConf, err := conf.GitHubConfigs(context.Background())
+			if err != nil {
+				log15.Error("unable to fetch GitHub configs", "err", err)
+				continue
 			}
 
 			var hasGitHubDotComConnection bool

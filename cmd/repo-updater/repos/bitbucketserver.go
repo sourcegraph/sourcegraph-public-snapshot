@@ -34,14 +34,10 @@ func init() {
 		t := time.NewTicker(configWatchInterval)
 		var lastConfig []*schema.BitbucketServerConnection
 		for range t.C {
-			var config []*schema.BitbucketServerConnection
-			if conf.ExternalServicesEnabled() {
-				if err := api.InternalClient.ExternalServiceConfigs(context.Background(), "BITBUCKETSERVER", &config); err != nil {
-					log15.Error("unable to fetch Bitbucket Server configs", "err", err)
-					continue
-				}
-			} else {
-				config = conf.Get().BitbucketServer
+			config, err := conf.BitbucketServerConfigs(context.Background())
+			if err != nil {
+				log15.Error("unable to fetch Bitbucket Server configs", "err", err)
+				continue
 			}
 
 			if reflect.DeepEqual(config, lastConfig) {

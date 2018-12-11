@@ -38,14 +38,10 @@ func init() {
 		t := time.NewTicker(configWatchInterval)
 		var lastConfig []*schema.AWSCodeCommitConnection
 		for range t.C {
-			var config []*schema.AWSCodeCommitConnection
-			if conf.ExternalServicesEnabled() {
-				if err := api.InternalClient.ExternalServiceConfigs(context.Background(), "AWSCODECOMMIT", &config); err != nil {
-					log15.Error("unable to fetch AWS CodeCommit configs", "err", err)
-					continue
-				}
-			} else {
-				config = conf.Get().AwsCodeCommit
+			config, err := conf.AWSCodeCommitConfigs(context.Background())
+			if err != nil {
+				log15.Error("unable to fetch AWS CodeCommit configs", "err", err)
+				continue
 			}
 
 			if reflect.DeepEqual(config, lastConfig) {
