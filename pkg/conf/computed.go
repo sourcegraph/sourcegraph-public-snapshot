@@ -50,8 +50,8 @@ func ExternalServicesEnabled() bool {
 	if ef := Get().ExperimentalFeatures; ef != nil {
 		v = ef.ExternalServices
 	}
-	// default is disabled
-	return v == "enabled"
+	// default is enabled
+	return v != "disabled"
 }
 
 func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {

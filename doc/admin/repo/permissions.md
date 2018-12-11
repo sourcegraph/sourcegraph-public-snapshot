@@ -19,7 +19,7 @@ uses the GitLab API to determine the set of repositories that are accessible to 
 Sourcegraph admin users will have access to **all** repositories on Sourcegraph regardless of what
 permissions are associated with their GitLab user.
 
-To enable GitLab permissions, set the `authorization` field in the GitLab site configuration:
+To enable GitLab permissions, set the `authorization` field in your GitLab external service configuration:
 
 1. If you haven't done so already, [add a GitLab connection
    object](../../integration/gitlab.md#gitlab-configuration) in the [site configuration
