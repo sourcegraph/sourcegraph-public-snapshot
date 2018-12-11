@@ -9,12 +9,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
+// TODO(slimsag): consider moving these into actual json files for improved
+// editing.
+
 // DevAndTesting is the default configuration applied to dev instances of
 // Sourcegraph, as well as what is used by default during Go testing.
 //
 // Tests that wish to use a specific configuration should use conf.Mock.
 //
-// TODO(slimsag): Unified
+// Note: This actually generally only applies to 'go test' because we always
+// override this configuration via DEV_OVERRIDE_*_CONFIG environment
+// variables.
 var DevAndTesting = conftypes.RawUnified{
 	Critical: `{
 	"auth.providers": [
@@ -29,20 +34,6 @@ var DevAndTesting = conftypes.RawUnified{
 
 // DockerContainer is the default configuration applied to Docker
 // single-container instances of Sourcegraph.
-//
-// TODO(slimsag): Unified
-/*
-	// The default site configuration.
-	defaultSiteConfig := schema.SiteConfiguration{
-		// TODO(slimsag): Unified
-		//AuthProviders: []schema.AuthProviders{
-		//	{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
-		//},
-		MaxReposToSearch: 50,
-
-		DisablePublicRepoRedirects: true,
-	}
-*/
 var DockerContainer = conftypes.RawUnified{
 	Critical: `{
 	"auth.providers": [
@@ -60,18 +51,27 @@ var DockerContainer = conftypes.RawUnified{
 
 // Cluster is the default configuration applied to Cluster instances of
 // Sourcegraph.
-//
-// TODO(slimsag): Unified
 var Cluster = conftypes.RawUnified{
 	Critical: `{
+	// The authentication provider to use for identifying and signing in users.
+	// Only one entry is supported.
+	//
+	// The builtin auth provider with signup disallowed (shown below) means that
+	// after the initial site admin signs in, all other users must be invited.
+	//
+	// Other providers are documented here:
+	// https://about.sourcegraph.com/docs/config/site#authproviders-array
 	"auth.providers": [
 		{
 			"type": "builtin",
-			"allowSignup": true
+			"allowSignup": false
 		}
-	],
+	]
 }`,
-	Site: `{}`,
+	Site: `{
+	// Publicly accessible URL to web app (e.g., what you type into your browser).
+	"appURL": "http://localhost:3080",
+}`,
 }
 
 // Default is the default for *this* deployment type. It is populated by
