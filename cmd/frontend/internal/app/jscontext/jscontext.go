@@ -178,8 +178,13 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 // configuration that is necessary for the web app and is not sensitive/secret.
 func publicCriticalConfiguration() schema.CriticalConfiguration {
 	c := conf.Get()
+	updateChannel := c.Critical.UpdateChannel
+	if updateChannel == "" {
+		updateChannel = "release"
+	}
 	return schema.CriticalConfiguration{
-		AuthPublic: c.Critical.AuthPublic,
+		AuthPublic:    c.Critical.AuthPublic,
+		UpdateChannel: updateChannel,
 	}
 }
 

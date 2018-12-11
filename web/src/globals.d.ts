@@ -74,6 +74,7 @@ interface SourcegraphContext {
      */
     critical: {
         'auth.public': boolean
+        'update.channel': string
     }
 
     /** Whether access tokens are enabled. */

@@ -1,8 +1,7 @@
 import { FormattingOptions } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { OpenIDConnectAuthProvider, SAMLAuthProvider } from '../schema/critical.schema'
 import { SlackNotificationsConfig } from '../schema/settings.schema'
-import { OpenIDConnectAuthProvider, SAMLAuthProvider, SiteConfiguration } from '../schema/site.schema'
-import { parseJSON } from '../settings/configuration'
 import { ConfigInsertionFunction } from '../settings/MonacoSettingsEditor'
 
 const defaultFormattingOptions: FormattingOptions = {
@@ -78,18 +77,3 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.addSAMLAUthProvider', label: 'Add SAML user auth', run: addSAMLAuthProvider },
     { id: 'sourcegraph.site.addLicenseKey', label: 'Add license key', run: addLicenseKey },
 ]
-
-export function getUpdateChannel(text: string): string {
-    const channel = getProperty(text, 'update.channel')
-    return channel || 'release'
-}
-
-function getProperty(text: string, property: keyof SiteConfiguration): any | null {
-    try {
-        const parsedConfig = parseJSON(text) as SiteConfiguration
-        return parsedConfig && parsedConfig[property] !== undefined ? parsedConfig[property] : null
-    } catch (err) {
-        console.error(err)
-        return null
-    }
-}
