@@ -3,8 +3,8 @@ import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { ChatIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
 import { parseHash, toPositionOrRangeHash, toViewStateHashComponent } from '../../../../../shared/src/util/url'
-import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { lprToRange } from '../../../util/url'
@@ -68,9 +68,12 @@ export class ToggleDiscussionsPanel extends React.PureComponent<{
     public render(): JSX.Element | null {
         const visible = ToggleDiscussionsPanel.isVisible(this.props.location)
         return (
-            <ActionItem onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} discussions (Alt+D/Opt+D)`}>
+            <LinkOrButton
+                onSelect={this.onClick}
+                data-tooltip={`${visible ? 'Hide' : 'Show'} discussions (Alt+D/Opt+D)`}
+            >
                 <ChatIcon className="icon-inline" />
-            </ActionItem>
+            </LinkOrButton>
         )
     }
 
