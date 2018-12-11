@@ -46,9 +46,12 @@ func UpdateScheduler2Enabled() bool {
 
 // ExternalServicesEnabled returns true if the ExternalService experiment is enabled.
 func ExternalServicesEnabled() bool {
-	p := Get().ExperimentalFeatures.ExternalServices
+	var v string
+	if ef := Get().ExperimentalFeatures; ef != nil {
+		v = ef.ExternalServices
+	}
 	// default is disabled
-	return p == "enabled"
+	return v == "enabled"
 }
 
 func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
