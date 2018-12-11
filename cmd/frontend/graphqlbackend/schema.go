@@ -3139,6 +3139,9 @@ type ExtensionManifest {
     description: String
     # The URL to the bundled JavaScript source code for the extension, if any.
     bundleURL: String
+    # The Sourcegraph repository, if the manifest contains a repository field
+    # that points to a repository available on this Sourcegraph instance, otherwise null.
+    repository: Repository
 }
 
 # A list of registry extensions.

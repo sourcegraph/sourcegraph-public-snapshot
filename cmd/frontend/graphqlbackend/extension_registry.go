@@ -114,6 +114,7 @@ type ExtensionManifest interface {
 	Title() (*string, error)
 	Description() (*string, error)
 	BundleURL() (*string, error)
+	Repository(ctx context.Context) (*RepositoryResolver, error)
 }
 
 // RegistryPublisher is the interface for the GraphQL type RegistryPublisher.

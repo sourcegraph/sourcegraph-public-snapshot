@@ -73,7 +73,7 @@ func (fm *fileMatchResolver) Key() string {
 func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	return &gitTreeEntryResolver{
 		commit: &gitCommitResolver{
-			repo:     &repositoryResolver{repo: fm.repo},
+			repo:     &RepositoryResolver{repo: fm.repo},
 			oid:      gitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
 		},
@@ -82,8 +82,8 @@ func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	}
 }
 
-func (fm *fileMatchResolver) Repository() *repositoryResolver {
-	return &repositoryResolver{repo: fm.repo}
+func (fm *fileMatchResolver) Repository() *RepositoryResolver {
+	return &RepositoryResolver{repo: fm.repo}
 }
 
 func (fm *fileMatchResolver) Resource() string {

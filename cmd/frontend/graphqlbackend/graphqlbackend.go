@@ -104,8 +104,8 @@ func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
-	n, ok := r.node.(*repositoryResolver)
+func (r *nodeResolver) ToRepository() (*RepositoryResolver, bool) {
+	n, ok := r.node.(*RepositoryResolver)
 	return n, ok
 }
 
@@ -199,7 +199,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	CloneURL *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
-}) (*repositoryResolver, error) {
+}) (*RepositoryResolver, error) {
 	var name api.RepoName
 	if args.URI != nil {
 		// Deprecated query by "URI"
@@ -221,19 +221,22 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	} else {
 		return nil, errors.New("Neither name nor cloneURL given")
 	}
+	return RepositoryResolverByName(ctx, name)
+}
 
+// RepositoryResolverByName looks up a repo name in the DB and returns a RepositoryResolver
+func RepositoryResolverByName(ctx context.Context, name api.RepoName) (*RepositoryResolver, error) {
 	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
-			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
+			return &RepositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-
-	return &repositoryResolver{repo: repo}, nil
+	return &RepositoryResolver{repo: repo}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

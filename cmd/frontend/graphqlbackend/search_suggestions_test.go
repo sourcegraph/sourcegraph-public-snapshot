@@ -159,12 +159,12 @@ func TestSearchSuggestions(t *testing.T) {
 			if repoRevs.Repo.Name == "foo-repo1" {
 				calledSearchFilesFoo = true
 				return []*searchSuggestionResolver{
-					{result: &gitTreeEntryResolver{path: "dir/foo-repo1-file-name-match", commit: &gitCommitResolver{repo: &repositoryResolver{repo: &types.Repo{Name: "r"}}}}, score: 1},
+					{result: &gitTreeEntryResolver{path: "dir/foo-repo1-file-name-match", commit: &gitCommitResolver{repo: &RepositoryResolver{repo: &types.Repo{Name: "r"}}}}, score: 1},
 				}, nil
 			} else if repoRevs.Repo.Name == "repo3" {
 				calledSearchFilesRepo3 = true
 				return []*searchSuggestionResolver{
-					{result: &gitTreeEntryResolver{path: "dir/foo-repo3-file-name-match", commit: &gitCommitResolver{repo: &repositoryResolver{repo: &types.Repo{Name: "r"}}}}, score: 2},
+					{result: &gitTreeEntryResolver{path: "dir/foo-repo3-file-name-match", commit: &gitCommitResolver{repo: &RepositoryResolver{repo: &types.Repo{Name: "r"}}}}, score: 2},
 				}, nil
 			}
 			t.Errorf("got %q, want %q or %q", repoRevs.Repo.Name, "foo-repo1", "repo3")
@@ -226,7 +226,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repoRevs.Repo.Name, want)
 			}
 			return []*searchSuggestionResolver{
-				{result: &gitTreeEntryResolver{path: "dir/file", commit: &gitCommitResolver{repo: &repositoryResolver{repo: &types.Repo{Name: "r"}}}}, score: 1},
+				{result: &gitTreeEntryResolver{path: "dir/file", commit: &gitCommitResolver{repo: &RepositoryResolver{repo: &types.Repo{Name: "r"}}}}, score: 1},
 			}, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()
@@ -264,7 +264,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repoRevs.Repo.Name, want)
 			}
 			return []*searchSuggestionResolver{
-				{result: &gitTreeEntryResolver{path: "dir/bar-file", commit: &gitCommitResolver{repo: &repositoryResolver{repo: &types.Repo{Name: "r"}}}}, score: 1},
+				{result: &gitTreeEntryResolver{path: "dir/bar-file", commit: &gitCommitResolver{repo: &RepositoryResolver{repo: &types.Repo{Name: "r"}}}}, score: 1},
 			}, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()

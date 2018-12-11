@@ -37,7 +37,7 @@ func (r *gitTreeEntryResolver) ToGitBlob() (*gitTreeEntryResolver, bool) { retur
 
 func (r *gitTreeEntryResolver) Commit() *gitCommitResolver { return r.commit }
 
-func (r *gitTreeEntryResolver) Repository() *repositoryResolver { return r.commit.repo }
+func (r *gitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repo }
 
 func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 

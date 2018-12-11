@@ -3,7 +3,7 @@ package graphqlbackend
 func testStringResult(result *searchSuggestionResolver) string {
 	var name string
 	switch r := result.result.(type) {
-	case *repositoryResolver:
+	case *RepositoryResolver:
 		name = "repo:" + string(r.repo.Name)
 	case *gitTreeEntryResolver:
 		name = "file:" + r.path

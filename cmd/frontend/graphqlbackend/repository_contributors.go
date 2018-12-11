@@ -15,7 +15,7 @@ type repositoryContributorsArgs struct {
 	Path          *string
 }
 
-func (r *repositoryResolver) Contributors(args *struct {
+func (r *RepositoryResolver) Contributors(args *struct {
 	repositoryContributorsArgs
 	First *int32
 }) *repositoryContributorConnectionResolver {
@@ -30,7 +30,7 @@ type repositoryContributorConnectionResolver struct {
 	args  repositoryContributorsArgs
 	first *int32
 
-	repo *repositoryResolver
+	repo *RepositoryResolver
 
 	// cache result because it is used by multiple fields
 	once    sync.Once

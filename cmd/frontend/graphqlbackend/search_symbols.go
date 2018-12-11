@@ -140,7 +140,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	fileMatches := make([]*fileMatchResolver, 0)
 	for _, symbol := range symbols {
 		commit := &gitCommitResolver{
-			repo:     &repositoryResolver{repo: repoRevs.Repo},
+			repo:     &RepositoryResolver{repo: repoRevs.Repo},
 			oid:      gitObjectID(commitID),
 			inputRev: &inputRev,
 			// NOTE: Not all fields are set, for performance.

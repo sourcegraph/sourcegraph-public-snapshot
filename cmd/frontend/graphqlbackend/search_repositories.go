@@ -53,7 +53,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 			break
 		}
 		if pattern.MatchString(string(repo.Repo.Name)) {
-			results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
+			results = append(results, &searchResultResolver{repo: &RepositoryResolver{repo: repo.Repo, icon: repoIcon}})
 		}
 	}
 	return results, common, nil

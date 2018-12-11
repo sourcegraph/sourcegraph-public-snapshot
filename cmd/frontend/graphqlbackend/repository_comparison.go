@@ -25,7 +25,7 @@ type repositoryComparisonInput struct {
 	Head *string
 }
 
-func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryComparisonInput) (*repositoryComparisonResolver, error) {
+func (r *RepositoryResolver) Comparison(ctx context.Context, args *repositoryComparisonInput) (*repositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
@@ -82,7 +82,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 type repositoryComparisonResolver struct {
 	baseRevspec, headRevspec string
 	base, head               *gitCommitResolver
-	repo                     *repositoryResolver
+	repo                     *RepositoryResolver
 }
 
 func (r *repositoryComparisonResolver) Range() *gitRevisionRange {

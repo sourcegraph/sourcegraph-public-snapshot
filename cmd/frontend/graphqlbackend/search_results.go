@@ -57,42 +57,42 @@ func (c *searchResultsCommon) LimitHit() bool {
 	return c.limitHit || c.resultCount > c.maxResultsCount
 }
 
-func (c *searchResultsCommon) Repositories() []*repositoryResolver {
+func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
 	if c.repos == nil {
-		return []*repositoryResolver{}
+		return []*RepositoryResolver{}
 	}
 	return toRepositoryResolvers(c.repos)
 }
 
-func (c *searchResultsCommon) RepositoriesSearched() []*repositoryResolver {
+func (c *searchResultsCommon) RepositoriesSearched() []*RepositoryResolver {
 	if c.searched == nil {
 		return nil
 	}
 	return toRepositoryResolvers(c.searched)
 }
 
-func (c *searchResultsCommon) IndexedRepositoriesSearched() []*repositoryResolver {
+func (c *searchResultsCommon) IndexedRepositoriesSearched() []*RepositoryResolver {
 	if c.indexed == nil {
 		return nil
 	}
 	return toRepositoryResolvers(c.indexed)
 }
 
-func (c *searchResultsCommon) Cloning() []*repositoryResolver {
+func (c *searchResultsCommon) Cloning() []*RepositoryResolver {
 	if c.cloning == nil {
 		return nil
 	}
 	return toRepositoryResolvers(c.cloning)
 }
 
-func (c *searchResultsCommon) Missing() []*repositoryResolver {
+func (c *searchResultsCommon) Missing() []*RepositoryResolver {
 	if c.missing == nil {
 		return nil
 	}
 	return toRepositoryResolvers(c.missing)
 }
 
-func (c *searchResultsCommon) Timedout() []*repositoryResolver {
+func (c *searchResultsCommon) Timedout() []*RepositoryResolver {
 	if c.timedout == nil {
 		return nil
 	}
@@ -929,7 +929,7 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type searchResultResolver struct {
-	repo      *repositoryResolver         // repo name match
+	repo      *RepositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
 }
@@ -965,7 +965,7 @@ func sortResults(r []*searchResultResolver) {
 	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
 }
 
-func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
+func (g *searchResultResolver) ToRepository() (*RepositoryResolver, bool) {
 	return g.repo, g.repo != nil
 }
 func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {

@@ -419,7 +419,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
 
-		repoResolver := &repositoryResolver{repo: repo}
+		repoResolver := &RepositoryResolver{repo: repo}
 
 		// if multiple specified revisions clash, report this usefully:
 		if len(revs) == 0 && clashingRevs != nil {
@@ -568,7 +568,7 @@ func (e *badRequestError) Cause() error {
 
 // searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
 type searchSuggestionResolver struct {
-	// result is either a repositoryResolver or a gitTreeEntryResolver
+	// result is either a RepositoryResolver or a gitTreeEntryResolver
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
 	score int
@@ -578,8 +578,8 @@ type searchSuggestionResolver struct {
 	label string
 }
 
-func (r *searchSuggestionResolver) ToRepository() (*repositoryResolver, bool) {
-	res, ok := r.result.(*repositoryResolver)
+func (r *searchSuggestionResolver) ToRepository() (*RepositoryResolver, bool) {
+	res, ok := r.result.(*RepositoryResolver)
 	return res, ok
 }
 
@@ -663,7 +663,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs search.Rep
 		return nil, nil // no revs to search
 	}
 
-	repoResolver := &repositoryResolver{repo: repoRevs.Repo}
+	repoResolver := &RepositoryResolver{repo: repoRevs.Repo}
 	commitResolver, err := repoResolver.Commit(ctx, &repositoryCommitArgs{Rev: repoRevs.RevSpecs()[0]}) // TODO(sqs): search all revspecs
 	if err != nil {
 		return nil, err
@@ -727,11 +727,11 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs search.Rep
 // newSearchResultResolver returns a new searchResultResolver wrapping the
 // given result.
 //
-// A panic occurs if the type of result is not a *repositoryResolver or
+// A panic occurs if the type of result is not a *RepositoryResolver or
 // *gitTreeEntryResolver.
 func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
-	case *repositoryResolver:
+	case *RepositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
 
 	case *gitTreeEntryResolver:
@@ -784,7 +784,7 @@ func (s *scorer) calcScore(result interface{}) int {
 	}
 
 	switch r := result.(type) {
-	case *repositoryResolver:
+	case *RepositoryResolver:
 		if !s.queryEmpty {
 			score = postfixFuzzyAlignScore(splitNoEmpty(string(r.repo.Name), "/"), s.queryParts)
 		}

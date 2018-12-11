@@ -1,6 +1,6 @@
 package graphqlbackend
 
-func (r *repositoryResolver) ExternalRepository() *externalRepositoryResolver {
+func (r *RepositoryResolver) ExternalRepository() *externalRepositoryResolver {
 	if r.repo.ExternalRepo == nil {
 		return nil
 	}
@@ -8,7 +8,7 @@ func (r *repositoryResolver) ExternalRepository() *externalRepositoryResolver {
 }
 
 type externalRepositoryResolver struct {
-	repository *repositoryResolver
+	repository *RepositoryResolver
 }
 
 func (r *externalRepositoryResolver) ID() string { return r.repository.repo.ExternalRepo.ID }

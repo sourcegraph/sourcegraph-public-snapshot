@@ -175,7 +175,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 							// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
 							// (which would make it slow). This gitCommitResolver will return empty
 							// values for all other fields.
-							repo: &repositoryResolver{repo: res.fileMatch.repo},
+							repo: &RepositoryResolver{repo: res.fileMatch.repo},
 						},
 						stat: createFileInfo(res.fileMatch.JPath, false),
 					}
@@ -239,7 +239,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	for _, s := range allSuggestions {
 		var k key
 		switch s := s.result.(type) {
-		case *repositoryResolver:
+		case *RepositoryResolver:
 			k.repoName = s.repo.Name
 		case *gitTreeEntryResolver:
 			k.repoName = s.commit.repo.repo.Name

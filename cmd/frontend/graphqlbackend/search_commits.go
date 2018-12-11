@@ -246,7 +246,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		rawResults = rawResults[:maxResults]
 	}
 
-	repoResolver := &repositoryResolver{repo: repo}
+	repoResolver := &RepositoryResolver{repo: repo}
 	results = make([]*commitSearchResultResolver, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit

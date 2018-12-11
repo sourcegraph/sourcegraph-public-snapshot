@@ -1,9 +1,11 @@
 package registry
 
 import (
+	"context"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -67,4 +69,24 @@ func (r *extensionManifest) BundleURL() (*string, error) {
 		return nil, nil
 	}
 	return &parsed.Url, nil
+}
+
+// Repository returns the Sourcegraph repository, if the manifest contains a `repository` field
+// that points to a repository available on this Sourcegraph instance
+func (r *extensionManifest) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	parsed, err := r.parse()
+	if parsed == nil || err != nil {
+		return nil, err
+	}
+	if parsed.Repository == nil {
+		return nil, nil
+	}
+	if parsed.Repository.Url == "" {
+		return nil, nil
+	}
+	repoName, err := reposource.CloneURLToRepoName(parsed.Repository.Url)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.RepositoryResolverByName(ctx, repoName)
 }
