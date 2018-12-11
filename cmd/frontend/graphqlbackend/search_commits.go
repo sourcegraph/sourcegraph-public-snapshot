@@ -360,7 +360,7 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) stri
 }
 
 // Returns a string with the apporximate time since the commit was created.
-// Implementation from https://stackoverflow.com/a/36531443.
+// Implementation adapted from https://stackoverflow.com/a/36531443.
 func approximateTimeSinceCommit(t time.Time) string {
 	now := time.Now()
 
@@ -414,11 +414,11 @@ func approximateTimeSinceCommit(t time.Time) string {
 		}
 		return fmt.Sprintf("over %v year%s ago", year, plural)
 	} else if month >= 1 {
-		if month > 1 {
-			plural = "s"
-		}
 		if day >= 1 {
 			month++
+		}
+		if month > 1 {
+			plural = "s"
 		}
 		return fmt.Sprintf("%v month%s ago", month, plural)
 	} else if day >= 1 {
@@ -427,19 +427,19 @@ func approximateTimeSinceCommit(t time.Time) string {
 		}
 		return fmt.Sprintf("%v day%s ago", day, plural)
 	} else if hour >= 1 {
-		if hour > 1 {
-			plural = "s"
-		}
 		if min >= 1 {
 			hour++
 		}
-		return fmt.Sprintf("about %v hour%s ago", hour, plural)
-	} else if min >= 1 {
-		if min > 1 {
+		if hour > 1 {
 			plural = "s"
 		}
+		return fmt.Sprintf("about %v hour%s ago", hour, plural)
+	} else if min >= 1 {
 		if sec >= 1 {
 			min++
+		}
+		if min > 1 {
+			plural = "s"
 		}
 		return fmt.Sprintf("%v minute%s ago", min, plural)
 	}
