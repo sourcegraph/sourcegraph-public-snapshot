@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -47,15 +48,24 @@ type LineFragmentMatch struct {
 
 // Repository is a repository at a commit.
 type Repository struct {
-	Name   api.RepoName
-	Commit api.CommitID
+	Name       api.RepoName
+	Commit     api.CommitID
+	RefPattern string
 }
 
 func (r *Repository) String() string {
-	if r.Commit != "" {
-		return string(r.Name) + "@" + string(r.Commit)
+	var b strings.Builder
+	b.Grow(len(r.Name) + len(r.Commit) + len(r.RefPattern) + 2)
+	b.WriteString(string(r.Name))
+	if r.RefPattern != "" {
+		b.WriteByte('@')
+		b.WriteString(r.RefPattern)
 	}
-	return string(r.Name)
+	if r.Commit != "" {
+		b.WriteByte('@')
+		b.WriteString(string(r.Commit))
+	}
+	return b.String()
 }
 
 // RepositoryStatus is the status of searching a repository with an
