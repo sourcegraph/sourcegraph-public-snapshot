@@ -81,7 +81,7 @@ func TestAuthMiddleware(t *testing.T) {
 			h.ServeHTTP(rec, req)
 			res := rec.Result()
 			if tst.wantAuthenticated {
-				if called != true {
+				if !called {
 					t.Fatal("authenticated requests should pass through")
 				}
 				if res.StatusCode != http.StatusOK {
