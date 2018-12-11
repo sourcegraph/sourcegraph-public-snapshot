@@ -166,6 +166,11 @@ func main() {
 	log.Fatalf("Fatal error serving: %s", s.ListenAndServeTLS(tlsCert, tlsKey))
 }
 
+type jsonConfiguration struct {
+	ID       string
+	Contents string
+}
+
 func serveGet(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "get")
 
@@ -176,10 +181,7 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(&struct {
-		ID       string
-		Contents string
-	}{
+	err = json.NewEncoder(w).Encode(&jsonConfiguration{
 		ID:       strconv.Itoa(int(critical.ID)),
 		Contents: critical.Contents,
 	})
@@ -193,8 +195,8 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "update")
 
 	var args struct {
-		LastID   string `json:"lastID"`
-		Contents string `json:"contents"`
+		LastID   string
+		Contents string
 	}
 	err := json.NewDecoder(r.Body).Decode(&args)
 	if err != nil {
@@ -218,7 +220,10 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(critical)
+	err = json.NewEncoder(w).Encode(&jsonConfiguration{
+		ID:       strconv.Itoa(int(critical.ID)),
+		Contents: critical.Contents,
+	})
 	if err != nil {
 		logger.Error("json response encoding failed", "error", err)
 		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
