@@ -11,6 +11,7 @@ import (
 	_ "github.com/kevinburke/differ"
 	_ "github.com/kevinburke/go-bindata/go-bindata"
 	_ "github.com/mattn/goreman"
+	_ "github.com/shurcooL/vfsgen/cmd/vfsgendev"
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
 	_ "github.com/sourcegraph/godockerize"
 	_ "golang.org/x/tools/cmd/stringer"
