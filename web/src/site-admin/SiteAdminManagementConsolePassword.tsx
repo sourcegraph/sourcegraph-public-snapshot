@@ -85,7 +85,7 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
                         <strong>Keep it somewhere safe and secure.</strong>
                     </div>
                     <div className="card-footer d-flex align-items-center justify-content-between">
-                        <div className="mr-2" style={{ width: '16rem' }}>
+                        <div className="site-admin-management-console-password__copyable-text-container mr-2">
                             <CopyableText password={true} className="flex-wrap-reverse" text={plaintextPassword} />
                         </div>
                         <div className="flex-wrap-reverse">
