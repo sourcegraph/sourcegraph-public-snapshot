@@ -70,7 +70,7 @@ var Cluster = conftypes.RawUnified{
 }`,
 	Site: `{
 	// Publicly accessible URL to web app (e.g., what you type into your browser).
-	"appURL": "http://localhost:3080",
+	"externalURL": "http://localhost:3080",
 }`,
 }
 
