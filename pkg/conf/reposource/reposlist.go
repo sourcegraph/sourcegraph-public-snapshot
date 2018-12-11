@@ -14,7 +14,7 @@ import (
 
 var (
 	// reposListInstance is the global instance of the repos.list repoSource. Do NOT reference this
-	// directly; use getReposListInstance() instead.
+	// directly; use GetReposListInstance() instead.
 	reposListInstance          atomic.Value
 	reposListInstanceReadyOnce sync.Once
 	reposListInstanceReady     = make(chan struct{})
@@ -32,7 +32,7 @@ func init() {
 	}()
 }
 
-func GetReposListInstance() *reposList {
+func GetReposListInstance() RepoSource {
 	<-reposListInstanceReady
 	return reposListInstance.Load().(*reposList)
 }
