@@ -25,14 +25,18 @@ type externalServices struct{}
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
-	Kind string
+	Kinds []string
 	*LimitOffset
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
-	if o.Kind != "" {
-		conds = append(conds, sqlf.Sprintf("kind=%s", o.Kind))
+	if len(o.Kinds) > 0 {
+		kinds := []*sqlf.Query{}
+		for _, kind := range o.Kinds {
+			kinds = append(kinds, sqlf.Sprintf("%s", kind))
+		}
+		conds = append(conds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ", ")))
 	}
 	return conds
 }
@@ -203,7 +207,7 @@ func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOpt
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) listConfigs(ctx context.Context, kind string, result interface{}) error {
-	services, err := c.List(ctx, ExternalServicesListOptions{Kind: kind})
+	services, err := c.List(ctx, ExternalServicesListOptions{Kinds: []string{kind}})
 	if err != nil {
 		return err
 	}
