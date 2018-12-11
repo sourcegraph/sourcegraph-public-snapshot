@@ -6,6 +6,7 @@ interface Props {}
 interface State {
     subject?: HTMLElement
     subjectSeq: number
+    lastEventTarget?: HTMLElement
     content?: string
 }
 
@@ -27,31 +28,39 @@ export class Tooltip extends React.PureComponent<Props, State> {
      * content while the tooltip is still visible.
      */
     public static forceUpdate(): void {
-        if (Tooltip.INSTANCE) {
-            Tooltip.INSTANCE.updateContent()
+        const instance = Tooltip.INSTANCE
+        if (instance) {
+            instance.setState(prevState => {
+                const subject =
+                    prevState.lastEventTarget && instance.getSubject(prevState.lastEventTarget as HTMLElement)
+                return {
+                    subject,
+                    content: subject ? instance.getContent(subject) : undefined,
+                }
+            })
         }
     }
 
     public componentDidMount(): void {
         Tooltip.INSTANCE = this
 
-        document.addEventListener('focusin', this.toggleHint)
-        document.addEventListener('mouseover', this.toggleHint)
-        document.addEventListener('touchend', this.toggleHint)
-        document.addEventListener('click', this.toggleHint)
+        document.addEventListener('focusin', this.handleEvent)
+        document.addEventListener('mouseover', this.handleEvent)
+        document.addEventListener('touchend', this.handleEvent)
+        document.addEventListener('click', this.handleEvent)
     }
 
     public componentWillUnmount(): void {
         Tooltip.INSTANCE = undefined
 
-        document.removeEventListener('focusin', this.toggleHint)
-        document.removeEventListener('mouseover', this.toggleHint)
-        document.removeEventListener('touchend', this.toggleHint)
-        document.removeEventListener('click', this.toggleHint)
+        document.removeEventListener('focusin', this.handleEvent)
+        document.removeEventListener('mouseover', this.handleEvent)
+        document.removeEventListener('touchend', this.handleEvent)
+        document.removeEventListener('click', this.handleEvent)
     }
 
     public render(): React.ReactFragment | null {
-        return this.state.subject ? (
+        return this.state.subject && this.state.content ? (
             <BootstrapTooltip
                 // Set key prop to work around a bug where quickly mousing between 2 elements with tooltips
                 // displays the 2nd element's tooltip as still pointing to the first.
@@ -66,23 +75,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
         ) : null
     }
 
-    private toggleHint = (event: Event): void => {
-        const subject = this.getSubject(event)
-        this.setState(prevState => ({
-            subject,
-            subjectSeq: prevState.subject === subject ? prevState.subjectSeq : prevState.subjectSeq + 1,
-            content: subject ? this.getContent(subject) : undefined,
-        }))
-    }
-
-    private updateContent = () => {
-        this.setState(prevState => ({ content: prevState.subject ? this.getContent(prevState.subject) : undefined }))
-    }
-
-    /**
-     * Find the nearest ancestor element to e that contains a tooltip.
-     */
-    private getSubject = (event: Event): HTMLElement | undefined => {
+    private handleEvent = (event: Event): void => {
         // As a special case, don't show the tooltip for click events on submit buttons that are probably triggered
         // by the user pressing the enter button. It is not desirable for the tooltip to be shown in that case.
         if (
@@ -92,10 +85,24 @@ export class Tooltip extends React.PureComponent<Props, State> {
             (event as MouseEvent).pageX === 0 &&
             (event as MouseEvent).pageY === 0
         ) {
-            return undefined
+            this.setState({ lastEventTarget: undefined, subject: undefined, content: undefined })
+            return
         }
 
-        let e: HTMLElement | null = event.target as HTMLElement
+        const eventTarget = event.target as HTMLElement
+        const subject = this.getSubject(eventTarget)
+        this.setState(prevState => ({
+            lastEventTarget: eventTarget,
+            subject,
+            subjectSeq: prevState.subject === subject ? prevState.subjectSeq : prevState.subjectSeq + 1,
+            content: subject ? this.getContent(subject) : undefined,
+        }))
+    }
+
+    /**
+     * Find the nearest ancestor element to e that contains a tooltip.
+     */
+    private getSubject = (e: HTMLElement | null): HTMLElement | undefined => {
         while (e) {
             if (e === document.body) {
                 break

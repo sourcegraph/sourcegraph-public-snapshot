@@ -59,5 +59,5 @@ You've written the code, you've tested your extension, and now you're almost rea
 Now publish the extension:
 
 ```
-run src extensions publish`
+run src extensions publish
 ```

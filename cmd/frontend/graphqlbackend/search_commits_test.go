@@ -20,6 +20,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
 
 	var calledVCSRawLogDiffSearch bool
+	gitSignatureWithDate := git.Signature{Date: time.Now()}
 	git.Mocks.RawLogDiffSearch = func(opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error) {
 		calledVCSRawLogDiffSearch = true
 		if want := "p"; opt.Query.Pattern != want {
@@ -36,7 +37,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		}
 		return []*git.LogCommitSearchResult{
 			{
-				Commit: git.Commit{ID: "c1"},
+				Commit: git.Commit{ID: "c1", Author: gitSignatureWithDate},
 				Diff:   &git.Diff{Raw: "x"},
 			},
 		}, true, nil
@@ -66,13 +67,13 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			commit: &gitCommitResolver{
 				repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
 				oid:    "c1",
-				author: *toSignatureResolver(&git.Signature{}),
+				author: *toSignatureResolver(&gitSignatureWithDate),
 			},
 			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
 			icon:        "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=",
 			label:       "[repo](/repo) &nbsp; [](/repo/-/commit/c1) &nbsp; [](/repo/-/commit/c1)",
 			url:         "/repo/-/commit/c1",
-			detail:      "c1",
+			detail:      "[`c1` about a second ago](/repo/-/commit/c1)",
 			matches:     []*searchResultMatchResolver{&searchResultMatchResolver{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
 		},
 	}; !reflect.DeepEqual(results, want) {

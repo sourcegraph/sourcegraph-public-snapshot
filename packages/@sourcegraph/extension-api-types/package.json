@@ -8,7 +8,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sourcegraph/sourcegraph"
+    "url": "https://github.com/sourcegraph/sourcegraph",
+    "directory": "packages/@sourcegraph/extension-api-types"
   },
   "license": "Apache-2.0",
   "main": "",

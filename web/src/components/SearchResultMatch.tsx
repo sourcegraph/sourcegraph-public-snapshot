@@ -130,10 +130,19 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     private getFirstLine(): number {
+        if (this.props.highlightRanges.length === 0) {
+            // If there are no highlights, the calculation below results in -Infinity.
+            return 0
+        }
         return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - 1)
     }
 
     private getLastLine(): number {
+        if (this.props.highlightRanges.length === 0) {
+            // If there are no highlights, the calculation below results in Infinity,
+            // so we set lastLine to 5, which is a just a heuristic for a medium-sized result.
+            return 5
+        }
         const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + 1
         return this.props.highlightRanges ? Math.min(lastLine, this.props.highlightRanges.length) : lastLine
     }

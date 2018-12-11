@@ -31,6 +31,10 @@ func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfig
 	cfg := conf.Get()
 	var contentScriptUrls []string
 
+	// The following code makes serial database calls.
+	// Ideally these could be done in parallel, but the table is small
+	// and I don't think real world perf is going to be bad.
+
 	githubs, err := conf.GitHubConfigs(ctx)
 	if err != nil {
 		return nil, err

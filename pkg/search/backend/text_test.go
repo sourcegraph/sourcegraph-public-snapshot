@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"reflect"
@@ -16,9 +17,11 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 )
 
 func TestText(t *testing.T) {
@@ -27,14 +30,23 @@ func TestText(t *testing.T) {
 		Client:       mz,
 		DisableCache: true,
 	}
-	fallback := &backend.Mock{Result: &search.Result{}}
+	defer index.Close()
+
+	fallback := &mockCollectRepos{}
+	addr, close := openServer(t, fallback)
+	defer close()
+	jit := &backend.TextJIT{
+		Endpoints: endpoint.New(addr),
+		Resolve: func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error) {
+			return api.CommitID("abc"), nil
+		},
+	}
+	defer jit.Close()
+
 	s := &backend.Text{
 		Index:    index,
-		Fallback: fallback,
+		Fallback: jit,
 	}
-
-	defer fallback.Close()
-	defer index.Close()
 	defer s.Close()
 
 	// Test string codepath
@@ -42,6 +54,7 @@ func TestText(t *testing.T) {
 
 	cases := []struct {
 		Name         string
+		Query        string
 		Repos        string
 		Indexed      string
 		WantIndex    string
@@ -56,27 +69,49 @@ func TestText(t *testing.T) {
 		Name:         "none",
 		Repos:        "a b c",
 		Indexed:      "d e f",
-		WantFallback: "a b c",
+		WantFallback: "a@abc b@abc c@abc",
 	}, {
 		Name:         "empty_index",
 		Repos:        "a b c",
-		WantFallback: "a b c",
+		WantFallback: "a@abc b@abc c@abc",
 	}, {
 		Name:      "subset_of_indexed",
 		Repos:     "a b c",
 		Indexed:   "a b c d",
 		WantIndex: "a b c",
 	}, {
-		Name:         "mix",
-		Repos:        "a@x b@x c d",
+		Name:         "query_has_extra_repos",
+		Query:        "(r:a ref:x) or r:b",
+		Repos:        "b",
 		Indexed:      "a d e",
-		WantIndex:    "d",
-		WantFallback: "a@x b@x c",
+		WantFallback: "b@x@abc",
+	}, {
+		// We send b to fallback since it matches b@x since searching b on the
+		// x branch will return results.
+		Name:         "query_has_extra_repos_indexed",
+		Query:        "(r:a ref:x) or r:b",
+		Repos:        "b",
+		Indexed:      "b d e",
+		WantFallback: "b@x@abc",
+	}, {
+		Name:         "mix",
+		Query:        "(r:a ref:x) or (r:b ref:y) or r:c or r:d",
+		Repos:        "a b c d",
+		Indexed:      "a d e",
+		WantIndex:    "",
+		WantFallback: "a@x@abc b@y@abc c@x@abc c@y@abc d@x@abc d@y@abc",
+	}, {
+		Name:         "mix_on_same_repo",
+		Query:        "(r:a ref:x) or (r:b ref:x)",
+		Repos:        "a b c d",
+		Indexed:      "a d e",
+		WantFallback: "a@x@abc b@x@abc",
 	}, {
 		Name:         "no-head",
-		Repos:        "a@x b@x c@x d@x",
+		Query:        "ref:x",
+		Repos:        "a b c d",
 		Indexed:      "a b c",
-		WantFallback: "a@x b@x c@x d@x",
+		WantFallback: "a@x@abc b@x@abc c@x@abc d@x@abc",
 	}, {
 		Name:      "empty",
 		WantError: "repository list empty",
@@ -85,11 +120,37 @@ func TestText(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
 			// Reset mocks
-			fallback.LastOpts = nil
+			fallback.Repos = nil
 			mz.LastSearchQ = nil
 			mz.ListResult = zoektRepoList(c.Indexed)
 
-			_, err := s.Search(context.Background(), &query.Const{Value: true}, &search.Options{Repositories: repoList(c.Repos)})
+			// Build a query which matches c.Repos
+			var q query.Q
+			if c.Query == "" {
+				q = &query.Const{Value: true}
+			} else {
+				var err error
+				q, err = query.Parse(c.Query)
+				if err != nil {
+					t.Fatal(q)
+				}
+				// Replace repo with reposet
+				q, err = query.ExpandRepo(q, func(p, e []string) (map[string]struct{}, error) {
+					if len(e) > 0 {
+						return nil, errors.Errorf("excludes: %v", e)
+					}
+					m := map[string]struct{}{}
+					for _, r := range p {
+						m[r] = struct{}{}
+					}
+					return m, nil
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Log(q)
+			}
+			_, err := s.Search(context.Background(), q, &search.Options{Repositories: repoList(c.Repos)})
 			assertError(t, err, c.WantError)
 
 			var gotIndexParts []string
@@ -97,7 +158,15 @@ func TestText(t *testing.T) {
 				zoektquery.VisitAtoms(mz.LastSearchQ, func(q zoektquery.Q) {
 					if rs, ok := q.(*zoektquery.RepoSet); ok {
 						for name := range rs.Set {
-							gotIndexParts = append(gotIndexParts, name)
+							seen := false
+							for _, p := range gotIndexParts {
+								if p == name {
+									seen = true
+								}
+							}
+							if !seen {
+								gotIndexParts = append(gotIndexParts, name)
+							}
 						}
 					}
 				})
@@ -109,17 +178,25 @@ func TestText(t *testing.T) {
 			}
 
 			var gotFallbackParts []string
-			if fallback.LastOpts != nil {
-				for _, r := range fallback.LastOpts.Repositories {
-					gotFallbackParts = append(gotFallbackParts, r.String())
-				}
+			for _, r := range fallback.Repos {
+				gotFallbackParts = append(gotFallbackParts, r.String())
 			}
+			sort.Strings(gotFallbackParts)
 			gotFallback := strings.Join(gotFallbackParts, " ")
 			if gotFallback != c.WantFallback {
-				t.Errorf("unexpected repos sent to index\ngot:  %s\nwant: %s", gotFallback, c.WantFallback)
+				t.Errorf("unexpected repos sent to fallback\ngot:  %s\nwant: %s", gotFallback, c.WantFallback)
 			}
 		})
 	}
+}
+
+func openServer(t *testing.T, s search.Searcher) (string, func()) {
+	server, err := rpc.Server(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(server)
+	return ts.URL, ts.Close
 }
 
 func TestText_error(t *testing.T) {
@@ -430,3 +507,16 @@ func diff(b1, b2 string) (string, error) {
 	}
 	return string(data), err
 }
+
+type mockCollectRepos struct {
+	Repos []search.Repository
+}
+
+func (m *mockCollectRepos) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
+	m.Repos = append(m.Repos, opts.Repositories...)
+	return &search.Result{}, nil
+}
+
+func (m *mockCollectRepos) Close() {}
+
+func (m *mockCollectRepos) String() string { return "mockCollectRepos" }

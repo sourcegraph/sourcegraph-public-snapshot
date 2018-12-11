@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -27,7 +28,7 @@ type Text struct {
 	// for testing purposes.
 	Index interface {
 		search.Searcher
-		SplitRepositories(context.Context, []search.Repository) (canSearch, cantSearch []search.Repository, err error)
+		SplitRepositories(context.Context, query.Q, *search.Options) (canSearch, cantSearch []search.Repository, err error)
 	}
 
 	// Fallback is the searcher used for anything that Index can't
@@ -55,7 +56,7 @@ func (t *Text) Search(ctx context.Context, q query.Q, opts *search.Options) (res
 	go func() {
 		defer close(shards)
 
-		index, fallback, err := t.Index.SplitRepositories(ctx, opts.Repositories)
+		index, fallback, err := t.Index.SplitRepositories(ctx, q, opts)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
@@ -91,12 +92,16 @@ func (t *Text) String() string {
 	return fmt.Sprintf("text(index=%v fallback=%v)", t.Index, t.Fallback)
 }
 
+// SourceSearcher is the source name used by searcher, our textjit service.
+const SourceSearcher = search.Source("textjit")
+
 // TextJIT is a client for searching our just in time text search (the
 // searcher service).
 //
 // It implements search.Searcher
 type TextJIT struct {
 	Endpoints *endpoint.Map
+	Resolve   func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error)
 
 	mu      sync.Mutex
 	clients map[string]search.Searcher
@@ -105,15 +110,30 @@ type TextJIT struct {
 // Search distributes the search across the searcher replicas, and merges the
 // results. opts.Repositories is required to be non-empty.
 func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
-	if len(opts.Repositories) == 0 {
-		return nil, errors.Errorf("repository list empty for jit text search on %s", q.String())
+	repoNames := make([]api.RepoName, len(opts.Repositories))
+	for i := range opts.Repositories {
+		repoNames[i] = opts.Repositories[i].Name
+	}
+	repos, err := expandRepoRefs(q, repoNames)
+	if err != nil {
+		return nil, err
 	}
 
 	all := &search.Result{}
 
 	// TODO parallize, delete missing endpoints, respect MaxWallTime
 	origOpts := opts
-	for _, r := range origOpts.Repositories {
+	for _, r := range repos {
+		commit, err := t.Resolve(ctx, r.Name, r.RefPattern)
+		if err != nil {
+			s, err := handleError(SourceSearcher, r, err)
+			if err != nil {
+				return all, err
+			}
+			all.Stats.Status = append(all.Stats.Status, *s)
+			continue
+		}
+		r.Commit = commit
 		opts := *origOpts
 		opts.Repositories = []search.Repository{r}
 
@@ -147,22 +167,94 @@ func (t *TextJIT) String() string {
 }
 
 func (t *TextJIT) client(r search.Repository) (search.Searcher, error) {
-	addr, err := t.Endpoints.Get(r.String(), nil)
+	ep, err := t.Endpoints.Get(r.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	t.mu.Lock()
-	client, ok := t.clients[addr]
+	if t.clients == nil {
+		t.clients = make(map[string]search.Searcher)
+	}
+	client, ok := t.clients[ep]
 	if !ok {
 		// Creating a client is non-blocking so can hold lock.
+		addr := strings.TrimPrefix(ep, "http://")
+		addr = strings.TrimPrefix(addr, "https://")
 		client = rpc.Client(addr)
-		t.clients[addr] = client
+		t.clients[ep] = client
 	}
 	t.mu.Unlock()
 
 	// TODO if we add a new client, check if we need to remove any.
 	return client, nil
+}
+
+func expandRepoRefs(q query.Q, repoNames []api.RepoName) ([]search.Repository, error) {
+	// Implementation Note: If a query does not have a "ref:" pattern, it
+	// implies that the user wants to search the default branch. This gives us
+	// a problem. For example this query:
+	//
+	//   (ref:x repo:a) or repo:b
+	//
+	// A user would expect this to match a@x and b@master. However, given that
+	// expression b actually matches any ref. The issue here is "or" doesn't
+	// restrict scope, since it just unions results. So to simplify our
+	// algorithm for determining refs for a repo, we only assume a repo is on
+	// the default branch if it matches no ref clauses.
+
+	// Create a set of refs to search
+	refs := map[string]struct{}{}
+	query.VisitAtoms(q, func(q query.Q) {
+		if s, ok := q.(*query.Ref); ok {
+			refs[s.Pattern] = struct{}{}
+		}
+	})
+	if len(refs) == 0 {
+		repos := make([]search.Repository, len(repoNames))
+		for i := range repoNames {
+			repos[i] = search.Repository{Name: repoNames[i]}
+		}
+		return repos, nil
+	}
+
+	// Otherwise we need to check if the repository can match with a ref
+	// specifier
+	var evalErr error
+	include := func(name api.RepoName, refPattern string) bool {
+		v, ok := query.EvalConstant(q, func(q query.Q) (bool, bool) {
+			switch s := q.(type) {
+			case *query.Repo:
+				evalErr = errors.Errorf("text search expected repo atom to be expanded: %v", q)
+				return false, false
+			case *query.RepoSet:
+				_, ok := s.Set[string(name)]
+				return ok, true
+			case *query.Ref:
+				return s.Pattern == refPattern, true
+			default:
+				return false, false
+			}
+		})
+		return !ok || v
+	}
+
+	var repos []search.Repository
+	for _, name := range repoNames {
+		for p := range refs {
+			if include(name, p) {
+				repos = append(repos, search.Repository{
+					Name:       name,
+					RefPattern: p,
+				})
+			}
+		}
+	}
+	if evalErr != nil {
+		return nil, evalErr
+	}
+
+	return repos, nil
 }
 
 // SourceZoekt is the source name used by Zoekt.
@@ -435,26 +527,30 @@ func (c *Zoekt) String() string {
 // SplitRepositories splits repos into two lists: indexed contains
 // repositories that can be searched by zoekt, unindexed contains everything
 // else.
-func (c *Zoekt) SplitRepositories(ctx context.Context, repos []search.Repository) (indexed, unindexed []search.Repository, err error) {
-	for _, r := range repos {
-		// TODO is this how we decide default branch?
-		if r.Commit == "" {
-			indexed = append(indexed, r)
-		} else {
-			unindexed = append(unindexed, r)
+func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.Options) (indexed, unindexed []search.Repository, err error) {
+	// We only use zoekt if we have no ref atoms. See notes about the master
+	// branch where we calculate which commits to search for a repository in
+	// TextJIT
+	hasRef := false
+	query.VisitAtoms(q, func(q query.Q) {
+		if _, ok := q.(*query.Ref); ok {
+			hasRef = true
 		}
+	})
+	if hasRef {
+		return nil, opts.Repositories, nil
 	}
 
-	// Return early if we don't need to querying zoekt
-	if len(indexed) == 0 {
-		return indexed, unindexed, nil
-	}
+	// Otherwise we want to search all repositories via Zoekt, but we need
+	// prune out the ones that aren't indexed. Make a copy of
+	// opts.Repositories since we are going to mutate it.
+	indexed = append(indexed, opts.Repositories...)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	resp, err := c.ListAll(ctx)
 	if err != nil {
-		return nil, repos, err
+		return nil, opts.Repositories, err
 	}
 
 	// Everything currently in indexed is at HEAD. Filter out repos which
@@ -463,12 +559,16 @@ func (c *Zoekt) SplitRepositories(ctx context.Context, repos []search.Repository
 	for _, repo := range resp.Repos {
 		set[repo.Repository.Name] = struct{}{}
 	}
+	unindexedSet := map[api.RepoName]struct{}{}
+	for _, repo := range unindexed {
+		unindexedSet[repo.Name] = struct{}{}
+	}
 	head := indexed
 	indexed = indexed[:0]
 	for _, r := range head {
 		if _, ok := set[string(r.Name)]; ok {
 			indexed = append(indexed, r)
-		} else {
+		} else if _, ok = unindexedSet[r.Name]; !ok {
 			unindexed = append(unindexed, r)
 		}
 	}

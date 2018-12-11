@@ -1912,12 +1912,11 @@
   resolved "https://registry.npmjs.org/@types/range-parser/-/range-parser-1.2.2.tgz#fa8e1ad1d474688a757140c91de6dace6f4abc8d"
   integrity sha512-HtKGu+qG1NPvYe1z7ezLsyIaXYyi8SoAVqWDZgDQ8dLrsZvSzUNCwZyfX33uhWxL/SU0ZDQZ3nwZ0nimt507Kw==
 
-"@types/react-dom@16.0.9":
-  version "16.0.9"
-  resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-16.0.9.tgz#73ceb7abe6703822eab6600e65c5c52efd07fb91"
-  integrity sha512-4Z0bW+75zeQgsEg7RaNuS1k9MKhci7oQqZXxrV5KUGIyXZHHAAL3KA4rjhdH8o6foZ5xsRMSqkoM5A3yRVPR5w==
+"@types/react-dom@16.0.11":
+  version "16.0.11"
+  resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-16.0.11.tgz#bd10ccb0d9260343f4b9a49d4f7a8330a5c1f081"
+  integrity sha512-x6zUx9/42B5Kl2Vl9HlopV8JF64wLpX3c+Pst9kc1HgzrsH+mkehe/zmHMQTplIrR48H2gpU7ZqurQolYu8XBA==
   dependencies:
-    "@types/node" "*"
     "@types/react" "*"
 
 "@types/react-router-dom@4.3.1":
@@ -1937,10 +1936,10 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react-stripe-elements@1.1.8":
-  version "1.1.8"
-  resolved "https://registry.npmjs.org/@types/react-stripe-elements/-/react-stripe-elements-1.1.8.tgz#eafdbbb67a0a9dcd7ede0b7811cc72abe3c2f25b"
-  integrity sha512-mggR4i+LCqbDjJ8fhM/CwBlpokYrUJmY/u3ogZSaMIbPFElV5CcPz+0h+QFnULWRjgEpDFjwZOYffHQRRlh2bw==
+"@types/react-stripe-elements@1.1.9":
+  version "1.1.9"
+  resolved "https://registry.npmjs.org/@types/react-stripe-elements/-/react-stripe-elements-1.1.9.tgz#21f951b0c3885584381ad7f87c4b502ecc554765"
+  integrity sha512-bLwKVf9wrrapuGv7HArFRrvwFhfhyg3DwaNaYFX4ENrNsl9U6tRC3wT7iv4TGTJ7PIjqRxSaFFEB5TDE4GsV2Q==
   dependencies:
     "@types/react" "*"
     "@types/stripe-v3" "*"
@@ -1952,18 +1951,26 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react@*", "@types/react@16.7.3":
-  version "16.7.3"
-  resolved "https://registry.npmjs.org/@types/react/-/react-16.7.3.tgz#dd96b19b21c450fab7d136f71d48f4b8fc72777e"
-  integrity sha512-ve/2lnXuLNaTDR1SPvsEX25m+NoNW3PMJxL2jd372UR8oJPwR5+jgtcheUoN27O+qKLFmQy0y0YKRwZcwtny3w==
+"@types/react@*":
+  version "16.7.13"
+  resolved "https://registry.npmjs.org/@types/react/-/react-16.7.13.tgz#d2369ae78377356d42fb54275d30218e84f2247a"
+  integrity sha512-WhqrQLAE9z65hfcvWqZfR6qUtIazFRyb8LXqHo8440R53dAQqNkt2OlVJ3FXwqOwAXXg4nfYxt0qgBvE18o5XA==
   dependencies:
     "@types/prop-types" "*"
     csstype "^2.2.0"
 
-"@types/reactstrap@6.4.2":
-  version "6.4.2"
-  resolved "https://registry.npmjs.org/@types/reactstrap/-/reactstrap-6.4.2.tgz#6164a66f5cb2b453a58b5a2fb542974484d4d665"
-  integrity sha512-LPjgD+3BLgeEEJV6GHkktkK3h7XyyP4eeVGn2i6KRQZsdl5WPzYF2LCmxH25l3GZVuNoMbu+a4rkVTZsK+Rbag==
+"@types/react@16.7.13":
+  version "16.7.13"
+  resolved "https://registry.npmjs.org/@types/react/-/react-16.7.13.tgz#d2369ae78377356d42fb54275d30218e84f2247a"
+  integrity sha512-WhqrQLAE9z65hfcvWqZfR6qUtIazFRyb8LXqHo8440R53dAQqNkt2OlVJ3FXwqOwAXXg4nfYxt0qgBvE18o5XA==
+  dependencies:
+    "@types/prop-types" "*"
+    csstype "^2.2.0"
+
+"@types/reactstrap@6.4.3":
+  version "6.4.3"
+  resolved "https://registry.npmjs.org/@types/reactstrap/-/reactstrap-6.4.3.tgz#b6e1a0944d876726c76c5cb74c48bef02e56b4f9"
+  integrity sha512-+L26oBxuQRfGCbnWiyzY/u7wZl0pZRMjBnOuQpA1XegD/g3/wc9lDL+14hnWUIaJ/vacEQDrDIEOByGLmtIohg==
   dependencies:
     "@types/react" "*"
     popper.js "^1.14.1"
