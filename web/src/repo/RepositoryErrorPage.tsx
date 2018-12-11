@@ -208,7 +208,9 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                             <>
                                                 As a site admin, you can add this repository to Sourcegraph to allow
                                                 users to search and view it by{' '}
-                                                <a href="/help/admin">configuring an integration with your code host</a>.
+                                                <a href="/site-admin/external-services">
+                                                    connecting an external service
+                                                </a>.
                                             </>
                                         )}
                                     </div>
