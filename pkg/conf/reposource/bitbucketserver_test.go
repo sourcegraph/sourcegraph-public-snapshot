@@ -45,7 +45,7 @@ func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoName, err := BitbucketServer{&test.conn}.cloneURLToRepoName(u.cloneURL)
+			repoName, err := BitbucketServer{&test.conn}.CloneURLToRepoName(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}
