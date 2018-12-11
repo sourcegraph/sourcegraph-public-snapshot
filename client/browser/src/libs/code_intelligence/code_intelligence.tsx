@@ -493,11 +493,12 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                             })
                         }
 
+                        let decoratedLines: number[] = []
                         if (extensionsController && !info.baseCommitID) {
                             extensionsController.services.textDocumentDecoration
                                 .getDecorations(toTextDocumentIdentifier(info))
                                 .subscribe(decorations => {
-                                    applyDecorations(dom, codeView, decorations || [])
+                                    decoratedLines = applyDecorations(dom, codeView, decorations || [], decoratedLines)
                                 })
                         }
 
