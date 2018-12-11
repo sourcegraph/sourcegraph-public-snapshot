@@ -38,29 +38,36 @@ func TestValidateCustom(t *testing.T) {
 	}{
 		"unrecognized auth.providers": {
 			rawCritical: `{"auth.providers":[{"type":"asdf"}]}`,
+			rawSite:     "{}",
 			wantErr:     "tagged union type must have a",
 		},
 
 		// username is optional; password and token are disjointly required
 		"bitbucketserver no auth": {
+			rawCritical: "{}",
 			rawSite:     `{"bitbucketServer":[{}]}`,
 			wantProblem: "specify either a token or a username/password",
 		},
 		"bitbucketserver password and token": {
+			rawCritical: "{}",
 			rawSite:     `{"bitbucketServer":[{"password":"p","token":"t"}]}`,
 			wantProblem: "specify either a token or a username/password",
 		},
 		"bitbucketserver username and token": {
-			rawSite: `{"bitbucketServer":[{"username":"u","token":"t"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"username":"u","token":"t"}]}`,
 		},
 		"bitbucketserver username and password": {
-			rawSite: `{"bitbucketServer":[{"username":"u","password":"p"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"username":"u","password":"p"}]}`,
 		},
 		"bitbucketserver password": {
-			rawSite: `{"bitbucketServer":[{"password":"p"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"password":"p"}]}`,
 		},
 		"bitbucketserver token": {
-			rawSite: `{"bitbucketServer":[{"token":"t"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"token":"t"}]}`,
 		},
 	}
 	for name, test := range tests {
