@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -106,56 +107,100 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return repoName, nil
 	}
 
-	var repoSources []reposource.RepoSource
+	var wg sync.WaitGroup
 
-	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range githubs {
-		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c})
+	type result struct {
+		repoSource reposource.RepoSource
+		err        error
 	}
 
-	gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range gitlabs {
-		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c})
-	}
+	results := make(chan result)
 
-	bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range bitbuckets {
-		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c})
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
+		if err != nil {
+			results <- result{err: err}
+			return
+		}
+		for _, c := range githubs {
+			results <- result{repoSource: reposource.GitHub{GitHubConnection: c}}
+		}
+	}()
 
-	awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range awscodecommits {
-		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c})
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
+		if err != nil {
+			results <- result{err: err}
+			return
+		}
+		for _, c := range gitlabs {
+			results <- result{repoSource: reposource.GitLab{GitLabConnection: c}}
+		}
+	}()
 
-	repoSources = append(repoSources, reposource.GetReposListInstance())
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
+		if err != nil {
+			results <- result{err: err}
+			return
+		}
+		for _, c := range bitbuckets {
+			results <- result{repoSource: reposource.BitbucketServer{BitbucketServerConnection: c}}
+		}
+	}()
 
-	gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range gitolites {
-		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c})
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
+		if err != nil {
+			results <- result{err: err}
+			return
+		}
+		for _, c := range awscodecommits {
+			results <- result{repoSource: reposource.AWS{AWSCodeCommitConnection: c}}
+		}
+	}()
 
-	// Fallback for github.com
-	repoSources = append(repoSources, reposource.GitHub{
-		GitHubConnection: &schema.GitHubConnection{Url: "https://github.com"},
-	})
-	for _, ch := range repoSources {
-		repoName, err := ch.CloneURLToRepoName(cloneURL)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		results <- result{repoSource: reposource.GetReposListInstance()}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
+		if err != nil {
+			results <- result{err: err}
+			return
+		}
+		for _, c := range gitolites {
+			results <- result{repoSource: reposource.Gitolite{GitoliteConnection: c}}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		// Fallback for github.com
+		results <- result{repoSource: reposource.GitHub{
+			GitHubConnection: &schema.GitHubConnection{Url: "https://github.com"},
+		}}
+		close(results)
+	}()
+
+	for result := range results {
+		if result.err != nil {
+			return "", err
+		}
+		repoName, err := result.repoSource.CloneURLToRepoName(cloneURL)
 		if err != nil {
 			return "", err
 		}
