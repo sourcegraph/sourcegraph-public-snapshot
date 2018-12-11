@@ -25,6 +25,10 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 }
 
 func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
+	if !conf.ExternalServicesEnabled() {
+		cfg := conf.Get()
+		return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && len(cfg.AwsCodeCommit) == 0 && len(cfg.Gitolite) == 0 && len(cfg.BitbucketServer) == 0, nil
+	}
 	count, err := db.ExternalServices.Count(ctx, db.ExternalServicesListOptions{
 		Kinds: []string{
 			"AWSCODECOMMIT",
