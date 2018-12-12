@@ -27,7 +27,7 @@ type externalServices struct{}
 type ExternalServicesListOptions struct {
 	ID    int64
 	Kinds []string
-	Url   *string
+	URL   *string
 	*LimitOffset
 }
 
@@ -449,14 +449,14 @@ func (c *externalServices) list(ctx context.Context, opt ExternalServicesListOpt
 		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt); err != nil {
 			return nil, err
 		}
-		if opt.Url != nil {
+		if opt.URL != nil {
 			var config struct {
 				URL string `json:"url"`
 			}
 			if err := jsonc.Unmarshal(h.Config, &config); err != nil {
 				return nil, err
 			}
-			if config.URL != *opt.Url {
+			if config.URL != *opt.URL {
 				continue
 			}
 		}

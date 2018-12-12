@@ -118,7 +118,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {
 		opt.Kinds = []string{*args.Kind}
 	}
 	if args.URL != nil {
-		opt.Url = args.URL
+		opt.URL = args.URL
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{opt: opt}, nil
