@@ -243,8 +243,6 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
 	Name            string
 	ExternalService graphql.ID
-	// Url  string
-	// Kind string
 }) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: Only site admins can add repositories.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
