@@ -84,7 +84,7 @@ const SiteSchemaJSON = `{
           "description": "Enables external service management UI",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "updateScheduler2": {
           "description": "Enables a new update scheduler algorithm",
