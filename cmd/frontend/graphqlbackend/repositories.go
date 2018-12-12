@@ -244,7 +244,7 @@ func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
 	Name            string
 	ExternalService graphql.ID
 }) (*externalServiceResolver, error) {
-	// 🚨 SECURITY: Only site admins can add repositories.
+	// 🚨 SECURITY: Only site admins can mutate external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
 		github.Repos = append(github.Repos, args.Name)
 		config = github
 	default:
-		return nil, fmt.Errorf("adding repositories of kind %s is not supported", externalService.Kind)
+		return nil, fmt.Errorf("this API does not support adding repositories of kind %s", externalService.Kind)
 	}
 
 	// This will lose any comments, non-standard whitespace, and unknown fields from the old config,
