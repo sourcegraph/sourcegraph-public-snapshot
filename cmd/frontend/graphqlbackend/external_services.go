@@ -105,6 +105,8 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {
+	Kind *string
+	Url  *string
 	graphqlutil.ConnectionArgs
 }) (*externalServiceConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
@@ -112,6 +114,12 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {
 		return nil, err
 	}
 	var opt db.ExternalServicesListOptions
+	if args.Kind != nil {
+		opt.Kinds = []string{*args.Kind}
+	}
+	if args.Url != nil {
+		opt.Url = args.Url
+	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{opt: opt}, nil
 }
