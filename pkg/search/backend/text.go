@@ -137,20 +137,57 @@ func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (
 		opts := *origOpts
 		opts.Repositories = []search.Repository{r}
 
+		qSearcher, err := expandForRepoAtCommit(q, r)
+		if err != nil {
+			return nil, err
+		}
+
 		client, err := t.client(r)
 		if err != nil {
 			return nil, err
 		}
 
-		result, err := client.Search(ctx, q, &opts)
+		result, err := client.Search(ctx, qSearcher, &opts)
 		if err != nil {
 			return all, err
+		}
+
+		// Searcher doesn't know the repo.RefPattern used, so we set it.
+		for i := range result.Stats.Status {
+			result.Stats.Status[i].Repository = r
+		}
+		for i := range result.Files {
+			result.Files[i].Repository = r
 		}
 
 		all.Add(result)
 	}
 
 	return all, nil
+}
+
+func expandForRepoAtCommit(q query.Q, repo search.Repository) (query.Q, error) {
+	var err error
+	q = query.Map(q, func(q query.Q) query.Q {
+		switch s := q.(type) {
+		case *query.Repo:
+			err = errors.Errorf("text search expected repo atom to be expanded: %v", q)
+			return q
+		case *query.RepoSet:
+			_, ok := s.Set[string(repo.Name)]
+			return &query.Const{Value: ok}
+		case *query.Ref:
+			return &query.Const{Value: s.Pattern == repo.RefPattern}
+		default:
+			return q
+		}
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+	// Include the commit as the only ref
+	q = query.NewAnd(&query.Ref{Pattern: string(repo.Commit)}, q)
+	return query.Simplify(q), nil
 }
 
 func (t *TextJIT) Close() {
