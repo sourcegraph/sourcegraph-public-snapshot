@@ -170,8 +170,8 @@ type Searcher interface {
 
 // Options for Search.
 type Options struct {
-	// Repositories if set limits search to the named repositories.
-	Repositories []Repository
+	// Repositories limits search to the named repositories.
+	Repositories []api.RepoName
 
 	// TotalMaxMatchCount if non-zero stops looking for more matches once we
 	// have this many matches across shards.
