@@ -80,7 +80,7 @@ require (
 	github.com/pkg/errors v0.8.0
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v0.8.0
-	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5 // indirect
+	github.com/prometheus/client_model v0.0.0-20181212100350-5c3871d89910 // indirect
 	github.com/prometheus/common v0.0.0-20180801064454-c7de2306084e // indirect
 	github.com/prometheus/procfs v0.0.0-20180725123919-05ee40e3a273 // indirect
 	github.com/russellhaering/gosaml2 v0.3.1
