@@ -35,8 +35,7 @@ require (
 	github.com/go-redsync/redsync v1.0.1
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3
-	github.com/golang-migrate/migrate v0.0.0-20180905051849-93d53a5ae84d
-	github.com/golang-migrate/migrate/v4 v4.1.0 // indirect
+	github.com/golang-migrate/migrate/v4 v4.1.0
 	github.com/golang/gddo v0.0.0-20181009135830-6c035858b4d7
 	github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7
 	github.com/golangci/golangci-lint v1.12.2
@@ -87,6 +86,7 @@ require (
 	github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371
 	github.com/shurcooL/httpgzip v0.0.0-20180522190206-b1c53ac65af9 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f
+	github.com/sirupsen/logrus v1.0.6 // indirect
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d
