@@ -29,7 +29,7 @@ func TestServer_handleGet(t *testing.T) {
 		defer func() { api.MockExternalServiceConfigs = nil }()
 	} else {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration & schema.SiteConfiguration{
+			SiteConfiguration: schema.SiteConfiguration{
 				Gitolite: conn,
 			},
 		})
@@ -80,7 +80,7 @@ func TestServer_handleGet_invalid(t *testing.T) {
 		defer func() { api.MockExternalServiceConfigs = nil }()
 	} else {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration & schema.SiteConfiguration{
+			SiteConfiguration: schema.SiteConfiguration{
 				Gitolite: conn,
 			},
 		})
