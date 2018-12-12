@@ -117,7 +117,6 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                         merge<Pick<State, 'addedOrError'>>(
                             of<Pick<State, 'addedOrError'>>({ addedOrError: 'loading' }),
                             addRepository(repo).pipe(
-                                switchMap(({ id }) => setRepositoryEnabled(id, true)),
                                 map(c => true),
 
                                 // HACK: Delay for gitserver to report the repository as cloning (after
