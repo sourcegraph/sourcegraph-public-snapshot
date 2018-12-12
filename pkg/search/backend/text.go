@@ -537,8 +537,6 @@ func mapZoektFileMatch(zf []zoekt.FileMatch) []search.FileMatch {
 
 			lines = append(lines, search.LineMatch{
 				Line:          lm.Line,
-				LineStart:     lm.LineStart,
-				LineEnd:       lm.LineEnd,
 				LineNumber:    lm.LineNumber,
 				LineFragments: frags,
 			})

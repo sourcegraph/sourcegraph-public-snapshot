@@ -437,7 +437,8 @@ func (c *contentProvider) fillMatches(candidates []*candidateMatch) []api.LineMa
 	var result []api.LineMatch
 	// We assume candidates is sorted by byteOffset and has already had
 	// overlapping matches merged.
-	for _, m := range candidates {
+	for len(candidates) > 0 {
+		m := candidates[0]
 		byteEnd := m.byteOffset + m.byteMatchSz
 		lineStart := bytes.LastIndexByte(data[:m.byteOffset+1], '\n') + 1
 		lineEnd := bytes.IndexByte(data[byteEnd:], '\n')
@@ -447,12 +448,25 @@ func (c *contentProvider) fillMatches(candidates []*candidateMatch) []api.LineMa
 			lineEnd += byteEnd
 		}
 
+		fragments := []api.LineFragmentMatch{}
+		for len(candidates) > 0 {
+			m := candidates[0]
+			if m.byteOffset+m.byteMatchSz > lineEnd {
+				break
+			}
+			candidates = candidates[1:]
+
+			fragments = append(fragments, api.LineFragmentMatch{
+				LineOffset:  m.byteOffset - lineStart,
+				MatchLength: m.byteMatchSz,
+			})
+		}
+
 		result = append(result, api.LineMatch{
 			// Intentionally create a copy since we can't hold onto data
-			Line:       append([]byte{}, data[lineStart:lineEnd]...),
-			LineStart:  m.byteOffset - lineStart,
-			LineEnd:    lineEnd - byteEnd,
-			LineNumber: bytes.Count(data[:lineStart], []byte{'\n'}),
+			Line:          append([]byte{}, data[lineStart:lineEnd]...),
+			LineNumber:    bytes.Count(data[:lineStart], []byte{'\n'}) + 1,
+			LineFragments: fragments,
 		})
 	}
 

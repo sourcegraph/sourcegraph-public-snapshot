@@ -30,8 +30,6 @@ func (f *FileMatch) IsPathMatch() bool {
 type LineMatch struct {
 	// The line in which a match was found.
 	Line       []byte
-	LineStart  int
-	LineEnd    int
 	LineNumber int
 
 	LineFragments []LineFragmentMatch

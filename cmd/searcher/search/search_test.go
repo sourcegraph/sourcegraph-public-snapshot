@@ -453,7 +453,7 @@ func toStringNew(sr *searchapi.Result) string {
 		for _, l := range f.LineMatches {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
+			buf.WriteString(strconv.Itoa(l.LineNumber))
 			buf.WriteByte(':')
 			buf.Write(l.Line)
 			buf.WriteByte('\n')
