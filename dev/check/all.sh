@@ -9,6 +9,7 @@ go env
 ./template-inlines.sh
 ./go-enterprise-import.sh
 ./go-dbconn-import.sh
+./mgmt-console-conf-import.sh
 ./go-generate.sh
 ./go-lint.sh
 ./todo-security.sh
