@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
@@ -26,17 +27,19 @@ import (
 
 func TestText(t *testing.T) {
 	mz := &mockZoekt{SearchResult: &zoekt.SearchResult{}}
+	addr1, close1 := openZoektServer(t, mz)
+	defer close1()
 	index := &backend.Zoekt{
-		Client:       mz,
+		Client:       zoektrpc.Client(addr1),
 		DisableCache: true,
 	}
 	defer index.Close()
 
 	fallback := &mockCollectRepos{}
-	addr, close := openServer(t, fallback)
-	defer close()
+	addr2, close2 := openServer(t, fallback)
+	defer close2()
 	jit := &backend.TextJIT{
-		Endpoints: endpoint.New(addr),
+		Endpoints: endpoint.New(addr2),
 		Resolve: func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error) {
 			if spec == "" {
 				spec = "HEAD"
@@ -200,6 +203,12 @@ func openServer(t *testing.T, s search.Searcher) (string, func()) {
 	}
 	ts := httptest.NewServer(server)
 	return ts.URL, ts.Close
+}
+
+func openZoektServer(t *testing.T, s zoekt.Searcher) (string, func()) {
+	server := zoektrpc.Server(s)
+	ts := httptest.NewServer(server)
+	return strings.TrimPrefix(ts.URL, "http://"), ts.Close
 }
 
 func TestText_error(t *testing.T) {
