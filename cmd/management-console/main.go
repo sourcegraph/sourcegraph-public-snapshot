@@ -215,6 +215,10 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 
 	critical, err := confdb.CriticalCreateIfUpToDate(r.Context(), &lastIDInt32, args.Contents)
 	if err != nil {
+		if err == confdb.ErrNewerEdit {
+			http.Error(w, confdb.ErrNewerEdit.Error(), http.StatusConflict)
+			return
+		}
 		logger.Error("confdb.CriticalCreateIfUpToDate failed", "error", err)
 		http.Error(w, "Error updating latest critical configuration.", http.StatusInternalServerError)
 		return
