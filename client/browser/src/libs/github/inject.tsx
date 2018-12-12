@@ -49,7 +49,7 @@ function injectServerBanner(): void {
         return
     }
 
-    const { isPullRequest, repoPath } = parseURL()
+    const { isPullRequest, repoName } = parseURL()
     if (!isPullRequest) {
         return
     }
@@ -69,7 +69,7 @@ function injectServerBanner(): void {
         }
         container.appendChild(mount)
     }
-    render(<Alerts repoPath={repoPath} />, mount)
+    render(<Alerts repoName={repoName} />, mount)
 }
 
 /**
@@ -90,12 +90,12 @@ function injectOpenOnSourcegraphButton(): void {
         }
         pageheadActions.insertBefore(container, pageheadActions.children[0])
         if (container) {
-            const { repoPath, rev } = parseURL()
-            if (repoPath) {
+            const { repoName, rev } = parseURL()
+            if (repoName) {
                 render(
                     <WithResolvedRev
                         component={ContextualSourcegraphButton}
-                        repoPath={repoPath}
+                        repoName={repoName}
                         rev={rev}
                         defaultBranch={'HEAD'}
                         notFoundComponent={ConfigureSourcegraphButton}

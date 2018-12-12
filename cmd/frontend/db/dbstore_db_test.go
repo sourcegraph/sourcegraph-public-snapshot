@@ -21,7 +21,7 @@ func TestMigrations(t *testing.T) {
 	if err := m.Down(); err != nil {
 		t.Errorf("error running down migrations: %s", err)
 	}
-	if err := dbconn.DoMigrateAndClose(m); err != nil {
+	if err := dbconn.DoMigrate(m); err != nil {
 		t.Errorf("error running up migrations: %s", err)
 	}
 }

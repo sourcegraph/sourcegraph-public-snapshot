@@ -11,9 +11,9 @@ import { getDeltaFileName, getDiffResolvedRev, getGitHubState, parseURL } from '
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
         map(codeView => {
-            const { repoPath } = parseURL()
+            const { repoName } = parseURL()
 
-            return { codeView, repoPath }
+            return { codeView, repoName }
         }),
         map(({ codeView, ...rest }) => {
             const { headFilePath, baseFilePath } = getDeltaFileName(codeView)
@@ -35,13 +35,13 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                 ...data,
             }
         }),
-        switchMap(({ repoPath, headRev, baseRev, ...rest }) => {
-            const resolvingHeadRev = resolveRev({ repoPath, rev: headRev }).pipe(retryWhenCloneInProgressError())
-            const resolvingBaseRev = resolveRev({ repoPath, rev: baseRev }).pipe(retryWhenCloneInProgressError())
+        switchMap(({ repoName, headRev, baseRev, ...rest }) => {
+            const resolvingHeadRev = resolveRev({ repoName, rev: headRev }).pipe(retryWhenCloneInProgressError())
+            const resolvingBaseRev = resolveRev({ repoName, rev: baseRev }).pipe(retryWhenCloneInProgressError())
 
             return zip(resolvingHeadRev, resolvingBaseRev).pipe(
                 map(([headCommitID, baseCommitID]) => ({
-                    repoPath,
+                    repoName,
                     headRev,
                     baseRev,
                     headCommitID,
@@ -51,12 +51,12 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
             )
         }),
         map(info => ({
-            repoPath: info.repoPath,
+            repoName: info.repoName,
             filePath: info.headFilePath,
             commitID: info.headCommitID,
             rev: info.headRev,
 
-            baseRepoPath: info.repoPath,
+            baseRepoName: info.repoName,
             baseFilePath: info.baseFilePath || info.headFilePath,
             baseCommitID: info.baseCommitID,
             baseRev: info.baseRev,
@@ -67,7 +67,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
     )
 
 export const resolveFileInfo = (): Observable<FileInfo> => {
-    const { repoPath, filePath, rev } = parseURL()
+    const { repoName, filePath, rev } = parseURL()
     if (!filePath) {
         return throwError(
             new Error(
@@ -82,7 +82,7 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
         const commitID = getCommitIDFromPermalink()
 
         return of({
-            repoPath,
+            repoName,
             filePath,
             commitID,
             rev: rev || commitID,
@@ -109,14 +109,17 @@ export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileIn
         }),
         filter(isDefined),
         filter(propertyIsDefined('owner')),
-        filter(propertyIsDefined('repoName')),
+        filter(propertyIsDefined('ghRepoName')),
         filter(propertyIsDefined('rev')),
         filter(propertyIsDefined('filePath')),
-        map(({ owner, repoName, ...rest }) => ({ repoPath: `${window.location.host}/${owner}/${repoName}`, ...rest })),
-        switchMap(({ repoPath, rev, ...rest }) =>
-            resolveRev({ repoPath, rev }).pipe(
+        map(({ owner, ghRepoName, ...rest }) => ({
+            repoName: `${window.location.host}/${owner}/${ghRepoName}`,
+            ...rest,
+        })),
+        switchMap(({ repoName, rev, ...rest }) =>
+            resolveRev({ repoName, rev }).pipe(
                 retryWhenCloneInProgressError(),
-                map(commitID => ({ ...rest, repoPath, commitID, rev: rev || commitID }))
+                map(commitID => ({ ...rest, repoName, commitID, rev: rev || commitID }))
             )
         )
     )

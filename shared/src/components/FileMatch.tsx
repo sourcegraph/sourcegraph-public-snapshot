@@ -92,7 +92,7 @@ export class FileMatch extends React.PureComponent<Props> {
 
         const title = (
             <RepoFileLink
-                repoPath={result.repository.name}
+                repoName={result.repository.name}
                 repoURL={result.repository.url}
                 filePath={result.file.path}
                 fileURL={result.file.url}
@@ -196,7 +196,7 @@ export class FileMatch extends React.PureComponent<Props> {
                             onClick={this.props.onSelect}
                         >
                             <CodeExcerpt
-                                repoPath={result.repository.name}
+                                repoName={result.repository.name}
                                 commitID={result.file.commit.oid}
                                 filePath={result.file.path}
                                 context={context}

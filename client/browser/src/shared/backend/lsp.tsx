@@ -100,7 +100,7 @@ function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
             id: 0,
             method: 'initialize',
             params: {
-                rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
+                rootUri: `git://${ctx.repoName}?${ctx.commitID}`,
                 initializationOptions: { mode: `${getModeFromPath(path)}` },
             },
         },
@@ -159,7 +159,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
             method: 'textDocument/hover',
             params: {
                 textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                    uri: `git://${pos.repoName}?${pos.commitID}#${pos.filePath}`,
                 },
                 position: {
                     character: pos.position.character! - 1,
@@ -171,7 +171,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
         pos.filePath
     )
 
-    const url = repoUrlCache[pos.repoPath] || sourcegraphUrl
+    const url = repoUrlCache[pos.repoName] || sourcegraphUrl
     if (!url) {
         throw new Error('Error fetching hover: No URL found.')
     }
@@ -193,7 +193,7 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
             method: 'textDocument/definition',
             params: {
                 textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                    uri: `git://${pos.repoName}?${pos.commitID}#${pos.filePath}`,
                 },
                 position: {
                     character: pos.position.character! - 1,
@@ -205,7 +205,7 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
         pos.filePath
     )
 
-    const url = repoUrlCache[pos.repoPath] || sourcegraphUrl
+    const url = repoUrlCache[pos.repoName] || sourcegraphUrl
     if (!url) {
         throw new Error('Error fetching definition: No URL found.')
     }
@@ -241,8 +241,8 @@ export function createJumpURLFetcher(
     fetchDefinition: SimpleProviderFns['fetchDefinition'],
     buildURL: (pos: JumpURLLocation) => string
 ): JumpURLFetcher<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> {
-    return ({ line, character, part, commitID, repoPath, ...rest }) =>
-        fetchDefinition({ ...rest, commitID, repoPath, position: { line, character } }).pipe(
+    return ({ line, character, part, commitID, repoName, ...rest }) =>
+        fetchDefinition({ ...rest, commitID, repoName, position: { line, character } }).pipe(
             map(def => {
                 const defArray = Array.isArray(def) ? def : [def]
                 def = defArray[0]
@@ -252,9 +252,9 @@ export function createJumpURLFetcher(
 
                 const uri = parseRepoURI(def.uri)
                 return buildURL({
-                    repoPath: uri.repoPath,
+                    repoName: uri.repoName,
                     commitID: uri.commitID!, // LSP proxy always includes a commitID in the URI.
-                    rev: uri.repoPath === repoPath && uri.commitID === commitID ? rest.rev : uri.rev!, // If the commitID is the same, keep the rev.
+                    rev: uri.repoName === repoName && uri.commitID === commitID ? rest.rev : uri.rev!, // If the commitID is the same, keep the rev.
                     filePath: uri.filePath!, // There's never going to be a definition without a file.
                     position: def.range
                         ? {
@@ -279,7 +279,7 @@ export const lspViaAPIXlang: SimpleProviderFns = {
 }
 
 export const toTextDocumentIdentifier = (pos: AbsoluteRepoFile): TextDocumentIdentifier => ({
-    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+    uri: `git://${pos.repoName}?${pos.commitID}#${pos.filePath}`,
 })
 
 const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocumentPositionParams => ({

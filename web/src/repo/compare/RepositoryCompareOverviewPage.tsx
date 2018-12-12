@@ -77,10 +77,10 @@ interface Props
         PlatformContextProps,
         ExtensionsControllerProps {
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    base: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    head: { repoName: string; repoID: GQL.ID; rev?: string | null }
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 
@@ -153,13 +153,13 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                         <RepositoryCompareDiffPage
                             {...this.props}
                             base={{
-                                repoPath: this.props.base.repoPath,
+                                repoName: this.props.base.repoName,
                                 repoID: this.props.base.repoID,
                                 rev: this.props.base.rev || null,
                                 commitID: this.state.rangeOrError.baseRevSpec.object!.oid,
                             }}
                             head={{
-                                repoPath: this.props.head.repoPath,
+                                repoName: this.props.head.repoName,
                                 repoID: this.props.head.repoID,
                                 rev: this.props.head.rev || null,
                                 commitID: this.state.rangeOrError.headRevSpec.object!.oid,

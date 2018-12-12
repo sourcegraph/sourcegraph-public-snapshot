@@ -191,8 +191,9 @@ milton.png
 			t.Errorf("%v failed to convert query: %s", test.arg, err)
 			continue
 		}
+		q = query.Simplify(query.NewAnd(&query.Ref{Pattern: string(req.Commit)}, q))
 
-		sr, err := s.Search(context.Background(), q, &searchapi.Options{Repositories: []searchapi.Repository{{Name: "foo", Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}}})
+		sr, err := s.Search(context.Background(), q, &searchapi.Options{Repositories: []api.RepoName{"foo"}})
 		if err != nil {
 			t.Errorf("%v failed to search: %s", q, err)
 			continue
@@ -452,7 +453,7 @@ func toStringNew(sr *searchapi.Result) string {
 		for _, l := range f.LineMatches {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
+			buf.WriteString(strconv.Itoa(l.LineNumber))
 			buf.WriteByte(':')
 			buf.Write(l.Line)
 			buf.WriteByte('\n')

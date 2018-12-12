@@ -197,6 +197,9 @@ func (*externalServices) Delete(ctx context.Context, id int64) error {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
+	if Mocks.ExternalServices.GetByID != nil {
+		return Mocks.ExternalServices.GetByID(id)
+	}
 	externalServices, err := c.list(ctx, ExternalServicesListOptions{ID: &id})
 	if err != nil {
 		return nil, err
@@ -211,6 +214,9 @@ func (c *externalServices) GetByID(ctx context.Context, id int64) (*types.Extern
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	if Mocks.ExternalServices.List != nil {
+		return Mocks.ExternalServices.List(opt)
+	}
 	return c.list(ctx, opt)
 }
 
@@ -475,4 +481,10 @@ func (c *externalServices) Count(ctx context.Context, opt ExternalServicesListOp
 		return 0, err
 	}
 	return count, nil
+}
+
+// MockExternalServices mocks the external services store.
+type MockExternalServices struct {
+	GetByID func(id int64) (*types.ExternalService, error)
+	List    func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 }

@@ -5,7 +5,7 @@ import { Button } from './Button'
 
 interface Props {
     error?: AuthRequiredError
-    repoPath: string
+    repoName: string
 }
 
 export class ServerAuthButton extends React.Component<Props, {}> {
@@ -25,7 +25,7 @@ export class ServerAuthButton extends React.Component<Props, {}> {
 
         return (
             <Button
-                url={`${url}/${this.props.repoPath}`}
+                url={`${url}/${this.props.repoName}`}
                 className={className}
                 ariaLabel={ariaLabel}
                 label={label}

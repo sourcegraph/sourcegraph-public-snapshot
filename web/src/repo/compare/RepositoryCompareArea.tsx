@@ -58,10 +58,10 @@ export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     repo: GQL.IRepository
 
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    base: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    head: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The URL route prefix for the comparison. */
     routePrefix: string
@@ -127,7 +127,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
         hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
-            repoPath: hoveredToken.repoPath,
+            repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,
             filePath: hoveredToken.filePath,
             commitID: hoveredToken.commitID,
@@ -164,8 +164,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
         const commonProps: RepositoryCompareAreaPageProps = {
             repo: this.props.repo,
-            base: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.base },
-            head: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.head },
+            base: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec && spec.base },
+            head: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec && spec.head },
             routePrefix: this.props.match.url,
             platformContext: this.props.platformContext,
         }
