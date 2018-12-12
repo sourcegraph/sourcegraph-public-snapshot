@@ -151,13 +151,22 @@ func (r *schemaResolver) ClearManagementConsolePlaintextPassword(ctx context.Con
 
 type siteConfigurationResolver struct{}
 
+func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return 0, err
+	}
+	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
+}
+
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return "", err
 	}
-	return globals.ConfigurationServerFrontendOnly.Raw(), nil
+	return globals.ConfigurationServerFrontendOnly.Raw().Site, nil
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
@@ -165,7 +174,7 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	if err != nil {
 		return nil, err
 	}
-	return conf.Validate(contents)
+	return conf.ValidateSite(contents)
 }
 
 func (r *siteConfigurationResolver) CanUpdate() bool {
@@ -175,19 +184,22 @@ func (r *siteConfigurationResolver) CanUpdate() bool {
 }
 
 func (r *siteConfigurationResolver) Source() string {
-	s := globals.ConfigurationServerFrontendOnly.FilePath()
-	return s
+	return "database" // TODO(slimsag): future: remove this field now that it is useless
 }
 
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
-	Input string
+	LastID int32
+	Input  string
 }) (bool, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-	if err := globals.ConfigurationServerFrontendOnly.Write(args.Input); err != nil {
+	prev := globals.ConfigurationServerFrontendOnly.Raw()
+	prev.Site = args.Input
+	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
+	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev); err != nil {
 		return false, err
 	}
 	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil

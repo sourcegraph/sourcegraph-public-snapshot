@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -31,40 +32,50 @@ func TestValidate(t *testing.T) {
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		raw         string
-		wantProblem string
-		wantErr     string
+		rawCritical, rawSite string
+		wantProblem          string
+		wantErr              string
 	}{
 		"unrecognized auth.providers": {
-			raw:     `{"auth.providers":[{"type":"asdf"}]}`,
-			wantErr: "tagged union type must have a",
+			rawCritical: `{"auth.providers":[{"type":"asdf"}]}`,
+			rawSite:     "{}",
+			wantErr:     "tagged union type must have a",
 		},
 
 		// username is optional; password and token are disjointly required
 		"bitbucketserver no auth": {
-			raw:         `{"bitbucketServer":[{}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{}]}`,
 			wantProblem: "specify either a token or a username/password",
 		},
 		"bitbucketserver password and token": {
-			raw:         `{"bitbucketServer":[{"password":"p","token":"t"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"password":"p","token":"t"}]}`,
 			wantProblem: "specify either a token or a username/password",
 		},
 		"bitbucketserver username and token": {
-			raw: `{"bitbucketServer":[{"username":"u","token":"t"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"username":"u","token":"t"}]}`,
 		},
 		"bitbucketserver username and password": {
-			raw: `{"bitbucketServer":[{"username":"u","password":"p"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"username":"u","password":"p"}]}`,
 		},
 		"bitbucketserver password": {
-			raw: `{"bitbucketServer":[{"password":"p"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"password":"p"}]}`,
 		},
 		"bitbucketserver token": {
-			raw: `{"bitbucketServer":[{"token":"t"}]}`,
+			rawCritical: "{}",
+			rawSite:     `{"bitbucketServer":[{"token":"t"}]}`,
 		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			problems, err := validateCustomRaw([]byte(test.raw))
+			problems, err := validateCustomRaw(conftypes.RawUnified{
+				Critical: test.rawCritical,
+				Site:     test.rawSite,
+			})
 			if err != nil {
 				if test.wantErr == "" {
 					t.Fatalf("got unexpected error: %v", err)

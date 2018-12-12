@@ -42,16 +42,16 @@ func init() {
 			}
 			ffIsEnabled = true
 		})
-		conf.ContributeValidator(func(cfg schema.SiteConfiguration) (problems []string) {
+		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
 			_, problems = parseConfig(&cfg)
 			return problems
 		})
 	}()
 }
 
-func parseConfig(cfg *schema.SiteConfiguration) (providers map[schema.GitHubAuthProvider]auth.Provider, problems []string) {
+func parseConfig(cfg *conf.Unified) (providers map[schema.GitHubAuthProvider]auth.Provider, problems []string) {
 	providers = make(map[schema.GitHubAuthProvider]auth.Provider)
-	for _, pr := range cfg.AuthProviders {
+	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Github == nil {
 			continue
 		}
@@ -72,7 +72,7 @@ func getStateConfig() gologin.CookieConfig {
 		MaxAge:   120, // 120 seconds
 		HTTPOnly: true,
 	}
-	if conf.Get().TlsCert != "" {
+	if conf.Get().Critical.TlsCert != "" {
 		cfg.Secure = true
 	}
 	return cfg

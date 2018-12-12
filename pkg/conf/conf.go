@@ -7,7 +7,22 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// Unified represents the overall global Sourcegraph configuration from various
+// sources:
+//
+// - The critical configuration, from the database (from the management console).
+// - The site configuration, from the database (from the site-admin panel).
+// - Service connections, from the frontend (e.g. which gitservers to talk to).
+//
+type Unified struct {
+	schema.SiteConfiguration
+	Critical           schema.CriticalConfiguration
+	ServiceConnections conftypes.ServiceConnections
+}
 
 type configurationMode int
 
@@ -51,10 +66,7 @@ var (
 
 func init() {
 	clientStore := NewStore()
-	defaultClient = &client{
-		store:   clientStore,
-		fetcher: httpFetcher{},
-	}
+	defaultClient = &client{store: clientStore}
 
 	mode := getMode()
 
@@ -64,25 +76,22 @@ func init() {
 		close(configurationServerFrontendOnlyInitialized)
 
 		// Seed the client store with a dummy configuration for test cases.
-		dummyConfig := `
-		{
-			// This is an empty configuration to run test cases.
-		}`
-
-		_, err := clientStore.MaybeUpdate(dummyConfig)
+		_, err := clientStore.MaybeUpdate(conftypes.RawUnified{
+			Critical:           "{}",
+			Site:               "{}",
+			ServiceConnections: conftypes.ServiceConnections{},
+		})
 		if err != nil {
-			log.Fatalf("received error when setting up the store for the default client durig test, err :%s", err)
+			log.Fatalf("received error when setting up the store for the default client during test, err :%s", err)
 		}
-
 		return
 	}
 
 	// The default client is started in InitConfigurationServerFrontendOnly in
 	// the case of server mode.
 	if mode == modeClient {
-		close(configurationServerFrontendOnlyInitialized)
-
 		go defaultClient.continuouslyUpdate()
+		close(configurationServerFrontendOnlyInitialized)
 	}
 }
 
@@ -103,14 +112,14 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	server := NewServer(source)
 	server.Start()
 
-	// Install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
-	defaultClient.fetcher = passthroughFetcherFrontendOnly{}
-
-	configurationServerFrontendOnly = server
-	close(configurationServerFrontendOnlyInitialized)
+	// Install the passthrough configuration source for defaultClient. This is
+	// so that the frontend does not request configuration from itself via HTTP
+	// and instead only relies on the DB.
+	defaultClient.passthrough = source
 
 	go defaultClient.continuouslyUpdate()
-
+	configurationServerFrontendOnly = server
+	close(configurationServerFrontendOnlyInitialized)
 	return server
 }
 

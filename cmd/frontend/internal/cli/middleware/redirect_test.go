@@ -187,7 +187,7 @@ func TestCanonicalURL(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			mock := &schema.SiteConfiguration{ExternalURL: test.externalURL, HttpToHttpsRedirect: test.httpToHttpsRedirect}
+			mock := &conf.Unified{Critical: schema.CriticalConfiguration{ExternalURL: test.externalURL, HttpToHttpsRedirect: test.httpToHttpsRedirect}}
 			if test.canonicalURLRedirect != "" {
 				mock.ExperimentalFeatures = &schema.ExperimentalFeatures{CanonicalURLRedirect: test.canonicalURLRedirect}
 			}
@@ -202,7 +202,7 @@ func TestCanonicalURL(t *testing.T) {
 	}
 
 	t.Run("httpToHttpsRedirect invalid value", func(t *testing.T) {
-		conf.Mock(&schema.SiteConfiguration{HttpToHttpsRedirect: "invalid"})
+		conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{HttpToHttpsRedirect: "invalid"}})
 		defer conf.Mock(nil)
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		req := httptest.NewRequest("GET", "/", nil)
@@ -217,7 +217,7 @@ func TestCanonicalURL(t *testing.T) {
 	})
 
 	t.Run("externalURL invalid value", func(t *testing.T) {
-		conf.Mock(&schema.SiteConfiguration{ExternalURL: "invalid"})
+		conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{ExternalURL: "invalid"}})
 		defer conf.Mock(nil)
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		req := httptest.NewRequest("GET", "/", nil)
@@ -232,7 +232,10 @@ func TestCanonicalURL(t *testing.T) {
 	})
 
 	t.Run("experimentalFeatures.canonicalURLRedirect invalid value", func(t *testing.T) {
-		conf.Mock(&schema.SiteConfiguration{ExternalURL: "http://example.com", ExperimentalFeatures: &schema.ExperimentalFeatures{CanonicalURLRedirect: "invalid"}})
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{CanonicalURLRedirect: "invalid"}},
+			Critical:          schema.CriticalConfiguration{ExternalURL: "http://example.com"},
+		})
 		defer conf.Mock(nil)
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		req := httptest.NewRequest("GET", "/", nil)

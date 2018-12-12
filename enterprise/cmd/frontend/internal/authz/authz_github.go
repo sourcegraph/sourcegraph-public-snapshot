@@ -7,10 +7,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	permgh "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-func githubProvidersFromConfig(cfg *schema.SiteConfiguration) (
+func githubProvidersFromConfig(cfg *conf.Unified) (
 	authzProviders []authz.Provider,
 	seriousProblems []string,
 	warnings []string,

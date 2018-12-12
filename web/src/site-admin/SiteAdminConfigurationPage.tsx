@@ -66,15 +66,18 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.remoteUpdates
                 .pipe(
                     tap(() => this.setState({ saving: true, error: undefined })),
-                    concatMap(event =>
-                        updateSiteConfiguration(event).pipe(
+                    concatMap(newContents => {
+                        const lastConfiguration = this.state.site && this.state.site.configuration
+                        const lastConfigurationID = (lastConfiguration && lastConfiguration.id) || 0
+
+                        return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ saving: false, error })
                                 return []
                             })
                         )
-                    ),
+                    }),
                     tap(restartToApply => {
                         if (restartToApply) {
                             window.context.needServerRestart = restartToApply

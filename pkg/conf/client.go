@@ -9,19 +9,22 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
 type client struct {
-	store *Store
-
-	fetcher fetcher
-
-	watchersMu sync.Mutex
-	watchers   []chan struct{}
+	store       *Store
+	passthrough ConfigurationSource
+	watchersMu  sync.Mutex
+	watchers    []chan struct{}
 }
 
 var defaultClient *client
+
+// Raw returns a copy of the raw configuration.
+func Raw() conftypes.RawUnified {
+	return defaultClient.Raw()
+}
 
 // Get returns a copy of the configuration. The returned value should NEVER be
 // modified.
@@ -39,8 +42,13 @@ var defaultClient *client
 // is running.
 //
 // Get is a wrapper around client.Get.
-func Get() *schema.SiteConfiguration {
+func Get() *Unified {
 	return defaultClient.Get()
+}
+
+// Raw returns a copy of the raw configuration.
+func (c *client) Raw() conftypes.RawUnified {
+	return c.store.Raw()
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -57,7 +65,7 @@ func Get() *schema.SiteConfiguration {
 // exception rather than the rule. In general, ANY use of configuration should
 // be done in such a way that it responds to config changes while the process
 // is running.
-func (c *client) Get() *schema.SiteConfiguration {
+func (c *client) Get() *Unified {
 	return c.store.LastValid()
 }
 
@@ -67,7 +75,7 @@ func (c *client) Get() *schema.SiteConfiguration {
 // use conf.Watch). See Get documentation for more details.
 //
 // GetTODO is a wrapper around client.GetTODO.
-func GetTODO() *schema.SiteConfiguration {
+func GetTODO() *Unified {
 	return defaultClient.GetTODO()
 }
 
@@ -75,19 +83,19 @@ func GetTODO() *schema.SiteConfiguration {
 // The code may need to be updated to use conf.Watch, or it may already be e.g.
 // invoked only in response to a user action (in which case it does not need to
 // use conf.Watch). See Get documentation for more details.
-func (c *client) GetTODO() *schema.SiteConfiguration {
+func (c *client) GetTODO() *Unified {
 	return c.Get()
 }
 
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
-func Mock(mockery *schema.SiteConfiguration) {
+func Mock(mockery *Unified) {
 	defaultClient.Mock(mockery)
 }
 
 // Mock sets up mock data for the site configuration.
-func (c *client) Mock(mockery *schema.SiteConfiguration) {
+func (c *client) Mock(mockery *Unified) {
 	c.store.Mock(mockery)
 }
 
@@ -162,12 +170,21 @@ func (c *client) continuouslyUpdate() {
 }
 
 func (c *client) fetchAndUpdate() error {
-	newRawConfig, err := c.fetcher.FetchConfig()
+	ctx := context.Background()
+	var (
+		newConfig conftypes.RawUnified
+		err       error
+	)
+	if c.passthrough != nil {
+		newConfig, err = c.passthrough.Read(ctx)
+	} else {
+		newConfig, err = api.InternalClient.Configuration(ctx)
+	}
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch new configuration")
 	}
 
-	configChange, err := c.store.MaybeUpdate(newRawConfig)
+	configChange, err := c.store.MaybeUpdate(newConfig)
 	if err != nil {
 		return errors.Wrap(err, "unable to update new configuration")
 	}
@@ -177,31 +194,4 @@ func (c *client) fetchAndUpdate() error {
 	}
 
 	return nil
-}
-
-type fetcher interface {
-	FetchConfig() (rawJSON string, err error)
-}
-
-// Fetch the raw configuration JSON via our internal API.
-type httpFetcher struct{}
-
-func (h httpFetcher) FetchConfig() (string, error) {
-	rawJSON, err := api.InternalClient.Configuration(context.Background())
-	return rawJSON, err
-}
-
-// Fetch the raw configuration directly via conf.DefaultServerFrontendOnly.
-// This is needed by frontend, otherwise we'll run into a deadlock issue since
-// frontend needs to read the site configuration before it can start serving
-// the internal api.
-//
-// WARNING: Only frontend should use this fetcher! Other services
-// that attempt to use it will panic.
-type passthroughFetcherFrontendOnly struct{}
-
-func (p passthroughFetcherFrontendOnly) FetchConfig() (string, error) {
-	<-configurationServerFrontendOnlyInitialized
-
-	return configurationServerFrontendOnly.Raw(), nil
 }
