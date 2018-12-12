@@ -14,5 +14,11 @@
     }
     &__status-indicator {
         margin-left: 1rem;
+        &--success {
+            color: limegreen;
+        }
+        &--error {
+            color: red;
+        }
     }
 }

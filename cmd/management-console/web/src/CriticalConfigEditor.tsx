@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { from, interval, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { delay, distinctUntilChanged, mapTo, startWith, takeUntil } from 'rxjs/operators'
+import { delay, distinctUntilChanged, mapTo, startWith, takeUntil, catchError } from 'rxjs/operators'
 import './CriticalConfigEditor.scss'
 import { MonacoEditor } from './MonacoEditor'
 
@@ -95,10 +95,13 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
         // Load the initial critical config.
         this.subscriptions.add(
             ajax('/api/get')
-                .pipe(delay(DEBUG_LOADING_STATE_DELAY))
+                .pipe(
+                    delay(DEBUG_LOADING_STATE_DELAY),
+                    catchError(err => of(err.xhr))
+                )
                 .subscribe(resp => {
                     if (resp.status !== 200) {
-                        const msg = 'error saving: ' + resp.status + ' ' + resp.responseText
+                        const msg = 'error saving: ' + resp.status
                         console.error(msg)
                         alert(msg) // TODO(slimsag): Better general error state here.
                         return
@@ -137,9 +140,15 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
                 </div>
                 <button onClick={this.onDidSave}>Save changes</button>
                 {this.state.showSaving && <span className="critical-config-editor__status-indicator">Saving...</span>}
-                {this.state.showSaved && <span className="critical-config-editor__status-indicator">Saved!</span>}
+                {this.state.showSaved && (
+                    <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--success">
+                        Saved!
+                    </span>
+                )}
                 {this.state.showSavingError && (
-                    <span className="critical-config-editor__status-indicator">{this.state.showSavingError}</span>
+                    <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--error">
+                        {this.state.showSavingError}
+                    </span>
                 )}
             </div>
         )
@@ -163,29 +172,34 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
                             LastID: this.state.criticalConfig.ID,
                             Contents: this.state.content,
                         } as UpdateParams),
-                    }).subscribe(resp => {
-                        if (resp.status !== 200) {
-                            const msg = 'error saving: ' + resp.status + ' ' + resp.responseText
-                            console.error(msg)
-                            this.setState({
-                                showSaving: false,
-                                showSaved: false,
-                                showSavingError: msg,
-                            })
-                            return
-                        }
-                        const config = resp.response as Configuration
-                        this.setState({
-                            criticalConfig: config,
-                            content: config.Contents,
-                            showSaving: false,
-                            showSaved: true,
-                            showSavingError: null,
-                        })
-
-                        // Hide the saved indicator after 2.5s.
-                        setTimeout(() => this.setState({ showSaved: false }), 2500)
                     })
+                        .pipe(catchError(err => of(err.xhr)))
+                        .subscribe(resp => {
+                            if (resp.status !== 200) {
+                                const msg =
+                                    resp.status === 409
+                                        ? 'error: someone else has already applied a newer edit'
+                                        : 'error: ' + resp.status
+                                console.error(msg)
+                                this.setState({
+                                    showSaving: false,
+                                    showSaved: false,
+                                    showSavingError: msg,
+                                })
+                                return
+                            }
+                            const config = resp.response as Configuration
+                            this.setState({
+                                criticalConfig: config,
+                                content: config.Contents,
+                                showSaving: false,
+                                showSaved: true,
+                                showSavingError: null,
+                            })
+
+                            // Hide the saved indicator after 2.5s.
+                            setTimeout(() => this.setState({ showSaved: false }), 2500)
+                        })
                 )
         )
     }
