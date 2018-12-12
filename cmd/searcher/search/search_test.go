@@ -193,7 +193,7 @@ milton.png
 		}
 		q = query.Simplify(query.NewAnd(&query.Ref{Pattern: string(req.Commit)}, q))
 
-		sr, err := s.Search(context.Background(), q, &searchapi.Options{Repositories: []searchapi.Repository{{Name: "foo"}}})
+		sr, err := s.Search(context.Background(), q, &searchapi.Options{Repositories: []api.RepoName{"foo"}})
 		if err != nil {
 			t.Errorf("%v failed to search: %s", q, err)
 			continue

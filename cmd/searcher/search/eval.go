@@ -64,7 +64,7 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 	}
 
 	var res api.Result
-	repo := api.Repository{Name: opts.Repositories[0].Name}
+	repo := api.Repository{Name: opts.Repositories[0]}
 	status := api.RepositoryStatusSearched
 
 	tr := trace.New("search", repo.String())
