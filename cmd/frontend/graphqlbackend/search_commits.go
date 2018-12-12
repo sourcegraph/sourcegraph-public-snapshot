@@ -264,7 +264,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		addRefs(&results[i].refs, rawResult.Refs)
 		addRefs(&results[i].sourceRefs, rawResult.SourceRefs)
 		var matchBody string
-		var highlights []*highlightedRange
+		var matchHighlights []*highlightedRange
 		// TODO(sqs): properly combine message: and term values for type:commit searches
 		if !op.diff {
 			var patString string
@@ -276,7 +276,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 				pat, err := regexp.Compile(patString)
 				if err == nil {
 					results[i].messagePreview = highlightMatches(pat, []byte(commit.Message))
-					highlights = results[i].messagePreview.highlights
+					matchHighlights = results[i].messagePreview.highlights
 				}
 			} else {
 				results[i].messagePreview = &highlightedString{value: string(commit.Message)}
@@ -285,12 +285,11 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 
 		if rawResult.Diff != nil && op.diff {
-			highlights = fromVCSHighlights(rawResult.DiffHighlights)
 			results[i].diffPreview = &highlightedString{
 				value:      rawResult.Diff.Raw,
-				highlights: highlights,
+				highlights: fromVCSHighlights(rawResult.DiffHighlights),
 			}
-			matchBody = "```diff\n" + cleanDiffPreview(highlights, rawResult.Diff.Raw) + "```"
+			matchBody, matchHighlights = cleanDiffPreview(fromVCSHighlights(rawResult.DiffHighlights), rawResult.Diff.Raw)
 		}
 
 		commitIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4="
@@ -303,7 +302,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), commitResolver.URL())
 		results[i].url = commitResolver.URL()
 		results[i].icon = commitIcon
-		match := &searchResultMatchResolver{body: matchBody, highlights: highlights, url: commitResolver.URL()}
+		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: commitResolver.URL()}
 		matches := []*searchResultMatchResolver{match}
 		results[i].matches = matches
 	}
@@ -311,7 +310,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	return results, limitHit, timedOut, nil
 }
 
-func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) string {
+func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (string, []*highlightedRange) {
 	// A map of line number to number of lines that have been ignored before the particular line number.
 	var lineByCountIgnored = make(map[int]int32)
 	// The line numbers of lines that were ignored.
@@ -355,7 +354,8 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) stri
 		}
 	}
 
-	return strings.Join(finalLines, "\n")
+	body := fmt.Sprintf("```diff\n%v```", strings.Join(finalLines, "\n"))
+	return body, highlights
 }
 
 func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) string {
