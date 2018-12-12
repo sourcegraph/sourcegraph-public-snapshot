@@ -27,7 +27,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ---
 
-### 3.0 (2019-01-07)
+### 3.0-preview.2 (2019-01-07)
 
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
@@ -40,7 +40,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ---
 
-### 3.1 (2019-02-04)
+### 3.0 (2019-02-04)
 
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
 - [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
@@ -58,7 +58,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ---
 
-### 3.2 (2019-03-04)
+### 3.1 (2019-03-04)
 
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978) (followup from 3.1)
 - [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)
