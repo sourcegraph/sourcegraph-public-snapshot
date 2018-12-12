@@ -240,14 +240,6 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(repos) > r.opt.Limit), nil
 }
 
-type addRepositoryKindNotSupportedError struct {
-	kind string
-}
-
-func (e addRepositoryKindNotSupportedError) Error() string {
-	return fmt.Sprintf("adding repositories of kind %s is not supported", e.kind)
-}
-
 func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
 	Name            string
 	ExternalService graphql.ID
@@ -295,72 +287,6 @@ func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
 	}
 
 	return &externalServiceResolver{externalService: externalService}, nil
-	// // First look to see if we can update an existing external service with the new repository.
-	// externalServices, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{Kinds: []string{args.Kind}})
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// for _, externalService := range externalServices {
-	// 	if externalService.Kind != args.Kind {
-	// 		continue
-	// 	}
-	// 	switch args.Kind {
-	// 	case "GITHUB":
-	// 		var config schema.GitHubConnection
-	// 		if err := jsonc.Unmarshal(externalService.Config, &config); err != nil {
-	// 			return nil, err
-	// 		}
-
-	// 		if config.Url != args.Url {
-	// 			continue
-	// 		}
-
-	// 		config.Repos = append(config.Repos, args.Name)
-
-	// 		// I don't see a way to recover any comments or non-standard whitespace
-	// 		// before writing this back, but this isn't a strong enough disadvantage to
-	// 		// not have this codepath at all.
-	// 		buf, err := json.MarshalIndent(config, "", "  ")
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
-	// 		sbuf := string(buf)
-	// 		if err := db.ExternalServices.Update(ctx, externalService.ID, &db.ExternalServiceUpdate{Config: &sbuf}); err != nil {
-	// 			return nil, err
-	// 		}
-
-	// 		return &externalServiceResolver{externalService: externalService}, nil
-	// 	default:
-	// 		return nil, addRepositoryKindNotSupportedError{kind: args.Kind}
-	// 	}
-	// }
-
-	// // We did not find an existing external service to update,
-	// // so automatically create a new one.
-	// externalService := &types.ExternalService{
-	// 	Kind: args.Kind,
-	// }
-	// switch args.Kind {
-	// case "GITHUB":
-	// 	config, err := json.Marshal(schema.GitHubConnection{
-	// 		Url:   args.Url,
-	// 		Repos: []string{args.Name},
-	// 	})
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	externalService.DisplayName = args.Url
-	// 	externalService.Config = string(config)
-	// default:
-	// 	return nil, addRepositoryKindNotSupportedError{kind: args.Kind}
-	// }
-
-	// if err := db.ExternalServices.Create(ctx, externalService); err != nil {
-	// 	return nil, err
-	// }
-
-	// return &externalServiceResolver{externalService: externalService}, nil
 }
 
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
