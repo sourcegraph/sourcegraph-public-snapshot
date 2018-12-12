@@ -2,6 +2,7 @@ package conf
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
@@ -9,7 +10,11 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/pkg/legacyconf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -18,13 +23,62 @@ func init() {
 	if !IsValidDeployType(deployType) {
 		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployCluster, DeployDocker, DeployDev, deployType)
 	}
+
+	defaultConfig := defaultConfigForDeployment()
+
+	// If a legacy configuration file is available (specified via
+	// SOURCEGRAPH_CONFIG_FILE), use it as the default for the critical and
+	// site configs.
+	//
+	// This relies on the fact that the old v2.13.6 site config schema has
+	// most fields align directly with the v3.0+ critical and site config
+	// schemas.
+	//
+	// This code can be removed in the next significant version after 3.0 (NOT
+	// preview), after which critical/site config schemas no longer need to
+	// align generally.
+	//
+	// TODO(slimsag): Remove after 3.0 (NOT preview).
+	{
+		legacyConf := jsonc.Normalize(legacyconf.Raw())
+
+		var criticalDecoded schema.CriticalConfiguration
+		_ = json.Unmarshal(legacyConf, &criticalDecoded)
+		critical, err := json.MarshalIndent(criticalDecoded, "", "  ")
+		if string(critical) != "{}" && err == nil {
+			defaultConfig.Critical = string(critical)
+		}
+
+		var siteDecoded schema.SiteConfiguration
+		_ = json.Unmarshal(legacyConf, &siteDecoded)
+		site, err := json.MarshalIndent(siteDecoded, "", "  ")
+		if string(site) != "{}" && err == nil {
+			defaultConfig.Site = string(site)
+		}
+	}
+
+	confdefaults.Default = defaultConfig
+}
+
+func defaultConfigForDeployment() conftypes.RawUnified {
+	deployType := DeployType()
+	switch {
+	case IsDev(deployType):
+		return confdefaults.DevAndTesting
+	case IsDeployTypeDockerContainer(deployType):
+		return confdefaults.DockerContainer
+	case IsDeployTypeCluster(deployType):
+		return confdefaults.Cluster
+	default:
+		panic("deploy type did not register default configuration")
+	}
 }
 
 const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
 
 // HTTPStrictTransportSecurity returns the value of the Strict-Transport-Security HTTP header to set.
 func HTTPStrictTransportSecurity() string {
-	switch v := Get().HttpStrictTransportSecurity.(type) {
+	switch v := Get().Critical.HttpStrictTransportSecurity.(type) {
 	case string:
 		return v
 	case bool:
@@ -218,7 +272,7 @@ func IsValidDeployType(deployType string) bool {
 
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
-	channel := GetTODO().UpdateChannel
+	channel := Get().Critical.UpdateChannel
 	if channel == "" {
 		return "release"
 	}

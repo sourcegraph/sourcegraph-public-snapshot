@@ -8,12 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	permgl "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func gitlabProvidersFromConfig(cfg *schema.SiteConfiguration) (
+func gitlabProvidersFromConfig(cfg *conf.Unified) (
 	authzProviders []authz.Provider,
 	seriousProblems []string,
 	warnings []string,
@@ -60,7 +60,7 @@ func gitlabProvidersFromConfig(cfg *schema.SiteConfiguration) (
 		} else {
 			// Best-effort determine if the authz.authnConfigID field refers to an item in auth.provider
 			found := false
-			for _, p := range cfg.AuthProviders {
+			for _, p := range cfg.Critical.AuthProviders {
 				if p.Openidconnect != nil && p.Openidconnect.ConfigID == gl.Authorization.AuthnProvider.ConfigID && p.Openidconnect.Type == gl.Authorization.AuthnProvider.Type {
 					found = true
 					break

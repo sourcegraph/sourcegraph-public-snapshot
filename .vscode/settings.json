@@ -7,11 +7,16 @@
     "ui/assets": true
   },
   "files.associations": {
-    "**/dev/config.json": "jsonc"
+    "**/dev/critical-config.json": "jsonc",
+    "**/dev/site-config.json": "jsonc"
   },
   "json.schemas": [
     {
-      "fileMatch": ["dev/config.json"],
+      "fileMatch": ["dev/critical-config.json"],
+      "url": "/schema/critical.schema.json"
+    },
+    {
+      "fileMatch": ["dev/site-config.json"],
       "url": "/schema/site.schema.json"
     }
   ],

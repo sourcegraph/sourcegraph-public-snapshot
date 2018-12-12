@@ -66,17 +66,17 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c schema.SiteConfiguration) (problems []string) {
+func validateConfig(c conf.Unified) (problems []string) {
 	var loggedNeedsExternalURL bool
-	for _, p := range c.AuthProviders {
-		if p.Saml != nil && c.ExternalURL == "" && !loggedNeedsExternalURL {
+	for _, p := range c.Critical.AuthProviders {
+		if p.Saml != nil && c.Critical.ExternalURL == "" && !loggedNeedsExternalURL {
 			problems = append(problems, `saml auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
 			loggedNeedsExternalURL = true
 		}
 	}
 
 	seen := map[schema.SAMLAuthProvider]int{}
-	for i, p := range c.AuthProviders {
+	for i, p := range c.Critical.AuthProviders {
 		if p.Saml != nil {
 			if j, ok := seen[*p.Saml]; ok {
 				problems = append(problems, fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j))
@@ -91,7 +91,7 @@ func validateConfig(c schema.SiteConfiguration) (problems []string) {
 
 func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
 	if pc.ServiceProviderIssuer == "" {
-		externalURL := conf.Get().ExternalURL
+		externalURL := conf.Get().Critical.ExternalURL
 		if externalURL == "" {
 			// An empty issuer will be detected as an error later.
 			return pc
@@ -99,7 +99,7 @@ func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
 
 		// Derive default issuer from externalURL.
 		tmp := *pc
-		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().ExternalURL, "/") + path.Join(authPrefix, "metadata")
+		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().Critical.ExternalURL, "/") + path.Join(authPrefix, "metadata")
 		return &tmp
 	}
 	return pc

@@ -73,16 +73,16 @@ func Main() {
 			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
 		}
 
-		// Load the config file, or generate a new one if it doesn't exist.
+		// Load the legacy config file if it exists.
+		//
+		// TODO(slimsag): Remove this code in the next significant version of
+		// Sourcegraph after 3.0 (NOT after 3.0-preview).
 		configPath := os.Getenv("SOURCEGRAPH_CONFIG_FILE")
 		if configPath == "" {
 			configPath = filepath.Join(configDir, "sourcegraph-config.json")
 		}
-		_, configIsWritable, err := readOrGenerateConfig(configPath)
-		if err != nil {
-			log.Fatalf("failed to load config: %s", err)
-		}
-		if configIsWritable {
+		_, err = os.Stat(configPath)
+		if err == nil {
 			if err := os.Setenv("SOURCEGRAPH_CONFIG_FILE", configPath); err != nil {
 				log.Fatal(err)
 			}

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -266,10 +267,10 @@ func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, erro
 	return names, err
 }
 
-func (c *internalClient) Configuration(ctx context.Context) (string, error) {
-	var raw string
-	err := c.postInternal(ctx, "configuration", nil, &raw)
-	return raw, err
+func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnified, error) {
+	var cfg conftypes.RawUnified
+	err := c.postInternal(ctx, "configuration", nil, &cfg)
+	return cfg, err
 }
 
 func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName, description string, fork bool, archived bool) error {
