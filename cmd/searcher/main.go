@@ -61,6 +61,7 @@ func main() {
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
 		},
+		Log: log15.Root(),
 	}
 	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
