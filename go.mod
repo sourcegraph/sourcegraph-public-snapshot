@@ -33,6 +33,7 @@ require (
 	github.com/gchaincl/sqlhooks v1.1.0
 	github.com/getsentry/raven-go v0.0.0-20180903072508-084a9de9eb03
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-redsync/redsync v1.0.1
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-migrate/migrate v0.0.0-20180905051849-93d53a5ae84d
@@ -125,7 +126,6 @@ require (
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
-	gopkg.in/redsync.v1 v1.0.1
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.7.0
 	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8 // indirect
