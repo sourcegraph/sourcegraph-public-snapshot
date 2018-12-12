@@ -86,6 +86,16 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		requestedPath = "/" + requestedPath
 	}
 
+	if requestedPath == "/" && r.Method == "HEAD" {
+		_, err = gitserver.DefaultClient.RepoInfo(r.Context(), common.Repo.Name)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return err
+		}
+		w.WriteHeader(http.StatusOK)
+		return nil
+	}
+
 	const (
 		textPlain       = "text/plain"
 		applicationZip  = "application/zip"
@@ -125,16 +135,6 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		relativePath := strings.TrimPrefix(requestedPath, "/")
 		if relativePath == "" {
 			relativePath = "."
-		}
-
-		if r.Method == "HEAD" {
-			_, err = gitserver.DefaultClient.RepoInfo(r.Context(), common.Repo.Name)
-			if err != nil {
-				w.WriteHeader(http.StatusNotFound)
-				return err
-			}
-			w.WriteHeader(http.StatusOK)
-			return nil
 		}
 
 		f, _, err := vfsutil.GitServerFetchArchive(r.Context(), vfsutil.ArchiveOpts{
