@@ -30,6 +30,11 @@ type SiteConfig Config
 // CriticalConfig contains the contents of a critical config along with associated metadata.
 type CriticalConfig Config
 
+// ErrNewerEdit is returned by SiteCreateIfUpToDate and
+// CriticalCreateifUpToDate when a newer edit has already been applied and the
+// edit has been rejected.
+var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
+
 // SiteCreateIfUpToDate saves the given site config "contents" to the database iff the
 // supplied "lastID" is equal to the one that was most recently saved to the database.
 //
@@ -178,7 +183,7 @@ func createIfUpToDate(ctx context.Context, tx queryable, configType configType, 
 		return nil, err
 	}
 	if latest != nil && lastID != nil && latest.ID != *lastID {
-		return nil, errors.New("someone else has already applied a newer edit")
+		return nil, ErrNewerEdit
 	}
 
 	err = tx.QueryRowContext(
