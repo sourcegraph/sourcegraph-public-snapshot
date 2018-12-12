@@ -45,14 +45,14 @@ func init() {
 		var criticalDecoded schema.CriticalConfiguration
 		_ = json.Unmarshal(legacyConf, &criticalDecoded)
 		critical, err := json.MarshalIndent(criticalDecoded, "", "  ")
-		if (criticalDecoded != schema.CriticalConfiguration{}) && err == nil {
+		if string(critical) != "{}" && err == nil {
 			defaultConfig.Critical = string(critical)
 		}
 
 		var siteDecoded schema.SiteConfiguration
 		_ = json.Unmarshal(legacyConf, &siteDecoded)
 		site, err := json.MarshalIndent(siteDecoded, "", "  ")
-		if (siteDecoded != schema.SiteConfiguration{}) && err == nil {
+		if string(site) != "{}" && err == nil {
 			defaultConfig.Site = string(site)
 		}
 	}
