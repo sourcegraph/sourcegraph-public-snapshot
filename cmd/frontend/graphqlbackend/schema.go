@@ -47,9 +47,12 @@ type Mutation {
     updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
     # Delete an external service. Only site admins may perform this mutation.
     deleteExternalService(externalService: ID!): EmptyResponse!
-    # Adds a repository to external service.
+    # Adds a repository to an existing external service.
     #
-    # Currently, this is only supported for GitHub external services.
+    # This is merely a convenience method for updating the external service config
+    # to ensure that it syncs the named repository. It currently only supports adding
+    # repos to GitHub external services.
+    #
     # If there is no GitHub personal access token configured the external service,
     # then the site may experience problems with the low default github.com API rate limit
     # (60 requests per hour).
