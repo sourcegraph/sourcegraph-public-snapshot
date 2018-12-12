@@ -50,9 +50,8 @@ func TestAddRepository(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
-	// backend.Mocks.Repos.Add = func(name api.RepoName) error { return nil }
-	// db.Mocks.Repos.MockGetByName(t, "my/repo", 123)
-	db.Mocks.ExternalService
+	backend.Mocks.Repos.Add = func(name api.RepoName) error { return nil }
+	db.Mocks.Repos.MockGetByName(t, "my/repo", 123)
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,
