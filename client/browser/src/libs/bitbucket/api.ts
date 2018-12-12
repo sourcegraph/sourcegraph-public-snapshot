@@ -10,8 +10,8 @@ import { PRPageInfo } from './scrape'
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1
 
-const buildURL = (project: string, repoName: string, path: string) =>
-    `${window.location.origin}/rest/api/1.0/projects/${encodeURIComponent(project)}/repos/${repoName}${path}`
+const buildURL = (project: string, repoSlug: string, path: string) =>
+    `${window.location.origin}/rest/api/1.0/projects/${encodeURIComponent(project)}/repos/${repoSlug}${path}`
 
 const get = <T>(url: string): Observable<T> => ajax.get(url).pipe(map(({ response }) => response as T))
 
@@ -39,7 +39,7 @@ interface PRResponse {
     toRef: Ref
 }
 
-interface GetCommitsForPRInput extends Pick<PRPageInfo, 'project' | 'repoName'> {
+interface GetCommitsForPRInput extends Pick<PRPageInfo, 'project' | 'repoSlug'> {
     /** Required here. */
     prID: number
 }
@@ -50,14 +50,14 @@ interface GetCommitsForPRInput extends Pick<PRPageInfo, 'project' | 'repoName'> 
 export const getCommitsForPR: (
     info: GetCommitsForPRInput
 ) => Observable<{ baseCommitID: string; headCommitID: string }> = memoizeObservable(
-    ({ project, repoName, prID }) =>
-        get<PRResponse>(buildURL(project, repoName, `/pull-requests/${prID}`)).pipe(
+    ({ project, repoSlug, prID }) =>
+        get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
             map(({ fromRef, toRef }) => ({ baseCommitID: toRef.latestCommit, headCommitID: fromRef.latestCommit }))
         ),
     ({ prID }) => prID.toString()
 )
 
-interface GetBaseCommitInput extends Pick<PRPageInfo, 'project' | 'repoName'> {
+interface GetBaseCommitInput extends Pick<PRPageInfo, 'project' | 'repoSlug'> {
     commitID: string
 }
 
@@ -71,8 +71,8 @@ interface CommitResponse {
 
 // Commit API /rest/api/1.0/projects/SG/repos/go-langserver/commits/b8a948dc75cc9d0c01ece01d0ba9d1eeace573aa
 export const getBaseCommit: (info: GetBaseCommitInput) => Observable<string> = memoizeObservable(
-    ({ project, repoName, commitID }) =>
-        get<CommitResponse>(buildURL(project, repoName, `/commits/${commitID}`)).pipe(
+    ({ project, repoSlug, commitID }) =>
+        get<CommitResponse>(buildURL(project, repoSlug, `/commits/${commitID}`)).pipe(
             map(({ parents }) => first(parents)),
             filter(isDefined),
             map(({ id }) => id)

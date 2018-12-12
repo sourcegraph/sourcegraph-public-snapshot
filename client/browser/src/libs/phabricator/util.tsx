@@ -192,7 +192,7 @@ export function getPhabricatorState(
             }
             match.callsign = callsign
             getRepoDetailsFromCallsign(callsign)
-                .then(({ repoPath }) => {
+                .then(({ repoName }) => {
                     const commitID = getCommitIDFromPageTag()
                     if (!commitID) {
                         console.error('cannot determine commitIDision from page')
@@ -200,7 +200,7 @@ export function getPhabricatorState(
                         return
                     }
                     resolve({
-                        repoPath,
+                        repoName,
                         filePath: match.filePath,
                         mode: PhabricatorMode.Diffusion,
                         commitID,
@@ -242,7 +242,7 @@ export function getPhabricatorState(
                         return
                     }
                     getRepoDetailsFromCallsign(callsign)
-                        .then(({ repoPath }) => {
+                        .then(({ repoName }) => {
                             let baseRev = `phabricator/base/${diffID}`
                             let headRev = `phabricator/diff/${diffID}`
 
@@ -281,9 +281,9 @@ export function getPhabricatorState(
                                 }
                             }
                             resolve({
-                                baseRepoPath: repoPath,
+                                baseRepoName: repoName,
                                 baseRev,
-                                headRepoPath: repoPath,
+                                headRepoName: repoName,
                                 headRev, // This will be blank on GitHub, but on a manually staged instance should exist
                                 differentialID,
                                 diffID,
@@ -312,7 +312,7 @@ export function getPhabricatorState(
                 rev: revisionMatch[2],
             }
             getRepoDetailsFromCallsign(match.callsign)
-                .then(({ repoPath }) => {
+                .then(({ repoName }) => {
                     const headCommitID = match.rev
                     const baseCommitID = getBaseCommitIDFromRevisionPage()
                     if (!baseCommitID) {
@@ -320,7 +320,7 @@ export function getPhabricatorState(
                         return null
                     }
                     resolve({
-                        repoPath,
+                        repoName,
                         baseCommitID,
                         headCommitID,
                         mode: PhabricatorMode.Revision,
@@ -351,14 +351,14 @@ export function getPhabricatorState(
             }
             match.callsign = callsign
             getRepoDetailsFromCallsign(callsign)
-                .then(({ repoPath }) => {
+                .then(({ repoName }) => {
                     const commitID = getCommitIDFromPageTag()
                     if (!commitID) {
                         console.error('cannot determine revision from page.')
                         return null
                     }
                     resolve({
-                        repoPath,
+                        repoName,
                         filePath: match.filePath,
                         mode: PhabricatorMode.Change,
                         commitID,
@@ -400,7 +400,7 @@ export function getPhabricatorState(
                     }
 
                     getRepoDetailsFromCallsign(callsign)
-                        .then(({ repoPath }) => {
+                        .then(({ repoName }) => {
                             let baseRev = `phabricator/base/${diffID}`
                             let headRev = `phabricator/diff/${diffID}`
 
@@ -421,9 +421,9 @@ export function getPhabricatorState(
                             }
 
                             resolve({
-                                baseRepoPath: repoPath,
+                                baseRepoName: repoName,
                                 baseRev,
-                                headRepoPath: repoPath,
+                                headRepoName: repoName,
                                 headRev, // This will be blank on GitHub, but on a manually staged instance should exist
                                 differentialID,
                                 diffID,
@@ -623,23 +623,23 @@ export function metaClickOverride(): void {
     }
 }
 
-export function normalizeRepoPath(origin: string): string {
-    let repoPath = origin
-    repoPath = repoPath.replace('\\', '')
+export function normalizeRepoName(origin: string): string {
+    let repoName = origin
+    repoName = repoName.replace('\\', '')
     if (origin.startsWith('git@')) {
-        repoPath = origin.substr('git@'.length)
-        repoPath = repoPath.replace(':', '/')
+        repoName = origin.substr('git@'.length)
+        repoName = repoName.replace(':', '/')
     } else if (origin.startsWith('git://')) {
-        repoPath = origin.substr('git://'.length)
+        repoName = origin.substr('git://'.length)
     } else if (origin.startsWith('https://')) {
-        repoPath = origin.substr('https://'.length)
+        repoName = origin.substr('https://'.length)
     } else if (origin.includes('@')) {
         // Assume the origin looks like `username@host:repo/path`
         const split = origin.split('@')
-        repoPath = split[1]
-        repoPath = repoPath.replace(':', '/')
+        repoName = split[1]
+        repoName = repoName.replace(':', '/')
     }
-    return repoPath.replace(/.git$/, '')
+    return repoName.replace(/.git$/, '')
 }
 
 export function getContainerForBlobAnnotation(): {

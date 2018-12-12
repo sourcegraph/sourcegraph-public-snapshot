@@ -20,9 +20,9 @@ export class OpenOnSourcegraph extends React.Component<Props, {}> {
     }
 
     private getOpenInSourcegraphUrl(props: OpenInSourcegraphProps): string {
-        const baseUrl = repoUrlCache[props.repoPath] || sourcegraphUrl
+        const baseUrl = repoUrlCache[props.repoName] || sourcegraphUrl
         // Build URL for Web
-        let url = `${baseUrl}/${props.repoPath}`
+        let url = `${baseUrl}/${props.repoName}`
         if (props.commit) {
             return `${url}/-/compare/${props.commit.baseRev}...${props.commit.headRev}?utm_source=${getPlatformName()}`
         }

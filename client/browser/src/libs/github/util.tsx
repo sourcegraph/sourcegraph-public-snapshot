@@ -278,15 +278,15 @@ function getDiffResolvedRevFromPageSource(pageSource: string): DiffResolvedRevSp
  * getDiffRepoRev returns the base and head branches & URIs, or null for non-diff views.
  */
 export function getDiffRepoRev(): DiffRepoRev | null {
-    const { repoPath, isDelta, isPullRequest, isCommit, isCompare } = parseURL()
+    const { repoName, isDelta, isPullRequest, isCommit, isCompare } = parseURL()
     if (!isDelta) {
         return null
     }
 
     let baseRev = ''
     let headRev = ''
-    let baseRepoPath = ''
-    let headRepoPath = ''
+    let baseRepoName = ''
+    let headRepoName = ''
     if (isPullRequest) {
         const branches = document.querySelectorAll('.commit-ref')
         baseRev = (branches[0] as any).title
@@ -295,16 +295,16 @@ export function getDiffRepoRev(): DiffRepoRev | null {
         if (baseRev.includes(':')) {
             const baseSplit = baseRev.split(':')
             baseRev = baseSplit[1]
-            baseRepoPath = `${window.location.host}/${baseSplit[0]}`
+            baseRepoName = `${window.location.host}/${baseSplit[0]}`
         } else {
-            baseRev = repoPath as string
+            baseRev = repoName as string
         }
         if (headRev.includes(':')) {
             const headSplit = headRev.split(':')
             headRev = headSplit[1]
-            headRepoPath = `${window.location.host}/${headSplit[0]}`
+            headRepoName = `${window.location.host}/${headSplit[0]}`
         } else {
-            headRepoPath = repoPath as string
+            headRepoName = repoName as string
         }
     } else if (isCommit) {
         let branchEl = document.querySelector('li.branch') as HTMLElement
@@ -324,8 +324,8 @@ export function getDiffRepoRev(): DiffRepoRev | null {
                 baseRev = baseCommitEl.innerText
             }
         }
-        baseRepoPath = repoPath as string
-        headRepoPath = repoPath as string
+        baseRepoName = repoName as string
+        headRepoName = repoName as string
     } else if (isCompare) {
         const resolvedDiffSpec = getResolvedDiffForCompare()
         if (resolvedDiffSpec) {
@@ -336,15 +336,15 @@ export function getDiffRepoRev(): DiffRepoRev | null {
             HTMLSpanElement
         >
         if (forkElements && forkElements.length === 2) {
-            baseRepoPath = `${window.location.host}/${forkElements[0].innerText}`
-            headRepoPath = `${window.location.host}/${forkElements[1].innerText}`
+            baseRepoName = `${window.location.host}/${forkElements[0].innerText}`
+            headRepoName = `${window.location.host}/${forkElements[1].innerText}`
         }
     }
 
-    if (baseRev === '' || headRev === '' || baseRepoPath === '' || headRepoPath === '') {
+    if (baseRev === '' || headRev === '' || baseRepoName === '' || headRepoName === '') {
         return null
     }
-    return { baseRev, headRev, baseRepoPath, headRepoPath }
+    return { baseRev, headRev, baseRepoName, headRepoName }
 }
 
 /**
@@ -467,7 +467,7 @@ export function getGitHubState(url: string): GitHubBlobUrl | GitHubPullUrl | Git
         return {
             mode: GitHubMode.Blob,
             owner: match.org,
-            repoName: match.repo,
+            ghRepoName: match.repo,
             revAndPath: match.revAndPath,
             lineNumber: match.lineNumber,
             rev,
@@ -491,7 +491,7 @@ export function getGitHubState(url: string): GitHubBlobUrl | GitHubPullUrl | Git
         }
         return {
             mode: GitHubMode.PullRequest,
-            repoName: match.repo,
+            ghRepoName: match.repo,
             owner: match.org,
             view: match.view,
             rev: '',
@@ -499,11 +499,11 @@ export function getGitHubState(url: string): GitHubBlobUrl | GitHubPullUrl | Git
         }
     }
     const parsed = parseURL()
-    if (parsed && parsed.repoName && parsed.repoPath && parsed.user) {
+    if (parsed && parsed.repoName && parsed.repoName && parsed.user) {
         return {
             mode: GitHubMode.Repository,
             owner: parsed.user,
-            repoName: parsed.repoName,
+            ghRepoName: parsed.repoName,
             rev: parsed.rev,
             filePath: parsed.filePath,
         }
@@ -553,14 +553,14 @@ export function parseURL(loc: Location = window.location): GitHubURL {
     // TODO(john): this all needs unit testing!
 
     let user: string | undefined
+    let ghRepoName: string | undefined // in "github.com/foo/bar", just "bar"
     let repoName: string | undefined
-    let repoPath: string | undefined
     let rev: string | undefined
     let filePath: string | undefined
 
     const urlsplit = loc.pathname.slice(1).split('/')
     user = urlsplit[0]
-    repoName = urlsplit[1]
+    ghRepoName = urlsplit[1]
 
     let revParts = 1 // a revision may have "/" chars, in which case we consume multiple parts;
     if ((urlsplit[3] && (urlsplit[2] === 'tree' || urlsplit[2] === 'blob')) || urlsplit[2] === 'commit') {
@@ -573,10 +573,10 @@ export function parseURL(loc: Location = window.location): GitHubURL {
     if (urlsplit[2] === 'blob') {
         filePath = urlsplit.slice(3 + revParts).join('/')
     }
-    if (user && repoName) {
-        repoPath = `${window.location.host}/${user}/${repoName}`
+    if (user && ghRepoName) {
+        repoName = `${window.location.host}/${user}/${ghRepoName}`
     } else {
-        repoPath = ''
+        repoName = ''
     }
 
     const isCompare = urlsplit[2] === 'compare'
@@ -593,7 +593,7 @@ export function parseURL(loc: Location = window.location): GitHubURL {
         repoName,
         rev,
         filePath,
-        repoPath,
+        ghRepoName,
         isDelta,
         isPullRequest,
         position,

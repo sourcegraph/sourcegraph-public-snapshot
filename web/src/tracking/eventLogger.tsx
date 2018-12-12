@@ -135,7 +135,7 @@ class EventLogger {
         })
         if (match) {
             const u = parseBrowserRepoURL(window.location.href)
-            props.repo = u.repoPath
+            props.repo = u.repoName
             props.rev = u.rev
             if (u.filePath) {
                 props.path = u.filePath

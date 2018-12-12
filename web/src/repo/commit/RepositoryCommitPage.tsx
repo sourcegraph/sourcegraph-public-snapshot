@@ -131,7 +131,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
-            repoPath: hoveredToken.repoPath,
+            repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,
             filePath: hoveredToken.filePath,
             commitID: hoveredToken.commitID,
@@ -222,13 +222,13 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 nodeComponent={FileDiffNode}
                                 nodeComponentProps={{
                                     base: {
-                                        repoPath: this.props.repo.name,
+                                        repoName: this.props.repo.name,
                                         repoID: this.props.repo.id,
                                         rev: commitParentOrEmpty(this.state.commitOrError),
                                         commitID: commitParentOrEmpty(this.state.commitOrError),
                                     },
                                     head: {
-                                        repoPath: this.props.repo.name,
+                                        repoName: this.props.repo.name,
                                         repoID: this.props.repo.id,
                                         rev: this.state.commitOrError.oid,
                                         commitID: this.state.commitOrError.oid,

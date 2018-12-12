@@ -4,7 +4,7 @@ export interface RepoSpec {
     /**
      * Example: github.com/gorilla/mux
      */
-    repoPath: string
+    repoName: string
 }
 
 export interface RevSpec {
@@ -114,7 +114,7 @@ const parsePosition = (str: string): Position => {
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
-    const repoPath = parsed.hostname + parsed.pathname
+    const repoName = parsed.hostname + parsed.pathname
     const rev = parsed.search.substr('?'.length) || undefined
     let commitID: string | undefined
     if (rev && rev.match(/[0-9a-fA-f]{40}/)) {
@@ -146,7 +146,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         throw new Error('unexpected fragment: ' + parsed.hash)
     }
 
-    return { repoPath, rev, commitID, filePath: filePath || undefined, position, range }
+    return { repoName, rev, commitID, filePath: filePath || undefined, position, range }
 }
 
 /**
@@ -405,7 +405,7 @@ export function encodeRepoRev(repo: string, rev?: string): string {
 export function toPrettyBlobURL(
     ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${encodeRepoRev(ctx.repoPath, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
+    return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
         ctx
     )}${toPositionOrRangeHash(ctx)}${toViewStateHashComponent(ctx.viewState)}`
 }
@@ -430,7 +430,7 @@ const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + po
  */
 export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     const rev = parsed.commitID || parsed.rev
-    let uri = `git://${parsed.repoPath}`
+    let uri = `git://${parsed.repoName}`
     uri += rev ? '?' + rev : ''
     uri += parsed.filePath ? '#' + parsed.filePath : ''
     uri += parsed.position || parsed.range ? ':' : ''
