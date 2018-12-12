@@ -16,7 +16,7 @@ interface WithResolvedRevProps {
     cloningComponent?: any
     notFoundComponent?: any // for 404s
     requireAuthComponent?: any // for 401s
-    repoPath: string
+    repoName: string
     rev?: string
     [key: string]: any
 }
@@ -38,13 +38,13 @@ export class WithResolvedRev extends React.Component<WithResolvedRevProps, WithR
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    switchMap(({ repoPath, rev }) => {
-                        if (!repoPath) {
+                    switchMap(({ repoName, rev }) => {
+                        if (!repoName) {
                             return [undefined]
                         }
                         // Defer Observable so it retries the request on resubscription
                         return (
-                            defer(() => resolveRev({ repoPath, rev }))
+                            defer(() => resolveRev({ repoName, rev }))
                                 // On a CloneInProgress error, retry after 5s
                                 .pipe(
                                     retryWhen(errors =>
@@ -96,7 +96,7 @@ export class WithResolvedRev extends React.Component<WithResolvedRevProps, WithR
     }
 
     public componentWillReceiveProps(nextProps: WithResolvedRevProps): void {
-        if (this.props.repoPath !== nextProps.repoPath || this.props.rev !== nextProps.rev) {
+        if (this.props.repoName !== nextProps.repoName || this.props.rev !== nextProps.rev) {
             // clear state so the child won't render until the revision is resolved for new props
             this.state = { cloneInProgress: false, notFound: false, requireAuthError: undefined }
             this.componentUpdates.next(nextProps)
@@ -121,8 +121,8 @@ export class WithResolvedRev extends React.Component<WithResolvedRevProps, WithR
             return <this.props.notFoundComponent {...this.props} />
         }
 
-        if (this.props.repoPath && !this.state.commitID) {
-            // commit not yet resolved but required if repoPath prop is provided;
+        if (this.props.repoName && !this.state.commitID) {
+            // commit not yet resolved but required if repoName prop is provided;
             // render empty until commit resolved
             return null
         }

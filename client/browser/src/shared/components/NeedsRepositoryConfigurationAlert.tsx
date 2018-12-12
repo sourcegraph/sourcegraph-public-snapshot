@@ -7,7 +7,7 @@ import { sourcegraphUrl } from '../util/context'
 interface Props {
     onClose: () => void
     alertKey: string
-    repoPath: string
+    repoName: string
 }
 
 /**
@@ -16,7 +16,7 @@ interface Props {
  */
 export class NeedsRepositoryConfigurationAlert extends React.Component<Props, {}> {
     private sync = () => {
-        const obj = { [this.props.alertKey]: { [this.props.repoPath]: true } }
+        const obj = { [this.props.alertKey]: { [this.props.repoName]: true } }
         storage.setSync(obj, () => {
             this.props.onClose()
         })

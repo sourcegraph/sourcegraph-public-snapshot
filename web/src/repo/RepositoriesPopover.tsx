@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
-import { displayRepoPath } from '../../../shared/src/components/RepoFileLink'
+import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -52,7 +52,7 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, cu
                 node.id === currentRepo ? 'connection-popover__node-link--active' : ''
             }`}
         >
-            {displayRepoPath(node.name)}
+            {displayRepoName(node.name)}
             {node.id === currentRepo && (
                 <CircleChevronLeftIcon className="icon-inline connection-popover__node-link-icon" />
             )}

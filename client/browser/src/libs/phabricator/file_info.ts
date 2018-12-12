@@ -22,7 +22,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
         }),
         switchMap(info => {
             const resolveBaseCommitID = resolveDiffRev({
-                repoPath: info.baseRepoPath,
+                repoName: info.baseRepoName,
                 differentialID: info.differentialID,
                 diffID: (info.leftDiffID || info.diffID)!,
                 leftDiffID: info.leftDiffID,
@@ -31,9 +31,9 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                 filePath: info.baseFilePath || info.filePath,
                 isBase: true,
             }).pipe(
-                map(({ commitID, stagingRepoPath }) => ({
+                map(({ commitID, stagingRepoName }) => ({
                     baseCommitID: commitID,
-                    baseRepoPath: stagingRepoPath || info.baseRepoPath,
+                    baseRepoName: stagingRepoName || info.baseRepoName,
                 })),
                 catchError(err => {
                     throw err
@@ -41,7 +41,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
             )
 
             const resolveHeadCommitID = resolveDiffRev({
-                repoPath: info.headRepoPath,
+                repoName: info.headRepoName,
                 differentialID: info.differentialID,
                 diffID: info.diffID!,
                 leftDiffID: info.leftDiffID,
@@ -50,9 +50,9 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                 filePath: info.filePath,
                 isBase: false,
             }).pipe(
-                map(({ commitID, stagingRepoPath }) => ({
+                map(({ commitID, stagingRepoName }) => ({
                     headCommitID: commitID,
-                    headRepoPath: stagingRepoPath || info.headRepoPath,
+                    headRepoName: stagingRepoName || info.headRepoName,
                 })),
                 catchError(err => {
                     throw err
@@ -60,25 +60,25 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
             )
 
             return zip(resolveBaseCommitID, resolveHeadCommitID).pipe(
-                map(([{ baseCommitID, baseRepoPath }, { headCommitID, headRepoPath }]) => ({
+                map(([{ baseCommitID, baseRepoName }, { headCommitID, headRepoName }]) => ({
                     baseCommitID,
                     headCommitID,
                     ...info,
-                    baseRepoPath,
-                    headRepoPath,
+                    baseRepoName,
+                    headRepoName,
                 }))
             )
         }),
         switchMap(info => {
             const fetchingBaseFile = fetchBlobContentLines({
-                repoPath: info.baseRepoPath,
+                repoName: info.baseRepoName,
                 filePath: info.baseFilePath || info.filePath,
                 commitID: info.baseCommitID,
                 rev: info.baseRev,
             })
 
             const fetchingHeadFile = fetchBlobContentLines({
-                repoPath: info.headRepoPath,
+                repoName: info.headRepoName,
                 filePath: info.filePath,
                 commitID: info.headCommitID,
                 rev: info.headRev,
@@ -89,12 +89,12 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
             )
         }),
         map(info => ({
-            repoPath: info.headRepoPath,
+            repoName: info.headRepoName,
             filePath: info.filePath,
             commitID: info.headCommitID,
             rev: info.headRev,
 
-            baseRepoPath: info.baseRepoPath,
+            baseRepoName: info.baseRepoName,
             baseFilePath: info.baseFileContent ? info.baseFilePath || info.filePath : undefined,
             baseCommitID: info.baseCommitID,
             baseRev: info.baseRev,
