@@ -6,6 +6,7 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
+import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
@@ -18,6 +19,7 @@ import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
+import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
 import { Tooltip } from './components/tooltip/Tooltip'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -88,6 +90,8 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminis
     id: window.context.siteGQLID,
     viewerCanAdminister: false,
 }
+
+setLinkComponent(RouterLinkOrAnchor)
 
 /**
  * The root component

@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Key } from 'ts-key-enum'
-import { RouterLinkOrAnchor } from './RouterLinkOrAnchor'
+import { Link } from './Link'
 
 interface Props {
     /** The link destination URL. */
@@ -60,9 +60,9 @@ export class LinkOrButton extends React.PureComponent<Props> {
         }
 
         return (
-            <RouterLinkOrAnchor {...commonProps} to={this.props.to} target={this.props.target}>
+            <Link {...commonProps} to={this.props.to} target={this.props.target}>
                 {this.props.children}
-            </RouterLinkOrAnchor>
+            </Link>
         )
     }
 
