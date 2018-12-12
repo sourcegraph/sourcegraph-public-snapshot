@@ -46,6 +46,13 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
+func (o ExternalServicesListOptions) limitOffsetSQL() *sqlf.Query {
+	if o.LimitOffset != nil {
+		return o.LimitOffset.SQL()
+	}
+	return &sqlf.Query{}
+}
+
 func validateConfig(kind, config string) error {
 	// All configs must be valid JSON.
 	// If this requirement is ever changed, you will need to update
@@ -190,7 +197,7 @@ func (*externalServices) Delete(ctx context.Context, id int64) error {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
-	externalServices, err := c.list(ctx, ExternalServicesListOptions{ID: id}, nil)
+	externalServices, err := c.list(ctx, ExternalServicesListOptions{ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +211,7 @@ func (c *externalServices) GetByID(ctx context.Context, id int64) (*types.Extern
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	return c.list(ctx, opt, opt.LimitOffset)
+	return c.list(ctx, opt)
 }
 
 // listConfigs decodes the list configs into result.
@@ -418,7 +425,7 @@ func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Conte
 	})
 }
 
-func (c *externalServices) list(ctx context.Context, opt ExternalServicesListOptions, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
+func (c *externalServices) list(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	c.migrateJsonConfigToExternalServices(ctx)
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at
@@ -427,7 +434,7 @@ func (c *externalServices) list(ctx context.Context, opt ExternalServicesListOpt
 		ORDER BY id DESC
 		%s`,
 		sqlf.Join(opt.sqlConditions(), ") AND ("),
-		limitOffset.SQL(),
+		opt.limitOffsetSQL(),
 	)
 
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
