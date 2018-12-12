@@ -11,7 +11,7 @@ This guide shows you how to create a simple Sourcegraph extension that:
 
 ## Prerequisites
 
-Follow the instructions for [setting up your development environment](../authoring/development_environment.md) so you can build and publish the extension.
+Follow the instructions for [setting up your development environment](../development_environment.md) so you can build and publish the extension.
 
 ## Create the extension
 
