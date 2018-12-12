@@ -312,6 +312,10 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 }
 
 func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) string {
+	cpy := make([]*highlightedRange, len(highlights))
+	copy(cpy, highlights)
+	highlights = cpy
+
 	// A map of line number to number of lines that have been ignored before the particular line number.
 	var lineByCountIgnored = make(map[int]int32)
 	// The line numbers of lines that were ignored.
