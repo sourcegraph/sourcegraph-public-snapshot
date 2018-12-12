@@ -12,6 +12,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
@@ -124,6 +126,17 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		if relativePath == "" {
 			relativePath = "."
 		}
+
+		if r.Method == "HEAD" {
+			_, err = gitserver.DefaultClient.RepoInfo(r.Context(), common.Repo.Name)
+			if err != nil {
+				w.WriteHeader(http.StatusNotFound)
+				return err
+			}
+			w.WriteHeader(http.StatusOK)
+			return nil
+		}
+
 		f, _, err := vfsutil.GitServerFetchArchive(r.Context(), vfsutil.ArchiveOpts{
 			Repo:         common.Repo.Name,
 			Commit:       common.CommitID,
