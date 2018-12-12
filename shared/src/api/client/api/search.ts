@@ -3,15 +3,15 @@ import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtSearch } from '../../extension/api/search'
 import { Connection } from '../../protocol/jsonrpc2/connection'
 import { GenericSearchResult } from '../../protocol/plainTypes'
-import { ProvideIssueResultsSignature } from '../services/issueResults'
 import { TransformQuerySignature } from '../services/queryTransformer'
 import { FeatureProviderRegistry } from '../services/registry'
+import { ProvideSearchResultsSignature } from '../services/searchResults'
 import { SubscriptionMap } from './common'
 
 /** @internal */
 export interface SearchAPI {
     $registerQueryTransformer(id: number): void
-    $registerSearchResultsProvider(id: number): void
+    $registerSearchResultProvider(id: number): void
     $unregister(id: number): void
 }
 
@@ -24,7 +24,7 @@ export class Search implements SearchAPI {
     constructor(
         connection: Connection,
         private queryTransformerRegistry: FeatureProviderRegistry<{}, TransformQuerySignature>,
-        private issueResultsProviderRegistry: FeatureProviderRegistry<{}, ProvideIssueResultsSignature>
+        private searchResultProviderRegistry: FeatureProviderRegistry<{}, ProvideSearchResultsSignature>
     ) {
         this.subscriptions.add(this.registrations)
 
@@ -41,13 +41,13 @@ export class Search implements SearchAPI {
         )
     }
 
-    public $registerSearchResultsProvider(id: number): void {
+    public $registerSearchResultProvider(id: number): void {
         this.registrations.add(
             id,
-            this.issueResultsProviderRegistry.registerProvider(
+            this.searchResultProviderRegistry.registerProvider(
                 {},
                 (query: string): Observable<GenericSearchResult[] | null> =>
-                    from(this.proxy.$provideIssueResults(id, query))
+                    from(this.proxy.$provideSearchResults(id, query))
             )
         )
     }

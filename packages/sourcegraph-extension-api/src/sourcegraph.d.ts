@@ -1017,9 +1017,14 @@ declare module 'sourcegraph' {
         html: string
     }
 
-    /** A search result provider takes in a user's query and returns a list of issue results */
-    export interface SearchResultsProvider {
-        provideSearchResults(query: string): GenericSearchResult[] | Promise<GenericSearchResult[]>
+    /** A search result provider accepts a query and returns a list of results. */
+    export interface SearchResultProvider {
+        /**
+         * Provide results for a search query.
+         *
+         * @param query A search query.
+         */
+        provideSearchResults(query: string): ProviderResult<GenericSearchResult[]>
     }
 
     /**
@@ -1052,7 +1057,7 @@ declare module 'sourcegraph' {
          * @param provider A query transformer.
          */
         export function registerQueryTransformer(provider: QueryTransformer): Unsubscribable
-        export function registerSearchResultsProvider(provider: SearchResultsProvider): Unsubscribable
+        export function registerSearchResultProvider(provider: SearchResultProvider): Unsubscribable
     }
 
     /**

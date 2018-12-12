@@ -87,7 +87,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             combineLatest(
                                 // Do async search request
                                 search(searchOptions, this.props),
-                                this.props.extensionsController.services.issuesResultsProvider.provideIssueResults(
+                                this.props.extensionsController.services.searchResultProvider.provideSearchResults(
                                     searchOptions.query
                                 )
                             ).pipe(
