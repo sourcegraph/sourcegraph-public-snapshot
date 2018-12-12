@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/gchaincl/sqlhooks"
-	"github.com/golang-migrate/migrate"
-	"github.com/golang-migrate/migrate/database/postgres"
-	bindata "github.com/golang-migrate/migrate/source/go_bindata"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/lib/pq"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
