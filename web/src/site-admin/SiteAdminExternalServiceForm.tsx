@@ -8,6 +8,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+import { ALL_EXTERNAL_SERVICES } from './externalServices'
 
 interface Props {
     history: H.History
@@ -22,15 +23,6 @@ interface Props {
 
 const EXTRA_SCHEMAS = [siteSchemaJSON]
 
-const ALL_EXTERNAL_SERVICES: { kind: GQL.ExternalServiceKind; displayName: string }[] = [
-    { kind: GQL.ExternalServiceKind.AWSCODECOMMIT, displayName: 'AWS CodeCommit' },
-    { kind: GQL.ExternalServiceKind.BITBUCKETSERVER, displayName: 'Bitbucket Server' },
-    { kind: GQL.ExternalServiceKind.GITHUB, displayName: 'GitHub' },
-    { kind: GQL.ExternalServiceKind.GITLAB, displayName: 'GitLab' },
-    { kind: GQL.ExternalServiceKind.GITOLITE, displayName: 'Gitolite' },
-    { kind: GQL.ExternalServiceKind.PHABRICATOR, displayName: 'Phabricator' },
-]
-
 export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
@@ -42,7 +34,6 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         id="external-service-form-display-name"
                         type="text"
                         className="form-control"
-                        placeholder="ACME GitHub Enterprise"
                         required={true}
                         autoCorrect="off"
                         autoComplete="off"
