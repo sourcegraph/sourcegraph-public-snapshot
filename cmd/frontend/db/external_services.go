@@ -25,7 +25,7 @@ type externalServices struct{}
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
-	ID    int64
+	ID    *int64
 	Kinds []string
 	URL   *string
 	*LimitOffset
@@ -33,7 +33,7 @@ type ExternalServicesListOptions struct {
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
-	if o.ID != 0 {
+	if o.ID != nil {
 		conds = append(conds, sqlf.Sprintf("id=%d", o.ID))
 	}
 	if len(o.Kinds) > 0 {
@@ -197,7 +197,7 @@ func (*externalServices) Delete(ctx context.Context, id int64) error {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
-	externalServices, err := c.list(ctx, ExternalServicesListOptions{ID: id})
+	externalServices, err := c.list(ctx, ExternalServicesListOptions{ID: &id})
 	if err != nil {
 		return nil, err
 	}
