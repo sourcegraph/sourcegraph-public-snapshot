@@ -42,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
 const port = "2633"
@@ -111,8 +110,6 @@ func configureTLS() error {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-
-	tracer.Init()
 
 	go func() {
 		c := make(chan os.Signal, 1)
