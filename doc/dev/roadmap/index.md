@@ -32,13 +32,10 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
-- [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - Improved code host support for Sourcegraph extensions
 - Codecov extension
 - Java language support via extension
-- Configuration data search extension
 - [Use nginx as HTTP proxy](https://github.com/sourcegraph/sourcegraph/pull/929)
 
 ---
@@ -46,7 +43,10 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 ### 3.1 (2019-02-04)
 
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
+- [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
+- Configuration data search extension
+- [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981) (followup from 3.0)
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
 - Improved code host support for Sourcegraph extensions (followup from 3.0)
