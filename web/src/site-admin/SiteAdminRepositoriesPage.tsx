@@ -226,9 +226,8 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                 <PageTitle title="Repositories - Admin" />
                 <h2>Repositories</h2>
                 <div>
-                    <Link to="/site-admin/configuration" className="btn btn-secondary">
-                        <SettingsIcon className="icon-inline" /> Configure repositories
-                    </Link>
+                    Repositories are synchronized from connected{' '}
+                    <Link to="/site-admin/external-services">external services</Link>.
                 </div>
                 <FilteredRepositoryConnection
                     className="list-group list-group-flush mt-3"

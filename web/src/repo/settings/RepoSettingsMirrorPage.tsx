@@ -298,14 +298,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                         value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
                         readOnly={true}
                     />
-                    <small className="form-text text-muted">
-                        Configure repository mirroring in{' '}
-                        {this.state.repo.viewerCanAdminister ? (
-                            <Link to="/site-admin/configuration">site configuration</Link>
-                        ) : (
-                            'site configuration'
-                        )}.
-                    </small>
+                    {this.state.repo.viewerCanAdminister && (
+                        <small className="form-text text-muted">
+                            Configure repository mirroring in{' '}
+                            <Link to="/site-admin/external-services">external services</Link>.
+                        </small>
+                    )}
                 </div>
                 <UpdateMirrorRepositoryActionContainer
                     repo={this.state.repo}
