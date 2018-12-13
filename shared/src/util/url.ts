@@ -52,6 +52,14 @@ export interface RangeSpec {
     range: Range
 }
 
+/**
+ * Specifies an LSP mode.
+ */
+export interface ModeSpec {
+    /** The LSP mode, which identifies the language server to use. */
+    mode: string
+}
+
 export type BlobViewState = 'references' | 'references:external' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {

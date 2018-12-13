@@ -20,13 +20,14 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
+    ModeSpec,
     PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
     toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
-import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
+import { getHover, getJumpURL } from '../../backend/features'
 import { fetchBlob } from '../../repo/blob/BlobPage'
 
 interface Props extends ExtensionsControllerProps {

@@ -24,6 +24,7 @@ import {
     AbsoluteRepoFile,
     FileSpec,
     LineOrPositionOrRange,
+    ModeSpec,
     parseHash,
     PositionSpec,
     RenderMode,
@@ -33,7 +34,7 @@ import {
     toPositionOrRangeHash,
     toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
-import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
+import { getHover, getJumpURL } from '../../backend/features'
 import { isDiscussionsEnabled } from '../../discussions'
 import { lprToSelectionsZeroIndexed } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'

@@ -17,13 +17,14 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
+    ModeSpec,
     PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
     toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
-import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
+import { getHover, getJumpURL } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

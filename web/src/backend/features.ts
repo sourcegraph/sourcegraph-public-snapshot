@@ -15,14 +15,6 @@ import {
 import { toAbsoluteBlobURL } from '../util/url'
 
 /**
- * Specifies an LSP mode.
- */
-export interface ModeSpec {
-    /** The LSP mode, which identifies the language server to use. */
-    mode: string
-}
-
-/**
  * Fetches hover information for the given location.
  *
  * @param ctx the location

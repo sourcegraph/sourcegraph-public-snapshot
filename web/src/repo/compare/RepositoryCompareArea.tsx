@@ -16,13 +16,14 @@ import { propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     escapeRevspecForURL,
     FileSpec,
+    ModeSpec,
     PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
     toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
-import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
+import { getHover, getJumpURL } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
