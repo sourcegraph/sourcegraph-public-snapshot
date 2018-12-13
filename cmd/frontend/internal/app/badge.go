@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
+	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 // TODO(slimsag): once https://github.com/badges/shields/pull/828 is merged,
@@ -18,11 +18,7 @@ import (
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
 func badgeValue(r *http.Request) (int, error) {
-	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
-	if err != nil {
-		return 0, errors.Wrap(err, "GetRepo")
-	}
-	totalRefs, err := backend.BackcompatBackendDefsTotalRefs(r.Context(), repo.Name)
+	totalRefs, err := backend.BackcompatBackendDefsTotalRefs(r.Context(), routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}
@@ -44,6 +40,11 @@ func badgeValueFmt(totalRefs int) string {
 }
 
 func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
+	value, err := badgeValue(r)
+	if err != nil {
+		return err
+	}
+
 	v := url.Values{}
 	v.Set("logo", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ny4wNzUgNzcuNyI+PHBhdGggZmlsbD0iI0ZGRiIgZD0iTTQ3LjMyMyA3Ny43Yy0zLjU5NCAwLTYuNzktMi4zOTYtNy43ODctNS45OWwtMTcuMTcyLTYxLjdjLS45OTgtNC4zOTMgMS41OTgtOC43ODYgNS45OS05Ljc4NCA0LjE5My0xIDguMzg3IDEuMzk3IDkuNTg0IDUuMzlsMTYuOTczIDYxLjdjMS4xOTggNC4zOTQtMS4zOTcgOC43ODYtNS41OSA5Ljk4NC0uNi4yLTEuMzk3LjQtMS45OTcuNHoiLz48cGF0aCBmaWxsPSIjRkZGIiBkPSJNMTcuMzcyIDcwLjcxYy00LjM5MyAwLTcuOTg3LTMuNTkzLTcuOTg3LTcuOTg1IDAtMS45OTcuOC0zLjk5NCAxLjk5Ny01LjM5Mkw1NC4xMTIgOS40MWMyLjk5NS0zLjM5MyA3Ljk4Ni0zLjU5MyAxMS4zOC0uNTk4czMuNTk1IDcuOTg3LjYgMTEuMzhsLTQyLjczIDQ3LjcyM2MtMS41OTcgMS43OTgtMy43OTQgMi43OTYtNS45OSAyLjc5NnoiLz48cGF0aCBmaWxsPSIjRkZGIiBkPSJNNjkuMDg3IDU2LjczNGMtLjc5OCAwLTEuNTk3LS4yLTIuNTk2LS40TDUuNTkgMzYuMzY4QzEuNCAzNC45Ny0uOTk3IDMwLjM3Ny40IDI2LjE4NGMxLjM5Ny00LjE5MyA1Ljk5LTYuNTkgMTAuMTgzLTUuMTlsNjAuOSAxOS45NjZjNC4xOTMgMS4zOTcgNi41OSA1Ljk5IDUuMTkgMTAuMTg0LS45OTYgMy4zOTQtMy45OSA1LjU5LTcuNTg2IDUuNTl6Ii8+PC9zdmc+")
 
@@ -53,10 +54,9 @@ func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	u := &url.URL{
-		Scheme: "https",
-		Host:   "img.shields.io",
-		// %3F is a question mark (?)
-		Path:     "/badge/used by-%3F-brightgreen.svg",
+		Scheme:   "https",
+		Host:     "img.shields.io",
+		Path:     "/badge/used by-" + badgeValueFmt(value) + "-brightgreen.svg",
 		RawQuery: v.Encode(),
 	}
 	http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
