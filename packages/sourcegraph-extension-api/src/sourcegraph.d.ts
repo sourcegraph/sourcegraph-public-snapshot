@@ -409,8 +409,23 @@ declare module 'sourcegraph' {
     }
 
     export interface ProgressReporter {
+        /**
+         * Updates the progress display with a new message and/or percentage.
+         */
         next(status: Progress): void
+
+        /**
+         * Turns the progress display into an error display for the given error or message.
+         * Use if the operation failed.
+         * No further progress updates can be sent after this.
+         */
         error(error: any): void
+
+        /**
+         * Completes the progress bar and hides the display.
+         * Sending a percentage of 100 has the same effect.
+         * No further progress updates can be sent after this.
+         */
         complete(): void
     }
 
