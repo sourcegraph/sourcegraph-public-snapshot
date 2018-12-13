@@ -17,7 +17,7 @@ interface Props {
 }
 
 interface State {
-    input: GQL.IAddExternalServiceInput
+    input: Pick<GQL.IAddExternalServiceInput, 'displayName' | 'config'>
 
     /**
      * Holds any error returned by the remote GraphQL endpoint on failed requests.
@@ -38,17 +38,6 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     public state: State = {
         loading: false,
         input: {
-            kind: (() => {
-                const params = new URLSearchParams(this.props.history.location.search)
-                const kind = params.get('kind')
-                if (kind) {
-                    const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind.toUpperCase())
-                    if (service) {
-                        return service.kind
-                    }
-                }
-                return GQL.ExternalServiceKind.GITHUB
-            })(),
             displayName: '',
             config: defaultConfig,
         },
@@ -56,6 +45,22 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
 
     private submits = new Subject<GQL.IAddExternalServiceInput>()
     private subscriptions = new Subscription()
+
+    private getExternalServiceKind(): GQL.ExternalServiceKind {
+        const params = new URLSearchParams(this.props.history.location.search)
+        const kind = params.get('kind')
+        if (kind) {
+            const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind.toUpperCase())
+            if (service) {
+                return service.kind
+            }
+        }
+        return GQL.ExternalServiceKind.GITHUB
+    }
+
+    private getExternalServiceInput(): GQL.IAddExternalServiceInput {
+        return { ...this.state.input, kind: this.getExternalServiceKind() }
+    }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('AddExternalService')
@@ -93,7 +98,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                 <p>Sourcegraph can synchronize data (e.g. code) from external services.</p>
                 <SiteAdminExternalServiceForm
                     error={this.state.error}
-                    input={this.state.input}
+                    input={this.getExternalServiceInput()}
                     history={this.props.history}
                     isLightTheme={this.props.isLightTheme}
                     mode="create"
@@ -113,7 +118,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         if (event) {
             event.preventDefault()
         }
-        this.submits.next(this.state.input)
+        this.submits.next(this.getExternalServiceInput())
     }
 }
 
