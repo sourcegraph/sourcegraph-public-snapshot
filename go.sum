@@ -405,6 +405,8 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWif
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d h1:mOqbJXhk6waoL3rWnLee6TDX85TgZyws7vx82MwAqqk=
 github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d/go.mod h1:8m7AP/HZwL7m7f8RibUjr32a3AOxKDbSXMiXrds9WjM=
+github.com/sourcegraph/go-diff v0.0.0-20171119081133-3f415a150aec h1:TfdFhMaGv+vRhTeVKKdQfRHprse6FmBdU5FErA8Zb5c=
+github.com/sourcegraph/go-diff v0.0.0-20171119081133-3f415a150aec/go.mod h1:sXPgRQcTP3k61t37PomsxZ0KT2y/mwH/EMNpoCH5gls=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d h1:BAP431YeA7rgSoySjmVzBfFjXsLtnD93zZip5JIOWdk=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d/go.mod h1:6DfNy4BLIggAeittTJ8o9z/6d1ly+YujBTSnv03i7Bk=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible h1:EX1bSaIbVia2U/Pt/2Z62y8wJS4Z4iNiK5VCeUKuBx8=
@@ -443,6 +445,8 @@ github.com/spf13/viper v1.0.2 h1:Ncr3ZIuJn322w2k1qmzXDnkLAdQMlJqBa9kfAH+irso=
 github.com/spf13/viper v1.0.2/go.mod h1:A8kyI5cUJhb8N+3pkfONlcEcZbueH6nhAm0Fq7SrnBM=
 github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff h1:35Om/vTf7BiYaXjy+V6enYxBRzWOhoFI0g/Uzc0QL8Y=
 github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff/go.mod h1:nWz2tl1iTFolecQ3BuPG6Vgj45dmiYL0greltKiFMoU=
+github.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4 h1:bCnkHtnrwr7CxaBOLs2vdk9QGqyrGWP5JuNddX4F13M=
+github.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4/go.mod h1:rUohGYgKNX0s7SVmOD07tgLQRf2lgdHGlKc32pyDeG0=
 github.com/src-d/gcfg v1.3.0 h1:2BEDr8r0I0b8h/fOqwtxCEiq2HJu8n2JGZJQFGXWLjg=
 github.com/src-d/gcfg v1.3.0/go.mod h1:p/UMsR43ujA89BJY9duynAwIpvqEujIH/jFlfL7jWoI=
 github.com/stretchr/testify v1.2.1/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
