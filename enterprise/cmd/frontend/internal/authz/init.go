@@ -3,7 +3,10 @@ package authz
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -67,21 +70,44 @@ func init() {
 }
 
 func init() {
+	path, _ := os.Executable()
+	isTest := filepath.Ext(path) == ".test"
+	if isTest {
+		return
+	}
+
+	ctx := context.Background()
+	// Authz providers depends on both site config state (i.e. auth.providers)
+	// and database state (i.e. external services). This is less than ideal:
+	// https://github.com/sourcegraph/sourcegraph/issues/1392.
+	// In the meantime, we need to watch for config changes and poll the database.
 	conf.ContributeValidator(func(cfg conf.Unified) []string {
-		_, _, seriousProblems, warnings := providersFromConfig(&cfg)
+		_, _, seriousProblems, warnings := providersFromConfig(ctx, &cfg)
 		return append(seriousProblems, warnings...)
 	})
 	go conf.Watch(func() {
-		allowAccessByDefault, authzProviders, _, _ := providersFromConfig(conf.Get())
+		allowAccessByDefault, authzProviders, _, _ := providersFromConfig(ctx, conf.Get())
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	})
+	go func() {
+		// This check is done inside the goroutine because attempting to get the config
+		// synchronously during init() will cause a deadlock in the frontend.
+		if !conf.ExternalServicesEnabled() {
+			return
+		}
+		t := time.NewTicker(5 * time.Second)
+		for range t.C {
+			allowAccessByDefault, authzProviders, _, _ := providersFromConfig(ctx, conf.Get())
+			authz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
 }
 
 // providersFromConfig returns the set of permission-related providers derived from the site config.
 // It also returns any validation problems with the config, separating these into "serious problems"
 // and "warnings".  "Serious problems" are those that should make Sourcegraph set
 // authz.allowAccessByDefault to false. "Warnings" are all other validation problems.
-func providersFromConfig(cfg *conf.Unified) (
+func providersFromConfig(ctx context.Context, cfg *conf.Unified) (
 	allowAccessByDefault bool,
 	authzProviders []authz.Provider,
 	seriousProblems []string,
@@ -95,12 +121,12 @@ func providersFromConfig(cfg *conf.Unified) (
 		}
 	}()
 
-	glp, glproblems, glwarnings := gitlabProvidersFromConfig(cfg)
+	glp, glproblems, glwarnings := gitlabProviders(ctx, cfg)
 	authzProviders = append(authzProviders, glp...)
 	seriousProblems = append(seriousProblems, glproblems...)
 	warnings = append(warnings, glwarnings...)
 
-	ghp, ghproblems, ghwarnings := githubProvidersFromConfig(cfg)
+	ghp, ghproblems, ghwarnings := githubProviders(ctx)
 	authzProviders = append(authzProviders, ghp...)
 	seriousProblems = append(seriousProblems, ghproblems...)
 	warnings = append(warnings, ghwarnings...)
