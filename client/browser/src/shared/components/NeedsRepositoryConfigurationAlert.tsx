@@ -11,8 +11,8 @@ interface Props {
 }
 
 /**
- * A global alert telling the site admin that they need to configure repositories
- * on this site.
+ * A global alert telling the site admin that they need to configure
+ * external services on this site.
  */
 export class NeedsRepositoryConfigurationAlert extends React.Component<Props, {}> {
     private sync = () => {
@@ -36,15 +36,15 @@ export class NeedsRepositoryConfigurationAlert extends React.Component<Props, {}
                 <a
                     onClick={this.onClick}
                     className="site-alert__link"
-                    href={`${sourcegraphUrl}/site-admin/configuration`}
+                    href={`${sourcegraphUrl}/site-admin/external-services`}
                     target="_blank"
                 >
                     <span className="icon-inline site-alert__link-icon">
                         <WarningIcon size={17} />
                     </span>{' '}
-                    <span className="underline">Configure repositories and code hosts</span>
+                    <span className="underline">Configure external services</span>
                 </a>
-                &nbsp;to add to Sourcegraph.
+                &nbsp;to connect to Sourcegraph.
                 <div
                     style={{
                         display: 'inline-flex',

@@ -130,8 +130,8 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 icon={RepositoryIcon}
                                 actions={
                                     <>
-                                        <Link to="/site-admin/configuration" className="btn btn-primary btn-sm">
-                                            <SettingsIcon className="icon-inline" /> Configure repositories
+                                        <Link to="/site-admin/external-services" className="btn btn-primary btn-sm">
+                                            <SettingsIcon className="icon-inline" /> Configure external services
                                         </Link>
                                         <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
                                             <OpenInNewIcon className="icon-inline" /> View all
