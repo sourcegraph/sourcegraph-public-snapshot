@@ -74,27 +74,36 @@ const groupByLine = (decorations: TextDocumentDecoration[]) => {
     return grouped
 }
 
+export const cleanupDecorations = (dom: DOMFunctions, codeView: HTMLElement, lines: number[]): void => {
+    for (const lineNumber of lines) {
+        const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
+        if (!codeElement) {
+            continue
+        }
+        codeElement.style.backgroundColor = null
+        const previousDecorations = codeElement.querySelectorAll('.line-decoration-attachment')
+        for (const d of previousDecorations) {
+            d.remove()
+        }
+    }
+}
+
 /**
  * Applies a decoration to a code view. This doesn't work with diff views yet.
  */
 export const applyDecorations = (
     dom: DOMFunctions,
     codeView: HTMLElement,
-    decorations: TextDocumentDecoration[]
-): void => {
-    for (const [lineNumber, decorationsForLine] of groupByLine(decorations)) {
+    decorations: TextDocumentDecoration[],
+    previousDecorations: number[]
+): number[] => {
+    cleanupDecorations(dom, codeView, previousDecorations)
+    const decorationsByLine = groupByLine(decorations)
+    for (const [lineNumber, decorationsForLine] of decorationsByLine) {
         const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
         if (!codeElement) {
             throw new Error(`Unable to find code element for line ${lineNumber}`)
         }
-
-        // remove all previously existing declarations on this line
-        codeElement.style.backgroundColor = null
-        const previousDecorations = codeElement.querySelectorAll('.line-decoration-attachment')
-        for (const d of previousDecorations) {
-            d.remove()
-        }
-
         for (const decoration of decorationsForLine) {
             const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
             if (style.backgroundColor) {
@@ -131,4 +140,5 @@ export const applyDecorations = (
             }
         }
     }
+    return [...decorationsByLine.keys()]
 }
