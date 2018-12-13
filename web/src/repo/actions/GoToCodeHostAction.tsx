@@ -6,9 +6,9 @@ import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
+import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { ActionItem } from '../../components/ActionItem'
 import { fetchFileExternalLinks } from '../backend'
 
 interface Props {
@@ -128,9 +128,9 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         }
 
         return (
-            <ActionItem to={url} target="_self" data-tooltip={`View on ${displayName}`}>
+            <LinkOrButton to={url} target="_self" data-tooltip={`View on ${displayName}`}>
                 <Icon className="icon-inline" />
-            </ActionItem>
+            </LinkOrButton>
         )
     }
 }
