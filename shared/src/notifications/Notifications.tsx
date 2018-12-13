@@ -1,7 +1,9 @@
-import { pull } from 'lodash'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+import { delay, filter } from 'rxjs/operators'
+import { MessageType } from '../api/client/services/notifications'
 import { ExtensionsControllerProps } from '../extensions/controller'
+import { asError } from '../util/errors'
 import { Notification } from './notification'
 import { NotificationItem } from './NotificationItem'
 
@@ -36,13 +38,32 @@ export class Notifications extends React.PureComponent<Props, State> {
                 if (notification.progress) {
                     // Remove once progress is finished
                     this.subscriptions.add(
-                        notification.progress.subscribe(({ percentage }) => {
-                            if (percentage && percentage >= 100) {
-                                this.setState(prevState => ({
-                                    notifications: pull(prevState.notifications, notification),
-                                }))
-                            }
-                        })
+                        notification.progress
+                            .pipe(
+                                filter(({ percentage }) => !!percentage && percentage >= 100),
+                                delay(500)
+                            )
+                            .subscribe(
+                                () => {
+                                    this.setState(prevState => ({
+                                        notifications: prevState.notifications.filter(n => n !== notification),
+                                    }))
+                                },
+                                err => {
+                                    this.setState(({ notifications }) => ({
+                                        notifications: notifications.map(
+                                            n =>
+                                                n === notification
+                                                    ? {
+                                                          ...n,
+                                                          type: MessageType.Error,
+                                                          message: asError(err).message,
+                                                      }
+                                                    : n
+                                        ),
+                                    }))
+                                }
+                            )
                     )
                 }
             })

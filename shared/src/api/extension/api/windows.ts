@@ -1,4 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
+import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
 import { ViewComponentData } from '../../client/model'
@@ -41,16 +42,20 @@ class ExtWindow implements sourcegraph.Window {
         options: sourcegraph.ProgressOptions,
         task: (reporter: sourcegraph.ProgressReporter) => Promise<R>
     ): Promise<R> {
-        const handle = this.windowsProxy.$startProgress(options)
+        const handle = await this.windowsProxy.$startProgress(options)
         const reporter = {
             next: (progress: sourcegraph.Progress): void => {
                 this.windowsProxy.$updateProgress(handle, progress)
             },
         }
         try {
-            return await task(reporter)
-        } finally {
+            const result = await task(reporter)
             this.windowsProxy.$updateProgress(handle, { percentage: 100 })
+            return result
+        } catch (err) {
+            const error = asError(err)
+            this.windowsProxy.$errorProgress(handle, { ...error, message: error.message, stack: error.stack })
+            throw err
         }
     }
 

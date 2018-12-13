@@ -1,5 +1,5 @@
 import { from, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions } from 'sourcegraph'
 import { Connection } from '../protocol/jsonrpc2/connection'
 import { Tracer } from '../protocol/jsonrpc2/trace'
@@ -82,9 +82,9 @@ export function createExtensionHostClientConnection(
                     services.notifications.showInputs.next({ ...params, resolve })
                 }),
             ({ title }: ProgressOptions) => {
-                const progress = new Subject<Progress>()
-                services.notifications.progresses.next({ progress, title })
-                return progress
+                const reporter = new Subject<Progress>()
+                services.notifications.progresses.next({ title, progress: reporter.asObservable() })
+                return reporter
             }
         )
     )

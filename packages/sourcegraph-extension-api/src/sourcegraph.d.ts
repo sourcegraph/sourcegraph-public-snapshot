@@ -401,7 +401,10 @@ declare module 'sourcegraph' {
     }
 
     export interface Progress {
+        /** Optional message. If not set, the previous message is still shown. */
         message?: string
+
+        /** Integer from 0 to 100. If not set, the previous percentage is still shown. */
         percentage?: number
     }
 
@@ -434,22 +437,12 @@ declare module 'sourcegraph' {
 
         /**
          * Show progress in the editor. Progress is shown while running the given callback
-         * and while the promise it returned isn't resolved nor rejected. The location at which
-         * progress should show (and other details) is defined via the passed [`ProgressOptions`](#ProgressOptions).
+         * and while the promise it returned isn't resolved nor rejected.
          *
          * @param task A callback returning a promise. Progress state can be reported with
-         * the provided [progress](#Progress)-object.
+         * the provided [ProgressReporter](#ProgressReporter)-object.
          *
-         * To report discrete progress, use `increment` to indicate how much work has been completed. Each call with
-         * a `increment` value will be summed up and reflected as overall progress until 100% is reached (a value of
-         * e.g. `10` accounts for `10%` of work done).
-         * Note that currently only `ProgressLocation.Notification` is capable of showing discrete progress.
-         *
-         * To monitor if the operation has been cancelled by the user, use the provided [`CancellationToken`](#CancellationToken).
-         * Note that currently only `ProgressLocation.Notification` is supporting to show a cancel button to cancel the
-         * long running operation.
-         *
-         * @return The thenable the task-callback returned.
+         * @return The Promise the task-callback returned.
          */
         withProgress<R>(options: ProgressOptions, task: (reporter: ProgressReporter) => Promise<R>): Promise<R>
 
