@@ -47,6 +47,32 @@ func init() {
 		critical, err := json.MarshalIndent(criticalDecoded, "", "  ")
 		if string(critical) != "{}" && err == nil {
 			defaultConfig.Critical = string(critical)
+
+			// Backwards compatability for deprecated environment variables
+			// that we previously considered deprecated but are actually
+			// widespread in use in user's deployments and/or are suggested for
+			// use in our public documentation (i.e., even though these were
+			// long deprecated, our docs were not up to date).
+			//
+			// These only apply in the event that we are migrating a
+			// SOURCEGRAPH_CONFIG_FILE with other critical config contents (e.g.
+			// "auth.providers") to keep the logic of when this occurs sane. If
+			// we did it generically whenever any of these env vars were
+			// specified, it would be hard for users to remove all the env vars
+			// here in order to get a stock default Sourcegraph config instead
+			// of a migration one if they wanted to.
+			criticalBackcompatVars := map[string]func(value string){
+				"TLS_CERT":               func(v string) { defaultConfig.Critical.TlsCert },
+				"TLS_KEY":                func(v string) { defaultConfig.Critical.TlsKey },
+				"LIGHTSTEP_PROJECT":      func(v string) { defaultConfig.Critical.LightstepProject },
+				"LIGHTSTEP_ACCESS_TOKEN": func(v string) { defaultConfig.Critical.LightstepAccessToken },
+			}
+			for envVar, setter := range criticalBackcompatVars {
+				val := os.Getenv(envVar)
+				if val != "" {
+					setter(val)
+				}
+			}
 		}
 
 		var siteDecoded schema.SiteConfiguration
