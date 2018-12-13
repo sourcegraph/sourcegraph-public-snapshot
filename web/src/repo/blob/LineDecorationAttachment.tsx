@@ -22,7 +22,7 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
 
     public componentWillReceiveProps(nextProps: Readonly<LineDecorationAttachmentProps>): void {
         if (
-            nextProps.repoName !== this.props.repoName ||
+            nextProps.repoPath !== this.props.repoPath ||
             nextProps.rev !== this.props.rev ||
             nextProps.filePath !== this.props.filePath ||
             nextProps.line !== this.props.line ||

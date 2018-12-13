@@ -83,7 +83,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 .pipe(
                     distinctUntilChanged(
                         (x, y) =>
-                            x.repoName === y.repoName &&
+                            x.repoPath === y.repoPath &&
                             x.rev === y.rev &&
                             x.commitID === y.commitID &&
                             x.parentPath === y.parentPath &&
@@ -92,7 +92,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     filter(props => props.isExpanded),
                     switchMap(props => {
                         const treeFetch = fetchTreeEntries({
-                            repoName: props.repoName,
+                            repoPath: props.repoPath,
                             rev: props.rev,
                             commitID: props.commitID,
                             filePath: props.parentPath || '',
@@ -132,7 +132,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     debounceTime(100),
                     mergeMap(path =>
                         fetchTreeEntries({
-                            repoName: this.props.repoName,
+                            repoPath: this.props.repoPath,
                             rev: this.props.rev,
                             commitID: this.props.commitID,
                             filePath: path,

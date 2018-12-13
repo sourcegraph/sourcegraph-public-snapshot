@@ -109,7 +109,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                     >
                         <Tree
                             key="files"
-                            repoName={this.props.repoName}
+                            repoPath={this.props.repoPath}
                             rev={this.props.rev}
                             commitID={this.props.commitID}
                             history={this.props.history}

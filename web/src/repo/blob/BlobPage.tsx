@@ -35,7 +35,7 @@ export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolea
 
 export const fetchBlob = memoizeObservable(
     (args: {
-        repoName: string
+        repoPath: string
         commitID: string
         filePath: string
         isLightTheme: boolean
@@ -44,13 +44,13 @@ export const fetchBlob = memoizeObservable(
         queryGraphQL(
             gql`
                 query Blob(
-                    $repoName: String!
+                    $repoPath: String!
                     $commitID: String!
                     $filePath: String!
                     $isLightTheme: Boolean!
                     $disableTimeout: Boolean!
                 ) {
-                    repository(name: $repoName) {
+                    repository(name: $repoPath) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 content
@@ -130,7 +130,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             combineLatest(
                 this.propsUpdates.pipe(
-                    map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
+                    map(props => pick(props, 'repoPath', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
                 this.extendHighlightingTimeoutClicks.pipe(
@@ -140,9 +140,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
             )
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),
-                    switchMap(([{ repoName, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
+                    switchMap(([{ repoPath, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
                         fetchBlob({
-                            repoName,
+                            repoPath,
                             commitID,
                             filePath,
                             isLightTheme,
@@ -172,7 +172,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
     public componentWillReceiveProps(newProps: Props): void {
         this.propsUpdates.next(newProps)
         if (
-            newProps.repoName !== this.props.repoName ||
+            newProps.repoPath !== this.props.repoPath ||
             newProps.commitID !== this.props.commitID ||
             newProps.filePath !== this.props.filePath ||
             ToggleRenderedFileMode.getModeFromURL(newProps.location) !==
@@ -278,7 +278,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     !this.state.blobOrError.highlight.aborted && (
                         <Blob
                             className="blob-page__blob"
-                            repoName={this.props.repoName}
+                            repoPath={this.props.repoPath}
                             commitID={this.props.commitID}
                             filePath={this.props.filePath}
                             content={this.state.blobOrError.content}
@@ -312,7 +312,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 <BlobPanel
                     {...this.props}
                     repoID={this.props.repoID}
-                    repoName={this.props.repoName}
+                    repoPath={this.props.repoPath}
                     commitID={this.props.commitID}
                     platformContext={this.props.platformContext}
                     extensionsController={this.props.extensionsController}
@@ -332,8 +332,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
     private onExtendHighlightingTimeoutClick = () => this.extendHighlightingTimeoutClicks.next()
 
     private getPageTitle(): string {
-        const repoNameSplit = this.props.repoName.split('/')
-        const repoStr = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : this.props.repoName
+        const repoPathSplit = this.props.repoPath.split('/')
+        const repoStr = repoPathSplit.length > 2 ? repoPathSplit.slice(1).join('/') : this.props.repoPath
         if (this.props.filePath) {
             const fileOrDir = this.props.filePath.split('/').pop()
             return `${fileOrDir} - ${repoStr}`

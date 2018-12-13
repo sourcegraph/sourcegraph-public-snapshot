@@ -158,9 +158,9 @@ export const githubCodeHost: CodeHost = {
     buildJumpURLLocation: (def: JumpURLLocation) => {
         const rev = def.rev
         // If we're provided options, we can make the j2d URL more specific.
-        const { repoName } = parseURL()
+        const { repoPath } = parseURL()
 
-        const sameRepo = repoName === def.repoName
+        const sameRepo = repoPath === def.repoPath
         // Stay on same page in PR if possible.
         if (sameRepo && def.part) {
             const containers = getFileContainers()
@@ -178,7 +178,7 @@ export const githubCodeHost: CodeHost = {
             }
         }
 
-        return `https://${def.repoName}/blob/${rev}/${def.filePath}#L${def.position.line}${
+        return `https://${def.repoPath}/blob/${rev}/${def.filePath}#L${def.position.line}${
             def.position.character ? ':' + def.position.character : ''
         }`
     },

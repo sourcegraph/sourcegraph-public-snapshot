@@ -134,7 +134,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
             {
                 name: 'repo',
                 defaultSize: 175,
-                key: loc => parseRepoURI(loc.uri).repoName,
+                key: loc => parseRepoURI(loc.uri).repoPath,
             },
         ]
         const groupByFile =
@@ -217,7 +217,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                                                         title={group.key}
                                                     >
                                                         <span className="hierarchical-locations-view__item-name-text">
-                                                            <RepoLink to={null} repoName={group.key} />
+                                                            <RepoLink to={null} repoPath={group.key} />
                                                         </span>
                                                     </span>
                                                     <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">

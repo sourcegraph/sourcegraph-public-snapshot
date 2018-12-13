@@ -118,8 +118,8 @@ export class FileLocations extends React.PureComponent<Props, State> {
                 if (!locationsByURI.has(loc.uri)) {
                     locationsByURI.set(loc.uri, [])
 
-                    const { repoName } = parseRepoURI(loc.uri)
-                    orderedURIs.push({ uri: loc.uri, repo: repoName })
+                    const { repoPath } = parseRepoURI(loc.uri)
+                    orderedURIs.push({ uri: loc.uri, repo: repoPath })
                 }
                 locationsByURI.get(loc.uri)!.push(loc)
             }
@@ -163,19 +163,19 @@ function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
     return {
         file: {
             path: p.filePath || '',
-            url: toPrettyBlobURL({ repoName: p.repoName, filePath: p.filePath!, rev: p.commitID || '' }),
+            url: toPrettyBlobURL({ repoPath: p.repoPath, filePath: p.filePath!, rev: p.commitID || '' }),
             commit: {
                 oid: p.commitID || p.rev,
             },
         },
         repository: {
-            name: p.repoName,
+            name: p.repoPath,
             // This is the only usage of toRepoURL, and it is arguably simpler than getting the value from the
             // GraphQL API. We will be removing these old-style git: URIs eventually, so it's not worth fixing this
             // deprecated usage.
             //
             // tslint:disable-next-line deprecation
-            url: toRepoURL(p.repoName),
+            url: toRepoURL(p.repoPath),
         },
         limitHit: false,
         lineMatches: refs.filter(propertyIsDefined('range')).map(

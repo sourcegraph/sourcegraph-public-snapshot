@@ -54,16 +54,16 @@ export const normalizeAjaxError = (err: any): void => {
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
 export class CloneInProgressError extends Error {
     public readonly code = ECLONEINPROGESS
-    constructor(repoName: string) {
-        super(`${repoName} is clone in progress`)
+    constructor(repoPath: string) {
+        super(`${repoPath} is clone in progress`)
     }
 }
 
 export const EREPONOTFOUND = 'EREPONOTFOUND'
 export class RepoNotFoundError extends Error {
     public readonly code = EREPONOTFOUND
-    constructor(repoName: string) {
-        super(`repo ${repoName} not found`)
+    constructor(repoPath: string) {
+        super(`repo ${repoPath} not found`)
     }
 }
 

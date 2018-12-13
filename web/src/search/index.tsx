@@ -35,8 +35,8 @@ export function parseSearchURLQuery(query: string): SearchOptions | undefined {
     }
 }
 
-export function searchQueryForRepoRev(repoName: string, rev?: string): string {
-    return `repo:${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
+export function searchQueryForRepoRev(repoPath: string, rev?: string): string {
+    return `repo:${quoteIfNeeded(`^${escapeRegExp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
 }
 
 function abbreviateOID(oid: string): string {

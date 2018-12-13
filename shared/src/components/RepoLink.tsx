@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { displayRepoName, splitPath } from '../components/RepoFileLink'
+import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 
 interface Props {
-    repoName: string
+    repoPath: string
 
     /**
      * The link's destination. If null, the element is text, not a link.
@@ -15,8 +15,8 @@ interface Props {
     onClick?: React.MouseEventHandler<HTMLElement>
 }
 
-export const RepoLink: React.FunctionComponent<Props> = ({ repoName: fullRepoName, to, className, onClick }) => {
-    const [repoBase, repoName] = splitPath(displayRepoName(fullRepoName))
+export const RepoLink: React.FunctionComponent<Props> = ({ repoPath, to, className, onClick }) => {
+    const [repoBase, repoName] = splitPath(displayRepoPath(repoPath))
     const children = (
         <>
             {' '}

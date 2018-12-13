@@ -98,10 +98,10 @@ interface RepositoryCompareDiffPageProps
         PlatformContextProps,
         ExtensionsControllerProps {
     /** The base of the comparison. */
-    base: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
+    base: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
 
     /** The head of the comparison. */
-    head: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
+    head: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 

@@ -25,7 +25,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
         depth: props.depth + 1,
         expandedTrees: props.expandedTrees,
         parent: props.parent,
-        repoName: props.repoName,
+        repoPath: props.repoPath,
         rev: props.rev,
         onToggleExpand: props.onToggleExpand,
         onHover: props.onHover,

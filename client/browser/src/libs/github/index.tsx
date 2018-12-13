@@ -2,7 +2,7 @@ import { MaybeDiffSpec, ParsedRepoURI } from '../../shared/repo'
 
 export interface GitHubURL extends ParsedRepoURI {
     user?: string
-    ghRepoName?: string
+    repoName?: string
     isDelta?: boolean
     isPullRequest?: boolean
     isCommit?: boolean
@@ -13,7 +13,7 @@ export interface GitHubURL extends ParsedRepoURI {
 export interface GitHubBlobUrl {
     mode: GitHubMode
     owner: string
-    ghRepoName: string
+    repoName: string
     revAndPath: string
     lineNumber: string | undefined
     rev: string
@@ -23,7 +23,7 @@ export interface GitHubBlobUrl {
 export interface GitHubPullUrl {
     mode: GitHubMode
     owner: string
-    ghRepoName: string
+    repoName: string
     view: string
     rev: string
     id: number
@@ -33,7 +33,7 @@ export interface GitHubPullUrl {
 export interface GitHubRepositoryUrl {
     mode: GitHubMode
     owner: string
-    ghRepoName: string
+    repoName: string
     rev?: string
     filePath?: string
 }

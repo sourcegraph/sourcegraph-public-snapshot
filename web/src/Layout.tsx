@@ -121,7 +121,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             </Switch>
             {parseHash(props.location.hash).viewState && (
                 <ResizablePanel
-                    repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                    repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoPath}`}
                     history={props.history}
                     location={props.location}
                     extensionsController={props.extensionsController}

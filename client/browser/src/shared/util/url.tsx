@@ -46,9 +46,9 @@ function toReferencesHash(group: 'local' | 'external' | undefined): string {
 
 export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
-    const url = repoUrlCache[ctx.repoName] || sourcegraphUrl
+    const url = repoUrlCache[ctx.repoPath] || sourcegraphUrl
 
-    return `${url}/${ctx.repoName}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(
+    return `${url}/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(
         ctx.position
     )}${toReferencesHash(ctx.referencesMode)}`
 }

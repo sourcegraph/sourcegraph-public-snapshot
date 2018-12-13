@@ -63,7 +63,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoLink
-                repoName={props.result.commit.repository.name}
+                repoPath={props.result.commit.repository.name}
                 to={
                     props.result.commit.tree
                         ? props.result.commit.tree.canonicalURL
@@ -130,7 +130,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
 
     if (props.result.diffPreview) {
         const commonCtx: RepoSpec = {
-            repoName: props.result.commit.repository.name,
+            repoPath: props.result.commit.repository.name,
         }
 
         interface AbsoluteRepoFilePositionNonReadonly

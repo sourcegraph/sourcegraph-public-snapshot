@@ -50,7 +50,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                 element={
                                     <FilePathBreadcrumb
                                         key="path"
-                                        repoName={context.repo.name}
+                                        repoPath={context.repo.name}
                                         rev={context.rev}
                                         filePath={filePath}
                                         isDir={objectType === 'tree'}
@@ -63,7 +63,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                     <RepoRevSidebar
                         className="repo-rev-container__sidebar"
                         repoID={context.repo.id}
-                        repoName={context.repo.name}
+                        repoPath={context.repo.name}
                         rev={context.rev}
                         commitID={context.resolvedRev.commitID}
                         filePath={context.match.params.filePath || '' || ''}
@@ -77,7 +77,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                         <div className="repo-rev-container__content">
                             {objectType === 'blob' ? (
                                 <BlobPage
-                                    repoName={context.repo.name}
+                                    repoPath={context.repo.name}
                                     repoID={context.repo.id}
                                     commitID={context.resolvedRev.commitID}
                                     rev={context.rev}
@@ -96,7 +96,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                 />
                             ) : (
                                 <TreePage
-                                    repoName={context.repo.name}
+                                    repoPath={context.repo.name}
                                     repoID={context.repo.id}
                                     repoDescription={context.repo.description}
                                     commitID={context.resolvedRev.commitID}

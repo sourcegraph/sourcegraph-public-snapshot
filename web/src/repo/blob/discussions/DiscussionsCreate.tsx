@@ -13,7 +13,7 @@ import { DiscussionsNavbar } from './DiscussionsNavbar'
 
 interface Props {
     repoID: GQL.ID
-    repoName: string
+    repoPath: string
     commitID: string
     rev: string | undefined
     filePath: string

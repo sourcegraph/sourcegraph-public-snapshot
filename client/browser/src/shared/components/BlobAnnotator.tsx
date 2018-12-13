@@ -97,7 +97,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
         createTooltips()
         this.addTooltipEventListeners(this.props.getTableElement())
         fetchBlobContentLines({
-            repoName: this.props.repoName,
+            repoPath: this.props.repoPath,
             commitID: this.props.commitID,
             filePath: this.props.filePath,
         }).subscribe(
@@ -142,7 +142,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
         let props: OpenInSourcegraphProps
         if (this.isDelta) {
             props = {
-                repoName: this.props.repoName!,
+                repoPath: this.props.repoPath!,
                 filePath: this.props.filePath,
                 rev: this.props.commitID!,
                 query: {
@@ -153,7 +153,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
             }
         } else {
             props = {
-                repoName: this.props.repoName,
+                repoPath: this.props.repoPath,
                 filePath: this.props.filePath,
                 rev: this.props.rev!,
             }
@@ -552,7 +552,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
             // this.setFixedTooltip()
 
             // Jump to definition inside of a pull request if the file exists in the PR.
-            const sameRepo = this.props.repoName === defCtx.repoName
+            const sameRepo = this.props.repoPath === defCtx.repoPath
             if (sameRepo && this.props.isPullRequest) {
                 const containers = github.getFileContainers()
                 for (const container of Array.from(containers)) {
@@ -575,7 +575,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
                     : defCtx.commitID || defCtx.rev
                 : defCtx.commitID || defCtx.rev
             // tslint:disable-next-line
-            const url = `https://${defCtx.repoName}/blob/${rev || 'HEAD'}/${defCtx.filePath}#L${defCtx.position.line}${
+            const url = `https://${defCtx.repoPath}/blob/${rev || 'HEAD'}/${defCtx.filePath}#L${defCtx.position.line}${
                 defCtx.position.character ? ':' + defCtx.position.character : ''
             }`
             window.location.href = url

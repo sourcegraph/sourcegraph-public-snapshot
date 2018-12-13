@@ -17,7 +17,7 @@ export interface RepoSpec {
     /**
      * Example: github.com/gorilla/mux
      */
-    repoName: string
+    repoPath: string
 }
 
 export interface RevSpec {
@@ -95,8 +95,8 @@ export interface AbsoluteRepoFilePosition
         Partial<ReferencesModeSpec> {}
 
 interface DiffRepoSpec {
-    baseRepoName: string
-    headRepoName: string
+    baseRepoPath: string
+    headRepoPath: string
 }
 
 interface DiffRevSpec {
@@ -112,7 +112,7 @@ export interface DiffResolvedRevSpec {
 export interface DiffRepoRev extends DiffRepoSpec, DiffRevSpec {}
 
 export interface OpenInSourcegraphProps {
-    repoName: string
+    repoPath: string
     rev: string
     filePath?: string
     commit?: {
@@ -163,7 +163,7 @@ const parsePosition = (str: string): Position => {
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
-    const repoName = parsed.hostname + parsed.pathname
+    const repoPath = parsed.hostname + parsed.pathname
     const rev = parsed.search.substr('?'.length) || undefined
     let commitID: string | undefined
     if (rev && rev.match(/[0-9a-fA-f]{40}/)) {
@@ -195,7 +195,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         throw new Error('unexpected fragment: ' + parsed.hash)
     }
 
-    return { repoName, rev, commitID, filePath: filePath || undefined, position, range }
+    return { repoPath, rev, commitID, filePath: filePath || undefined, position, range }
 }
 
 /**
@@ -216,8 +216,8 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
         repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
     }
     const repoRevSplit = repoRev.split('@')
-    const repoName = repoRevSplit[0]
-    if (!repoName) {
+    const repoPath = repoRevSplit[0]
+    if (!repoPath) {
         throw new Error('unexpected repo url: ' + href)
     }
     const rev: string | undefined = repoRevSplit[1]
@@ -244,7 +244,7 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
         }
     }
 
-    return { repoName, rev, commitID, filePath, position }
+    return { repoPath, rev, commitID, filePath, position }
 }
 
 const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + pos.character : '')
@@ -254,7 +254,7 @@ const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + po
  */
 export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     const rev = parsed.commitID || parsed.rev
-    let uri = `git://${parsed.repoName}`
+    let uri = `git://${parsed.repoPath}`
     uri += rev ? '?' + rev : ''
     uri += parsed.filePath ? '#' + parsed.filePath : ''
     uri += parsed.position || parsed.range ? ':' : ''
@@ -263,7 +263,7 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     return uri
 }
 
-export const toRootURI = (ctx: AbsoluteRepo) => `git://${ctx.repoName}?${ctx.commitID}`
+export const toRootURI = (ctx: AbsoluteRepo) => `git://${ctx.repoPath}?${ctx.commitID}`
 export function toURIWithPath(ctx: AbsoluteRepoFile): string {
-    return `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`
+    return `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
 }

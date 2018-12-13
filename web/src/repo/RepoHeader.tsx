@@ -4,7 +4,7 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
+import { displayRepoPath, splitPath } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -181,7 +181,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         const leftActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'left')
         const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
 
-        const [repoDir, repoBase] = splitPath(displayRepoName(this.props.repo.name))
+        const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.name))
         const context: RepoHeaderContext = {
             repoName: this.props.repo.name,
             encodedRev: this.props.rev,

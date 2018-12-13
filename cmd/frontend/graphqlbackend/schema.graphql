@@ -1662,7 +1662,7 @@ type GitRevisionRange {
 
 # A Phabricator repository.
 type PhabricatorRepo {
-    # The canonical repo name (e.g. "github.com/gorilla/mux").
+    # The canonical repo path (e.g. "github.com/gorilla/mux").
     name: String!
     # An alias for name.
     uri: String! @deprecated(reason: "use name instead")

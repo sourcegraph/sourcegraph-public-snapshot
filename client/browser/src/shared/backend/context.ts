@@ -38,8 +38,8 @@ export function getContext(ctx: Partial<RequestContext> = {}): RequestContext {
     const out = { ...defaultContext, ...ctx }
 
     if (!repoKey && out.isRepoSpecific) {
-        const { repoName } = parseURL()
-        out.repoKey = repoName
+        const { repoPath } = parseURL()
+        out.repoKey = repoPath
     }
 
     return out

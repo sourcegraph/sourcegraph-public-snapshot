@@ -176,7 +176,7 @@ const diffDomFunctions: DOMFunctions = {
 }
 
 interface Part {
-    repoName: string
+    repoPath: string
     repoID: GQL.ID
     rev: string
     commitID: string
@@ -256,9 +256,9 @@ export class FileDiffHunks extends React.Component<Props, State> {
                 positionJumps: NEVER, // TODO support diff URLs
                 resolveContext: hoveredToken => {
                     // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                    const { repoName, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']
+                    const { repoPath, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']
                     // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                    return { repoName, filePath: filePath!, rev, commitID }
+                    return { repoPath, filePath: filePath!, rev, commitID }
                 },
             })
         )

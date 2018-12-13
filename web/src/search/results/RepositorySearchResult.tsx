@@ -26,7 +26,7 @@ export const RepositorySearchResult: React.FunctionComponent<Props> = (props: Pr
         title={
             <>
                 <RepoLink
-                    repoName={props.result.name}
+                    repoPath={props.result.name}
                     to={props.result.url}
                     // tslint:disable-next-line:jsx-no-lambda
                     onClick={() => {

@@ -7,7 +7,7 @@ import { highlightNode } from '../util/dom'
 import { Repo } from '../util/url'
 
 export interface FetchFileCtx {
-    repoName: string
+    repoPath: string
     commitID: string
     filePath: string
     disableTimeout?: boolean
@@ -58,9 +58,9 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             combineLatest(this.propsChanges, this.visibilityChanges)
                 .pipe(
                     filter(([, isVisible]) => isVisible),
-                    switchMap(([{ repoName, filePath, commitID, isLightTheme }]) =>
+                    switchMap(([{ repoPath, filePath, commitID, isLightTheme }]) =>
                         props.fetchHighlightedFileLines({
-                            repoName,
+                            repoPath,
                             commitID,
                             filePath,
                             isLightTheme,

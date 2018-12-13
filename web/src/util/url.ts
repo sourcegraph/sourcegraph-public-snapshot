@@ -16,14 +16,14 @@ import {
 
 export function toTreeURL(ctx: RepoFile): string {
     const rev = ctx.commitID || ctx.rev || ''
-    return `/${encodeRepoRev(ctx.repoName, rev)}/-/tree/${ctx.filePath}`
+    return `/${encodeRepoRev(ctx.repoPath, rev)}/-/tree/${ctx.filePath}`
 }
 
 export function toAbsoluteBlobURL(
     ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RenderModeSpec>
 ): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
-    return `/${encodeRepoRev(ctx.repoName, rev)}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
+    return `/${encodeRepoRev(ctx.repoPath, rev)}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
         ctx
     )}${toViewStateHashComponent(ctx.viewState)}`
 }
@@ -63,10 +63,10 @@ function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
  */
 export function replaceRevisionInURL(href: string, newRev: string): string {
     const parsed = parseBrowserRepoURL(window.location.href)
-    const repoRev = `/${encodeRepoRev(parsed.repoName, parsed.rev)}`
+    const repoRev = `/${encodeRepoRev(parsed.repoPath, parsed.rev)}`
 
     const u = new URL(window.location.href)
-    u.pathname = `/${encodeRepoRev(parsed.repoName, newRev)}${u.pathname.slice(repoRev.length)}`
+    u.pathname = `/${encodeRepoRev(parsed.repoPath, newRev)}${u.pathname.slice(repoRev.length)}`
     return `${u.pathname}${u.search}${u.hash}`
 }
 
@@ -95,8 +95,8 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     } else {
         repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
     }
-    const { repoName, rev } = parseRepoRev(repoRev)
-    if (!repoName) {
+    const { repoPath, rev } = parseRepoRev(repoRev)
+    if (!repoPath) {
         throw new Error('unexpected repo url: ' + href)
     }
     const commitID = rev && /^[a-f0-9]{40}$/i.test(rev) ? rev : undefined
@@ -136,7 +136,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
         }
     }
 
-    return { repoName, rev, commitID, filePath, commitRange, position, range }
+    return { repoPath, rev, commitID, filePath, commitRange, position, range }
 }
 
 export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
@@ -172,7 +172,7 @@ export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selectio
 
 /** The results of parsing a repo-rev string like "my/repo@my/rev". */
 export interface ParsedRepoRev {
-    repoName: string
+    repoPath: string
 
     /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
     rev?: string
@@ -187,7 +187,7 @@ export interface ParsedRepoRev {
 export function parseRepoRev(repoRev: string): ParsedRepoRev {
     const [repo, rev] = repoRev.split('@', 2)
     return {
-        repoName: decodeURIComponent(repo),
+        repoPath: decodeURIComponent(repo),
         rev: rev && decodeURIComponent(rev),
         rawRev: rev,
     }

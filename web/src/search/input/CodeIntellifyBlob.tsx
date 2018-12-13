@@ -83,7 +83,7 @@ const domFunctions = {
     },
 }
 
-const REPO_NAME = 'github.com/gorilla/mux'
+const REPO_PATH = 'github.com/gorilla/mux'
 const COMMIT_ID = '9e1f5955c0d22b55d9e20d6faa28589f83b2faca'
 const REV = undefined
 const FILE_PATH = 'mux.go'
@@ -159,7 +159,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
             hoverifier.hoverify({
                 positionEvents,
                 resolveContext: () => ({
-                    repoName: REPO_NAME,
+                    repoPath: REPO_PATH,
                     commitID: COMMIT_ID,
                     rev: REV || '',
                     filePath: FILE_PATH,
@@ -191,7 +191,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     public componentDidMount(): void {
         // Fetch repository revision.
         fetchBlob({
-            repoName: REPO_NAME,
+            repoPath: REPO_PATH,
             commitID: COMMIT_ID,
             filePath: FILE_PATH,
             isLightTheme: false,
@@ -234,7 +234,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
-            repoName: position.repoName,
+            repoPath: position.repoPath,
             filePath: position.filePath,
             commitID: position.commitID,
             rev: position.rev,

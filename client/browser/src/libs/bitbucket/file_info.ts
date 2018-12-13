@@ -21,14 +21,14 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
         map(getPRInfoFromCodeView),
-        switchMap(({ commitID, project, repoSlug, prID, ...rest }) => {
+        switchMap(({ commitID, project, repoName, prID, ...rest }) => {
             if (commitID) {
-                return getBaseCommit({ commitID, project, repoSlug }).pipe(
+                return getBaseCommit({ commitID, project, repoName }).pipe(
                     map(baseCommitID => ({ baseCommitID, headCommitID: commitID, ...rest }))
                 )
             }
 
-            return getCommitsForPR({ project, repoSlug, prID: prID! }).pipe(map(commits => ({ ...rest, ...commits })))
+            return getCommitsForPR({ project, repoName, prID: prID! }).pipe(map(commits => ({ ...rest, ...commits })))
         }),
         map(({ headCommitID, ...rest }) => ({ ...rest, commitID: headCommitID })),
         switchMap(info =>
@@ -40,14 +40,14 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                 }))
             )
         ),
-        switchMap(({ repoName, filePath, baseCommitID, ...rest }) =>
+        switchMap(({ repoPath, filePath, baseCommitID, ...rest }) =>
             fetchBlobContentLines({
-                repoName,
+                repoPath,
                 filePath,
                 commitID: baseCommitID,
             }).pipe(
                 map(lines => ({
-                    repoName,
+                    repoPath,
                     filePath,
                     baseCommitID,
                     baseContent: lines.join('\n'),

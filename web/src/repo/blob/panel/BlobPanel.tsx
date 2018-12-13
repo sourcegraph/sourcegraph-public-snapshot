@@ -33,7 +33,7 @@ interface Props
     location: H.Location
     history: H.History
     repoID: GQL.ID
-    repoName: string
+    repoPath: string
     commitID: string
     isLightTheme: boolean
     authenticatedUser: GQL.IUser | null
@@ -57,7 +57,7 @@ interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec>
 function toSubject(props: Props): PanelSubject {
     const parsedHash = parseHash(props.location.hash)
     return {
-        repoName: props.repoName,
+        repoPath: props.repoPath,
         repoID: props.repoID,
         commitID: props.commitID,
         rev: props.rev,
@@ -161,7 +161,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 reactElement: (
                                     <RepoRevSidebarCommits
                                         key="commits"
-                                        repoName={subject.repoName}
+                                        repoName={subject.repoPath}
                                         repoID={this.props.repoID}
                                         rev={subject.rev}
                                         filePath={subject.filePath}
@@ -188,7 +188,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                               reactElement: (
                                                   <DiscussionsTree
                                                       repoID={this.props.repoID}
-                                                      repoName={subject.repoName}
+                                                      repoPath={subject.repoPath}
                                                       commitID={subject.commitID}
                                                       rev={subject.rev}
                                                       filePath={subject.filePath}

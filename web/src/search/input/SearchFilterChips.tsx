@@ -120,8 +120,8 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                 switch (match.path) {
                     case '/:repoRev+': {
                         // Repo page
-                        const [repoName] = match.params.repoRev!.split('@')
-                        scopes.push(scopeForRepo(repoName))
+                        const [repoPath] = match.params.repoRev!.split('@')
+                        scopes.push(scopeForRepo(repoPath))
                         break
                     }
                     case '/:repoRev+/-/tree/:filePath+':
@@ -129,17 +129,17 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                         // Blob/tree page
                         const isTree = match.path === '/:repoRev+/-/tree/:filePath+'
 
-                        const [repoName] = match.params.repoRev!.split('@')
+                        const [repoPath] = match.params.repoRev!.split('@')
 
                         scopes.push({
-                            value: `repo:^${escapeRegExp(repoName)}$`,
+                            value: `repo:^${escapeRegExp(repoPath)}$`,
                         })
 
                         if (match.params.filePath) {
                             const dirname = isTree ? match.params.filePath : path.dirname(match.params.filePath)
                             if (dirname !== '.') {
                                 scopes.push({
-                                    value: `repo:^${escapeRegExp(repoName)}$ file:^${escapeRegExp(dirname)}/`,
+                                    value: `repo:^${escapeRegExp(repoPath)}$ file:^${escapeRegExp(dirname)}/`,
                                 })
                             }
                         }
@@ -163,8 +163,8 @@ export class SearchFilterChips extends React.PureComponent<Props> {
     }
 }
 
-function scopeForRepo(repoName: string): ISearchScope {
+function scopeForRepo(repoPath: string): ISearchScope {
     return {
-        value: `repo:^${escapeRegExp(repoName)}$`,
+        value: `repo:^${escapeRegExp(repoPath)}$`,
     }
 }

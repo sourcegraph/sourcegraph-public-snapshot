@@ -50,7 +50,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
             <li className="repository-node list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <RepoLink repoName={this.props.node.name} to={this.props.node.url} />
+                        <RepoLink repoPath={this.props.node.name} to={this.props.node.url} />
                         {this.props.node.enabled ? (
                             <small
                                 data-tooltip="Access to this repository is enabled. All users can view and search it."

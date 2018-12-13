@@ -8,7 +8,7 @@ import { mutateGraphQL } from '../../shared/backend/graphql'
 import { resolveRepo } from '../../shared/repo/backend'
 import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../../shared/util/context'
 import { memoizeObservable } from '../../shared/util/memoize'
-import { normalizeRepoName } from './util'
+import { normalizeRepoPath } from './util'
 
 interface PhabEntity {
     id: string // e.g. "48"
@@ -253,20 +253,20 @@ export function getRepoPHIDForDifferentialID(differentialID: number): Promise<st
 
 interface CreatePhabricatorRepoOptions {
     callsign: string
-    repoName: string
+    repoPath: string
     phabricatorURL: string
 }
 
 export const createPhabricatorRepo = memoizeObservable(
     (options: CreatePhabricatorRepoOptions): Observable<void> =>
         mutateGraphQL({
-            ctx: getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
+            ctx: getContext({ repoKey: options.repoPath, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
             request: `mutation addPhabricatorRepo(
             $callsign: String!,
-            $repoName: String!
+            $repoPath: String!
             $phabricatorURL: String!
         ) {
-            addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) { alwaysNil }
+            addPhabricatorRepo(callsign: $callsign, uri: $repoPath, url: $phabricatorURL) { alwaysNil }
         }`,
             variables: options,
         }).pipe(
@@ -281,7 +281,7 @@ export const createPhabricatorRepo = memoizeObservable(
 
 export interface PhabricatorRepoDetails {
     callsign: string
-    repoName: string
+    repoPath: string
 }
 
 export function getRepoDetailsFromCallsign(callsign: string): Promise<PhabricatorRepoDetails> {
@@ -312,7 +312,7 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
                     if (details) {
                         return createPhabricatorRepo({
                             callsign,
-                            repoName: details.repoName,
+                            repoPath: details.repoPath,
                             phabricatorURL: window.location.origin,
                         }).subscribe(() => resolve(details))
                     } else {
@@ -354,7 +354,7 @@ export function getRepoDetailsFromCallsignObservable(callsign: string): Observab
         switchMap(details =>
             createPhabricatorRepo({
                 callsign,
-                repoName: details.repoName,
+                repoPath: details.repoPath,
                 phabricatorURL: window.location.origin,
             }).pipe(map(() => details))
         )
@@ -423,7 +423,7 @@ export function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRep
                     if (details) {
                         return createPhabricatorRepo({
                             callsign: repo.fields.callsign,
-                            repoName: details.repoName,
+                            repoPath: details.repoPath,
                             phabricatorURL: window.location.origin,
                         })
                             .pipe(map(() => details))
@@ -452,7 +452,7 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
                         if (mapping.callsign === repo.fields.callsign) {
                             return resolve({
                                 callsign: repo.fields.callsign,
-                                repoName: mapping.path,
+                                repoPath: mapping.path,
                             })
                         }
                     }
@@ -475,7 +475,7 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
                     if (mapping.callsign === repo.fields.callsign) {
                         return resolve({
                             callsign: repo.fields.callsign,
-                            repoName: mapping.path,
+                            repoPath: mapping.path,
                         })
                     }
                 }
@@ -494,7 +494,7 @@ function convertConduitRepoToRepoDetailsObservable(repo: ConduitRepo): Observabl
                         if (mapping.callsign === repo.fields.callsign) {
                             return observer.next({
                                 callsign: repo.fields.callsign,
-                                repoName: mapping.path,
+                                repoPath: mapping.path,
                             })
                         }
                     }
@@ -519,7 +519,7 @@ function convertConduitRepoToRepoDetailsObservable(repo: ConduitRepo): Observabl
                     if (mapping.callsign === repo.fields.callsign) {
                         return observer.next({
                             callsign: repo.fields.callsign,
-                            repoName: mapping.path,
+                            repoPath: mapping.path,
                         })
                     }
                 }
@@ -543,8 +543,8 @@ function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
         return null
     }
     const rawURI = uri.fields.uri.raw
-    const repoName = normalizeRepoName(rawURI)
-    return { callsign: repo.fields.callsign, repoName }
+    const repoPath = normalizeRepoPath(rawURI)
+    return { callsign: repo.fields.callsign, repoPath }
 }
 
 interface ResolveStagingOptions {
@@ -608,7 +608,7 @@ function hasThisFileChanged(filePath: string, changes: ConduitDiffChange[]): boo
 }
 
 interface ResolveDiffOpt {
-    repoName: string
+    repoPath: string
     filePath: string
     differentialID: number
     diffID: number
@@ -620,7 +620,7 @@ interface ResolveDiffOpt {
 
 interface PropsWithInfo {
     info: ConduitDiffDetails
-    repoName: string
+    repoPath: string
     filePath: string
     differentialID: number
     diffID: number
@@ -669,7 +669,7 @@ function getPropsWithInfo(props: ResolveDiffOpt): Promise<PropsWithInfo> {
 
 function getStagingDetails(
     propsWithInfo: PropsWithInfo
-): { repoName: string; ref: ConduitRef; unconfigured: boolean } | undefined {
+): { repoPath: string; ref: ConduitRef; unconfigured: boolean } | undefined {
     const stagingInfo = propsWithInfo.info.properties['arc.staging']
     if (!stagingInfo) {
         return undefined
@@ -687,7 +687,7 @@ function getStagingDetails(
             const remote = ref.remote.uri
             if (remote) {
                 return {
-                    repoName: normalizeRepoName(remote),
+                    repoPath: normalizeRepoPath(remote),
                     ref,
                     unconfigured: stagingInfo.status === 'repository.unconfigured',
                 }
@@ -699,7 +699,7 @@ function getStagingDetails(
 
 export interface ResolvedDiff {
     commitID: string
-    stagingRepoName?: string
+    stagingRepoPath?: string
 }
 
 export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> {
@@ -710,7 +710,7 @@ export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> 
                 .then(propsWithInfo => {
                     const stagingDetails = getStagingDetails(propsWithInfo)
                     const conduitProps = {
-                        repoName: propsWithInfo.repoName,
+                        repoName: propsWithInfo.repoPath,
                         diffID: propsWithInfo.diffID,
                         baseRev: propsWithInfo.info.sourceControlBaseRevision,
                         date: propsWithInfo.info.dateCreated,
@@ -738,11 +738,11 @@ export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> 
 
                     if (!stagingDetails.unconfigured) {
                         // Ensure the staging repo exists before resolving. Otherwise create the patch.
-                        resolveRepo({ repoName: stagingDetails.repoName }).subscribe(
+                        resolveRepo({ repoPath: stagingDetails.repoPath }).subscribe(
                             () =>
                                 resolve({
                                     commitID: stagingDetails.ref.commit,
-                                    stagingRepoName: stagingDetails.repoName,
+                                    stagingRepoPath: stagingDetails.repoPath,
                                 }),
                             error => {
                                 getRawDiffFromConduit(propsWithInfo.diffID)

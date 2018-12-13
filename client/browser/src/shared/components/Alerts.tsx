@@ -11,7 +11,7 @@ interface State {
 }
 
 interface Props {
-    repoName: string
+    repoPath: string
 }
 
 const SERVER_CONFIGURATION_KEY = 'NeedsServerConfigurationAlertDismissed'
@@ -28,7 +28,7 @@ export class Alerts extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.updateAlerts()
-        resolveRev({ repoName: this.props.repoName })
+        resolveRev({ repoPath: this.props.repoPath })
             .toPromise()
             .catch(e => {
                 this.setState(() => ({ ...this.state, needsConfig: true }))
@@ -41,7 +41,7 @@ export class Alerts extends React.Component<Props, State> {
             if (!items[SERVER_CONFIGURATION_KEY]) {
                 alerts.push(SERVER_CONFIGURATION_KEY)
             }
-            if (!items[REPO_CONFIGURATION_KEY] || !items[REPO_CONFIGURATION_KEY][this.props.repoName]) {
+            if (!items[REPO_CONFIGURATION_KEY] || !items[REPO_CONFIGURATION_KEY][this.props.repoPath]) {
                 alerts.push(REPO_CONFIGURATION_KEY)
             }
             this.setState(() => ({ ...this.state, alerts }))
@@ -56,7 +56,7 @@ export class Alerts extends React.Component<Props, State> {
         if (this.state.needsConfig && this.state.alerts.includes(REPO_CONFIGURATION_KEY) && !isSourcegraphDotCom()) {
             return (
                 <NeedsRepositoryConfigurationAlert
-                    repoName={this.props.repoName}
+                    repoPath={this.props.repoPath}
                     alertKey={REPO_CONFIGURATION_KEY}
                     onClose={this.updateAlerts}
                 />

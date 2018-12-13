@@ -26,7 +26,7 @@ export interface ButtonProps {
 }
 
 interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<ExtensionsControllerProps> {
-    repoName: string
+    repoPath: string
     filePath: string
 
     baseCommitID: string
@@ -86,7 +86,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     label={`View File${this.props.headCommitID ? ' (base)' : ''}`}
                     ariaLabel="View file on Sourcegraph"
                     openProps={{
-                        repoName: this.props.repoName,
+                        repoPath: this.props.repoPath,
                         filePath: this.props.filePath,
                         rev: this.props.baseRev || this.props.baseCommitID,
                         query: this.props.headCommitID
@@ -106,7 +106,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         label={'View File (head)'}
                         ariaLabel="View file on Sourcegraph"
                         openProps={{
-                            repoName: this.props.repoName,
+                            repoPath: this.props.repoPath,
                             filePath: this.props.filePath,
                             rev: this.props.headRev || this.props.headCommitID,
                             query: {

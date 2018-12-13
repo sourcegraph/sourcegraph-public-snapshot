@@ -80,8 +80,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
 
     public componentDidMount(): void {
         const repoRevChanges = this.propsUpdates.pipe(
-            // Pick repoName and rev out of the props
-            map(props => ({ repoName: props.repo.name, rev: props.rev })),
+            // Pick repoPath and rev out of the props
+            map(props => ({ repoPath: props.repo.name, rev: props.rev })),
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
 
@@ -91,8 +91,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 .pipe(
                     // Reset resolved rev / error state
                     tap(() => this.props.onResolvedRevOrError(undefined)),
-                    switchMap(({ repoName, rev }) =>
-                        defer(() => resolveRev({ repoName, rev })).pipe(
+                    switchMap(({ repoPath, rev }) =>
+                        defer(() => resolveRev({ repoPath, rev })).pipe(
                             // On a CloneInProgress error, retry after 1s
                             retryWhen(errors =>
                                 errors.pipe(
@@ -215,7 +215,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             popoverElement={
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
-                                    repoName={this.props.repo.name}
+                                    repoPath={this.props.repo.name}
                                     defaultBranch={this.props.resolvedRevOrError.defaultBranch}
                                     currentRev={this.props.rev}
                                     currentCommitID={this.props.resolvedRevOrError.commitID}

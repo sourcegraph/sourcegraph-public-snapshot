@@ -52,7 +52,7 @@ export const FilePathBreadcrumb: React.FunctionComponent<
         filePath: string
         isDir: boolean
     }
-> = ({ repoName, rev, filePath, isDir }) => {
+> = ({ repoPath, rev, filePath, isDir }) => {
     const parts = filePath.split('/')
     // tslint:disable-next-line:jsx-no-lambda
     return (
@@ -62,9 +62,9 @@ export const FilePathBreadcrumb: React.FunctionComponent<
             partToUrl={i => {
                 const partPath = parts.slice(0, i + 1).join('/')
                 if (isDir || i < parts.length - 1) {
-                    return toTreeURL({ repoName, rev, filePath: partPath })
+                    return toTreeURL({ repoPath, rev, filePath: partPath })
                 }
-                return toPrettyBlobURL({ repoName, rev, filePath: partPath })
+                return toPrettyBlobURL({ repoPath, rev, filePath: partPath })
             }}
             // tslint:disable-next-line:jsx-no-lambda
             partToClassName={i => (i === parts.length - 1 ? 'part-last' : 'part-directory')}

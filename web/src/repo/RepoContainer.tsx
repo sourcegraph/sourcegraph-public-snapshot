@@ -93,7 +93,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
 
         // Fetch repository.
         const repositoryChanges = parsedRouteChanges.pipe(
-            map(({ repoName }) => repoName),
+            map(({ repoPath }) => repoPath),
             distinctUntilChanged()
         )
         this.subscriptions.add(
@@ -101,13 +101,13 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 repositoryChanges,
                 this.repositoryAdds.pipe(
                     withLatestFrom(repositoryChanges),
-                    map(([, repoName]) => repoName)
+                    map(([, repoPath]) => repoPath)
                 )
             )
                 .pipe(
                     tap(() => this.setState({ repoOrError: undefined })),
-                    switchMap(repoName =>
-                        fetchRepository({ repoName }).pipe(
+                    switchMap(repoPath =>
+                        fetchRepository({ repoPath }).pipe(
                             catchError(error => {
                                 switch (error.code) {
                                     case EREPOSEEOTHER:
@@ -135,10 +135,10 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
 
         // Update header and other global state.
         this.subscriptions.add(
-            parsedRouteChanges.subscribe(({ repoName, rev, rawRev, rest }) => {
-                this.setState({ repoName, rev, rawRev, rest })
+            parsedRouteChanges.subscribe(({ repoPath, rev, rawRev, rest }) => {
+                this.setState({ repoPath, rev, rawRev, rest })
 
-                queryUpdates.next(searchQueryForRepoRev(repoName, rev))
+                queryUpdates.next(searchQueryForRepoRev(repoPath, rev))
             })
         )
 
@@ -161,7 +161,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             roots = [
                                 {
                                     uri: makeRepoURI({
-                                        repoName: this.state.repoName,
+                                        repoPath: this.state.repoPath,
                                         rev: resolvedRevOrError.commitID,
                                     }),
                                 },
@@ -200,7 +200,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             return null
         }
 
-        const { repoName, filePath, commitRange, position, range } = parseBrowserRepoURL(
+        const { repoPath, filePath, commitRange, position, range } = parseBrowserRepoURL(
             location.pathname + location.search + location.hash
         )
         const viewerCanAdminister = !!this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin
@@ -211,7 +211,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 case EREPONOTFOUND:
                     return (
                         <RepositoryErrorPage
-                            repo={repoName}
+                            repo={repoPath}
                             repoID={null}
                             error={this.state.repoOrError}
                             viewerCanAdminister={viewerCanAdminister}
@@ -313,7 +313,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
                                     <RepositoryCommitPage
                                         {...routeComponentProps}
                                         {...transferProps}
@@ -327,7 +327,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
                                     <RepositoryBranchesArea {...routeComponentProps} {...transferProps} />
                                 </RepositoryGitDataContainer>
                             )}
@@ -337,7 +337,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
                                     <RepositoryReleasesArea {...routeComponentProps} {...transferProps} />
                                 </RepositoryGitDataContainer>
                             )}
@@ -347,7 +347,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
                                     <RepositoryCompareArea {...routeComponentProps} {...transferProps} />
                                 </RepositoryGitDataContainer>
                             )}
@@ -357,7 +357,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
                                     <RepositoryStatsArea {...routeComponentProps} {...transferProps} />
                                 </RepositoryGitDataContainer>
                             )}
