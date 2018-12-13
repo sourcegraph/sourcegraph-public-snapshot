@@ -1,5 +1,6 @@
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
+import idCreator from '../../util/idCreator'
 import { createProxy, handleRequests } from '../common/proxy'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
 import { ExtCommands } from './api/commands'
@@ -122,6 +123,9 @@ function initializeExtensionHost(
     return { unsubscribe: () => subscriptions.unsubscribe(), __testAPI: api }
 }
 
+const nextDecorationType = idCreator('TextDocumentDecorationType')
+export const createDecorationType = () => ({ key: nextDecorationType() })
+
 function createExtensionAPI(
     initData: InitData,
     connection: Connection
@@ -191,6 +195,7 @@ function createExtensionAPI(
                 return windows.getAll()
             },
             createPanelView: (id: string) => views.createPanelView(id),
+            createDecorationType,
         },
 
         workspace: {

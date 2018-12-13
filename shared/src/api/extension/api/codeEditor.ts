@@ -29,8 +29,11 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         return this._selections.map(data => Selection.fromPlain(data))
     }
 
-    public setDecorations(_decorationType: null, decorations: sourcegraph.TextDocumentDecoration[]): void {
-        this.proxy.$setDecorations(this.resource, decorations.map(fromTextDocumentDecoration))
+    public setDecorations(
+        decorationType: sourcegraph.TextDocumentDecorationType,
+        decorations: sourcegraph.TextDocumentDecoration[]
+    ): void {
+        this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
     }
 
     public toJSON(): any {
