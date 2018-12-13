@@ -1,3 +1,4 @@
+import { Observer } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
@@ -42,21 +43,32 @@ class ExtWindow implements sourcegraph.Window {
         options: sourcegraph.ProgressOptions,
         task: (reporter: sourcegraph.ProgressReporter) => Promise<R>
     ): Promise<R> {
+        const reporter = await this.showProgress(options)
+        try {
+            const result = await task(reporter)
+            reporter.complete()
+            return result
+        } catch (err) {
+            reporter.error(err)
+            throw err
+        }
+    }
+
+    public async showProgress(options: sourcegraph.ProgressOptions): Promise<sourcegraph.ProgressReporter> {
         const handle = await this.windowsProxy.$startProgress(options)
-        const reporter = {
+        const reporter: Observer<sourcegraph.Progress> = {
             next: (progress: sourcegraph.Progress): void => {
                 this.windowsProxy.$updateProgress(handle, progress)
             },
+            error: (err: any): void => {
+                const error = asError(err)
+                this.windowsProxy.$errorProgress(handle, { ...error, message: error.message, stack: error.stack })
+            },
+            complete: (): void => {
+                this.windowsProxy.$updateProgress(handle, { percentage: 100 })
+            },
         }
-        try {
-            const result = await task(reporter)
-            this.windowsProxy.$updateProgress(handle, { percentage: 100 })
-            return result
-        } catch (err) {
-            const error = asError(err)
-            this.windowsProxy.$errorProgress(handle, { ...error, message: error.message, stack: error.stack })
-            throw err
-        }
+        return reporter
     }
 
     public toJSON(): any {

@@ -1,5 +1,5 @@
 import { from, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, filter, map } from 'rxjs/operators'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions } from 'sourcegraph'
 import { Connection } from '../protocol/jsonrpc2/connection'
 import { Tracer } from '../protocol/jsonrpc2/trace'

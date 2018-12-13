@@ -410,6 +410,8 @@ declare module 'sourcegraph' {
 
     export interface ProgressReporter {
         next(status: Progress): void
+        error(error: any): void
+        complete(): void
     }
 
     /**
@@ -436,7 +438,7 @@ declare module 'sourcegraph' {
         showNotification(message: string): void
 
         /**
-         * Show progress in the editor. Progress is shown while running the given callback
+         * Show progress in the window. Progress is shown while running the given callback
          * and while the promise it returned isn't resolved nor rejected.
          *
          * @param task A callback returning a promise. Progress state can be reported with
@@ -445,6 +447,14 @@ declare module 'sourcegraph' {
          * @return The Promise the task-callback returned.
          */
         withProgress<R>(options: ProgressOptions, task: (reporter: ProgressReporter) => Promise<R>): Promise<R>
+
+        /**
+         * Show progress in the window. The returned ProgressReporter can be used to update the
+         * progress bar, complete it or turn the notification into an error notification in case the operation failed.
+         *
+         * @return A ProgressReporter that allows updating the progress display.
+         */
+        showProgress(options: ProgressOptions): Promise<ProgressReporter>
 
         /**
          * Show a modal message to the user that the user must dismiss before continuing.
