@@ -32,7 +32,7 @@ import {
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toRootURI, toURIWithPath } from '../../shared/repo'
-import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
@@ -259,7 +259,6 @@ function initCodeIntelligence(
                 .pipe(map(hover => (hover ? (hover as HoverMerged) : hover))),
         fetchJumpURL,
         getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
-        logTelemetryEvent: () => eventLogger.logCodeIntelligenceEvent(),
     })
 
     const Link: LinkComponent = ({ to, children, ...rest }) => (
@@ -346,7 +345,6 @@ function initCodeIntelligence(
                       <HoverOverlay
                           {...hoverOverlayProps}
                           linkComponent={Link}
-                          logTelemetryEvent={this.log}
                           hoverRef={nextOverlayElement}
                           onGoToDefinitionClick={nextGoToDefinitionClick}
                           onCloseButtonClick={nextCloseButtonClick}
@@ -355,7 +353,6 @@ function initCodeIntelligence(
                   )
                 : null
         }
-        private log = () => eventLogger.logCodeIntelligenceEvent()
         private getHoverOverlayProps(): HoverState['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined

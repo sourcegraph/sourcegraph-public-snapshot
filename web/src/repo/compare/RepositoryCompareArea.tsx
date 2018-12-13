@@ -23,7 +23,6 @@ import {
 import { getHover, getJumpURL } from '../../backend/features'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
-import { eventLogger } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -67,7 +66,6 @@ export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     routePrefix: string
 }
 
-const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
 const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 /**
@@ -113,7 +111,6 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
             pushHistory: path => this.props.history.push(path),
-            logTelemetryEvent,
             fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
@@ -210,7 +207,6 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
-                        logTelemetryEvent={logTelemetryEvent}
                         linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}
