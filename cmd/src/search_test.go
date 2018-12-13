@@ -119,3 +119,15 @@ var nMonthsAgoPattern = regexp.MustCompile(`\d+ months? ago`)
 func normalizeTimeAgo(s *string) {
 	*s = nMonthsAgoPattern.ReplaceAllString(*s, "N months ago")
 }
+
+func TestBuildVersionHasNewSearchInterface(t *testing.T) {
+	buildWithoutSearchInterface := "24568_2018-11-30_429039d"
+	buildWithSearchInterface := "25391_2018-12-12_ffbd6a3"
+
+	if buildVersionHasNewSearchInterface(buildWithoutSearchInterface) {
+		t.Errorf("Build version is before the new generic search interface was merged. Expected false, but got true.")
+	}
+	if !buildVersionHasNewSearchInterface(buildWithSearchInterface) {
+		t.Errorf("Build version is after the new generic search interface was merged. Expected true, but got false.")
+	}
+}

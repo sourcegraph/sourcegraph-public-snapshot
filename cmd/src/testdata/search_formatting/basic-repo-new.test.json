@@ -1,0 +1,69 @@
+{
+  "SourcegraphEndpoint": "https://sourcegraph.com",
+  "Query": "repogroup:goteam type:repo golang max:4",
+  "Site": { "BuildVersion": "aaaaa_2018-12-12_aaaaa" },
+  "Results": [
+    {
+      "__typename": "Repository",
+      "name": "github.com/golang/build",
+      "url": "/github.com/golang/build",
+      "externalURLs": [
+        {
+          "serviceType": "github",
+          "url": "https://github.com/golang/build"
+        }
+      ],
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/build\" rel=\"nofollow\">github.com/golang/build</a></p>\n"
+      }
+    },
+    {
+      "__typename": "Repository",
+      "name": "github.com/golang/crypto",
+      "url": "/github.com/golang/crypto",
+      "externalURLs": [
+        {
+          "serviceType": "github",
+          "url": "https://github.com/golang/crypto"
+        }
+      ],
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/crypto\" rel=\"nofollow\">github.com/golang/crypto</a></p>\n"
+      }
+    },
+    {
+      "__typename": "Repository",
+      "name": "github.com/golang/net",
+      "url": "/github.com/golang/net",
+      "externalURLs": [
+        {
+          "serviceType": "github",
+          "url": "https://github.com/golang/net"
+        }
+      ],
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/net\" rel=\"nofollow\">github.com/golang/net</a></p>\n"
+      }
+    },
+    {
+      "__typename": "Repository",
+      "name": "github.com/golang/protobuf",
+      "url": "/github.com/golang/protobuf",
+      "externalURLs": [
+        {
+          "serviceType": "github",
+          "url": "https://github.com/golang/protobuf"
+        }
+      ],
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/protobuf\" rel=\"nofollow\">github.com/golang/protobuf</a></p>\n"
+      }
+    }
+  ],
+  "LimitHit": true,
+  "Cloning": [],
+  "Missing": [],
+  "Timedout": [],
+  "ResultCount": 4,
+  "ElapsedMilliseconds": 37
+}

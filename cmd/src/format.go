@@ -82,11 +82,14 @@ func parseTemplate(text string) (*template.Template, error) {
 		},
 
 		// Register search-specific template functions
-		"searchSequentialLineNumber": searchTemplateFuncs["searchSequentialLineNumber"],
-		"searchHighlightMatch":       searchTemplateFuncs["searchHighlightMatch"],
-		"searchHighlightPreview":     searchTemplateFuncs["searchHighlightPreview"],
-		"searchHighlightDiffPreview": searchTemplateFuncs["searchHighlightDiffPreview"],
-		"searchMaxRepoNameLength":    searchTemplateFuncs["searchMaxRepoNameLength"],
+		"searchSequentialLineNumber":        searchTemplateFuncs["searchSequentialLineNumber"],
+		"searchHighlightMatch":              searchTemplateFuncs["searchHighlightMatch"],
+		"searchHighlightPreview":            searchTemplateFuncs["searchHighlightPreview"],
+		"searchHighlightDiffPreview":        searchTemplateFuncs["searchHighlightDiffPreview"],
+		"searchMaxRepoNameLength":           searchTemplateFuncs["searchMaxRepoNameLength"],
+		"htmlToPlainText":                   searchTemplateFuncs["htmlToPlainText"],
+		"buildVersionHasNewSearchInterface": searchTemplateFuncs["buildVersionHasNewSearchInterface"],
+		"renderResult":                      searchTemplateFuncs["renderResult"],
 	})
 	return tmpl.Parse(text)
 }

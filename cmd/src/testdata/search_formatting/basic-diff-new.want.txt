@@ -1,0 +1,57 @@
+[38;5;57m✱[0m [38;5;2m3+ results[0m for [38;5;68m"repogroup:sample type:diff error max:3 repo:^github\.com/golang/oauth2$"[0m in [38;5;2m39ms[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/232e45548389bd9357411a6922a07c5fd4068bda[0m[38;5;239m)
+[0m[0m[38;5;68mgolang/oauth2   Brad Fitzpatrick   google: remove Go 1.8 support[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m[0m  google/default.go google/default.go
+  @@ -42,2 +61,1 @@ func DefaultTokenSource(ctx context.Context, scope ...string) (oauth2.TokenSourc
+  -// Common implementation for FindDefaultCredentials.
+  -func findDefaultCredentials(ctx context.Context, scopes []string) (*DefaultCredentials, [38;5;0m[48;5;11merror[0m) {
+  +// FindDefaultCredentials searches for "Application Default Credentials".
+  @@ -44,0 +76,2 @@ func DefaultTokenSource(ctx context.Context, scope ...string) (oauth2.TokenSourc
+  +//      (In this final case any provided scopes are ignored.)
+  +func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, [38;5;0m[48;5;11merror[0m) {
+  @@ -87,2 +121,1 @@ func findDefaultCredentials(ctx context.Context, scopes []string) (*DefaultCrede
+  -// Common implementation for CredentialsFromJSON.
+  -func credentialsFromJSON(ctx context.Context, jsonData []byte, scopes []string) (*DefaultCredentials, [38;5;0m[48;5;11merror[0m) {
+  +// CredentialsFromJSON obtains Google credentials from a JSON value. The JSON can
+  google/go19.go google/go19.go
+  @@ -49,3 +0,0 @@
+  -//      (In this final case any provided scopes are ignored.)
+  -func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, [38;5;0m[48;5;11merror[0m) {
+  -	return findDefaultCredentials(ctx, scopes)
+  @@ -57,3 +0,0 @@
+  -// JWTConfigFromJSON).
+  -func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*Credentials, [38;5;0m[48;5;11merror[0m) {
+  -	return credentialsFromJSON(ctx, jsonData, scopes)
+  google/not_go19.go google/not_go19.go
+  @@ -44,3 +0,0 @@
+  -//      (In this final case any provided scopes are ignored.)
+  -func FindDefaultCredentials(ctx context.Context, scopes ...string) (*DefaultCredentials, [38;5;0m[48;5;11merror[0m) {
+  -	return findDefaultCredentials(ctx, scopes)
+  @@ -54,3 +0,0 @@
+  -// Note: despite the name, the returned credentials may not be Application Default Credentials.
+  -func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*DefaultCredentials, [38;5;0m[48;5;11merror[0m) {
+  -	return credentialsFromJSON(ctx, jsonData, scopes)
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/5a69e67f3fa6ce11b512c271912d08ac74da7c7f[0m[38;5;239m)
+[0m[0m[38;5;68mgolang/oauth2   Michael Traver   appengine: implement AppEngineTokenSource for 2nd gen runtimes[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m[0m  google/appengine.go google/appengine.go
+  @@ -61,3 +37,0 @@ func AppEngineTokenSource(ctx context.Context, scope ...string) oauth2.TokenSour
+  -
+  -func (ts *appEngineTokenSource) Token() (*oauth2.Token, [38;5;0m[48;5;11merror[0m) {
+  -	if appengineTokenFunc == nil {
+  google/appengine_gen1.go google/appengine_gen1.go
+  @@ -0,0 +53,3 @@
+  +
+  +func (ts *gaeTokenSource) Token() (*oauth2.Token, [38;5;0m[48;5;11merror[0m) {
+  +	aeTokensMu.Lock()
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83[0m[38;5;239m)
+[0m[0m[38;5;68mgolang/oauth2   Travis Bischel   oauth2: fix error message typo[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m[0m  internal/oauth2.go internal/oauth2.go
+  @@ -29,1 +29,1 @@ func ParseKey(key []byte) (*rsa.PrivateKey, error) {
+  -			return nil, fmt.[38;5;0m[48;5;11mError[0mf("private key should be a PEM or plain PKSC1 or PKCS8; parse [38;5;0m[48;5;11merror[0m: %v", err)
+  +			return nil, fmt.[38;5;0m[48;5;11mError[0mf("private key should be a PEM or plain PKCS1 or PKCS8; parse [38;5;0m[48;5;11merror[0m: %v", err)

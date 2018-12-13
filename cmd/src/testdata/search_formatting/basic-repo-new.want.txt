@@ -1,0 +1,6 @@
+[38;5;57m✱[0m [38;5;2m4+ results[0m for [38;5;68m"repogroup:goteam type:repo golang max:4"[0m in [38;5;2m37ms[0m
+[38;5;2mgithub.com/golang/build   [0m[38;5;239m ([0m[38;5;23mhttps://sourcegraph.com/github.com/golang/build[0m[38;5;239m)
+[0m[0m[38;5;2mgithub.com/golang/crypto  [0m[38;5;239m ([0m[38;5;23mhttps://sourcegraph.com/github.com/golang/crypto[0m[38;5;239m)
+[0m[0m[38;5;2mgithub.com/golang/net     [0m[38;5;239m ([0m[38;5;23mhttps://sourcegraph.com/github.com/golang/net[0m[38;5;239m)
+[0m[0m[38;5;2mgithub.com/golang/protobuf[0m[38;5;239m ([0m[38;5;23mhttps://sourcegraph.com/github.com/golang/protobuf[0m[38;5;239m)
+[0m[0m

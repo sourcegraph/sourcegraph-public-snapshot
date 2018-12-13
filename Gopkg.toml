@@ -48,3 +48,11 @@
 [[constraint]]
   name = "github.com/pkg/errors"
   version = "0.8.0"
+
+[[constraint]]
+  name = "github.com/russross/blackfriday"
+  version = "2.0.1"
+
+[[constraint]]
+  branch = "master"
+  name = "jaytaylor.com/html2text"
