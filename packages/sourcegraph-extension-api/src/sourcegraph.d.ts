@@ -397,7 +397,7 @@ declare module 'sourcegraph' {
     }
 
     export interface ProgressOptions {
-        title: string
+        title?: string
     }
 
     export interface Progress {
