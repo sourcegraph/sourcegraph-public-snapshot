@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs'
 import { MessageType } from '../api/client/services/notifications'
 import { ErrorLike } from '../util/errors'
 
@@ -17,4 +18,6 @@ export interface Notification {
 
     /** The source of the notification.  */
     source?: string
+
+    progress?: Observable<{ message?: string; percentage?: number }>
 }

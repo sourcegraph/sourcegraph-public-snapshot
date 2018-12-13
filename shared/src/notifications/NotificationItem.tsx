@@ -1,5 +1,8 @@
 import marked from 'marked'
 import * as React from 'react'
+import { Subject, Subscription } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+import { Progress } from 'sourcegraph'
 import { MessageType } from '../api/client/services/notifications'
 import { isErrorLike } from '../util/errors'
 import { Notification } from './notification'
@@ -10,17 +13,38 @@ interface Props {
     className?: string
 }
 
+interface State {
+    progress?: Progress
+}
+
 /**
  * A notification message displayed in a {@link module:./Notifications.Notifications} component.
  */
-export class NotificationItem extends React.PureComponent<Props> {
-    public render(): JSX.Element | null {
-        const markdownHTML = marked(
-            isErrorLike(this.props.notification.message)
-                ? this.props.notification.message.message
-                : this.props.notification.message,
-            { gfm: true, breaks: true, sanitize: true }
+export class NotificationItem extends React.PureComponent<Props, State> {
+    public state: State = {}
+    private componentUpdates = new Subject<Props>()
+    private subscription = new Subscription()
+    public componentDidMount(): void {
+        this.subscription.add(
+            this.componentUpdates
+                .pipe(switchMap(props => props.notification.progress || []))
+                .subscribe(progress => this.setState({ progress }))
         )
+    }
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
+    }
+    public componentWillUnmount(): void {
+        this.subscription.unsubscribe()
+    }
+    public render(): JSX.Element | null {
+        let message = isErrorLike(this.props.notification.message)
+            ? this.props.notification.message.message
+            : this.props.notification.message
+        if (this.state.progress) {
+            message += '  \n' + this.state.progress.message
+        }
+        const markdownHTML = marked(message, { gfm: true, breaks: true, sanitize: true })
         return (
             <div
                 className={`sourcegraph-notification-item alert alert-${alertClass(
@@ -39,6 +63,15 @@ export class NotificationItem extends React.PureComponent<Props> {
                 >
                     <span aria-hidden="true">&times;</span>
                 </button>
+                {this.state.progress && (
+                    <div className="w-100">
+                        <div
+                            className={`p-1 bg-${this.props.notification.type}`}
+                            // tslint:disable-next-line:jsx-ban-props
+                            style={{ width: this.state.progress.percentage + '%' }}
+                        />
+                    </div>
+                )}
             </div>
         )
     }

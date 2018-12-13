@@ -37,6 +37,23 @@ class ExtWindow implements sourcegraph.Window {
         return this.windowsProxy.$showInputBox(options)
     }
 
+    public async withProgress<R>(
+        options: sourcegraph.ProgressOptions,
+        task: (reporter: sourcegraph.ProgressReporter) => Promise<R>
+    ): Promise<R> {
+        const handle = this.windowsProxy.$startProgress(options)
+        const reporter = {
+            next: (progress: sourcegraph.Progress): void => {
+                this.windowsProxy.$updateProgress(handle, progress)
+            },
+        }
+        try {
+            return await task(reporter)
+        } finally {
+            this.windowsProxy.$updateProgress(handle, { percentage: 100 })
+        }
+    }
+
     public toJSON(): any {
         return { visibleViewComponents: this.visibleViewComponents, activeViewComponent: this.activeViewComponent }
     }

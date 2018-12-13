@@ -1,3 +1,4 @@
+import { pull } from 'lodash'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -32,6 +33,18 @@ export class Notifications extends React.PureComponent<Props, State> {
                 this.setState(prevState => ({
                     notifications: [notification, ...prevState.notifications.slice(0, Notifications.MAX_RETAIN - 1)],
                 }))
+                if (notification.progress) {
+                    // Remove once progress is finished
+                    this.subscriptions.add(
+                        notification.progress.subscribe(({ percentage }) => {
+                            if (percentage && percentage >= 100) {
+                                this.setState(prevState => ({
+                                    notifications: pull(prevState.notifications, notification),
+                                }))
+                            }
+                        })
+                    )
+                }
             })
         )
     }

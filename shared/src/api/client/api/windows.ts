@@ -18,6 +18,8 @@ export interface ClientWindowsAPI {
     $showNotification(message: string): void
     $showMessage(message: string): Promise<void>
     $showInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined>
+    $startProgress(options: sourcegraph.ProgressOptions): number
+    $updateProgress(handle: number, progress: sourcegraph.Progress): void
 }
 
 /** @internal */
@@ -40,7 +42,8 @@ export class ClientWindows implements ClientWindowsAPI {
          * Called when the client receives a window/showInput request and expected to return a promise that
          * resolves to the user's input.
          */
-        private showInput: (params: ShowInputParams) => Promise<string | null>
+        private showInput: (params: ShowInputParams) => Promise<string | null>,
+        private createProgressReporter: (options: sourcegraph.ProgressOptions) => sourcegraph.ProgressReporter
     ) {
         this.proxy = createProxyAndHandleRequests('windows', connection, this)
 
@@ -88,6 +91,24 @@ export class ClientWindows implements ClientWindowsAPI {
                 // external API.
                 v === null ? undefined : v
         )
+    }
+
+    private handles = 1
+    private progress = new Map<number, sourcegraph.ProgressReporter>()
+
+    public $startProgress(options: sourcegraph.ProgressOptions): number {
+        const handle = this.handles++
+        const progress = this.createProgressReporter(options)
+        this.progress.set(handle, progress)
+        return handle
+    }
+
+    public $updateProgress(handle: number, progress: sourcegraph.Progress): void {
+        const reporter = this.progress.get(handle)
+        if (!reporter) {
+            return
+        }
+        reporter.next(progress)
     }
 
     public unsubscribe(): void {

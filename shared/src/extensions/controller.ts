@@ -97,6 +97,11 @@ export function createController(context: PlatformContext): Controller {
     subscriptions.add(
         services.notifications.showMessages.subscribe(({ message, type }) => notifications.next({ message, type }))
     )
+    subscriptions.add(
+        services.notifications.progresses.subscribe(({ title, progress }) =>
+            notifications.next({ message: title, progress })
+        )
+    )
 
     function messageFromExtension(message: string): string {
         return `From extension:\n\n${message}`

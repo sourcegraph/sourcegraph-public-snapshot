@@ -396,6 +396,19 @@ declare module 'sourcegraph' {
         value?: string
     }
 
+    export interface ProgressOptions {
+        title: string
+    }
+
+    export interface Progress {
+        message?: string
+        percentage?: number
+    }
+
+    export interface ProgressReporter {
+        next(status: Progress): void
+    }
+
     /**
      * A window in the client application that is running the extension.
      */
@@ -418,6 +431,27 @@ declare module 'sourcegraph' {
          * @return A promise that resolves when the user dismisses the message.
          */
         showNotification(message: string): void
+
+        /**
+         * Show progress in the editor. Progress is shown while running the given callback
+         * and while the promise it returned isn't resolved nor rejected. The location at which
+         * progress should show (and other details) is defined via the passed [`ProgressOptions`](#ProgressOptions).
+         *
+         * @param task A callback returning a promise. Progress state can be reported with
+         * the provided [progress](#Progress)-object.
+         *
+         * To report discrete progress, use `increment` to indicate how much work has been completed. Each call with
+         * a `increment` value will be summed up and reflected as overall progress until 100% is reached (a value of
+         * e.g. `10` accounts for `10%` of work done).
+         * Note that currently only `ProgressLocation.Notification` is capable of showing discrete progress.
+         *
+         * To monitor if the operation has been cancelled by the user, use the provided [`CancellationToken`](#CancellationToken).
+         * Note that currently only `ProgressLocation.Notification` is supporting to show a cancel button to cancel the
+         * long running operation.
+         *
+         * @return The thenable the task-callback returned.
+         */
+        withProgress<R>(options: ProgressOptions, task: (reporter: ProgressReporter) => Promise<R>): Promise<R>
 
         /**
          * Show a modal message to the user that the user must dismiss before continuing.
