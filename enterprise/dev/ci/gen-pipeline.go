@@ -279,11 +279,10 @@ func main() {
 		// 	bk.ArtifactPaths("./puppeteer/*.png"))
 		// pipeline.AddWait()
 
-		// TODO(slimsag): re-enable prod deployment once safe.
 		// Deploy to prod
-		//pipeline.AddStep(":rocket:",
-		//	bk.Env("VERSION", version),
-		//	bk.Cmd("./dev/ci/deploy-prod.sh"))
+		pipeline.AddStep(":rocket:",
+			bk.Env("VERSION", version),
+			bk.Cmd("./dev/ci/deploy-prod.sh"))
 	}
 
 	switch {
