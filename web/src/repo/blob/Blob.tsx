@@ -31,7 +31,7 @@ import {
     toPositionOrRangeHash,
     toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
-import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
+import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
 import { lprToSelectionsZeroIndexed } from '../../util/url'
@@ -323,7 +323,12 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
                 // Only clear decorations if the model changed. If only the extensions changed, keep
                 // the old decorations until the new ones are available, to avoid UI jitter.
-                return merge(modelChanged ? [null] : [], getDecorations(model, this.props))
+                return merge(
+                    modelChanged ? [null] : [],
+                    this.props.extensionsController.services.textDocumentDecoration.getDecorations({
+                        uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
+                    })
+                )
             }),
             share()
         )

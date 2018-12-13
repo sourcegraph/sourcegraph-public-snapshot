@@ -1,11 +1,11 @@
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
-import { Location, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { Location } from '@sourcegraph/extension-api-types'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { AbsoluteRepoFile, parseRepoURI, toPrettyBlobURL } from '../../../shared/src/util/url'
+import { parseRepoURI, toPrettyBlobURL } from '../../../shared/src/util/url'
 import { toAbsoluteBlobURL } from '../util/url'
-import { LSPSelector, LSPTextDocumentPositionParams } from './lsp'
+import { LSPTextDocumentPositionParams } from './lsp'
 
 /**
  * Specifies an LSP mode.
@@ -44,7 +44,7 @@ export function getHover(
  * @param ctx the location
  * @return definitions of the symbol at the location
  */
-export function getDefinition(
+function getDefinition(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[] | null> {
@@ -89,60 +89,4 @@ export function getJumpURL(
             return toAbsoluteBlobURL(uri)
         })
     )
-}
-
-/**
- * Fetches references (in the same repository) to the symbol at the given location.
- *
- * @param ctx the location
- * @return references to the symbol at the location
- */
-export function getReferences(
-    ctx: LSPTextDocumentPositionParams & { includeDeclaration?: boolean },
-    { extensionsController }: ExtensionsControllerProps
-): Observable<Location[] | null> {
-    return extensionsController.services.textDocumentReferences.getLocations({
-        textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
-        position: {
-            character: ctx.position.character - 1,
-            line: ctx.position.line - 1,
-        },
-        context: {
-            includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
-        },
-    })
-}
-
-/**
- * Fetches implementations (in the same repository) of the symbol at the given location.
- *
- * @param ctx the location
- * @return implementations of the symbol at the location
- */
-export function getImplementations(
-    ctx: LSPTextDocumentPositionParams,
-    { extensionsController }: ExtensionsControllerProps
-): Observable<Location[] | null> {
-    return extensionsController.services.textDocumentImplementation.getLocations({
-        textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
-        position: {
-            character: ctx.position.character - 1,
-            line: ctx.position.line - 1,
-        },
-    })
-}
-
-/**
- * Fetches decorations for the given file.
- *
- * @param ctx the file
- * @return decorations
- */
-export function getDecorations(
-    ctx: AbsoluteRepoFile & LSPSelector,
-    { extensionsController }: ExtensionsControllerProps
-): Observable<TextDocumentDecoration[] | null> {
-    return extensionsController.services.textDocumentDecoration.getDecorations({
-        uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`,
-    })
 }
