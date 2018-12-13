@@ -2,18 +2,18 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 
 /**
- *  Returns the friendly display form of the repository path (e.g., removing "github.com/").
+ *  Returns the friendly display form of the repository name (e.g., removing "github.com/").
  */
-export function displayRepoPath(repoPath: string): string {
-    let parts = repoPath.split('/')
+export function displayRepoName(repoName: string): string {
+    let parts = repoName.split('/')
     if (parts.length >= 3 && parts[0].includes('.')) {
-        parts = parts.slice(1) // remove hostname from repo path (reduce visual noise)
+        parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
     }
     return parts.join('/')
 }
 
 /**
- * Splits the repository path into the dir and base components.
+ * Splits the repository name into the dir and base components.
  */
 export function splitPath(path: string): [string, string] {
     const components = path.split('/')
@@ -21,7 +21,7 @@ export function splitPath(path: string): [string, string] {
 }
 
 interface Props {
-    repoPath: string
+    repoName: string
     repoURL: string
     filePath: string
     fileURL: string
@@ -31,11 +31,11 @@ interface Props {
  * A link to a repository or a file within a repository, formatted as "repo" or "repo > file". Unless you
  * absolutely need breadcrumb-like behavior, use this instead of FilePathBreadcrumb.
  */
-export const RepoFileLink: React.FunctionComponent<Props> = ({ repoPath, repoURL, filePath, fileURL }) => {
+export const RepoFileLink: React.FunctionComponent<Props> = ({ repoName, repoURL, filePath, fileURL }) => {
     const [fileBase, fileName] = splitPath(filePath)
     return (
         <>
-            <Link to={repoURL}>{displayRepoPath(repoPath)}</Link> ›{' '}
+            <Link to={repoURL}>{displayRepoName(repoName)}</Link> ›{' '}
             <Link to={fileURL}>
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>

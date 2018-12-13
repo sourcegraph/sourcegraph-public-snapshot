@@ -179,7 +179,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         this.subscriptions.add(hoverifier)
 
         const resolveContext = () => ({
-            repoPath: this.props.repoPath,
+            repoName: this.props.repoName,
             rev: this.props.rev,
             commitID: this.props.commitID,
             filePath: this.props.filePath,
@@ -291,7 +291,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         const modelChanges: Observable<
             AbsoluteRepoFile & LSPSelector & Pick<BlobProps, 'content'>
         > = this.componentUpdates.pipe(
-            map(props => pick(props, 'repoPath', 'rev', 'commitID', 'filePath', 'mode', 'content')),
+            map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
         )
@@ -305,7 +305,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         {
                             type: 'textEditor' as 'textEditor',
                             item: {
-                                uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
+                                uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
                                 languageId: model.mode,
                                 text: model.content,
                             },
@@ -404,7 +404,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
-            repoPath: position.repoPath,
+            repoName: position.repoName,
             filePath: position.filePath,
             commitID: position.commitID,
             rev: position.rev,

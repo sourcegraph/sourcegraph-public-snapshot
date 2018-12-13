@@ -192,7 +192,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                                     <div key={i} className="scope-page__row">
                                                         <Link to={repo.url} className="scope-page__link">
                                                             <RepositoryIcon className="icon-inline scope-page__link-icon" />
-                                                            <RepoLink repoPath={repo.name} to={null} />
+                                                            <RepoLink repoName={repo.name} to={null} />
                                                         </Link>
                                                     </div>
                                                 ))}

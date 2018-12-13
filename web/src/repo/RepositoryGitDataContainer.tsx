@@ -5,7 +5,7 @@ import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 import { RepoQuestionIcon } from '../../../shared/src/components/icons'
 import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
-import { displayRepoPath } from '../../../shared/src/components/RepoFileLink'
+import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND, resolveRev } from './backend'
@@ -17,7 +17,7 @@ export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName
 }) => (
     <HeroPage
         icon={RepositoryIcon}
-        title={displayRepoPath(repoName)}
+        title={displayRepoName(repoName)}
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"
         detail={<code>{progress}</code>}
@@ -31,7 +31,7 @@ export const EmptyRepositoryPage: React.FunctionComponent = () => (
 
 interface Props {
     /** The repository. */
-    repoPath: string
+    repoName: string
 
     /** The fragment to render if the repository's Git data is accessible. */
     children: React.ReactNode
@@ -61,11 +61,11 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
         this.subscriptions.add(
             this.propsUpdates
                 .pipe(
-                    map(({ repoPath }) => repoPath),
+                    map(({ repoName }) => repoName),
                     distinctUntilChanged(),
                     tap(() => this.setState({ gitDataPresentOrError: undefined })),
-                    switchMap(repoPath =>
-                        defer(() => resolveRev({ repoPath })).pipe(
+                    switchMap(repoName =>
+                        defer(() => resolveRev({ repoName })).pipe(
                             // On a CloneInProgress error, retry after 1s
                             retryWhen(errors =>
                                 errors.pipe(
@@ -116,7 +116,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                 case ECLONEINPROGESS:
                     return (
                         <RepositoryCloningInProgressPage
-                            repoName={this.props.repoPath}
+                            repoName={this.props.repoName}
                             progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
                         />
                     )

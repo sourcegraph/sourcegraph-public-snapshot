@@ -1,8 +1,8 @@
 import { FileInfo } from '../code_intelligence'
 
-export interface PageInfo extends Pick<FileInfo, 'repoPath' | 'filePath' | 'rev'> {
+export interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
     project: string
-    repoName: string
+    repoSlug: string
 }
 
 const getFileInfoFromLink = (codeView: HTMLElement, linkSelector: string, fileInfoRegexp: RegExp) => {
@@ -23,7 +23,7 @@ const getFileInfoFromLink = (codeView: HTMLElement, linkSelector: string, fileIn
     }
 
     const project = pathMatch[1]
-    const repoName = pathMatch[2]
+    const repoSlug = pathMatch[2]
     const filePath = pathMatch[3]
 
     // Looks like 'refs/heads/<rev>'
@@ -37,16 +37,16 @@ const getFileInfoFromLink = (codeView: HTMLElement, linkSelector: string, fileIn
     const rev = atMatch ? atMatch[1] : at
 
     return {
-        repoPath: [host, project, repoName].join('/'),
+        repoName: [host, project, repoSlug].join('/'),
         filePath,
         rev,
         project,
-        repoName,
+        repoSlug,
     }
 }
 
 export const getFileInfoFromCodeView = (codeView: HTMLElement): PageInfo & Pick<FileInfo, 'commitID'> => {
-    const { repoPath, filePath, rev, project, repoName } = getFileInfoFromLink(
+    const { repoName, filePath, rev, project, repoSlug } = getFileInfoFromLink(
         codeView,
         'a.raw-view-link',
         // Looks like '/projects/<project>/repos/<repo name>/raw/<file path>'
@@ -61,12 +61,12 @@ export const getFileInfoFromCodeView = (codeView: HTMLElement): PageInfo & Pick<
     const commitID = commitLink.dataset.commitid!
 
     return {
-        repoPath,
+        repoName,
         filePath,
         rev,
         commitID,
         project,
-        repoName,
+        repoSlug,
     }
 }
 
@@ -88,7 +88,7 @@ const getFileInfoFromFilePathLink = (codeView: HTMLElement) => {
     }
 
     const project = pathMatch[1]
-    const repoName = pathMatch[2]
+    const repoSlug = pathMatch[2]
 
     const commitMatch = path.match(/\/commits\/(.*?)$/)
 
@@ -98,11 +98,11 @@ const getFileInfoFromFilePathLink = (codeView: HTMLElement) => {
     filePath = filePath.replace(/\?.*$/, '')
 
     return {
-        repoPath: [host, project, repoName].join('/'),
+        repoName: [host, project, repoSlug].join('/'),
         filePath,
         commitID,
         project,
-        repoName,
+        repoSlug,
     }
 }
 
@@ -112,10 +112,10 @@ export interface PRPageInfo extends PageInfo {
 }
 
 export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
-    let repoPath: string
+    let repoName: string
     let filePath: string
     let project: string
-    let repoName: string
+    let repoSlug: string
     let commitID: string | undefined
 
     try {
@@ -126,17 +126,17 @@ export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
             /\/projects\/(.*?)\/repos\/(.*?)\/browse\/(.*)$/
         )
 
-        repoPath = info.repoPath
+        repoName = info.repoName
         filePath = info.filePath
         project = info.project
-        repoName = info.repoName
+        repoSlug = info.repoSlug
     } catch (e) {
         const info = getFileInfoFromFilePathLink(codeView)
 
-        repoPath = info.repoPath
+        repoName = info.repoName
         filePath = info.filePath
         project = info.project
-        repoName = info.repoName
+        repoSlug = info.repoSlug
         commitID = info.commitID
     }
 
@@ -157,11 +157,11 @@ export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
     }
 
     return {
-        repoPath: repoPath!,
+        repoName: repoName!,
         filePath: filePath!,
         commitID: commitID!,
         prID: prIDMatch ? parseInt(prIDMatch[1], 10) : undefined,
         project: project!,
-        repoName: repoName!,
+        repoSlug: repoSlug!,
     }
 }
