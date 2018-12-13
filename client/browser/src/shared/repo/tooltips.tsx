@@ -1,36 +1,15 @@
-import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
+import { highlightBlock } from 'highlight.js/lib/highlight'
 import * as _ from 'lodash'
 import marked from 'marked'
 import { MarkupContent } from 'sourcegraph'
 import { Key } from 'ts-key-enum'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, parseBrowserRepoURL } from '.'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import '../../../../../shared/src/highlight/contributions'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { makeCloseIcon, makeSourcegraphIcon } from '../components/Icons'
 import { sourcegraphUrl } from '../util/context'
 import { toAbsoluteBlobURL } from '../util/url'
-
-registerLanguage('go', require('highlight.js/lib/languages/go'))
-registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
-registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))
-registerLanguage('java', require('highlight.js/lib/languages/java'))
-registerLanguage('python', require('highlight.js/lib/languages/python'))
-registerLanguage('php', require('highlight.js/lib/languages/php'))
-registerLanguage('bash', require('highlight.js/lib/languages/bash'))
-registerLanguage('clojure', require('highlight.js/lib/languages/clojure'))
-registerLanguage('cpp', require('highlight.js/lib/languages/cpp'))
-registerLanguage('cs', require('highlight.js/lib/languages/cs'))
-registerLanguage('css', require('highlight.js/lib/languages/css'))
-registerLanguage('dockerfile', require('highlight.js/lib/languages/dockerfile'))
-registerLanguage('elixir', require('highlight.js/lib/languages/elixir'))
-registerLanguage('haskell', require('highlight.js/lib/languages/haskell'))
-registerLanguage('html', require('highlight.js/lib/languages/xml'))
-registerLanguage('lua', require('highlight.js/lib/languages/lua'))
-registerLanguage('ocaml', require('highlight.js/lib/languages/ocaml'))
-registerLanguage('r', require('highlight.js/lib/languages/r'))
-registerLanguage('ruby', require('highlight.js/lib/languages/ruby'))
-registerLanguage('rust', require('highlight.js/lib/languages/rust'))
-registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
 let tooltip: HTMLElement
 let loadingTooltip: HTMLElement

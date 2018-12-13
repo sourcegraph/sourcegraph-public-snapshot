@@ -5,6 +5,7 @@
     "deprecation": {
       "severity": "warning"
     },
+    "import-blacklist": [true, "highlight.js"],
     "jsx-ban-props": false
   }
 }

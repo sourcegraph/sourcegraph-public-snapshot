@@ -3,7 +3,7 @@
   "compilerOptions": {
     "jsx": "react",
     "sourceRoot": "src",
-    "typeRoots": ["../node_modules/@types", "src/types"]
+    "typeRoots": ["src/types", "../node_modules/@types"]
   },
   "include": ["**/*"],
   "exclude": ["../node_modules"]
