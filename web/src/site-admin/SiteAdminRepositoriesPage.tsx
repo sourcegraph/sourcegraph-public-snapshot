@@ -141,14 +141,13 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
 }
 
 interface Props extends RouteComponentProps<any> {}
-interface State {}
 
 class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
 
 /**
  * A page displaying the repositories on this site.
  */
-export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State> {
+export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
     private static FILTERS: FilteredConnectionFilter[] = [
         {
             label: 'All',
@@ -193,10 +192,6 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
             args: { indexed: false },
         },
     ]
-
-    public state: State = {
-        addPublicRepositoryFormVisible: false,
-    }
 
     private repositoryUpdates = new Subject<void>()
 
