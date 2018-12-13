@@ -6,12 +6,13 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
-import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, fromEvent, merge, Observable, Subject, Subscribable, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -169,7 +170,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
             pushHistory: path => this.props.history.push(path),
-            fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
+            fetchHover: position =>
+                getHover(this.getLSPTextDocumentPositionParams(position), this.props) as Subscribable<HoverMerged>,
             fetchJumpURL: position => getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props),
             getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })

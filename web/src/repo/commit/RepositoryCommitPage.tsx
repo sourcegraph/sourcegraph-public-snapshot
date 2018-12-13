@@ -1,10 +1,11 @@
 import { createHoverifier, HoveredToken, Hoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
-import { merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { merge, Observable, of, Subject, Subscribable, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
@@ -118,7 +119,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
             pushHistory: path => this.props.history.push(path),
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            fetchHover: hoveredToken =>
+                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props) as Subscribable<HoverMerged>,
             fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })

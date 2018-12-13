@@ -1,11 +1,12 @@
 import { createHoverifier, HoveredToken, Hoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
-import { Subject, Subscription } from 'rxjs'
+import { Subject, Subscribable, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -111,7 +112,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
             pushHistory: path => this.props.history.push(path),
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            fetchHover: hoveredToken =>
+                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props) as Subscribable<HoverMerged>,
             fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })

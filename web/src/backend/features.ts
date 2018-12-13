@@ -1,7 +1,7 @@
-import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { Location } from '@sourcegraph/extension-api-types'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { HoverMerged } from '../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import {
     FileSpec,
@@ -22,8 +22,6 @@ export interface ModeSpec {
     mode: string
 }
 
-export { HoverMerged } // reexport to avoid needing to change all import sites - TODO(sqs): actually go change all them
-
 /**
  * Fetches hover information for the given location.
  *
@@ -34,15 +32,13 @@ export function getHover(
     ctx: RepoSpec & ResolvedRevSpec & FileSpec & PositionSpec,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<HoverMerged | null> {
-    return extensionsController.services.textDocumentHover
-        .getHover({
-            textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
-            position: {
-                character: ctx.position.character - 1,
-                line: ctx.position.line - 1,
-            },
-        })
-        .pipe(map(hover => hover as HoverMerged | null))
+    return extensionsController.services.textDocumentHover.getHover({
+        textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
+        position: {
+            character: ctx.position.character - 1,
+            line: ctx.position.line - 1,
+        },
+    })
 }
 
 /**
