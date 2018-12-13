@@ -101,7 +101,7 @@ const commentSnippetCodeView: CodeView = {
 }
 
 const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
-    if (elem.querySelector('.markdown-body')) {
+    if (elem.querySelector('.markdown-body:not(.comment-body)')) {
         return null
     }
 
