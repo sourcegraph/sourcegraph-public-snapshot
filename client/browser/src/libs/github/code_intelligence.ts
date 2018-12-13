@@ -156,7 +156,7 @@ export const githubCodeHost: CodeHost = {
     getCommandPaletteMount,
     getGlobalDebugMount,
     buildJumpURLLocation: (def: JumpURLLocation) => {
-        const rev = def.rev
+        const rev = def.rev || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
         const { repoName } = parseURL()
 
