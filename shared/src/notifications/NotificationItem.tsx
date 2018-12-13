@@ -1,7 +1,7 @@
 import marked from 'marked'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, scan, switchMap, tap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
 import { Progress } from 'sourcegraph'
 import { MessageType } from '../api/client/services/notifications'
 import { Notification } from './notification'
