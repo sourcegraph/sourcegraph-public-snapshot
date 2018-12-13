@@ -356,10 +356,6 @@ func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Conte
 	}
 
 	migrateOnce.Do(func() {
-		if dbconn.Global == nil {
-			// Skip migration in tests
-			return
-		}
 		// Run in a transaction because we are racing with other frontend replicas.
 		err := dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 			now := time.Now()
