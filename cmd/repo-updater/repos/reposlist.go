@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -887,35 +885,6 @@ func UpdateOnce(ctx context.Context, name api.RepoName, url string) {
 	repos.mu.Lock()
 	defer repos.mu.Unlock()
 	repos.update(string(name), url)
-}
-
-// GetExplicitlyConfiguredRepository reports information about a repository configured explicitly with "repos.list".
-func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-	if args.Repo == "" {
-		return nil, false, nil
-	}
-
-	repoNameLower := api.RepoName(strings.ToLower(string(args.Repo)))
-	for _, repo := range conf.Get().ReposList {
-		if api.RepoName(strings.ToLower(string(repo.Path))) == repoNameLower {
-			repoInfo := &protocol.RepoInfo{
-				Name:         api.RepoName(repo.Path),
-				ExternalRepo: nil,
-				VCS:          protocol.VCSInfo{URL: repo.Url},
-			}
-			if repo.Links != nil {
-				repoInfo.Links = &protocol.RepoLinks{
-					Root:   repo.Links.Repository,
-					Blob:   repo.Links.Blob,
-					Tree:   repo.Links.Tree,
-					Commit: repo.Links.Commit,
-				}
-			}
-			return repoInfo, true, nil
-		}
-	}
-
-	return nil, false, nil // not found
 }
 
 // QueueSnapshot represents the state of the various queues repo-updater
