@@ -13,7 +13,7 @@ import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands } from '../commands/commands'
 import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
-import { isErrorLike } from '../util/errors'
+import { asError, isErrorLike } from '../util/errors'
 import { ExtensionManifest } from './extensionManifest'
 
 export interface Controller extends Unsubscribable {
@@ -155,7 +155,7 @@ export function createController(context: PlatformContext): Controller {
         services,
         executeCommand: params =>
             services.commands.executeCommand(params).catch(err => {
-                notifications.next({ message: err, type: MessageType.Error, source: params.command })
+                notifications.next({ message: asError(err).message, type: MessageType.Error, source: params.command })
                 return Promise.reject(err)
             }),
         unsubscribe: () => subscriptions.unsubscribe(),

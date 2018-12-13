@@ -1,7 +1,7 @@
 import marked from 'marked'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
-import { catchError, scan, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, scan, switchMap, tap } from 'rxjs/operators'
 import { Progress } from 'sourcegraph'
 import { MessageType } from '../api/client/services/notifications'
 import { Notification } from './notification'
@@ -35,20 +35,28 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         this.subscription.add(
             this.componentUpdates
                 .pipe(
-                    switchMap(props =>
-                        from(props.notification.progress || []).pipe(
-                            // Merge new progress updates with previous
-                            scan<Progress, Required<Progress>>((current, update) => ({ ...current, ...update }), {
-                                percentage: 0,
-                                message: '',
-                            }),
+                    map(props => props.notification.progress),
+                    distinctUntilChanged(),
+                    switchMap(progress =>
+                        from(progress || []).pipe(
                             // Hide progress bar and update message if error occured
+                            // Merge new progress updates with previous
+                            scan<Progress, Required<Progress>>(
+                                (current, { message = current.message, percentage = current.percentage }) => ({
+                                    message,
+                                    percentage,
+                                }),
+                                {
+                                    percentage: 0,
+                                    message: '',
+                                }
+                            ),
                             catchError(() => [undefined])
                         )
                     )
                 )
                 .subscribe(progress => {
-                    this.setState(prevState => ({ progress: progress && { ...prevState.progress, ...progress } }))
+                    this.setState({ progress })
                 })
         )
         this.componentUpdates.next(this.props)
@@ -60,10 +68,9 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         this.subscription.unsubscribe()
     }
     public render(): JSX.Element | null {
-        let message = this.props.notification.message
-        if (this.state.progress) {
-            message += '  \n' + this.state.progress.message
-        }
+        const message = [this.props.notification.message, this.state.progress && this.state.progress.message]
+            .filter(Boolean)
+            .join('  \n')
         const markdownHTML = marked(message, { gfm: true, breaks: true, sanitize: true })
         const bootstrapClass = getBootstrapClass(this.props.notification.type)
         return (

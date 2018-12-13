@@ -104,7 +104,7 @@ export class NotificationsService {
     /** Messages from extensions requesting the user to select an action. */
     public readonly showMessageRequests = new Subject<ShowMessageRequest>()
     /** Messages from extensions requesting the user to select an action. */
-    public readonly progresses = new Subject<{ title: string; progress: Observable<Progress> }>()
+    public readonly progresses = new Subject<{ title?: string; progress: Observable<Progress> }>()
 
     /** Messages from extensions requesting text input from the user. */
     public readonly showInputs = new Subject<ShowInputRequest>()

@@ -7,7 +7,7 @@ import { MessageType } from '../api/client/services/notifications'
  */
 export interface Notification {
     /** The message of the notification. */
-    message: string
+    message?: string
 
     /**
      * The type of the message.
