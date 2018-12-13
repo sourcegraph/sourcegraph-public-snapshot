@@ -34,8 +34,9 @@ func init() {
 		t := time.NewTicker(configWatchInterval)
 		var lastGitHubConf []*schema.GitHubConnection
 		for range t.C {
-			githubConf := conf.Get().Github
-			if reflect.DeepEqual(githubConf, lastGitHubConf) {
+			githubConf, err := conf.GitHubConfigs(context.Background())
+			if err != nil {
+				log15.Error("unable to fetch GitHub configs", "err", err)
 				continue
 			}
 
@@ -57,6 +58,9 @@ func init() {
 				})
 			}
 
+			if reflect.DeepEqual(githubConf, lastGitHubConf) {
+				continue
+			}
 			lastGitHubConf = githubConf
 
 			var conns []*githubConnection

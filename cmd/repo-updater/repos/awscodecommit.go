@@ -38,7 +38,12 @@ func init() {
 		t := time.NewTicker(configWatchInterval)
 		var lastConfig []*schema.AWSCodeCommitConnection
 		for range t.C {
-			config := conf.Get().AwsCodeCommit
+			config, err := conf.AWSCodeCommitConfigs(context.Background())
+			if err != nil {
+				log15.Error("unable to fetch AWS CodeCommit configs", "err", err)
+				continue
+			}
+
 			if reflect.DeepEqual(config, lastConfig) {
 				continue
 			}

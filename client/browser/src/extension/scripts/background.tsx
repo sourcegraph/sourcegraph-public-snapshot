@@ -4,6 +4,7 @@ import '../../config/polyfill'
 
 import { without } from 'lodash'
 import { noop } from 'rxjs'
+import { ajax } from 'rxjs/ajax'
 import DPT from 'webext-domain-permission-toggle'
 import ExtensionHostWorker from 'worker-loader?inline!../../../../../shared/src/api/extension/main.worker.ts'
 import * as browserAction from '../../browser/browserAction'
@@ -282,10 +283,30 @@ runtime.onMessage((message, _, cb) => {
         case 'openOptionsPage':
             runtime.openOptionsPage()
             return true
+        case 'createBlobURL':
+            createBlobURLForBundle(message.payload! as string)
+                .then(url => {
+                    if (cb) {
+                        cb(url)
+                    }
+                })
+                .catch(err => {
+                    throw new Error(`Unable to create blob url for bundle ${message.payload} error: ${err}`)
+                })
+            return true
     }
 
     return
 })
+
+async function createBlobURLForBundle(bundleURL: string): Promise<string> {
+    const req = await ajax({
+        url: bundleURL,
+        crossDomain: true,
+        responseType: 'blob',
+    }).toPromise()
+    return window.URL.createObjectURL(req.response)
+}
 
 function requestPermissionsForEnterpriseUrls(urls: string[], cb: (res?: any) => void): void {
     storage.getSync(items => {

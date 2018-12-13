@@ -101,7 +101,7 @@ describe('getHover', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
-                        cold<ProvideTextDocumentHoverSignature[]>('-a----|', {
+                        cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
                             a: [
                                 () =>
                                     of({
@@ -117,14 +117,7 @@ describe('getHover', () => {
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-(ia)-|', {
-                    // TODO: We don't actually *want* this "i" emission, but it is tricky to skip it in getHover
-                    // (without regressing such that getHover's returned observable waits to emit for the slowest
-                    // hover provider to emit its first result).
-                    i: {
-                        contents: [{ value: 'c1', kind: MarkupKind.PlainText }],
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                    },
+                ).toBe('-a-|', {
                     a: {
                         contents: [
                             { value: 'c1', kind: MarkupKind.PlainText },

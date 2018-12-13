@@ -1,5 +1,5 @@
+import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
-import * as plain from '../../protocol/plainTypes'
 import { illegalArgument } from './errors'
 import { Position } from './position'
 
@@ -142,7 +142,7 @@ export class Range implements sourcegraph.Range {
         return { start: this._start.toJSON(), end: this._end.toJSON() }
     }
 
-    public toPlain(): plain.Range {
+    public toPlain(): clientType.Range {
         return {
             start: { line: this._start.line, character: this._start.character },
             end: { line: this._end.line, character: this._end.character },

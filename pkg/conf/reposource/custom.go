@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -22,7 +21,7 @@ var (
 )
 
 func init() {
-	conf.ContributeValidator(func(c schema.SiteConfiguration) (problems []string) {
+	conf.ContributeValidator(func(c conf.Unified) (problems []string) {
 		for _, c := range conf.Get().GitCloneURLToRepositoryName {
 			if _, err := regexp.Compile(c.From); err != nil {
 				problems = append(problems, fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From))
@@ -60,9 +59,9 @@ type cloneURLResolver struct {
 	to   string
 }
 
-// customCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
+// CustomCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
-func customCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
+func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
 	<-cloneURLResolversReady
 	for _, r := range cloneURLResolvers.Load().([]*cloneURLResolver) {
 		if name := mapString(r.from, cloneURL, r.to); name != "" {

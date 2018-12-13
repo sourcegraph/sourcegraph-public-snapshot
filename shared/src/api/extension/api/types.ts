@@ -1,23 +1,23 @@
+import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
-import * as plain from '../../protocol/plainTypes'
 import { Position } from '../types/position'
 import { Range } from '../types/range'
 
 /**
- * Converts from a plain object {@link plain.Position} to an instance of {@link Position}.
+ * Converts from a plain object {@link clientType.Position} to an instance of {@link Position}.
  *
  * @internal
  */
-export function toPosition(position: plain.Position): Position {
+export function toPosition(position: clientType.Position): Position {
     return new Position(position.line, position.character)
 }
 
 /**
- * Converts from an instance of {@link Location} to the plain object {@link plain.Location}.
+ * Converts from an instance of {@link Location} to the plain object {@link clientType.Location}.
  *
  * @internal
  */
-export function fromLocation(location: sourcegraph.Location): plain.Location {
+export function fromLocation(location: sourcegraph.Location): clientType.Location {
     return {
         uri: location.uri.toString(),
         range: fromRange(location.range),
@@ -25,11 +25,11 @@ export function fromLocation(location: sourcegraph.Location): plain.Location {
 }
 
 /**
- * Converts from an instance of {@link Hover} to the plain object {@link plain.Hover}.
+ * Converts from an instance of {@link Hover} to the plain object {@link clientType.Hover}.
  *
  * @internal
  */
-export function fromHover(hover: sourcegraph.Hover): plain.Hover {
+export function fromHover(hover: sourcegraph.Hover): clientType.Hover {
     return {
         contents: hover.contents,
         __backcompatContents: hover.__backcompatContents, // tslint:disable-line deprecation
@@ -38,11 +38,11 @@ export function fromHover(hover: sourcegraph.Hover): plain.Hover {
 }
 
 /**
- * Converts from an instance of {@link Range} to the plain object {@link plain.Range}.
+ * Converts from an instance of {@link Range} to the plain object {@link clientType.Range}.
  *
  * @internal
  */
-export function fromRange(range: Range | sourcegraph.Range | undefined): plain.Range | undefined {
+export function fromRange(range: Range | sourcegraph.Range | undefined): clientType.Range | undefined {
     if (!range) {
         return undefined
     }

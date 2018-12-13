@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
-import { NavLink } from 'react-router-dom'
 import { parseHash } from '../util/url'
+import { Link } from './Link'
 
 /**
  * Describes a tab.
@@ -286,7 +286,7 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
     }
 
     private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
-        <NavLink
+        <Link
             className={className}
             to={TabsWithURLViewStatePersistence.urlForTabID(this.props.location, tab.id)}
             // tslint:disable-next-line:jsx-no-lambda
@@ -297,6 +297,6 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
             }}
         >
             {tab.label}
-        </NavLink>
+        </Link>
     )
 }

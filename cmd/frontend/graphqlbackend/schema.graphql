@@ -291,6 +291,10 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateSiteConfiguration(
+        # The last ID of the site configuration that is known by the client, to
+        # prevent race conditions. An error will be returned if someone else
+        # has already written a new update.
+        lastID: Int!
         # A JSON object containing the entire site configuration. The previous site configuration will be replaced
         # with this new value.
         input: String!
@@ -317,6 +321,9 @@ type Mutation {
     requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
+    # Clears the management console plaintext password forever. Only site
+    # admins can perform this action.
+    clearManagementConsolePlaintextPassword: EmptyResponse
     # Mutations that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -692,10 +699,6 @@ type Query {
         indexed: Boolean = true
         # Include repositories that do not have a text search index.
         notIndexed: Boolean = true
-        # Filter for repositories that have been indexed for cross-repository code intelligence.
-        ciIndexed: Boolean = false
-        # Filter for repositories that have not been indexed for cross-repository code intelligence.
-        notCIIndexed: Boolean = false
         # Sort field.
         orderBy: RepositoryOrderBy = REPOSITORY_NAME
         # Sort direction.
@@ -769,6 +772,8 @@ type Query {
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
+    # EXPERIMENTAL: Syntax highlights a code string.
+    highlightCode(code: String!, fuzzyLanguage: String!, disableTimeout: Boolean!, isLightTheme: Boolean!): String!
     # Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
     # be a site (which has global settings), an organization, or a user.
     settingsSubject(id: ID!): SettingsSubject
@@ -837,6 +842,42 @@ type Search {
 
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository
+
+# An object representing a markdown string.
+type Markdown {
+    # The raw markdown string.
+    text: String!
+    # HTML for the rendered markdown string, or null if there is no HTML representation provided.
+    # If specified, clients should render this directly.
+    html: String!
+}
+
+# A search result. Every type of search result, except FileMatch, must implement this interface.
+interface GenericSearchResultInterface {
+    # URL to an icon that is displayed with every search result.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string that is rendered less prominently.
+    detail: Markdown!
+    # A list of matches in this search result.
+    matches: [SearchResultMatch!]!
+}
+
+# A match in a search result. Matches make up the body content of a search result.
+type SearchResultMatch {
+    # URL for the individual result match.
+    url: String!
+    # A markdown string containing the preview contents of the result match.
+    body: Markdown!
+    # A list of highlights that specify locations of matches of the query in the body. Each highlight is
+    # a line number, character offset, and length. Currently, highlights are only displayed on match bodies
+    # that are code blocks. If the result body is a code block, exclude the markdown code fence lines in
+    # the line and character count. Leave as an empty list if no highlights are available.
+    highlights: [Highlight!]!
+}
 
 # Search results.
 type SearchResults {
@@ -969,7 +1010,17 @@ type Diff {
 }
 
 # A search result that is a Git commit.
-type CommitSearchResult {
+type CommitSearchResult implements GenericSearchResultInterface {
+    # Base64 data uri to an icon.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
+    # The result previews of the result.
+    matches: [SearchResultMatch!]!
     # The commit that matched the search query.
     commit: GitCommit!
     # The ref names of the commit.
@@ -1006,40 +1057,6 @@ type Highlight {
     character: Int!
     # The length of the highlight, in characters (on the same line).
     length: Int!
-}
-
-# Ref fields.
-type RefFields {
-    # The ref location.
-    refLocation: RefLocation
-    # The URI.
-    uri: URI
-}
-
-# A URI.
-type URI {
-    # The host.
-    host: String!
-    # The fragment.
-    fragment: String!
-    # The path.
-    path: String!
-    # The query.
-    query: String!
-    # The scheme.
-    scheme: String!
-}
-
-# A ref location.
-type RefLocation {
-    # The starting line number.
-    startLineNumber: Int!
-    # The starting column.
-    startColumn: Int!
-    # The ending line number.
-    endLineNumber: Int!
-    # The ending column.
-    endColumn: Int!
 }
 
 # A list of external services.
@@ -1095,7 +1112,7 @@ type RepositoryConnection {
 }
 
 # A repository is a Git source control repository that is mirrored from some origin code host.
-type Repository implements Node {
+type Repository implements Node & GenericSearchResultInterface {
     # The repository's unique ID.
     id: ID!
     # The repository's name, as a path with one or more components. It conventionally consists of
@@ -1140,8 +1157,6 @@ type Repository implements Node {
     externalRepository: ExternalRepository
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
-    # The commit that was last indexed for cross-references, if any.
-    lastIndexedRevOrLatest: GitCommit
     # Information about the text search index for this repository, or null if text search indexing
     # is not enabled or supported for this repository.
     textSearchIndex: RepositoryTextSearchIndex
@@ -1204,6 +1219,14 @@ type Repository implements Node {
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
+    # Base64 data uri to an icon.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # A markdown string of that is rendered less prominently.
+    detail: Markdown!
+    # The result previews of the result.
+    matches: [SearchResultMatch!]!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -1639,7 +1662,7 @@ type GitRevisionRange {
 
 # A Phabricator repository.
 type PhabricatorRepo {
-    # The canonical repo path (e.g. "github.com/gorilla/mux").
+    # The canonical repo name (e.g. "github.com/gorilla/mux").
     name: String!
     # An alias for name.
     uri: String! @deprecated(reason: "use name instead")
@@ -1898,8 +1921,6 @@ interface File2 {
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Returns dependency references for the file.
-    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Symbols defined in this file.
     symbols(
         # Returns the first n symbols from the list.
@@ -1954,8 +1975,6 @@ type GitBlob implements TreeEntry & File2 {
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Returns dependency references for the blob.
-    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # Symbols defined in this blob.
@@ -2014,48 +2033,6 @@ type LineMatch {
     offsetAndLengths: [[Int!]!]!
     # Whether or not the limit was hit.
     limitHit: Boolean!
-}
-
-# Dependency references.
-type DependencyReferences {
-    # The dependency reference data.
-    dependencyReferenceData: DependencyReferencesData!
-    # The repository data.
-    repoData: RepoDataMap!
-}
-
-# A repository data map.
-type RepoDataMap {
-    # The repositories.
-    repos: [Repository!]!
-    # The repository IDs.
-    repoIds: [Int!]!
-}
-
-# Dependency references data.
-type DependencyReferencesData {
-    # The references.
-    references: [DependencyReference!]!
-    # The location.
-    location: DepLocation!
-}
-
-# A dependency reference.
-type DependencyReference {
-    # The dependency data.
-    dependencyData: String!
-    # The repository ID.
-    repoId: Int!
-    # The hints.
-    hints: String!
-}
-
-# A dependency location.
-type DepLocation {
-    # The location.
-    location: String!
-    # The symbol.
-    symbol: String!
 }
 
 # A hunk.
@@ -2733,10 +2710,26 @@ type Site implements SettingsSubject {
         # Months of history.
         months: Int
     ): SiteUsageStatistics!
+    # Information about this site's management console.
+    #
+    # Only site admins may retrieve this information.
+    managementConsoleState: ManagementConsoleState!
+}
+
+# Information about this site's management console.
+#
+# Only site admins may retrieve this information.
+type ManagementConsoleState {
+    # The plaintext password of the management console, which is automatically
+    # generated. This can only be retrieved until the admin clears it, after
+    # which it is impossible to retrieve.
+    plaintextPassword: String
 }
 
 # The configuration for a site.
 type SiteConfiguration {
+    # The unique identifier of this site configuration version.
+    id: Int!
     # The effective configuration JSON.
     effectiveContents: String!
     # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.

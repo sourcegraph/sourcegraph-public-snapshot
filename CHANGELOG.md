@@ -11,7 +11,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Repositories can now be queried by a git clone URL through the GraphQL API.
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
-- Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`.
+- Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`. By default, GitHub identities must be linked to an existing Sourcegraph user account. To enable new account creation via GitHub, use the `allowSignup` option in the `GitHubConnection` config.
 - Authentication via GitLab is now supported. To enable, add an item to the `auth.providers` list with `type: "gitlab"`.
 - GitHub repository permissions are supported if authentication via GitHub is enabled. See the
   documentation for the `authorization` field of the `GitHubConnection` configuration.
@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Code host configuration has moved out of the site config JSON into the "External services" area of the site admin web UI. Sourcegraph instances will automatically perform a one time migration of existing data in the site config JSON. After the migration these keys can be safely deleted from the site config JSON: `awsCodeCommit`, `bitbucketServer`, `github`, `gitlab`, `gitolite`, and `phabricator`.
 - Site and user usage statistics are now visible to all users. Previously only site admins (and users, for their own usage statistics) could view this information. The information consists of aggregate counts of actions such as searches, page views, etc.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
 - The `appURL` site configuration option was renamed to `externalURL`.
@@ -38,6 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
 - Fixed number formatting issues on site admin Overview and Survey Response pages.
 - Fixed resolving of git clone URLs with `git+` prefix through the GraphQL API
+- Fixed an issue where the graphql Repositories endpoint would order by a field which was not indexed. Times on Sourcegraph.com went from 10s to 200ms.
 
 ### Removed
 

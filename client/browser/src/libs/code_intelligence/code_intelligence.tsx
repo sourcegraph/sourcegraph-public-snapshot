@@ -15,7 +15,7 @@ import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
-import { animationFrameScheduler, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
 import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
@@ -32,13 +32,13 @@ import {
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toRootURI, toURIWithPath } from '../../shared/repo'
-import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews, getContentOfCodeView } from './code_views'
-import { applyDecoration, initializeExtensions } from './extensions'
+import { applyDecorations, initializeExtensions } from './extensions'
 
 /**
  * Defines a type of code view a given code host can have. It tells us how to
@@ -158,10 +158,10 @@ export interface CodeHost {
 
 export interface FileInfo {
     /**
-     * The path for the repo the file belongs to. If a `baseRepoPath` is provided, this value
-     * is treated as the head repo path.
+     * The path for the repo the file belongs to. If a `baseRepoName` is provided, this value
+     * is treated as the head repo name.
      */
-    repoPath: string
+    repoName: string
     /**
      * The path for the file path for a given `codeView`. If a `baseFilePath` is provided, this value
      * is treated as the head file path.
@@ -177,10 +177,10 @@ export interface FileInfo {
      */
     rev?: string
     /**
-     * The repo bath for the BASE side of a diff. This is useful for Phabricator
+     * The repo name for the BASE side of a diff. This is useful for Phabricator
      * staging areas since they are separate repos.
      */
-    baseRepoPath?: string
+    baseRepoName?: string
     /**
      * The base file path.
      */
@@ -259,7 +259,6 @@ function initCodeIntelligence(
                 .pipe(map(hover => (hover ? (hover as HoverMerged) : hover))),
         fetchJumpURL,
         getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
-        logTelemetryEvent: () => eventLogger.logCodeIntelligenceEvent(),
     })
 
     const Link: LinkComponent = ({ to, children, ...rest }) => (
@@ -346,7 +345,6 @@ function initCodeIntelligence(
                       <HoverOverlay
                           {...hoverOverlayProps}
                           linkComponent={Link}
-                          logTelemetryEvent={this.log}
                           hoverRef={nextOverlayElement}
                           onGoToDefinitionClick={nextGoToDefinitionClick}
                           onCloseButtonClick={nextCloseButtonClick}
@@ -355,7 +353,6 @@ function initCodeIntelligence(
                   )
                 : null
         }
-        private log = () => eventLogger.logCodeIntelligenceEvent()
         private getHoverOverlayProps(): HoverState['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined
@@ -466,12 +463,12 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         const roots: Model['roots'] = [{ uri: toRootURI(info) }]
 
                         // When codeView is a diff, add BASE too.
-                        if (baseContent! && info.baseRepoPath && info.baseCommitID && info.baseFilePath) {
+                        if (baseContent! && info.baseRepoName && info.baseCommitID && info.baseFilePath) {
                             visibleViewComponents.push({
                                 type: 'textEditor',
                                 item: {
                                     uri: toURIWithPath({
-                                        repoPath: info.baseRepoPath,
+                                        repoName: info.baseRepoName,
                                         commitID: info.baseCommitID,
                                         filePath: info.baseFilePath,
                                     }),
@@ -487,34 +484,18 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                             })
                             roots.push({
                                 uri: toRootURI({
-                                    repoPath: info.baseRepoPath,
+                                    repoName: info.baseRepoName,
                                     commitID: info.baseCommitID,
                                 }),
                             })
                         }
 
+                        let decoratedLines: number[] = []
                         if (extensionsController && !info.baseCommitID) {
-                            let oldDecorations: Unsubscribable[] = []
-
                             extensionsController.services.textDocumentDecoration
                                 .getDecorations(toTextDocumentIdentifier(info))
                                 .subscribe(decorations => {
-                                    for (const old of oldDecorations) {
-                                        old.unsubscribe()
-                                    }
-                                    oldDecorations = []
-                                    for (const decoration of decorations || []) {
-                                        try {
-                                            oldDecorations.push(
-                                                applyDecoration(dom, {
-                                                    codeView,
-                                                    decoration,
-                                                })
-                                            )
-                                        } catch (e) {
-                                            console.warn(e)
-                                        }
-                                    }
+                                    decoratedLines = applyDecorations(dom, codeView, decorations || [], decoratedLines)
                                 })
                         }
 
@@ -524,7 +505,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
                         part,
                     }) => ({
-                        repoPath: part === 'base' ? info.baseRepoPath || info.repoPath : info.repoPath,
+                        repoName: part === 'base' ? info.baseRepoName || info.repoName : info.repoName,
                         commitID: part === 'base' ? info.baseCommitID! : info.commitID,
                         filePath: part === 'base' ? info.baseFilePath || info.filePath : info.filePath,
                         rev: part === 'base' ? info.baseRev || info.baseCommitID! : info.rev || info.commitID,

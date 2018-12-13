@@ -1,9 +1,10 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import React from 'react'
-import { combineLatest, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableViewContainer } from '../../protocol'
-import * as plain from '../../protocol/plainTypes'
 import { Entry, FeatureProviderRegistry } from './registry'
 
 export interface ViewProviderRegistrationOptions {
@@ -15,7 +16,7 @@ export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'tit
     /**
      * The location provider whose results to render in the panel view.
      */
-    locationProvider?: Observable<plain.Location[] | null>
+    locationProvider?: Observable<Location[] | null>
 
     /**
      * The React element to render in the panel view.
@@ -77,27 +78,23 @@ export function getViews(
     container: ContributableViewContainer
 ): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[]> {
     return entries.pipe(
-        switchMap(
-            entries =>
-                entries && entries.length > 0
-                    ? combineLatest(
-                          entries.filter(e => e.registrationOptions.container === container).map(entry =>
-                              addRegistrationOptions(entry).pipe(
-                                  catchError(err => {
-                                      console.error(err)
-                                      return [null]
-                                  })
-                              )
-                          )
-                      ).pipe(
-                          map(entries =>
-                              entries.filter(
-                                  (result): result is PanelViewWithComponent & ViewProviderRegistrationOptions =>
-                                      result !== null
-                              )
-                          )
-                      )
-                    : [[]]
+        switchMap(entries =>
+            combineLatestOrDefault(
+                entries.filter(e => e.registrationOptions.container === container).map(entry =>
+                    addRegistrationOptions(entry).pipe(
+                        catchError(err => {
+                            console.error(err)
+                            return [null]
+                        })
+                    )
+                )
+            ).pipe(
+                map(entries =>
+                    entries.filter(
+                        (result): result is PanelViewWithComponent & ViewProviderRegistrationOptions => result !== null
+                    )
+                )
+            )
         )
     )
 }

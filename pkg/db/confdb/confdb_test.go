@@ -49,6 +49,7 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 	type output struct {
 		ID       int32
 		contents string
+		err      error
 	}
 
 	type pair struct {
@@ -123,6 +124,7 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 					output{
 						ID:       2,
 						contents: `"This is the first one."`,
+						err:      ErrNewerEdit,
 					},
 				},
 			},
@@ -156,6 +158,9 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 			for _, p := range test.sequence {
 				output, err := CriticalCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
 				if err != nil {
+					if err == p.expected.err {
+						continue
+					}
 					t.Fatal(err)
 				}
 

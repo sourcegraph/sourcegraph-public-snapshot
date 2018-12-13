@@ -31,8 +31,9 @@ func init() {
 		t := time.NewTicker(configWatchInterval)
 		var lastConfig []*schema.GitLabConnection
 		for range t.C {
-			gitlabConf := conf.Get().Gitlab
-			if reflect.DeepEqual(gitlabConf, lastConfig) {
+			gitlabConf, err := conf.GitLabConfigs(context.Background())
+			if err != nil {
+				log15.Error("unable to fetch Gitlab configs", "err", err)
 				continue
 			}
 
@@ -54,6 +55,9 @@ func init() {
 				})
 			}
 
+			if reflect.DeepEqual(gitlabConf, lastConfig) {
+				continue
+			}
 			lastConfig = gitlabConf
 
 			var conns []*gitlabConnection

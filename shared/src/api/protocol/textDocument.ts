@@ -1,6 +1,6 @@
+import { Position } from '@sourcegraph/extension-api-types'
 import { DocumentSelector } from 'sourcegraph'
 import { TextDocumentIdentifier } from '../client/types/textDocument'
-import { Position } from './plainTypes'
 
 /**
  * A parameter literal used in requests to pass a text document and a position inside that

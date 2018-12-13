@@ -6,12 +6,12 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getTokenAtPosition } from '@sourcegraph/codeintellify/lib/token_position'
+import { Position } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
-import { Position } from '../../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
@@ -83,7 +83,7 @@ const domFunctions = {
     },
 }
 
-const REPO_PATH = 'github.com/gorilla/mux'
+const REPO_NAME = 'github.com/gorilla/mux'
 const COMMIT_ID = '9e1f5955c0d22b55d9e20d6faa28589f83b2faca'
 const REV = undefined
 const FILE_PATH = 'mux.go'
@@ -159,7 +159,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
             hoverifier.hoverify({
                 positionEvents,
                 resolveContext: () => ({
-                    repoPath: REPO_PATH,
+                    repoName: REPO_NAME,
                     commitID: COMMIT_ID,
                     rev: REV || '',
                     filePath: FILE_PATH,
@@ -191,7 +191,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     public componentDidMount(): void {
         // Fetch repository revision.
         fetchBlob({
-            repoPath: REPO_PATH,
+            repoName: REPO_NAME,
             commitID: COMMIT_ID,
             filePath: FILE_PATH,
             isLightTheme: false,
@@ -234,7 +234,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
     ): LSPTextDocumentPositionParams {
         return {
-            repoPath: position.repoPath,
+            repoName: position.repoName,
             filePath: position.filePath,
             commitID: position.commitID,
             rev: position.rev,

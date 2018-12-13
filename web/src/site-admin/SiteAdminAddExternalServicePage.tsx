@@ -8,6 +8,7 @@ import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { ALL_EXTERNAL_SERVICES } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
 interface Props {
@@ -37,7 +38,17 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     public state: State = {
         loading: false,
         input: {
-            kind: GQL.ExternalServiceKind.GITHUB,
+            kind: (() => {
+                const params = new URLSearchParams(this.props.history.location.search)
+                const kind = params.get('kind')
+                if (kind) {
+                    const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind.toUpperCase())
+                    if (service) {
+                        return service.kind
+                    }
+                }
+                return GQL.ExternalServiceKind.GITHUB
+            })(),
             displayName: '',
             config: defaultConfig,
         },

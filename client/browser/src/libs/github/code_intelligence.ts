@@ -100,7 +100,11 @@ const commentSnippetCodeView: CodeView = {
     isDiff: false,
 }
 
-const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector => {
+const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
+    if (elem.querySelector('.markdown-body:not(.comment-body)')) {
+        return null
+    }
+
     const files = document.getElementsByClassName('file')
     const { filePath } = parseURL()
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
@@ -154,9 +158,9 @@ export const githubCodeHost: CodeHost = {
     buildJumpURLLocation: (def: JumpURLLocation) => {
         const rev = def.rev
         // If we're provided options, we can make the j2d URL more specific.
-        const { repoPath } = parseURL()
+        const { repoName } = parseURL()
 
-        const sameRepo = repoPath === def.repoPath
+        const sameRepo = repoName === def.repoName
         // Stay on same page in PR if possible.
         if (sameRepo && def.part) {
             const containers = getFileContainers()
@@ -174,7 +178,7 @@ export const githubCodeHost: CodeHost = {
             }
         }
 
-        return `https://${def.repoPath}/blob/${rev}/${def.filePath}#L${def.position.line}${
+        return `https://${def.repoName}/blob/${rev}/${def.filePath}#L${def.position.line}${
             def.position.character ? ':' + def.position.character : ''
         }`
     },

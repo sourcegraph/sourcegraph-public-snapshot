@@ -1,14 +1,14 @@
+import { Position, Range } from '@sourcegraph/extension-api-types'
 import { upperFirst } from 'lodash'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { Position, Range } from '../../../../shared/src/api/protocol/plainTypes'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
+import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { ActionItem } from '../../components/ActionItem'
 import { fetchFileExternalLinks } from '../backend'
 
 interface Props {
@@ -51,7 +51,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                         }
                         return merge(
                             of({ fileExternalLinksOrError: undefined }),
-                            fetchFileExternalLinks({ repoPath: repo.name, rev, filePath }).pipe(
+                            fetchFileExternalLinks({ repoName: repo.name, rev, filePath }).pipe(
                                 catchError(err => [asError(err)]),
                                 map(c => ({ fileExternalLinksOrError: c }))
                             )
@@ -128,9 +128,9 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         }
 
         return (
-            <ActionItem to={url} target="_self" data-tooltip={`View on ${displayName}`}>
+            <LinkOrButton to={url} target="_self" data-tooltip={`View on ${displayName}`}>
                 <Icon className="icon-inline" />
-            </ActionItem>
+            </LinkOrButton>
         )
     }
 }

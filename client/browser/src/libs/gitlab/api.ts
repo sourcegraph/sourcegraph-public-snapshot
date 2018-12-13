@@ -31,10 +31,10 @@ interface DiffVersionsResponse {
     base_commit_sha: string
 }
 
-type GetBaseCommitIDInput = Pick<GitLabDiffInfo, 'owner' | 'repoName' | 'mergeRequestID' | 'diffID'>
+type GetBaseCommitIDInput = Pick<GitLabDiffInfo, 'owner' | 'projectName' | 'mergeRequestID' | 'diffID'>
 
-const buildURL = (owner: string, repoName: string, path: string) =>
-    `${window.location.origin}/api/v4/projects/${encodeURIComponent(owner)}%2f${repoName}${path}`
+const buildURL = (owner: string, projectName: string, path: string) =>
+    `${window.location.origin}/api/v4/projects/${encodeURIComponent(owner)}%2f${projectName}${path}`
 
 const get = <T>(url: string): Observable<T> => ajax.get(url).pipe(map(({ response }) => response as T))
 
@@ -42,8 +42,8 @@ const get = <T>(url: string): Observable<T> => ajax.get(url).pipe(map(({ respons
  * Get the base commit ID for a merge request.
  */
 export const getBaseCommitIDForMergeRequest: (info: GetBaseCommitIDInput) => Observable<string> = memoizeObservable(
-    ({ owner, repoName, mergeRequestID, diffID }: GetBaseCommitIDInput) => {
-        const mrURL = buildURL(owner, repoName, `/merge_requests/${mergeRequestID}`)
+    ({ owner, projectName, mergeRequestID, diffID }: GetBaseCommitIDInput) => {
+        const mrURL = buildURL(owner, projectName, `/merge_requests/${mergeRequestID}`)
 
         // If we have a `diffID`, retrieve the information for that individual diff.
         if (diffID) {
@@ -66,9 +66,9 @@ interface CommitResponse {
  * Get the base commit ID for a commit.
  */
 export const getBaseCommitIDForCommit: (
-    { owner, repoName, commitID }: Pick<GetBaseCommitIDInput, 'owner' | 'repoName'> & { commitID: string }
-) => Observable<string> = memoizeObservable(({ owner, repoName, commitID }) =>
-    get<CommitResponse>(buildURL(owner, repoName, `/repository/commits/${commitID}`)).pipe(
+    { owner, projectName, commitID }: Pick<GetBaseCommitIDInput, 'owner' | 'projectName'> & { commitID: string }
+) => Observable<string> = memoizeObservable(({ owner, projectName, commitID }) =>
+    get<CommitResponse>(buildURL(owner, projectName, `/repository/commits/${commitID}`)).pipe(
         map(({ parent_ids }) => first(parent_ids)!) // ! because it'll always have a parent if we are looking at the commit page.
     )
 )

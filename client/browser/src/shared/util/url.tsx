@@ -1,4 +1,4 @@
-import { Position } from '../../../../../shared/src/api/protocol/plainTypes'
+import { Position } from '@sourcegraph/extension-api-types'
 import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec } from '../repo'
 import { repoUrlCache, sourcegraphUrl } from './context'
 
@@ -46,9 +46,9 @@ function toReferencesHash(group: 'local' | 'external' | undefined): string {
 
 export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
-    const url = repoUrlCache[ctx.repoPath] || sourcegraphUrl
+    const url = repoUrlCache[ctx.repoName] || sourcegraphUrl
 
-    return `${url}/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(
+    return `${url}/${ctx.repoName}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(
         ctx.position
     )}${toReferencesHash(ctx.referencesMode)}`
 }

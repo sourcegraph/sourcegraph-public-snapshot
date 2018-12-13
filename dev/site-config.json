@@ -1,0 +1,10 @@
+// The Sourcegraph site configuration for development servers.
+{
+  "experimentalFeatures": {
+    "discussions": "enabled",
+    "externalServices": "enabled"
+  },
+  "disablePublicRepoRedirects": true,
+  "repoListUpdateInterval": 1,
+  "corsOrigin": "https://github.com"
+}

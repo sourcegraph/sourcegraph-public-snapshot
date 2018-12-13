@@ -109,6 +109,30 @@ type CloneURLToRepositoryName struct {
 	To   string `json:"to"`
 }
 
+// CriticalConfiguration description: Critical configuration for a Sourcegraph site.
+type CriticalConfiguration struct {
+	AuthProviders               []AuthProviders     `json:"auth.providers,omitempty"`
+	AuthPublic                  bool                `json:"auth.public,omitempty"`
+	AuthSessionExpiry           string              `json:"auth.sessionExpiry,omitempty"`
+	AuthUserOrgMap              map[string][]string `json:"auth.userOrgMap,omitempty"`
+	ExternalURL                 string              `json:"externalURL,omitempty"`
+	HtmlBodyBottom              string              `json:"htmlBodyBottom,omitempty"`
+	HtmlBodyTop                 string              `json:"htmlBodyTop,omitempty"`
+	HtmlHeadBottom              string              `json:"htmlHeadBottom,omitempty"`
+	HtmlHeadTop                 string              `json:"htmlHeadTop,omitempty"`
+	HttpStrictTransportSecurity interface{}         `json:"httpStrictTransportSecurity,omitempty"`
+	HttpToHttpsRedirect         interface{}         `json:"httpToHttpsRedirect,omitempty"`
+	LicenseKey                  string              `json:"licenseKey,omitempty"`
+	LightstepAccessToken        string              `json:"lightstepAccessToken,omitempty"`
+	LightstepProject            string              `json:"lightstepProject,omitempty"`
+	Log                         *Log                `json:"log,omitempty"`
+	TlsLetsencrypt              string              `json:"tls.letsencrypt,omitempty"`
+	TlsCert                     string              `json:"tlsCert,omitempty"`
+	TlsKey                      string              `json:"tlsKey,omitempty"`
+	UpdateChannel               string              `json:"update.channel,omitempty"`
+	UseJaeger                   bool                `json:"useJaeger,omitempty"`
+}
+
 // Discussions description: Configures Sourcegraph code discussions.
 type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
@@ -122,7 +146,6 @@ type ExperimentalFeatures struct {
 	ExternalServices     string `json:"externalServices,omitempty"`
 	GithubAuth           bool   `json:"githubAuth,omitempty"`
 	GitlabAuth           bool   `json:"gitlabAuth,omitempty"`
-	JumpToDefOSSIndex    string `json:"jumpToDefOSSIndex,omitempty"`
 	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
 }
 
@@ -135,6 +158,7 @@ type Extensions struct {
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
 type GitHubAuthProvider struct {
+	AllowSignup  bool   `json:"allowSignup,omitempty"`
 	ClientID     string `json:"clientID"`
 	ClientSecret string `json:"clientSecret"`
 	DisplayName  string `json:"displayName,omitempty"`
@@ -144,8 +168,7 @@ type GitHubAuthProvider struct {
 
 // GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
 type GitHubAuthorization struct {
-	Organizations []string `json:"organizations,omitempty"`
-	Ttl           string   `json:"ttl,omitempty"`
+	Ttl string `json:"ttl,omitempty"`
 }
 type GitHubConnection struct {
 	Authorization               *GitHubAuthorization `json:"authorization,omitempty"`
@@ -204,13 +227,6 @@ type IMAPServerConfig struct {
 	Port     int    `json:"port"`
 	Username string `json:"username,omitempty"`
 }
-type Langservers struct {
-	Address               string                 `json:"address,omitempty"`
-	Disabled              bool                   `json:"disabled,omitempty"`
-	InitializationOptions map[string]interface{} `json:"initializationOptions,omitempty"`
-	Language              string                 `json:"language"`
-	Metadata              *Metadata              `json:"metadata,omitempty"`
-}
 type Links struct {
 	Blob       string `json:"blob,omitempty"`
 	Commit     string `json:"commit,omitempty"`
@@ -221,14 +237,6 @@ type Links struct {
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
-}
-
-// Metadata description: Language server metadata. Used to populate various UI elements.
-type Metadata struct {
-	DocsURL      string `json:"docsURL,omitempty"`
-	Experimental bool   `json:"experimental,omitempty"`
-	HomepageURL  string `json:"homepageURL,omitempty"`
-	IssuesURL    string `json:"issuesURL,omitempty"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -325,13 +333,8 @@ type Settings struct {
 type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
-	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
-	AuthPublic                        bool                         `json:"auth.public,omitempty"`
-	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
-	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
 	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
 	BitbucketServer                   []*BitbucketServerConnection `json:"bitbucketServer,omitempty"`
-	BlacklistGoGet                    []string                     `json:"blacklistGoGet,omitempty"`
 	CorsOrigin                        string                       `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                         `json:"disableAutoGitUpdates,omitempty"`
 	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
@@ -342,10 +345,8 @@ type SiteConfiguration struct {
 	EmailAddress                      string                       `json:"email.address,omitempty"`
 	EmailImap                         *IMAPServerConfig            `json:"email.imap,omitempty"`
 	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
-	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
 	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
 	Extensions                        *Extensions                  `json:"extensions,omitempty"`
-	ExternalURL                       string                       `json:"externalURL,omitempty"`
 	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName  `json:"git.cloneURLToRepositoryName,omitempty"`
 	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
 	Github                            []*GitHubConnection          `json:"github,omitempty"`
@@ -353,34 +354,13 @@ type SiteConfiguration struct {
 	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`
 	Gitlab                            []*GitLabConnection          `json:"gitlab,omitempty"`
 	Gitolite                          []*GitoliteConnection        `json:"gitolite,omitempty"`
-	HtmlBodyBottom                    string                       `json:"htmlBodyBottom,omitempty"`
-	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
-	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
-	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
-	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
-	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
-	Langservers                       []*Langservers               `json:"langservers,omitempty"`
-	LicenseKey                        string                       `json:"licenseKey,omitempty"`
-	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
-	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
-	Log                               *Log                         `json:"log,omitempty"`
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
-	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
 	Phabricator                       []*PhabricatorConnection     `json:"phabricator,omitempty"`
-	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
-	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
-	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`
-	PrivateArtifactRepoUsername       string                       `json:"privateArtifactRepoUsername,omitempty"`
 	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
 	ReposList                         []*Repository                `json:"repos.list,omitempty"`
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
-	TlsLetsencrypt                    string                       `json:"tls.letsencrypt,omitempty"`
-	TlsCert                           string                       `json:"tlsCert,omitempty"`
-	TlsKey                            string                       `json:"tlsKey,omitempty"`
-	UpdateChannel                     string                       `json:"update.channel,omitempty"`
-	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
 }
 
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.

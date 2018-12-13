@@ -62,14 +62,19 @@ type phabAPIResponse struct {
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	for {
-		for i, c := range conf.Get().Phabricator {
+		phabs, err := conf.PhabricatorConfigs(ctx)
+		if err != nil {
+			log15.Error("unable to fetch Phabricator connections", "err", err)
+		}
+
+		for i, c := range phabs {
 			if c.Token == "" {
 				continue
 			}
 
 			after := ""
 			for {
-				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(conf.Get().Phabricator))
+				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(phabs))
 				res, err := fetchPhabRepos(ctx, c, after)
 				if err != nil {
 					log15.Error("Error fetching Phabricator repos", "err", err)

@@ -1,8 +1,6 @@
+import { Selection } from '@sourcegraph/extension-api-types'
 import assert from 'assert'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { Position } from '../../extension/types/position'
-import { Selection } from '../../extension/types/selection'
-import * as plain from '../../protocol/plainTypes'
 import { EMPTY_MODEL, Model } from '../model'
 import { applyContextUpdate, Context, getComputedContextProperty } from './context'
 
@@ -43,7 +41,15 @@ describe('getComputedContextProperty', () => {
                         languageId: 'inactive',
                         text: 'inactive',
                     },
-                    selections: [new Selection(new Position(11, 22), new Position(33, 44)).toPlain()],
+                    selections: [
+                        {
+                            start: { line: 11, character: 22 },
+                            end: { line: 33, character: 44 },
+                            anchor: { line: 11, character: 22 },
+                            active: { line: 33, character: 44 },
+                            isReversed: false,
+                        },
+                    ],
                     isActive: false,
                 },
                 {
@@ -53,7 +59,15 @@ describe('getComputedContextProperty', () => {
                         languageId: 'l',
                         text: 't',
                     },
-                    selections: [new Selection(new Position(1, 2), new Position(3, 4)).toPlain()],
+                    selections: [
+                        {
+                            start: { line: 1, character: 2 },
+                            end: { line: 3, character: 4 },
+                            anchor: { line: 1, character: 2 },
+                            active: { line: 3, character: 4 },
+                            isReversed: false,
+                        },
+                    ],
                     isActive: true,
                 },
             ],
@@ -111,7 +125,7 @@ describe('getComputedContextProperty', () => {
                     null
                 ))
 
-            function assertSelection(model: Model, expr: string, expected: plain.Selection): void {
+            function assertSelection(model: Model, expr: string, expected: Selection): void {
                 assert.deepStrictEqual(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, expr), expected)
                 assert.deepStrictEqual(
                     getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start`),
@@ -143,6 +157,8 @@ describe('getComputedContextProperty', () => {
                 assertSelection(model, 'component.selection', {
                     start: { line: 1, character: 2 },
                     end: { line: 3, character: 4 },
+                    anchor: { line: 1, character: 2 },
+                    active: { line: 3, character: 4 },
                     isReversed: false,
                 }))
 
@@ -153,6 +169,8 @@ describe('getComputedContextProperty', () => {
                         {
                             start: { line: 1, character: 2 },
                             end: { line: 3, character: 4 },
+                            anchor: { line: 1, character: 2 },
+                            active: { line: 3, character: 4 },
                             isReversed: false,
                         },
                     ]

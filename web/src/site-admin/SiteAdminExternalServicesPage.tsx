@@ -1,5 +1,6 @@
-import { AddIcon, SettingsIcon } from 'mdi-react'
+import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -125,14 +126,12 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
 
         return (
             <div className="site-admin-external-services-page">
-                <PageTitle title="External Services - Admin" />
-                <div className="d-flex justify-content-between align-items-center">
-                    <h2>External Services</h2>
-                    <Link className="btn btn-primary ml-2" to="/site-admin/external-services/add">
-                        <AddIcon className="icon-inline" /> Add external service
-                    </Link>
-                </div>
-                <p>Manage connections to external services.</p>
+                <PageTitle title="External services - Admin" />
+                <h2>External services</h2>
+                <Link className="btn btn-primary" to="/site-admin/external-services/add">
+                    <AddIcon className="icon-inline" /> Add external service
+                </Link>
+                <p className="mt-2">Manage connections to external services.</p>
                 <FilteredExternalServiceConnection
                     className="list-group list-group-flush"
                     noun="external service"

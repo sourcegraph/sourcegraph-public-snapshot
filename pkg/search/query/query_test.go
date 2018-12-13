@@ -16,6 +16,7 @@ package query
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"reflect"
 	"regexp"
@@ -229,12 +230,88 @@ func TestMap_traversal(t *testing.T) {
 }
 
 func TestVisitAtoms(t *testing.T) {
-	in := NewAnd(&Substring{}, &Repo{}, &Not{&Const{}})
+	in := NewAnd(&Substring{}, NewOr(&Repo{}, &Not{&Const{}}))
 	count := 0
 	VisitAtoms(in, func(q Q) {
 		count++
 	})
 	if count != 3 {
 		t.Errorf("got %d, want 3", count)
+	}
+}
+
+type testEval struct {
+	value, ok bool
+}
+
+func (q *testEval) String() string {
+	if q.ok {
+		return fmt.Sprintf("%v", q.value)
+	}
+	return "?"
+}
+
+func TestEvalConstant(t *testing.T) {
+	yes := &testEval{value: true, ok: true}
+	no := &testEval{value: false, ok: true}
+	unsure := &testEval{ok: false}
+
+	cases := []struct {
+		Q    Q
+		V    bool
+		Sure bool
+	}{{
+		Q:    &Const{},
+		V:    false,
+		Sure: true,
+	}, {
+		Q:    &Const{Value: true},
+		V:    true,
+		Sure: true,
+	}, {
+		Q:    NewAnd(yes),
+		V:    true,
+		Sure: true,
+	}, {
+		Q:    NewAnd(yes, yes),
+		V:    true,
+		Sure: true,
+	}, {
+		Q:    NewAnd(yes, no),
+		V:    false,
+		Sure: true,
+	}, {
+		Q:    NewAnd(yes, unsure),
+		V:    false,
+		Sure: false,
+	}, {
+		Q:    NewAnd(no, unsure),
+		V:    false,
+		Sure: true,
+	}, {
+		Q:    NewAnd(unsure, no),
+		V:    false,
+		Sure: true,
+	}, {
+		Q:    &Not{unsure},
+		V:    true,
+		Sure: false,
+	}, {
+		Q:    &Not{yes},
+		V:    false,
+		Sure: true,
+	}, {
+		Q:    &Not{no},
+		V:    true,
+		Sure: true,
+	}}
+	for _, c := range cases {
+		v, ok := EvalConstant(c.Q, func(q Q) (v, ok bool) {
+			e := q.(*testEval)
+			return e.value, e.ok
+		})
+		if v != c.V || ok != c.Sure {
+			t.Errorf("EvalConstant(%v) got v=%v ok=%v; want v=%v ok=%v", c.Q, v, ok, c.V, c.Sure)
+		}
 	}
 }

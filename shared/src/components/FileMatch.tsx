@@ -1,6 +1,5 @@
 import { flatMap } from 'lodash'
 import React from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { pluralize } from '../../../shared/src/util/strings'
 import * as GQL from '../graphql/schema'
@@ -9,6 +8,7 @@ import { toPositionOrRangeHash } from '../util/url'
 import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
 import { mergeContext } from './FileMatchContext'
+import { Link } from './Link'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
@@ -92,7 +92,7 @@ export class FileMatch extends React.PureComponent<Props> {
 
         const title = (
             <RepoFileLink
-                repoPath={result.repository.name}
+                repoName={result.repository.name}
                 repoURL={result.repository.url}
                 filePath={result.file.path}
                 fileURL={result.file.url}
@@ -196,7 +196,7 @@ export class FileMatch extends React.PureComponent<Props> {
                             onClick={this.props.onSelect}
                         >
                             <CodeExcerpt
-                                repoPath={result.repository.name}
+                                repoName={result.repository.name}
                                 commitID={result.file.commit.oid}
                                 filePath={result.file.path}
                                 context={context}

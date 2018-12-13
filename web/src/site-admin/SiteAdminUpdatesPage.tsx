@@ -12,12 +12,10 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
-import { getUpdateChannel } from './configHelpers'
 
 interface Props extends RouteComponentProps<any> {}
 
 interface State {
-    channel?: string | null
     buildVersion?: string
     productVersion?: string
     updateCheck?: GQL.IUpdateCheck
@@ -41,7 +39,6 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                 .subscribe(
                     ([site, { buildVersion, productVersion, updateCheck }]) =>
                         this.setState({
-                            channel: getUpdateChannel(site.configuration.effectiveContents),
                             buildVersion,
                             productVersion,
                             updateCheck,
@@ -57,7 +54,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const autoUpdateCheckingEnabled = this.state.channel === 'release'
+        const autoUpdateCheckingEnabled = window.context.critical['update.channel'] === 'release'
         return (
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />

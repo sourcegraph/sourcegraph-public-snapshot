@@ -6,8 +6,11 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 // Mock is a mock search.Searcher
@@ -71,8 +74,36 @@ func shardedSearch(ctx context.Context, shards <-chan shard) (*search.Result, er
 			}
 			return nil, r.error
 		}
-		all.Files = append(all.Files, r.Result.Files...)
+		all.Add(r.Result)
 	}
 
 	return &all, nil
+}
+
+func handleError(source search.Source, r search.Repository, err error) (*search.RepositoryStatus, error) {
+	status := search.RepositoryStatusSearched
+	if vcs.IsRepoNotExist(err) {
+		if vcs.IsCloneInProgress(err) {
+			status = search.RepositoryStatusCloning
+		} else {
+			status = search.RepositoryStatusMissing
+		}
+	} else if git.IsRevisionNotFound(err) {
+		if r.RefPattern == "" {
+			// If we didn't specify an input revision, then the repo is empty and can be ignored.
+		} else {
+			return nil, err
+		}
+	} else if errcode.IsNotFound(err) {
+		status = search.RepositoryStatusMissing
+	} else if errcode.IsTimeout(err) || errcode.IsTemporary(err) {
+		status = search.RepositoryStatusTimedOut
+	} else if err != nil {
+		return nil, err
+	}
+	return &search.RepositoryStatus{
+		Repository: r,
+		Source:     source,
+		Status:     status,
+	}, nil
 }

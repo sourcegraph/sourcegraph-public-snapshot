@@ -19,9 +19,9 @@ export interface DifferentialState {
     leftDiffID?: number
     diffID?: number
     baseRev: string
-    baseRepoPath: string
+    baseRepoName: string
     headRev: string
-    headRepoPath: string
+    headRepoName: string
 }
 
 /**
@@ -35,13 +35,13 @@ export interface ChangesetState {
     differentialID: number
     leftDiffID?: number
     diffID: number
-    repoPath: number
+    repoName: number
     filePath: number
 }
 
 export interface RevisionState {
     mode: PhabricatorMode
-    repoPath: string
+    repoName: string
     baseCommitID: string
     headCommitID: string
 }
@@ -52,7 +52,7 @@ export interface RevisionState {
  */
 export interface ChangeState {
     mode: PhabricatorMode
-    repoPath: string
+    repoName: string
     filePath: string
     commitID: string
 }

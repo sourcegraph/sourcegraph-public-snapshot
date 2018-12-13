@@ -63,7 +63,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoLink
-                repoPath={props.result.commit.repository.name}
+                repoName={props.result.commit.repository.name}
                 to={
                     props.result.commit.tree
                         ? props.result.commit.tree.canonicalURL
@@ -130,20 +130,26 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
 
     if (props.result.diffPreview) {
         const commonCtx: RepoSpec = {
-            repoPath: props.result.commit.repository.name,
+            repoName: props.result.commit.repository.name,
         }
+
+        interface AbsoluteRepoFilePositionNonReadonly
+            extends Pick<AbsoluteRepoFilePosition, Exclude<keyof AbsoluteRepoFilePosition, 'position'>> {
+            position: { line: number; character: number }
+        }
+
         // lhsCtx and rhsCtx need the cast because their values at const init time lack
         // the filePath field, which is assigned as we iterate over the lines below.
         const lhsCtx = {
             ...commonCtx,
             commitID: props.result.commit.oid + '~',
             rev: props.result.commit.oid + '~',
-        } as AbsoluteRepoFilePosition
+        } as AbsoluteRepoFilePositionNonReadonly
         const rhsCtx = {
             ...commonCtx,
             commitID: props.result.commit.oid,
             rev: props.result.commit.oid,
-        } as AbsoluteRepoFilePosition
+        } as AbsoluteRepoFilePositionNonReadonly
 
         // Omit "index ", "--- file", and "+++ file" lines.
         const lines = props.result.diffPreview.value.split('\n')

@@ -3,7 +3,7 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
-
+import { HighlightRange } from './SearchResult'
 interface Props {
     /**
      * A CSS class name to add to this component's element.
@@ -18,7 +18,7 @@ interface Props {
     /**
      * The highlights for the lines.
      */
-    highlights?: GQL.IHighlight[]
+    highlights?: GQL.IHighlight[] | HighlightRange[]
 
     /**
      * A list of classes to apply to 1-indexed line numbers.
@@ -33,7 +33,7 @@ interface Props {
 
 interface DecoratedLine {
     value: string
-    highlights?: GQL.IHighlight[]
+    highlights?: (GQL.IHighlight | HighlightRange)[]
     classNames?: string[]
     url?: string
 }
@@ -97,6 +97,9 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
         const lines: DecoratedLine[] = lineValues.map(line => ({ value: line }))
         if (props.highlights) {
             for (const highlight of props.highlights) {
+                if (highlight.line > lines.length - 1) {
+                    continue
+                }
                 const line = lines[highlight.line - 1]
                 if (!line.highlights) {
                     line.highlights = []

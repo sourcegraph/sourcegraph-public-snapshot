@@ -34,7 +34,12 @@ func init() {
 		t := time.NewTicker(configWatchInterval)
 		var lastConfig []*schema.BitbucketServerConnection
 		for range t.C {
-			config := conf.Get().BitbucketServer
+			config, err := conf.BitbucketServerConfigs(context.Background())
+			if err != nil {
+				log15.Error("unable to fetch Bitbucket Server configs", "err", err)
+				continue
+			}
+
 			if reflect.DeepEqual(config, lastConfig) {
 				continue
 			}

@@ -57,12 +57,15 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		return toGitCommitResolver(r, commit), nil
 	}
 
-	grepo := backend.CachedGitRepo(r.repo)
-	base, err := getCommit(ctx, grepo, baseRevspec)
+	grepo, err := backend.CachedGitRepo(ctx, r.repo)
 	if err != nil {
 		return nil, err
 	}
-	head, err := getCommit(ctx, grepo, headRevspec)
+	base, err := getCommit(ctx, *grepo, baseRevspec)
+	if err != nil {
+		return nil, err
+	}
+	head, err := getCommit(ctx, *grepo, headRevspec)
 	if err != nil {
 		return nil, err
 	}
@@ -136,8 +139,11 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			// flags or refer to a file.
 			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
-
-		rdr, err := git.ExecReader(ctx, backend.CachedGitRepo(r.cmp.repo.repo), []string{
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.cmp.repo.repo)
+		if err != nil {
+			return nil, err
+		}
+		rdr, err := git.ExecReader(ctx, *cachedRepo, []string{
 			"diff",
 			"--find-renames",
 			"--find-copies",

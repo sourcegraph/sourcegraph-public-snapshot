@@ -1,9 +1,5 @@
 # TypeScript: code intelligence configuration
 
-To enable TypeScript code intelligence, see the [installation documentation](install/index.md).
+Documentation for TypeScript support on Sourcegraph was moved to the [TypeScript Sourcegraph extension documentation](https://sourcegraph.com/extensions/sourcegraph/typescript).
 
-Sourcegraph's TypeScript code intelligence uses your existing [tsconfig.json](http://www.typescriptlang.org/docs/handbook/tsconfig-json.html) to analyze your TypeScript code. Multiple projects (and tsconfig.json files) in a single repository are supported.
-
-Sourcegraph's TypeScript support is a superset of its JavaScript support. See [JavaScript language support documentation](javascript.md) for information about topics that are common to both TypeScript and JavaScript, such as:
-
-- [Private package dependencies](javascript.md#private-package-dependencies)
+See [TypeScript documentation for older versions (Sourcegraph 2.x)](https://docs.sourcegraph.com/@v2.12.3/extensions/language_servers/typescript).

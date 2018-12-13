@@ -46,8 +46,10 @@ declare module 'sourcegraph' {
     export class Position {
         /** Zero-based line number. */
         readonly line: number
-        /** Zero-based line number. */
+
+        /** Zero-based character on the line. */
         readonly character: number
+
         /**
          * Constructs a Position from a line and character.
          *

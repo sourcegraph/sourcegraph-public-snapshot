@@ -1,8 +1,8 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { Location } from '../../api/protocol/plainTypes'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../components/RepoLink'
@@ -134,7 +134,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
             {
                 name: 'repo',
                 defaultSize: 175,
-                key: loc => parseRepoURI(loc.uri).repoPath,
+                key: loc => parseRepoURI(loc.uri).repoName,
             },
         ]
         const groupByFile =
@@ -217,7 +217,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                                                         title={group.key}
                                                     >
                                                         <span className="hierarchical-locations-view__item-name-text">
-                                                            <RepoLink to={null} repoPath={group.key} />
+                                                            <RepoLink to={null} repoName={group.key} />
                                                         </span>
                                                     </span>
                                                     <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">

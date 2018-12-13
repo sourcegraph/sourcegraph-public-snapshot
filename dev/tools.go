@@ -3,6 +3,7 @@
 package main
 
 import (
+	_ "github.com/derekparker/delve"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/zoekt/cmd/zoekt-archive-index"
 	_ "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
@@ -10,6 +11,7 @@ import (
 	_ "github.com/kevinburke/differ"
 	_ "github.com/kevinburke/go-bindata/go-bindata"
 	_ "github.com/mattn/goreman"
+	_ "github.com/shurcooL/vfsgen/cmd/vfsgendev"
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
 	_ "github.com/sourcegraph/godockerize"
 	_ "golang.org/x/tools/cmd/stringer"
