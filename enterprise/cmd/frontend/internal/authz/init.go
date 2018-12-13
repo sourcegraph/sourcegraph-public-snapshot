@@ -1,10 +1,12 @@
 package authz
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -24,18 +26,36 @@ func init() {
 		}
 
 		var authzTypes []string
-		for _, g := range conf.Get().Github {
+		ctx := context.Background()
+
+		githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
+		if err != nil {
+			return []*graphqlbackend.Alert{{
+				TypeValue:    graphqlbackend.AlertTypeError,
+				MessageValue: fmt.Sprintf("Unable to fetch GitHub external services: %s", err),
+			}}
+		}
+		for _, g := range githubs {
 			if g.Authorization != nil {
 				authzTypes = append(authzTypes, "GitHub")
 				break
 			}
 		}
-		for _, g := range conf.Get().Gitlab {
+
+		gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
+		if err != nil {
+			return []*graphqlbackend.Alert{{
+				TypeValue:    graphqlbackend.AlertTypeError,
+				MessageValue: fmt.Sprintf("Unable to fetch GitLab external services: %s", err),
+			}}
+		}
+		for _, g := range gitlabs {
 			if g.Authorization != nil {
 				authzTypes = append(authzTypes, "GitLab")
 				break
 			}
 		}
+
 		if len(authzTypes) > 0 {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
