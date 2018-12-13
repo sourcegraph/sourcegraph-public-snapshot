@@ -90,6 +90,14 @@ func New(urlspec string) *Map {
 	return m
 }
 
+// Empty returns an Endpoint map which always fails with err.
+func Empty(err error) *Map {
+	return &Map{
+		urlspec: "error: " + err.Error(),
+		err:     err,
+	}
+}
+
 func (m *Map) String() string {
 	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
 }

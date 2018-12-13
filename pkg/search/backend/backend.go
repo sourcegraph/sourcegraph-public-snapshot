@@ -89,11 +89,7 @@ func handleError(source search.Source, r search.Repository, err error) (*search.
 			status = search.RepositoryStatusMissing
 		}
 	} else if git.IsRevisionNotFound(err) {
-		if r.RefPattern == "" {
-			// If we didn't specify an input revision, then the repo is empty and can be ignored.
-		} else {
-			return nil, err
-		}
+		status = search.RepositoryStatusCommitMissing
 	} else if errcode.IsNotFound(err) {
 		status = search.RepositoryStatusMissing
 	} else if errcode.IsTimeout(err) || errcode.IsTemporary(err) {

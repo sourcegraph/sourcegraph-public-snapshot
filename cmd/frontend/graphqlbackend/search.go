@@ -49,7 +49,16 @@ func maxReposToSearch() int {
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
 	Query string
-}) (*searchResolver, error) {
+}) (interface {
+	Results(context.Context) (*searchResultsResolver, error)
+	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
+	//lint:ignore U1000 is used by graphql via reflection
+	Stats(context.Context) (*searchResultsStats, error)
+}, error) {
+	if strings.HasPrefix(args.Query, "!hier!") {
+		return newSearcherResolver(strings.TrimPrefix(args.Query, "!hier!"))
+	}
+
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
