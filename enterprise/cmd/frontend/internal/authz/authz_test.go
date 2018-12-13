@@ -216,6 +216,38 @@ func Test_providersFromConfig(t *testing.T) {
 			expSeriousProblems:           nil,
 		},
 		{
+			description: "1 GitLab with incomplete auth provider descriptor",
+			cfg: conf.Unified{
+				Critical: schema.CriticalConfiguration{
+					AuthProviders: []schema.AuthProviders{
+						schema.AuthProviders{
+							Saml: &schema.SAMLAuthProvider{
+								ConfigID: "okta-config-id",
+								Type:     "saml",
+							},
+						},
+					},
+				},
+				SiteConfiguration: schema.SiteConfiguration{
+					Gitlab: []*schema.GitLabConnection{
+						{
+							Authorization: &schema.GitLabAuthorization{
+								AuthnProvider: schema.AuthnProvider{
+									ConfigID:       "okta-config-id",
+									GitlabProvider: "okta",
+								},
+								Ttl: "48h",
+							},
+							Url:   "https://gitlab-0.mine",
+							Token: "asdf",
+						},
+					},
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"`authz.authnProvider.type` was not specified, which means GitLab users cannot be resolved."},
+		},
+		{
 			description: "1 GitLab with incomplete auth provider descriptor, ttl error",
 			cfg: conf.Unified{
 				Critical: schema.CriticalConfiguration{
