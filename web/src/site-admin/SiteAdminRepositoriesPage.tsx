@@ -226,7 +226,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                 <PageTitle title="Repositories - Admin" />
                 <h2>Repositories</h2>
                 <div>
-                    Repositories are synchronized from connected{' '}
+                    Repositories are mirrored from connected{' '}
                     <Link to="/site-admin/external-services">external services</Link>.
                 </div>
                 <FilteredRepositoryConnection
