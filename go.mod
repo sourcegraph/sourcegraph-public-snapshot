@@ -140,9 +140,3 @@ replace (
 )
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
-
-// sourcegraph.com redirects don't seem to be working
-replace (
-	sourcegraph.com/sourcegraph/go-diff => github.com/sourcegraph/go-diff v0.0.0-20171119081133-3f415a150aec
-	sourcegraph.com/sqs/pbtypes => github.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4
-)
