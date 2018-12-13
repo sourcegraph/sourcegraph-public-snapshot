@@ -2,7 +2,7 @@ import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'
 import { decorationAttachmentStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
-import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
+import { Link } from '../../../../shared/src/components/Link'
 import { AbsoluteRepoFile } from '../../../../shared/src/util/url'
 
 interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
@@ -41,9 +41,9 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
         const style = decorationAttachmentStyleForTheme(this.props.attachment, this.props.isLightTheme)
 
         return ReactDOM.createPortal(
-            <LinkOrSpan
+            <Link
                 className="line-decoration-attachment"
-                to={this.props.attachment.linkURL}
+                to={this.props.attachment.linkURL!}
                 data-tooltip={this.props.attachment.hoverMessage}
                 // Use target to open external URLs (or else react-router's Link will treat the URL as a URL path
                 // and navigation will fail).
@@ -64,7 +64,7 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
                     }}
                     data-contents={this.props.attachment.contentText || ''}
                 />
-            </LinkOrSpan>,
+            </Link>,
             this.portal
         )
     }
