@@ -87,28 +87,12 @@ const SiteSchemaJSON = `{
         "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean"
     },
-    "phabricator": {
-      "description":
-        "JSON array of configuration for Phabricator hosts. See Phabricator Configuration section for more information.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/PhabricatorConnection"
-      }
-    },
     "git.cloneURLToRepositoryName": {
       "description":
         "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/CloneURLToRepositoryName"
-      }
-    },
-    "github": {
-      "description":
-        "JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/GitHubConnection"
       }
     },
     "githubClientID": {
@@ -118,34 +102,6 @@ const SiteSchemaJSON = `{
     "githubClientSecret": {
       "description": "Client secret for GitHub.",
       "type": "string"
-    },
-    "gitlab": {
-      "description": "JSON array of configuration for GitLab hosts.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/GitLabConnection"
-      }
-    },
-    "awsCodeCommit": {
-      "description": "JSON array of configuration for AWS CodeCommit endpoints.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/AWSCodeCommitConnection"
-      }
-    },
-    "bitbucketServer": {
-      "description": "JSON array of configuration for Bitbucket Server hosts.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/BitbucketServerConnection"
-      }
-    },
-    "gitolite": {
-      "description": "JSON array of configuration for Gitolite hosts.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/GitoliteConnection"
-      }
     },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",

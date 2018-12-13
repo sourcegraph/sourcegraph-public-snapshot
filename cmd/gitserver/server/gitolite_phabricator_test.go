@@ -18,23 +18,14 @@ func TestServer_handleGet(t *testing.T) {
 		Host:                       "git@mygitolite.host",
 		PhabricatorMetadataCommand: `echo ${REPO} | tr a-z A-Z`,
 	}}
-	if conf.ExternalServicesEnabled() {
-		api.MockExternalServiceConfigs = func(kind string, result interface{}) error {
-			buf, err := json.Marshal(conn)
-			if err != nil {
-				return err
-			}
-			return json.Unmarshal(buf, result)
+	api.MockExternalServiceConfigs = func(kind string, result interface{}) error {
+		buf, err := json.Marshal(conn)
+		if err != nil {
+			return err
 		}
-		defer func() { api.MockExternalServiceConfigs = nil }()
-	} else {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				Gitolite: conn,
-			},
-		})
-		defer conf.Mock(nil)
+		return json.Unmarshal(buf, result)
 	}
+	defer func() { api.MockExternalServiceConfigs = nil }()
 
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
@@ -69,23 +60,14 @@ func TestServer_handleGet_invalid(t *testing.T) {
 		Host:                       "git@mygitolite.host",
 		PhabricatorMetadataCommand: `echo "Something went wrong this is not a valid callsign"`,
 	}}
-	if conf.ExternalServicesEnabled() {
-		api.MockExternalServiceConfigs = func(kind string, result interface{}) error {
-			buf, err := json.Marshal(conn)
-			if err != nil {
-				return err
-			}
-			return json.Unmarshal(buf, result)
+	api.MockExternalServiceConfigs = func(kind string, result interface{}) error {
+		buf, err := json.Marshal(conn)
+		if err != nil {
+			return err
 		}
-		defer func() { api.MockExternalServiceConfigs = nil }()
-	} else {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				Gitolite: conn,
-			},
-		})
-		defer conf.Mock(nil)
+		return json.Unmarshal(buf, result)
 	}
+	defer func() { api.MockExternalServiceConfigs = nil }()
 
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
