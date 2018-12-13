@@ -24,6 +24,7 @@ import {
     FileSpec,
     LineOrPositionOrRange,
     parseHash,
+    PositionSpec,
     RenderMode,
     RepoSpec,
     ResolvedRevSpec,
@@ -32,7 +33,6 @@ import {
     toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
 import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
-import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { isDiscussionsEnabled } from '../../discussions'
 import { lprToSelectionsZeroIndexed } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
@@ -286,7 +286,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
         const modelChanges: Observable<
-            AbsoluteRepoFile & LSPSelector & Pick<BlobProps, 'content'>
+            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content'>
         > = this.componentUpdates.pipe(
             map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
@@ -315,7 +315,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
 
         /** Decorations */
-        let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
+        let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
         const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(modelChanges).pipe(
             switchMap(([model]) => {
                 const modelChanged = !isEqual(model, lastModel)
@@ -404,7 +404,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
     private getLSPTextDocumentPositionParams(
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): LSPTextDocumentPositionParams {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
             repoName: position.repoName,
             filePath: position.filePath,

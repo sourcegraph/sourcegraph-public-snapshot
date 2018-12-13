@@ -14,10 +14,16 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toPrettyBlobURL } from '../../../../shared/src/util/url'
-import { getHover, getJumpURL } from '../../backend/features'
+import {
+    FileSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+} from '../../../../shared/src/util/url'
+import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitCommitNode } from '../commits/GitCommitNode'
@@ -127,7 +133,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     private getLSPTextDocumentPositionParams(
         hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): LSPTextDocumentPositionParams {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
             repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,

@@ -17,9 +17,15 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toPrettyBlobURL } from '../../../../shared/src/util/url'
-import { getHover, getJumpURL } from '../../backend/features'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
+import {
+    FileSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+} from '../../../../shared/src/util/url'
+import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { fetchBlob } from '../../repo/blob/BlobPage'
 
 interface Props extends ExtensionsControllerProps {
@@ -232,7 +238,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
 
     private getLSPTextDocumentPositionParams(
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): LSPTextDocumentPositionParams {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
             repoName: position.repoName,
             filePath: position.filePath,

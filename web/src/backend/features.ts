@@ -3,9 +3,16 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { parseRepoURI, toPrettyBlobURL } from '../../../shared/src/util/url'
+import {
+    FileSpec,
+    parseRepoURI,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+} from '../../../shared/src/util/url'
 import { toAbsoluteBlobURL } from '../util/url'
-import { LSPTextDocumentPositionParams } from './lsp'
 
 /**
  * Specifies an LSP mode.
@@ -24,7 +31,7 @@ export { HoverMerged } // reexport to avoid needing to change all import sites -
  * @return hover for the location
  */
 export function getHover(
-    ctx: LSPTextDocumentPositionParams,
+    ctx: RepoSpec & ResolvedRevSpec & FileSpec & PositionSpec,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<HoverMerged | null> {
     return extensionsController.services.textDocumentHover
@@ -45,7 +52,7 @@ export function getHover(
  * @return definitions of the symbol at the location
  */
 function getDefinition(
-    ctx: LSPTextDocumentPositionParams,
+    ctx: RepoSpec & ResolvedRevSpec & FileSpec & PositionSpec,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[] | null> {
     return extensionsController.services.textDocumentDefinition.getLocations({
@@ -67,7 +74,7 @@ function getDefinition(
  * @return destination URL
  */
 export function getJumpURL(
-    ctx: LSPTextDocumentPositionParams,
+    ctx: RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec,
     extensions: ExtensionsControllerProps
 ): Observable<string | null> {
     return getDefinition(ctx, extensions).pipe(
@@ -77,7 +84,7 @@ export function getJumpURL(
             }
             const def = defs[0]
 
-            const uri = parseRepoURI(def.uri) as LSPTextDocumentPositionParams
+            const uri = parseRepoURI(def.uri) as RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec
             if (def.range) {
                 uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
             }

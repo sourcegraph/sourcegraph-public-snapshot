@@ -15,13 +15,13 @@ import { propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     escapeRevspecForURL,
     FileSpec,
+    PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
     toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
-import { getHover, getJumpURL } from '../../backend/features'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
+import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
@@ -122,7 +122,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
     private getLSPTextDocumentPositionParams(
         hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): LSPTextDocumentPositionParams {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
             repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,
