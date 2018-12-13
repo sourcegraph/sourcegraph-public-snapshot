@@ -27,6 +27,7 @@ Configuration and deployment:
 - [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
 - [Use nginx as HTTP proxy](https://github.com/sourcegraph/sourcegraph/pull/929)
 - [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
+- [Upgrade to PostgreSQL 10](https://github.com/sourcegraph/sourcegraph/issues/1404)
 
 Search
 
