@@ -270,6 +270,10 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateSiteConfiguration(
+        # The last ID of the site configuration that is known by the client, to
+        # prevent race conditions. An error will be returned if someone else
+        # has already written a new update.
+        lastID: Int!
         # A JSON object containing the entire site configuration. The previous site configuration will be replaced
         # with this new value.
         input: String!
@@ -1632,7 +1636,7 @@ type GitRevisionRange {
 
 # A Phabricator repository.
 type PhabricatorRepo {
-    # The canonical repo path (e.g. "github.com/gorilla/mux").
+    # The canonical repo name (e.g. "github.com/gorilla/mux").
     name: String!
     # An alias for name.
     uri: String! @deprecated(reason: "use name instead")
@@ -2698,6 +2702,8 @@ type ManagementConsoleState {
 
 # The configuration for a site.
 type SiteConfiguration {
+    # The unique identifier of this site configuration version.
+    id: Int!
     # The effective configuration JSON.
     effectiveContents: String!
     # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.

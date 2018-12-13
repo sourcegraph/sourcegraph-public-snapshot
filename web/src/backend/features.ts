@@ -29,7 +29,7 @@ export function getHover(
 ): Observable<HoverMerged | null> {
     return extensionsController.services.textDocumentHover
         .getHover({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+            textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
             position: {
                 character: ctx.position.character - 1,
                 line: ctx.position.line - 1,
@@ -49,7 +49,7 @@ export function getDefinition(
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[] | null> {
     return extensionsController.services.textDocumentDefinition.getLocations({
-        textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
         position: {
             character: ctx.position.character - 1,
             line: ctx.position.line - 1,
@@ -81,7 +81,7 @@ export function getJumpURL(
             if (def.range) {
                 uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
             }
-            if (uri.repoPath === ctx.repoPath && uri.commitID === ctx.commitID) {
+            if (uri.repoName === ctx.repoName && uri.commitID === ctx.commitID) {
                 // Use pretty rev from the current context for same-repo J2D.
                 uri.rev = ctx.rev
                 return toPrettyBlobURL(uri)
@@ -102,7 +102,7 @@ export function getReferences(
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[] | null> {
     return extensionsController.services.textDocumentReferences.getLocations({
-        textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
         position: {
             character: ctx.position.character - 1,
             line: ctx.position.line - 1,
@@ -124,7 +124,7 @@ export function getImplementations(
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[] | null> {
     return extensionsController.services.textDocumentImplementation.getLocations({
-        textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
         position: {
             character: ctx.position.character - 1,
             line: ctx.position.line - 1,
@@ -143,6 +143,6 @@ export function getDecorations(
     { extensionsController }: ExtensionsControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
     return extensionsController.services.textDocumentDecoration.getDecorations({
-        uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+        uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`,
     })
 }

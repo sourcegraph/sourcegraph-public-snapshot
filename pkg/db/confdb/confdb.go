@@ -3,6 +3,7 @@ package confdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -28,6 +30,11 @@ type SiteConfig Config
 // CriticalConfig contains the contents of a critical config along with associated metadata.
 type CriticalConfig Config
 
+// ErrNewerEdit is returned by SiteCreateIfUpToDate and
+// CriticalCreateifUpToDate when a newer edit has already been applied and the
+// edit has been rejected.
+var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
+
 // SiteCreateIfUpToDate saves the given site config "contents" to the database iff the
 // supplied "lastID" is equal to the one that was most recently saved to the database.
 //
@@ -43,7 +50,7 @@ func SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (
 	}
 	defer done()
 
-	newLastID, err := addDefault(ctx, tx, typeSite, defaultSiteConfig)
+	newLastID, err := addDefault(ctx, tx, typeSite, confdefaults.Default.Site)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +78,7 @@ func CriticalCreateIfUpToDate(ctx context.Context, lastID *int32, contents strin
 	}
 	defer done()
 
-	newLastID, err := addDefault(ctx, tx, typeCritical, defaultCriticalConfig)
+	newLastID, err := addDefault(ctx, tx, typeCritical, confdefaults.Default.Critical)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +102,7 @@ func SiteGetLatest(ctx context.Context) (latest *SiteConfig, err error) {
 	}
 	defer done()
 
-	_, err = addDefault(ctx, tx, typeSite, defaultSiteConfig)
+	_, err = addDefault(ctx, tx, typeSite, confdefaults.Default.Site)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +123,7 @@ func CriticalGetLatest(ctx context.Context) (latest *CriticalConfig, err error) 
 	}
 	defer done()
 
-	_, err = addDefault(ctx, tx, typeCritical, defaultCriticalConfig)
+	_, err = addDefault(ctx, tx, typeCritical, confdefaults.Default.Critical)
 	if err != nil {
 		return nil, err
 	}
@@ -175,20 +182,19 @@ func createIfUpToDate(ctx context.Context, tx queryable, configType configType, 
 	if err != nil {
 		return nil, err
 	}
-
-	creatorIsUpToDate := latest != nil && lastID != nil && latest.ID == *lastID
-	if latest == nil || creatorIsUpToDate {
-		err := tx.QueryRowContext(
-			ctx,
-			"INSERT INTO critical_and_site_config(type, contents) VALUES($1, $2) RETURNING id, created_at, updated_at",
-			configType, new.Contents,
-		).Scan(&new.ID, &new.CreatedAt, &new.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		latest = &new
+	if latest != nil && lastID != nil && latest.ID != *lastID {
+		return nil, ErrNewerEdit
 	}
-	return latest, nil
+
+	err = tx.QueryRowContext(
+		ctx,
+		"INSERT INTO critical_and_site_config(type, contents) VALUES($1, $2) RETURNING id, created_at, updated_at",
+		configType, new.Contents,
+	).Scan(&new.ID, &new.CreatedAt, &new.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &new, nil
 }
 
 func getLatest(ctx context.Context, tx queryable, configType configType) (*Config, error) {
@@ -237,22 +243,4 @@ type configType string
 const (
 	typeCritical configType = "critical"
 	typeSite     configType = "site"
-)
-
-// SetDefaultConfigs should be invoked once early on in the program
-// startup, before calls to e.g. conf.Get are made. It will panic if called
-// more than once.
-func SetDefaultConfigs(critical, site string) {
-	if setDefaultConfigsCalled {
-		panic("confdb.SetDefaultConfigs may not be called twice")
-	}
-	setDefaultConfigsCalled = true
-	defaultCriticalConfig = critical
-	defaultSiteConfig = site
-}
-
-var (
-	setDefaultConfigsCalled bool
-	defaultCriticalConfig   string
-	defaultSiteConfig       string
 )

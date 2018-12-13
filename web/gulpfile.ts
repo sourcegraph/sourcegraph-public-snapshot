@@ -32,6 +32,7 @@ export async function webpack(): Promise<void> {
 export async function webpackDevServer(): Promise<void> {
     const compiler = createWebpackCompiler(webpackConfig)
     const server = new WebpackDevServer(compiler as any, {
+        allowedHosts: ['.host.docker.internal'],
         publicPath: '/.assets/',
         contentBase: './ui/assets',
         stats: WEBPACK_STATS_OPTIONS,

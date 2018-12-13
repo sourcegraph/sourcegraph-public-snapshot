@@ -11,11 +11,11 @@ import { memoizeObservable } from '../util/memoize'
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
 export const resolveRepo = memoizeObservable(
-    (ctx: { repoPath: string }): Observable<string> =>
+    (ctx: { repoName: string }): Observable<string> =>
         queryGraphQL({
-            ctx: getContext({ repoKey: ctx.repoPath }),
-            request: `query ResolveRepo($repoPath: String!) {
-                repository(name: $repoPath) {
+            ctx: getContext({ repoKey: ctx.repoName }),
+            request: `query ResolveRepo($repoName: String!) {
+                repository(name: $repoName) {
                     url
                 }
             }`,
@@ -23,7 +23,7 @@ export const resolveRepo = memoizeObservable(
         }).pipe(
             map(result => {
                 if (!result.data || !result.data.repository) {
-                    throw new RepoNotFoundError(ctx.repoPath)
+                    throw new RepoNotFoundError(ctx.repoName)
                 }
 
                 return result.data.repository.url
@@ -37,11 +37,11 @@ export const resolveRepo = memoizeObservable(
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
-    (ctx: { repoPath: string; rev?: string }): Observable<string> =>
+    (ctx: { repoName: string; rev?: string }): Observable<string> =>
         queryGraphQL({
-            ctx: getContext({ repoKey: ctx.repoPath }),
-            request: `query ResolveRev($repoPath: String!, $rev: String!) {
-                repository(name: $repoPath) {
+            ctx: getContext({ repoKey: ctx.repoName }),
+            request: `query ResolveRev($repoName: String!, $rev: String!) {
+                repository(name: $repoName) {
                     mirrorInfo {
                         cloneInProgress
                     }
@@ -57,10 +57,10 @@ export const resolveRev = memoizeObservable(
                     throw new Error('invalid response received from graphql endpoint')
                 }
                 if (!result.data.repository) {
-                    throw new RepoNotFoundError(ctx.repoPath)
+                    throw new RepoNotFoundError(ctx.repoName)
                 }
                 if (result.data.repository.mirrorInfo.cloneInProgress) {
-                    throw new CloneInProgressError(ctx.repoPath)
+                    throw new CloneInProgressError(ctx.repoName)
                 }
                 if (!result.data.repository.commit) {
                     throw new RevNotFoundError(ctx.rev)
@@ -75,7 +75,7 @@ export const resolveRev = memoizeObservable(
                     error.data.repository.mirrorInfo &&
                     error.data.repository.mirrorInfo.cloneInProgress
                 ) {
-                    throw new CloneInProgressError(ctx.repoPath)
+                    throw new CloneInProgressError(ctx.repoName)
                 }
 
                 throw error
@@ -103,14 +103,14 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
         )
 }
 
-const trimRepoPath = ({ repoPath, ...rest }) => ({ ...rest, repoPath: repoPath.replace(/.git$/, '') })
+const trimRepoName = ({ repoName, ...rest }) => ({ ...rest, repoName: repoName.replace(/.git$/, '') })
 
 export const fetchBlobContentLines = memoizeObservable(
     (ctx: AbsoluteRepoFile): Observable<string[]> =>
         queryGraphQL({
-            ctx: getContext({ repoKey: ctx.repoPath }),
-            request: `query BlobContent($repoPath: String!, $commitID: String!, $filePath: String!) {
-                repository(name: $repoPath) {
+            ctx: getContext({ repoKey: ctx.repoName }),
+            request: `query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
+                repository(name: $repoName) {
                     commit(rev: $commitID) {
                         file(path: $filePath) {
                             content
@@ -118,7 +118,7 @@ export const fetchBlobContentLines = memoizeObservable(
                     }
                 }
             }`,
-            variables: trimRepoPath(ctx),
+            variables: trimRepoName(ctx),
             retry: false,
         }).pipe(
             map(({ data }) => {

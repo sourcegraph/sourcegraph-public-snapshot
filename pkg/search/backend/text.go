@@ -28,7 +28,7 @@ type Text struct {
 	// for testing purposes.
 	Index interface {
 		search.Searcher
-		SplitRepositories(context.Context, query.Q, *search.Options) (canSearch, cantSearch []search.Repository, err error)
+		SplitRepositories(context.Context, query.Q, *search.Options) (canSearch, cantSearch []api.RepoName, err error)
 	}
 
 	// Fallback is the searcher used for anything that Index can't
@@ -110,11 +110,7 @@ type TextJIT struct {
 // Search distributes the search across the searcher replicas, and merges the
 // results. opts.Repositories is required to be non-empty.
 func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
-	repoNames := make([]api.RepoName, len(opts.Repositories))
-	for i := range opts.Repositories {
-		repoNames[i] = opts.Repositories[i].Name
-	}
-	repos, err := expandRepoRefs(q, repoNames)
+	repos, err := expandRepoRefs(q, opts.Repositories)
 	if err != nil {
 		return nil, err
 	}
@@ -135,22 +131,59 @@ func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (
 		}
 		r.Commit = commit
 		opts := *origOpts
-		opts.Repositories = []search.Repository{r}
+		opts.Repositories = []api.RepoName{r.Name}
+
+		qSearcher, err := expandForRepoAtCommit(q, r)
+		if err != nil {
+			return nil, err
+		}
 
 		client, err := t.client(r)
 		if err != nil {
 			return nil, err
 		}
 
-		result, err := client.Search(ctx, q, &opts)
+		result, err := client.Search(ctx, qSearcher, &opts)
 		if err != nil {
 			return all, err
+		}
+
+		// Searcher doesn't know the repo.RefPattern used, so we set it.
+		for i := range result.Stats.Status {
+			result.Stats.Status[i].Repository = r
+		}
+		for i := range result.Files {
+			result.Files[i].Repository = r
 		}
 
 		all.Add(result)
 	}
 
 	return all, nil
+}
+
+func expandForRepoAtCommit(q query.Q, repo search.Repository) (query.Q, error) {
+	var err error
+	q = query.Map(q, func(q query.Q) query.Q {
+		switch s := q.(type) {
+		case *query.Repo:
+			err = errors.Errorf("text search expected repo atom to be expanded: %v", q)
+			return q
+		case *query.RepoSet:
+			_, ok := s.Set[string(repo.Name)]
+			return &query.Const{Value: ok}
+		case *query.Ref:
+			return &query.Const{Value: s.Pattern == repo.RefPattern}
+		default:
+			return q
+		}
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+	// Include the commit as the only ref
+	q = query.NewAnd(&query.Ref{Pattern: string(repo.Commit)}, q)
+	return query.Simplify(q), nil
 }
 
 func (t *TextJIT) Close() {
@@ -299,8 +332,8 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 	// Have a top level AND to ensure we only return results for repositories
 	// in opts.Repositories
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	for _, r := range repos {
-		repoSet.Set[string(r.Name)] = true
+	for _, name := range repos {
+		repoSet.Set[string(name)] = true
 	}
 	zq = zoektquery.NewAnd(repoSet, zq)
 	zq = zoektquery.Simplify(zq)
@@ -334,9 +367,9 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 		}
 	}
 	statuses := make([]search.RepositoryStatus, len(repos))
-	for i, r := range repos {
+	for i, name := range repos {
 		statuses[i] = search.RepositoryStatus{
-			Repository: r,
+			Repository: search.Repository{Name: name},
 			Source:     SourceZoekt,
 			Status:     status,
 		}
@@ -504,8 +537,6 @@ func mapZoektFileMatch(zf []zoekt.FileMatch) []search.FileMatch {
 
 			lines = append(lines, search.LineMatch{
 				Line:          lm.Line,
-				LineStart:     lm.LineStart,
-				LineEnd:       lm.LineEnd,
 				LineNumber:    lm.LineNumber,
 				LineFragments: frags,
 			})
@@ -527,7 +558,7 @@ func (c *Zoekt) String() string {
 // SplitRepositories splits repos into two lists: indexed contains
 // repositories that can be searched by zoekt, unindexed contains everything
 // else.
-func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.Options) (indexed, unindexed []search.Repository, err error) {
+func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.Options) (indexed, unindexed []api.RepoName, err error) {
 	// We only use zoekt if we have no ref atoms. See notes about the master
 	// branch where we calculate which commits to search for a repository in
 	// TextJIT
@@ -560,16 +591,16 @@ func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.O
 		set[repo.Repository.Name] = struct{}{}
 	}
 	unindexedSet := map[api.RepoName]struct{}{}
-	for _, repo := range unindexed {
-		unindexedSet[repo.Name] = struct{}{}
+	for _, name := range unindexed {
+		unindexedSet[name] = struct{}{}
 	}
 	head := indexed
 	indexed = indexed[:0]
-	for _, r := range head {
-		if _, ok := set[string(r.Name)]; ok {
-			indexed = append(indexed, r)
-		} else if _, ok = unindexedSet[r.Name]; !ok {
-			unindexed = append(unindexed, r)
+	for _, name := range head {
+		if _, ok := set[string(name)]; ok {
+			indexed = append(indexed, name)
+		} else if _, ok = unindexedSet[name]; !ok {
+			unindexed = append(unindexed, name)
 		}
 	}
 

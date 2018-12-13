@@ -20,6 +20,7 @@ import { queryGraphQL } from '../backend/graphql'
 import { OverviewItem, OverviewList } from '../components/Overview'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 
 interface Props {
@@ -104,6 +105,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
+                <div className="mb-3">
+                    <SiteAdminManagementConsolePassword />
+                </div>
                 {this.props.overviewComponents.length > 0 && (
                     <div className="mb-4">{this.props.overviewComponents.map((C, i) => <C key={i} />)}</div>
                 )}

@@ -135,7 +135,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
 
 interface Props {
     repo: GQL.ID
-    repoPath: string
+    repoName: string
     defaultBranch: string | undefined
 
     /** The current revision, or undefined for the default branch. */

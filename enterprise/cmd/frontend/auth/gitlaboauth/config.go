@@ -44,25 +44,25 @@ func init() {
 			}
 			ffIsEnabled = true
 		})
-		conf.ContributeValidator(func(cfg schema.SiteConfiguration) (problems []string) {
+		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
 			_, problems = parseConfig(&cfg)
 			return problems
 		})
 	}()
 }
 
-func parseConfig(cfg *schema.SiteConfiguration) (providers map[schema.GitLabAuthProvider]auth.Provider, problems []string) {
+func parseConfig(cfg *conf.Unified) (providers map[schema.GitLabAuthProvider]auth.Provider, problems []string) {
 	providers = make(map[schema.GitLabAuthProvider]auth.Provider)
-	for _, pr := range cfg.AuthProviders {
+	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Gitlab == nil {
 			continue
 		}
 
-		if cfg.ExternalURL == "" {
+		if cfg.Critical.ExternalURL == "" {
 			problems = append(problems, "`externalURL` was empty and it is needed to determine the OAuth callback URL.")
 			continue
 		}
-		externalURL, err := url.Parse(cfg.ExternalURL)
+		externalURL, err := url.Parse(cfg.Critical.ExternalURL)
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
 			continue

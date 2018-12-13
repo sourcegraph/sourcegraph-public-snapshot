@@ -27,12 +27,12 @@ interface QuerySpec {
 
 interface RepositoryContributorNodeProps extends QuerySpec {
     node: GQL.IRepositoryContributor
-    repoPath: string
+    repoName: string
 }
 
 const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
     node,
-    repoPath,
+    repoName,
     revisionRange,
     after,
     path,
@@ -40,7 +40,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
 
     const query: string = [
-        searchQueryForRepoRev(repoPath),
+        searchQueryForRepoRev(repoName),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
@@ -159,7 +159,7 @@ interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {}
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoPath' | 'revisionRange' | 'after' | 'path'>
+    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path'>
 > {}
 
 interface State extends QuerySpec {}
@@ -348,7 +348,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                     queryConnection={this.queryRepositoryContributors}
                     nodeComponent={RepositoryContributorNode}
                     nodeComponentProps={{
-                        repoPath: this.props.repo.name,
+                        repoName: this.props.repo.name,
                         revisionRange,
                         after,
                         path,

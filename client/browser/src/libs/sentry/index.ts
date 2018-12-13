@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/browser'
 import { once } from 'lodash'
 
+import { getExtensionVersionSync } from '../../browser/runtime'
 import storage from '../../browser/storage'
 import { isInPage } from '../../context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
@@ -33,6 +34,7 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
 
         Sentry.configureScope(async scope => {
             scope.setTag('script', script)
+            scope.setTag('extension_version', getExtensionVersionSync())
             scope.setTag('extensions', flags.useExtensions ? 'enabled' : 'disabled')
 
             const codeHosts: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]

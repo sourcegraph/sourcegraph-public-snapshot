@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/gchaincl/sqlhooks"
-	"github.com/golang-migrate/migrate"
-	"github.com/golang-migrate/migrate/database/postgres"
-	bindata "github.com/golang-migrate/migrate/source/go_bindata"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/lib/pq"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -64,7 +64,7 @@ func ConnectToDB(dataSource string) error {
 	registerPrometheusCollector(Global, "_app")
 	configureConnectionPool(Global)
 
-	if err := DoMigrateAndClose(NewMigrate(Global)); err != nil {
+	if err := DoMigrate(NewMigrate(Global)); err != nil {
 		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
 
@@ -229,18 +229,7 @@ func NewMigrate(db *sql.DB) *migrate.Migrate {
 	return m
 }
 
-func DoMigrateAndClose(m *migrate.Migrate) (err error) {
-	defer func() {
-		srcErr, dbErr := m.Close()
-		if err == nil {
-			if srcErr != nil {
-				err = srcErr
-			} else if dbErr != nil {
-				err = dbErr
-			}
-		}
-	}()
-
+func DoMigrate(m *migrate.Migrate) (err error) {
 	err = m.Up()
 	if err == nil || err == migrate.ErrNoChange {
 		return nil

@@ -25,6 +25,7 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
+	srcapi "github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	api "github.com/sourcegraph/sourcegraph/pkg/search"
@@ -63,7 +64,7 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 	}
 
 	var res api.Result
-	repo := opts.Repositories[0]
+	repo := api.Repository{Name: opts.Repositories[0]}
 	status := api.RepositoryStatusSearched
 
 	tr := trace.New("search", repo.String())
@@ -86,6 +87,19 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 			err = errors.Wrapf(err, "failed to search %s for %s", repo, q)
 		}
 	}()
+
+	// Read and remove the commit from the query. We don't need to keep it
+	// since our matchtree logic doesn't want it.
+	q = query.Simplify(query.Map(q, func(q query.Q) query.Q {
+		if s, ok := q.(*query.Ref); ok {
+			repo.Commit = srcapi.CommitID(s.Pattern)
+			return &query.Const{Value: true}
+		}
+		return q
+	}, nil))
+	if len(repo.Commit) != 40 {
+		return nil, errors.Errorf("Commit must be resolved (Commit=%q)", repo.Commit)
+	}
 
 	emptyResultWithStatus := func(s api.RepositoryStatusType) *api.Result {
 		status = s
@@ -111,7 +125,7 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 		prepareCtx, cancel = context.WithTimeout(ctx, opts.FetchTimeout)
 		defer cancel()
 	}
-	path, err := s.Store.prepareZip(prepareCtx, gitserver.Repo{Name: opts.Repositories[0].Name}, opts.Repositories[0].Commit)
+	path, err := s.Store.prepareZip(prepareCtx, gitserver.Repo{Name: repo.Name}, repo.Commit)
 	if err != nil {
 		if errcode.IsTimeout(err) {
 			return emptyResultWithStatus(api.RepositoryStatusTimedOut), nil
@@ -170,7 +184,7 @@ nextFileMatch:
 
 		res.Files = append(res.Files, api.FileMatch{
 			Path:        cp.file.Name,
-			Repository:  opts.Repositories[0],
+			Repository:  repo,
 			LineMatches: matches,
 		})
 
@@ -423,7 +437,8 @@ func (c *contentProvider) fillMatches(candidates []*candidateMatch) []api.LineMa
 	var result []api.LineMatch
 	// We assume candidates is sorted by byteOffset and has already had
 	// overlapping matches merged.
-	for _, m := range candidates {
+	for len(candidates) > 0 {
+		m := candidates[0]
 		byteEnd := m.byteOffset + m.byteMatchSz
 		lineStart := bytes.LastIndexByte(data[:m.byteOffset+1], '\n') + 1
 		lineEnd := bytes.IndexByte(data[byteEnd:], '\n')
@@ -433,12 +448,25 @@ func (c *contentProvider) fillMatches(candidates []*candidateMatch) []api.LineMa
 			lineEnd += byteEnd
 		}
 
+		fragments := []api.LineFragmentMatch{}
+		for len(candidates) > 0 {
+			m := candidates[0]
+			if m.byteOffset+m.byteMatchSz > lineEnd {
+				break
+			}
+			candidates = candidates[1:]
+
+			fragments = append(fragments, api.LineFragmentMatch{
+				LineOffset:  m.byteOffset - lineStart,
+				MatchLength: m.byteMatchSz,
+			})
+		}
+
 		result = append(result, api.LineMatch{
 			// Intentionally create a copy since we can't hold onto data
-			Line:       append([]byte{}, data[lineStart:lineEnd]...),
-			LineStart:  m.byteOffset - lineStart,
-			LineEnd:    lineEnd - byteEnd,
-			LineNumber: bytes.Count(data[:lineStart], []byte{'\n'}),
+			Line:          append([]byte{}, data[lineStart:lineEnd]...),
+			LineNumber:    bytes.Count(data[:lineStart], []byte{'\n'}) + 1,
+			LineFragments: fragments,
 		})
 	}
 

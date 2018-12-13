@@ -51,17 +51,17 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c schema.SiteConfiguration) (problems []string) {
+func validateConfig(c conf.Unified) (problems []string) {
 	var loggedNeedsExternalURL bool
-	for _, p := range c.AuthProviders {
-		if p.Openidconnect != nil && c.ExternalURL == "" && !loggedNeedsExternalURL {
+	for _, p := range c.Critical.AuthProviders {
+		if p.Openidconnect != nil && c.Critical.ExternalURL == "" && !loggedNeedsExternalURL {
 			problems = append(problems, `openidconnect auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
 			loggedNeedsExternalURL = true
 		}
 	}
 
 	seen := map[schema.OpenIDConnectAuthProvider]int{}
-	for i, p := range c.AuthProviders {
+	for i, p := range c.Critical.AuthProviders {
 		if p.Openidconnect != nil {
 			if j, ok := seen[*p.Openidconnect]; ok {
 				problems = append(problems, fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j))

@@ -57,17 +57,17 @@ func init() {
 
 	go func() {
 		conf.Watch(func() {
-			if conf.Get().Log == nil {
+			if conf.Get().Critical.Log == nil {
 				return
 			}
-			if conf.Get().Log.Sentry == nil {
+			if conf.Get().Critical.Log.Sentry == nil {
 				return
 			}
-			if conf.Get().Log.Sentry.Dsn == "" {
+			if conf.Get().Critical.Log.Sentry.Dsn == "" {
 				return
 			}
 
-			sentryDSN = conf.Get().Log.Sentry.Dsn
+			sentryDSN = conf.Get().Critical.Log.Sentry.Dsn
 			raven.SetDSN(sentryDSN)
 		})
 

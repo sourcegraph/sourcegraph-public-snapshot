@@ -83,7 +83,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                             label={'View File (base)'}
                             ariaLabel="View file on Sourcegraph"
                             openProps={{
-                                repoPath: this.props.baseRepoPath || this.props.repoPath,
+                                repoName: this.props.baseRepoName || this.props.repoName,
                                 filePath: this.props.baseFilePath || this.props.filePath,
                                 rev: this.props.baseRev || this.props.baseCommitID,
                                 query: {
@@ -107,7 +107,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         label={`View File${this.props.baseCommitID ? ' (head)' : ''}`}
                         ariaLabel="View file on Sourcegraph"
                         openProps={{
-                            repoPath: this.props.repoPath,
+                            repoName: this.props.repoName,
                             filePath: this.props.filePath,
                             rev: this.props.rev || this.props.commitID,
                             query: this.props.commitID

@@ -18,7 +18,7 @@ import {
  * Resolves file information for a page with a single file, not including diffs with only one file.
  */
 export const resolveFileInfo = (): Observable<FileInfo> => {
-    const { repoPath, filePath, rev } = getFilePageInfo()
+    const { repoName, filePath, rev } = getFilePageInfo()
     if (!filePath) {
         return throwError(
             new Error(
@@ -33,7 +33,7 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
         const commitID = getCommitIDFromPermalink()
 
         return of({
-            repoPath,
+            repoName,
             filePath,
             commitID,
             rev,
@@ -50,12 +50,12 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
     of(undefined).pipe(
         map(getDiffPageInfo),
         // Resolve base commit ID.
-        switchMap(({ owner, repoName, mergeRequestID, diffID, baseCommitID, ...rest }) => {
+        switchMap(({ owner, projectName, mergeRequestID, diffID, baseCommitID, ...rest }) => {
             const gettingBaseCommitID = baseCommitID
                 ? // Commit was found in URL.
                   of(baseCommitID)
                 : // Commit needs to be fetched from the API.
-                  getBaseCommitIDForMergeRequest({ owner, repoName, mergeRequestID, diffID })
+                  getBaseCommitIDForMergeRequest({ owner, projectName, mergeRequestID, diffID })
 
             return gettingBaseCommitID.pipe(map(baseCommitID => ({ baseCommitID, baseRev: baseCommitID, ...rest })))
         }),
@@ -92,9 +92,9 @@ export const resolveCommitFileInfo = (codeView: HTMLElement): Observable<FileInf
     of(undefined).pipe(
         map(getCommitPageInfo),
         // Resolve base commit ID.
-        switchMap(({ owner, repoName, commitID, ...rest }) =>
-            getBaseCommitIDForCommit({ owner, repoName, commitID }).pipe(
-                map(baseCommitID => ({ owner, repoName, commitID, baseCommitID, ...rest }))
+        switchMap(({ owner, projectName, commitID, ...rest }) =>
+            getBaseCommitIDForCommit({ owner, projectName, commitID }).pipe(
+                map(baseCommitID => ({ owner, projectName, commitID, baseCommitID, ...rest }))
             )
         ),
         map(info => ({ ...info, rev: info.commitID, baseRev: info.baseCommitID })),
