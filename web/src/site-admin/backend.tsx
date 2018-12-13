@@ -1,9 +1,11 @@
-import { Observable, Subject } from 'rxjs'
-import { map, mergeMap, startWith, tap } from 'rxjs/operators'
+import { Observable, of, Subject, timer } from 'rxjs'
+import { map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Fetches all users.
@@ -173,19 +175,12 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
     )
 }
 
-/**
- * Add a repository. See the GraphQL documentation for Mutation.addRepository.
- */
-export function addRepository(
-    name: string
-): Observable<{
-    /** The ID of the newly added repository (or the existing repository, if it already existed). */
-    id: GQL.ID
-}> {
-    return mutateGraphQL(
+export function pollUntilRepositoryAdded(name: string): Observable<GQL.IRepository> {
+    console.log('polling')
+    return queryGraphQL(
         gql`
-            mutation AddRepository($name: String!) {
-                addRepository(name: $name) {
+            query Repository($name: String) {
+                repository(name: $name) {
                     id
                 }
             }
@@ -193,8 +188,106 @@ export function addRepository(
         { name }
     ).pipe(
         map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()), // in case we memoized that this repository doesn't exist
-        map(data => data.addRepository)
+        switchMap(data => {
+            if (!data.repository) {
+                return timer(1000).pipe(switchMap(() => pollUntilRepositoryAdded(name)))
+            }
+            return of(data.repository)
+        })
+    )
+}
+
+export function queryExternalServices(args: {
+    first?: number
+    kind?: GQL.ExternalServiceKind
+}): Observable<GQL.IExternalServiceConnection> {
+    console.log('queryExternalSErvice')
+    return queryGraphQL(
+        gql`
+            query ExternalServices($first: Int, $kind: ExternalServiceKind) {
+                externalServices(first: $first, kind: $kind) {
+                    nodes {
+                        id
+                        kind
+                        displayName
+                        config
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.externalServices)
+    )
+}
+
+export function addGitHubDotComRepository(name: string): Observable<void> {
+    console.log('addGithubdotcom')
+    const url = 'https://github.com'
+    const kind = GQL.ExternalServiceKind.GITHUB
+    return queryExternalServices({ kind }).pipe(
+        map(externalServices => externalServices.nodes[0]),
+        switchMap(node => {
+            if (!node) {
+                return addExternalService({
+                    kind,
+                    displayName: url,
+                    config: '{}',
+                })
+            }
+            return of(node)
+        }),
+        map(externalService => addRepository(name, externalService.id)),
+        map(() => undefined)
+    )
+}
+
+function addRepository(name: string, externalService: GQL.ID): Observable<void> {
+    console.log('addRepository')
+    return mutateGraphQL(
+        gql`
+            mutation AddRepository($name: String!, $externalService: ID!) {
+                addRepository(name: $name, externalService: $externalService) {
+                    id
+                }
+            }
+        `,
+        { name, externalService }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(() => undefined)
+    )
+}
+
+export function addExternalService(input: GQL.IAddExternalServiceInput): Observable<GQL.IExternalService> {
+    console.log('addexternalservice')
+    return mutateGraphQL(
+        gql`
+            mutation addExternalService($input: AddExternalServiceInput!) {
+                addExternalService(input: $input) {
+                    id
+                }
+            }
+        `,
+        { input }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
+                eventLogger.log('AddExternalServiceFailed')
+                throw createAggregateError(errors)
+            }
+            eventLogger.log('AddExternalServiceSucceeded', {
+                externalService: {
+                    kind: data.addExternalService.kind,
+                },
+            })
+            return data.addExternalService
+        })
     )
 }
 

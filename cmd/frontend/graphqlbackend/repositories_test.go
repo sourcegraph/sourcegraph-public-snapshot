@@ -52,6 +52,7 @@ func TestAddRepository(t *testing.T) {
 	}
 	backend.Mocks.Repos.Add = func(name api.RepoName) error { return nil }
 	db.Mocks.Repos.MockGetByName(t, "my/repo", 123)
+
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,

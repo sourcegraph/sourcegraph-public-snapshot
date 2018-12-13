@@ -9,7 +9,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
-import { catchError, mergeMap, switchMap } from 'rxjs/operators'
+import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
 import {
@@ -22,8 +22,9 @@ import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import {
-    addRepository,
+    addGitHubDotComRepository,
     fetchAllRepositoriesAndPollIfAnyCloning,
+    pollUntilRepositoryAdded,
     setAllRepositoriesEnabled,
     setRepositoryEnabled,
     updateAllMirrorRepositories,
@@ -172,9 +173,14 @@ class AddPublicRepositoryForm extends React.PureComponent<AddPublicRepositoryFor
         this.subscriptions.add(
             this.submits
                 .pipe(
-                    mergeMap(({ repoName }) =>
-                        addRepository(`github.com/${repoName}`).pipe(
-                            switchMap(({ id }) => setRepositoryEnabled(id, true)),
+                    mergeMap(({ repoName }) => {
+                        const fullName = `github.com/${repoName}`
+                        return addGitHubDotComRepository(fullName).pipe(
+                            switchMap(() =>
+                                pollUntilRepositoryAdded(fullName).pipe(
+                                    map(repo => setRepositoryEnabled(repo.id, true))
+                                )
+                            ),
                             catchError(error => {
                                 console.error(error)
                                 eventLogger.log('PublicRepositoryAdditionFailed', {
@@ -184,7 +190,7 @@ class AddPublicRepositoryForm extends React.PureComponent<AddPublicRepositoryFor
                                 return []
                             })
                         )
-                    )
+                    })
                 )
                 .subscribe(() => {
                     eventLogger.log('PublicRepositoryAdded', { repositories: { code_host: 'github' } })

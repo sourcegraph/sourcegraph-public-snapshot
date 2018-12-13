@@ -1,13 +1,11 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Observable, Subject, Subscription } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
-import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
-import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { addExternalService } from './backend'
 import { ALL_EXTERNAL_SERVICES } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
@@ -115,30 +113,4 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         }
         this.submits.next(this.state.input)
     }
-}
-
-function addExternalService(input: GQL.IAddExternalServiceInput): Observable<GQL.IExternalService> {
-    return mutateGraphQL(
-        gql`
-            mutation addExternalService($input: AddExternalServiceInput!) {
-                addExternalService(input: $input) {
-                    id
-                }
-            }
-        `,
-        { input }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
-                eventLogger.log('AddExternalServiceFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('AddExternalServiceSucceeded', {
-                externalService: {
-                    kind: data.addExternalService.kind,
-                },
-            })
-            return data.addExternalService
-        })
-    )
 }

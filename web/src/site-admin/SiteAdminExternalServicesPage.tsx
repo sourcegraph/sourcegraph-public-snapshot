@@ -8,11 +8,11 @@ import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
-import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
+import { mutateGraphQL } from '../backend/graphql'
+import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { queryExternalServices } from './backend'
 
 interface ExternalServiceNodeProps {
     node: GQL.IExternalService
@@ -150,35 +150,4 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
     }
 
     private onDidUpdateExternalServices = () => this.updates.next()
-}
-
-function queryExternalServices(args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> {
-    return queryGraphQL(
-        gql`
-            query ExternalServices($first: Int) {
-                externalServices(first: $first) {
-                    nodes {
-                        id
-                        kind
-                        displayName
-                        config
-                    }
-                    totalCount
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
-            }
-        `,
-        {
-            first: args.first,
-        }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.externalServices
-        })
-    )
 }
