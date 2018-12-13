@@ -43,12 +43,6 @@ interface State {
     canAddOrError?: boolean | ErrorLike
 
     /**
-     * Whether the repository was added successfully. undefined before being triggered, 'loading' while loading,
-     * true if successful, and an error otherwise.
-     */
-    addedOrError?: true | 'loading' | ErrorLike
-
-    /**
      * Whether the option to enable the repository should be shown.
      */
     showEnable: boolean
@@ -215,11 +209,6 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                         )}
                                     </div>
                                 </div>
-                                {isErrorLike(this.state.addedOrError) && (
-                                    <div className="alert alert-danger repository-error-page__alert mt-2">
-                                        Error adding repository: {upperFirst(this.state.addedOrError.message)}
-                                    </div>
-                                )}
                             </div>
                         )}
                         {this.state.showEnable && (
