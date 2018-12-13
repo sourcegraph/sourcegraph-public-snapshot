@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-func parseTTLOrDefault(ttl string, defaultVal time.Duration, warnings []string) (_ time.Duration, updatedWarnings []string) {
+func parseTTL(ttl string) (time.Duration, error) {
+	defaultValue := 3 * time.Hour
 	if ttl == "" {
-		return defaultVal, warnings
+		return defaultValue, nil
 	}
-	parsed, err := time.ParseDuration(ttl)
+	d, err := time.ParseDuration(ttl)
 	if err != nil {
-		warnings = append(warnings, fmt.Sprintf("Could not parse time duration %q, falling back to %v.", ttl, defaultVal))
-		return defaultVal, warnings
+		return defaultValue, fmt.Errorf("Could not parse time duration %q.", ttl)
 	}
-	return parsed, warnings
+	return d, nil
 }
