@@ -499,11 +499,11 @@ export function getGitHubState(url: string): GitHubBlobUrl | GitHubPullUrl | Git
         }
     }
     const parsed = parseURL()
-    if (parsed && parsed.repoName && parsed.repoName && parsed.user) {
+    if (parsed && parsed.ghRepoName && parsed.repoName && parsed.user) {
         return {
             mode: GitHubMode.Repository,
             owner: parsed.user,
-            ghRepoName: parsed.repoName,
+            ghRepoName: parsed.ghRepoName,
             rev: parsed.rev,
             filePath: parsed.filePath,
         }
