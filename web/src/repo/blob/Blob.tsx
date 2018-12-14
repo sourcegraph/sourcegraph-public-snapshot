@@ -6,12 +6,13 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
-import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, fromEvent, merge, Observable, Subject, Subscribable, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -23,7 +24,9 @@ import {
     AbsoluteRepoFile,
     FileSpec,
     LineOrPositionOrRange,
+    ModeSpec,
     parseHash,
+    PositionSpec,
     RenderMode,
     RepoSpec,
     ResolvedRevSpec,
@@ -31,8 +34,7 @@ import {
     toPositionOrRangeHash,
     toPrettyBlobURL,
 } from '../../../../shared/src/util/url'
-import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
-import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
+import { getHover, getJumpURL } from '../../backend/features'
 import { isDiscussionsEnabled } from '../../discussions'
 import { lprToSelectionsZeroIndexed } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
@@ -169,7 +171,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
             pushHistory: path => this.props.history.push(path),
-            fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
+            fetchHover: position =>
+                getHover(this.getLSPTextDocumentPositionParams(position), this.props) as Subscribable<HoverMerged>,
             fetchJumpURL: position => getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props),
             getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })
@@ -286,7 +289,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
         const modelChanges: Observable<
-            AbsoluteRepoFile & LSPSelector & Pick<BlobProps, 'content'>
+            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content'>
         > = this.componentUpdates.pipe(
             map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
@@ -315,7 +318,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
 
         /** Decorations */
-        let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
+        let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
         const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(modelChanges).pipe(
             switchMap(([model]) => {
                 const modelChanged = !isEqual(model, lastModel)
@@ -323,7 +326,12 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
                 // Only clear decorations if the model changed. If only the extensions changed, keep
                 // the old decorations until the new ones are available, to avoid UI jitter.
-                return merge(modelChanged ? [null] : [], getDecorations(model, this.props))
+                return merge(
+                    modelChanged ? [null] : [],
+                    this.props.extensionsController.services.textDocumentDecoration.getDecorations({
+                        uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
+                    })
+                )
             }),
             share()
         )
@@ -399,7 +407,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
     private getLSPTextDocumentPositionParams(
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): LSPTextDocumentPositionParams {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
             repoName: position.repoName,
             filePath: position.filePath,

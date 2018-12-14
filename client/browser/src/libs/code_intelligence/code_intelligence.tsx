@@ -11,13 +11,13 @@ import {
     PositionAdjuster,
 } from '@sourcegraph/codeintellify'
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
 import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'

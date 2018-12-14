@@ -1,5 +1,5 @@
 import { GitHubBlobUrl, GitHubMode, GitHubPullUrl, GitHubRepositoryUrl, GitHubURL } from '.'
-import { CodeCell, DiffRepoRev, DiffResolvedRevSpec, MaybeDiffSpec } from '../../shared/repo'
+import { DiffResolvedRevSpec } from '../../shared/repo'
 import { parseHash } from '../../shared/util/url'
 
 /**
@@ -13,48 +13,6 @@ import { parseHash } from '../../shared/util/url'
  */
 export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
     return document.getElementsByClassName('file') as HTMLCollectionOf<HTMLElement>
-}
-
-/**
- * createBlobAnnotatorMount creates a <div> element and adds it to the DOM
- * where the BlobAnnotator component should be mounted.
- */
-export function createBlobAnnotatorMount(fileContainer: HTMLElement, isBase?: boolean): HTMLElement | null {
-    if (isInlineCommentContainer(fileContainer)) {
-        return null
-    }
-
-    const className = 'sourcegraph-app-annotator' + (isBase ? '-base' : '')
-    const existingMount = fileContainer.querySelector('.' + className) as HTMLElement
-    if (existingMount) {
-        return existingMount
-    }
-
-    const mountEl = document.createElement('div')
-    mountEl.style.display = 'inline-flex'
-    mountEl.style.verticalAlign = 'middle'
-    mountEl.style.alignItems = 'center'
-    mountEl.className = className
-
-    const fileActions = fileContainer.querySelector('.file-actions')
-    if (!fileActions) {
-        // E.g. snippets on the PR conversation view.
-        return null
-    }
-    const buttonGroup = fileActions.querySelector('.BtnGroup')
-    if (buttonGroup && buttonGroup.parentNode && !fileContainer.querySelector('.show-file-notes')) {
-        // blob view
-        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
-    } else {
-        // commit & pull request view
-        const note = fileContainer.querySelector('.show-file-notes')
-        if (!note || !note.parentNode) {
-            throw new Error('cannot locate BlobAnnotator injection site')
-        }
-        note.parentNode.insertBefore(mountEl, note.nextSibling)
-    }
-
-    return mountEl
 }
 
 /**
@@ -95,10 +53,6 @@ export function createCodeViewToolbarMount(fileContainer: HTMLElement): HTMLElem
     }
 
     return mountEl
-}
-
-export function isInlineCommentContainer(file: HTMLElement): boolean {
-    return file.classList.contains('inline-review-comment')
 }
 
 /**
@@ -274,177 +228,6 @@ function getDiffResolvedRevFromPageSource(pageSource: string): DiffResolvedRevSp
     }
 }
 
-/**
- * getDiffRepoRev returns the base and head branches & URIs, or null for non-diff views.
- */
-export function getDiffRepoRev(): DiffRepoRev | null {
-    const { repoName, isDelta, isPullRequest, isCommit, isCompare } = parseURL()
-    if (!isDelta) {
-        return null
-    }
-
-    let baseRev = ''
-    let headRev = ''
-    let baseRepoName = ''
-    let headRepoName = ''
-    if (isPullRequest) {
-        const branches = document.querySelectorAll('.commit-ref')
-        baseRev = (branches[0] as any).title
-        headRev = (branches[1] as any).title
-
-        if (baseRev.includes(':')) {
-            const baseSplit = baseRev.split(':')
-            baseRev = baseSplit[1]
-            baseRepoName = `${window.location.host}/${baseSplit[0]}`
-        } else {
-            baseRev = repoName as string
-        }
-        if (headRev.includes(':')) {
-            const headSplit = headRev.split(':')
-            headRev = headSplit[1]
-            headRepoName = `${window.location.host}/${headSplit[0]}`
-        } else {
-            headRepoName = repoName as string
-        }
-    } else if (isCommit) {
-        let branchEl = document.querySelector('li.branch') as HTMLElement
-        if (branchEl) {
-            branchEl = branchEl.querySelector('a') as HTMLElement
-        }
-        if (branchEl) {
-            baseRev = branchEl.innerHTML
-            headRev = branchEl.innerHTML
-        } else {
-            const headCommitEl = document.querySelector('[name="commit_id"]') as HTMLInputElement
-            if (headCommitEl) {
-                headRev = headCommitEl.value
-            }
-            const baseCommitEl = document.querySelector('.sha-block > .sha') as HTMLAnchorElement
-            if (baseCommitEl) {
-                baseRev = baseCommitEl.innerText
-            }
-        }
-        baseRepoName = repoName as string
-        headRepoName = repoName as string
-    } else if (isCompare) {
-        const resolvedDiffSpec = getResolvedDiffForCompare()
-        if (resolvedDiffSpec) {
-            baseRev = resolvedDiffSpec.baseCommitID
-            headRev = resolvedDiffSpec.headCommitID
-        }
-        const forkElements = document.querySelectorAll('.fork-suggester span.js-select-button') as NodeListOf<
-            HTMLSpanElement
-        >
-        if (forkElements && forkElements.length === 2) {
-            baseRepoName = `${window.location.host}/${forkElements[0].innerText}`
-            headRepoName = `${window.location.host}/${forkElements[1].innerText}`
-        }
-    }
-
-    if (baseRev === '' || headRev === '' || baseRepoName === '' || headRepoName === '') {
-        return null
-    }
-    return { baseRev, headRev, baseRepoName, headRepoName }
-}
-
-/**
- * getCodeCellsForAnnotation code cells which should be annotated
- */
-export function getCodeCells(table: HTMLTableElement, opt: MaybeDiffSpec): CodeCell[] {
-    const cells: CodeCell[] = []
-    for (let i = 0; i < table.rows.length; ++i) {
-        const row = table.rows[i]
-
-        // Inline comments can be on
-        if (row.className.includes('inline-comments')) {
-            continue
-        }
-
-        let line: number // line number of the current line
-        let codeCell: HTMLTableDataCellElement // the actual cell that has code inside; each row contains multiple columns
-        let isAddition: boolean | undefined
-        let isDeletion: boolean | undefined
-        if (opt.isDelta) {
-            if ((opt.isSplitDiff && row.cells.length !== 4) || (!opt.isSplitDiff && row.cells.length !== 3)) {
-                // for "diff expander" lines
-                continue
-            }
-
-            let lineCell: HTMLTableDataCellElement
-            if (opt.isSplitDiff) {
-                lineCell = opt.isBase ? row.cells[0] : row.cells[2]
-            } else {
-                lineCell = opt.isBase ? row.cells[0] : row.cells[1]
-            }
-
-            if (opt.isSplitDiff) {
-                codeCell = opt.isBase ? row.cells[1] : row.cells[3]
-            } else {
-                codeCell = row.cells[2]
-            }
-
-            if (!codeCell) {
-                console.error(`missing code cell at row ${i}`, table)
-                continue
-            }
-
-            if (codeCell.className.includes('blob-code-empty')) {
-                // for split diffs, this class represents "empty" ranges for one side of the diff
-                continue
-            }
-
-            isAddition = codeCell.className.includes('blob-code-addition')
-            isDeletion = codeCell.className.includes('blob-code-deletion')
-
-            // additions / deletions should be annotated with the correct revision;
-            // unmodified parts should only be annotated once;
-            // head is preferred over base for unmodified parts because of the ?w=1 parameter
-            if (!isAddition && !isDeletion && opt.isBase && !opt.isSplitDiff) {
-                continue
-            }
-            if (isDeletion && !opt.isBase) {
-                continue
-            }
-            if (isAddition && opt.isBase) {
-                continue
-            }
-
-            const lineData = lineCell.getAttribute('data-line-number') as string
-            if (lineData === '...') {
-                // row before line "1" on diff views
-                continue
-            }
-            line = parseInt(lineData, 10)
-        } else {
-            const lineCell = row.cells[0]
-            if (!lineCell) {
-                continue
-            }
-            // Some blob views do not user the data-line-number attribute and instead use a specific class.
-            if (lineCell.className === 'blob-num') {
-                line = parseInt(lineCell.innerText, 10)
-            } else {
-                line = parseInt(lineCell.getAttribute('data-line-number') as string, 10)
-            }
-            codeCell = row.cells[1]
-        }
-        if (!codeCell) {
-            continue
-        }
-
-        const innerCode = codeCell.querySelector('.blob-code-inner') // ignore extraneous inner elements, like "comment" button on diff views
-        cells.push({
-            cell: (innerCode || codeCell) as HTMLElement,
-            eventHandler: codeCell, // allways the TD element
-            line,
-            isAddition,
-            isDeletion,
-        })
-    }
-
-    return cells
-}
-
 const GITHUB_BLOB_REGEX = /^(https?):\/\/(github.com)\/([A-Za-z0-9_]+)\/([A-Za-z0-9-]+)\/blob\/([^#]*)(#L[0-9]+)?/i
 const GITHUB_PULL_REGEX = /^(https?):\/\/(github.com)\/([A-Za-z0-9_]+)\/([A-Za-z0-9-]+)\/pull\/([0-9]+)(\/(commits|files))?/i
 const COMMIT_HASH_REGEX = /^([0-9a-f]{40})/i
@@ -601,14 +384,4 @@ export function parseURL(loc: Location = window.location): GitHubURL {
         isCodePage,
         isCompare,
     }
-}
-
-// Code Comments
-export function getCodeCommentContainers(): HTMLCollectionOf<HTMLElement> {
-    return document.getElementsByClassName('js-comment-body') as HTMLCollectionOf<HTMLElement>
-}
-
-// Repository search
-export function getRepoCodeSearchContainers(): HTMLCollectionOf<HTMLElement> {
-    return document.getElementsByClassName('code-list-item') as HTMLCollectionOf<HTMLElement>
 }

@@ -1,6 +1,5 @@
 import { from, Observable } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
-import { map, switchMap } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import storage from '../../browser/storage'
 import { isExtension } from '../../context'
 import { getContext } from '../../shared/backend/context'
@@ -16,7 +15,7 @@ interface PhabEntity {
     phid: string // e.g. "PHID-RHURI-..."
 }
 
-export interface ConduitURI extends PhabEntity {
+interface ConduitURI extends PhabEntity {
     fields: {
         uri: {
             raw: string // e.g. https://secure.phabricator.com/source/phabricator.git",
@@ -27,7 +26,7 @@ export interface ConduitURI extends PhabEntity {
     }
 }
 
-export interface ConduitRepo extends PhabEntity {
+interface ConduitRepo extends PhabEntity {
     fields: {
         name: string
         vcs: string // e.g. 'git'
@@ -63,7 +62,7 @@ interface SourcegraphConduitConfiguration {
     error_info?: string
 }
 
-export interface ConduitRef {
+interface ConduitRef {
     ref: string
     type: 'base' | 'diff'
     commit: string // a SHA
@@ -72,12 +71,12 @@ export interface ConduitRef {
     }
 }
 
-export interface ConduitDiffChange {
+interface ConduitDiffChange {
     oldPath: string
     currentPath: string
 }
 
-export interface ConduitDiffDetails {
+interface ConduitDiffDetails {
     branch: string
     sourceControlBaseRevision: string // the merge base commit
     description: string // e.g. 'rNZAP9bee3bc2cd3068dd97dfa87068c4431c5d6093ef'
@@ -130,7 +129,7 @@ export function getPhabricatorCSS(): Promise<string> {
     })
 }
 
-export function getDiffDetailsFromConduit(diffID: number, differentialID: number): Promise<ConduitDiffDetails> {
+function getDiffDetailsFromConduit(diffID: number, differentialID: number): Promise<ConduitDiffDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[ids]', `[${diffID}]`)
@@ -159,7 +158,7 @@ interface ConduitRawDiffResponse {
     result: string
 }
 
-export function getRawDiffFromConduit(diffID: number): Promise<string> {
+function getRawDiffFromConduit(diffID: number): Promise<string> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[diffID]', diffID.toString())
@@ -195,7 +194,7 @@ interface ConduitDiffusionCommitQueryResponse {
     }
 }
 
-export function searchForCommitID(props: any): Promise<string> {
+function searchForCommitID(props: any): Promise<string> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[constraints]', `{"ids":[${props.diffID}]}`)
@@ -229,7 +228,7 @@ interface ConduitDifferentialQueryResponse {
     }
 }
 
-export function getRepoPHIDForDifferentialID(differentialID: number): Promise<string> {
+function getRepoPHIDForDifferentialID(differentialID: number): Promise<string> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[ids]', `[${differentialID}]`)
@@ -257,7 +256,7 @@ interface CreatePhabricatorRepoOptions {
     phabricatorURL: string
 }
 
-export const createPhabricatorRepo = memoizeObservable(
+const createPhabricatorRepo = memoizeObservable(
     (options: CreatePhabricatorRepoOptions): Observable<void> =>
         mutateGraphQL({
             ctx: getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
@@ -279,7 +278,7 @@ export const createPhabricatorRepo = memoizeObservable(
     ({ callsign }) => callsign
 )
 
-export interface PhabricatorRepoDetails {
+interface PhabricatorRepoDetails {
     callsign: string
     repoName: string
 }
@@ -324,43 +323,6 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
     })
 }
 
-export function getRepoDetailsFromCallsignObservable(callsign: string): Observable<PhabricatorRepoDetails> {
-    const form = createConduitRequestForm()
-    form.set('params[constraints]', JSON.stringify({ callsigns: [callsign] }))
-    form.set('params[attachments]', '{ "uris": true }')
-
-    return ajax({
-        url: window.location.origin + '/api/diffusion.repository.search',
-        withCredentials: true,
-        headers: new Headers({ Accept: 'application/json' }),
-        body: form,
-    }).pipe(
-        map(({ response }) => response as ConduitReposResponse),
-        map(res => {
-            if (res.error_code) {
-                throw new Error(`error ${res.error_code}: ${res.error_info}`)
-            }
-
-            return res.result.data[0]
-        }),
-        switchMap(repo => convertConduitRepoToRepoDetailsObservable(repo)),
-        map(details => {
-            if (!details) {
-                throw new Error('could not parse repo details')
-            }
-
-            return details
-        }),
-        switchMap(details =>
-            createPhabricatorRepo({
-                callsign,
-                repoName: details.repoName,
-                phabricatorURL: window.location.origin,
-            }).pipe(map(() => details))
-        )
-    )
-}
-
 /**
  *  getSourcegraphURLFromConduit returns the current Sourcegraph URL on the window object or will query the
  *  sourcegraph.configuration conduit API endpoint. The Phabricator extension updates the window object automatically, but in the case it fails
@@ -394,7 +356,7 @@ export function getSourcegraphURLFromConduit(): Promise<string> {
     })
 }
 
-export function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetails> {
+function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[constraints]', JSON.stringify({ phids: [phid] }))
@@ -485,50 +447,6 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
     })
 }
 
-function convertConduitRepoToRepoDetailsObservable(repo: ConduitRepo): Observable<PhabricatorRepoDetails | null> {
-    return new Observable(observer => {
-        if (isExtension) {
-            return storage.getSync(items => {
-                if (items.phabricatorMappings) {
-                    for (const mapping of items.phabricatorMappings) {
-                        if (mapping.callsign === repo.fields.callsign) {
-                            return observer.next({
-                                callsign: repo.fields.callsign,
-                                repoName: mapping.path,
-                            })
-                        }
-                    }
-                }
-                return observer.next(convertToDetails(repo))
-            })
-        } else {
-            // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
-            // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
-            // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
-            // in the browser extension options menu.
-            const callsignMappings =
-                window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS') || window.PHABRICATOR_CALLSIGN_MAPPINGS
-            const details = convertToDetails(repo)
-            if (callsignMappings) {
-                const mappings =
-                    typeof callsignMappings === 'string'
-                        ? (JSON.parse(callsignMappings) as { path: string; callsign: string }[])
-                        : callsignMappings
-
-                for (const mapping of mappings) {
-                    if (mapping.callsign === repo.fields.callsign) {
-                        return observer.next({
-                            callsign: repo.fields.callsign,
-                            repoName: mapping.path,
-                        })
-                    }
-                }
-            }
-            return observer.next(details)
-        }
-    })
-}
-
 function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
     let uri: ConduitURI | undefined
     for (const u of repo.attachments.uris.uris) {
@@ -558,7 +476,7 @@ interface ResolveStagingOptions {
     description?: string
 }
 
-export const resolveStagingRev = memoizeObservable(
+const resolveStagingRev = memoizeObservable(
     (options: ResolveStagingOptions): Observable<string | null> =>
         mutateGraphQL({
             ctx: getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
@@ -697,7 +615,7 @@ function getStagingDetails(
     return undefined
 }
 
-export interface ResolvedDiff {
+interface ResolvedDiff {
     commitID: string
     stagingRepoName?: string
 }

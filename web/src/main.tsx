@@ -5,7 +5,7 @@
 
 import './polyfills'
 
-import './highlight'
+import '../../shared/src/highlight/contributions'
 
 import React from 'react'
 import { render } from 'react-dom'
