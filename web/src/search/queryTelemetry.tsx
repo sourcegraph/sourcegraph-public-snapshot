@@ -1,12 +1,11 @@
-import { SearchOptions } from '.'
 import { count } from '../../../shared/src/util/strings'
 
-export function queryTelemetryData(opt: SearchOptions): { [key: string]: any } {
+export function queryTelemetryData(query: string): { [key: string]: any } {
     return {
         // 🚨 PRIVACY: never provide any private data in { code_search: { query_data: { query } } }.
-        query: opt.query ? queryStringTelemetryData(opt.query) : undefined,
-        combined: opt.query,
-        empty: !opt.query,
+        query: query ? queryStringTelemetryData(query) : undefined,
+        combined: query,
+        empty: !query,
     }
 }
 

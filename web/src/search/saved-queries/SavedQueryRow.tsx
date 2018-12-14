@@ -49,7 +49,7 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
                     debounceTime(250),
                     withLatestFrom(propsChanges),
                     map(([v]) => v),
-                    switchMap(query => fetchSearchResultStats({ query })),
+                    switchMap(query => fetchSearchResultStats(query)),
                     map(results => ({
                         approximateResultCount: results.approximateResultCount,
                         sparkline: results.sparkline,

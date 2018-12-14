@@ -249,7 +249,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                             component={
                                 <SavedQueryCreateForm
                                     authenticatedUser={this.props.authenticatedUser}
-                                    values={{ query: parsedQuery ? parsedQuery.query : '' }}
+                                    values={{ query: parsedQuery || '' }}
                                     onDidCancel={this.props.onSavedQueryModalClose}
                                     onDidCreate={this.props.onDidCreateSavedQuery}
                                     settingsCascade={this.props.settingsCascade}

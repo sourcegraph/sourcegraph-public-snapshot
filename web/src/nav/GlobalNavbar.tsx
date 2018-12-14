@@ -8,7 +8,7 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
 import { KeybindingsProps } from '../keybindings'
-import { parseSearchURLQuery, SearchOptions } from '../search'
+import { parseSearchURLQuery } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { NavLinks } from './NavLinks'
 
@@ -43,13 +43,12 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         /**
          * Reads initial state from the props (i.e. URL parameters).
          */
-        const options = parseSearchURLQuery(props.location.search || '')
-        if (options) {
-            props.onNavbarQueryChange(options.query)
+        const query = parseSearchURLQuery(props.location.search || '')
+        if (query) {
+            props.onNavbarQueryChange(query)
         } else {
             // If we have no component state, then we may have gotten unmounted during a route change.
-            const state: SearchOptions | undefined = props.location.state
-            props.onNavbarQueryChange(state ? state.query : '')
+            props.onNavbarQueryChange(props.location.state ? props.location.state.query : '')
         }
     }
 
@@ -59,9 +58,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location.search !== this.props.location.search) {
-            const options = parseSearchURLQuery(this.props.location.search || '')
-            if (options) {
-                this.props.onNavbarQueryChange(options.query)
+            const query = parseSearchURLQuery(this.props.location.search || '')
+            if (query) {
+                this.props.onNavbarQueryChange(query)
             }
         }
     }
