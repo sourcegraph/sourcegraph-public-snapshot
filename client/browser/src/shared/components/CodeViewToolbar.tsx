@@ -7,10 +7,10 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { toURIWithPath } from '../../../../../shared/src/util/url'
 import { FileInfo } from '../../libs/code_intelligence'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
-import { toURIWithPath } from '../repo'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {

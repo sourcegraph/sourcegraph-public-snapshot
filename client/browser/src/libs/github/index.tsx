@@ -1,4 +1,4 @@
-import { ParsedRepoURI } from '../../shared/repo'
+import { ParsedRepoURI } from '../../../../../shared/src/util/url'
 
 export interface GitHubURL extends ParsedRepoURI {
     user?: string
