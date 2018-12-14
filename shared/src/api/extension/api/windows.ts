@@ -62,10 +62,14 @@ class ExtWindow implements sourcegraph.Window {
             },
             error: (err: any): void => {
                 const error = asError(err)
-                this.windowsProxy.$errorProgress(handle, { ...error, message: error.message, stack: error.stack })
+                this.windowsProxy.$updateProgress(handle, undefined, {
+                    ...error,
+                    message: error.message,
+                    stack: error.stack,
+                })
             },
             complete: (): void => {
-                this.windowsProxy.$updateProgress(handle, { percentage: 100 })
+                this.windowsProxy.$updateProgress(handle, undefined, undefined, true)
             },
         }
         return reporter

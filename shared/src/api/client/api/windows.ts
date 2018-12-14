@@ -19,8 +19,7 @@ export interface ClientWindowsAPI {
     $showMessage(message: string): Promise<void>
     $showInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined>
     $startProgress(options: sourcegraph.ProgressOptions): Promise<number>
-    $updateProgress(handle: number, progress: sourcegraph.Progress): void
-    $errorProgress(handle: number, error: any): void
+    $updateProgress(handle: number, progress?: sourcegraph.Progress, error?: any, done?: boolean): void
 }
 
 /** @internal */
@@ -95,34 +94,28 @@ export class ClientWindows implements ClientWindowsAPI {
     }
 
     private handles = 1
-    private progress = new Map<number, Subject<sourcegraph.Progress>>()
+    private progressReporters = new Map<number, Subject<sourcegraph.Progress>>()
 
     public async $startProgress(options: sourcegraph.ProgressOptions): Promise<number> {
         const handle = this.handles++
-        const progress = this.createProgressReporter(options)
-        this.progress.set(handle, progress)
+        const reporter = this.createProgressReporter(options)
+        this.progressReporters.set(handle, reporter)
         return handle
     }
 
-    public $updateProgress(handle: number, progress: sourcegraph.Progress): void {
-        const reporter = this.progress.get(handle)
+    public $updateProgress(handle: number, progress?: sourcegraph.Progress, error?: any, done?: boolean): void {
+        const reporter = this.progressReporters.get(handle)
         if (!reporter) {
             console.warn('No ProgressReporter for handle ' + handle)
             return
         }
-        reporter.next(progress)
-        if (progress.percentage && progress.percentage >= 100) {
+        if (done || (progress && progress.percentage && progress.percentage >= 100)) {
             reporter.complete()
+        } else if (error) {
+            reporter.error(error)
+        } else if (progress) {
+            reporter.next(progress)
         }
-    }
-
-    public $errorProgress(handle: number, error: any): void {
-        const reporter = this.progress.get(handle)
-        if (!reporter) {
-            console.warn('No ProgressReporter for handle ' + handle)
-            return
-        }
-        reporter.error(error)
     }
 
     public unsubscribe(): void {
