@@ -103,13 +103,6 @@
       "type": "integer",
       "default": 5
     },
-    "repos.list": {
-      "description": "JSON array of configuration for external repositories.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/Repository"
-      }
-    },
     "reviewBoard": {
       "description": "JSON array of configuration for Review Board.",
       "type": "array",
@@ -279,7 +272,7 @@
         },
         "gitURLType": {
           "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/add_from_git_repository#repositories-that-need-http-s-or-ssh-authentication.",
+            "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"
@@ -359,7 +352,7 @@
         },
         "gitURLType": {
           "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/add_from_git_repository#repositories-that-need-http-s-or-ssh-authentication.",
+            "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"
@@ -462,7 +455,7 @@
         },
         "gitURLType": {
           "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/add_from_git_repository#repositories-that-need-http-s-or-ssh-authentication.",
+            "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"
@@ -582,54 +575,6 @@
           "description":
             "The repository name output pattern. This should use `{matchGroup}` syntax to reference the capturing groups from the `from` field.",
           "type": "string"
-        }
-      }
-    },
-    "Repository": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["url", "path"],
-      "properties": {
-        "type": {
-          "description": "Type of the version control system for this repository, such as \"git\"",
-          "type": "string",
-          "enum": ["git"],
-          "default": "git"
-        },
-        "url": {
-          "description": "Clone URL for the repository, such as git@example.com:my/repo.git",
-          "type": "string"
-        },
-        "path": {
-          "description": "Display path on Sourcegraph for the repository, such as my/repo",
-          "type": "string",
-          "pattern": "^[\\w_]"
-        },
-        "links": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "repository": {
-              "description":
-                "URL specifying where to view the repository at an external location e.g. \"https://example.com/myrepo\"",
-              "type": "string"
-            },
-            "commit": {
-              "description":
-                "URL template for specifying how to link to commits at an external location. Use \"{commit}\" as a placeholder for a given commit ID e.g. \"https://example.com/myrepo/view-commit/{commit}\"",
-              "type": "string"
-            },
-            "tree": {
-              "description":
-                "URL template for specifying how to link to paths at an external location. Use \"{path}\" as a placeholder for a given path and \"{rev}\" as a placeholder for a given revision e.g. \"https://example.com/myrepo@{rev}/browse/{path}\"",
-              "type": "string"
-            },
-            "blob": {
-              "description":
-                "URL template for specifying how to link to files at an external location. Use \"{path}\" as a placeholder for a given path and \"{rev}\" as a placeholder for a given revision e.g. \"https://example.com/myrepo@{rev}/browse/{path}\"",
-              "type": "string"
-            }
-          }
         }
       }
     },

@@ -18,7 +18,6 @@ The primary function of repo-updater for repository metadata is to provide an ab
 - GitLab
 - Gitolite
 - Phabricator
-- repos.list information in config.json
 
 The exposed API call `RepoLookup` is the primary interface to this. Everything else calls RepoLookup when it wants to find out about a repository. This function then tries each of the code hosts in a consistent order, looking for one which claims to be authoritative. The current order is:
 
@@ -26,7 +25,6 @@ The exposed API call `RepoLookup` is the primary interface to this. Everything e
 - GitLab
 - Bitbucket Server
 - AWS Code Commit
-- repos.list information in config.json
 - Gitolite
 
 Note that Phabricator isn't listed here. (As of this writing, I don't know why.)
@@ -45,7 +43,7 @@ The migration process started moving everything else to ask repo-updater to do u
 
 But now that everything goes through repo-updater, it can notice when those happen, and reschedule periodic updates, which are now scheduled per-repository. Furthermore, the intervals at which they're checked can vary based on other criteria; repositories which rarely see updates don't get checked as often as frequently-updated repositories.
 
-This is still being worked on and revised. For historical reasons, the logic for the scheduler is all living in `repos/reposlist.go`, which is an error; that should be the source for handling the specifics of the `repos.list` property of site config. This should get addressed in a future iteration.
+This is still being worked on and revised. For historical reasons, the logic for the scheduler is all living in `repos/reposlist.go`, which is an error; that should have been the source for handling the specifics of the now deleted `repos.list` property of site config. This should get addressed in a future iteration by migrating to the new scheduler and deleting the old code.
 
 ## Future directions
 

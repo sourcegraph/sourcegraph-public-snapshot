@@ -227,12 +227,6 @@ type IMAPServerConfig struct {
 	Port     int    `json:"port"`
 	Username string `json:"username,omitempty"`
 }
-type Links struct {
-	Blob       string `json:"blob,omitempty"`
-	Commit     string `json:"commit,omitempty"`
-	Repository string `json:"repository,omitempty"`
-	Tree       string `json:"tree,omitempty"`
-}
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
@@ -262,12 +256,6 @@ type PhabricatorConnection struct {
 type Repos struct {
 	Callsign string `json:"callsign"`
 	Path     string `json:"path"`
-}
-type Repository struct {
-	Links *Links `json:"links,omitempty"`
-	Path  string `json:"path"`
-	Type  string `json:"type,omitempty"`
-	Url   string `json:"url"`
 }
 type ReviewBoard struct {
 	Url string `json:"url,omitempty"`
@@ -352,7 +340,6 @@ type SiteConfiguration struct {
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
-	ReposList                         []*Repository               `json:"repos.list,omitempty"`
 	ReviewBoard                       []*ReviewBoard              `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 }

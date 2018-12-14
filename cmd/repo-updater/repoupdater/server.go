@@ -5,12 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"net/http"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -114,9 +114,6 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 	}
 	if !authoritative {
 		repo, authoritative, err = repos.GetAWSCodeCommitRepository(ctx, args)
-	}
-	if !authoritative {
-		repo, authoritative, err = repos.GetExplicitlyConfiguredRepository(ctx, args)
 	}
 	if !authoritative {
 		repo, authoritative, err = repos.GetGitoliteRepository(ctx, args)
