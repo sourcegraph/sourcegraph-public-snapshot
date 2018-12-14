@@ -112,9 +112,6 @@ interface SourcegraphContext {
 
     /** Whether the new update scheduler is enabled */
     updateScheduler2Enabled: boolean
-
-    /** Whether external services are enabled */
-    externalServicesEnabled: boolean
 }
 
 // We cannot use resolveJsonModule because of https://github.com/Microsoft/TypeScript/issues/25755

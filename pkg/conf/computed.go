@@ -117,20 +117,7 @@ func UpdateScheduler2Enabled() bool {
 	return p != "disabled"
 }
 
-// ExternalServicesEnabled returns true if the ExternalService experiment is enabled.
-func ExternalServicesEnabled() bool {
-	var v string
-	if ef := Get().ExperimentalFeatures; ef != nil {
-		v = ef.ExternalServices
-	}
-	// default is enabled
-	return v != "disabled"
-}
-
 func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().AwsCodeCommit, nil
-	}
 	var config []*schema.AWSCodeCommitConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
 		return nil, err
@@ -139,9 +126,6 @@ func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnectio
 }
 
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().BitbucketServer, nil
-	}
 	var config []*schema.BitbucketServerConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
 		return nil, err
@@ -150,9 +134,6 @@ func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConne
 }
 
 func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().Github, nil
-	}
 	var config []*schema.GitHubConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITHUB", &config); err != nil {
 		return nil, err
@@ -161,9 +142,6 @@ func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
 }
 
 func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().Gitlab, nil
-	}
 	var config []*schema.GitLabConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITLAB", &config); err != nil {
 		return nil, err
@@ -172,9 +150,6 @@ func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
 }
 
 func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().Gitolite, nil
-	}
 	var config []*schema.GitoliteConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
 		return nil, err
@@ -183,9 +158,6 @@ func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) 
 }
 
 func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().Phabricator, nil
-	}
 	var config []*schema.PhabricatorConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &config); err != nil {
 		return nil, err

@@ -331,36 +331,30 @@ type Settings struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
-	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
-	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
-	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
-	BitbucketServer                   []*BitbucketServerConnection `json:"bitbucketServer,omitempty"`
-	CorsOrigin                        string                       `json:"corsOrigin,omitempty"`
-	DisableAutoGitUpdates             bool                         `json:"disableAutoGitUpdates,omitempty"`
-	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
-	DisableBuiltInSearches            bool                         `json:"disableBuiltInSearches,omitempty"`
-	DisablePublicRepoRedirects        bool                         `json:"disablePublicRepoRedirects,omitempty"`
-	Discussions                       *Discussions                 `json:"discussions,omitempty"`
-	DontIncludeSymbolResultsByDefault bool                         `json:"dontIncludeSymbolResultsByDefault,omitempty"`
-	EmailAddress                      string                       `json:"email.address,omitempty"`
-	EmailImap                         *IMAPServerConfig            `json:"email.imap,omitempty"`
-	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
-	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
-	Extensions                        *Extensions                  `json:"extensions,omitempty"`
-	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName  `json:"git.cloneURLToRepositoryName,omitempty"`
-	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
-	Github                            []*GitHubConnection          `json:"github,omitempty"`
-	GithubClientID                    string                       `json:"githubClientID,omitempty"`
-	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`
-	Gitlab                            []*GitLabConnection          `json:"gitlab,omitempty"`
-	Gitolite                          []*GitoliteConnection        `json:"gitolite,omitempty"`
-	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
-	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
-	Phabricator                       []*PhabricatorConnection     `json:"phabricator,omitempty"`
-	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
-	ReposList                         []*Repository                `json:"repos.list,omitempty"`
-	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
-	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
+	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
+	AuthDisableAccessTokens           bool                        `json:"auth.disableAccessTokens,omitempty"`
+	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
+	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
+	DisableBrowserExtension           bool                        `json:"disableBrowserExtension,omitempty"`
+	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
+	DisablePublicRepoRedirects        bool                        `json:"disablePublicRepoRedirects,omitempty"`
+	Discussions                       *Discussions                `json:"discussions,omitempty"`
+	DontIncludeSymbolResultsByDefault bool                        `json:"dontIncludeSymbolResultsByDefault,omitempty"`
+	EmailAddress                      string                      `json:"email.address,omitempty"`
+	EmailImap                         *IMAPServerConfig           `json:"email.imap,omitempty"`
+	EmailSmtp                         *SMTPServerConfig           `json:"email.smtp,omitempty"`
+	ExperimentalFeatures              *ExperimentalFeatures       `json:"experimentalFeatures,omitempty"`
+	Extensions                        *Extensions                 `json:"extensions,omitempty"`
+	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
+	GitMaxConcurrentClones            int                         `json:"gitMaxConcurrentClones,omitempty"`
+	GithubClientID                    string                      `json:"githubClientID,omitempty"`
+	GithubClientSecret                string                      `json:"githubClientSecret,omitempty"`
+	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
+	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
+	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
+	ReposList                         []*Repository               `json:"repos.list,omitempty"`
+	ReviewBoard                       []*ReviewBoard              `json:"reviewBoard,omitempty"`
+	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 }
 
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.

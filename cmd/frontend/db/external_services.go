@@ -253,10 +253,6 @@ func (c *externalServices) listConfigs(ctx context.Context, kind string, result 
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) ListAWSCodeCommitConnections(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	if !conf.ExternalServicesEnabled() {
-		return conf.Get().AwsCodeCommit, nil
-	}
-
 	var connections []*schema.AWSCodeCommitConnection
 	if err := c.listConfigs(ctx, "AWSCODECOMMIT", &connections); err != nil {
 		return nil, err
@@ -268,10 +264,6 @@ func (c *externalServices) ListAWSCodeCommitConnections(ctx context.Context) ([]
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	if !conf.ExternalServicesEnabled() {
-		return conf.Get().BitbucketServer, nil
-	}
-
 	var connections []*schema.BitbucketServerConnection
 	if err := c.listConfigs(ctx, "BITBUCKET", &connections); err != nil {
 		return nil, err
@@ -283,10 +275,6 @@ func (c *externalServices) ListBitbucketServerConnections(ctx context.Context) (
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) ListGitHubConnections(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	if !conf.ExternalServicesEnabled() {
-		return conf.Get().Github, nil
-	}
-
 	var connections []*schema.GitHubConnection
 	if err := c.listConfigs(ctx, "GITHUB", &connections); err != nil {
 		return nil, err
@@ -298,10 +286,6 @@ func (c *externalServices) ListGitHubConnections(ctx context.Context) ([]*schema
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) ListGitLabConnections(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	if !conf.ExternalServicesEnabled() {
-		return conf.Get().Gitlab, nil
-	}
-
 	var connections []*schema.GitLabConnection
 	if err := c.listConfigs(ctx, "GITLAB", &connections); err != nil {
 		return nil, err
@@ -313,10 +297,6 @@ func (c *externalServices) ListGitLabConnections(ctx context.Context) ([]*schema
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) ListGitoliteConnections(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	if !conf.ExternalServicesEnabled() {
-		return conf.Get().Gitolite, nil
-	}
-
 	var connections []*schema.GitoliteConnection
 	if err := c.listConfigs(ctx, "GITOLITE", &connections); err != nil {
 		return nil, err
@@ -328,10 +308,6 @@ func (c *externalServices) ListGitoliteConnections(ctx context.Context) ([]*sche
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	if !conf.ExternalServicesEnabled() {
-		return conf.Get().Phabricator, nil
-	}
-
 	var connections []*schema.PhabricatorConnection
 	if err := c.listConfigs(ctx, "PHABRICATOR", &connections); err != nil {
 		return nil, err
@@ -351,10 +327,6 @@ var migrateOnce sync.Once
 //   - All customers have updated to 3.0 or newer.
 //   - 3 months after 3.0 is released.
 func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Context) {
-	if !conf.ExternalServicesEnabled() {
-		return
-	}
-
 	migrateOnce.Do(func() {
 		// Run in a transaction because we are racing with other frontend replicas.
 		err := dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
@@ -401,27 +373,38 @@ func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Conte
 				return nil
 			}
 
-			if err := migrate(conf.Get().AwsCodeCommit, "AWSCodeCommit"); err != nil {
+			var legacyConfig struct {
+				AwsCodeCommit   []*schema.AWSCodeCommitConnection   `json:"awsCodeCommit"`
+				BitbucketServer []*schema.BitbucketServerConnection `json:"bitbucketServer"`
+				Github          []*schema.GitHubConnection          `json:"github"`
+				Gitlab          []*schema.GitLabConnection          `json:"gitlab"`
+				Gitolite        []*schema.GitoliteConnection        `json:"gitolite"`
+				Phabricator     []*schema.PhabricatorConnection     `json:"phabricator"`
+			}
+			if err := jsonc.Unmarshal(conf.Raw().Site, &legacyConfig); err != nil {
+				return err
+			}
+			if err := migrate(legacyConfig.AwsCodeCommit, "AWSCodeCommit"); err != nil {
 				return err
 			}
 
-			if err := migrate(conf.Get().BitbucketServer, "BitbucketServer"); err != nil {
+			if err := migrate(legacyConfig.BitbucketServer, "BitbucketServer"); err != nil {
 				return err
 			}
 
-			if err := migrate(conf.Get().Github, "GitHub"); err != nil {
+			if err := migrate(legacyConfig.Github, "GitHub"); err != nil {
 				return err
 			}
 
-			if err := migrate(conf.Get().Gitlab, "GitLab"); err != nil {
+			if err := migrate(legacyConfig.Gitlab, "GitLab"); err != nil {
 				return err
 			}
 
-			if err := migrate(conf.Get().Gitolite, "Gitolite"); err != nil {
+			if err := migrate(legacyConfig.Gitolite, "Gitolite"); err != nil {
 				return err
 			}
 
-			if err := migrate(conf.Get().Phabricator, "Phabricator"); err != nil {
+			if err := migrate(legacyConfig.Phabricator, "Phabricator"); err != nil {
 				return err
 			}
 

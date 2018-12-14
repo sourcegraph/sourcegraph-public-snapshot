@@ -52,6 +52,7 @@ func Test_providersFromConfig(t *testing.T) {
 	tests := []struct {
 		description                  string
 		cfg                          conf.Unified
+		gitlabConnections            []*schema.GitLabConnection
 		expAuthzAllowAccessByDefault bool
 		expAuthzProviders            []authz.Provider
 		expSeriousProblems           []string
@@ -69,21 +70,19 @@ func Test_providersFromConfig(t *testing.T) {
 						},
 					},
 				},
-				SiteConfiguration: schema.SiteConfiguration{
-					Gitlab: []*schema.GitLabConnection{
-						{
-							Authorization: &schema.GitLabAuthorization{
-								AuthnProvider: schema.AuthnProvider{
-									ConfigID:       "okta-config-id",
-									Type:           "saml",
-									GitlabProvider: "okta",
-								},
-								Ttl: "48h",
-							},
-							Url:   "https://gitlab.mine",
-							Token: "asdf",
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						AuthnProvider: schema.AuthnProvider{
+							ConfigID:       "okta-config-id",
+							Type:           "saml",
+							GitlabProvider: "okta",
 						},
+						Ttl: "48h",
 					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
@@ -118,31 +117,29 @@ func Test_providersFromConfig(t *testing.T) {
 						},
 					},
 				},
-				SiteConfiguration: schema.SiteConfiguration{
-					Gitlab: []*schema.GitLabConnection{
-						{
-							Authorization: &schema.GitLabAuthorization{
-								AuthnProvider: schema.AuthnProvider{
-									ConfigID:       "onelogin-config-id",
-									GitlabProvider: "onelogin",
-									Type:           "openidconnect",
-								},
-							},
-							Url:   "https://gitlab-0.mine",
-							Token: "asdf",
-						},
-						{
-							Authorization: &schema.GitLabAuthorization{
-								AuthnProvider: schema.AuthnProvider{
-									ConfigID:       "okta-config-id",
-									GitlabProvider: "okta",
-									Type:           "saml",
-								},
-							},
-							Url:   "https://gitlab-1.mine",
-							Token: "asdf",
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						AuthnProvider: schema.AuthnProvider{
+							ConfigID:       "onelogin-config-id",
+							GitlabProvider: "onelogin",
+							Type:           "openidconnect",
 						},
 					},
+					Url:   "https://gitlab-0.mine",
+					Token: "asdf",
+				},
+				{
+					Authorization: &schema.GitLabAuthorization{
+						AuthnProvider: schema.AuthnProvider{
+							ConfigID:       "okta-config-id",
+							GitlabProvider: "okta",
+							Type:           "saml",
+						},
+					},
+					Url:   "https://gitlab-1.mine",
+					Token: "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
@@ -169,48 +166,42 @@ func Test_providersFromConfig(t *testing.T) {
 		},
 		{
 			description: "0 auth providers, 1 GitLab referencing non-existent auth provider",
-			cfg: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				Gitlab: []*schema.GitLabConnection{
-					{
-						Authorization: &schema.GitLabAuthorization{
-							AuthnProvider: schema.AuthnProvider{
-								ConfigID:       "onelogin-config-id",
-								GitlabProvider: "onelogin",
-								Type:           "openidconnect",
-							},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						AuthnProvider: schema.AuthnProvider{
+							ConfigID:       "onelogin-config-id",
+							GitlabProvider: "onelogin",
+							Type:           "openidconnect",
 						},
-						Url:   "https://gitlab-0.mine",
-						Token: "asdf",
 					},
+					Url:   "https://gitlab-0.mine",
+					Token: "asdf",
 				},
-			}},
+			},
 			expAuthzAllowAccessByDefault: false,
 			expSeriousProblems:           []string{"Could not find item in `auth.providers` with config ID \"onelogin-config-id\" and type \"openidconnect\""},
 		},
 		{
 			description: "1 GitLab referencing no auth provider",
-			cfg: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				Gitlab: []*schema.GitLabConnection{
-					{
-						Authorization: &schema.GitLabAuthorization{},
-						Url:           "https://gitlab-0.mine",
-						Token:         "asdf",
-					},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{},
+					Url:           "https://gitlab-0.mine",
+					Token:         "asdf",
 				},
-			}},
+			},
 			expAuthzAllowAccessByDefault: false,
 			expSeriousProblems:           []string{"`authz.authnProvider.configID` was empty. No users will be granted access to these repositories."},
 		},
 		{
 			description: "1 GitLab with permissions disabled",
-			cfg: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				Gitlab: []*schema.GitLabConnection{
-					{
-						Url:   "https://gitlab-0.mine",
-						Token: "asdf",
-					},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Url:   "https://gitlab-0.mine",
+					Token: "asdf",
 				},
-			}},
+			},
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders:            nil,
 			expSeriousProblems:           nil,
@@ -228,20 +219,18 @@ func Test_providersFromConfig(t *testing.T) {
 						},
 					},
 				},
-				SiteConfiguration: schema.SiteConfiguration{
-					Gitlab: []*schema.GitLabConnection{
-						{
-							Authorization: &schema.GitLabAuthorization{
-								AuthnProvider: schema.AuthnProvider{
-									ConfigID:       "okta-config-id",
-									GitlabProvider: "okta",
-								},
-								Ttl: "48h",
-							},
-							Url:   "https://gitlab-0.mine",
-							Token: "asdf",
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						AuthnProvider: schema.AuthnProvider{
+							ConfigID:       "okta-config-id",
+							GitlabProvider: "okta",
 						},
+						Ttl: "48h",
 					},
+					Url:   "https://gitlab-0.mine",
+					Token: "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
@@ -260,20 +249,18 @@ func Test_providersFromConfig(t *testing.T) {
 						},
 					},
 				},
-				SiteConfiguration: schema.SiteConfiguration{
-					Gitlab: []*schema.GitLabConnection{
-						{
-							Authorization: &schema.GitLabAuthorization{
-								AuthnProvider: schema.AuthnProvider{
-									ConfigID:       "okta-config-id",
-									GitlabProvider: "okta",
-								},
-								Ttl: "invalid",
-							},
-							Url:   "https://gitlab-0.mine",
-							Token: "asdf",
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						AuthnProvider: schema.AuthnProvider{
+							ConfigID:       "okta-config-id",
+							GitlabProvider: "okta",
 						},
+						Ttl: "invalid",
 					},
+					Url:   "https://gitlab-0.mine",
+					Token: "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
@@ -284,54 +271,28 @@ func Test_providersFromConfig(t *testing.T) {
 	for _, test := range tests {
 		t.Logf("Test %q", test.description)
 
-		// This is a lazy way to support both code paths without updating all test cases.
-		// This can be cleaned up when conf.ExternalServicesEnabled is removed.
-		if conf.ExternalServicesEnabled() {
-			githubs := test.cfg.Github
-			gitlabs := test.cfg.Gitlab
-			test.cfg.Github = nil
-			test.cfg.Gitlab = nil
+		gitlabs := test.gitlabConnections
+		db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 
-			db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				if reflect.DeepEqual(opt.Kinds, []string{"GITHUB"}) {
-					externalServices := make([]*types.ExternalService, 0, len(githubs))
-					for _, gh := range githubs {
-						config, err := json.Marshal(gh)
-						if err != nil {
-							return nil, err
-						}
-						externalServices = append(externalServices, &types.ExternalService{
-							ID:          1,
-							Kind:        "GITHUB",
-							DisplayName: "Test GitHub",
-							Config:      string(config),
-							CreatedAt:   time.Now(),
-							UpdatedAt:   time.Now(),
-						})
+			if reflect.DeepEqual(opt.Kinds, []string{"GITLAB"}) {
+				externalServices := make([]*types.ExternalService, 0, len(gitlabs))
+				for _, gl := range gitlabs {
+					config, err := json.Marshal(gl)
+					if err != nil {
+						return nil, err
 					}
-					return externalServices, nil
+					externalServices = append(externalServices, &types.ExternalService{
+						ID:          2,
+						Kind:        "GITLAB",
+						DisplayName: "Test GitLab",
+						Config:      string(config),
+						CreatedAt:   time.Now(),
+						UpdatedAt:   time.Now(),
+					})
 				}
-
-				if reflect.DeepEqual(opt.Kinds, []string{"GITLAB"}) {
-					externalServices := make([]*types.ExternalService, 0, len(gitlabs))
-					for _, gl := range gitlabs {
-						config, err := json.Marshal(gl)
-						if err != nil {
-							return nil, err
-						}
-						externalServices = append(externalServices, &types.ExternalService{
-							ID:          2,
-							Kind:        "GITLAB",
-							DisplayName: "Test GitLab",
-							Config:      string(config),
-							CreatedAt:   time.Now(),
-							UpdatedAt:   time.Now(),
-						})
-					}
-					return externalServices, nil
-				}
-				return nil, nil
+				return externalServices, nil
 			}
+			return nil, nil
 		}
 
 		allowAccessByDefault, authzProviders, seriousProblems, _ := providersFromConfig(context.Background(), &test.cfg)

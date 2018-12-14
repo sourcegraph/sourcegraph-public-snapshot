@@ -90,11 +90,6 @@ func init() {
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	})
 	go func() {
-		// This check is done inside the goroutine because attempting to get the config
-		// synchronously during init() will cause a deadlock in the frontend.
-		if !conf.ExternalServicesEnabled() {
-			return
-		}
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ := providersFromConfig(ctx, conf.Get())
