@@ -4,11 +4,11 @@ import { SearchResult } from '../../protocol/plainTypes'
 import { FeatureProviderRegistry } from './registry'
 export type ProvideSearchResultSignature = (query: string) => Observable<SearchResult[] | null>
 export class SearchResultProviderRegistry extends FeatureProviderRegistry<{}, ProvideSearchResultSignature> {
-    public provideSearchResults(query: string): Observable<SearchResult[] | null> {
-        return provideSearchResults(this.providers, query)
+    public provideSearchResult(query: string): Observable<SearchResult[] | null> {
+        return provideSearchResult(this.providers, query)
     }
 }
-export function provideSearchResults(
+export function provideSearchResult(
     providers: Observable<ProvideSearchResultSignature[]>,
     query: string
 ): Observable<SearchResult[] | null> {

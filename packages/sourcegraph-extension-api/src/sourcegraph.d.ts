@@ -1024,7 +1024,7 @@ declare module 'sourcegraph' {
          *
          * @param query A search query.
          */
-        provideSearchResults(query: string): ProviderResult<SearchResult[]>
+        provideSearchResult(query: string): ProviderResult<SearchResult[]>
     }
 
     /**

@@ -46,7 +46,7 @@ export class Search implements SearchAPI {
             id,
             this.searchResultProviderRegistry.registerProvider(
                 {},
-                (query: string): Observable<SearchResult[] | null> => from(this.proxy.$provideSearchResults(id, query))
+                (query: string): Observable<SearchResult[] | null> => from(this.proxy.$provideSearchResult(id, query))
             )
         )
     }
