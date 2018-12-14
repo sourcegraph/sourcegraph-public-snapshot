@@ -77,18 +77,6 @@ func init() {
 	}
 
 	ctx := context.Background()
-	// Authz providers depends on both site config state (i.e. auth.providers)
-	// and database state (i.e. external services). This is less than ideal:
-	// https://github.com/sourcegraph/sourcegraph/issues/1392.
-	// In the meantime, we need to watch for config changes and poll the database.
-	conf.ContributeValidator(func(cfg conf.Unified) []string {
-		_, _, seriousProblems, warnings := providersFromConfig(ctx, &cfg)
-		return append(seriousProblems, warnings...)
-	})
-	go conf.Watch(func() {
-		allowAccessByDefault, authzProviders, _, _ := providersFromConfig(ctx, conf.Get())
-		authz.SetProviders(allowAccessByDefault, authzProviders)
-	})
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
