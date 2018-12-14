@@ -583,54 +583,6 @@ const SiteSchemaJSON = `{
         }
       }
     },
-    "Repository": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["url", "path"],
-      "properties": {
-        "type": {
-          "description": "Type of the version control system for this repository, such as \"git\"",
-          "type": "string",
-          "enum": ["git"],
-          "default": "git"
-        },
-        "url": {
-          "description": "Clone URL for the repository, such as git@example.com:my/repo.git",
-          "type": "string"
-        },
-        "path": {
-          "description": "Display path on Sourcegraph for the repository, such as my/repo",
-          "type": "string",
-          "pattern": "^[\\w_]"
-        },
-        "links": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "repository": {
-              "description":
-                "URL specifying where to view the repository at an external location e.g. \"https://example.com/myrepo\"",
-              "type": "string"
-            },
-            "commit": {
-              "description":
-                "URL template for specifying how to link to commits at an external location. Use \"{commit}\" as a placeholder for a given commit ID e.g. \"https://example.com/myrepo/view-commit/{commit}\"",
-              "type": "string"
-            },
-            "tree": {
-              "description":
-                "URL template for specifying how to link to paths at an external location. Use \"{path}\" as a placeholder for a given path and \"{rev}\" as a placeholder for a given revision e.g. \"https://example.com/myrepo@{rev}/browse/{path}\"",
-              "type": "string"
-            },
-            "blob": {
-              "description":
-                "URL template for specifying how to link to files at an external location. Use \"{path}\" as a placeholder for a given path and \"{rev}\" as a placeholder for a given revision e.g. \"https://example.com/myrepo@{rev}/browse/{path}\"",
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
     "SMTPServerConfig": {
       "description":
         "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
