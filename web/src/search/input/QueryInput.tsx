@@ -19,7 +19,6 @@ import {
     toArray,
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import { SearchOptions } from '..'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
@@ -135,10 +134,10 @@ export class QueryInput extends React.Component<Props, State> {
                         if (query.length < QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH) {
                             return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
                         }
-                        const options: SearchOptions = {
-                            query: [this.props.prependQueryForSuggestions, this.props.value].filter(s => !!s).join(' '),
-                        }
-                        const suggestionsFetch = fetchSuggestions(options).pipe(
+                        const fullQuery = [this.props.prependQueryForSuggestions, this.props.value]
+                            .filter(s => !!s)
+                            .join(' ')
+                        const suggestionsFetch = fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             toArray(),
                             map((suggestions: Suggestion[]) => ({

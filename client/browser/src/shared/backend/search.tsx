@@ -144,12 +144,7 @@ const symbolsFragment = `
     }
 `
 
-export interface SearchOptions {
-    /** The query entered by the user */
-    query: string
-}
-
-const fetchSuggestions = (options: SearchOptions, first: number) =>
+const fetchSuggestions = (query: string, first: number) =>
     queryGraphQL({
         ctx: getContext({ repoKey: '', isRepoSpecific: false }),
         request: `
@@ -180,7 +175,7 @@ const fetchSuggestions = (options: SearchOptions, first: number) =>
             ${symbolsFragment}
         `,
         variables: {
-            query: options.query,
+            query,
             // The browser extension API only takes 5 suggestions
             first,
         },
@@ -206,11 +201,8 @@ export const createSuggestionFetcher = (first = 5) => {
         .pipe(
             distinctUntilChanged(),
             debounceTime(200),
-            switchMap(({ query, handler }) => {
-                const options: SearchOptions = {
-                    query,
-                }
-                return fetchSuggestions(options, first).pipe(
+            switchMap(({ query, handler }) =>
+                fetchSuggestions(query, first).pipe(
                     take(first),
                     map(createSuggestion),
                     // createSuggestion will return null if we get a type we don't recognize
@@ -223,7 +215,7 @@ export const createSuggestionFetcher = (first = 5) => {
                     publishReplay(),
                     refCount()
                 )
-            }),
+            ),
             // But resubscribe afterwards
             repeat()
         )
@@ -232,7 +224,7 @@ export const createSuggestionFetcher = (first = 5) => {
     return (input: SuggestionInput) => fetcher.next(input)
 }
 
-export const fetchSymbols = (options: SearchOptions): Observable<GQL.ISymbol[]> =>
+export const fetchSymbols = (query: string): Observable<GQL.ISymbol[]> =>
     queryGraphQL({
         ctx: getContext({ isRepoSpecific: true }),
         request: `
@@ -252,7 +244,7 @@ export const fetchSymbols = (options: SearchOptions): Observable<GQL.ISymbol[]> 
             ${symbolsFragment}
         `,
         variables: {
-            query: options.query,
+            query,
         },
         retry: false,
     }).pipe(
