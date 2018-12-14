@@ -118,7 +118,13 @@ const parsePosition = (str: string): Position => {
 }
 
 /**
- * Parses the properties of a repo URI like git://github.com/gorilla/mux#mux.go
+ * Parses the properties of a legacy Git URI like git://github.com/gorilla/mux#mux.go.
+ *
+ * These URIs were used when communicating with language servers over LSP and with extensions. They are being
+ * phased out in favor of URLs to resources in the Sourcegraph raw API, which do not require out-of-band
+ * information to fetch the contents of.
+ *
+ * @deprecated Migrate to using URLs to the Sourcegraph raw API (or other concrete URLs) instead.
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
