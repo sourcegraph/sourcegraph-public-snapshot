@@ -108,13 +108,6 @@ const SiteSchemaJSON = `{
       "type": "integer",
       "default": 5
     },
-    "repos.list": {
-      "description": "JSON array of configuration for external repositories.",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/Repository"
-      }
-    },
     "reviewBoard": {
       "description": "JSON array of configuration for Review Board.",
       "type": "array",

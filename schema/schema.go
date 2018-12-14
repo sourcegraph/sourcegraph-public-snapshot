@@ -352,7 +352,6 @@ type SiteConfiguration struct {
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
-	ReposList                         []*Repository               `json:"repos.list,omitempty"`
 	ReviewBoard                       []*ReviewBoard              `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 }

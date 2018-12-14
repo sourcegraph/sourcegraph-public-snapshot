@@ -37,7 +37,7 @@ func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return count == 0 && len(conf.Get().ReposList) == 0, nil
+	return count == 0, nil
 }
 
 func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {
