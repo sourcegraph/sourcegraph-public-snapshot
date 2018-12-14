@@ -7,8 +7,8 @@ import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
-import { buildSearchURLQuery } from '../../search'
 
 interface Props {}
 
@@ -102,7 +102,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                             )}
                         </div>
                         <div className="text-right mt-3">
-                            <Link to={`/search?${buildSearchURLQuery({ query: 'repo:' })}`}>
+                            <Link to={`/search?${buildSearchURLQuery('repo:')}`}>
                                 View all repositories<ChevronRightIcon className="icon-inline" />
                             </Link>
                         </div>
