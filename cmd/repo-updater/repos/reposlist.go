@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -768,44 +767,6 @@ func RunRepositorySyncWorker(ctx context.Context) {
 			}
 		}
 	})
-}
-
-// updateConfig responds to changes in the configured list of repositories;
-// this is specifically the list of repositories directly configured, as opposed
-// to repositories found by looking up keys from various services.
-func updateConfig(ctx context.Context, configs []*schema.Repository) (sourceRepoList, sourceRepoMap) {
-	log15.Debug("repolist updateConfig")
-	newList := make(sourceRepoList)
-	newScheduler := conf.UpdateScheduler2Enabled()
-	newMap := make(sourceRepoMap)
-	for _, cfg := range configs {
-		if cfg.Type == "" {
-			cfg.Type = "git"
-		}
-		if cfg.Type != "git" {
-			continue
-		}
-		if cfg.Path == "" {
-			log15.Warn("ignoring repo with empty path in repos.list", "url", cfg.Url)
-			continue
-		}
-		// Check whether repo already exists, if not create an entry for it.
-		newRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoName: api.RepoName(cfg.Path), Enabled: true})
-		if err != nil {
-			log15.Warn("error creating or checking for repo", "repo", cfg.Path)
-			continue
-		}
-		if newScheduler {
-			newMap[api.RepoName(cfg.Path)] = &configuredRepo2{
-				Name:    api.RepoName(cfg.Path),
-				URL:     cfg.Url,
-				Enabled: newRepo.Enabled,
-			}
-			continue
-		}
-		newList[cfg.Path] = configuredRepo{url: cfg.Url, enabled: newRepo.Enabled}
-	}
-	return newList, newMap
 }
 
 // Snapshot represents the state of the various queues repo-updater
