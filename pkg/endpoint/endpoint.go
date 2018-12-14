@@ -117,21 +117,6 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	return urls.get(key, exclude), nil
 }
 
-// GetAll returns a slice of values such that m[keys[i]] == values[i]. It is a
-// more efficient implementation than calling Get on each key.
-func (m *Map) GetAll(keys []string, exclude map[string]bool) ([]string, error) {
-	urls, err := m.getUrls()
-	if err != nil {
-		return nil, err
-	}
-
-	v := make([]string, len(keys))
-	for i, key := range keys {
-		v[i] = urls.get(key, exclude)
-	}
-	return v, nil
-}
-
 // Endpoints returns a set of all addresses.
 func (m *Map) Endpoints() (map[string]struct{}, error) {
 	urls, err := m.getUrls()
