@@ -132,7 +132,10 @@ func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (
 	resC := make(chan searchResponse)
 	go func() {
 		defer close(resC)
+
 		var wg sync.WaitGroup
+		defer wg.Wait()
+
 		origOpts := opts
 		for _, r := range repos {
 			if err := sem.Acquire(ctx); err != nil {
@@ -189,8 +192,6 @@ func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (
 				return
 			}(r)
 		}
-
-		wg.Wait()
 	}()
 
 	all := &search.Result{}
