@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Users can now request an Enterprise trial license from the site init page.
 - When searching, a filter button `case:yes` will now appear when relevant. This helps discovery and makes it easier to use our case-sensitive search syntax.
 - Extensions can now report progress in the UI through the `withProgress()` extension API.
+- When calling `editor.setDecorations()`, extensions must now provide an instance of `TextDocumentDecorationType` as first argument. This helps gracefully displaying decorations from several extensions.
 
 ### Changed
 
