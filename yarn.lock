@@ -1122,10 +1122,10 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^5.0.0":
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-5.0.0.tgz#f125d6df694f9a6165589c56677dc076a0ff014a"
-  integrity sha512-Q1YCvFpNjZxZeKLFJKIZGbQz9JEls6WDcEXKwE+BXoyFhNN9uEUuW9mJ5vBxW6meIlJXgXC2BnqEhPwZsZOBAg==
+"@sourcegraph/codeintellify@^5.0.1":
+  version "5.0.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-5.0.1.tgz#9cfbbd1ae3ca9d9983ef3ca246437380454a8225"
+  integrity sha512-INdXFVqkKXQoRquKFMuOAhrwsfjwK9yAM2VrMKT/GW86oWieP7hYGpfoFxrKsJiTI1793cEyShb8w0FkaAzOQA==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.0"
     "@sourcegraph/react-loading-spinner" "0.0.7"
@@ -1148,9 +1148,8 @@
     vscode-languageserver-types "^3.8.2"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "1.0.2"
-  dependencies:
-    sourcegraph "*"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -13374,7 +13373,8 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "19.4.1"
+  version "0.0.0"
+  uid ""
 
 sparkles@^1.0.0:
   version "1.0.1"
