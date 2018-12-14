@@ -39,6 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
 - Fixed number formatting issues on site admin Overview and Survey Response pages.
 - Fixed resolving of git clone URLs with `git+` prefix through the GraphQL API
+- Fixed an issue where the graphql Repositories endpoint would order by a field which was not indexed. Times on Sourcegraph.com went from 10s to 200ms.
 
 ### Removed
 

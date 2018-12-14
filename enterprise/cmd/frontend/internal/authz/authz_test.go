@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -45,13 +46,15 @@ func Test_providersFromConfig(t *testing.T) {
 		return newGitLabAuthzProviderParams{op}
 	}
 
+	db.Mocks = db.MockStores{}
+	defer func() { db.Mocks = db.MockStores{} }()
+
 	tests := []struct {
 		description                  string
 		cfg                          conf.Unified
 		expAuthzAllowAccessByDefault bool
 		expAuthzProviders            []authz.Provider
 		expSeriousProblems           []string
-		expWarnings                  []string
 	}{
 		{
 			description: "1 auth provider (okta), 1 GitLab referencing okta",
@@ -182,18 +185,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			}},
 			expAuthzAllowAccessByDefault: false,
-			expAuthzProviders: []authz.Provider{
-				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabAuthzProviderOp{
-						BaseURL:        mustURLParse(t, "https://gitlab-0.mine"),
-						AuthnConfigID:  auth.ProviderConfigID{Type: "openidconnect", ID: "onelogin-config-id"},
-						SudoToken:      "asdf",
-						GitLabProvider: "onelogin",
-						CacheTTL:       3 * time.Hour,
-					},
-				},
-			},
-			expSeriousProblems: []string{"Could not find item in `auth.providers` with config ID \"onelogin-config-id\" and type \"openidconnect\""},
+			expSeriousProblems:           []string{"Could not find item in `auth.providers` with config ID \"onelogin-config-id\" and type \"openidconnect\""},
 		},
 		{
 			description: "1 GitLab referencing no auth provider",
@@ -207,18 +199,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			}},
 			expAuthzAllowAccessByDefault: false,
-			expAuthzProviders: []authz.Provider{
-				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabAuthzProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab-0.mine"),
-						AuthnConfigID:     auth.ProviderConfigID{},
-						SudoToken:         "asdf",
-						CacheTTL:          3 * time.Hour,
-						UseNativeUsername: false,
-					},
-				},
-			},
-			expSeriousProblems: []string{"`authz.authnProvider.configID` was empty. No users will be granted access to these repositories."},
+			expSeriousProblems:           []string{"`authz.authnProvider.configID` was empty. No users will be granted access to these repositories."},
 		},
 		{
 			description: "1 GitLab with permissions disabled",
@@ -233,6 +214,38 @@ func Test_providersFromConfig(t *testing.T) {
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders:            nil,
 			expSeriousProblems:           nil,
+		},
+		{
+			description: "1 GitLab with incomplete auth provider descriptor",
+			cfg: conf.Unified{
+				Critical: schema.CriticalConfiguration{
+					AuthProviders: []schema.AuthProviders{
+						schema.AuthProviders{
+							Saml: &schema.SAMLAuthProvider{
+								ConfigID: "okta-config-id",
+								Type:     "saml",
+							},
+						},
+					},
+				},
+				SiteConfiguration: schema.SiteConfiguration{
+					Gitlab: []*schema.GitLabConnection{
+						{
+							Authorization: &schema.GitLabAuthorization{
+								AuthnProvider: schema.AuthnProvider{
+									ConfigID:       "okta-config-id",
+									GitlabProvider: "okta",
+								},
+								Ttl: "48h",
+							},
+							Url:   "https://gitlab-0.mine",
+							Token: "asdf",
+						},
+					},
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"`authz.authnProvider.type` was not specified, which means GitLab users cannot be resolved."},
 		},
 		{
 			description: "1 GitLab with incomplete auth provider descriptor, ttl error",
@@ -264,25 +277,64 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expAuthzProviders: []authz.Provider{
-				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabAuthzProviderOp{
-						BaseURL:        mustURLParse(t, "https://gitlab-0.mine"),
-						AuthnConfigID:  auth.ProviderConfigID{ID: "okta-config-id"},
-						SudoToken:      "asdf",
-						GitLabProvider: "okta",
-						CacheTTL:       3 * time.Hour,
-					},
-				},
-			},
-			expSeriousProblems: []string{"`authz.authnProvider.type` was not specified, which means GitLab users cannot be resolved."},
-			expWarnings:        []string{"Could not parse time duration \"invalid\", falling back to 3h0m0s."},
+			expSeriousProblems:           []string{"Could not parse time duration \"invalid\"."},
 		},
 	}
 
 	for _, test := range tests {
 		t.Logf("Test %q", test.description)
-		allowAccessByDefault, authzProviders, seriousProblems, warnings := providersFromConfig(&test.cfg)
+
+		// This is a lazy way to support both code paths without updating all test cases.
+		// This can be cleaned up when conf.ExternalServicesEnabled is removed.
+		if conf.ExternalServicesEnabled() {
+			githubs := test.cfg.Github
+			gitlabs := test.cfg.Gitlab
+			test.cfg.Github = nil
+			test.cfg.Gitlab = nil
+
+			db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				if reflect.DeepEqual(opt.Kinds, []string{"GITHUB"}) {
+					externalServices := make([]*types.ExternalService, 0, len(githubs))
+					for _, gh := range githubs {
+						config, err := json.Marshal(gh)
+						if err != nil {
+							return nil, err
+						}
+						externalServices = append(externalServices, &types.ExternalService{
+							ID:          1,
+							Kind:        "GITHUB",
+							DisplayName: "Test GitHub",
+							Config:      string(config),
+							CreatedAt:   time.Now(),
+							UpdatedAt:   time.Now(),
+						})
+					}
+					return externalServices, nil
+				}
+
+				if reflect.DeepEqual(opt.Kinds, []string{"GITLAB"}) {
+					externalServices := make([]*types.ExternalService, 0, len(gitlabs))
+					for _, gl := range gitlabs {
+						config, err := json.Marshal(gl)
+						if err != nil {
+							return nil, err
+						}
+						externalServices = append(externalServices, &types.ExternalService{
+							ID:          2,
+							Kind:        "GITLAB",
+							DisplayName: "Test GitLab",
+							Config:      string(config),
+							CreatedAt:   time.Now(),
+							UpdatedAt:   time.Now(),
+						})
+					}
+					return externalServices, nil
+				}
+				return nil, nil
+			}
+		}
+
+		allowAccessByDefault, authzProviders, seriousProblems, _ := providersFromConfig(context.Background(), &test.cfg)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
@@ -291,9 +343,6 @@ func Test_providersFromConfig(t *testing.T) {
 		}
 		if !reflect.DeepEqual(seriousProblems, test.expSeriousProblems) {
 			t.Errorf("seriousProblems: (actual) %+v != (expected) %+v", asJSON(t, seriousProblems), asJSON(t, test.expSeriousProblems))
-		}
-		if !reflect.DeepEqual(warnings, test.expWarnings) {
-			t.Errorf("warnings: (actual) %+v != (expected) %+v", asJSON(t, warnings), asJSON(t, test.expWarnings))
 		}
 	}
 }

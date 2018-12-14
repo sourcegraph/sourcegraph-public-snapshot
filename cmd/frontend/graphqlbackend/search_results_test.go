@@ -16,15 +16,11 @@ import (
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	createSearchResolver := func(t *testing.T, query string) *searchResolver {
+	getResults := func(t *testing.T, query string) []string {
 		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
-		return r
-	}
-	getResults := func(t *testing.T, query string) []string {
-		r := createSearchResolver(t, query)
 		results, err := r.Results(context.Background())
 		if err != nil {
 			t.Fatal("Results:", err)

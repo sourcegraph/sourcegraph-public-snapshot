@@ -3,7 +3,7 @@ import LinkIcon from 'mdi-react/LinkIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { ActionItem } from '../../components/ActionItem'
+import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
 import { replaceRevisionInURL } from '../../util/url'
 
 /**
@@ -58,9 +58,9 @@ export class GoToPermalinkAction extends React.PureComponent<{
         }
 
         return (
-            <ActionItem to={this.permalinkURL} data-tooltip="Permalink (with full Git commit SHA)">
+            <LinkOrButton to={this.permalinkURL} data-tooltip="Permalink (with full Git commit SHA)">
                 <LinkIcon className="icon-inline" />
-            </ActionItem>
+            </LinkOrButton>
         )
     }
 

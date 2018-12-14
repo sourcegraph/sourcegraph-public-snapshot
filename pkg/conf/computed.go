@@ -44,6 +44,25 @@ func init() {
 
 		var criticalDecoded schema.CriticalConfiguration
 		_ = json.Unmarshal(legacyConf, &criticalDecoded)
+
+		// Backwards compatability for deprecated environment variables
+		// that we previously considered deprecated but are actually
+		// widespread in use in user's deployments and/or are suggested for
+		// use in our public documentation (i.e., even though these were
+		// long deprecated, our docs were not up to date).
+		criticalBackcompatVars := map[string]func(value string){
+			"TLS_CERT":               func(v string) { criticalDecoded.TlsCert = v },
+			"TLS_KEY":                func(v string) { criticalDecoded.TlsKey = v },
+			"LIGHTSTEP_PROJECT":      func(v string) { criticalDecoded.LightstepProject = v },
+			"LIGHTSTEP_ACCESS_TOKEN": func(v string) { criticalDecoded.LightstepAccessToken = v },
+		}
+		for envVar, setter := range criticalBackcompatVars {
+			val := os.Getenv(envVar)
+			if val != "" {
+				setter(val)
+			}
+		}
+
 		critical, err := json.MarshalIndent(criticalDecoded, "", "  ")
 		if string(critical) != "{}" && err == nil {
 			defaultConfig.Critical = string(critical)

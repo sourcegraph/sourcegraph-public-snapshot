@@ -110,8 +110,12 @@ const (
 	RepositoryStatusCloning RepositoryStatusType = "cloning"
 
 	// RepositoryStatusMissing indicates the search failed for the repository
-	// since the repository or commit does not exist.
+	// since the repository does not exist.
 	RepositoryStatusMissing RepositoryStatusType = "missing"
+
+	// RepositoryStatusCommitMissing indicates the search failed for the
+	// repository since the commit does not exist.
+	RepositoryStatusCommitMissing RepositoryStatusType = "commitmissing"
 
 	// RepositoryStatusError indicates the search failed for the repository
 	// due to an unexpected error. Implementations of Searcher should not use
@@ -191,4 +195,11 @@ type Options struct {
 
 func (s *Options) String() string {
 	return fmt.Sprintf("%#v", s)
+}
+
+// ShallowCopy returns a shallow copy of Options. Note: That means
+// Repositories slice is the same underlying array.
+func (s *Options) ShallowCopy() *Options {
+	o := *s
+	return &o
 }

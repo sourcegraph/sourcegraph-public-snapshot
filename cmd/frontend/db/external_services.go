@@ -21,7 +21,10 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-type externalServices struct{}
+type externalServices struct {
+	GitHubValidators []func(cfg *schema.GitHubConnection) error
+	GitLabValidators []func(cfg *schema.GitLabConnection) error
+}
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
@@ -41,7 +44,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
-func validateConfig(kind, config string) error {
+func (c *externalServices) validateConfig(kind, config string) error {
 	// All configs must be valid JSON.
 	// If this requirement is ever changed, you will need to update
 	// serveExternalServiceConfigs to handle this case.
@@ -65,6 +68,17 @@ func validateConfig(kind, config string) error {
 		} else if cfg.Token == "" && cfg.Username == "" && cfg.Password == "" {
 			return errors.New("Specify either a token or a username/password to authenticate")
 		}
+	case "GITHUB":
+		var cfg schema.GitHubConnection
+		if err := jsonc.Unmarshal(config, &cfg); err != nil {
+			return err
+		}
+
+		for _, validate := range c.GitHubValidators {
+			if err := validate(&cfg); err != nil {
+				return err
+			}
+		}
 	case "GITLAB":
 		var cfg schema.GitLabConnection
 		if err := jsonc.Unmarshal(config, &cfg); err != nil {
@@ -72,6 +86,12 @@ func validateConfig(kind, config string) error {
 		}
 		if strings.Contains(cfg.Url, "example.com") {
 			return fmt.Errorf(`invalid GitLab URL detected: %s (did you forget to remove "example.com"?)`, cfg.Url)
+		}
+
+		for _, validate := range c.GitLabValidators {
+			if err := validate(&cfg); err != nil {
+				return err
+			}
 		}
 	default:
 		if _, err := jsonc.Parse(config); err != nil {
@@ -85,7 +105,7 @@ func validateConfig(kind, config string) error {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Create(ctx context.Context, externalService *types.ExternalService) error {
-	if err := validateConfig(externalService.Kind, externalService.Config); err != nil {
+	if err := c.validateConfig(externalService.Kind, externalService.Config); err != nil {
 		return err
 	}
 
@@ -116,7 +136,7 @@ func (c *externalServices) Update(ctx context.Context, id int64, update *Externa
 			return err
 		}
 
-		if err := validateConfig(externalService.Kind, *update.Config); err != nil {
+		if err := c.validateConfig(externalService.Kind, *update.Config); err != nil {
 			return err
 		}
 	}

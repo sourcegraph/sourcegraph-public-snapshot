@@ -97,16 +97,17 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		var indexed map[api.RepoName]bool
+		searchIndexEnabled := Search().Index.Enabled()
 		isIndexed := func(repo api.RepoName) bool {
-			if !searchIndexEnabled() {
+			if !searchIndexEnabled {
 				return true // do not need index
 			}
 			return indexed[api.RepoName(strings.ToLower(string(repo)))]
 		}
-		if searchIndexEnabled() && (!r.indexed || !r.notIndexed) {
+		if searchIndexEnabled && (!r.indexed || !r.notIndexed) {
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
-			indexedRepos, err := zoektCache.ListAll(listCtx)
+			indexedRepos, err := Search().Index.ListAll(listCtx)
 			if err != nil {
 				r.err = err
 				return
@@ -236,25 +237,6 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(repos) > r.opt.Limit), nil
 }
 
-func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
-	Name string
-}) (*repositoryResolver, error) {
-	// 🚨 SECURITY: Only site admins can add repositories.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	repoName := api.RepoName(args.Name)
-	if err := backend.Repos.Add(ctx, repoName); err != nil {
-		return nil, err
-	}
-	repo, err := backend.Repos.GetByName(ctx, repoName)
-	if err != nil {
-		return nil, err
-	}
-	return &repositoryResolver{repo: repo}, nil
-}
-
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
 	Repository graphql.ID
 	Enabled    bool
@@ -365,9 +347,9 @@ func toRepoNames(repos []*types.Repo) []api.RepoName {
 func toDBRepoListColumn(ob string) db.RepoListColumn {
 	switch ob {
 	case "REPO_URI", "REPOSITORY_NAME":
-		return "uri"
+		return db.RepoListName
 	case "REPO_CREATED_AT", "REPOSITORY_CREATED_AT":
-		return "created_at"
+		return db.RepoListCreatedAt
 	default:
 		return ""
 	}

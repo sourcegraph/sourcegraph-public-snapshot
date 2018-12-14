@@ -1,9 +1,9 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from './Link'
 
 /**
- * The LinkOrSpan component renders a <Link> (from react-router-dom) if the "to" property is a non-empty string;
- * otherwise it renders the text in a <span> (with no link).
+ * The LinkOrSpan component renders a <Link> if the "to" property is a non-empty string; otherwise it renders the
+ * text in a <span> (with no link).
  */
 export const LinkOrSpan: React.FunctionComponent<
     {

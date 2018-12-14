@@ -3,8 +3,8 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { merge, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -74,7 +74,6 @@ interface RepoRevContainerState extends ParsedRepoRev {
 export class RepoContainer extends React.Component<RepoContainerProps, RepoRevContainerState> {
     private routeMatchChanges = new Subject<{ repoRevAndRest: string }>()
     private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
-    private repositoryAdds = new Subject<void>()
     private revResolves = new Subject<ResolvedRev | ErrorLike | undefined>()
     private subscriptions = new Subscription()
 
@@ -97,13 +96,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             distinctUntilChanged()
         )
         this.subscriptions.add(
-            merge(
-                repositoryChanges,
-                this.repositoryAdds.pipe(
-                    withLatestFrom(repositoryChanges),
-                    map(([, repoName]) => repoName)
-                )
-            )
+            repositoryChanges
                 .pipe(
                     tap(() => this.setState({ repoOrError: undefined })),
                     switchMap(repoName =>
@@ -215,7 +208,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             repoID={null}
                             error={this.state.repoOrError}
                             viewerCanAdminister={viewerCanAdminister}
-                            onDidAddRepository={this.onDidAddRepository}
                         />
                     )
                 default:
@@ -390,7 +382,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     private onDidUpdateRepository = (update: Partial<GQL.IRepository>) => this.repositoryUpdates.next(update)
-    private onDidAddRepository = () => this.repositoryAdds.next()
 
     private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
         this.setState({ externalLinks })

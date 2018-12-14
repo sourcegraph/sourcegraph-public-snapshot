@@ -308,6 +308,7 @@ type Zoekt struct {
 	state    int32 // 0 not running, 1 running, 2 stopped
 	listResp *zoekt.RepoList
 	listErr  error
+	disabled bool
 }
 
 // Close will tear down the background goroutines.
@@ -319,6 +320,10 @@ func (c *Zoekt) Close() {
 
 // Search implements Searcher.Search
 func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (res *search.Result, err error) {
+	if !c.Enabled() {
+		return nil, errors.New("indexed search is disabled")
+	}
+
 	repos := opts.Repositories
 	if len(repos) == 0 {
 		return nil, errors.Errorf("repository list empty for indexed text search on %s", q.String())
@@ -609,6 +614,12 @@ func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.O
 
 // ListAll returns the response of List without any restrictions.
 func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
+	if !c.Enabled() {
+		// By returning an empty list Text.Search won't send any queries to
+		// Zoekt.
+		return &zoekt.RepoList{}, nil
+	}
+
 	c.mu.Lock()
 	r, err := c.listResp, c.listErr
 	c.mu.Unlock()
@@ -624,6 +635,22 @@ func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
 	return r, err
 }
 
+// SetEnabled will disable zoekt if b is false.
+func (c *Zoekt) SetEnabled(b bool) {
+	c.mu.Lock()
+	c.disabled = !b
+	c.mu.Unlock()
+}
+
+// Enabled returns true if Zoekt is enabled. It is enabled if Client is
+// non-nil and it hasn't been disabled by SetEnable.
+func (c *Zoekt) Enabled() bool {
+	c.mu.Lock()
+	b := c.disabled
+	c.mu.Unlock()
+	return c.Client != nil && !b
+}
+
 func (c *Zoekt) start() {
 	c.mu.Lock()
 	if c.state != 0 {
@@ -637,6 +664,19 @@ func (c *Zoekt) start() {
 	errorCount := 0
 	state := int32(1)
 	for state == 1 {
+		if !c.Enabled() {
+			// If we haven't been stopped, reset state so start() is called
+			// again when we are enabled. We can defer unlocking since we will
+			// return.
+			c.mu.Lock()
+			defer c.mu.Unlock()
+			if c.state == 1 {
+				c.state = 0
+				c.listResp, c.listErr = nil, nil
+			}
+			return
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		listResp, listErr := c.Client.List(ctx, &zoektquery.Const{Value: true})
 		cancel()

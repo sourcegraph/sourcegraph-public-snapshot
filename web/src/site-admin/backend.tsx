@@ -173,31 +173,6 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
     )
 }
 
-/**
- * Add a repository. See the GraphQL documentation for Mutation.addRepository.
- */
-export function addRepository(
-    name: string
-): Observable<{
-    /** The ID of the newly added repository (or the existing repository, if it already existed). */
-    id: GQL.ID
-}> {
-    return mutateGraphQL(
-        gql`
-            mutation AddRepository($name: String!) {
-                addRepository(name: $name) {
-                    id
-                }
-            }
-        `,
-        { name }
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()), // in case we memoized that this repository doesn't exist
-        map(data => data.addRepository)
-    )
-}
-
 export function setRepositoryEnabled(repository: GQL.ID, enabled: boolean): Observable<void> {
     return mutateGraphQL(
         gql`

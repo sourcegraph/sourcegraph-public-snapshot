@@ -3,7 +3,7 @@ import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { WrapDisabledIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
-import { ActionItem } from '../../../components/ActionItem'
+import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -70,12 +70,12 @@ export class ToggleLineWrap extends React.PureComponent<
 
     public render(): JSX.Element | null {
         return (
-            <ActionItem
+            <LinkOrButton
                 onSelect={this.onClick}
                 data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
             >
                 {this.state.value ? <WrapDisabledIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
-            </ActionItem>
+            </LinkOrButton>
         )
     }
 
