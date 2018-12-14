@@ -64,6 +64,8 @@ github.com/dghubble/gologin v1.0.2-0.20181013174641-0e442dd5bb73 h1:6jaxc0Dji7N+
 github.com/dghubble/gologin v1.0.2-0.20181013174641-0e442dd5bb73/go.mod h1:+EjjX5AiOREcyqxhz0c6I8OsL+6F9/38WD1CDcClx+Y=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
+github.com/die-net/lrucache v0.0.0-20180825112409-f89ea99a4e43 h1:vP/Cyr4SjftyA4DVbGAk8akxe1dnmrXmgvbl1nX2Ak8=
+github.com/die-net/lrucache v0.0.0-20180825112409-f89ea99a4e43/go.mod h1:ew0MSjCVDdtGMjF3kzLK9hwdgF5mOE8SbYVF3Rc7mkU=
 github.com/docker/distribution v0.0.0-20180720172123-0dae0957e5fe h1:ZRQNMB7Sw5jf9g/0imDbI+vTFNk4J7qBdtFI5/zf1kg=
 github.com/docker/distribution v0.0.0-20180720172123-0dae0957e5fe/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/docker v0.7.3-0.20180221142240-453f2b8b40b9 h1:j5P9Aya3JMe0sv7rAfRWIohQVP3YxHgui125drv1DAM=

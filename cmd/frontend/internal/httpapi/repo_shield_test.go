@@ -34,7 +34,7 @@ func TestRepoShield(t *testing.T) {
 	c := newTest()
 
 	wantResp := map[string]interface{}{
-		"value": "?",
+		"value": " 200 projects",
 	}
 
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {

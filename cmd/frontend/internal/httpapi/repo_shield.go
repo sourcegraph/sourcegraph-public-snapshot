@@ -7,16 +7,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
+	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
 func badgeValue(r *http.Request) (int, error) {
-	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
-	if err != nil {
-		return 0, errors.Wrap(err, "GetRepoAndRev")
-	}
-	totalRefs, err := backend.BackcompatBackendDefsTotalRefs(r.Context(), repo.Name)
+	totalRefs, err := backend.BackcompatBackendDefsTotalRefs(r.Context(), routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}
@@ -38,11 +34,15 @@ func badgeValueFmt(totalRefs int) string {
 }
 
 func serveRepoShield(w http.ResponseWriter, r *http.Request) error {
+	value, err := badgeValue(r)
+	if err != nil {
+		return err
+	}
 	return writeJSON(w, &struct {
 		// Note: Named lowercase because the JSON is consumed by shields.io JS
 		// code.
 		Value string `json:"value"`
 	}{
-		Value: "?",
+		Value: badgeValueFmt(value),
 	})
 }
