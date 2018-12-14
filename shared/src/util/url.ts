@@ -60,7 +60,7 @@ export interface ModeSpec {
     mode: string
 }
 
-export type BlobViewState = 'references' | 'discussions' | 'impl'
+export type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -444,4 +444,9 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     uri += parsed.position ? positionStr(parsed.position) : ''
     uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
     return uri
+}
+
+export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec) => `git://${ctx.repoName}?${ctx.commitID}`
+export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): string {
+    return `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`
 }

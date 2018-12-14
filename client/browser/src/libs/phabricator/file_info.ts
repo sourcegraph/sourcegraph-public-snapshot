@@ -74,14 +74,12 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                 repoName: info.baseRepoName,
                 filePath: info.baseFilePath || info.filePath,
                 commitID: info.baseCommitID,
-                rev: info.baseRev,
             })
 
             const fetchingHeadFile = fetchBlobContentLines({
                 repoName: info.headRepoName,
                 filePath: info.filePath,
                 commitID: info.headCommitID,
-                rev: info.headRev,
             })
 
             return zip(fetchingBaseFile, fetchingHeadFile).pipe(
