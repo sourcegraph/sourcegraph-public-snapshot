@@ -39,7 +39,7 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-migrate/migrate/v4 v4.1.0
-	github.com/golang/gddo v0.0.0-20181009135830-6c035858b4d7
+	github.com/golang/gddo v0.0.0-20181214210356-9bd4a3295021
 	github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7
 	github.com/golangci/golangci-lint v1.12.2
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
