@@ -13,10 +13,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/pkg/legacyconf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -381,7 +381,7 @@ func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Conte
 				Gitolite        []*schema.GitoliteConnection        `json:"gitolite"`
 				Phabricator     []*schema.PhabricatorConnection     `json:"phabricator"`
 			}
-			if err := jsonc.Unmarshal(conf.Raw().Site, &legacyConfig); err != nil {
+			if err := jsonc.Unmarshal(legacyconf.Raw(), &legacyConfig); err != nil {
 				return err
 			}
 			if err := migrate(legacyConfig.AwsCodeCommit, "AWSCodeCommit"); err != nil {
