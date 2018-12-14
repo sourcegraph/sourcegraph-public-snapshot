@@ -48,11 +48,11 @@
       "internalConsoleOptions": "openOnSessionStart"
     },
     {
-      "name": "ui",
+      "name": "Webapp Chrome",
       "type": "chrome",
       "request": "attach",
       "port": 9222,
-      "webRoot": "${workspaceRoot}",
+      "webRoot": "${workspaceRoot}/web",
       "url": "http://localhost:3080/*",
       "sourceMaps": true
     },
