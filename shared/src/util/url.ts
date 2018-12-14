@@ -450,3 +450,15 @@ export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec) => `git://${ctx.repoN
 export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): string {
     return `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`
 }
+
+/**
+ * Builds a URL query for the given query (without leading `?`).
+ */
+export function buildSearchURLQuery(query: string): string {
+    const searchParams = new URLSearchParams()
+    searchParams.set('q', query)
+    return searchParams
+        .toString()
+        .replace(/%2F/g, '/')
+        .replace(/%3A/g, ':')
+}

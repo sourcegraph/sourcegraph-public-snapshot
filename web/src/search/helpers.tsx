@@ -1,6 +1,7 @@
 import * as H from 'history'
-import { buildSearchURLQuery, SearchOptions } from '.'
+import { SearchOptions } from '.'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 
 export function submitSearch(
@@ -9,7 +10,7 @@ export function submitSearch(
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter'
 ): void {
     // Go to search results page
-    const path = '/search?' + buildSearchURLQuery(options)
+    const path = '/search?' + buildSearchURLQuery(options.query)
     eventLogger.log('SearchSubmitted', {
         code_search: {
             pattern: options.query,

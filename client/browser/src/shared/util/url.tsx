@@ -36,15 +36,3 @@ export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec>)
 
     return `${url}/${ctx.repoName}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(ctx.position)}`
 }
-
-/**
- * Builds a URL query for given SearchOptions (without leading `?`)
- */
-export function buildSearchURLQuery(query: string): string {
-    const searchParams = new URLSearchParams()
-    searchParams.set('q', query)
-    return searchParams
-        .toString()
-        .replace(/%2F/g, '/')
-        .replace(/%3A/g, ':')
-}

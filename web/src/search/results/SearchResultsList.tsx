@@ -9,7 +9,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { buildSearchURLQuery, parseSearchURLQuery } from '..'
+import { parseSearchURLQuery } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
@@ -18,6 +18,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined } from '../../../../shared/src/util/types'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -322,7 +323,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                             <li key={proposedQuery.query}>
                                                                 <Link
                                                                     className="btn btn-secondary btn-sm"
-                                                                    to={'/search?' + buildSearchURLQuery(proposedQuery)}
+                                                                    to={
+                                                                        '/search?' +
+                                                                        buildSearchURLQuery(proposedQuery.query)
+                                                                    }
                                                                 >
                                                                     {proposedQuery.query || proposedQuery.description}
                                                                 </Link>

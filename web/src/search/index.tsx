@@ -7,18 +7,6 @@ export interface SearchOptions {
 }
 
 /**
- * Builds a URL query for given SearchOptions (without leading `?`)
- */
-export function buildSearchURLQuery(options: SearchOptions): string {
-    const searchParams = new URLSearchParams()
-    searchParams.set('q', options.query)
-    return searchParams
-        .toString()
-        .replace(/%2F/g, '/')
-        .replace(/%3A/g, ':')
-}
-
-/**
  * Parses the SearchOptions out of URL search params. If neither the 'q' nor
  * 'sq' params are present, it returns undefined.
  */
