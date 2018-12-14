@@ -747,8 +747,6 @@ func RunRepositorySyncWorker(ctx context.Context) {
 					shutdownPreviousScheduler = cancel
 					newSchedulerRunning = true
 				}
-				_, newMap := updateConfig(ctx, c.ReposList)
-				Scheduler.updateSource("internalConfig", newMap)
 				return
 			}
 		} else {
@@ -768,8 +766,6 @@ func RunRepositorySyncWorker(ctx context.Context) {
 				shutdownPreviousScheduler = cancel
 				oldSchedulerRunning = true
 			}
-			newList, _ := updateConfig(ctx, c.ReposList)
-			repos.updateSource("internalConfig", newList)
 		}
 	})
 }
