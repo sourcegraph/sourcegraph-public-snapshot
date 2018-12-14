@@ -45,6 +45,7 @@ Search
 - [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
+- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 
 ---
 
@@ -71,7 +72,6 @@ Sourcegraph extensions
 
 Other
 
-- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 - Enhanced notification preferences
 - [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)
 - API access logging
