@@ -1,4 +1,5 @@
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -6,13 +7,16 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { SymbolIcon } from '../../../shared/src/symbols/SymbolIcon'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { fetchSymbols } from '../symbols/backend'
+import { parseBrowserRepoURL } from '../util/url'
 
 function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
-    const currentHash = currentLocation.hash.replace('$references:external', '').replace('$references', '')
+    const current = parseBrowserRepoURL(H.createPath(currentLocation))
+    const symbol = parseBrowserRepoURL(symbolLocation)
     return (
-        (currentLocation.pathname + currentHash).startsWith(symbolLocation) ||
-        (currentLocation.pathname.includes('/-/blob/') &&
-            symbolLocation.startsWith(currentLocation.pathname + currentHash))
+        current.repoName === symbol.repoName &&
+        current.rev === symbol.rev &&
+        current.filePath === symbol.filePath &&
+        isEqual(current.position, symbol.position)
     )
 }
 
