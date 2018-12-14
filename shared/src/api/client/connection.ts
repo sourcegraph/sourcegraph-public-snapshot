@@ -109,7 +109,7 @@ export function createExtensionHostClientConnection(
             services.textDocumentLocations
         )
     )
-    subscription.add(new Search(connection, services.queryTransformer, services.issuesResultsProvider))
+    subscription.add(new Search(connection, services.queryTransformer, services.searchResultProvider))
     subscription.add(new ClientCommands(connection, services.commands))
     subscription.add(
         new ClientRoots(

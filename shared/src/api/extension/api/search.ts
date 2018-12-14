@@ -1,12 +1,12 @@
-import { Observable, Unsubscribable } from 'rxjs'
-import { QueryTransformer, SearchResultProvider } from 'sourcegraph'
+import { Observable, of, Unsubscribable } from 'rxjs'
+import { QueryTransformer, SearchResultProvider, Subscribable } from 'sourcegraph'
 import { SearchAPI } from '../../client/api/search'
 import { SearchResult } from '../../protocol/plainTypes'
 import { ProviderMap, toProviderResultObservable } from './common'
 
 export interface ExtSearchAPI {
     $transformQuery: (id: number, query: string) => Promise<string>
-    $provideSearchResult: (id: number, query: string) => Promise<SearchResult[] | null>
+    $provideSearchResult: (id: number, query: string) => Observable<SearchResult[] | null | undefined>
 }
 
 export class ExtSearch implements ExtSearchAPI, Unsubscribable {
@@ -29,9 +29,14 @@ export class ExtSearch implements ExtSearchAPI, Unsubscribable {
         this.proxy.$registerSearchResultProvider(id)
         return subscription
     }
-    public $provideSearchResult(id: number, query: string): Promise<SearchResult[]> {
+    public $provideSearchResult(id: number, query: string): Observable<SearchResult[] | null | undefined> {
         const provider = this.registrations.get<SearchResultProvider>(id)
-        return provider.provideSearchResult(query)
+        return toProviderResultObservable(
+            new Promise<SearchResult[] | null | Subscribable<SearchResult[] | null | undefined> | undefined>(resolve =>
+                resolve(provider.provideSearchResult(query))
+            ),
+            result => (result ? result.map(r => r) : result)
+        )
     }
 
     public unsubscribe(): void {

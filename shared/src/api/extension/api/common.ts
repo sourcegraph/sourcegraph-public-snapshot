@@ -94,6 +94,8 @@ export function toProviderResultObservable<T, R>(
                 }
                 observable.subscribe(observer)
             })
-            .catch(err => observer.error(err))
+            .catch(err => {
+                observer.error(err)
+            })
     })
 }
