@@ -55,13 +55,6 @@ interface RangeSpec {
     range: Range
 }
 
-export interface ReferencesModeSpec {
-    /**
-     * the mode for the references panel
-     */
-    referencesMode: 'local' | 'external'
-}
-
 /**
  * Properties of a RepoURI (like git://github.com/gorilla/mux#mux.go) or a URL (like https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go)
  */
@@ -86,13 +79,7 @@ export interface AbsoluteRepoFile extends RepoSpec, Partial<RevSpec>, ResolvedRe
 /**
  * A position in file at an exact commit
  */
-export interface AbsoluteRepoFilePosition
-    extends RepoSpec,
-        Partial<RevSpec>,
-        ResolvedRevSpec,
-        FileSpec,
-        PositionSpec,
-        Partial<ReferencesModeSpec> {}
+export interface AbsoluteRepoFilePosition extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec, FileSpec, PositionSpec {}
 
 interface DiffRepoSpec {
     baseRepoName: string

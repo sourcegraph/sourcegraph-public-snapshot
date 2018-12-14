@@ -38,15 +38,7 @@ interface Props
     authenticatedUser: GQL.IUser | null
 }
 
-export type BlobPanelTabID =
-    | 'info'
-    | 'def'
-    | 'references'
-    | 'references:external'
-    | 'discussions'
-    | 'impl'
-    | 'typedef'
-    | 'history'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'discussions' | 'impl' | 'typedef' | 'history'
 
 /** The subject (what the contextual information refers to). */
 interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec> {

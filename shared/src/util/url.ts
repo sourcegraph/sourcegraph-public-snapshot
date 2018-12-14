@@ -60,7 +60,7 @@ export interface ModeSpec {
     mode: string
 }
 
-export type BlobViewState = 'references' | 'references:external' | 'discussions' | 'impl'
+export type BlobViewState = 'references' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -276,7 +276,6 @@ export function isLegacyFragment(hash: string): boolean {
         (hash.includes('$info') ||
             hash.includes('$def') ||
             hash.includes('$references') ||
-            hash.includes('$references:external') ||
             hash.includes('$impl') ||
             hash.includes('$history'))
     )
@@ -313,7 +312,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
         // invalid or empty hash
         return {}
     }
-    const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references:external"
+    const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references"
     const lpr = parseLineOrPositionOrRange(lineCharModalInfo[0]) as LineOrPositionOrRange & { viewState?: V }
     if (lineCharModalInfo[1]) {
         lpr.viewState = lineCharModalInfo[1] as V

@@ -157,7 +157,7 @@ describe('util/url', () => {
     const linePosition = { line: 1 }
     const lineCharPosition = { line: 1, character: 1 }
     const localRefMode = { ...lineCharPosition, viewState: 'references' }
-    const externalRefMode = { ...lineCharPosition, viewState: 'references:external' }
+    const externalRefMode = { ...lineCharPosition, viewState: 'references' }
     const ctx = {
         repoName: 'github.com/gorilla/mux',
         rev: '',
@@ -214,10 +214,10 @@ describe('util/url', () => {
         })
 
         it('parses hash with external references', () => {
-            assert.deepStrictEqual(parseHash('L1:1$references:external'), externalRefMode)
+            assert.deepStrictEqual(parseHash('L1:1$references'), externalRefMode)
         })
         it('parses modern hash with external references', () => {
-            assert.deepStrictEqual(parseHash('L1:1&tab=references:external'), externalRefMode)
+            assert.deepStrictEqual(parseHash('L1:1&tab=references'), externalRefMode)
         })
     })
 
@@ -242,8 +242,8 @@ describe('util/url', () => {
 
         it('formats url with view state', () => {
             assert.strictEqual(
-                toPrettyBlobURL({ ...ctx, position: lineCharPosition, viewState: 'references:external' }),
-                '/github.com/gorilla/mux/-/blob/mux.go#L1:1&tab=references:external'
+                toPrettyBlobURL({ ...ctx, position: lineCharPosition, viewState: 'references' }),
+                '/github.com/gorilla/mux/-/blob/mux.go#L1:1&tab=references'
             )
         })
     })
