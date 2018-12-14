@@ -574,7 +574,7 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * Represents a handle to a set of decorations
+     * Represents a handle to a set of decorations.
      *
      * To get an instance of {@link TextDocumentDecorationType}, use {@link createDecorationType}
      */
@@ -617,7 +617,6 @@ declare module 'sourcegraph' {
          *
          * @see {@link TextDocumentDecorationType}
          *
-         * @param decorationType DecorationType
          */
         setDecorations(decorationType: TextDocumentDecorationType, decorations: TextDocumentDecoration[]): void
     }
@@ -681,8 +680,10 @@ declare module 'sourcegraph' {
         export function createPanelView(id: string): PanelView
 
         /**
-         * Creates a decorationType that can be used to add decorations to code views
+         * Creates a decorationType that can be used to add decorations to code views.
          *
+         * Use this to create a unique handle to a set of decorations, that can be applied to
+         * text editors using {@link setDecorations}.
          */
         export function createDecorationType(): TextDocumentDecorationType
     }
