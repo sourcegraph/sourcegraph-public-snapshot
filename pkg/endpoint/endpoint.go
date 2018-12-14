@@ -117,14 +117,14 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	return urls.get(key, exclude), nil
 }
 
-// Endpoints returns a set of all addresses.
+// Endpoints returns a set of all addresses. Do not modify the returned value.
 func (m *Map) Endpoints() (map[string]struct{}, error) {
 	urls, err := m.getUrls()
 	if err != nil {
 		return nil, err
 	}
 
-	return urls.values(), nil
+	return urls.values, nil
 }
 
 func (m *Map) getUrls() (*hashMap, error) {

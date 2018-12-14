@@ -38,25 +38,24 @@ type shard struct {
 	*search.Options
 }
 
+type searchResponse struct {
+	*search.Result
+	error
+}
+
 func shardedSearch(ctx context.Context, shards <-chan shard) (*search.Result, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	var wg sync.WaitGroup
-	resC := make(chan struct {
-		*search.Result
-		error
-	})
+	resC := make(chan searchResponse)
 	for shard := range shards {
 		shard := shard
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			r, err := shard.Searcher.Search(ctx, shard.Q, shard.Options)
-			resC <- struct {
-				*search.Result
-				error
-			}{r, err}
+			resC <- searchResponse{r, err}
 		}()
 	}
 
@@ -102,4 +101,23 @@ func handleError(source search.Source, r search.Repository, err error) (*search.
 		Source:     source,
 		Status:     status,
 	}, nil
+}
+
+type semaphore chan struct{}
+
+// Acquire increments the semaphore. Up to cap(sem) can be acquired
+// concurrently. If the context is canceled before acquiring the context
+// error is returned.
+func (sem semaphore) Acquire(ctx context.Context) error {
+	select {
+	case sem <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// Release decrements the semaphore.
+func (sem semaphore) Release() {
+	<-sem
 }

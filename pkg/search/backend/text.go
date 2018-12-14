@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Text is a searcher which routes requests for indexed commits to indexed
@@ -115,51 +116,132 @@ func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (
 		return nil, err
 	}
 
-	all := &search.Result{}
+	var cancel context.CancelFunc
+	if opts.MaxWallTime > 0 {
+		ctx, cancel = context.WithTimeout(ctx, opts.MaxWallTime)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+	defer cancel()
 
-	// TODO parallize, delete missing endpoints, respect MaxWallTime
-	origOpts := opts
-	for _, r := range repos {
-		commit, err := t.Resolve(ctx, r.Name, r.RefPattern)
-		if err != nil {
-			s, err := handleError(SourceSearcher, r, err)
-			if err != nil {
-				return all, err
+	sem, err := t.semaphore()
+	if err != nil {
+		return nil, err
+	}
+
+	resC := make(chan searchResponse)
+	go func() {
+		defer close(resC)
+		var wg sync.WaitGroup
+		origOpts := opts
+		for _, r := range repos {
+			if err := sem.Acquire(ctx); err != nil {
+				return
 			}
-			all.Stats.Status = append(all.Stats.Status, *s)
-			continue
-		}
-		r.Commit = commit
-		opts := *origOpts
-		opts.Repositories = []api.RepoName{r.Name}
 
-		qSearcher, err := expandForRepoAtCommit(q, r)
-		if err != nil {
-			return nil, err
+			wg.Add(1)
+			go func(r search.Repository) {
+				defer sem.Release()
+				defer wg.Done()
+
+				commit, err := t.Resolve(ctx, r.Name, r.RefPattern)
+				if err != nil {
+					if s, err := handleError(SourceSearcher, r, err); err != nil {
+						resC <- searchResponse{error: err}
+					} else {
+						var result search.Result
+						result.Stats.Status = append(result.Stats.Status, *s)
+						resC <- searchResponse{Result: &result}
+					}
+					return
+				}
+				r.Commit = commit
+				opts := *origOpts
+				opts.Repositories = []api.RepoName{r.Name}
+
+				qSearcher, err := expandForRepoAtCommit(q, r)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
+
+				client, err := t.client(r)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
+
+				result, err := client.Search(ctx, qSearcher, &opts)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
+
+				// Searcher doesn't know the repo.RefPattern used, so we set it.
+				for i := range result.Stats.Status {
+					result.Stats.Status[i].Repository = r
+				}
+				for i := range result.Files {
+					result.Files[i].Repository = r
+				}
+
+				resC <- searchResponse{Result: result}
+				return
+			}(r)
 		}
 
-		client, err := t.client(r)
-		if err != nil {
-			return nil, err
-		}
+		wg.Wait()
+	}()
 
-		result, err := client.Search(ctx, qSearcher, &opts)
-		if err != nil {
-			return all, err
+	all := &search.Result{}
+	for r := range resC {
+		if r.error != nil {
+			// Drain resC
+			cancel()
+			for range resC {
+			}
+			return nil, r.error
 		}
-
-		// Searcher doesn't know the repo.RefPattern used, so we set it.
-		for i := range result.Stats.Status {
-			result.Stats.Status[i].Repository = r
-		}
-		for i := range result.Files {
-			result.Files[i].Repository = r
-		}
-
-		all.Add(result)
+		all.Add(r.Result)
 	}
 
 	return all, nil
+}
+
+// semaphore returns a semaphore for limiting search concurrency.
+func (t *TextJIT) semaphore() (semaphore, error) {
+	// We don't want to overload searcher instances. So we use the heuristic
+	// of 5 searchers per replica.
+	eps, err := t.Endpoints.Endpoints()
+	if err != nil {
+		return nil, err
+	}
+
+	// Additionally we use this opportunity to check if we need to do a GC
+	t.maybeGC(len(eps))
+
+	return make(semaphore, len(eps)*5), nil
+}
+
+func (t *TextJIT) maybeGC(expectedClientCount int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if len(t.clients) == expectedClientCount {
+		return
+	}
+
+	eps, err := t.Endpoints.Endpoints()
+	if err != nil {
+		log15.Warn("TextJIT.maybeGC unexpected error listing endpoints", "error", err)
+		return
+	}
+	for k, c := range t.clients {
+		if _, ok := eps[k]; !ok {
+			c.Close()
+			delete(eps, k)
+		}
+	}
 }
 
 func expandForRepoAtCommit(q query.Q, repo search.Repository) (query.Q, error) {

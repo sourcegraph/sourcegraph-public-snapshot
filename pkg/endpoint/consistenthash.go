@@ -29,6 +29,7 @@ type hashMap struct {
 	replicas int
 	keys     []int // Sorted
 	hashMap  map[int]string
+	values   map[string]struct{}
 }
 
 func hashMapNew(replicas int, fn hashFn) *hashMap {
@@ -36,6 +37,7 @@ func hashMapNew(replicas int, fn hashFn) *hashMap {
 		replicas: replicas,
 		hash:     fn,
 		hashMap:  make(map[int]string),
+		values:   make(map[string]struct{}),
 	}
 	if m.hash == nil {
 		m.hash = crc32.ChecksumIEEE
@@ -51,6 +53,7 @@ func (m *hashMap) isEmpty() bool {
 // Adds some keys to the hash.
 func (m *hashMap) add(keys ...string) {
 	for _, key := range keys {
+		m.values[key] = struct{}{}
 		for i := 0; i < m.replicas; i++ {
 			hash := int(m.hash([]byte(strconv.Itoa(i) + key)))
 			m.keys = append(m.keys, hash)
@@ -90,12 +93,4 @@ func (m *hashMap) get(key string, exclude map[string]bool) string {
 		}
 	}
 	return ""
-}
-
-func (m *hashMap) values() map[string]struct{} {
-	values := map[string]struct{}{}
-	for _, v := range m.hashMap {
-		values[v] = struct{}{}
-	}
-	return values
 }
