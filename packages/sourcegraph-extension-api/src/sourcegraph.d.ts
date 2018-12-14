@@ -997,14 +997,14 @@ declare module 'sourcegraph' {
         length: number
     }
 
-    /** A search result from an issue provider */
+    /** A search result from a search result provider. */
     export interface SearchMatch {
         url: string
         body: Markdown
         highlights: Highlight[]
     }
 
-    export interface GenericSearchResult {
+    export interface SearchResult {
         icon: string
         label: Markdown
         url: string
@@ -1024,7 +1024,7 @@ declare module 'sourcegraph' {
          *
          * @param query A search query.
          */
-        provideSearchResults(query: string): ProviderResult<GenericSearchResult[]>
+        provideSearchResults(query: string): ProviderResult<SearchResult[]>
     }
 
     /**

@@ -47,7 +47,7 @@ export interface Markdown {
     html: string
 }
 
-export interface GenericSearchResult {
+export interface SearchResult {
     icon: string
     label: Markdown
     url: string

@@ -1,17 +1,17 @@
 import { Observable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { GenericSearchResult } from '../../protocol/plainTypes'
+import { SearchResult } from '../../protocol/plainTypes'
 import { FeatureProviderRegistry } from './registry'
-export type ProvideSearchResultsSignature = (query: string) => Observable<GenericSearchResult[] | null>
-export class SearchResultProviderRegistry extends FeatureProviderRegistry<{}, ProvideSearchResultsSignature> {
-    public provideSearchResults(query: string): Observable<GenericSearchResult[] | null> {
+export type ProvideSearchResultSignature = (query: string) => Observable<SearchResult[] | null>
+export class SearchResultProviderRegistry extends FeatureProviderRegistry<{}, ProvideSearchResultSignature> {
+    public provideSearchResults(query: string): Observable<SearchResult[] | null> {
         return provideSearchResults(this.providers, query)
     }
 }
 export function provideSearchResults(
-    providers: Observable<ProvideSearchResultsSignature[]>,
+    providers: Observable<ProvideSearchResultSignature[]>,
     query: string
-): Observable<GenericSearchResult[] | null> {
+): Observable<SearchResult[] | null> {
     return providers.pipe(
         switchMap(providers => {
             if (providers.length === 0) {
