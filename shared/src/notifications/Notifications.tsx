@@ -1,6 +1,9 @@
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+import { delay, takeWhile } from 'rxjs/operators'
+import { MessageType } from '../api/client/services/notifications'
 import { ExtensionsControllerProps } from '../extensions/controller'
+import { asError } from '../util/errors'
 import { Notification } from './notification'
 import { NotificationItem } from './NotificationItem'
 
@@ -32,6 +35,37 @@ export class Notifications extends React.PureComponent<Props, State> {
                 this.setState(prevState => ({
                     notifications: [notification, ...prevState.notifications.slice(0, Notifications.MAX_RETAIN - 1)],
                 }))
+                if (notification.progress) {
+                    // Remove once progress is finished
+                    this.subscriptions.add(
+                        notification.progress
+                            .pipe(
+                                takeWhile(({ percentage }) => !percentage || percentage < 100),
+                                delay(1000)
+                            )
+                            .subscribe({
+                                error: err => {
+                                    this.setState(({ notifications }) => ({
+                                        notifications: notifications.map(
+                                            n =>
+                                                n === notification
+                                                    ? {
+                                                          ...n,
+                                                          type: MessageType.Error,
+                                                          message: asError(err).message,
+                                                      }
+                                                    : n
+                                        ),
+                                    }))
+                                },
+                                complete: () => {
+                                    this.setState(prevState => ({
+                                        notifications: prevState.notifications.filter(n => n !== notification),
+                                    }))
+                                },
+                            })
+                    )
+                }
             })
         )
     }
