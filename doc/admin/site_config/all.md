@@ -55,8 +55,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [gitMaxConcurrentClones](all.md#gitmaxconcurrentclones-integer)
 
-- [repos.list](all.md#repos-list-array)
-
 - [reviewBoard](all.md#reviewboard-array)
 
 - [lightstepAccessToken](all.md#lightstepaccesstoken-string)
@@ -412,14 +410,6 @@ Default: `5`
 
 <br/>
 
-## repos.list (array)
-
-JSON array of configuration for external repositories.
-
-The object is an array with all elements of the type [`Repository`](all.md#repository-object).
-
-<br/>
-
 ## reviewBoard (array)
 
 JSON array of configuration for Review Board.
@@ -729,7 +719,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Gi
 
 If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 
-If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication)..
+If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/auth.md#repositories-that-need-https-or-ssh-authentication)..
 
 This property must be one of the following enum values:
 
@@ -832,7 +822,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Gi
 
 If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).
 
-If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/auth.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 
@@ -923,7 +913,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Bi
 
 If "http", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).
 
-If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/auth.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 

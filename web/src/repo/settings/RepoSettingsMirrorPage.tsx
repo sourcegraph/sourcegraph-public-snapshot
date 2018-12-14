@@ -331,7 +331,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                                         <strong>No ECDSA host key is known ... Host key verification failed?</strong>
                                     </code>{' '}
                                     See{' '}
-                                    <Link to="/help/admin/repo/add_from_git_repository#ssh-authentication-config-keys-known-hosts">
+                                    <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
                                         SSH repository authentication documentation
                                     </Link>{' '}
                                     for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH

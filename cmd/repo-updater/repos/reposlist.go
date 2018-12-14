@@ -16,8 +16,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// This file contains the repo-updater scheduler and "repos.list" config
-// handling. The repo-updater scheduler is a scheduler for running git fetch
+// This file contains the repo-updater scheduler.
+// The repo-updater scheduler is a scheduler for running git fetch
 // which scales to tens of thousands of repositories.
 //
 // The best way to understand the scheduler is to start by reading the
@@ -49,8 +49,6 @@ import (
 // See the original design document at
 // https://github.com/sourcegraph/docs-private/blob/master/201806/repo.md
 //
-// TODO: Separate "repos.list" code and the scheduler.
-
 // repo represents a repository we're tracking.
 type repoData struct {
 	// Name used as the unique key, also sometimes api.RepoName
