@@ -18,6 +18,7 @@ Code intelligence:
 - [JavaScript/TypeScript language support via extension](https://github.com/sourcegraph/sourcegraph/issues/960)
 - [Python language support via extension](https://github.com/sourcegraph/sourcegraph/issues/959)
 - [Basic code intel](https://github.com/sourcegraph/sourcegraph/pull/1313)
+- [Datadog metrics extension](https://github.com/sourcegraph/sourcegraph/issues/655)
 
 Configuration and deployment:
 
@@ -115,7 +116,6 @@ See [previous Sourcegraph releases](previous_releases.md).
 [felixfbecker]: https://github.com/felixfbecker
 [slimsag]: https://github.com/slimsag
 [kattmingming]: https://github.com/kattmingming
-
 
 <!--
 
