@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { delay, filter } from 'rxjs/operators'
+import { delay, takeWhile } from 'rxjs/operators'
 import { MessageType } from '../api/client/services/notifications'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { asError } from '../util/errors'
@@ -40,16 +40,11 @@ export class Notifications extends React.PureComponent<Props, State> {
                     this.subscriptions.add(
                         notification.progress
                             .pipe(
-                                filter(({ percentage }) => !!percentage && percentage >= 100),
-                                delay(500)
+                                takeWhile(({ percentage }) => !percentage || percentage < 100),
+                                delay(1000)
                             )
-                            .subscribe(
-                                () => {
-                                    this.setState(prevState => ({
-                                        notifications: prevState.notifications.filter(n => n !== notification),
-                                    }))
-                                },
-                                err => {
+                            .subscribe({
+                                error: err => {
                                     this.setState(({ notifications }) => ({
                                         notifications: notifications.map(
                                             n =>
@@ -62,8 +57,13 @@ export class Notifications extends React.PureComponent<Props, State> {
                                                     : n
                                         ),
                                     }))
-                                }
-                            )
+                                },
+                                complete: () => {
+                                    this.setState(prevState => ({
+                                        notifications: prevState.notifications.filter(n => n !== notification),
+                                    }))
+                                },
+                            })
                     )
                 }
             })
