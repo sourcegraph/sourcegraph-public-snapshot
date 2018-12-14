@@ -1,4 +1,4 @@
-// +build dev
+// +build !dist
 
 package assets
 
