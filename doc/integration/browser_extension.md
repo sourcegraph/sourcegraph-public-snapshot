@@ -71,3 +71,4 @@ Try the following:
     - Ensure that the Sourcegraph URL is correct. It must point to your own Sourcegraph instance to work on private code.
     - Check whether any permissions must be granted. If so, the settings page will display an alert with a **Grant permissions** button.
     - Confirm with your Sourcegraph instance's site admin that the site config `corsOrigin` property contains the URL of the external site on which you are trying to use the browser extension.
+1. On some code hosts, you need to be signed in (to the code host) to use the browser extension. Try signing in.
