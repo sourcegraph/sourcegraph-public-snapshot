@@ -189,7 +189,6 @@ func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (
 				}
 
 				resC <- searchResponse{Result: result}
-				return
 			}(r)
 		}
 	}()
