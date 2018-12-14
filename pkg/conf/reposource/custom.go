@@ -13,13 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-var (
-	// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived from the site config
-	cloneURLResolvers          atomic.Value
-	cloneURLResolversReadyOnce sync.Once
-	cloneURLResolversReady     = make(chan struct{})
-)
-
 func init() {
 	conf.ContributeValidator(func(c conf.Unified) (problems []string) {
 		for _, c := range conf.Get().GitCloneURLToRepositoryName {
@@ -29,8 +22,24 @@ func init() {
 		}
 		return
 	})
+}
 
-	go func() {
+type cloneURLResolver struct {
+	from *regexp.Regexp
+	to   string
+}
+
+var (
+	// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings,
+	// derived from the site config
+	cloneURLResolvers     atomic.Value
+	cloneURLResolversOnce sync.Once
+)
+
+// CustomCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
+// user in site config. An empty string return value indicates no match.
+func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
+	cloneURLResolversOnce.Do(func() {
 		conf.Watch(func() {
 			cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
 			newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
@@ -47,22 +56,9 @@ func init() {
 				}
 			}
 			cloneURLResolvers.Store(newCloneURLResolvers)
-			cloneURLResolversReadyOnce.Do(func() {
-				close(cloneURLResolversReady)
-			})
 		})
-	}()
-}
+	})
 
-type cloneURLResolver struct {
-	from *regexp.Regexp
-	to   string
-}
-
-// CustomCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
-// user in site config. An empty string return value indicates no match.
-func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
-	<-cloneURLResolversReady
 	for _, r := range cloneURLResolvers.Load().([]*cloneURLResolver) {
 		if name := mapString(r.from, cloneURL, r.to); name != "" {
 			return api.RepoName(name)

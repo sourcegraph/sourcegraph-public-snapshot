@@ -45,6 +45,7 @@ func Test_customCloneURLToRepoName(t *testing.T) {
 		},
 	}}
 
+	cloneURLResolversOnce.Do(func() {}) // Prevent conf watching
 	for i, test := range tests {
 		cloneURLResolvers.Store(test.cloneURLResolvers)
 		for cloneURL, expName := range test.cloneURLToRepoName {
