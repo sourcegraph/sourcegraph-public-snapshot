@@ -133,5 +133,51 @@ describe('CodeEditor (integration)', () => {
                 ] as clientType.TextDocumentDecoration[]
             )
         })
+
+        it('is backwards compatible with extensions that do not provide a decoration type', async () => {
+            const { services, extensionHost } = await integrationTestContext()
+            const dt = extensionHost.app.createDecorationType()
+
+            // Set some decorations and check they are present on the client.
+            const codeEditor = extensionHost.app.windows[0].visibleViewComponents[0]
+            codeEditor.setDecorations(dt, [
+                {
+                    range: new Range(1, 2, 3, 4),
+                    backgroundColor: 'red',
+                },
+            ])
+
+            // This call to setDecorations does not supply a type, mimicking extensions
+            // that may have been developed against an older version of the API
+            codeEditor.setDecorations(null as any, [
+                {
+                    range: new Range(1, 2, 3, 4),
+                    after: {
+                        hoverMessage: 'foo',
+                    },
+                },
+            ])
+
+            // Both sets of decorations should be displayed
+            await extensionHost.internal.sync()
+            assert.deepStrictEqual(
+                await services.textDocumentDecoration
+                    .getDecorations({ uri: 'file:///f' })
+                    .pipe(take(1))
+                    .toPromise(),
+                [
+                    {
+                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                        backgroundColor: 'red',
+                    },
+                    {
+                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                        after: {
+                            hoverMessage: 'foo',
+                        },
+                    },
+                ] as clientType.TextDocumentDecoration[]
+            )
+        })
     })
 })

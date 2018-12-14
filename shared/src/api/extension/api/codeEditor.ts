@@ -3,7 +3,10 @@ import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { Range } from '../types/range'
 import { Selection } from '../types/selection'
+import { createDecorationType } from './decorations'
 import { ExtDocuments } from './documents'
+
+const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
 export class ExtCodeEditor implements sourcegraph.CodeEditor {
@@ -33,6 +36,9 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         decorationType: sourcegraph.TextDocumentDecorationType,
         decorations: sourcegraph.TextDocumentDecoration[]
     ): void {
+        // Backcompat: extensions developed against an older version of the API
+        // may not supply a decorationType
+        decorationType = decorationType || DEFAULT_DECORATION_TYPE
         this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
     }
 

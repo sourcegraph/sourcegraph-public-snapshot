@@ -1,11 +1,11 @@
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import idCreator from '../../util/idCreator'
 import { createProxy, handleRequests } from '../common/proxy'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
 import { ExtContext } from './api/context'
+import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
@@ -122,9 +122,6 @@ function initializeExtensionHost(
 
     return { unsubscribe: () => subscriptions.unsubscribe(), __testAPI: api }
 }
-
-const nextDecorationType = idCreator('TextDocumentDecorationType')
-export const createDecorationType = () => ({ key: nextDecorationType() })
 
 function createExtensionAPI(
     initData: InitData,
