@@ -1,6 +1,5 @@
 import { GitHubBlobUrl, GitHubMode, GitHubPullUrl, GitHubRepositoryUrl, GitHubURL } from '.'
 import { DiffResolvedRevSpec } from '../../shared/repo'
-import { parseHash } from '../../shared/util/url'
 
 /**
  * getFileContainers returns the elements on the page which should be marked
@@ -368,8 +367,8 @@ export function parseURL(loc: Location = window.location): GitHubURL {
     const isDelta = isPullRequest || isCommit || isCompare
     const isCodePage = urlsplit[2] === 'blob' || urlsplit[2] === 'tree'
 
-    const hash = parseHash(loc.hash)
-    const position = hash.line ? { line: hash.line, character: hash.character || 0 } : undefined
+    const hash = parseGitHubHash(loc.hash)
+    const position = hash ? { line: hash.startLine, character: 0 } : undefined
 
     return {
         user,
@@ -384,4 +383,21 @@ export function parseURL(loc: Location = window.location): GitHubURL {
         isCodePage,
         isCompare,
     }
+}
+
+/**
+ * Parses the GitHub URL hash, such as "#L23-L28" in
+ * https://github.com/ReactTraining/react-router/blob/master/packages/react-router/modules/Router.js#L23-L28.
+ *
+ * This hash has a slightly different format from Sourcegraph URL hashes. GitHub hashes do not support specifying
+ * the character on a line, and GitHub hashes duplicate the "L" before the range end line number.
+ */
+export function parseGitHubHash(hash: string): { startLine: number; endLine?: number } | undefined {
+    const m = hash.match(/^#?L(\d+)(?:-L(\d+))?/)
+    if (!m) {
+        return undefined
+    }
+    const startLine = parseInt(m[1], 10)
+    const endLine = m[2] ? parseInt(m[2], 10) : undefined
+    return { startLine, endLine }
 }
