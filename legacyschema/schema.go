@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	"github.com/sourcegraph/go-jsonschema/jsonschema"
 )
 
 type AWSCodeCommitConnection struct {
@@ -16,22 +14,6 @@ type AWSCodeCommitConnection struct {
 	Region                      string `json:"region"`
 	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
 	SecretAccessKey             string `json:"secretAccessKey"`
-}
-type Action struct {
-	ActionItem       *ActionItem   `json:"actionItem,omitempty"`
-	Category         string        `json:"category,omitempty"`
-	Command          string        `json:"command,omitempty"`
-	CommandArguments []interface{} `json:"commandArguments,omitempty"`
-	IconURL          string        `json:"iconURL,omitempty"`
-	Id               string        `json:"id,omitempty"`
-	Title            string        `json:"title,omitempty"`
-}
-
-// ActionItem description: The action item.
-type ActionItem struct {
-	Description string `json:"description,omitempty"`
-	IconURL     string `json:"iconURL,omitempty"`
-	Label       string `json:"label,omitempty"`
 }
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -121,13 +103,6 @@ type CloneURLToRepositoryName struct {
 	To   string `json:"to"`
 }
 
-// Contributions description: Features contributed by this extension. Extensions may also register certain types of contributions dynamically.
-type Contributions struct {
-	Actions       []*Action          `json:"actions,omitempty"`
-	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
-	Menus         *Menus             `json:"menus,omitempty"`
-}
-
 // Discussions description: Configures Sourcegraph code discussions.
 type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
@@ -139,12 +114,6 @@ type ExperimentalFeatures struct {
 	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
 	Discussions          string `json:"discussions,omitempty"`
 	JumpToDefOSSIndex    string `json:"jumpToDefOSSIndex,omitempty"`
-}
-
-// ExtensionRepository description: The location of the version control repository for this extension.
-type ExtensionRepository struct {
-	Type string `json:"type,omitempty"`
-	Url  string `json:"url"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -210,18 +179,6 @@ type Links struct {
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
-}
-type MenuItem struct {
-	Action string `json:"action,omitempty"`
-	Alt    string `json:"alt,omitempty"`
-	When   string `json:"when,omitempty"`
-}
-
-// Menus description: Describes where to place actions in menus.
-type Menus struct {
-	CommandPalette []*MenuItem `json:"commandPalette,omitempty"`
-	EditorTitle    []*MenuItem `json:"editor/title,omitempty"`
-	Help           []*MenuItem `json:"help,omitempty"`
 }
 
 // Metadata description: Language server metadata. Used to populate various UI elements.
@@ -292,34 +249,10 @@ type SMTPServerConfig struct {
 	Port           int    `json:"port"`
 	Username       string `json:"username,omitempty"`
 }
-type SearchSavedQueries struct {
-	Description    string `json:"description"`
-	Key            string `json:"key"`
-	Notify         bool   `json:"notify,omitempty"`
-	NotifySlack    bool   `json:"notifySlack,omitempty"`
-	Query          string `json:"query"`
-	ShowOnHomepage bool   `json:"showOnHomepage,omitempty"`
-}
-type SearchScope struct {
-	Description string `json:"description,omitempty"`
-	Id          string `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Value       string `json:"value"`
-}
 
 // Sentry description: Configuration for Sentry
 type Sentry struct {
 	Dsn string `json:"dsn,omitempty"`
-}
-
-// Settings description: Configuration settings for users and organizations on Sourcegraph.
-type Settings struct {
-	Extensions             map[string]bool           `json:"extensions,omitempty"`
-	Motd                   []string                  `json:"motd,omitempty"`
-	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
-	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
-	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -383,22 +316,4 @@ type SiteConfiguration struct {
 	TlsKey                            string                       `json:"tlsKey,omitempty"`
 	UpdateChannel                     string                       `json:"update.channel,omitempty"`
 	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
-}
-
-// SlackNotificationsConfig description: Configuration for sending notifications to Slack.
-type SlackNotificationsConfig struct {
-	WebhookURL string `json:"webhookURL"`
-}
-
-// SourcegraphExtensionManifest description: The Sourcegraph extension manifest describes the extension and the features it provides.
-type SourcegraphExtensionManifest struct {
-	ActivationEvents []string                `json:"activationEvents"`
-	Args             *map[string]interface{} `json:"args,omitempty"`
-	Contributes      *Contributions          `json:"contributes,omitempty"`
-	Description      string                  `json:"description,omitempty"`
-	Icon             string                  `json:"icon,omitempty"`
-	Readme           string                  `json:"readme,omitempty"`
-	Repository       *ExtensionRepository    `json:"repository,omitempty"`
-	Title            string                  `json:"title,omitempty"`
-	Url              string                  `json:"url"`
 }
