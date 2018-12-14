@@ -1,4 +1,4 @@
-import { Observable, Subscription } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtWindowsAPI } from '../../extension/api/windows'
@@ -18,6 +18,8 @@ export interface ClientWindowsAPI {
     $showNotification(message: string): void
     $showMessage(message: string): Promise<void>
     $showInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined>
+    $startProgress(options: sourcegraph.ProgressOptions): Promise<number>
+    $updateProgress(handle: number, progress?: sourcegraph.Progress, error?: any, done?: boolean): void
 }
 
 /** @internal */
@@ -40,7 +42,8 @@ export class ClientWindows implements ClientWindowsAPI {
          * Called when the client receives a window/showInput request and expected to return a promise that
          * resolves to the user's input.
          */
-        private showInput: (params: ShowInputParams) => Promise<string | null>
+        private showInput: (params: ShowInputParams) => Promise<string | null>,
+        private createProgressReporter: (options: sourcegraph.ProgressOptions) => Subject<sourcegraph.Progress>
     ) {
         this.proxy = createProxyAndHandleRequests('windows', connection, this)
 
@@ -88,6 +91,31 @@ export class ClientWindows implements ClientWindowsAPI {
                 // external API.
                 v === null ? undefined : v
         )
+    }
+
+    private handles = 1
+    private progressReporters = new Map<number, Subject<sourcegraph.Progress>>()
+
+    public async $startProgress(options: sourcegraph.ProgressOptions): Promise<number> {
+        const handle = this.handles++
+        const reporter = this.createProgressReporter(options)
+        this.progressReporters.set(handle, reporter)
+        return handle
+    }
+
+    public $updateProgress(handle: number, progress?: sourcegraph.Progress, error?: any, done?: boolean): void {
+        const reporter = this.progressReporters.get(handle)
+        if (!reporter) {
+            console.warn('No ProgressReporter for handle ' + handle)
+            return
+        }
+        if (done || (progress && progress.percentage && progress.percentage >= 100)) {
+            reporter.complete()
+        } else if (error) {
+            reporter.error(error)
+        } else if (progress) {
+            reporter.next(progress)
+        }
     }
 
     public unsubscribe(): void {

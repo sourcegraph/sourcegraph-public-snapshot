@@ -32,8 +32,8 @@ describe('search (integration)', () => {
         const { services, extensionHost } = await integrationTestContext()
 
         // Register the provider and call it
-        extensionHost.search.registerQueryTransformer({ transformQuery: q => `${q} bar` })
-        extensionHost.search.registerQueryTransformer({ transformQuery: q => `${q} qux` })
+        extensionHost.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} bar` })
+        extensionHost.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} qux` })
         await extensionHost.internal.sync()
         assert.deepStrictEqual(
             await services.queryTransformer

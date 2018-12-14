@@ -3,8 +3,8 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { merge, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -74,7 +74,6 @@ interface RepoRevContainerState extends ParsedRepoRev {
 export class RepoContainer extends React.Component<RepoContainerProps, RepoRevContainerState> {
     private routeMatchChanges = new Subject<{ repoRevAndRest: string }>()
     private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
-    private repositoryAdds = new Subject<void>()
     private revResolves = new Subject<ResolvedRev | ErrorLike | undefined>()
     private subscriptions = new Subscription()
 
@@ -93,21 +92,15 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
 
         // Fetch repository.
         const repositoryChanges = parsedRouteChanges.pipe(
-            map(({ repoPath }) => repoPath),
+            map(({ repoName }) => repoName),
             distinctUntilChanged()
         )
         this.subscriptions.add(
-            merge(
-                repositoryChanges,
-                this.repositoryAdds.pipe(
-                    withLatestFrom(repositoryChanges),
-                    map(([, repoPath]) => repoPath)
-                )
-            )
+            repositoryChanges
                 .pipe(
                     tap(() => this.setState({ repoOrError: undefined })),
-                    switchMap(repoPath =>
-                        fetchRepository({ repoPath }).pipe(
+                    switchMap(repoName =>
+                        fetchRepository({ repoName }).pipe(
                             catchError(error => {
                                 switch (error.code) {
                                     case EREPOSEEOTHER:
@@ -135,10 +128,10 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
 
         // Update header and other global state.
         this.subscriptions.add(
-            parsedRouteChanges.subscribe(({ repoPath, rev, rawRev, rest }) => {
-                this.setState({ repoPath, rev, rawRev, rest })
+            parsedRouteChanges.subscribe(({ repoName, rev, rawRev, rest }) => {
+                this.setState({ repoName, rev, rawRev, rest })
 
-                queryUpdates.next(searchQueryForRepoRev(repoPath, rev))
+                queryUpdates.next(searchQueryForRepoRev(repoName, rev))
             })
         )
 
@@ -161,7 +154,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             roots = [
                                 {
                                     uri: makeRepoURI({
-                                        repoPath: this.state.repoPath,
+                                        repoName: this.state.repoName,
                                         rev: resolvedRevOrError.commitID,
                                     }),
                                 },
@@ -200,7 +193,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             return null
         }
 
-        const { repoPath, filePath, commitRange, position, range } = parseBrowserRepoURL(
+        const { repoName, filePath, commitRange, position, range } = parseBrowserRepoURL(
             location.pathname + location.search + location.hash
         )
         const viewerCanAdminister = !!this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin
@@ -211,11 +204,10 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 case EREPONOTFOUND:
                     return (
                         <RepositoryErrorPage
-                            repo={repoPath}
+                            repo={repoName}
                             repoID={null}
                             error={this.state.repoOrError}
                             viewerCanAdminister={viewerCanAdminister}
-                            onDidAddRepository={this.onDidAddRepository}
                         />
                     )
                 default:
@@ -313,7 +305,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
                                     <RepositoryCommitPage
                                         {...routeComponentProps}
                                         {...transferProps}
@@ -327,7 +319,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
                                     <RepositoryBranchesArea {...routeComponentProps} {...transferProps} />
                                 </RepositoryGitDataContainer>
                             )}
@@ -337,7 +329,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
                                     <RepositoryReleasesArea {...routeComponentProps} {...transferProps} />
                                 </RepositoryGitDataContainer>
                             )}
@@ -347,7 +339,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
                                     <RepositoryCompareArea {...routeComponentProps} {...transferProps} />
                                 </RepositoryGitDataContainer>
                             )}
@@ -357,7 +349,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
                                     <RepositoryStatsArea {...routeComponentProps} {...transferProps} />
                                 </RepositoryGitDataContainer>
                             )}
@@ -390,7 +382,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     private onDidUpdateRepository = (update: Partial<GQL.IRepository>) => this.repositoryUpdates.next(update)
-    private onDidAddRepository = () => this.repositoryAdds.next()
 
     private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
         this.setState({ externalLinks })

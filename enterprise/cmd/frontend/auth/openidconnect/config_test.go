@@ -9,17 +9,17 @@ import (
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		input        schema.SiteConfiguration
+		input        conf.Unified
 		wantProblems []string
 	}{
 		"duplicates": {
-			input: schema.SiteConfiguration{
+			input: conf.Unified{Critical: schema.CriticalConfiguration{
 				ExternalURL: "x",
 				AuthProviders: []schema.AuthProviders{
 					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
 					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
 				},
-			},
+			}},
 			wantProblems: []string{"OpenID Connect auth provider at index 1 is duplicate of index 0"},
 		},
 	}

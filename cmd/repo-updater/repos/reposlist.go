@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -14,13 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// This file contains the repo-updater scheduler and "repos.list" config
-// handling. The repo-updater scheduler is a scheduler for running git fetch
+// This file contains the repo-updater scheduler.
+// The repo-updater scheduler is a scheduler for running git fetch
 // which scales to tens of thousands of repositories.
 //
 // The best way to understand the scheduler is to start by reading the
@@ -52,8 +49,6 @@ import (
 // See the original design document at
 // https://github.com/sourcegraph/docs-private/blob/master/201806/repo.md
 //
-// TODO: Separate "repos.list" code and the scheduler.
-
 // repo represents a repository we're tracking.
 type repoData struct {
 	// Name used as the unique key, also sometimes api.RepoName
@@ -749,8 +744,6 @@ func RunRepositorySyncWorker(ctx context.Context) {
 					shutdownPreviousScheduler = cancel
 					newSchedulerRunning = true
 				}
-				_, newMap := updateConfig(ctx, c.ReposList)
-				Scheduler.updateSource("internalConfig", newMap)
 				return
 			}
 		} else {
@@ -770,48 +763,8 @@ func RunRepositorySyncWorker(ctx context.Context) {
 				shutdownPreviousScheduler = cancel
 				oldSchedulerRunning = true
 			}
-			newList, _ := updateConfig(ctx, c.ReposList)
-			repos.updateSource("internalConfig", newList)
 		}
 	})
-}
-
-// updateConfig responds to changes in the configured list of repositories;
-// this is specifically the list of repositories directly configured, as opposed
-// to repositories found by looking up keys from various services.
-func updateConfig(ctx context.Context, configs []*schema.Repository) (sourceRepoList, sourceRepoMap) {
-	log15.Debug("repolist updateConfig")
-	newList := make(sourceRepoList)
-	newScheduler := conf.UpdateScheduler2Enabled()
-	newMap := make(sourceRepoMap)
-	for _, cfg := range configs {
-		if cfg.Type == "" {
-			cfg.Type = "git"
-		}
-		if cfg.Type != "git" {
-			continue
-		}
-		if cfg.Path == "" {
-			log15.Warn("ignoring repo with empty path in repos.list", "url", cfg.Url)
-			continue
-		}
-		// Check whether repo already exists, if not create an entry for it.
-		newRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoName: api.RepoName(cfg.Path), Enabled: true})
-		if err != nil {
-			log15.Warn("error creating or checking for repo", "repo", cfg.Path)
-			continue
-		}
-		if newScheduler {
-			newMap[api.RepoName(cfg.Path)] = &configuredRepo2{
-				Name:    api.RepoName(cfg.Path),
-				URL:     cfg.Url,
-				Enabled: newRepo.Enabled,
-			}
-			continue
-		}
-		newList[cfg.Path] = configuredRepo{url: cfg.Url, enabled: newRepo.Enabled}
-	}
-	return newList, newMap
 }
 
 // Snapshot represents the state of the various queues repo-updater
@@ -887,35 +840,6 @@ func UpdateOnce(ctx context.Context, name api.RepoName, url string) {
 	repos.mu.Lock()
 	defer repos.mu.Unlock()
 	repos.update(string(name), url)
-}
-
-// GetExplicitlyConfiguredRepository reports information about a repository configured explicitly with "repos.list".
-func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-	if args.Repo == "" {
-		return nil, false, nil
-	}
-
-	repoNameLower := api.RepoName(strings.ToLower(string(args.Repo)))
-	for _, repo := range conf.Get().ReposList {
-		if api.RepoName(strings.ToLower(string(repo.Path))) == repoNameLower {
-			repoInfo := &protocol.RepoInfo{
-				Name:         api.RepoName(repo.Path),
-				ExternalRepo: nil,
-				VCS:          protocol.VCSInfo{URL: repo.Url},
-			}
-			if repo.Links != nil {
-				repoInfo.Links = &protocol.RepoLinks{
-					Root:   repo.Links.Repository,
-					Blob:   repo.Links.Blob,
-					Tree:   repo.Links.Tree,
-					Commit: repo.Links.Commit,
-				}
-			}
-			return repoInfo, true, nil
-		}
-	}
-
-	return nil, false, nil // not found
 }
 
 // QueueSnapshot represents the state of the various queues repo-updater

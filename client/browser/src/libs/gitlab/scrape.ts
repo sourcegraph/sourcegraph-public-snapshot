@@ -16,15 +16,15 @@ export interface GitLabInfo {
     pageKind: GitLabPageKind
 
     owner: string
-    repoName: string
+    projectName: string
 
-    repoPath: string
+    repoName: string
 }
 
 /**
  * Information about single file pages.
  */
-export interface GitLabFileInfo extends Pick<GitLabInfo, 'repoPath'> {
+export interface GitLabFileInfo extends Pick<GitLabInfo, 'repoName'> {
     filePath: string
     rev: string
 }
@@ -40,17 +40,17 @@ export function getPageInfo(): GitLabInfo {
         throw new Error('Unable to determine project name')
     }
 
-    const projectName = new URL(projectLink.href).pathname.slice(1)
+    const projectFullName = new URL(projectLink.href).pathname.slice(1)
 
-    const parts = projectName.split('/')
+    const parts = projectFullName.split('/')
 
     const owner = take(parts, parts.length - 1).join('/')
-    const repoName = last(parts)!
+    const projectName = last(parts)!
 
     let pageKind: GitLabPageKind
-    if (window.location.pathname.includes(`${owner}/${repoName}/commit`)) {
+    if (window.location.pathname.includes(`${owner}/${projectName}/commit`)) {
         pageKind = GitLabPageKind.Commit
-    } else if (window.location.pathname.includes(`${owner}/${repoName}/merge_requests`)) {
+    } else if (window.location.pathname.includes(`${owner}/${projectName}/merge_requests`)) {
         pageKind = GitLabPageKind.MergeRequest
     } else {
         pageKind = GitLabPageKind.File
@@ -58,8 +58,8 @@ export function getPageInfo(): GitLabInfo {
 
     return {
         owner,
-        repoName,
-        repoPath: [host, owner, repoName].join('/'),
+        projectName,
+        repoName: [host, owner, projectName].join('/'),
         pageKind,
     }
 }
@@ -68,9 +68,9 @@ export function getPageInfo(): GitLabInfo {
  * Gets information about a file view page.
  */
 export function getFilePageInfo(): GitLabFileInfo {
-    const { repoPath, owner, repoName } = getPageInfo()
+    const { repoName, owner, projectName } = getPageInfo()
 
-    const matches = window.location.pathname.match(new RegExp(`${owner}\/${repoName}\/blob\/(.*?)\/(.*)`))
+    const matches = window.location.pathname.match(new RegExp(`${owner}\/${projectName}\/blob\/(.*?)\/(.*)`))
     if (!matches) {
         throw new Error('Unable to determine revision or file path')
     }
@@ -79,7 +79,7 @@ export function getFilePageInfo(): GitLabFileInfo {
     const filePath = matches[2]
 
     return {
-        repoPath,
+        repoName,
         filePath,
         rev,
     }
@@ -90,7 +90,7 @@ const createErrorBuilder = (message: string) => (kind: string) => new Error(`${m
 /**
  * Information specific to diff pages.
  */
-export interface GitLabDiffInfo extends Pick<GitLabFileInfo, 'repoPath'>, Pick<GitLabInfo, 'owner' | 'repoName'> {
+export interface GitLabDiffInfo extends Pick<GitLabFileInfo, 'repoName'>, Pick<GitLabInfo, 'owner' | 'projectName'> {
     mergeRequestID: string
 
     diffID?: string
@@ -98,10 +98,10 @@ export interface GitLabDiffInfo extends Pick<GitLabFileInfo, 'repoPath'>, Pick<G
 }
 
 /**
- * Scrapes the DOM for the repo path and revision information.
+ * Scrapes the DOM for the repo name and revision information.
  */
 export function getDiffPageInfo(): GitLabDiffInfo {
-    const { repoPath, owner, repoName } = getPageInfo()
+    const { repoName, owner, projectName } = getPageInfo()
 
     const query = new URLSearchParams(window.location.search)
 
@@ -111,9 +111,9 @@ export function getDiffPageInfo(): GitLabDiffInfo {
     }
 
     return {
-        repoPath,
-        owner,
         repoName,
+        owner,
+        projectName,
         mergeRequestID: matches[1],
         diffID: query.get('diff_id') || undefined,
         baseCommitID: query.get('start_sha') || undefined,
@@ -166,7 +166,7 @@ export function getHeadCommitIDFromCodeView(codeView: HTMLElement): FileInfo['co
     return revMatch[1]
 }
 
-interface GitLabCommitPageInfo extends Pick<GitLabFileInfo, 'repoPath'>, Pick<GitLabInfo, 'owner' | 'repoName'> {
+interface GitLabCommitPageInfo extends Pick<GitLabFileInfo, 'repoName'>, Pick<GitLabInfo, 'owner' | 'projectName'> {
     commitID: FileInfo['commitID']
 }
 
@@ -174,12 +174,12 @@ interface GitLabCommitPageInfo extends Pick<GitLabFileInfo, 'repoPath'>, Pick<Gi
  * Get the commit from the URL.
  */
 export function getCommitPageInfo(): GitLabCommitPageInfo {
-    const { repoPath, owner, repoName } = getPageInfo()
+    const { repoName, owner, projectName } = getPageInfo()
 
     return {
-        repoPath,
-        owner,
         repoName,
+        owner,
+        projectName,
         commitID: last(window.location.pathname.split('/'))!,
     }
 }

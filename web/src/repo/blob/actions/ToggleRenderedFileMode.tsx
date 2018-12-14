@@ -1,8 +1,8 @@
 import * as H from 'history'
 import EyeIcon from 'mdi-react/EyeIcon'
 import * as React from 'react'
+import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
 import { RenderMode } from '../../../../../shared/src/util/url'
-import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 
 interface Props {
@@ -56,13 +56,13 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
         const otherMode: RenderMode = this.props.mode === 'code' ? 'rendered' : 'code'
 
         return (
-            <ActionItem
+            <LinkOrButton
                 to={ToggleRenderedFileMode.getURLForMode(this.props.location, otherMode)}
                 data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
             >
                 <EyeIcon className="icon-inline" />{' '}
                 <span className="d-none d-lg-inline">{otherMode === 'code' ? 'Raw' : 'Formatted'}</span>
-            </ActionItem>
+            </LinkOrButton>
         )
     }
 }

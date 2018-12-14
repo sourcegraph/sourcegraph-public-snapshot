@@ -7,7 +7,7 @@ import { DiscussionsThread } from './DiscussionsThread'
 
 interface Props {
     repoID: GQL.ID
-    repoPath: string
+    repoName: string
     commitID: string
     rev: string | undefined
     filePath: string

@@ -114,7 +114,7 @@ func updateURL(ctx context.Context) string {
 }
 
 func authProviderTypes() []string {
-	ps := conf.Get().AuthProviders
+	ps := conf.Get().Critical.AuthProviders
 	types := make([]string, len(ps))
 	for i, p := range ps {
 		types[i] = conf.AuthProviderType(p)

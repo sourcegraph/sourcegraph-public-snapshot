@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Text is a searcher which routes requests for indexed commits to indexed
@@ -28,7 +29,7 @@ type Text struct {
 	// for testing purposes.
 	Index interface {
 		search.Searcher
-		SplitRepositories(context.Context, query.Q, *search.Options) (canSearch, cantSearch []search.Repository, err error)
+		SplitRepositories(context.Context, query.Q, *search.Options) (canSearch, cantSearch []api.RepoName, err error)
 	}
 
 	// Fallback is the searcher used for anything that Index can't
@@ -110,47 +111,161 @@ type TextJIT struct {
 // Search distributes the search across the searcher replicas, and merges the
 // results. opts.Repositories is required to be non-empty.
 func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
-	repoNames := make([]api.RepoName, len(opts.Repositories))
-	for i := range opts.Repositories {
-		repoNames[i] = opts.Repositories[i].Name
-	}
-	repos, err := expandRepoRefs(q, repoNames)
+	repos, err := expandRepoRefs(q, opts.Repositories)
 	if err != nil {
 		return nil, err
 	}
 
-	all := &search.Result{}
+	var cancel context.CancelFunc
+	if opts.MaxWallTime > 0 {
+		ctx, cancel = context.WithTimeout(ctx, opts.MaxWallTime)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+	defer cancel()
 
-	// TODO parallize, delete missing endpoints, respect MaxWallTime
-	origOpts := opts
-	for _, r := range repos {
-		commit, err := t.Resolve(ctx, r.Name, r.RefPattern)
-		if err != nil {
-			s, err := handleError(SourceSearcher, r, err)
-			if err != nil {
-				return all, err
+	sem, err := t.semaphore()
+	if err != nil {
+		return nil, err
+	}
+
+	resC := make(chan searchResponse)
+	go func() {
+		defer close(resC)
+
+		var wg sync.WaitGroup
+		defer wg.Wait()
+
+		origOpts := opts
+		for _, r := range repos {
+			if err := sem.Acquire(ctx); err != nil {
+				return
 			}
-			all.Stats.Status = append(all.Stats.Status, *s)
-			continue
-		}
-		r.Commit = commit
-		opts := *origOpts
-		opts.Repositories = []search.Repository{r}
 
-		client, err := t.client(r)
-		if err != nil {
-			return nil, err
-		}
+			wg.Add(1)
+			go func(r search.Repository) {
+				defer sem.Release()
+				defer wg.Done()
 
-		result, err := client.Search(ctx, q, &opts)
-		if err != nil {
-			return all, err
-		}
+				commit, err := t.Resolve(ctx, r.Name, r.RefPattern)
+				if err != nil {
+					if s, err := handleError(SourceSearcher, r, err); err != nil {
+						resC <- searchResponse{error: err}
+					} else {
+						var result search.Result
+						result.Stats.Status = append(result.Stats.Status, *s)
+						resC <- searchResponse{Result: &result}
+					}
+					return
+				}
+				r.Commit = commit
+				opts := *origOpts
+				opts.Repositories = []api.RepoName{r.Name}
 
-		all.Add(result)
+				qSearcher, err := expandForRepoAtCommit(q, r)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
+
+				client, err := t.client(r)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
+
+				result, err := client.Search(ctx, qSearcher, &opts)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
+
+				// Searcher doesn't know the repo.RefPattern used, so we set it.
+				for i := range result.Stats.Status {
+					result.Stats.Status[i].Repository = r
+				}
+				for i := range result.Files {
+					result.Files[i].Repository = r
+				}
+
+				resC <- searchResponse{Result: result}
+			}(r)
+		}
+	}()
+
+	all := &search.Result{}
+	for r := range resC {
+		if r.error != nil {
+			// Drain resC
+			cancel()
+			for range resC {
+			}
+			return nil, r.error
+		}
+		all.Add(r.Result)
 	}
 
 	return all, nil
+}
+
+// semaphore returns a semaphore for limiting search concurrency.
+func (t *TextJIT) semaphore() (semaphore, error) {
+	// We don't want to overload searcher instances. So we use the heuristic
+	// of 5 searchers per replica.
+	eps, err := t.Endpoints.Endpoints()
+	if err != nil {
+		return nil, err
+	}
+
+	// Additionally we use this opportunity to check if we need to do a GC
+	t.maybeGC(len(eps))
+
+	return make(semaphore, len(eps)*5), nil
+}
+
+func (t *TextJIT) maybeGC(expectedClientCount int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if len(t.clients) == expectedClientCount {
+		return
+	}
+
+	eps, err := t.Endpoints.Endpoints()
+	if err != nil {
+		log15.Warn("TextJIT.maybeGC unexpected error listing endpoints", "error", err)
+		return
+	}
+	for k, c := range t.clients {
+		if _, ok := eps[k]; !ok {
+			c.Close()
+			delete(eps, k)
+		}
+	}
+}
+
+func expandForRepoAtCommit(q query.Q, repo search.Repository) (query.Q, error) {
+	var err error
+	q = query.Map(q, func(q query.Q) query.Q {
+		switch s := q.(type) {
+		case *query.Repo:
+			err = errors.Errorf("text search expected repo atom to be expanded: %v", q)
+			return q
+		case *query.RepoSet:
+			_, ok := s.Set[string(repo.Name)]
+			return &query.Const{Value: ok}
+		case *query.Ref:
+			return &query.Const{Value: s.Pattern == repo.RefPattern}
+		default:
+			return q
+		}
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+	// Include the commit as the only ref
+	q = query.NewAnd(&query.Ref{Pattern: string(repo.Commit)}, q)
+	return query.Simplify(q), nil
 }
 
 func (t *TextJIT) Close() {
@@ -275,6 +390,7 @@ type Zoekt struct {
 	state    int32 // 0 not running, 1 running, 2 stopped
 	listResp *zoekt.RepoList
 	listErr  error
+	disabled bool
 }
 
 // Close will tear down the background goroutines.
@@ -286,6 +402,10 @@ func (c *Zoekt) Close() {
 
 // Search implements Searcher.Search
 func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (res *search.Result, err error) {
+	if !c.Enabled() {
+		return nil, errors.New("indexed search is disabled")
+	}
+
 	repos := opts.Repositories
 	if len(repos) == 0 {
 		return nil, errors.Errorf("repository list empty for indexed text search on %s", q.String())
@@ -299,8 +419,8 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 	// Have a top level AND to ensure we only return results for repositories
 	// in opts.Repositories
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	for _, r := range repos {
-		repoSet.Set[string(r.Name)] = true
+	for _, name := range repos {
+		repoSet.Set[string(name)] = true
 	}
 	zq = zoektquery.NewAnd(repoSet, zq)
 	zq = zoektquery.Simplify(zq)
@@ -334,9 +454,9 @@ func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (re
 		}
 	}
 	statuses := make([]search.RepositoryStatus, len(repos))
-	for i, r := range repos {
+	for i, name := range repos {
 		statuses[i] = search.RepositoryStatus{
-			Repository: r,
+			Repository: search.Repository{Name: name},
 			Source:     SourceZoekt,
 			Status:     status,
 		}
@@ -504,8 +624,6 @@ func mapZoektFileMatch(zf []zoekt.FileMatch) []search.FileMatch {
 
 			lines = append(lines, search.LineMatch{
 				Line:          lm.Line,
-				LineStart:     lm.LineStart,
-				LineEnd:       lm.LineEnd,
 				LineNumber:    lm.LineNumber,
 				LineFragments: frags,
 			})
@@ -527,7 +645,7 @@ func (c *Zoekt) String() string {
 // SplitRepositories splits repos into two lists: indexed contains
 // repositories that can be searched by zoekt, unindexed contains everything
 // else.
-func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.Options) (indexed, unindexed []search.Repository, err error) {
+func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.Options) (indexed, unindexed []api.RepoName, err error) {
 	// We only use zoekt if we have no ref atoms. See notes about the master
 	// branch where we calculate which commits to search for a repository in
 	// TextJIT
@@ -560,16 +678,16 @@ func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.O
 		set[repo.Repository.Name] = struct{}{}
 	}
 	unindexedSet := map[api.RepoName]struct{}{}
-	for _, repo := range unindexed {
-		unindexedSet[repo.Name] = struct{}{}
+	for _, name := range unindexed {
+		unindexedSet[name] = struct{}{}
 	}
 	head := indexed
 	indexed = indexed[:0]
-	for _, r := range head {
-		if _, ok := set[string(r.Name)]; ok {
-			indexed = append(indexed, r)
-		} else if _, ok = unindexedSet[r.Name]; !ok {
-			unindexed = append(unindexed, r)
+	for _, name := range head {
+		if _, ok := set[string(name)]; ok {
+			indexed = append(indexed, name)
+		} else if _, ok = unindexedSet[name]; !ok {
+			unindexed = append(unindexed, name)
 		}
 	}
 
@@ -578,6 +696,12 @@ func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.O
 
 // ListAll returns the response of List without any restrictions.
 func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
+	if !c.Enabled() {
+		// By returning an empty list Text.Search won't send any queries to
+		// Zoekt.
+		return &zoekt.RepoList{}, nil
+	}
+
 	c.mu.Lock()
 	r, err := c.listResp, c.listErr
 	c.mu.Unlock()
@@ -593,6 +717,22 @@ func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
 	return r, err
 }
 
+// SetEnabled will disable zoekt if b is false.
+func (c *Zoekt) SetEnabled(b bool) {
+	c.mu.Lock()
+	c.disabled = !b
+	c.mu.Unlock()
+}
+
+// Enabled returns true if Zoekt is enabled. It is enabled if Client is
+// non-nil and it hasn't been disabled by SetEnable.
+func (c *Zoekt) Enabled() bool {
+	c.mu.Lock()
+	b := c.disabled
+	c.mu.Unlock()
+	return c.Client != nil && !b
+}
+
 func (c *Zoekt) start() {
 	c.mu.Lock()
 	if c.state != 0 {
@@ -606,6 +746,19 @@ func (c *Zoekt) start() {
 	errorCount := 0
 	state := int32(1)
 	for state == 1 {
+		if !c.Enabled() {
+			// If we haven't been stopped, reset state so start() is called
+			// again when we are enabled. We can defer unlocking since we will
+			// return.
+			c.mu.Lock()
+			defer c.mu.Unlock()
+			if c.state == 1 {
+				c.state = 0
+				c.listResp, c.listErr = nil, nil
+			}
+			return
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		listResp, listErr := c.Client.List(ctx, &zoektquery.Const{Value: true})
 		cancel()

@@ -1122,17 +1122,17 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-4.0.0.tgz#59001ee68949dbbac0de2164399f448f7e6f4ef3"
-  integrity sha512-+ctLPrXY3mkpLw/rwMryno/jn47FUddK7t7RAJB72imFi8Mz8MgYZxhJFhgUkLva3e48WgBqkYyWhCQhw4wK7g==
+"@sourcegraph/codeintellify@^5.0.1":
+  version "5.0.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-5.0.1.tgz#9cfbbd1ae3ca9d9983ef3ca246437380454a8225"
+  integrity sha512-INdXFVqkKXQoRquKFMuOAhrwsfjwK9yAM2VrMKT/GW86oWieP7hYGpfoFxrKsJiTI1793cEyShb8w0FkaAzOQA==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.0"
-    "@sourcegraph/react-loading-spinner" "0.0.6"
+    "@sourcegraph/react-loading-spinner" "0.0.7"
     highlight.js "^9.12.0"
     lodash "^4.17.10"
     marked "^0.4.0 || ^0.5.0"
-    mdi-react "^4.0.0 || ^5.0.0"
+    mdi-react "^5.1.0"
     rxjs "^6.3.3"
     sanitize-html "^1.18.2"
     ts-key-enum "^2.0.0"
@@ -1160,6 +1160,11 @@
   version "0.0.6"
   resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.6.tgz#9729c833cc250b788407194c2abacbbc3f68a6f4"
   integrity sha512-ouE4HeOvDiuBsQ04BAS0plhF1dn9Q5NEiWEpAlxj7uTXlFMiXCO4NL2hejsuSA9+N1ZIysPQL4HrKQZ835ny3w==
+
+"@sourcegraph/react-loading-spinner@0.0.7":
+  version "0.0.7"
+  resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
+  integrity sha512-F4GMp+8XhlRQzEngc+CwbalT8zy8vXMxMrUjhm2cslTjWgWuSft0vSNCmCJDVPshpG/B+Ehb/OzpLLAzsG2JKg==
 
 "@sourcegraph/stylelint-config@^1.0.1":
   version "1.0.1"
@@ -1514,13 +1519,6 @@
   version "4.1.7"
   resolved "https://registry.npmjs.org/@types/chai/-/chai-4.1.7.tgz#1b8e33b61a8c09cbe1f85133071baa0dbf9fa71a"
   integrity sha512-2Y8uPt0/jwjhQ6EiluT0XCri1Dbplr0ZxfFXUz+ye13gaqE8u5gL5ppao1JrUYr9cIip5S6MvQzBS7Kke7U9VA==
-
-"@types/chalk@2.2.0":
-  version "2.2.0"
-  resolved "https://registry.npmjs.org/@types/chalk/-/chalk-2.2.0.tgz#b7f6e446f4511029ee8e3f43075fb5b73fbaa0ba"
-  integrity sha512-1zzPV9FDe1I/WHhRkf9SNgqtRJWZqrBWgu7JGveuHmmyR9CnAPCie2N/x+iHrgnpYBIcCJWHBoMRv2TRWktsvw==
-  dependencies:
-    chalk "*"
 
 "@types/chalk@^0.4.31":
   version "0.4.31"
@@ -1951,15 +1949,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react@*":
-  version "16.7.13"
-  resolved "https://registry.npmjs.org/@types/react/-/react-16.7.13.tgz#d2369ae78377356d42fb54275d30218e84f2247a"
-  integrity sha512-WhqrQLAE9z65hfcvWqZfR6qUtIazFRyb8LXqHo8440R53dAQqNkt2OlVJ3FXwqOwAXXg4nfYxt0qgBvE18o5XA==
-  dependencies:
-    "@types/prop-types" "*"
-    csstype "^2.2.0"
-
-"@types/react@16.7.13":
+"@types/react@*", "@types/react@16.7.13":
   version "16.7.13"
   resolved "https://registry.npmjs.org/@types/react/-/react-16.7.13.tgz#d2369ae78377356d42fb54275d30218e84f2247a"
   integrity sha512-WhqrQLAE9z65hfcvWqZfR6qUtIazFRyb8LXqHo8440R53dAQqNkt2OlVJ3FXwqOwAXXg4nfYxt0qgBvE18o5XA==
@@ -4035,15 +4025,6 @@ chai@^4.1.2:
     pathval "^1.1.0"
     type-detect "^4.0.5"
 
-chalk@*, chalk@2.4.1, chalk@^2.0.0, chalk@^2.0.1, chalk@^2.3.0, chalk@^2.3.1, chalk@^2.3.2, chalk@^2.4.1:
-  version "2.4.1"
-  resolved "https://registry.npmjs.org/chalk/-/chalk-2.4.1.tgz#18c49ab16a037b6eb0152cc83e3471338215b66e"
-  integrity sha512-ObN6h1v2fTJSmUXoS3nMQ92LbDK9be4TV+6G+omQlGJFdcUX5heKi1LZ1YnRMIgwTLEj3E24bT6tYni50rlCfQ==
-  dependencies:
-    ansi-styles "^3.2.1"
-    escape-string-regexp "^1.0.5"
-    supports-color "^5.3.0"
-
 chalk@2.1.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/chalk/-/chalk-2.1.0.tgz#ac5becf14fa21b99c6c92ca7a7d7cfd5b17e743e"
@@ -4052,6 +4033,15 @@ chalk@2.1.0:
     ansi-styles "^3.1.0"
     escape-string-regexp "^1.0.5"
     supports-color "^4.0.0"
+
+chalk@2.4.1, chalk@^2.0.0, chalk@^2.0.1, chalk@^2.3.0, chalk@^2.3.1, chalk@^2.3.2, chalk@^2.4.1:
+  version "2.4.1"
+  resolved "https://registry.npmjs.org/chalk/-/chalk-2.4.1.tgz#18c49ab16a037b6eb0152cc83e3471338215b66e"
+  integrity sha512-ObN6h1v2fTJSmUXoS3nMQ92LbDK9be4TV+6G+omQlGJFdcUX5heKi1LZ1YnRMIgwTLEj3E24bT6tYni50rlCfQ==
+  dependencies:
+    ansi-styles "^3.2.1"
+    escape-string-regexp "^1.0.5"
+    supports-color "^5.3.0"
 
 chalk@^1.1.1, chalk@^1.1.3:
   version "1.1.3"
@@ -9447,11 +9437,6 @@ mdast-util-compact@^1.0.0:
   dependencies:
     unist-util-visit "^1.1.0"
 
-"mdi-react@^4.0.0 || ^5.0.0":
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-5.0.0.tgz#38d5e0ac15e9322c7e0ff1e1dc5e1d65748e06db"
-  integrity sha512-26rbkxWW7yHBJrdZm9J06R3/4SzkqEVyYi/e0vjuWgpv4G7s64XDRjizKry98pnkjtAkktc0/roq6oUo9KbTYQ==
-
 mdi-react@^5.1.0:
   version "5.1.0"
   resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-5.1.0.tgz#22f26540731a2cdb2a39b22b4ea51a069a025d07"
@@ -13822,13 +13807,6 @@ stylelint-config-standard@^18.2.0:
   integrity sha512-07x0TaSIzvXlbOioUU4ORkCIM07kyIuojkbSVCyFWNVgXMXYHfhnQSCkqu+oHWJf3YADAnPGWzdJ53NxkoJ7RA==
   dependencies:
     stylelint-config-recommended "^2.1.0"
-
-stylelint-formatter-compact@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/stylelint-formatter-compact/-/stylelint-formatter-compact-1.1.0.tgz#0b76ddd2a061f706b5094f7682db389ac9c163d4"
-  integrity sha512-FkEY6LcEfoFT3OOdiUMnqT9pRJJMxo3J64pBJw8bx/VdLdf6O9RcJPxAC6getk6UVOMMYdsFfR8/0qBhl9U38w==
-  dependencies:
-    lodash "^4.17.10"
 
 stylelint-scss@^3.3.0:
   version "3.4.0"

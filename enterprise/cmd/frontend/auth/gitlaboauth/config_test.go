@@ -8,6 +8,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
@@ -19,7 +20,7 @@ func Test_parseConfig(t *testing.T) {
 	spew.Config.SpewKeys = true
 
 	type args struct {
-		cfg *schema.SiteConfiguration
+		cfg *conf.Unified
 	}
 	tests := []struct {
 		name          string
@@ -29,12 +30,12 @@ func Test_parseConfig(t *testing.T) {
 	}{
 		{
 			name:          "No configs",
-			args:          args{cfg: &schema.SiteConfiguration{}},
+			args:          args{cfg: &conf.Unified{}},
 			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{},
 		},
 		{
 			name: "1 GitLab.com config",
-			args: args{cfg: &schema.SiteConfiguration{
+			args: args{cfg: &conf.Unified{Critical: schema.CriticalConfiguration{
 				ExternalURL: "https://sourcegraph.example.com",
 				AuthProviders: []schema.AuthProviders{{
 					Gitlab: &schema.GitLabAuthProvider{
@@ -45,7 +46,7 @@ func Test_parseConfig(t *testing.T) {
 						Url:          "https://gitlab.com",
 					},
 				}},
-			}},
+			}}},
 			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{
 				schema.GitLabAuthProvider{
 					ClientID:     "my-client-id",
@@ -67,7 +68,7 @@ func Test_parseConfig(t *testing.T) {
 		},
 		{
 			name: "2 GitLab configs",
-			args: args{cfg: &schema.SiteConfiguration{
+			args: args{cfg: &conf.Unified{Critical: schema.CriticalConfiguration{
 				ExternalURL: "https://sourcegraph.example.com",
 				AuthProviders: []schema.AuthProviders{{
 					Gitlab: &schema.GitLabAuthProvider{
@@ -86,7 +87,7 @@ func Test_parseConfig(t *testing.T) {
 						Url:          "https://mycompany.com",
 					},
 				}},
-			}},
+			}}},
 			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{
 				schema.GitLabAuthProvider{
 					ClientID:     "my-client-id",

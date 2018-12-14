@@ -109,6 +109,30 @@ type CloneURLToRepositoryName struct {
 	To   string `json:"to"`
 }
 
+// CriticalConfiguration description: Critical configuration for a Sourcegraph site.
+type CriticalConfiguration struct {
+	AuthProviders               []AuthProviders     `json:"auth.providers,omitempty"`
+	AuthPublic                  bool                `json:"auth.public,omitempty"`
+	AuthSessionExpiry           string              `json:"auth.sessionExpiry,omitempty"`
+	AuthUserOrgMap              map[string][]string `json:"auth.userOrgMap,omitempty"`
+	ExternalURL                 string              `json:"externalURL,omitempty"`
+	HtmlBodyBottom              string              `json:"htmlBodyBottom,omitempty"`
+	HtmlBodyTop                 string              `json:"htmlBodyTop,omitempty"`
+	HtmlHeadBottom              string              `json:"htmlHeadBottom,omitempty"`
+	HtmlHeadTop                 string              `json:"htmlHeadTop,omitempty"`
+	HttpStrictTransportSecurity interface{}         `json:"httpStrictTransportSecurity,omitempty"`
+	HttpToHttpsRedirect         interface{}         `json:"httpToHttpsRedirect,omitempty"`
+	LicenseKey                  string              `json:"licenseKey,omitempty"`
+	LightstepAccessToken        string              `json:"lightstepAccessToken,omitempty"`
+	LightstepProject            string              `json:"lightstepProject,omitempty"`
+	Log                         *Log                `json:"log,omitempty"`
+	TlsLetsencrypt              string              `json:"tls.letsencrypt,omitempty"`
+	TlsCert                     string              `json:"tlsCert,omitempty"`
+	TlsKey                      string              `json:"tlsKey,omitempty"`
+	UpdateChannel               string              `json:"update.channel,omitempty"`
+	UseJaeger                   bool                `json:"useJaeger,omitempty"`
+}
+
 // Discussions description: Configures Sourcegraph code discussions.
 type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
@@ -203,12 +227,6 @@ type IMAPServerConfig struct {
 	Port     int    `json:"port"`
 	Username string `json:"username,omitempty"`
 }
-type Links struct {
-	Blob       string `json:"blob,omitempty"`
-	Commit     string `json:"commit,omitempty"`
-	Repository string `json:"repository,omitempty"`
-	Tree       string `json:"tree,omitempty"`
-}
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
@@ -238,12 +256,6 @@ type PhabricatorConnection struct {
 type Repos struct {
 	Callsign string `json:"callsign"`
 	Path     string `json:"path"`
-}
-type Repository struct {
-	Links *Links `json:"links,omitempty"`
-	Path  string `json:"path"`
-	Type  string `json:"type,omitempty"`
-	Url   string `json:"url"`
 }
 type ReviewBoard struct {
 	Url string `json:"url,omitempty"`
@@ -307,56 +319,29 @@ type Settings struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
-	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
-	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
-	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
-	AuthPublic                        bool                         `json:"auth.public,omitempty"`
-	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
-	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
-	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
-	BitbucketServer                   []*BitbucketServerConnection `json:"bitbucketServer,omitempty"`
-	CorsOrigin                        string                       `json:"corsOrigin,omitempty"`
-	DisableAutoGitUpdates             bool                         `json:"disableAutoGitUpdates,omitempty"`
-	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
-	DisableBuiltInSearches            bool                         `json:"disableBuiltInSearches,omitempty"`
-	DisablePublicRepoRedirects        bool                         `json:"disablePublicRepoRedirects,omitempty"`
-	Discussions                       *Discussions                 `json:"discussions,omitempty"`
-	DontIncludeSymbolResultsByDefault bool                         `json:"dontIncludeSymbolResultsByDefault,omitempty"`
-	EmailAddress                      string                       `json:"email.address,omitempty"`
-	EmailImap                         *IMAPServerConfig            `json:"email.imap,omitempty"`
-	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
-	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
-	Extensions                        *Extensions                  `json:"extensions,omitempty"`
-	ExternalURL                       string                       `json:"externalURL,omitempty"`
-	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName  `json:"git.cloneURLToRepositoryName,omitempty"`
-	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
-	Github                            []*GitHubConnection          `json:"github,omitempty"`
-	GithubClientID                    string                       `json:"githubClientID,omitempty"`
-	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`
-	Gitlab                            []*GitLabConnection          `json:"gitlab,omitempty"`
-	Gitolite                          []*GitoliteConnection        `json:"gitolite,omitempty"`
-	HtmlBodyBottom                    string                       `json:"htmlBodyBottom,omitempty"`
-	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
-	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
-	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
-	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
-	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
-	LicenseKey                        string                       `json:"licenseKey,omitempty"`
-	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
-	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
-	Log                               *Log                         `json:"log,omitempty"`
-	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
-	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
-	Phabricator                       []*PhabricatorConnection     `json:"phabricator,omitempty"`
-	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
-	ReposList                         []*Repository                `json:"repos.list,omitempty"`
-	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
-	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
-	TlsLetsencrypt                    string                       `json:"tls.letsencrypt,omitempty"`
-	TlsCert                           string                       `json:"tlsCert,omitempty"`
-	TlsKey                            string                       `json:"tlsKey,omitempty"`
-	UpdateChannel                     string                       `json:"update.channel,omitempty"`
-	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
+	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
+	AuthDisableAccessTokens           bool                        `json:"auth.disableAccessTokens,omitempty"`
+	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
+	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
+	DisableBrowserExtension           bool                        `json:"disableBrowserExtension,omitempty"`
+	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
+	DisablePublicRepoRedirects        bool                        `json:"disablePublicRepoRedirects,omitempty"`
+	Discussions                       *Discussions                `json:"discussions,omitempty"`
+	DontIncludeSymbolResultsByDefault bool                        `json:"dontIncludeSymbolResultsByDefault,omitempty"`
+	EmailAddress                      string                      `json:"email.address,omitempty"`
+	EmailImap                         *IMAPServerConfig           `json:"email.imap,omitempty"`
+	EmailSmtp                         *SMTPServerConfig           `json:"email.smtp,omitempty"`
+	ExperimentalFeatures              *ExperimentalFeatures       `json:"experimentalFeatures,omitempty"`
+	Extensions                        *Extensions                 `json:"extensions,omitempty"`
+	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
+	GitMaxConcurrentClones            int                         `json:"gitMaxConcurrentClones,omitempty"`
+	GithubClientID                    string                      `json:"githubClientID,omitempty"`
+	GithubClientSecret                string                      `json:"githubClientSecret,omitempty"`
+	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
+	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
+	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
+	ReviewBoard                       []*ReviewBoard              `json:"reviewBoard,omitempty"`
+	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 }
 
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.

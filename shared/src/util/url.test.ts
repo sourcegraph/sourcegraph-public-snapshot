@@ -16,14 +16,14 @@ describe('parseRepoURI', () => {
     it('should parse repo', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux')
         assertDeepStrictEqual(parsed, {
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
         })
     })
 
     it('should parse repo with rev', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch')
         assertDeepStrictEqual(parsed, {
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
         })
     })
@@ -31,7 +31,7 @@ describe('parseRepoURI', () => {
     it('should parse repo with commitID', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
         assertDeepStrictEqual(parsed, {
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
             commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
         })
@@ -40,7 +40,7 @@ describe('parseRepoURI', () => {
     it('should parse repo with rev and file', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#mux.go')
         assertDeepStrictEqual(parsed, {
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
             filePath: 'mux.go',
         })
@@ -49,7 +49,7 @@ describe('parseRepoURI', () => {
     it('should parse repo with rev and file and line', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3')
         assertDeepStrictEqual(parsed, {
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
             filePath: 'mux.go',
             position: {
@@ -62,7 +62,7 @@ describe('parseRepoURI', () => {
     it('should parse repo with rev and file and position', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3,5')
         assertDeepStrictEqual(parsed, {
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
             filePath: 'mux.go',
             position: {
@@ -75,7 +75,7 @@ describe('parseRepoURI', () => {
     it('should parse repo with rev and file and range', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3,5-6,9')
         assertDeepStrictEqual(parsed, {
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
             filePath: 'mux.go',
             range: {
@@ -95,14 +95,14 @@ describe('parseRepoURI', () => {
 describe('makeRepoURI', () => {
     it('should make repo', () => {
         const uri = makeRepoURI({
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
         })
         assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux')
     })
 
     it('should make repo with rev', () => {
         const uri = makeRepoURI({
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
         })
         assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch')
@@ -110,7 +110,7 @@ describe('makeRepoURI', () => {
 
     it('should make repo with commitID', () => {
         const uri = makeRepoURI({
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
             commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
         })
@@ -119,7 +119,7 @@ describe('makeRepoURI', () => {
 
     it('should make repo with rev and file', () => {
         const uri = makeRepoURI({
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
             filePath: 'mux.go',
         })
@@ -128,7 +128,7 @@ describe('makeRepoURI', () => {
 
     it('should make repo with rev and file and line', () => {
         const uri = makeRepoURI({
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
             filePath: 'mux.go',
             position: {
@@ -141,7 +141,7 @@ describe('makeRepoURI', () => {
 
     it('should make repo with rev and file and position', () => {
         const uri = makeRepoURI({
-            repoPath: 'github.com/gorilla/mux',
+            repoName: 'github.com/gorilla/mux',
             rev: 'branch',
             filePath: 'mux.go',
             position: {
@@ -159,7 +159,7 @@ describe('util/url', () => {
     const localRefMode = { ...lineCharPosition, viewState: 'references' }
     const externalRefMode = { ...lineCharPosition, viewState: 'references:external' }
     const ctx = {
-        repoPath: 'github.com/gorilla/mux',
+        repoName: 'github.com/gorilla/mux',
         rev: '',
         commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
         filePath: 'mux.go',

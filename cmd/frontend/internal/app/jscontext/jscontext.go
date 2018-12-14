@@ -61,10 +61,10 @@ type JSContext struct {
 	ShowOnboarding bool   `json:"showOnboarding"`
 	EmailEnabled   bool   `json:"emailEnabled"`
 
-	Site                schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
-	NeedServerRestart   bool                     `json:"needServerRestart"`
-	IsClusterDeployment bool                     `json:"isClusterDeployment"`
+	Critical            schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
+	LikelyDockerOnMac   bool                         `json:"likelyDockerOnMac"`
+	NeedServerRestart   bool                         `json:"needServerRestart"`
+	IsClusterDeployment bool                         `json:"isClusterDeployment"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
@@ -79,8 +79,6 @@ type JSContext struct {
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
 	UpdateScheduler2Enabled bool `json:"updateScheduler2Enabled"`
-
-	ExternalServicesEnabled bool `json:"externalServicesEnabled"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -149,7 +147,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ShowOnboarding:      showOnboarding,
 		EmailEnabled:        conf.CanSendEmail(),
-		Site:                publicSiteConfiguration(),
+		Critical:            publicCriticalConfiguration(),
 		LikelyDockerOnMac:   likelyDockerOnMac(),
 		NeedServerRestart:   globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		IsClusterDeployment: conf.IsDeployTypeCluster(conf.DeployType()),
@@ -169,17 +167,20 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AuthProviders: authProviders,
 
 		UpdateScheduler2Enabled: conf.UpdateScheduler2Enabled(),
-
-		ExternalServicesEnabled: conf.ExternalServicesEnabled(),
 	}
 }
 
-// publicSiteConfiguration is the subset of the site.schema.json site configuration
-// that is necessary for the web app and is not sensitive/secret.
-func publicSiteConfiguration() schema.SiteConfiguration {
+// publicCriticalConfiguration is the subset of the critical.schema.json critical
+// configuration that is necessary for the web app and is not sensitive/secret.
+func publicCriticalConfiguration() schema.CriticalConfiguration {
 	c := conf.Get()
-	return schema.SiteConfiguration{
-		AuthPublic: c.AuthPublic,
+	updateChannel := c.Critical.UpdateChannel
+	if updateChannel == "" {
+		updateChannel = "release"
+	}
+	return schema.CriticalConfiguration{
+		AuthPublic:    c.Critical.AuthPublic,
+		UpdateChannel: updateChannel,
 	}
 }
 

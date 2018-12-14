@@ -11,10 +11,12 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
@@ -26,19 +28,24 @@ import (
 
 func TestText(t *testing.T) {
 	mz := &mockZoekt{SearchResult: &zoekt.SearchResult{}}
+	addr1, close1 := openZoektServer(t, mz)
+	defer close1()
 	index := &backend.Zoekt{
-		Client:       mz,
+		Client:       zoektrpc.Client(addr1),
 		DisableCache: true,
 	}
 	defer index.Close()
 
 	fallback := &mockCollectRepos{}
-	addr, close := openServer(t, fallback)
-	defer close()
+	addr2, close2 := openServer(t, fallback)
+	defer close2()
 	jit := &backend.TextJIT{
-		Endpoints: endpoint.New(addr),
+		Endpoints: endpoint.New(addr2),
 		Resolve: func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error) {
-			return api.CommitID("abc"), nil
+			if spec == "" {
+				spec = "HEAD"
+			}
+			return api.CommitID(strings.ToUpper(spec)), nil
 		},
 	}
 	defer jit.Close()
@@ -69,11 +76,11 @@ func TestText(t *testing.T) {
 		Name:         "none",
 		Repos:        "a b c",
 		Indexed:      "d e f",
-		WantFallback: "a@abc b@abc c@abc",
+		WantFallback: "a@HEAD b@HEAD c@HEAD",
 	}, {
 		Name:         "empty_index",
 		Repos:        "a b c",
-		WantFallback: "a@abc b@abc c@abc",
+		WantFallback: "a@HEAD b@HEAD c@HEAD",
 	}, {
 		Name:      "subset_of_indexed",
 		Repos:     "a b c",
@@ -84,7 +91,7 @@ func TestText(t *testing.T) {
 		Query:        "(r:a ref:x) or r:b",
 		Repos:        "b",
 		Indexed:      "a d e",
-		WantFallback: "b@x@abc",
+		WantFallback: "b@X",
 	}, {
 		// We send b to fallback since it matches b@x since searching b on the
 		// x branch will return results.
@@ -92,26 +99,26 @@ func TestText(t *testing.T) {
 		Query:        "(r:a ref:x) or r:b",
 		Repos:        "b",
 		Indexed:      "b d e",
-		WantFallback: "b@x@abc",
+		WantFallback: "b@X",
 	}, {
 		Name:         "mix",
 		Query:        "(r:a ref:x) or (r:b ref:y) or r:c or r:d",
 		Repos:        "a b c d",
 		Indexed:      "a d e",
 		WantIndex:    "",
-		WantFallback: "a@x@abc b@y@abc c@x@abc c@y@abc d@x@abc d@y@abc",
+		WantFallback: "a@X b@Y c@X c@Y d@X d@Y",
 	}, {
 		Name:         "mix_on_same_repo",
 		Query:        "(r:a ref:x) or (r:b ref:x)",
 		Repos:        "a b c d",
 		Indexed:      "a d e",
-		WantFallback: "a@x@abc b@x@abc",
+		WantFallback: "a@X b@X",
 	}, {
 		Name:         "no-head",
 		Query:        "ref:x",
 		Repos:        "a b c d",
 		Indexed:      "a b c",
-		WantFallback: "a@x@abc b@x@abc c@x@abc d@x@abc",
+		WantFallback: "a@X b@X c@X d@X",
 	}, {
 		Name:      "empty",
 		WantError: "repository list empty",
@@ -197,6 +204,12 @@ func openServer(t *testing.T, s search.Searcher) (string, func()) {
 	}
 	ts := httptest.NewServer(server)
 	return ts.URL, ts.Close
+}
+
+func openZoektServer(t *testing.T, s zoekt.Searcher) (string, func()) {
+	server := zoektrpc.Server(s)
+	ts := httptest.NewServer(server)
+	return strings.TrimPrefix(ts.URL, "http://"), ts.Close
 }
 
 func TestText_error(t *testing.T) {
@@ -411,20 +424,10 @@ func zoektRepoList(names string) *zoekt.RepoList {
 	}
 }
 
-func repoList(specs string) []search.Repository {
-	var res []search.Repository
-	for _, spec := range strings.Fields(specs) {
-		p := strings.Split(spec, "@")
-		if len(p) == 1 {
-			res = append(res, search.Repository{
-				Name: api.RepoName(p[0]),
-			})
-		} else {
-			res = append(res, search.Repository{
-				Name:   api.RepoName(p[0]),
-				Commit: api.CommitID(p[1]),
-			})
-		}
+func repoList(specs string) []api.RepoName {
+	var res []api.RepoName
+	for _, name := range strings.Fields(specs) {
+		res = append(res, api.RepoName(name))
 	}
 	return res
 }
@@ -509,11 +512,43 @@ func diff(b1, b2 string) (string, error) {
 }
 
 type mockCollectRepos struct {
+	mu    sync.Mutex
 	Repos []search.Repository
 }
 
 func (m *mockCollectRepos) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
-	m.Repos = append(m.Repos, opts.Repositories...)
+	var commits []api.CommitID
+	var patterns []string
+	query.VisitAtoms(q, func(q query.Q) {
+		if s, ok := q.(*query.Ref); ok {
+			if len(s.Pattern) == 40 {
+				commits = append(commits, api.CommitID(s.Pattern))
+			} else {
+				patterns = append(patterns, s.Pattern)
+			}
+		}
+	})
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, name := range opts.Repositories {
+		if len(commits) == 0 && len(patterns) == 0 {
+			m.Repos = append(m.Repos, search.Repository{
+				Name: name,
+			})
+		}
+		for _, c := range commits {
+			m.Repos = append(m.Repos, search.Repository{
+				Name:   name,
+				Commit: c,
+			})
+		}
+		for _, p := range patterns {
+			m.Repos = append(m.Repos, search.Repository{
+				Name:       name,
+				RefPattern: p,
+			})
+		}
+	}
 	return &search.Result{}, nil
 }
 

@@ -1,4 +1,5 @@
-import { Subject } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
+import { Progress } from 'sourcegraph'
 
 interface PromiseCallback<T> {
     resolve: (p: T | Promise<T>) => void
@@ -102,6 +103,8 @@ export class NotificationsService {
 
     /** Messages from extensions requesting the user to select an action. */
     public readonly showMessageRequests = new Subject<ShowMessageRequest>()
+    /** Messages from extensions requesting the user to select an action. */
+    public readonly progresses = new Subject<{ title?: string; progress: Observable<Progress> }>()
 
     /** Messages from extensions requesting text input from the user. */
     public readonly showInputs = new Subject<ShowInputRequest>()

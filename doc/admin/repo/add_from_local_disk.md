@@ -25,5 +25,3 @@ If you're using the default `--volume $HOME/.sourcegraph/data:/var/opt/sourcegra
 1.  Ensure your site configuration contains entries for the code host of the added repository and then enable the repository in the admin UI.
 
     If this repository exists on a code host that Sourcegraph directly integrates with, then use that code host's configuration (as described in the other section on this page). After updating the site configuration, if you used the correct repository path, Sourcegraph will detect and reuse the existing clone. (For example, if you're working with a repository on GitHub.com, ensure that the repository path name you used is of the form `github.com/my/repo`.)
-
-    Otherwise, add an entry for this repository using [`repos.list`](#sync-repositories-from-any-code-host) and use a `url` (clone URL) of `file:///var/opt/sourcegraph/repos/github.com/my/repo`.

@@ -30,8 +30,6 @@ func (f *FileMatch) IsPathMatch() bool {
 type LineMatch struct {
 	// The line in which a match was found.
 	Line       []byte
-	LineStart  int
-	LineEnd    int
 	LineNumber int
 
 	LineFragments []LineFragmentMatch
@@ -112,8 +110,12 @@ const (
 	RepositoryStatusCloning RepositoryStatusType = "cloning"
 
 	// RepositoryStatusMissing indicates the search failed for the repository
-	// since the repository or commit does not exist.
+	// since the repository does not exist.
 	RepositoryStatusMissing RepositoryStatusType = "missing"
+
+	// RepositoryStatusCommitMissing indicates the search failed for the
+	// repository since the commit does not exist.
+	RepositoryStatusCommitMissing RepositoryStatusType = "commitmissing"
 
 	// RepositoryStatusError indicates the search failed for the repository
 	// due to an unexpected error. Implementations of Searcher should not use
@@ -170,8 +172,8 @@ type Searcher interface {
 
 // Options for Search.
 type Options struct {
-	// Repositories if set limits search to the named repositories.
-	Repositories []Repository
+	// Repositories limits search to the named repositories.
+	Repositories []api.RepoName
 
 	// TotalMaxMatchCount if non-zero stops looking for more matches once we
 	// have this many matches across shards.
@@ -193,4 +195,11 @@ type Options struct {
 
 func (s *Options) String() string {
 	return fmt.Sprintf("%#v", s)
+}
+
+// ShallowCopy returns a shallow copy of Options. Note: That means
+// Repositories slice is the same underlying array.
+func (s *Options) ShallowCopy() *Options {
+	o := *s
+	return &o
 }

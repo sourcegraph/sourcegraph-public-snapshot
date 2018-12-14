@@ -70,8 +70,8 @@ export ZOEKT_HOST=localhost:6070
 export SRC_HTTP_ADDR=":3081"
 export WEBPACK_DEV_SERVER=1
 
-# we want to keep config.json, but allow local config.
-export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE:-./dev/config.json}
+export DEV_OVERRIDE_CRITICAL_CONFIG=${DEV_OVERRIDE_CRITICAL_CONFIG:-./dev/critical-config.json}
+export DEV_OVERRIDE_SITE_CONFIG=${DEV_OVERRIDE_SITE_CONFIG:-./dev/site-config.json}
 
 # WebApp
 export NODE_ENV=development
@@ -103,6 +103,9 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
+
+# Management console webapp
+pushd ./cmd/management-console/web && npm install && popd
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE:-dev/Procfile}"

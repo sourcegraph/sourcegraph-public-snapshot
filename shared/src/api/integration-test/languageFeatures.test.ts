@@ -10,13 +10,14 @@ import { URI } from '../extension/types/uri'
 import { createBarrier, integrationTestContext } from './helpers.test'
 
 describe('LanguageFeatures (integration)', () => {
-    testLocationProvider(
+    testLocationProvider<sourcegraph.HoverProvider>(
         'registerHoverProvider',
         extensionHost => extensionHost.languages.registerHoverProvider,
-        label =>
-            ({
-                provideHover: (doc, pos) => ({ contents: { value: label, kind: sourcegraph.MarkupKind.PlainText } }),
-            } as sourcegraph.HoverProvider),
+        label => ({
+            provideHover: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => ({
+                contents: { value: label, kind: sourcegraph.MarkupKind.PlainText },
+            }),
+        }),
         labels => ({
             contents: labels.map(label => ({ value: label, kind: sourcegraph.MarkupKind.PlainText })),
         }),
@@ -27,13 +28,14 @@ describe('LanguageFeatures (integration)', () => {
                 position: { line: 1, character: 2 },
             })
     )
-    testLocationProvider(
+    testLocationProvider<sourcegraph.DefinitionProvider>(
         'registerDefinitionProvider',
         extensionHost => extensionHost.languages.registerDefinitionProvider,
-        label =>
-            ({
-                provideDefinition: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.DefinitionProvider),
+        label => ({
+            provideDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
+                { uri: new URI(`file:///${label}`) },
+            ],
+        }),
         labeledDefinitionResults,
         run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
         services =>
@@ -46,10 +48,11 @@ describe('LanguageFeatures (integration)', () => {
     testLocationProvider(
         'registerTypeDefinitionProvider',
         extensionHost => extensionHost.languages.registerTypeDefinitionProvider,
-        label =>
-            ({
-                provideTypeDefinition: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.TypeDefinitionProvider),
+        label => ({
+            provideTypeDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
+                { uri: new URI(`file:///${label}`) },
+            ],
+        }),
         labeledDefinitionResults,
         run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
         services =>
@@ -58,13 +61,14 @@ describe('LanguageFeatures (integration)', () => {
                 position: { line: 1, character: 2 },
             })
     )
-    testLocationProvider(
+    testLocationProvider<sourcegraph.ImplementationProvider>(
         'registerImplementationProvider',
         extensionHost => extensionHost.languages.registerImplementationProvider,
-        label =>
-            ({
-                provideImplementation: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.ImplementationProvider),
+        label => ({
+            provideImplementation: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
+                { uri: new URI(`file:///${label}`) },
+            ],
+        }),
         labeledDefinitionResults,
         run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
         services =>
@@ -74,17 +78,24 @@ describe('LanguageFeatures (integration)', () => {
             })
     )
     // tslint:enable deprecation
-    testLocationProvider(
+    testLocationProvider<sourcegraph.ReferenceProvider>(
         'registerReferenceProvider',
         extensionHost => extensionHost.languages.registerReferenceProvider,
-        label =>
-            ({
-                provideReferences: (doc, pos, context) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.ReferenceProvider),
+        label => ({
+            provideReferences: (
+                doc: sourcegraph.TextDocument,
+                pos: sourcegraph.Position,
+                context: sourcegraph.ReferenceContext
+            ) => [{ uri: new URI(`file:///${label}`) }],
+        }),
         labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
         run =>
             ({
-                provideReferences: (doc, pos, _context: sourcegraph.ReferenceContext) => run(doc, pos),
+                provideReferences: (
+                    doc: sourcegraph.TextDocument,
+                    pos: sourcegraph.Position,
+                    _context: sourcegraph.ReferenceContext
+                ) => run(doc, pos),
             } as sourcegraph.ReferenceProvider),
         services =>
             services.textDocumentReferences.getLocations({
@@ -97,14 +108,15 @@ describe('LanguageFeatures (integration)', () => {
         'registerLocationProvider',
         extensionHost => (selector, provider) =>
             extensionHost.languages.registerLocationProvider('x', selector, provider),
-        label =>
-            ({
-                provideLocations: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.LocationProvider),
+        label => ({
+            provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
+                { uri: new URI(`file:///${label}`) },
+            ],
+        }),
         labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
         run =>
             ({
-                provideLocations: (doc, pos) => run(doc, pos),
+                provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => run(doc, pos),
             } as sourcegraph.LocationProvider),
         services =>
             services.textDocumentLocations.getLocations('x', {

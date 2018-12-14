@@ -70,10 +70,11 @@ interface SourcegraphContext {
     emailEnabled: boolean
 
     /**
-     * A subset of the site configuration. Not all fields are set.
+     * A subset of the critical configuration. Not all fields are set.
      */
-    site: {
+    critical: {
         'auth.public': boolean
+        'update.channel': string
     }
 
     /** Whether access tokens are enabled. */
@@ -111,9 +112,6 @@ interface SourcegraphContext {
 
     /** Whether the new update scheduler is enabled */
     updateScheduler2Enabled: boolean
-
-    /** Whether external services are enabled */
-    externalServicesEnabled: boolean
 }
 
 // We cannot use resolveJsonModule because of https://github.com/Microsoft/TypeScript/issues/25755

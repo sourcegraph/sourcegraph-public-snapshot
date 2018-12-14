@@ -101,7 +101,7 @@ const commentSnippetCodeView: CodeView = {
 }
 
 const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
-    if (elem.querySelector('.markdown-body')) {
+    if (elem.querySelector('.markdown-body:not(.comment-body)')) {
         return null
     }
 
@@ -156,11 +156,11 @@ export const githubCodeHost: CodeHost = {
     getCommandPaletteMount,
     getGlobalDebugMount,
     buildJumpURLLocation: (def: JumpURLLocation) => {
-        const rev = def.rev
+        const rev = def.rev || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
-        const { repoPath } = parseURL()
+        const { repoName } = parseURL()
 
-        const sameRepo = repoPath === def.repoPath
+        const sameRepo = repoName === def.repoName
         // Stay on same page in PR if possible.
         if (sameRepo && def.part) {
             const containers = getFileContainers()
@@ -178,7 +178,7 @@ export const githubCodeHost: CodeHost = {
             }
         }
 
-        return `https://${def.repoPath}/blob/${rev}/${def.filePath}#L${def.position.line}${
+        return `https://${def.repoName}/blob/${rev}/${def.filePath}#L${def.position.line}${
             def.position.character ? ':' + def.position.character : ''
         }`
     },

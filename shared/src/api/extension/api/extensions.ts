@@ -1,4 +1,5 @@
 import { Subscription, Unsubscribable } from 'rxjs'
+import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'
 
 /** @internal */
@@ -75,11 +76,13 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
         // significantly delaying other extensions.
         return tryCatchPromise<void>(() => extensionExports.activate({ subscriptions: extensionSubscriptions })).catch(
             error => {
+                error = asError(error)
                 throw Object.assign(
-                    new Error(`error during extension ${JSON.stringify(extensionID)} activate function: ${error}`),
-                    {
-                        error,
-                    }
+                    new Error(
+                        `error during extension ${JSON.stringify(extensionID)} activate function: ${error.stack ||
+                            error}`
+                    ),
+                    { error }
                 )
             }
         )

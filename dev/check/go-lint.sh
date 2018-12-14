@@ -14,7 +14,7 @@ pkgs=${@:-./...}
 go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 echo "--- go install"
-go install -buildmode=archive ${pkgs}
+go install -tags=dev -buildmode=archive ${pkgs}
 
 echo "--- lint"
 if [ -n "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" ]; then
@@ -26,4 +26,4 @@ else
 fi
 
 rev=$(git merge-base ${base} HEAD)
-golangci-lint run -v ${pkgs} --new-from-rev ${rev} --deadline 5m
+golangci-lint run --build-tags=dev -v ${pkgs} --new-from-rev ${rev} --deadline 5m

@@ -231,7 +231,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     depth={0}
                     history={this.props.history}
                     location={this.props.location}
-                    repoPath={this.props.repoPath}
+                    repoName={this.props.repoName}
                     rev={this.props.rev}
                     commitID={this.props.commitID}
                     index={0}

@@ -1,11 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://sourcegraph.com/v1/extension.schema.json#",
+  "$id": "https://raw.githubusercontent.com/sourcegraph/sourcegraph/master/shared/src/schema/extension.schema.json#",
   "title": "Sourcegraph extension manifest",
   "description": "The Sourcegraph extension manifest describes the extension and the features it provides.",
   "type": "object",
   "additionalProperties": true,
-  "required": ["url", "activationEvents"],
+  "required": ["activationEvents", "publisher"],
   "properties": {
     "title": {
       "description": "The title of the extension. If not specified, the extension ID is used.",
@@ -17,17 +17,10 @@
       "type": "string",
       "maxLength": 280
     },
-    "icon": {
-      "description": "The extension icon in data URI format (must begin with data:image/png).",
-      "type": "string",
-      "format": "^data:image/png"
-    },
-    "readme": {
-      "description":
-        "The extension's README, which should describe (in detail) the extension's purpose, features, and usage instructions. Markdown formatting is supported.",
-      "type": "string",
-      "format": "markdown"
-    },
+    "publisher": {
+			"description": "The Sourcegraph user or organization name publishing the extension.",
+			"type": "string"
+		},
     "url": {
       "description": "A URL to a file containing the bundled JavaScript source code of this extension.",
       "type": "string",

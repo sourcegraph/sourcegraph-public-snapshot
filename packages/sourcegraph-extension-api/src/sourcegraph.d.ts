@@ -396,6 +396,39 @@ declare module 'sourcegraph' {
         value?: string
     }
 
+    export interface ProgressOptions {
+        title?: string
+    }
+
+    export interface Progress {
+        /** Optional message. If not set, the previous message is still shown. */
+        message?: string
+
+        /** Integer from 0 to 100. If not set, the previous percentage is still shown. */
+        percentage?: number
+    }
+
+    export interface ProgressReporter {
+        /**
+         * Updates the progress display with a new message and/or percentage.
+         */
+        next(status: Progress): void
+
+        /**
+         * Turns the progress display into an error display for the given error or message.
+         * Use if the operation failed.
+         * No further progress updates can be sent after this.
+         */
+        error(error: any): void
+
+        /**
+         * Completes the progress bar and hides the display.
+         * Sending a percentage of 100 has the same effect.
+         * No further progress updates can be sent after this.
+         */
+        complete(): void
+    }
+
     /**
      * A window in the client application that is running the extension.
      */
@@ -418,6 +451,25 @@ declare module 'sourcegraph' {
          * @return A promise that resolves when the user dismisses the message.
          */
         showNotification(message: string): void
+
+        /**
+         * Show progress in the window. Progress is shown while running the given callback
+         * and while the promise it returned isn't resolved nor rejected.
+         *
+         * @param task A callback returning a promise. Progress state can be reported with
+         * the provided [ProgressReporter](#ProgressReporter)-object.
+         *
+         * @return The Promise the task-callback returned.
+         */
+        withProgress<R>(options: ProgressOptions, task: (reporter: ProgressReporter) => Promise<R>): Promise<R>
+
+        /**
+         * Show progress in the window. The returned ProgressReporter can be used to update the
+         * progress bar, complete it or turn the notification into an error notification in case the operation failed.
+         *
+         * @return A ProgressReporter that allows updating the progress display.
+         */
+        showProgress(options: ProgressOptions): Promise<ProgressReporter>
 
         /**
          * Show a modal message to the user that the user must dismiss before continuing.

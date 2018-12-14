@@ -116,8 +116,7 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 		span.SetTag("phabErr", err.Error())
 	}
 
-	// Look up repo links in the repo-updater. This supplies links from code host APIs as well as
-	// explicitly configured links for repos.list repos.
+	// Look up repo links in the repo-updater. This supplies links from code host APIs.
 	info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
 		Repo:         repo.Name,
 		ExternalRepo: repo.ExternalRepo,

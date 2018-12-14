@@ -47,25 +47,6 @@ type Mutation {
     updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
     # Delete an external service. Only site admins may perform this mutation.
     deleteExternalService(externalService: ID!): EmptyResponse!
-    # Adds a repository on a code host that is already present in the site configuration. The name (which may
-    # consist of one or more path components) of the repository must be recognized by an already configured code
-    # host, or else Sourcegraph won't know how to clone it.
-    #
-    # The newly added repository is not enabled (unless the code host's configuration specifies that it should be
-    # enabled). The caller must explicitly enable it with setRepositoryEnabled.
-    #
-    # If the repository already exists, it is returned.
-    #
-    # To add arbitrary repositories (that don't need to reside on an already configured code host), use the site
-    # configuration "repos.list" property.
-    #
-    # As a special case, GitHub.com public repositories may be added by using a name of the form
-    # "github.com/owner/repo". If there is no GitHub personal access token for github.com configured, the site may
-    # experience problems with github.com repositories due to the low default github.com API rate limit (60
-    # requests per hour).
-    #
-    # Only site admins may perform this mutation.
-    addRepository(name: String!): Repository!
     # Enables or disables a repository. A disabled repository is only
     # accessible to site admins and never appears in search results.
     #
@@ -289,6 +270,10 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateSiteConfiguration(
+        # The last ID of the site configuration that is known by the client, to
+        # prevent race conditions. An error will be returned if someone else
+        # has already written a new update.
+        lastID: Int!
         # A JSON object containing the entire site configuration. The previous site configuration will be replaced
         # with this new value.
         input: String!
@@ -1651,7 +1636,7 @@ type GitRevisionRange {
 
 # A Phabricator repository.
 type PhabricatorRepo {
-    # The canonical repo path (e.g. "github.com/gorilla/mux").
+    # The canonical repo name (e.g. "github.com/gorilla/mux").
     name: String!
     # An alias for name.
     uri: String! @deprecated(reason: "use name instead")
@@ -2717,6 +2702,8 @@ type ManagementConsoleState {
 
 # The configuration for a site.
 type SiteConfiguration {
+    # The unique identifier of this site configuration version.
+    id: Int!
     # The effective configuration JSON.
     effectiveContents: String!
     # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.

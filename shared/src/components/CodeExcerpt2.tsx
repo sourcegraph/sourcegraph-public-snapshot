@@ -1,7 +1,7 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { highlightNode } from '../util/dom'
 import { toPositionOrRangeHash } from '../util/url'
+import { Link } from './Link'
 
 interface Props {
     urlWithoutPosition: string

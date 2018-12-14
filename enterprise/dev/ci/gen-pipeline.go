@@ -118,6 +118,10 @@ func main() {
 	// addDockerImageStep adds a build step for a given app.
 	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
 	addDockerImageStep := func(app string, insiders bool) {
+		cmds := []bk.StepOpt{
+			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+		}
+
 		cmdDir := "cmd/" + app
 		var pkgPath string
 		if _, err := os.Stat(filepath.Join("enterprise", cmdDir)); err != nil {
@@ -125,11 +129,7 @@ func main() {
 			pkgPath = "github.com/sourcegraph/sourcegraph/cmd/" + app
 		} else {
 			pkgPath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/" + app
-		}
-
-		cmds := []bk.StepOpt{
-			bk.Cmd("pushd enterprise"),
-			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+			cmds = append(cmds, bk.Cmd("pushd enterprise"))
 		}
 
 		preBuildScript := cmdDir + "/pre-build.sh"

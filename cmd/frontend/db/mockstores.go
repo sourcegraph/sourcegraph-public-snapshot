@@ -22,4 +22,6 @@ type MockStores struct {
 	ExternalAccounts MockExternalAccounts
 
 	OrgInvitations MockOrgInvitations
+
+	ExternalServices MockExternalServices
 }

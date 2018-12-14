@@ -59,9 +59,9 @@ export class ClientExtensions {
 
                     // Activate extensions that haven't yet been activated.
                     for (const x of toActivate) {
-                        this.proxy
-                            .$activateExtension(x.id, x.scriptURL)
-                            .catch(err => console.error(`Error activating extension ${JSON.stringify(x.id)}:`, err))
+                        this.proxy.$activateExtension(x.id, x.scriptURL).catch(err => {
+                            console.error(`Error activating extension ${JSON.stringify(x.id)}:`, err)
+                        })
                     }
                 })
         )
