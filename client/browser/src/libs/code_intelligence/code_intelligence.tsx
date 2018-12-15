@@ -218,14 +218,17 @@ function initCodeIntelligence(
     codeHost: CodeHost
 ): {
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
-    controllers: Partial<ExtensionsControllerProps & PlatformContextProps>
+    controllers: ExtensionsControllerProps & PlatformContextProps
 } {
+    const {
+        platformContext,
+        extensionsController,
+    }: PlatformContextProps & ExtensionsControllerProps = initializeExtensions(codeHost)
+
     const shouldUseExtensions = useExtensions || sourcegraphUrl === 'https://sourcegraph.com'
-    const { platformContext, extensionsController }: Partial<ExtensionsControllerProps & PlatformContextProps> =
-        shouldUseExtensions && codeHost.getCommandPaletteMount
-            ? initializeExtensions(codeHost.getCommandPaletteMount)
-            : {}
-    const simpleProviderFns = extensionsController ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
+    const { fetchHover, fetchDefinition } = shouldUseExtensions
+        ? createLSPFromExtensions(extensionsController)
+        : lspViaAPIXlang
 
     /** Emits when the go to definition button was clicked */
     const goToDefinitionClicks = new Subject<MouseEvent>()
@@ -241,10 +244,7 @@ function initCodeIntelligence(
 
     const relativeElement = document.body
 
-    const fetchJumpURL = createJumpURLFetcher(
-        simpleProviderFns.fetchDefinition,
-        codeHost.buildJumpURLLocation || toPrettyBlobURL
-    )
+    const fetchJumpURL = createJumpURLFetcher(fetchDefinition, codeHost.buildJumpURLLocation || toPrettyBlobURL)
 
     const containerComponentUpdates = new Subject<void>()
 
@@ -261,9 +261,9 @@ function initCodeIntelligence(
             location.href = path
         },
         fetchHover: ({ line, character, part, ...rest }) =>
-            simpleProviderFns
-                .fetchHover({ ...rest, position: { line, character } })
-                .pipe(map(hover => (hover ? (hover as HoverMerged) : hover))),
+            fetchHover({ ...rest, position: { line, character } }).pipe(
+                map(hover => (hover ? (hover as HoverMerged) : hover))
+            ),
         fetchJumpURL,
         getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
     })
@@ -437,77 +437,76 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                 ? null
                                 : originalDOM.getCodeElementFromTarget(target),
                     }
-                    if (extensionsController) {
-                        let content = info.content
-                        let baseContent = info.baseContent
 
-                        if (!content) {
-                            if (!getLineRanges) {
-                                throw new Error('Must either provide a line range getter or provide file contents')
-                            }
+                    let content = info.content
+                    let baseContent = info.baseContent
 
-                            const contents = getContentOfCodeView(codeView, { isDiff, getLineRanges, dom })
-
-                            content = contents.content
-                            baseContent = contents.baseContent
+                    if (!content) {
+                        if (!getLineRanges) {
+                            throw new Error('Must either provide a line range getter or provide file contents')
                         }
 
-                        visibleViewComponents = [
-                            // Either a normal file, or HEAD when codeView is a diff
-                            {
-                                type: 'textEditor',
-                                item: {
-                                    uri: toURIWithPath(info),
-                                    languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                    text: content!,
-                                },
-                                selections: [],
-                                isActive: true,
-                            },
-                            // All the currently open documents, which are all now considered inactive.
-                            ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
-                        ]
-                        const roots: Model['roots'] = [{ uri: toRootURI(info) }]
+                        const contents = getContentOfCodeView(codeView, { isDiff, getLineRanges, dom })
 
-                        // When codeView is a diff, add BASE too.
-                        if (baseContent! && info.baseRepoName && info.baseCommitID && info.baseFilePath) {
-                            visibleViewComponents.push({
-                                type: 'textEditor',
-                                item: {
-                                    uri: toURIWithPath({
-                                        repoName: info.baseRepoName,
-                                        commitID: info.baseCommitID,
-                                        filePath: info.baseFilePath,
-                                    }),
-                                    languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                    text: baseContent!,
-                                },
-                                // There is no notion of a selection on code hosts yet, so this is empty.
-                                //
-                                // TODO: Support interpreting GitHub #L1-2, etc., URL fragments as selections (and
-                                // similar on other code hosts), or find some other way to get this info.
-                                selections: [],
-                                isActive: false,
-                            })
-                            roots.push({
-                                uri: toRootURI({
+                        content = contents.content
+                        baseContent = contents.baseContent
+                    }
+
+                    visibleViewComponents = [
+                        // Either a normal file, or HEAD when codeView is a diff
+                        {
+                            type: 'textEditor',
+                            item: {
+                                uri: toURIWithPath(info),
+                                languageId: getModeFromPath(info.filePath) || 'could not determine mode',
+                                text: content!,
+                            },
+                            selections: [],
+                            isActive: true,
+                        },
+                        // All the currently open documents, which are all now considered inactive.
+                        ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
+                    ]
+                    const roots: Model['roots'] = [{ uri: toRootURI(info) }]
+
+                    // When codeView is a diff, add BASE too.
+                    if (baseContent! && info.baseRepoName && info.baseCommitID && info.baseFilePath) {
+                        visibleViewComponents.push({
+                            type: 'textEditor',
+                            item: {
+                                uri: toURIWithPath({
                                     repoName: info.baseRepoName,
                                     commitID: info.baseCommitID,
+                                    filePath: info.baseFilePath,
                                 }),
-                            })
-                        }
-
-                        let decoratedLines: number[] = []
-                        if (extensionsController && !info.baseCommitID) {
-                            extensionsController.services.textDocumentDecoration
-                                .getDecorations(toTextDocumentIdentifier(info))
-                                .subscribe(decorations => {
-                                    decoratedLines = applyDecorations(dom, codeView, decorations || [], decoratedLines)
-                                })
-                        }
-
-                        extensionsController.services.model.model.next({ roots, visibleViewComponents })
+                                languageId: getModeFromPath(info.filePath) || 'could not determine mode',
+                                text: baseContent!,
+                            },
+                            // There is no notion of a selection on code hosts yet, so this is empty.
+                            //
+                            // TODO: Support interpreting GitHub #L1-2, etc., URL fragments as selections (and
+                            // similar on other code hosts), or find some other way to get this info.
+                            selections: [],
+                            isActive: false,
+                        })
+                        roots.push({
+                            uri: toRootURI({
+                                repoName: info.baseRepoName,
+                                commitID: info.baseCommitID,
+                            }),
+                        })
                     }
+
+                    let decoratedLines: number[] = []
+                    if (!info.baseCommitID) {
+                        extensionsController.services.textDocumentDecoration
+                            .getDecorations(toTextDocumentIdentifier(info))
+                            .subscribe(decorations => {
+                                decoratedLines = applyDecorations(dom, codeView, decorations || [], decoratedLines)
+                            })
+                    }
+
+                    extensionsController.services.model.model.next({ roots, visibleViewComponents })
 
                     const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
                         part,
@@ -545,9 +544,6 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                     className: '',
                                     style: {},
                                 }
-                            }
-                            simpleProviderFns={
-                                extensionsController ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
                             }
                             location={H.createLocation(window.location)}
                         />,

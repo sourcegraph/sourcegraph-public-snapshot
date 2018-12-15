@@ -20,31 +20,37 @@ import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { getGlobalDebugMount } from '../github/extensions'
-import { MountGetter } from './code_intelligence'
+import { CodeHost } from './code_intelligence'
 
 /**
- * Initializes extensions for a page. It creates the controllers and injects the command palette.
+ * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
+ *
+ * If the "Use extensions" feature flag is enabled (or always for Sourcegraph.com), it injects the command palette.
+ * If extensions are not supported by the associated Sourcegraph instance, the extensions controller will behave as
+ * though no individual extensions are enabled, which makes it effectively a noop.
  */
-export function initializeExtensions(
-    getCommandPaletteMount: MountGetter
-): PlatformContextProps & ExtensionsControllerProps {
+export function initializeExtensions({
+    getCommandPaletteMount,
+}: Pick<CodeHost, 'getCommandPaletteMount'>): PlatformContextProps & ExtensionsControllerProps {
     const platformContext = createPlatformContext()
     const extensionsController = createExtensionsController(platformContext)
     const history = H.createBrowserHistory()
 
-    render(
-        <ShortcutProvider>
-            <CommandListPopoverButton
-                extensionsController={extensionsController}
-                menu={ContributableMenu.CommandPalette}
-                platformContext={platformContext}
-                autoFocus={false}
-                location={history.location}
-            />
-            <Notifications extensionsController={extensionsController} />
-        </ShortcutProvider>,
-        getCommandPaletteMount()
-    )
+    if (getCommandPaletteMount) {
+        render(
+            <ShortcutProvider>
+                <CommandListPopoverButton
+                    extensionsController={extensionsController}
+                    menu={ContributableMenu.CommandPalette}
+                    platformContext={platformContext}
+                    autoFocus={false}
+                    location={history.location}
+                />
+                <Notifications extensionsController={extensionsController} />
+            </ShortcutProvider>,
+            getCommandPaletteMount()
+        )
+    }
 
     render(
         <GlobalDebug
