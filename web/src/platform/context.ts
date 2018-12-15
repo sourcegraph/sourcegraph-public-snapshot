@@ -8,6 +8,7 @@ import { PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import { gqlToCascade } from '../../../shared/src/settings/settings'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
+import { toPrettyBlobURL } from '../../../shared/src/util/url'
 import { requestGraphQL } from '../backend/graphql'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { fetchViewerSettings } from '../user/settings/backend'
@@ -63,8 +64,10 @@ export function createPlatformContext(): PlatformContext {
                 return () => worker.terminate()
             })
         },
+        urlToFile: toPrettyBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,
+        urlToFile: toPrettyBlobURL,
         clientApplication: 'sourcegraph',
         traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
     }
