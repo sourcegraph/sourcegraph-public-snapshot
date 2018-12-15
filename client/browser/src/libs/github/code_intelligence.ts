@@ -1,9 +1,16 @@
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
-import { JumpURLLocation } from '../../shared/backend/lsp'
+import {
+    FileSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    ViewStateSpec,
+} from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
+import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
 import {
     diffDomFunctions,
@@ -155,31 +162,40 @@ export const githubCodeHost: CodeHost = {
     getOverlayMount,
     getCommandPaletteMount,
     getGlobalDebugMount,
-    buildJumpURLLocation: (def: JumpURLLocation) => {
-        const rev = def.rev || 'HEAD'
+    urlToFile: (
+        location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
+    ) => {
+        if (location.viewState) {
+            // A view state means that a panel must be shown, and panels are currently only supported on
+            // Sourcegraph (not code hosts).
+            return toAbsoluteBlobURL(location)
+        }
+
+        const rev = location.rev || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
         const { repoName } = parseURL()
 
-        const sameRepo = repoName === def.repoName
+        const sameRepo = repoName === location.repoName
         // Stay on same page in PR if possible.
-        if (sameRepo && def.part) {
+        if (sameRepo && location.part) {
             const containers = getFileContainers()
             for (const container of containers) {
                 const header = container.querySelector('.file-header') as HTMLElement
                 const anchorPath = header.dataset.path
-                if (anchorPath === def.filePath) {
+                if (anchorPath === location.filePath) {
                     const anchorUrl = header.dataset.anchor
                     const url = `${window.location.origin}${window.location.pathname}#${anchorUrl}${
-                        def.part === 'base' ? 'L' : 'R'
-                    }${def.position.line}`
+                        location.part === 'base' ? 'L' : 'R'
+                    }${location.position ? location.position.line : ''}`
 
                     return url
                 }
             }
         }
 
-        return `https://${def.repoName}/blob/${rev}/${def.filePath}#L${def.position.line}${
-            def.position.character ? ':' + def.position.character : ''
-        }`
+        const fragment = location.position
+            ? `#L${location.position.line}${location.position.character ? ':' + location.position.character : ''}`
+            : ''
+        return `https://${location.repoName}/blob/${rev}/${location.filePath}${fragment}`
     },
 }

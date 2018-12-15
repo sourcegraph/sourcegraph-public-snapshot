@@ -31,8 +31,9 @@ import { CodeHost } from './code_intelligence'
  */
 export function initializeExtensions({
     getCommandPaletteMount,
-}: Pick<CodeHost, 'getCommandPaletteMount'>): PlatformContextProps & ExtensionsControllerProps {
-    const platformContext = createPlatformContext()
+    urlToFile,
+}: Pick<CodeHost, 'getCommandPaletteMount' | 'urlToFile'>): PlatformContextProps & ExtensionsControllerProps {
+    const platformContext = createPlatformContext({ urlToFile })
     const extensionsController = createExtensionsController(platformContext)
     const history = H.createBrowserHistory()
 

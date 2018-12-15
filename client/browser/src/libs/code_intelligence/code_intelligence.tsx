@@ -24,17 +24,18 @@ import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import {
     FileSpec,
+    PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
     toPrettyBlobURL,
     toRootURI,
     toURIWithPath,
+    ViewStateSpec,
 } from '../../../../../shared/src/util/url'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
-    JumpURLLocation,
     lspViaAPIXlang,
     toTextDocumentIdentifier,
 } from '../../shared/backend/lsp'
@@ -159,8 +160,10 @@ export interface CodeHost {
      */
     getGlobalDebugMount?: MountGetter
 
-    /** Build the J2D url from the location. */
-    buildJumpURLLocation?: (def: JumpURLLocation) => string
+    /** Construct the URL to the specified file. */
+    urlToFile?: (
+        location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
+    ) => string
 }
 
 export interface FileInfo {
@@ -244,7 +247,7 @@ function initCodeIntelligence(
 
     const relativeElement = document.body
 
-    const fetchJumpURL = createJumpURLFetcher(fetchDefinition, codeHost.buildJumpURLLocation || toPrettyBlobURL)
+    const fetchJumpURL = createJumpURLFetcher(fetchDefinition, location => platformContext.urlToFile(location))
 
     const containerComponentUpdates = new Subject<void>()
 
