@@ -23,7 +23,7 @@ const FIXTURE_RESULT: TextDocumentDecoration[] | null = [
     },
 ]
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 describe('getDecorations', () => {
     describe('0 providers', () => {
@@ -135,13 +135,13 @@ describe('decorationStyleForTheme', () => {
     const FIXTURE_RANGE = { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }
 
     it('supports no theme overrides', () =>
-        assert.deepStrictEqual(decorationStyleForTheme({ range: FIXTURE_RANGE, backgroundColor: 'red' }, true), {
+        assert.deepEqual(decorationStyleForTheme({ range: FIXTURE_RANGE, backgroundColor: 'red' }, true), {
             range: FIXTURE_RANGE, // it's not necessary that range is included, but it saves an object allocation
             backgroundColor: 'red',
         }))
 
     it('applies light theme overrides', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             decorationStyleForTheme(
                 { range: FIXTURE_RANGE, backgroundColor: 'red', light: { backgroundColor: 'blue' } },
                 true
@@ -152,7 +152,7 @@ describe('decorationStyleForTheme', () => {
         ))
 
     it('applies dark theme overrides', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             decorationStyleForTheme(
                 {
                     range: FIXTURE_RANGE,
@@ -170,15 +170,15 @@ describe('decorationStyleForTheme', () => {
 
 describe('decorationAttachmentStyleForTheme', () => {
     it('supports no theme overrides', () =>
-        assert.deepStrictEqual(decorationAttachmentStyleForTheme({ color: 'red' }, true), { color: 'red' }))
+        assert.deepEqual(decorationAttachmentStyleForTheme({ color: 'red' }, true), { color: 'red' }))
 
     it('applies light theme overrides', () =>
-        assert.deepStrictEqual(decorationAttachmentStyleForTheme({ color: 'red', light: { color: 'blue' } }, true), {
+        assert.deepEqual(decorationAttachmentStyleForTheme({ color: 'red', light: { color: 'blue' } }, true), {
             color: 'blue',
         }))
 
     it('applies dark theme overrides', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             decorationAttachmentStyleForTheme(
                 { color: 'red', light: { color: 'blue' }, dark: { color: 'green' } },
                 false

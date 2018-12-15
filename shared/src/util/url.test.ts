@@ -2,14 +2,14 @@ import assert from 'assert'
 import { buildSearchURLQuery, makeRepoURI, parseHash, parseRepoURI, toPrettyBlobURL } from './url'
 
 /**
- * Asserts deep object equality using node's assert.deepStrictEqual, except it (1) ignores differences in the
+ * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
  * prototype (because that causes 2 object literals to fail the test) and (2) treats undefined properties as
  * missing.
  */
 function assertDeepStrictEqual(actual: any, expected: any, message?: string): void {
     actual = JSON.parse(JSON.stringify(actual))
     expected = JSON.parse(JSON.stringify(expected))
-    assert.deepStrictEqual(actual, expected, message)
+    assert.deepEqual(actual, expected, message)
 }
 
 describe('parseRepoURI', () => {
@@ -167,50 +167,50 @@ describe('util/url', () => {
 
     describe('parseHash', () => {
         it('parses empty hash', () => {
-            assert.deepStrictEqual(parseHash(''), {})
+            assert.deepEqual(parseHash(''), {})
         })
 
         it('parses unexpectedly formatted hash', () => {
-            assert.deepStrictEqual(parseHash('L-53'), {})
-            assert.deepStrictEqual(parseHash('L53:'), {})
-            assert.deepStrictEqual(parseHash('L1:2-'), {})
-            assert.deepStrictEqual(parseHash('L1:2-3'), {})
-            assert.deepStrictEqual(parseHash('L1:2-3:'), {})
-            assert.deepStrictEqual(parseHash('L1:-3:'), {})
-            assert.deepStrictEqual(parseHash('L1:-3:4'), {})
-            assert.deepStrictEqual(parseHash('L1-2:3'), {})
-            assert.deepStrictEqual(parseHash('L1-2:'), {})
-            assert.deepStrictEqual(parseHash('L1:-2'), {})
-            assert.deepStrictEqual(parseHash('L1:2--3:4'), {})
-            assert.deepStrictEqual(parseHash('L53:a'), {})
+            assert.deepEqual(parseHash('L-53'), {})
+            assert.deepEqual(parseHash('L53:'), {})
+            assert.deepEqual(parseHash('L1:2-'), {})
+            assert.deepEqual(parseHash('L1:2-3'), {})
+            assert.deepEqual(parseHash('L1:2-3:'), {})
+            assert.deepEqual(parseHash('L1:-3:'), {})
+            assert.deepEqual(parseHash('L1:-3:4'), {})
+            assert.deepEqual(parseHash('L1-2:3'), {})
+            assert.deepEqual(parseHash('L1-2:'), {})
+            assert.deepEqual(parseHash('L1:-2'), {})
+            assert.deepEqual(parseHash('L1:2--3:4'), {})
+            assert.deepEqual(parseHash('L53:a'), {})
         })
 
         it('parses hash with leading octothorpe', () => {
-            assert.deepStrictEqual(parseHash('#L1'), linePosition)
+            assert.deepEqual(parseHash('#L1'), linePosition)
         })
 
         it('parses hash with line', () => {
-            assert.deepStrictEqual(parseHash('L1'), linePosition)
+            assert.deepEqual(parseHash('L1'), linePosition)
         })
 
         it('parses hash with line and character', () => {
-            assert.deepStrictEqual(parseHash('L1:1'), lineCharPosition)
+            assert.deepEqual(parseHash('L1:1'), lineCharPosition)
         })
 
         it('parses hash with range', () => {
-            assert.deepStrictEqual(parseHash('L1-2'), { line: 1, endLine: 2 })
-            assert.deepStrictEqual(parseHash('L1:2-3:4'), { line: 1, character: 2, endLine: 3, endCharacter: 4 })
+            assert.deepEqual(parseHash('L1-2'), { line: 1, endLine: 2 })
+            assert.deepEqual(parseHash('L1:2-3:4'), { line: 1, character: 2, endLine: 3, endCharacter: 4 })
         })
 
         it('parses hash with local references', () => {
-            assert.deepStrictEqual(parseHash('$references'), { viewState: 'references' })
-            assert.deepStrictEqual(parseHash('L1:1$references'), localRefMode)
-            assert.deepStrictEqual(parseHash('L1:1$references'), localRefMode)
+            assert.deepEqual(parseHash('$references'), { viewState: 'references' })
+            assert.deepEqual(parseHash('L1:1$references'), localRefMode)
+            assert.deepEqual(parseHash('L1:1$references'), localRefMode)
         })
         it('parses modern hash with local references', () => {
-            assert.deepStrictEqual(parseHash('tab=references'), { viewState: 'references' })
-            assert.deepStrictEqual(parseHash('L1:1&tab=references'), localRefMode)
-            assert.deepStrictEqual(parseHash('L1:1&tab=references'), localRefMode)
+            assert.deepEqual(parseHash('tab=references'), { viewState: 'references' })
+            assert.deepEqual(parseHash('L1:1&tab=references'), localRefMode)
+            assert.deepEqual(parseHash('L1:1&tab=references'), localRefMode)
         })
 
         it('parses hash with external references', () => {

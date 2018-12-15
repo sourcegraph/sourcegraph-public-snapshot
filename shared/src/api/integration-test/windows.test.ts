@@ -130,7 +130,7 @@ describe('Windows (integration)', () => {
             const values = collectSubscribableValues(services.notifications.showMessages)
             extensionHost.app.activeWindow!.showNotification('a') // tslint:disable-line deprecation
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(values, [{ message: 'a', type: MessageType.Info }] as typeof values)
+            assert.deepEqual(values, [{ message: 'a', type: MessageType.Info }] as typeof values)
         })
 
         it('Window#showMessage', async () => {
@@ -140,7 +140,7 @@ describe('Windows (integration)', () => {
                 services.notifications.showMessageRequests.pipe(map(({ message, type }) => ({ message, type })))
             )
             assert.strictEqual(await extensionHost.app.activeWindow!.showMessage('a'), null)
-            assert.deepStrictEqual(values, [{ message: 'a', type: MessageType.Info }] as typeof values)
+            assert.deepEqual(values, [{ message: 'a', type: MessageType.Info }] as typeof values)
         })
 
         it('Window#showInputBox', async () => {
@@ -150,7 +150,7 @@ describe('Windows (integration)', () => {
                 services.notifications.showInputs.pipe(map(({ message, defaultValue }) => ({ message, defaultValue })))
             )
             assert.strictEqual(await extensionHost.app.activeWindow!.showInputBox({ prompt: 'a', value: 'b' }), 'c')
-            assert.deepStrictEqual(values, [{ message: 'a', defaultValue: 'b' }] as typeof values)
+            assert.deepEqual(values, [{ message: 'a', defaultValue: 'b' }] as typeof values)
         })
     })
 })

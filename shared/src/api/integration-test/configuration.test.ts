@@ -16,7 +16,7 @@ describe('Configuration (integration)', () => {
         it('gets configuration', async () => {
             const { extensionHost } = await integrationTestContext({ settings: of({ final: { a: 1 }, subjects: [] }) })
             assertToJSON(extensionHost.configuration.get(), { a: 1 })
-            assert.deepStrictEqual(extensionHost.configuration.get().value, { a: 1 })
+            assert.deepEqual(extensionHost.configuration.get().value, { a: 1 })
         })
     })
 
@@ -32,12 +32,12 @@ describe('Configuration (integration)', () => {
 
             await extensionHost.configuration.get().update('a', 2)
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(calls, [{ path: ['a'], value: 2 }] as SettingsEdit[])
+            assert.deepEqual(calls, [{ path: ['a'], value: 2 }] as SettingsEdit[])
             calls.length = 0 // clear
 
             await extensionHost.configuration.get().update('a', 3)
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(calls, [{ path: ['a'], value: 3 }] as SettingsEdit[])
+            assert.deepEqual(calls, [{ path: ['a'], value: 3 }] as SettingsEdit[])
         })
     })
 

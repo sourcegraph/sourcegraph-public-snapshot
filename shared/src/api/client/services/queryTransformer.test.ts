@@ -3,7 +3,7 @@ import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { transformQuery, TransformQuerySignature } from './queryTransformer'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 const FIXTURE_INPUT = 'foo'
 const FIXTURE_RESULT = 'bar'

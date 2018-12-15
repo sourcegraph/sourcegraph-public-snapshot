@@ -6,7 +6,7 @@ describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {
         it('lists text documents', async () => {
             const { extensionHost } = await integrationTestContext()
-            assert.deepStrictEqual(extensionHost.workspace.textDocuments, [
+            assert.deepEqual(extensionHost.workspace.textDocuments, [
                 { uri: 'file:///f', languageId: 'l', text: 't' },
             ] as TextDocument[])
         })
@@ -25,7 +25,7 @@ describe('Documents (integration)', () => {
                 ],
             })
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(extensionHost.workspace.textDocuments, [
+            assert.deepEqual(extensionHost.workspace.textDocuments, [
                 { uri: 'file:///f', languageId: 'l', text: 't' },
                 { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             ] as TextDocument[])
@@ -37,7 +37,7 @@ describe('Documents (integration)', () => {
             const { model, extensionHost } = await integrationTestContext()
 
             const values = collectSubscribableValues(extensionHost.workspace.onDidOpenTextDocument)
-            assert.deepStrictEqual(values, [] as TextDocument[])
+            assert.deepEqual(values, [] as TextDocument[])
 
             model.next({
                 ...model.value,
@@ -52,7 +52,7 @@ describe('Documents (integration)', () => {
             })
             await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(values, [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
+            assert.deepEqual(values, [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
         })
     })
 })

@@ -16,7 +16,7 @@ import {
     mergeContributions,
 } from './contribution'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 const FIXTURE_CONTRIBUTIONS_1: Contributions = {
     actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
@@ -50,7 +50,7 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
 
 describe('ContributionRegistry', () => {
     it('is initially empty', () => {
-        assert.deepStrictEqual(
+        assert.deepEqual(
             new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({})).entries.value,
             []
         )
@@ -63,16 +63,16 @@ describe('ContributionRegistry', () => {
         const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
 
         const unregister1 = subscriptions.add(registry.registerContributions(entry1))
-        assert.deepStrictEqual(registry.entries.value, [entry1])
+        assert.deepEqual(registry.entries.value, [entry1])
 
         const unregister2 = subscriptions.add(registry.registerContributions(entry2))
-        assert.deepStrictEqual(registry.entries.value, [entry1, entry2])
+        assert.deepEqual(registry.entries.value, [entry1, entry2])
 
         unregister1.unsubscribe()
-        assert.deepStrictEqual(registry.entries.value, [entry2])
+        assert.deepEqual(registry.entries.value, [entry2])
 
         unregister2.unsubscribe()
-        assert.deepStrictEqual(registry.entries.value, [])
+        assert.deepEqual(registry.entries.value, [])
     })
 
     it('replaces contributions', () => {
@@ -81,16 +81,16 @@ describe('ContributionRegistry', () => {
         const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
 
         const unregister1 = registry.registerContributions(entry1)
-        assert.deepStrictEqual(registry.entries.value, [entry1])
+        assert.deepEqual(registry.entries.value, [entry1])
 
         const unregister2 = registry.replaceContributions(unregister1, entry2)
-        assert.deepStrictEqual(registry.entries.value, [entry2])
+        assert.deepEqual(registry.entries.value, [entry2])
 
         unregister1.unsubscribe()
-        assert.deepStrictEqual(registry.entries.value, [entry2])
+        assert.deepEqual(registry.entries.value, [entry2])
 
         unregister2.unsubscribe()
-        assert.deepStrictEqual(registry.entries.value, [])
+        assert.deepEqual(registry.entries.value, [])
     })
 
     describe('contributions observable', () => {
@@ -226,11 +226,11 @@ describe('ContributionRegistry', () => {
 })
 
 describe('mergeContributions', () => {
-    it('handles an empty array', () => assert.deepStrictEqual(mergeContributions([]), {}))
+    it('handles an empty array', () => assert.deepEqual(mergeContributions([]), {}))
     it('handles an single item', () =>
-        assert.deepStrictEqual(mergeContributions([FIXTURE_CONTRIBUTIONS_1]), FIXTURE_CONTRIBUTIONS_1))
+        assert.deepEqual(mergeContributions([FIXTURE_CONTRIBUTIONS_1]), FIXTURE_CONTRIBUTIONS_1))
     it('handles multiple items', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             mergeContributions([FIXTURE_CONTRIBUTIONS_1, FIXTURE_CONTRIBUTIONS_2, {}, { actions: [] }, { menus: {} }]),
             FIXTURE_CONTRIBUTIONS_MERGED
         ))
@@ -245,7 +245,7 @@ const FIXTURE_CONTEXT = new Map<string, any>(
 
 describe('contextFilter', () => {
     it('filters', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             contextFilter(
                 FIXTURE_CONTEXT,
                 [{ x: 1 }, { x: 2, when: 'a' }, { x: 3, when: 'a' }, { x: 4, when: 'b' }],
@@ -257,20 +257,20 @@ describe('contextFilter', () => {
 
 describe('filterContributions', () => {
     it('handles empty contributions', () =>
-        assert.deepStrictEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, {}), {} as Contributions))
+        assert.deepEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, {}), {} as Contributions))
 
     it('handles empty menu contributions', () =>
-        assert.deepStrictEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, { menus: {} }), {
+        assert.deepEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, { menus: {} }), {
             menus: {},
         } as Contributions))
 
     it('handles empty array of menu contributions', () =>
-        assert.deepStrictEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, { menus: { commandPalette: [] } }), {
+        assert.deepEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, { menus: { commandPalette: [] } }), {
             menus: { commandPalette: [] },
         } as Contributions))
 
     it('handles non-empty contributions', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             filterContributions(
                 FIXTURE_CONTEXT,
                 {
@@ -320,10 +320,10 @@ describe('evaluateContributions', () => {
     }
 
     it('handles empty contributions', () =>
-        assert.deepStrictEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, {}), {} as Contributions))
+        assert.deepEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, {}), {} as Contributions))
 
     it('handles empty array of command contributions', () =>
-        assert.deepStrictEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, { actions: [] }), {
+        assert.deepEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, { actions: [] }), {
             actions: [],
         } as Contributions))
 
@@ -350,7 +350,7 @@ describe('evaluateContributions', () => {
             ],
         }
         const origInput = JSON.parse(JSON.stringify(input))
-        assert.deepStrictEqual(evaluateContributions(FIXTURE_CONTEXT, input, TEST_TEMPLATE_EVALUATOR), {
+        assert.deepEqual(evaluateContributions(FIXTURE_CONTEXT, input, TEST_TEMPLATE_EVALUATOR), {
             actions: [
                 {
                     id: 'a1',
@@ -371,11 +371,11 @@ describe('evaluateContributions', () => {
                 { id: 'a3', command: 'c3', title: 'b', category: 'b', actionItem: { label: 'x', description: 'b' } },
             ],
         } as Contributions)
-        assert.deepStrictEqual(input, origInput, 'input must not be mutated')
+        assert.deepEqual(input, origInput, 'input must not be mutated')
     })
 
     it('supports commandArguments with the first element non-evaluated', () => {
-        assert.deepStrictEqual(
+        assert.deepEqual(
             evaluateContributions(
                 FIXTURE_CONTEXT,
                 {
@@ -397,7 +397,7 @@ describe('evaluateContributions', () => {
     }
 
     it('does not evaluate the `id` or `command` values', () => {
-        assert.deepStrictEqual(
+        assert.deepEqual(
             evaluateContributions(
                 FIXTURE_CONTEXT,
                 {

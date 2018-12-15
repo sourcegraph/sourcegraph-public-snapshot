@@ -5,7 +5,7 @@ import { getContributedActionItems } from './contributions'
 
 describe('getContributedActionItems', () => {
     it('gets action items', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             getContributedActionItems(
                 {
                     actions: [

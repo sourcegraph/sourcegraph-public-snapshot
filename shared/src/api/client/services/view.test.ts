@@ -19,7 +19,7 @@ const FIXTURE_ENTRY_2: Entry<ViewProviderRegistrationOptions, Observable<PanelVi
 }
 const FIXTURE_RESULT_2 = { container: FIXTURE_CONTAINER, id: '2', title: 't2', content: 'c2', priority: 0 }
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 describe('getView', () => {
     describe('0 providers', () => {

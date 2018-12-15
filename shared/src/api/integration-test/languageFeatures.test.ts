@@ -147,7 +147,7 @@ function testLocationProvider<P>(
             // Register the provider and call it.
             const unsubscribe = registerProvider(extensionHost)(['*'], labeledProvider('a'))
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            assert.deepEqual(
                 await getResult(services)
                     .pipe(take(1))
                     .toPromise(),
@@ -156,7 +156,7 @@ function testLocationProvider<P>(
 
             // Unregister the provider and ensure it's removed.
             unsubscribe.unsubscribe()
-            assert.deepStrictEqual(
+            assert.deepEqual(
                 await getResult(services)
                     .pipe(take(1))
                     .toPromise(),
@@ -191,7 +191,7 @@ function testLocationProvider<P>(
             await extensionHost.internal.sync()
 
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
-            assert.deepStrictEqual(
+            assert.deepEqual(
                 await getResult(services)
                     .pipe(
                         take(2),

@@ -7,7 +7,7 @@ import { Model } from '../model'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 class TestExtensionsService extends ExtensionsService {
     constructor(

@@ -18,7 +18,7 @@ describe('CodeEditor (integration)', () => {
                 },
             ])
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            assert.deepEqual(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
@@ -34,7 +34,7 @@ describe('CodeEditor (integration)', () => {
             // Clear the decorations and ensure they are removed.
             codeEditor.setDecorations(null, [])
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            assert.deepEqual(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))

@@ -6,7 +6,7 @@ import { HoverMerged } from '../../client/types/hover'
 import { getHover, ProvideTextDocumentHoverSignature } from './hover'
 import { FIXTURE } from './registry.test'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 const FIXTURE_RESULT: Hover | null = { contents: { value: 'c', kind: MarkupKind.PlainText } }
 const FIXTURE_RESULT_MERGED: HoverMerged | null = { contents: [{ value: 'c', kind: MarkupKind.PlainText }] }

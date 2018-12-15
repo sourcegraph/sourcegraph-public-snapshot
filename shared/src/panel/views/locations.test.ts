@@ -14,7 +14,7 @@ const GROUP_KEYS: ((location: TestLocation) => TestGroup | undefined)[] = [
 
 describe('groupLocations', () => {
     it('groups 1 levels', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             groupLocations<TestLocation, TestGroup>(LOCATIONS, null, GROUP_KEYS.slice(0, 1), LOCATIONS[0]),
             {
                 groups: [[{ key: 'a', count: 3 }, { key: 'b', count: 1 }]],
@@ -24,7 +24,7 @@ describe('groupLocations', () => {
         ))
 
     it('groups 2 levels', () =>
-        assert.deepStrictEqual(groupLocations<TestLocation, TestGroup>(LOCATIONS, null, GROUP_KEYS, LOCATIONS[0]), {
+        assert.deepEqual(groupLocations<TestLocation, TestGroup>(LOCATIONS, null, GROUP_KEYS, LOCATIONS[0]), {
             groups: [
                 [{ key: 'a', count: 3 }, { key: 'b', count: 1 }],
                 [{ key: 'a', count: 2 }, { key: 'b', count: 1 }],
@@ -34,7 +34,7 @@ describe('groupLocations', () => {
         } as GroupedLocations<TestLocation, TestGroup>))
 
     it('supports initial selectedGroups', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             groupLocations<TestLocation, TestGroup>(LOCATIONS, ['b', 'a'], GROUP_KEYS, LOCATIONS[0]),
             {
                 groups: [[{ key: 'a', count: 3 }, { key: 'b', count: 1 }], [{ key: 'a', count: 1 }]],
@@ -44,7 +44,7 @@ describe('groupLocations', () => {
         ))
 
     it('handles selectedGroups element that does not exist', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             groupLocations<TestLocation, TestGroup>(LOCATIONS, ['b', 'x'], GROUP_KEYS, LOCATIONS[0]),
             {
                 groups: [[{ key: 'a', count: 3 }, { key: 'b', count: 1 }], [{ key: 'a', count: 1 }]],
@@ -54,7 +54,7 @@ describe('groupLocations', () => {
         ))
 
     it('resolves selectedGroups undefined element', () =>
-        assert.deepStrictEqual(groupLocations<TestLocation, TestGroup>(LOCATIONS, ['a'], GROUP_KEYS, LOCATIONS[0]), {
+        assert.deepEqual(groupLocations<TestLocation, TestGroup>(LOCATIONS, ['a'], GROUP_KEYS, LOCATIONS[0]), {
             groups: [
                 [{ key: 'a', count: 3 }, { key: 'b', count: 1 }],
                 [{ key: 'a', count: 2 }, { key: 'b', count: 1 }],

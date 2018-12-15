@@ -7,7 +7,7 @@ describe('Workspace roots (integration)', () => {
     describe('workspace.roots', () => {
         it('lists roots', async () => {
             const { extensionHost } = await integrationTestContext()
-            assert.deepStrictEqual(extensionHost.workspace.roots, [{ uri: new URI('file:///') }] as WorkspaceRoot[])
+            assert.deepEqual(extensionHost.workspace.roots, [{ uri: new URI('file:///') }] as WorkspaceRoot[])
         })
 
         it('adds new text documents', async () => {
@@ -19,7 +19,7 @@ describe('Workspace roots (integration)', () => {
             })
             await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(extensionHost.workspace.roots, [
+            assert.deepEqual(extensionHost.workspace.roots, [
                 { uri: new URI('file:///a') },
                 { uri: new URI('file:///b') },
             ] as WorkspaceRoot[])
@@ -31,7 +31,7 @@ describe('Workspace roots (integration)', () => {
             const { model, extensionHost } = await integrationTestContext()
 
             const values = collectSubscribableValues(extensionHost.workspace.onDidChangeRoots)
-            assert.deepStrictEqual(values, [] as void[])
+            assert.deepEqual(values, [] as void[])
 
             model.next({
                 ...model.value,
@@ -39,7 +39,7 @@ describe('Workspace roots (integration)', () => {
             })
             await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(values, [void 0])
+            assert.deepEqual(values, [void 0])
         })
     })
 })

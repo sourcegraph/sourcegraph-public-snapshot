@@ -5,7 +5,7 @@ import { TestScheduler } from 'rxjs/testing'
 import { getLocations, ProvideTextDocumentLocationSignature } from './location'
 import { FIXTURE } from './registry.test'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 const FIXTURE_LOCATION: Location = {
     uri: 'file:///f',

@@ -3,7 +3,7 @@ import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { combineLatestOrDefault } from './combineLatestOrDefault'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 describe('combineLatestOrDefault', () => {
     describe('with 0 source observables', () => {

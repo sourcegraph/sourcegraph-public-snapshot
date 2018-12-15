@@ -6,7 +6,7 @@ import { applyContextUpdate, Context, getComputedContextProperty } from './conte
 
 describe('applyContextUpdate', () => {
     it('merges properties', () =>
-        assert.deepStrictEqual(applyContextUpdate({ a: 1, b: null, c: 2, d: 3, e: null }, { a: null, b: 1, c: 3 }), {
+        assert.deepEqual(applyContextUpdate({ a: 1, b: null, c: 2, d: 3, e: null }, { a: null, b: 1, c: 3 }), {
             b: 1,
             c: 3,
             d: 3,
@@ -126,12 +126,12 @@ describe('getComputedContextProperty', () => {
                 ))
 
             function assertSelection(model: Model, expr: string, expected: Selection): void {
-                assert.deepStrictEqual(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, expr), expected)
-                assert.deepStrictEqual(
+                assert.deepEqual(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, expr), expected)
+                assert.deepEqual(
                     getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start`),
                     expected.start
                 )
-                assert.deepStrictEqual(
+                assert.deepEqual(
                     getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end`),
                     expected.end
                 )
@@ -163,7 +163,7 @@ describe('getComputedContextProperty', () => {
                 }))
 
             it('provides selections', () =>
-                assert.deepStrictEqual(
+                assert.deepEqual(
                     getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selections'),
                     [
                         {

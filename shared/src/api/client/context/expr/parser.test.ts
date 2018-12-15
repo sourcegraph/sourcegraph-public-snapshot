@@ -196,7 +196,7 @@ describe('Parser', () => {
     }
     const parser = new Parser()
     for (const [expr, want] of Object.entries(TESTS)) {
-        it(expr, () => assert.deepStrictEqual(parser.parse(expr), want))
+        it(expr, () => assert.deepEqual(parser.parse(expr), want))
     }
 
     it('throws an error on an invalid argument list', () => assert.throws(() => parser.parse('a(1,,)')))
@@ -291,6 +291,6 @@ describe('TemplateParser', () => {
     }
     const parser = new TemplateParser()
     for (const [template, want] of Object.entries(TESTS)) {
-        it(template, () => assert.deepStrictEqual(parser.parse(template), want))
+        it(template, () => assert.deepEqual(parser.parse(template), want))
     }
 })

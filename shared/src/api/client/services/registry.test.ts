@@ -23,7 +23,7 @@ export const FIXTURE = {
     },
 }
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
 
 class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocumentRegistrationOptions, {}> {
     /**
@@ -46,7 +46,7 @@ class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocume
 
 describe('FeatureProviderRegistry', () => {
     it('is initially empty', () => {
-        assert.deepStrictEqual(new FeatureProviderRegistry().providersSnapshot, [])
+        assert.deepEqual(new FeatureProviderRegistry().providersSnapshot, [])
     })
 
     it('registers and unregisters providers', () => {
@@ -58,18 +58,18 @@ describe('FeatureProviderRegistry', () => {
         const unregister1 = subscriptions.add(
             registry.registerProvider(FIXTURE.PartialEntry.registrationOptions, provider1)
         )
-        assert.deepStrictEqual(registry.providersSnapshot, [provider1])
+        assert.deepEqual(registry.providersSnapshot, [provider1])
 
         const unregister2 = subscriptions.add(
             registry.registerProvider(FIXTURE.PartialEntry.registrationOptions, provider2)
         )
-        assert.deepStrictEqual(registry.providersSnapshot, [provider1, provider2])
+        assert.deepEqual(registry.providersSnapshot, [provider1, provider2])
 
         unregister1.unsubscribe()
-        assert.deepStrictEqual(registry.providersSnapshot, [provider2])
+        assert.deepEqual(registry.providersSnapshot, [provider2])
 
         unregister2.unsubscribe()
-        assert.deepStrictEqual(registry.providersSnapshot, [])
+        assert.deepEqual(registry.providersSnapshot, [])
     })
 })
 

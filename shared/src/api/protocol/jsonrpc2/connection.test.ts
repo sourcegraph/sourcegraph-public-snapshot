@@ -18,14 +18,14 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (p1, _signal) => {
-            assert.deepStrictEqual(p1, ['foo'])
+            assert.deepEqual(p1, ['foo'])
             return p1
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.deepStrictEqual(await client.sendRequest(method, ['foo']), ['foo'])
+        assert.deepEqual(await client.sendRequest(method, ['foo']), ['foo'])
     })
 
     it('handle single request with async result', async () => {
@@ -34,14 +34,14 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (p1, _signal) => {
-            assert.deepStrictEqual(p1, ['foo'])
+            assert.deepEqual(p1, ['foo'])
             return Promise.resolve(p1)
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.deepStrictEqual(await client.sendRequest(method, ['foo']), ['foo'])
+        assert.deepEqual(await client.sendRequest(method, ['foo']), ['foo'])
     })
 
     it('abort undispatched request', async () => {
@@ -116,7 +116,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         client.listen()
         const result = client.observeRequest<number>('m', [1])
-        assert.deepStrictEqual(await result.toPromise(), 2)
+        assert.deepEqual(await result.toPromise(), 2)
     })
 
     it('observe request with multiple observable emissions', async () => {
@@ -136,7 +136,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.deepStrictEqual(
+        assert.deepEqual(
             await client
                 .observeRequest<number>('m', [1, 2, 3, 4])
                 .pipe(bufferCount(4))
@@ -160,7 +160,7 @@ describe('Connection', () => {
         promises.push(client.sendRequest(method, ['bar']))
 
         const values = await Promise.all(promises)
-        assert.deepStrictEqual(values, [['foo'], ['bar']])
+        assert.deepEqual(values, [['foo'], ['bar']])
     })
 
     it('unhandled request', async () => {
@@ -258,7 +258,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(method, params => {
-            assert.deepStrictEqual(params, [null])
+            assert.deepEqual(params, [null])
             return null
         })
         server.listen()
@@ -274,7 +274,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(method, params => {
-            assert.deepStrictEqual(params, [0])
+            assert.deepEqual(params, [0])
             return 0
         })
         server.listen()
@@ -290,7 +290,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onNotification(testNotification, params => {
-            assert.deepStrictEqual(params, [{ value: true }])
+            assert.deepEqual(params, [{ value: true }])
             done()
         })
         server.listen()
@@ -306,7 +306,7 @@ describe('Connection', () => {
         const server = createConnection(serverTransports)
         server.onUnhandledNotification(message => {
             assert.strictEqual(message.method, testNotification)
-            assert.deepStrictEqual(message.params, [{ value: true }])
+            assert.deepEqual(message.params, [{ value: true }])
             done()
         })
         server.listen()
@@ -360,7 +360,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onNotification(method, params => {
-            assert.deepStrictEqual(params, [10, 'vscode'])
+            assert.deepEqual(params, [10, 'vscode'])
             done()
         })
         server.listen()
@@ -376,7 +376,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (params: number[]) => {
-            assert.deepStrictEqual(params, [10, 20, 30])
+            assert.deepEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
@@ -392,7 +392,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (params: number[], _signal) => {
-            assert.deepStrictEqual(params, [10, 20, 30])
+            assert.deepEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
@@ -429,7 +429,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onNotification(type, params => {
-            assert.deepStrictEqual(params, [10, 20, 30])
+            assert.deepEqual(params, [10, 20, 30])
             done()
         })
         server.listen()
@@ -444,7 +444,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest('test', (params: number[], _signal) => {
-            assert.deepStrictEqual(params, [10, 20, 30])
+            assert.deepEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
@@ -460,7 +460,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onNotification('test', (params: number[]) => {
-            assert.deepStrictEqual(params, [10, 20, 30])
+            assert.deepEqual(params, [10, 20, 30])
             done()
         })
         server.listen()
@@ -476,7 +476,7 @@ describe('Connection', () => {
         const server = createConnection(serverTransports)
         server.onRequest((method: string, params: number[], _signal) => {
             assert.strictEqual(method, 'test')
-            assert.deepStrictEqual(params, [10, 20, 30])
+            assert.deepEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
@@ -493,7 +493,7 @@ describe('Connection', () => {
         const server = createConnection(serverTransports)
         server.onNotification((method: string, params: number[]) => {
             assert.strictEqual(method, 'test')
-            assert.deepStrictEqual(params, [10, 20, 30])
+            assert.deepEqual(params, [10, 20, 30])
             done()
         })
         server.listen()
@@ -509,7 +509,7 @@ describe('Connection', () => {
 
         const server = createConnection(serverTransports)
         server.onRequest(type, (params: number[], _signal) => {
-            assert.deepStrictEqual(params, [10, 20, 30])
+            assert.deepEqual(params, [10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()

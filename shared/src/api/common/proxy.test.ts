@@ -50,7 +50,7 @@ describe('Proxy', () => {
                 }),
         })
 
-        assert.deepStrictEqual(
+        assert.deepEqual(
             await proxy
                 .$observe(1, 2, 3, 4)
                 .pipe(bufferCount(4))

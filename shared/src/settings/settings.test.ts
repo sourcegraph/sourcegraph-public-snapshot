@@ -42,7 +42,7 @@ const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([new Error('parse e
 
 describe('gqlToCascade', () => {
     it('converts a value', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             gqlToCascade({
                 subjects: [FIXTURE_ORG, FIXTURE_USER],
             }),
@@ -72,7 +72,7 @@ describe('gqlToCascade', () => {
 describe('mergeSettings', () => {
     it('handles an empty array', () => assert.strictEqual(mergeSettings([]), null))
     it('merges multiple values', () =>
-        assert.deepStrictEqual(mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }]), {
+        assert.deepEqual(mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }]), {
             a: 3,
             b: 2,
         }))
@@ -82,7 +82,7 @@ describe('merge', () => {
     function assertMerged(base: any, add: any, expected: any, custom?: CustomMergeFunctions): void {
         const origBase = cloneDeep(base)
         merge(base, add, custom)
-        assert.deepStrictEqual(
+        assert.deepEqual(
             base,
             expected,
             `merge ${JSON.stringify(origBase)} into ${JSON.stringify(add)}:\ngot:  ${JSON.stringify(

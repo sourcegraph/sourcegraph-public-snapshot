@@ -4,7 +4,7 @@ import { parseExtensionManifestOrError } from './extensionManifest'
 
 describe('parseExtensionManifestOrError', () => {
     it('parses valid input', () =>
-        assert.deepStrictEqual(parseExtensionManifestOrError('{"url":"a","activationEvents":["*"]}'), {
+        assert.deepEqual(parseExtensionManifestOrError('{"url":"a","activationEvents":["*"]}'), {
             url: 'a',
             activationEvents: ['*'],
         }))

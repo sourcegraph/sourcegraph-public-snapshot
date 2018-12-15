@@ -6,44 +6,44 @@ describe('Lexer', () => {
 
     it('scans an expression', () => {
         l.reset('ab * 2')
-        assert.deepStrictEqual(l.peek(), { type: TokenType.Identifier, value: 'ab' } as Token)
+        assert.deepEqual(l.peek(), { type: TokenType.Identifier, value: 'ab' } as Token)
         const token = l.next()
-        assert.deepStrictEqual(token, { type: TokenType.Identifier, value: 'ab', start: 0, end: 2 } as Token)
+        assert.deepEqual(token, { type: TokenType.Identifier, value: 'ab', start: 0, end: 2 } as Token)
         assert.ok(l.next())
         assert.ok(l.next())
         assert.strictEqual(l.peek(), undefined)
         assert.strictEqual(l.next(), undefined)
 
         l.reset('a')
-        assert.deepStrictEqual(l.next(), { type: TokenType.Identifier, value: 'a', start: 0, end: 1 } as Token)
+        assert.deepEqual(l.next(), { type: TokenType.Identifier, value: 'a', start: 0, end: 1 } as Token)
     })
 
     it('scans identifier with dots', () =>
-        assert.deepStrictEqual(scanAll(l, 'a.b'), [
+        assert.deepEqual(scanAll(l, 'a.b'), [
             { type: TokenType.Identifier, value: 'a.b', start: 0, end: 3 },
         ] as Token[]))
 
     it('scans string', () =>
-        assert.deepStrictEqual(scanAll(l, '"a\\nb\\"c\'d"'), [
+        assert.deepEqual(scanAll(l, '"a\\nb\\"c\'d"'), [
             { type: TokenType.String, value: 'a\nb"c\'d', start: 0, end: 11 },
         ] as Token[]))
 
     // tslint:disable:no-invalid-template-strings
     describe('templates', () => {
         it('scans no-substitution template', () =>
-            assert.deepStrictEqual(scanAll(l, '`a`'), [
+            assert.deepEqual(scanAll(l, '`a`'), [
                 { type: TokenType.NoSubstitutionTemplate, value: 'a', start: 0, end: 3 },
             ] as Token[]))
 
         it('scans template with empty head/tail', () =>
-            assert.deepStrictEqual(scanAll(l, '`${x}`'), [
+            assert.deepEqual(scanAll(l, '`${x}`'), [
                 { type: TokenType.TemplateHead, value: '', start: 0, end: 3 },
                 { type: TokenType.Identifier, value: 'x', start: 3, end: 4 },
                 { type: TokenType.TemplateTail, value: '', start: 4, end: 6 },
             ] as Token[]))
 
         it('scans template with empty head/tail and multiple tokens', () =>
-            assert.deepStrictEqual(scanAll(l, '`${x+y}`'), [
+            assert.deepEqual(scanAll(l, '`${x+y}`'), [
                 { type: TokenType.TemplateHead, value: '', start: 0, end: 3 },
                 { type: TokenType.Identifier, value: 'x', start: 3, end: 4 },
                 { type: TokenType.Operator, value: '+', start: 4, end: 5 },
@@ -52,28 +52,28 @@ describe('Lexer', () => {
             ] as Token[]))
 
         it('scans template with non-empty head, empty tail', () =>
-            assert.deepStrictEqual(scanAll(l, '`a${x}`'), [
+            assert.deepEqual(scanAll(l, '`a${x}`'), [
                 { type: TokenType.TemplateHead, value: 'a', start: 0, end: 4 },
                 { type: TokenType.Identifier, value: 'x', start: 4, end: 5 },
                 { type: TokenType.TemplateTail, value: '', start: 5, end: 7 },
             ] as Token[]))
 
         it('scans template with empty head, non-empty tail', () =>
-            assert.deepStrictEqual(scanAll(l, '`${x}b`'), [
+            assert.deepEqual(scanAll(l, '`${x}b`'), [
                 { type: TokenType.TemplateHead, value: '', start: 0, end: 3 },
                 { type: TokenType.Identifier, value: 'x', start: 3, end: 4 },
                 { type: TokenType.TemplateTail, value: 'b', start: 4, end: 7 },
             ] as Token[]))
 
         it('scans template with non-empty head/tail', () =>
-            assert.deepStrictEqual(scanAll(l, '`a${x}b`'), [
+            assert.deepEqual(scanAll(l, '`a${x}b`'), [
                 { type: TokenType.TemplateHead, value: 'a', start: 0, end: 4 },
                 { type: TokenType.Identifier, value: 'x', start: 4, end: 5 },
                 { type: TokenType.TemplateTail, value: 'b', start: 5, end: 8 },
             ] as Token[]))
 
         it('scans template with middle and empty values', () =>
-            assert.deepStrictEqual(scanAll(l, '`${x}${y}`'), [
+            assert.deepEqual(scanAll(l, '`${x}${y}`'), [
                 { type: TokenType.TemplateHead, value: '', start: 0, end: 3 },
                 { type: TokenType.Identifier, value: 'x', start: 3, end: 4 },
                 { type: TokenType.TemplateMiddle, value: '', start: 4, end: 7 },
@@ -82,7 +82,7 @@ describe('Lexer', () => {
             ] as Token[]))
 
         it('scans template with middle', () =>
-            assert.deepStrictEqual(scanAll(l, '`a${x}b${y}c`'), [
+            assert.deepEqual(scanAll(l, '`a${x}b${y}c`'), [
                 { type: TokenType.TemplateHead, value: 'a', start: 0, end: 4 },
                 { type: TokenType.Identifier, value: 'x', start: 4, end: 5 },
                 { type: TokenType.TemplateMiddle, value: 'b', start: 5, end: 9 },
@@ -91,14 +91,14 @@ describe('Lexer', () => {
             ] as Token[]))
 
         it('scans nested no-substitution template', () =>
-            assert.deepStrictEqual(scanAll(l, '`a${`x`}b`'), [
+            assert.deepEqual(scanAll(l, '`a${`x`}b`'), [
                 { type: TokenType.TemplateHead, value: 'a', start: 0, end: 4 },
                 { type: TokenType.NoSubstitutionTemplate, value: 'x', start: 4, end: 7 },
                 { type: TokenType.TemplateTail, value: 'b', start: 7, end: 10 },
             ] as Token[]))
 
         it('scans nested template', () =>
-            assert.deepStrictEqual(scanAll(l, '`a${`x${y}z`}b`'), [
+            assert.deepEqual(scanAll(l, '`a${`x${y}z`}b`'), [
                 { type: TokenType.TemplateHead, value: 'a', start: 0, end: 4 },
                 { type: TokenType.TemplateHead, value: 'x', start: 4, end: 8 },
                 { type: TokenType.Identifier, value: 'y', start: 8, end: 9 },
@@ -116,28 +116,28 @@ describe('Lexer', () => {
     })
 
     it('scans single-char binary operators', () =>
-        assert.deepStrictEqual(scanAll(l, 'a = b'), [
+        assert.deepEqual(scanAll(l, 'a = b'), [
             { type: TokenType.Identifier, value: 'a', start: 0, end: 1 },
             { type: TokenType.Operator, value: '=', start: 2, end: 3 },
             { type: TokenType.Identifier, value: 'b', start: 4, end: 5 },
         ] as Token[]))
 
     it('scans 2-char binary operators', () =>
-        assert.deepStrictEqual(scanAll(l, 'a == b'), [
+        assert.deepEqual(scanAll(l, 'a == b'), [
             { type: TokenType.Identifier, value: 'a', start: 0, end: 1 },
             { type: TokenType.Operator, value: '==', start: 2, end: 4 },
             { type: TokenType.Identifier, value: 'b', start: 5, end: 6 },
         ] as Token[]))
 
     it('scans 3-char binary operators', () =>
-        assert.deepStrictEqual(scanAll(l, 'a !== b'), [
+        assert.deepEqual(scanAll(l, 'a !== b'), [
             { type: TokenType.Identifier, value: 'a', start: 0, end: 1 },
             { type: TokenType.Operator, value: '!==', start: 2, end: 5 },
             { type: TokenType.Identifier, value: 'b', start: 6, end: 7 },
         ] as Token[]))
 
     it('scans adjacent operators', () => {
-        assert.deepStrictEqual(scanAll(l, 'a==!b'), [
+        assert.deepEqual(scanAll(l, 'a==!b'), [
             { type: TokenType.Identifier, value: 'a', start: 0, end: 1 },
             { type: TokenType.Operator, value: '==', start: 1, end: 3 },
             { type: TokenType.Operator, value: '!', start: 3, end: 4 },
@@ -186,7 +186,7 @@ describe('TemplateLexer', () => {
 
     it('scans template with middle', () =>
         // tslint:disable-next-line:no-invalid-template-strings
-        assert.deepStrictEqual(scanAll(l, 'a${x}b${y}c'), [
+        assert.deepEqual(scanAll(l, 'a${x}b${y}c'), [
             { type: TokenType.TemplateHead, value: 'a', start: 0, end: 3 },
             { type: TokenType.Identifier, value: 'x', start: 3, end: 4 },
             { type: TokenType.TemplateMiddle, value: 'b', start: 4, end: 8 },

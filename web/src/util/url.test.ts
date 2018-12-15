@@ -2,14 +2,14 @@ import assert from 'assert'
 import { parseBrowserRepoURL, toTreeURL } from './url'
 
 /**
- * Asserts deep object equality using node's assert.deepStrictEqual, except it (1) ignores differences in the
+ * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
  * prototype (because that causes 2 object literals to fail the test) and (2) treats undefined properties as
  * missing.
  */
 function assertDeepStrictEqual(actual: any, expected: any, message?: string): void {
     actual = JSON.parse(JSON.stringify(actual))
     expected = JSON.parse(JSON.stringify(expected))
-    assert.deepStrictEqual(actual, expected, message)
+    assert.deepEqual(actual, expected, message)
 }
 
 const ctx = {
