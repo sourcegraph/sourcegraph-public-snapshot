@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { getPathExtension } from './languages'
 
 describe('util/index', () => {

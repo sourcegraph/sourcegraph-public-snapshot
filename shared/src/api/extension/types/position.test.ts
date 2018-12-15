@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { assertToJSON } from './common.test'
 import { Position } from './position'
 

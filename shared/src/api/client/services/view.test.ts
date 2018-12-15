@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ContributableViewContainer } from '../../protocol'

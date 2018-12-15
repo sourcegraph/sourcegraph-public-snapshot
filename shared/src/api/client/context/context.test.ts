@@ -1,5 +1,4 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import assert from 'assert'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
 import { EMPTY_MODEL, Model } from '../model'
 import { applyContextUpdate, Context, getComputedContextProperty } from './context'

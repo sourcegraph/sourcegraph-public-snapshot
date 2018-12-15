@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { Subscription } from 'rxjs'
 import { CommandEntry, CommandRegistry, executeCommand } from './command'
 

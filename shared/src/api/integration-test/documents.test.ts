@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { TextDocument } from 'sourcegraph'
 import { collectSubscribableValues, integrationTestContext } from './helpers.test'
 

@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { DocumentSelector } from 'sourcegraph'
 import { match, score, TextDocumentItem } from './textDocument'
 

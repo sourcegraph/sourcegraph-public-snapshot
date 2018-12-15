@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { from, of, Subscribable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'

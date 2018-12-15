@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { GroupedLocations, groupLocations } from './locations'
 
 type TestLocation = string

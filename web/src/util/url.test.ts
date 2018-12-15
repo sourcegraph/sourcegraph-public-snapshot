@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { parseBrowserRepoURL, toTreeURL } from './url'
 
 /**

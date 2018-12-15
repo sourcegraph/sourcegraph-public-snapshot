@@ -1,4 +1,3 @@
-import assert from 'assert'
 import * as sourcegraph from 'sourcegraph'
 import { assertToJSON } from './common.test'
 import { Position } from './position'

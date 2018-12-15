@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import {
     CustomMergeFunctions,

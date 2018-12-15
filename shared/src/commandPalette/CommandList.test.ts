@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { ActionItemProps } from '../actions/ActionItem'
 import { filterAndRankItems } from './CommandList'
 

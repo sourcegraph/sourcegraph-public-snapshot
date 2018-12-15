@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { fuzzyMatches, Span } from './HighlightedMatches'
 
 describe('fuzzyMatches', () => {

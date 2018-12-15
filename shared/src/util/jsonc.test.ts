@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { isErrorLike } from './errors'
 import { parseJSONCOrError } from './jsonc'
 

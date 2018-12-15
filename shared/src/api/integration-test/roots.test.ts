@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { WorkspaceRoot } from 'sourcegraph'
 import { URI } from '../extension/types/uri'
 import { collectSubscribableValues, integrationTestContext } from './helpers.test'

@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { buildSearchURLQuery, makeRepoURI, parseHash, parseRepoURI, toPrettyBlobURL } from './url'
 
 /**
@@ -237,10 +236,9 @@ describe('util/url', () => {
 })
 
 describe('buildSearchURLQuery', () => {
-    it('builds the URL query for a search', () => assert.strictEqual(buildSearchURLQuery('foo'), 'q=foo'))
-    it('handles an empty query', () => assert.strictEqual(buildSearchURLQuery(''), 'q='))
+    it('builds the URL query for a search', () => expect(buildSearchURLQuery('foo')).toBe('q=foo'))
+    it('handles an empty query', () => expect(buildSearchURLQuery('')).toBe('q='))
     it('handles characters that need encoding', () =>
-        assert.strictEqual(buildSearchURLQuery('foo bar%baz'), 'q=foo+bar%25baz'))
-    it('preserves / and : for readability', () =>
-        assert.strictEqual(buildSearchURLQuery('repo:foo/bar'), 'q=repo:foo/bar'))
+        expect(buildSearchURLQuery('foo bar%baz')).toBe('q=foo+bar%25baz'))
+    it('preserves / and : for readability', () => expect(buildSearchURLQuery('repo:foo/bar')).toBe('q=repo:foo/bar'))
 })

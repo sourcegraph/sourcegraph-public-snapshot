@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { integrationTestContext } from './helpers.test'
 
 describe('Internal (integration)', () => {

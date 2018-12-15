@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { Subject } from 'rxjs'
 import { isPromise, isSubscribable, tryCatchPromise } from './util'
 

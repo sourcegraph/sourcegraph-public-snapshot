@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { Lexer, OPERATOR_CHARS, OPERATORS, OperatorTree, TemplateLexer, Token, TokenType } from './lexer'
 
 describe('Lexer', () => {

@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { ActionItemProps } from '../actions/ActionItem'
 import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from './contributions'

@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { map } from 'rxjs/operators'
 import { ViewComponent, Window } from 'sourcegraph'
 import { MessageType } from '../client/services/notifications'

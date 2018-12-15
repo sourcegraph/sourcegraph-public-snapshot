@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { flattenAndCompact } from './util'
 
 describe('flattenAndCompact', () => {

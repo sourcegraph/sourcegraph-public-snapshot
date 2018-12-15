@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { BehaviorSubject, of } from 'rxjs'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../settings/settings'
 import { SettingsEdit } from '../client/services/settings'

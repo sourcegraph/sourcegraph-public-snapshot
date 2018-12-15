@@ -1,5 +1,4 @@
 import * as clientType from '@sourcegraph/extension-api-types'
-import assert from 'assert'
 import { take } from 'rxjs/operators'
 import { Range } from '../extension/types/range'
 import { integrationTestContext } from './helpers.test'

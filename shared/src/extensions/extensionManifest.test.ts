@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { isErrorLike } from '../util/errors'
 import { parseExtensionManifestOrError } from './extensionManifest'
 

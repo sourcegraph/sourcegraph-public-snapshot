@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { createTestBundle, TestBundle } from '../../../web/src/util/unit-test-utils'
 import * as _dom from './dom'
 

@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { TokenType } from './lexer'
 import { Expression, Parser, TemplateParser } from './parser'
 

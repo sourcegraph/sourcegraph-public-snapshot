@@ -1,5 +1,4 @@
 // @ts-ignore
-import assert from 'assert'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {

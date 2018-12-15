@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { Observable, Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
