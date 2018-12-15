@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { transformQuery, TransformQuerySignature } from './queryTransformer'

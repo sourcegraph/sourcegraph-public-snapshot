@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import assert from 'assert'
 import { Observable, of } from 'rxjs'
 import { Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'

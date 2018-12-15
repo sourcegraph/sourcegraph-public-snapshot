@@ -1,5 +1,5 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import * as assert from 'assert'
+import assert from 'assert'
 import { Observable } from 'rxjs'
 import { bufferCount, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'

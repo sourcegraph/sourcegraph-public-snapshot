@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import assert from 'assert'
 import { from } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
 import { ContextValues } from 'sourcegraph'

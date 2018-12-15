@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import assert from 'assert'
 import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Hover, MarkupKind } from 'sourcegraph'

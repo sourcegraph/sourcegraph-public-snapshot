@@ -1,5 +1,5 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import * as assert from 'assert'
+import assert from 'assert'
 import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { getLocations, ProvideTextDocumentLocationSignature } from './location'
