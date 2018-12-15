@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { cloneDeep } from 'lodash-es'
+import { cloneDeep } from 'lodash'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import {
     CustomMergeFunctions,
