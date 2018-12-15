@@ -1,7 +1,7 @@
 import * as sourcegraph from 'sourcegraph'
-import { assertToJSON } from './common.test'
 import { Position } from './position'
 import { Range } from './range'
+import { assertToJSON } from './testHelpers'
 
 describe('Range', () => {
     test('constructs', () => {

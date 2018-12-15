@@ -4,9 +4,9 @@ import { bufferCount, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
-import { assertToJSON } from '../extension/types/common.test'
+import { assertToJSON } from '../extension/types/testHelpers'
 import { URI } from '../extension/types/uri'
-import { createBarrier, integrationTestContext } from './helpers.test'
+import { createBarrier, integrationTestContext } from './testHelpers'
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider<sourcegraph.HoverProvider>(

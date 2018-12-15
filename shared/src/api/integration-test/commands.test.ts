@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { integrationTestContext } from './helpers.test'
+import { integrationTestContext } from './testHelpers'
 
 describe('Commands (integration)', () => {
     describe('commands.registerCommand', () => {

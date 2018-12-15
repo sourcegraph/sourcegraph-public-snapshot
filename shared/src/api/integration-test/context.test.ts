@@ -1,7 +1,7 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
 import { ContextValues } from 'sourcegraph'
-import { collectSubscribableValues, integrationTestContext } from './helpers.test'
+import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Context (integration)', () => {
     describe('internal.updateContext', () => {

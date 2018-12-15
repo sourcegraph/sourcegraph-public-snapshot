@@ -1,7 +1,7 @@
-import { assertToJSON } from './common.test'
 import { Location } from './location'
 import { Position } from './position'
 import { Range } from './range'
+import { assertToJSON } from './testHelpers'
 import { URI } from './uri'
 
 describe('Location', () => {

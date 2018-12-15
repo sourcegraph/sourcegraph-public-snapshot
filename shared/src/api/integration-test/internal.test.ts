@@ -1,4 +1,4 @@
-import { integrationTestContext } from './helpers.test'
+import { integrationTestContext } from './testHelpers'
 
 describe('Internal (integration)', () => {
     test('constant values', async () => {

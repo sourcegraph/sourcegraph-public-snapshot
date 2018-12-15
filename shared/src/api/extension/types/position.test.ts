@@ -1,5 +1,5 @@
-import { assertToJSON } from './common.test'
 import { Position } from './position'
+import { assertToJSON } from './testHelpers'
 
 describe('Position', () => {
     test('constructs', () => {

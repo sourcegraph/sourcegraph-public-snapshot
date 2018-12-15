@@ -1,6 +1,6 @@
 import { WorkspaceRoot } from 'sourcegraph'
 import { URI } from '../extension/types/uri'
-import { collectSubscribableValues, integrationTestContext } from './helpers.test'
+import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Workspace roots (integration)', () => {
     describe('workspace.roots', () => {

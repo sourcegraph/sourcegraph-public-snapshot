@@ -1,5 +1,5 @@
 import { take } from 'rxjs/operators'
-import { integrationTestContext } from './helpers.test'
+import { integrationTestContext } from './testHelpers'
 
 describe('search (integration)', () => {
     test('registers a query transformer', async () => {

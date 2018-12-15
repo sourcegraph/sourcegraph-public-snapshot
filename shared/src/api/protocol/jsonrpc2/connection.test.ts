@@ -3,9 +3,9 @@ import assert from 'assert'
 import { AbortError } from 'p-retry'
 import { Observable, of } from 'rxjs'
 import { bufferCount, delay } from 'rxjs/operators'
-import { createBarrier } from '../../integration-test/helpers.test'
+import { createBarrier } from '../../integration-test/testHelpers'
 import { createConnection } from './connection'
-import { createMessagePipe, createMessageTransports } from './helpers.test'
+import { createMessagePipe, createMessageTransports } from './testHelpers'
 import { ErrorCodes, ResponseError } from './messages'
 
 describe('Connection', () => {

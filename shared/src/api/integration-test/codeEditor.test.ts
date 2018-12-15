@@ -1,7 +1,7 @@
 import * as clientType from '@sourcegraph/extension-api-types'
 import { take } from 'rxjs/operators'
 import { Range } from '../extension/types/range'
-import { integrationTestContext } from './helpers.test'
+import { integrationTestContext } from './testHelpers'
 
 describe('CodeEditor (integration)', () => {
     describe('setDecorations', () => {

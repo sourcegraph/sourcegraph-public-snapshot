@@ -2,7 +2,7 @@ import assert from 'assert'
 import { Observable } from 'rxjs'
 import { bufferCount } from 'rxjs/operators'
 import { createConnection } from '../protocol/jsonrpc2/connection'
-import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
+import { createMessageTransports } from '../protocol/jsonrpc2/testHelpers'
 import { createProxy, handleRequests } from './proxy'
 
 function createTestProxy<T>(handler: T): Record<keyof T, (...args: any[]) => any> {

@@ -1,8 +1,8 @@
 import { map } from 'rxjs/operators'
 import { ViewComponent, Window } from 'sourcegraph'
 import { MessageType } from '../client/services/notifications'
-import { assertToJSON } from '../extension/types/common.test'
-import { collectSubscribableValues, integrationTestContext } from './helpers.test'
+import { assertToJSON } from '../extension/types/testHelpers'
+import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {

@@ -1,5 +1,5 @@
 import { TextDocument } from 'sourcegraph'
-import { collectSubscribableValues, integrationTestContext } from './helpers.test'
+import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {
