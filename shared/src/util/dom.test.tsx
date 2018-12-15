@@ -1,4 +1,3 @@
-import { createTestBundle, TestBundle } from '../../../web/src/util/unit-test-utils'
 import * as _dom from './dom'
 
 describe('util/dom', () => {
@@ -6,18 +5,11 @@ describe('util/dom', () => {
         const cellInnerHTML = `<span style="color:#c0c5ce;"><span>\t</span></span><span style="color:#fff3bf;"><span>ServeHTTP</span></span><span style="color:#c0c5ce;"><span>(</span></span><span style="color:#c0c5ce;"><span>ResponseWriter</span></span><span style="color:#c0c5ce;"><span>,</span></span><span style="color:#c0c5ce;"><span> </span></span><span style="color:#329af0;"><span>*</span></span><span style="color:#c0c5ce;"><span>Request</span></span><span style="color:#c0c5ce;"><span>)</span></span>`
         let cell: HTMLTableCellElement
         let dom: typeof _dom
-        let bundle: TestBundle
-
-        beforeAll(async function(): Promise<void> {
-            this.timeout(10000)
-            bundle = await createTestBundle(__dirname + '/dom.tsx')
-        })
 
         beforeEach(() => {
-            const { window, module } = bundle.load()
-            dom = module
-            window.document.body.innerHTML = `<table><tbody><td id="cell">${cellInnerHTML}</td></tbody></table>`
+            document.body.innerHTML = `<table><tbody><td id="cell">${cellInnerHTML}</td></tbody></table>`
             cell = window.document.getElementById('cell') as HTMLTableCellElement
+            dom = require('./dom')
         })
 
         test('highlights no characters', () => {

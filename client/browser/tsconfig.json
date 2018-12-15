@@ -7,7 +7,6 @@
     "noImplicitReturns": false,
     "strictPropertyInitialization": false,
     "resolveJsonModule": true,
-    "allowJs": true,
     "checkJs": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "config/**/*.js", "config/**/*.ts", "scripts/**/*.ts", "*.ts"],

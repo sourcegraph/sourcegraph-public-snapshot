@@ -66,17 +66,19 @@ We write unit tests and e2e tests.
 
 Unit tests are for things that can be tested in isolation; you provide inputs and make assertion on the outputs and/or side effects.
 
-You can run unit tests via `yarn run test`.
+React component snapshot tests are a special kind of unit test that we use to test React components. See "[React component snapshot tests](testing.md#react-component-snapshot-tests)" for more information.
+
+You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to run only tests changed since the last commit). See "[Testing](testing.md)" for more information.
 
 ### E2E tests
 
-_🚨  Until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976 is completed, our E2E tests will be disabled in CI. **Before merging your PR, you should manually run e2e tests against a local instancing by running `./dev/launch.sh` in one terminal tab and `yarn run test-e2e` in another one**. Additionally, some E2E tests depend on the Go language server. Currently, that language server is in a transition state and can't be run on its own. Until @chrismwendt finishes up his work on that project, all tests that rely on Go code intelligence are skipped.🚨_
+_🚨  Until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976 is completed, our E2E tests will be disabled in CI. **Before merging your PR, you should manually run e2e tests against a local instancing by running `./dev/enterprise/start.sh` in one terminal tab and `yarn run test-e2e` in another one**. Additionally, some E2E tests depend on the Go language server. Currently, that language server is in a transition state and can't be run on its own. Until @chrismwendt finishes up his work on that project, all tests that rely on Go code intelligence are skipped.🚨_
 
 E2E tests are for the whole app: JS, CSS, and backend. 
 
 These tests require hitting a backend like https://sourcegraph.com or https://sourcegraph.sgdev.org (default `SOURCEGRAPH_BASE_URL=http://localhost:3080`). E2E tests send messages to a chrome debugger port (9222), telling chrome to do things like "go to this URL" and "click on this selector" and "execute this JavaScript in the page".
 
-You can run E2E tests via `yarn run test-e2e`. This command will automatically start a headless chrome process; to prevent that, set the environment variable `SKIP_LAUNCH_CHROME=t`.
+You can run E2E tests via `cd web && yarn run test-e2e`. This command will automatically start a headless chrome process; to prevent that, set the environment variable `SKIP_LAUNCH_CHROME=t`. See "[Testing](testing.md)" for more information.
 
 #### E2E caveats 
 

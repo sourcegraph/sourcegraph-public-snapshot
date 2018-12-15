@@ -1,6 +1,6 @@
 {
   "extends": ["@sourcegraph/tslint-config"],
-  "linterOptions": { "exclude": ["node_modules/**"] },
+  "linterOptions": { "exclude": ["node_modules/**", "coverage/**"] },
   "rules": {
     "await-promise": false,
     "import-blacklist": [true, "highlight.js"],

@@ -1,18 +1,9 @@
-import mkdirp from 'mkdirp-promise'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { retry } from '../util/e2e-test-utils'
 
-const REPO_ROOT = path.resolve(__dirname, '..', '..', '..')
-const SCREENSHOT_DIRECTORY = path.resolve(__dirname, '..', '..', 'puppeteer')
-
-describe('e2e test suite', () => {
-    let testContext
-
-    beforeEach(() => {
-        testContext = {}
-    })
-
+describe('e2e test suite', function(this: any): void {
     let authenticate: (page: puppeteer.Page) => Promise<void>
     let baseURL: string
 
@@ -43,16 +34,23 @@ describe('e2e test suite', () => {
     let browser: puppeteer.Browser
     let page: puppeteer.Page
     if (browserWSEndpoint) {
-        beforeAll('Connect to browser', async () => {
+        // Connect to browser.
+        beforeAll(async () => {
             browser = await puppeteer.connect({ browserWSEndpoint })
         })
-        afterAll('Disconnect from browser', async () => {
+
+        // Disconnect from browser.
+        afterAll(async () => {
             if (browser) {
+                if (page && !page.isClosed()) {
+                    await page.close()
+                }
                 await browser.disconnect()
             }
         })
     } else {
-        beforeAll('Start browser', async () => {
+        // Start browser.
+        beforeAll(async () => {
             let args: string[] | undefined
             if (process.getuid() === 0) {
                 // TODO don't run as root in CI
@@ -61,36 +59,31 @@ describe('e2e test suite', () => {
             }
             browser = await puppeteer.launch({ args })
         })
-        afterAll('Close browser', async () => {
+
+        // Close browser.
+        afterAll(async () => {
             if (browser) {
+                if (page && !page.isClosed()) {
+                    await page.close()
+                }
                 await browser.close()
             }
         })
     }
-    beforeEach('Open page', async () => {
+
+    // Open page.
+    beforeEach(async () => {
         page = await browser.newPage()
         await authenticate(page)
         await disableDefaultFeatureFlags(page)
     })
-    afterEach('Close page', async () => {
-        if (page) {
-            if (testContext.currentTest && testContext.currentTest.state === 'failed') {
-                await mkdirp(SCREENSHOT_DIRECTORY)
-                const filePath = path.join(
-                    SCREENSHOT_DIRECTORY,
-                    testContext.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
-                )
-                await page.screenshot({ path: filePath })
-                if (process.env.CI) {
-                    // Print image with ANSI escape code for Buildkite
-                    // https://buildkite.com/docs/builds/images-in-log-output
-                    const relativePath = path.relative(REPO_ROOT, filePath)
-                    console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
-                }
-            }
-            await page.close()
-        }
-    })
+
+    // Take a screenshot when a test fails.
+    saveScreenshotsUponFailuresAndClosePage(
+        path.resolve(__dirname, '..', '..', '..'),
+        path.resolve(__dirname, '..', '..', 'puppeteer'),
+        () => page
+    )
 
     const enableOrAddRepositoryIfNeeded = async (): Promise<any> => {
         // Disable any toasts, which can interfere with clicking on the enable/add button.
@@ -551,8 +544,8 @@ describe('e2e test suite', () => {
                     // access to sourcegraph-frontend's internal API)
                     // TODO@ggilmore
                     // TODO@chrismwendt
-                    test.skip('opens widget and fetches local references', async function(): Promise<void> {
-                        this.timeout(120000)
+                    test.skip('opens widget and fetches local references', async (): Promise<void> => {
+                        jest.setTimeout(120000)
 
                         await page.goto(
                             baseURL +
@@ -583,29 +576,28 @@ describe('e2e test suite', () => {
                         await assertAllHighlightedTokens('MultiFileDiffReader')
                     })
 
-                    test('opens widget and fetches external references', async () => {
-                        // Testing external references on localhost is unreliable, since different dev environments will
-                        // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
-                        // 1 repo, in which case there would never be external references. So we *only* run this test against
-                        // non-localhost servers.
-                        if (baseURL === 'http://localhost:3080') {
-                            testContext.skip()
-                            return
+                    // Testing external references on localhost is unreliable, since different dev environments will
+                    // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
+                    // 1 repo, in which case there would never be external references. So we *only* run this test against
+                    // non-localhost servers.
+                    const skipExternalReferences = baseURL === 'http://localhost:3080'
+                    ;(skipExternalReferences ? test.skip : test)(
+                        'opens widget and fetches external references',
+                        async () => {
+                            await page.goto(
+                                baseURL +
+                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
+                            )
+                            await enableOrAddRepositoryIfNeeded()
+
+                            // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
+                            // look like they're for the appropriate token)
+                            await assertNonemptyExternalRefs()
+
+                            // verify all the matches highlight a `Reader` token
+                            await assertAllHighlightedTokens('Reader')
                         }
-
-                        await page.goto(
-                            baseURL +
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
-                        )
-                        await enableOrAddRepositoryIfNeeded()
-
-                        // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
-                        // look like they're for the appropriate token)
-                        await assertNonemptyExternalRefs()
-
-                        // verify all the matches highlight a `Reader` token
-                        await assertAllHighlightedTokens('Reader')
-                    })
+                    )
                 })
             })
         })

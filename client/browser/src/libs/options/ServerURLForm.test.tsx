@@ -49,7 +49,7 @@ describe('ServerURLForm', () => {
 
         const newValue = urlInput.value
 
-        expect(newValue).to.equal('https://different.com')
+        expect(newValue).toEqual('https://different.com')
     })
 
     test('fires the onSubmit prop handler when the form is submitted', () => {

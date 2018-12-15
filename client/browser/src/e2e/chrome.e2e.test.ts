@@ -1,11 +1,8 @@
-import { mkdirp } from 'fs-extra'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../../shared/src/util/screenshotReporter'
 
 const chromeExtensionPath = path.resolve(__dirname, '..', '..', 'build/chrome')
-
-const repoRoot = path.resolve(__dirname, '..', '..', '..', '..')
-const screenshotDirectory = path.resolve(__dirname, '..', '..', '..', 'puppeteer')
 
 async function getTokenWithSelector(
     page: puppeteer.Page,
@@ -37,12 +34,6 @@ async function clickElement(page: puppeteer.Page, element: puppeteer.ElementHand
 }
 
 describe('Sourcegraph Chrome extension', () => {
-    let testContext
-
-    beforeEach(() => {
-        testContext = {}
-    })
-
     let authenticate: (page: puppeteer.Page) => Promise<void>
 
     let browser: puppeteer.Browser
@@ -55,8 +46,9 @@ describe('Sourcegraph Chrome extension', () => {
 
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
-    beforeAll('Open Browser', async function(): Promise<void> {
-        this.timeout(90 * 1000)
+    // Open browser.
+    beforeAll(async (): Promise<void> => {
+        jest.setTimeout(90 * 1000)
 
         let args: string[] = [
             `--disable-extensions-except=${chromeExtensionPath}`,
@@ -75,34 +67,25 @@ describe('Sourcegraph Chrome extension', () => {
         })
     })
 
-    beforeEach('Open page', async () => {
+    // Open page.
+    beforeEach(async () => {
         page = await browser.newPage()
         await authenticate(page)
     })
 
-    afterEach('Close page', async () => {
-        if (page) {
-            if (testContext.currentTest && testContext.currentTest.state === 'failed') {
-                await mkdirp(screenshotDirectory)
-                const filePath = path.join(
-                    screenshotDirectory,
-                    testContext.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
-                )
-                await page.screenshot({ path: filePath })
-                if (process.env.CI) {
-                    // Print image with ANSI escape code for Buildkite
-                    // https://buildkite.com/docs/builds/images-in-log-output
-                    const relativePath = path.relative(repoRoot, filePath)
-                    console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
-                }
-            }
+    // Take a screenshot when a test fails.
+    saveScreenshotsUponFailuresAndClosePage(
+        path.resolve(__dirname, '..', '..', '..', '..'),
+        path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
+        () => page
+    )
 
-            await page.close()
-        }
-    })
-
-    afterAll('Close browser', async () => {
+    // Close browser.
+    afterAll(async () => {
         if (browser) {
+            if (page && !page.isClosed()) {
+                await page.close()
+            }
             await browser.close()
         }
     })
