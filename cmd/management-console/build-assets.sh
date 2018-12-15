@@ -9,6 +9,6 @@ yarn install
 popd
 
 pushd web/
-npm install
-npm run build
+yarn install
+yarn run build
 popd
