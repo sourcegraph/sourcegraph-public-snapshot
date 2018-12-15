@@ -14,7 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -29,13 +31,23 @@ var (
 		if err != nil {
 			return nil, err
 		}
-		xs := make([]*registry.Extension, len(vs))
-		for i, v := range vs {
+		xs := make([]*registry.Extension, 0, len(vs))
+		for _, v := range vs {
 			x, err := toRegistryAPIExtension(ctx, v)
 			if err != nil {
-				return nil, err
+				continue
 			}
-			xs[i] = x
+
+			// To be safe, ensure that the JSON can be safely unmarshaled by API clients. If not,
+			// skip this extension.
+			if x.Manifest != nil {
+				var o schema.SourcegraphExtensionManifest
+				if err := jsonc.Unmarshal(*x.Manifest, &o); err != nil {
+					continue
+				}
+			}
+
+			xs = append(xs, x)
 		}
 		return xs, nil
 	}
