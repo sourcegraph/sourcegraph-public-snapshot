@@ -1,5 +1,3 @@
-import { assert } from 'chai'
-import { describe, it } from 'mocha'
 import * as React from 'react'
 import { render, RenderResult } from 'react-testing-library'
 import { noop, Observable, of } from 'rxjs'
@@ -32,8 +30,8 @@ describe('OptionsContainer', () => {
         featureFlags: [],
     }
 
-    it('checks the connection status when it mounts', () => {
-        const scheduler = new TestScheduler((a, b) => assert.deepEqual(a, b))
+    test('checks the connection status when it mounts', () => {
+        const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
         scheduler.run(({ cold, expectObservable }) => {
             const values = { a: 'https://test.com' }
@@ -64,8 +62,8 @@ describe('OptionsContainer', () => {
         })
     })
 
-    it('checks the connection status when it the url updates', () => {
-        const scheduler = new TestScheduler((a, b) => assert.deepEqual(a, b))
+    test('checks the connection status when it the url updates', () => {
+        const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
         const buildRenderer = () => {
             let rerender: RenderResult['rerender'] | undefined
@@ -112,7 +110,7 @@ describe('OptionsContainer', () => {
         })
     })
 
-    it('handles when an error is thrown checking the site connection', () => {
+    test('handles when an error is thrown checking the site connection', () => {
         const ensureValidSite = () => {
             throw new Error('no site, woops')
         }
@@ -131,8 +129,8 @@ describe('OptionsContainer', () => {
         }
     })
 
-    it('creates a token when no token exists', () => {
-        const scheduler = new TestScheduler((a, b) => assert.deepEqual(a, b))
+    test('creates a token when no token exists', () => {
+        const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
         scheduler.run(({ cold, expectObservable }) => {
             const accessToken = {
@@ -186,7 +184,7 @@ describe('OptionsContainer', () => {
         })
     })
 
-    it('does not create a new access token when we have a valid token', () => {
+    test('does not create a new access token when we have a valid token', () => {
         const getAccessToken = () => of({ id: 'valid', token: 'valid' })
 
         const user = {
@@ -212,10 +210,10 @@ describe('OptionsContainer', () => {
             />
         )
 
-        assert.isTrue(createAccessToken.notCalled, 'createAccessToken was called')
+        expect(createAccessToken.notCalled).toBe(true)
     })
 
-    it('creates a new access token when the existing token is invalid', () => {
+    test('creates a new access token when the existing token is invalid', () => {
         const getAccessToken = () => of({ id: 'invalid', token: 'invalid' })
 
         const accessToken = {
@@ -249,6 +247,6 @@ describe('OptionsContainer', () => {
             />
         )
 
-        assert.isTrue(setAccessToken.calledOnceWith('https://test.com', accessToken))
+        expect(setAccessToken.calledOnceWith('https://test.com', accessToken)).toBe(true)
     })
 })

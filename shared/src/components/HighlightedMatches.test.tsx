@@ -57,8 +57,8 @@ describe('fuzzyMatches', () => {
         },
     ] as { text: string; pattern: string; want: Span[] }[]
     for (const { text, pattern, want } of TESTS) {
-        it(`matches ${JSON.stringify(pattern)} in ${JSON.stringify(text)}`, () => {
-            assert.deepEqual(fuzzyMatches(text, pattern), want)
+        test(`matches ${JSON.stringify(pattern)} in ${JSON.stringify(text)}`, () => {
+            expect(fuzzyMatches(text, pattern)).toEqual(want)
         })
     }
 })

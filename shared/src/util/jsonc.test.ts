@@ -3,10 +3,10 @@ import { isErrorLike } from './errors'
 import { parseJSONCOrError } from './jsonc'
 
 describe('parseJSONCOrError', () => {
-    it('parses valid JSON', () => assert.deepEqual(parseJSONCOrError('{"a":1}'), { a: 1 }))
-    it('parses valid JSONC', () => assert.deepEqual(parseJSONCOrError('{/*x*/"a":1,}'), { a: 1 }))
-    it('returns an error value for invalid input', () => {
+    test('parses valid JSON', () => expect(parseJSONCOrError('{"a":1}')).toEqual({ a: 1 }))
+    test('parses valid JSONC', () => expect(parseJSONCOrError('{/*x*/"a":1,}')).toEqual({ a: 1 }))
+    test('returns an error value for invalid input', () => {
         const value = parseJSONCOrError('.')
-        assert.ok(isErrorLike(value))
+        expect(isErrorLike(value)).toBeTruthy()
     })
 })

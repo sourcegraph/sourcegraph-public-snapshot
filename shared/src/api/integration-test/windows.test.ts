@@ -7,7 +7,7 @@ import { collectSubscribableValues, integrationTestContext } from './helpers.tes
 
 describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {
-        it('returns the active window', async () => {
+        test('returns the active window', async () => {
             const { extensionHost } = await integrationTestContext()
             const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
                 type: 'CodeEditor' as 'CodeEditor',
@@ -21,7 +21,7 @@ describe('Windows (integration)', () => {
     })
 
     describe('app.windows', () => {
-        it('lists windows', async () => {
+        test('lists windows', async () => {
             const { extensionHost } = await integrationTestContext()
             const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
                 type: 'CodeEditor' as 'CodeEditor',
@@ -35,7 +35,7 @@ describe('Windows (integration)', () => {
             ] as Window[])
         })
 
-        it('adds new text documents', async () => {
+        test('adds new text documents', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
             model.next({
@@ -65,7 +65,7 @@ describe('Windows (integration)', () => {
     })
 
     describe('Window', () => {
-        it('Window#visibleViewComponent', async () => {
+        test('Window#visibleViewComponent', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
             model.next({
@@ -98,7 +98,7 @@ describe('Windows (integration)', () => {
             ] as ViewComponent[])
         })
 
-        it('Window#activeViewComponent', async () => {
+        test('Window#activeViewComponent', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
             model.next({
@@ -125,32 +125,32 @@ describe('Windows (integration)', () => {
             } as ViewComponent)
         })
 
-        it('Window#showNotification', async () => {
+        test('Window#showNotification', async () => {
             const { extensionHost, services } = await integrationTestContext()
             const values = collectSubscribableValues(services.notifications.showMessages)
             extensionHost.app.activeWindow!.showNotification('a') // tslint:disable-line deprecation
             await extensionHost.internal.sync()
-            assert.deepEqual(values, [{ message: 'a', type: MessageType.Info }] as typeof values)
+            expect(values).toEqual([{ message: 'a', type: MessageType.Info }] as typeof values)
         })
 
-        it('Window#showMessage', async () => {
+        test('Window#showMessage', async () => {
             const { extensionHost, services } = await integrationTestContext()
             services.notifications.showMessageRequests.subscribe(({ resolve }) => resolve(Promise.resolve(null)))
             const values = collectSubscribableValues(
                 services.notifications.showMessageRequests.pipe(map(({ message, type }) => ({ message, type })))
             )
-            assert.strictEqual(await extensionHost.app.activeWindow!.showMessage('a'), null)
-            assert.deepEqual(values, [{ message: 'a', type: MessageType.Info }] as typeof values)
+            expect(await extensionHost.app.activeWindow!.showMessage('a')).toBe(null)
+            expect(values).toEqual([{ message: 'a', type: MessageType.Info }] as typeof values)
         })
 
-        it('Window#showInputBox', async () => {
+        test('Window#showInputBox', async () => {
             const { extensionHost, services } = await integrationTestContext()
             services.notifications.showInputs.subscribe(({ resolve }) => resolve(Promise.resolve('c')))
             const values = collectSubscribableValues(
                 services.notifications.showInputs.pipe(map(({ message, defaultValue }) => ({ message, defaultValue })))
             )
-            assert.strictEqual(await extensionHost.app.activeWindow!.showInputBox({ prompt: 'a', value: 'b' }), 'c')
-            assert.deepEqual(values, [{ message: 'a', defaultValue: 'b' }] as typeof values)
+            expect(await extensionHost.app.activeWindow!.showInputBox({ prompt: 'a', value: 'b' })).toBe('c')
+            expect(values).toEqual([{ message: 'a', defaultValue: 'b' }] as typeof values)
         })
     })
 })

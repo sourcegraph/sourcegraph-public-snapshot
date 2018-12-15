@@ -31,15 +31,15 @@ describe('Proxy', () => {
             },
         })
 
-        it('to functions', async () => assert.strictEqual(await proxy.$a(1), 2))
-        it('to async functions', async () => assert.strictEqual(await proxy.$b(1), 3))
-        it('with multiple arguments ', async () => assert.strictEqual(await proxy.$c(2, 3), 5))
-        it('with variadic arguments ', async () => assert.strictEqual(await proxy.$d(...[2, 3, 4]), 9))
-        it('to functions returning a rejected promise', async () => assert.rejects(() => proxy.$e()))
-        it('to functions throwing an error', async () => assert.rejects(() => proxy.$f()))
+        test('to functions', async () => expect(await proxy.$a(1)).toBe(2))
+        test('to async functions', async () => expect(await proxy.$b(1)).toBe(3))
+        test('with multiple arguments ', async () => expect(await proxy.$c(2, 3)).toBe(5))
+        test('with variadic arguments ', async () => expect(await proxy.$d(...[2, 3, 4])).toBe(9))
+        test('to functions returning a rejected promise', async () => assert.rejects(() => proxy.$e()))
+        test('to functions throwing an error', async () => assert.rejects(() => proxy.$f()))
     })
 
-    it('proxies Observables', async () => {
+    test('proxies Observables', async () => {
         const proxy = createTestProxy({
             $observe: (...args: number[]) =>
                 new Observable<number>(observer => {
@@ -50,12 +50,11 @@ describe('Proxy', () => {
                 }),
         })
 
-        assert.deepEqual(
+        expect(
             await proxy
                 .$observe(1, 2, 3, 4)
                 .pipe(bufferCount(4))
-                .toPromise(),
-            [2, 3, 4, 5]
-        )
+                .toPromise()
+        ).toEqual([2, 3, 4, 5])
     })
 })

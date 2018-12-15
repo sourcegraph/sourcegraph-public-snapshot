@@ -37,6 +37,12 @@ async function clickElement(page: puppeteer.Page, element: puppeteer.ElementHand
 }
 
 describe('Sourcegraph Chrome extension', () => {
+    let testContext
+
+    beforeEach(() => {
+        testContext = {}
+    })
+
     let authenticate: (page: puppeteer.Page) => Promise<void>
 
     let browser: puppeteer.Browser
@@ -49,7 +55,7 @@ describe('Sourcegraph Chrome extension', () => {
 
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
-    before('Open Browser', async function(): Promise<void> {
+    beforeAll('Open Browser', async function(): Promise<void> {
         this.timeout(90 * 1000)
 
         let args: string[] = [
@@ -74,13 +80,13 @@ describe('Sourcegraph Chrome extension', () => {
         await authenticate(page)
     })
 
-    afterEach('Close page', async function(): Promise<void> {
+    afterEach('Close page', async () => {
         if (page) {
-            if (this.currentTest && this.currentTest.state === 'failed') {
+            if (testContext.currentTest && testContext.currentTest.state === 'failed') {
                 await mkdirp(screenshotDirectory)
                 const filePath = path.join(
                     screenshotDirectory,
-                    this.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
+                    testContext.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
                 )
                 await page.screenshot({ path: filePath })
                 if (process.env.CI) {
@@ -95,7 +101,7 @@ describe('Sourcegraph Chrome extension', () => {
         }
     })
 
-    after('Close browser', async () => {
+    afterAll('Close browser', async () => {
         if (browser) {
             await browser.close()
         }
@@ -103,17 +109,17 @@ describe('Sourcegraph Chrome extension', () => {
 
     const repoBaseURL = 'https://github.com/gorilla/mux'
 
-    it('injects View on Sourcegraph', async () => {
+    test('injects View on Sourcegraph', async () => {
         await page.goto(repoBaseURL)
         await page.waitForSelector('li#open-on-sourcegraph')
     })
 
-    it('injects toolbar for code views', async () => {
+    test('injects toolbar for code views', async () => {
         await page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
         await page.waitForSelector('.code-view-toolbar')
     })
 
-    it('provides tooltips for single file', async () => {
+    test('provides tooltips for single file', async () => {
         await page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
 
         const element = await getTokenWithSelector(page, 'NewRouter', 'span.pl-en')
@@ -130,7 +136,7 @@ describe('Sourcegraph Chrome extension', () => {
 
     for (const diffType of ['unified', 'split']) {
         for (const side of ['base', 'head']) {
-            it(`provides tooltips for diff files (${diffType}, ${side})`, async () => {
+            test(`provides tooltips for diff files (${diffType}, ${side})`, async () => {
                 await page.goto(`https://github.com/gorilla/mux/pull/328/files?diff=${diffType}`)
 
                 const token = tokens[side]

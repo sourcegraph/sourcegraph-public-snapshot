@@ -2,9 +2,9 @@ import assert from 'assert'
 import { integrationTestContext } from './helpers.test'
 
 describe('Internal (integration)', () => {
-    it('constant values', async () => {
+    test('constant values', async () => {
         const { extensionHost } = await integrationTestContext()
-        assert.deepEqual(extensionHost.internal.sourcegraphURL.toString(), 'https://example.com')
-        assert.deepEqual(extensionHost.internal.clientApplication, 'sourcegraph')
+        expect(extensionHost.internal.sourcegraphURL.toString()).toEqual('https://example.com')
+        expect(extensionHost.internal.clientApplication).toEqual('sourcegraph')
     })
 })

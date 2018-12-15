@@ -6,13 +6,13 @@ import { collectSubscribableValues, integrationTestContext } from './helpers.tes
 
 describe('Context (integration)', () => {
     describe('internal.updateContext', () => {
-        it('updates context', async () => {
+        test('updates context', async () => {
             const { services, extensionHost } = await integrationTestContext()
             const values = collectSubscribableValues(from(services.context.data).pipe(distinctUntilChanged()))
 
             extensionHost.internal.updateContext({ a: 1 })
             await extensionHost.internal.sync()
-            assert.deepEqual(values, [
+            expect(values).toEqual([
                 { 'clientApplication.isSourcegraph': true, 'clientApplication.extensionAPIVersion.major': 3 },
                 { a: 1, 'clientApplication.isSourcegraph': true, 'clientApplication.extensionAPIVersion.major': 3 },
             ] as ContextValues[])

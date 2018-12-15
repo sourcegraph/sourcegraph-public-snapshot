@@ -23,11 +23,11 @@ const FIXTURE_RESULT: TextDocumentDecoration[] | null = [
     },
 ]
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getDecorations', () => {
     describe('0 providers', () => {
-        it('returns null', () =>
+        test('returns null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getDecorations(
@@ -41,7 +41,7 @@ describe('getDecorations', () => {
     })
 
     describe('1 provider', () => {
-        it('returns null result from provider', () =>
+        test('returns null result from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getDecorations(
@@ -53,7 +53,7 @@ describe('getDecorations', () => {
                 })
             ))
 
-        it('returns result from provider', () =>
+        test('returns result from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getDecorations(
@@ -69,7 +69,7 @@ describe('getDecorations', () => {
     })
 
     describe('2 providers', () => {
-        it('returns null result if both providers return null', () =>
+        test('returns null result if both providers return null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getDecorations(
@@ -83,7 +83,7 @@ describe('getDecorations', () => {
                 })
             ))
 
-        it('omits null result from 1 provider', () =>
+        test('omits null result from 1 provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getDecorations(
@@ -97,7 +97,7 @@ describe('getDecorations', () => {
                 })
             ))
 
-        it('merges results from providers', () =>
+        test('merges results from providers', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getDecorations(
@@ -113,7 +113,7 @@ describe('getDecorations', () => {
     })
 
     describe('multiple emissions', () => {
-        it('returns stream of results', () =>
+        test('returns stream of results', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getDecorations(
@@ -134,25 +134,24 @@ describe('getDecorations', () => {
 describe('decorationStyleForTheme', () => {
     const FIXTURE_RANGE = { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }
 
-    it('supports no theme overrides', () =>
-        assert.deepEqual(decorationStyleForTheme({ range: FIXTURE_RANGE, backgroundColor: 'red' }, true), {
+    test('supports no theme overrides', () =>
+        expect(decorationStyleForTheme({ range: FIXTURE_RANGE, backgroundColor: 'red' }, true)).toEqual({
             range: FIXTURE_RANGE, // it's not necessary that range is included, but it saves an object allocation
             backgroundColor: 'red',
         }))
 
-    it('applies light theme overrides', () =>
-        assert.deepEqual(
+    test('applies light theme overrides', () =>
+        expect(
             decorationStyleForTheme(
                 { range: FIXTURE_RANGE, backgroundColor: 'red', light: { backgroundColor: 'blue' } },
                 true
-            ),
-            {
-                backgroundColor: 'blue',
-            }
-        ))
+            )
+        ).toEqual({
+            backgroundColor: 'blue',
+        }))
 
-    it('applies dark theme overrides', () =>
-        assert.deepEqual(
+    test('applies dark theme overrides', () =>
+        expect(
             decorationStyleForTheme(
                 {
                     range: FIXTURE_RANGE,
@@ -161,30 +160,28 @@ describe('decorationStyleForTheme', () => {
                     dark: { backgroundColor: 'green' },
                 },
                 false
-            ),
-            {
-                backgroundColor: 'green',
-            }
-        ))
+            )
+        ).toEqual({
+            backgroundColor: 'green',
+        }))
 })
 
 describe('decorationAttachmentStyleForTheme', () => {
-    it('supports no theme overrides', () =>
-        assert.deepEqual(decorationAttachmentStyleForTheme({ color: 'red' }, true), { color: 'red' }))
+    test('supports no theme overrides', () =>
+        expect(decorationAttachmentStyleForTheme({ color: 'red' }, true)).toEqual({ color: 'red' }))
 
-    it('applies light theme overrides', () =>
-        assert.deepEqual(decorationAttachmentStyleForTheme({ color: 'red', light: { color: 'blue' } }, true), {
+    test('applies light theme overrides', () =>
+        expect(decorationAttachmentStyleForTheme({ color: 'red', light: { color: 'blue' } }, true)).toEqual({
             color: 'blue',
         }))
 
-    it('applies dark theme overrides', () =>
-        assert.deepEqual(
+    test('applies dark theme overrides', () =>
+        expect(
             decorationAttachmentStyleForTheme(
                 { color: 'red', light: { color: 'blue' }, dark: { color: 'green' } },
                 false
-            ),
-            {
-                color: 'green',
-            }
-        ))
+            )
+        ).toEqual({
+            color: 'green',
+        }))
 })

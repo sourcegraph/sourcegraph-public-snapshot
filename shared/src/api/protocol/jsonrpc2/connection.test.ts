@@ -12,39 +12,39 @@ describe('Connection', () => {
     // Polyfill
     ;(global as any).AbortController = AbortController
 
-    it('handle single request', async () => {
+    test('handle single request', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (p1, _signal) => {
-            assert.deepEqual(p1, ['foo'])
+            expect(p1).toEqual(['foo'])
             return p1
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.deepEqual(await client.sendRequest(method, ['foo']), ['foo'])
+        expect(await client.sendRequest(method, ['foo'])).toEqual(['foo'])
     })
 
-    it('handle single request with async result', async () => {
+    test('handle single request with async result', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (p1, _signal) => {
-            assert.deepEqual(p1, ['foo'])
+            expect(p1).toEqual(['foo'])
             return Promise.resolve(p1)
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.deepEqual(await client.sendRequest(method, ['foo']), ['foo'])
+        expect(await client.sendRequest(method, ['foo'])).toEqual(['foo'])
     })
 
-    it('abort undispatched request', async () => {
+    test('abort undispatched request', async () => {
         const [serverTransports, clientTransports] = createMessageTransports()
         const b1 = createBarrier()
         const b2 = createBarrier()
@@ -70,7 +70,7 @@ describe('Connection', () => {
         await assert.rejects(result, (err: AbortError) => err.name === 'AbortError')
     })
 
-    it('abort request currently being handled', async () => {
+    test('abort request currently being handled', async () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
@@ -89,12 +89,12 @@ describe('Connection', () => {
         client.listen()
         const abortController = new AbortController()
         const result = client.sendRequest('m', undefined, abortController.signal)
-        assert.strictEqual(await client.sendRequest('ping'), 'pong') // waits until the 'm' message starts to be handled
+        expect(await client.sendRequest('ping')).toBe('pong') // waits until the 'm' message starts to be handled
         abortController.abort()
         await assert.rejects(result, (err: AbortError) => err.name === 'AbortError')
     })
 
-    it('send request with single observable emission', async () => {
+    test('send request with single observable emission', async () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
@@ -103,10 +103,10 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest<number>('m', [1]), 2)
+        expect(await client.sendRequest<number>('m', [1])).toBe(2)
     })
 
-    it('observe request with single observable emission', async () => {
+    test('observe request with single observable emission', async () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
@@ -116,10 +116,10 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         client.listen()
         const result = client.observeRequest<number>('m', [1])
-        assert.deepEqual(await result.toPromise(), 2)
+        expect(await result.toPromise()).toEqual(2)
     })
 
-    it('observe request with multiple observable emissions', async () => {
+    test('observe request with multiple observable emissions', async () => {
         const [serverTransports, clientTransports] = createMessageTransports()
         const server = createConnection(serverTransports)
         server.onRequest(
@@ -136,16 +136,15 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.deepEqual(
+        expect(
             await client
                 .observeRequest<number>('m', [1, 2, 3, 4])
                 .pipe(bufferCount(4))
-                .toPromise(),
-            [2, 3, 4, 5]
-        )
+                .toPromise()
+        ).toEqual([2, 3, 4, 5])
     })
 
-    it('handle multiple requests', async () => {
+    test('handle multiple requests', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
@@ -160,10 +159,10 @@ describe('Connection', () => {
         promises.push(client.sendRequest(method, ['bar']))
 
         const values = await Promise.all(promises)
-        assert.deepEqual(values, [['foo'], ['bar']])
+        expect(values).toEqual([['foo'], ['bar']])
     })
 
-    it('unhandled request', async () => {
+    test('unhandled request', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
@@ -178,7 +177,7 @@ describe('Connection', () => {
         )
     })
 
-    it('handler throws an Error', async () => {
+    test('handler throws an Error', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
@@ -200,7 +199,7 @@ describe('Connection', () => {
         )
     })
 
-    it('handler returns a rejected Promise with an Error', async () => {
+    test('handler returns a rejected Promise with an Error', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
@@ -220,13 +219,13 @@ describe('Connection', () => {
         )
     })
 
-    it('receives undefined request params as null', async () => {
+    test('receives undefined request params as null', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(method, params => {
-            assert.strictEqual(params, null)
+            expect(params).toBe(null)
             return ''
         })
         server.listen()
@@ -236,13 +235,13 @@ describe('Connection', () => {
         await client.sendRequest(method)
     })
 
-    it('receives undefined notification params as null', async () => {
+    test('receives undefined notification params as null', async () => {
         const method = 'testNotification'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onNotification(method, params => {
-            assert.strictEqual(params, null)
+            expect(params).toBe(null)
             return ''
         })
         server.listen()
@@ -252,45 +251,45 @@ describe('Connection', () => {
         client.sendNotification(method)
     })
 
-    it('receives null as null', async () => {
+    test('receives null as null', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(method, params => {
-            assert.deepEqual(params, [null])
+            expect(params).toEqual([null])
             return null
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, [null]), null)
+        expect(await client.sendRequest(method, [null])).toBe(null)
     })
 
-    it('receives 0 as 0', async () => {
+    test('receives 0 as 0', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(method, params => {
-            assert.deepEqual(params, [0])
+            expect(params).toEqual([0])
             return 0
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, [0]), 0)
+        expect(await client.sendRequest(method, [0])).toBe(0)
     })
 
     const testNotification = 'testNotification'
-    it('sends and receives notification', done => {
+    test('sends and receives notification', done => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onNotification(testNotification, params => {
-            assert.deepEqual(params, [{ value: true }])
+            expect(params).toEqual([{ value: true }])
             done()
         })
         server.listen()
@@ -300,13 +299,13 @@ describe('Connection', () => {
         client.sendNotification(testNotification, [{ value: true }])
     })
 
-    it('unhandled notification event', done => {
+    test('unhandled notification event', done => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onUnhandledNotification(message => {
-            assert.strictEqual(message.method, testNotification)
-            assert.deepEqual(message.params, [{ value: true }])
+            expect(message.method).toBe(testNotification)
+            expect(message.params).toEqual([{ value: true }])
             done()
         })
         server.listen()
@@ -316,7 +315,7 @@ describe('Connection', () => {
         client.sendNotification(testNotification, [{ value: true }])
     })
 
-    it('unsubscribes client connection', async () => {
+    test('unsubscribes client connection', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
 
@@ -332,20 +331,20 @@ describe('Connection', () => {
         await assert.rejects(() => client.sendRequest(method, ['']))
     })
 
-    it('unsubscribed connection throws', () => {
+    test('unsubscribed connection throws', () => {
         const client = createConnection(createMessagePipe())
         client.listen()
         client.unsubscribe()
-        assert.throws(() => client.sendNotification(testNotification))
+        expect(() => client.sendNotification(testNotification)).toThrow()
     })
 
-    it('two listen throw', () => {
+    test('two listen throw', () => {
         const client = createConnection(createMessagePipe())
         client.listen()
-        assert.throws(() => client.listen())
+        expect(() => client.listen()).toThrow()
     })
 
-    it('notify on connection unsubscribe', done => {
+    test('notify on connection unsubscribe', done => {
         const client = createConnection(createMessagePipe())
         client.listen()
         client.onUnsubscribe(() => {
@@ -354,13 +353,13 @@ describe('Connection', () => {
         client.unsubscribe()
     })
 
-    it('params in notifications', done => {
+    test('params in notifications', done => {
         const method = 'test'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onNotification(method, params => {
-            assert.deepEqual(params, [10, 'vscode'])
+            expect(params).toEqual([10, 'vscode'])
             done()
         })
         server.listen()
@@ -370,29 +369,29 @@ describe('Connection', () => {
         client.sendNotification(method, [10, 'vscode'])
     })
 
-    it('params in request/response', async () => {
+    test('params in request/response', async () => {
         const method = 'add'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (params: number[]) => {
-            assert.deepEqual(params, [10, 20, 30])
+            expect(params).toEqual([10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, [10, 20, 30]), 60)
+        expect(await client.sendRequest(method, [10, 20, 30])).toBe(60)
     })
 
-    it('params in request/response with signal', async () => {
+    test('params in request/response with signal', async () => {
         const method = 'add'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(method, (params: number[], _signal) => {
-            assert.deepEqual(params, [10, 20, 30])
+            expect(params).toEqual([10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
@@ -400,19 +399,19 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         const signal = new AbortController().signal
         client.listen()
-        assert.strictEqual(await client.sendRequest(method, [10, 20, 30], signal), 60)
+        expect(await client.sendRequest(method, [10, 20, 30], signal)).toBe(60)
     })
 
-    it('1 param as array in request', async () => {
+    test('1 param as array in request', async () => {
         const type = 'add'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(type, p1 => {
-            assert(Array.isArray(p1))
-            assert.strictEqual(p1[0], 10)
-            assert.strictEqual(p1[1], 20)
-            assert.strictEqual(p1[2], 30)
+            expect(Array.isArray(p1)).toBeTruthy()
+            expect(p1[0]).toBe(10)
+            expect(p1[1]).toBe(20)
+            expect(p1[2]).toBe(30)
             return 60
         })
         server.listen()
@@ -420,16 +419,16 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         const signal = new AbortController().signal
         client.listen()
-        assert.strictEqual(await client.sendRequest(type, [10, 20, 30], signal), 60)
+        expect(await client.sendRequest(type, [10, 20, 30], signal)).toBe(60)
     })
 
-    it('1 param as array in notification', done => {
+    test('1 param as array in notification', done => {
         const type = 'add'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onNotification(type, params => {
-            assert.deepEqual(params, [10, 20, 30])
+            expect(params).toEqual([10, 20, 30])
             done()
         })
         server.listen()
@@ -439,12 +438,12 @@ describe('Connection', () => {
         client.sendNotification(type, [10, 20, 30])
     })
 
-    it('untyped request/response', async () => {
+    test('untyped request/response', async () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest('test', (params: number[], _signal) => {
-            assert.deepEqual(params, [10, 20, 30])
+            expect(params).toEqual([10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
@@ -452,15 +451,15 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         const signal = new AbortController().signal
         client.listen()
-        assert.strictEqual(await client.sendRequest('test', [10, 20, 30], signal), 60)
+        expect(await client.sendRequest('test', [10, 20, 30], signal)).toBe(60)
     })
 
-    it('untyped notification', done => {
+    test('untyped notification', done => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onNotification('test', (params: number[]) => {
-            assert.deepEqual(params, [10, 20, 30])
+            expect(params).toEqual([10, 20, 30])
             done()
         })
         server.listen()
@@ -470,13 +469,13 @@ describe('Connection', () => {
         client.sendNotification('test', [10, 20, 30])
     })
 
-    it('star request handler', async () => {
+    test('star request handler', async () => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest((method: string, params: number[], _signal) => {
-            assert.strictEqual(method, 'test')
-            assert.deepEqual(params, [10, 20, 30])
+            expect(method).toBe('test')
+            expect(params).toEqual([10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
@@ -484,16 +483,16 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         const signal = new AbortController().signal
         client.listen()
-        assert.strictEqual(await client.sendRequest('test', [10, 20, 30], signal), 60)
+        expect(await client.sendRequest('test', [10, 20, 30], signal)).toBe(60)
     })
 
-    it('star notification handler', done => {
+    test('star notification handler', done => {
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onNotification((method: string, params: number[]) => {
-            assert.strictEqual(method, 'test')
-            assert.deepEqual(params, [10, 20, 30])
+            expect(method).toBe('test')
+            expect(params).toEqual([10, 20, 30])
             done()
         })
         server.listen()
@@ -503,23 +502,23 @@ describe('Connection', () => {
         client.sendNotification('test', [10, 20, 30])
     })
 
-    it('abort signal is undefined', async () => {
+    test('abort signal is undefined', async () => {
         const type = 'add'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onRequest(type, (params: number[], _signal) => {
-            assert.deepEqual(params, [10, 20, 30])
+            expect(params).toEqual([10, 20, 30])
             return params.reduce((sum, n) => sum + n, 0)
         })
         server.listen()
 
         const client = createConnection(clientTransports)
         client.listen()
-        assert.strictEqual(await client.sendRequest(type, [10, 20, 30], undefined), 60)
+        expect(await client.sendRequest(type, [10, 20, 30], undefined)).toBe(60)
     })
 
-    it('null params in request', async () => {
+    test('null params in request', async () => {
         const type = 'add'
         const [serverTransports, clientTransports] = createMessageTransports()
 
@@ -529,16 +528,16 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        ;(client.sendRequest as any)(type, null).then((result: any) => assert.strictEqual(result, 123))
+        ;(client.sendRequest as any)(type, null).then((result: any) => expect(result).toBe(123))
     })
 
-    it('null params in notifications', done => {
+    test('null params in notifications', done => {
         const type = 'test'
         const [serverTransports, clientTransports] = createMessageTransports()
 
         const server = createConnection(serverTransports)
         server.onNotification(type, params => {
-            assert.strictEqual(params, null)
+            expect(params).toBe(null)
             done()
         })
         server.listen()

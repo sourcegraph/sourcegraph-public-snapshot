@@ -7,20 +7,19 @@ describe('filterAndRankItems', () => {
         return items.map(({ action: { id } }) => id)
     }
 
-    it('no query, no recentActions', () =>
-        assert.deepEqual(
+    test('no query, no recentActions', () =>
+        expect(
             actionIDs(
                 filterAndRankItems(
                     [{ action: { id: 'a', command: 'a' } }, { action: { id: 'b', command: 'b' } }],
                     '',
                     null
                 )
-            ),
-            ['a', 'b']
-        ))
+            )
+        ).toEqual(['a', 'b']))
 
-    it('query, no recentActions', () =>
-        assert.deepEqual(
+    test('query, no recentActions', () =>
+        expect(
             actionIDs(
                 filterAndRankItems(
                     [
@@ -31,22 +30,20 @@ describe('filterAndRankItems', () => {
                     'b',
                     null
                 )
-            ),
-            ['b1', 'b2']
-        ))
+            )
+        ).toEqual(['b1', 'b2']))
 
-    it('no query, recentActions', () =>
-        assert.deepEqual(
+    test('no query, recentActions', () =>
+        expect(
             actionIDs(
                 filterAndRankItems([{ action: { id: 'a', command: 'a' } }, { action: { id: 'b', command: 'b' } }], '', [
                     'b',
                 ])
-            ),
-            ['b', 'a']
-        ))
+            )
+        ).toEqual(['b', 'a']))
 
-    it('query, recentActions', () =>
-        assert.deepEqual(
+    test('query, recentActions', () =>
+        expect(
             actionIDs(
                 filterAndRankItems(
                     [
@@ -57,7 +54,6 @@ describe('filterAndRankItems', () => {
                     'b',
                     ['b2']
                 )
-            ),
-            ['b2', 'b1']
-        ))
+            )
+        ).toEqual(['b2', 'b1']))
 })

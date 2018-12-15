@@ -5,7 +5,7 @@ import { TestScheduler } from 'rxjs/testing'
 import { getLocations, ProvideTextDocumentLocationSignature } from './location'
 import { FIXTURE } from './registry.test'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_LOCATION: Location = {
     uri: 'file:///f',
@@ -15,7 +15,7 @@ const FIXTURE_LOCATIONS: Location | Location[] | null = [FIXTURE_LOCATION, FIXTU
 
 describe('getLocations', () => {
     describe('0 providers', () => {
-        it('returns null', () =>
+        test('returns null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocations(
@@ -29,7 +29,7 @@ describe('getLocations', () => {
     })
 
     describe('1 provider', () => {
-        it('returns null result from provider', () =>
+        test('returns null result from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocations(
@@ -41,7 +41,7 @@ describe('getLocations', () => {
                 })
             ))
 
-        it('returns result array from provider', () =>
+        test('returns result array from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocations(
@@ -56,7 +56,7 @@ describe('getLocations', () => {
             ))
     })
 
-    it('errors do not propagate', () =>
+    test('errors do not propagate', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 getLocations(
@@ -72,7 +72,7 @@ describe('getLocations', () => {
         ))
 
     describe('2 providers', () => {
-        it('returns null result if both providers return null', () =>
+        test('returns null result if both providers return null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocations(
@@ -86,7 +86,7 @@ describe('getLocations', () => {
                 })
             ))
 
-        it('omits null result from 1 provider', () =>
+        test('omits null result from 1 provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocations(
@@ -100,7 +100,7 @@ describe('getLocations', () => {
                 })
             ))
 
-        it('merges results from providers', () =>
+        test('merges results from providers', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocations(
@@ -136,7 +136,7 @@ describe('getLocations', () => {
     })
 
     describe('multiple emissions', () => {
-        it('returns stream of results', () =>
+        test('returns stream of results', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocations(
