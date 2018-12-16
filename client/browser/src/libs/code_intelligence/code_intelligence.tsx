@@ -22,7 +22,15 @@ import { Model, ViewComponentData } from '../../../../../shared/src/api/client/m
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
+import {
+    FileSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+    toRootURI,
+    toURIWithPath,
+} from '../../../../../shared/src/util/url'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
@@ -31,7 +39,6 @@ import {
     toTextDocumentIdentifier,
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toRootURI, toURIWithPath } from '../../shared/repo'
 import { sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'

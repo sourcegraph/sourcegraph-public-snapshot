@@ -1,4 +1,4 @@
-import { AbsoluteRepoFile } from '../../shared/repo'
+import { AbsoluteRepoFile } from '../../../../../shared/src/util/url'
 
 export enum PhabricatorMode {
     Diffusion = 1,

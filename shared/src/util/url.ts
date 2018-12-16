@@ -60,7 +60,7 @@ export interface ModeSpec {
     mode: string
 }
 
-export type BlobViewState = 'references' | 'references:external' | 'discussions' | 'impl'
+export type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -118,7 +118,13 @@ const parsePosition = (str: string): Position => {
 }
 
 /**
- * Parses the properties of a repo URI like git://github.com/gorilla/mux#mux.go
+ * Parses the properties of a legacy Git URI like git://github.com/gorilla/mux#mux.go.
+ *
+ * These URIs were used when communicating with language servers over LSP and with extensions. They are being
+ * phased out in favor of URLs to resources in the Sourcegraph raw API, which do not require out-of-band
+ * information to fetch the contents of.
+ *
+ * @deprecated Migrate to using URLs to the Sourcegraph raw API (or other concrete URLs) instead.
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
@@ -276,7 +282,6 @@ export function isLegacyFragment(hash: string): boolean {
         (hash.includes('$info') ||
             hash.includes('$def') ||
             hash.includes('$references') ||
-            hash.includes('$references:external') ||
             hash.includes('$impl') ||
             hash.includes('$history'))
     )
@@ -313,7 +318,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
         // invalid or empty hash
         return {}
     }
-    const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references:external"
+    const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references"
     const lpr = parseLineOrPositionOrRange(lineCharModalInfo[0]) as LineOrPositionOrRange & { viewState?: V }
     if (lineCharModalInfo[1]) {
         lpr.viewState = lineCharModalInfo[1] as V
@@ -445,6 +450,11 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     uri += parsed.position ? positionStr(parsed.position) : ''
     uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
     return uri
+}
+
+export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec) => `git://${ctx.repoName}?${ctx.commitID}`
+export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): string {
+    return `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`
 }
 
 /**

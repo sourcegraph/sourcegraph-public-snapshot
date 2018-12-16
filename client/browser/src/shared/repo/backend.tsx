@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
-import { AbsoluteRepoFile, makeRepoURI } from '.'
+import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec } from '../../../../../shared/src/util/url'
 import { getContext } from '../backend/context'
 import { CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError } from '../backend/errors'
 import { queryGraphQL } from '../backend/graphql'
@@ -106,7 +106,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
 const trimRepoName = ({ repoName, ...rest }) => ({ ...rest, repoName: repoName.replace(/.git$/, '') })
 
 export const fetchBlobContentLines = memoizeObservable(
-    (ctx: AbsoluteRepoFile): Observable<string[]> =>
+    (ctx: RepoSpec & ResolvedRevSpec & FileSpec): Observable<string[]> =>
         queryGraphQL({
             ctx: getContext({ repoKey: ctx.repoName }),
             request: `query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
