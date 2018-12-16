@@ -163,7 +163,10 @@ export class ActionItem extends React.PureComponent<Props, State> {
                         ? `Error: ${this.state.actionOrError.message}`
                         : tooltip
                 }
-                disabled={this.props.disabledDuringExecution && this.state.actionOrError === LOADING}
+                disabled={
+                    (this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
+                    this.state.actionOrError === LOADING
+                }
                 className={`action-item ${this.props.className || ''} ${
                     showLoadingSpinner ? 'action-item--loading' : ''
                 } ${this.props.variant === 'actionItem' ? 'action-item--variant-action-item' : ''}`}
