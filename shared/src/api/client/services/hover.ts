@@ -35,7 +35,8 @@ export class TextDocumentHoverProviderRegistry extends DocumentFeatureProviderRe
  */
 export function getHover(
     providers: Observable<ProvideTextDocumentHoverSignature[]>,
-    params: TextDocumentPositionParams
+    params: TextDocumentPositionParams,
+    logErrors = true
 ): Observable<HoverMerged | null> {
     return providers.pipe(
         switchMap(providers =>
@@ -44,7 +45,9 @@ export function getHover(
                     from(
                         provider(params).pipe(
                             catchError(err => {
-                                console.error(err)
+                                if (logErrors) {
+                                    console.error(err)
+                                }
                                 return [null]
                             })
                         )

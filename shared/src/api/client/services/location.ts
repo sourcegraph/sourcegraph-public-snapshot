@@ -67,14 +67,20 @@ export class TextDocumentLocationProviderRegistry<
 export function getLocations<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
     L extends Location = Location
->(providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>, params: P): Observable<L[] | null> {
+>(
+    providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>,
+    params: P,
+    logErrors = true
+): Observable<L[] | null> {
     return providers.pipe(
         switchMap(providers =>
             combineLatestOrDefault(
                 providers.map(provider =>
                     from(provider(params)).pipe(
                         catchError(err => {
-                            console.error(err)
+                            if (logErrors) {
+                                console.error(err)
+                            }
                             return [null]
                         })
                     )

@@ -115,7 +115,8 @@ describe('getViews', () => {
                             FIXTURE_ENTRY_1,
                         ],
                     }),
-                    FIXTURE_CONTAINER
+                    FIXTURE_CONTAINER,
+                    false
                 )
             ).toBe('-a-|', {
                 a: [FIXTURE_RESULT_1],

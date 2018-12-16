@@ -86,7 +86,8 @@ export class ContributionRegistry {
 
     protected getContributionsFromEntries(
         entries: Observable<ContributionsEntry[]>,
-        scope?: ContributionScope
+        scope: ContributionScope | undefined,
+        logWarning = (...args: any[]) => console.log(...args)
     ): Observable<Contributions> {
         return combineLatest(
             entries.pipe(
@@ -120,7 +121,7 @@ export class ContributionRegistry {
                     } catch (err) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
-                        console.error('Discarding contributions: evaluating expressions or templates failed.', {
+                        logWarning('Discarding contributions: evaluating expressions or templates failed.', {
                             contributions,
                             err,
                         })
