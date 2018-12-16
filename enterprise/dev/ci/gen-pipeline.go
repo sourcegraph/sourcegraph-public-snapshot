@@ -47,7 +47,7 @@ func main() {
 	}
 	releaseBranch := regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch)
 
-	isBextReleaseBranch := branch == "bext/release"
+	isBextBranch := strings.HasPrefix(branch, "bext/")
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
@@ -56,7 +56,7 @@ func main() {
 		bk.Env("ENTERPRISE", "1"),
 	)
 
-	if !isBextReleaseBranch {
+	if !isBextBranch {
 		pipeline.AddStep(":white_check_mark:",
 			bk.Cmd("./dev/check/all.sh"))
 	}
@@ -67,7 +67,7 @@ func main() {
 	pipeline.AddStep(":ie:",
 		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
-	if !isBextReleaseBranch {
+	if !isBextBranch {
 		pipeline.AddStep(":webpack:",
 			bk.Cmd("dev/ci/yarn-build.sh web"),
 			bk.Env("NODE_ENV", "production"),
@@ -87,7 +87,7 @@ func main() {
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
-	if !isBextReleaseBranch {
+	if !isBextBranch {
 		// TODO(sqs): reenable the DB backcompat test
 		//
 		// pipeline.AddStep(":postgres:",
@@ -180,63 +180,67 @@ func main() {
 		return
 	}
 
-	addBrowserExtensionReleaseSteps := func() {
-		// // Run e2e tests
-		// pipeline.AddStep(":chromium:",
-		// 	bk.Env("FORCE_COLOR", "1"),
-		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		// 	bk.Env("DISPLAY", ":99"),
-		// 	bk.Cmd("Xvfb :99 &"),
-		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		// 	bk.Cmd("pushd client/browser"),
-		// 	bk.Cmd("yarn -s run build"),
-		// 	bk.Cmd("yarn -s run test:ci"),
-		// 	bk.Cmd("yarn -s run test:e2e-ci --retries 5"),
-		// 	bk.Cmd("popd"),
-		// 	bk.ArtifactPaths("./puppeteer/*.png"),
-		// )
-
-		// pipeline.AddWait()
-
-		// // Run e2e tests with extensions enabled
-		// //
-		// // TODO: Remove this step when extensions are enabled by default
-		// pipeline.AddStep(":chromium:",
-		// 	bk.Env("FORCE_COLOR", "1"),
-		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		// 	bk.Env("DISPLAY", ":99"),
-		// 	bk.Cmd("Xvfb :99 &"),
-		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		// 	bk.Cmd("pushd client/browser"),
-		// 	bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
-		// 	bk.Cmd("yarn -s run test:ci"),
-		// 	bk.Cmd("yarn -s run test:e2e-ci --retries 5"),
-		// 	bk.Cmd("popd"),
-		// 	bk.ArtifactPaths("./puppeteer/*.png"),
-		// )
-
-		// pipeline.AddWait()
-
-		// Release to the Chrome Webstore
-		pipeline.AddStep(":chrome:",
+	addBrowserExtensionSteps := func() {
+		// Run e2e tests
+		pipeline.AddStep(":chromium:",
 			bk.Env("FORCE_COLOR", "1"),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("DISPLAY", ":99"),
+			bk.Cmd("Xvfb :99 &"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn release:chrome"),
-			bk.Cmd("popd"))
+			bk.Cmd("yarn -s run test"),
+			bk.Cmd("yarn -s run test:e2e --retries 5"),
+			bk.Cmd("kill %1 || echo Xvfb not running"),
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
 
-		// Build and self sign the FF extension and upload it to ...
-		pipeline.AddStep(":firefox:",
+		// Run e2e tests with extensions enabled
+		//
+		// TODO: Remove this step when extensions are enabled by default
+		pipeline.AddStep(":chromium:",
 			bk.Env("FORCE_COLOR", "1"),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("DISPLAY", ":99"),
+			bk.Cmd("Xvfb :99 &"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd client/browser"),
-			bk.Cmd("yarn release:ff"),
-			bk.Cmd("popd"))
+			bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
+			bk.Cmd("yarn -s run test"),
+			bk.Cmd("yarn -s run test:e2e --retries 5"),
+			bk.Cmd("kill %1 || echo Xvfb not running"),
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
+
+		pipeline.AddWait()
+
+		// Only actually release on the bext/release branch. This lets you push to bext/e2e if you
+		// just want to trigger the e2e tests.
+		if branch == "bext/release" {
+			// Release to the Chrome Webstore
+			pipeline.AddStep(":chrome:",
+				bk.Env("FORCE_COLOR", "1"),
+				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+				bk.Cmd("pushd client/browser"),
+				bk.Cmd("yarn -s run build"),
+				bk.Cmd("yarn release:chrome"),
+				bk.Cmd("popd"))
+
+			// Build and self sign the FF extension and upload it to ...
+			pipeline.AddStep(":firefox:",
+				bk.Env("FORCE_COLOR", "1"),
+				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+				bk.Cmd("pushd client/browser"),
+				bk.Cmd("yarn release:ff"),
+				bk.Cmd("popd"))
+		}
 	}
 
-	if isBextReleaseBranch {
-		addBrowserExtensionReleaseSteps()
+	if isBextBranch {
+		addBrowserExtensionSteps()
 		return
 	}
 
