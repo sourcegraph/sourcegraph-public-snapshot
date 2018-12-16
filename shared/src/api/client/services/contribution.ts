@@ -1,3 +1,4 @@
+import { flatten, isEqual } from 'lodash'
 import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
@@ -9,7 +10,6 @@ import {
     MenuContributions,
     MenuItemContribution,
 } from '../../protocol'
-import { flatten, isEqual } from '../../util'
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'

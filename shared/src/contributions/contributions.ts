@@ -1,4 +1,4 @@
-import { sortBy } from 'lodash-es'
+import { sortBy } from 'lodash'
 import { ActionItemProps } from '../actions/ActionItem'
 import { ContributableMenu, Contributions } from '../api/protocol'
 
