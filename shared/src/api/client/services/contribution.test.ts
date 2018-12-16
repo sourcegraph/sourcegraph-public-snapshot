@@ -202,7 +202,7 @@ describe('ContributionRegistry', () => {
                         entries: Observable<ContributionsEntry[]>,
                         scope?: ContributionScope
                     ): Observable<Contributions> {
-                        return super.getContributionsFromEntries(entries, scope, () => void 0 /* noop log */)
+                        return super.getContributionsFromEntries(entries, scope, undefined, () => void 0 /* noop log */)
                     }
                 }()
                 expectObservable(

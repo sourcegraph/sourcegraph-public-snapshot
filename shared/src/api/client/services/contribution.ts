@@ -79,14 +79,18 @@ export class ContributionRegistry {
     /**
      * Returns an observable that emits all contributions (merged) evaluated in the current model (with the
      * optional scope). It emits whenever there is any change.
+     *
+     * @param extraContext Extra context values to use when computing the contributions. Properties in this object
+     * shadow (take precedence over) properties in the global context for this computation.
      */
-    public getContributions(scope?: ContributionScope): Observable<Contributions> {
-        return this.getContributionsFromEntries(this._entries, scope)
+    public getContributions(scope?: ContributionScope | undefined, extraContext?: Context): Observable<Contributions> {
+        return this.getContributionsFromEntries(this._entries, scope, extraContext)
     }
 
     protected getContributionsFromEntries(
         entries: Observable<ContributionsEntry[]>,
         scope: ContributionScope | undefined,
+        extraContext?: Context,
         logWarning = (...args: any[]) => console.log(...args)
     ): Observable<Contributions> {
         return combineLatest(
@@ -108,6 +112,11 @@ export class ContributionRegistry {
             this.context
         ).pipe(
             map(([multiContributions, model, settings, context]) => {
+                // Merge in extra context.
+                if (extraContext) {
+                    context = { ...context, ...extraContext }
+                }
+
                 // TODO(sqs): use {@link ContextService#observeValue}
                 const computedContext = {
                     get: (key: string) => getComputedContextProperty(model, settings, context, key, scope),
