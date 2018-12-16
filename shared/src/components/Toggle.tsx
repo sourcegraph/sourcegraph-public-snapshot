@@ -13,7 +13,7 @@ interface Props {
     onToggle?: (value: boolean) => void
 
     /** The title attribute (tooltip). */
-    title: string
+    title?: string
 
     disabled?: boolean
     tabIndex?: number
