@@ -1,0 +1,131 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActionItem actionItem variant 1`] = `
+<a
+  aria-label="d"
+  className="nav-link "
+  data-tooltip="d"
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
+</a>
+`;
+
+exports[`ActionItem non-actionItem variant 1`] = `
+<a
+  aria-label="d"
+  className="nav-link "
+  data-tooltip="d"
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
+</a>
+`;
+
+exports[`ActionItem render as link for "open" command 1`] = `
+<a
+  className="nav-link "
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+  to="https://example.com"
+>
+   
+  
+  t
+</a>
+`;
+
+exports[`ActionItem run command 1`] = `
+<a
+  aria-label="d"
+  className="nav-link disabled"
+  data-tooltip="d"
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
+</a>
+`;
+
+exports[`ActionItem run command 2`] = `
+<a
+  aria-label="d"
+  className="nav-link "
+  data-tooltip="d"
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
+</a>
+`;
+
+exports[`ActionItem run command with error 1`] = `
+<a
+  aria-label="d"
+  className="nav-link "
+  data-tooltip="d"
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
+</a>
+`;
+
+exports[`ActionItem title element 1`] = `
+<a
+  aria-label="d"
+  className="nav-link "
+  data-tooltip="d"
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  <span>
+    t2
+  </span>
+</a>
+`;
