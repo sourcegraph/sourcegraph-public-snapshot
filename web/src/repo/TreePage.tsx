@@ -370,7 +370,7 @@ export class TreePage extends React.PureComponent<Props, State> {
         event.preventDefault()
         submitSearch(
             this.props.history,
-            { query: this.getQueryPrefix() + this.state.query },
+            this.getQueryPrefix() + this.state.query,
             this.props.filePath ? 'tree' : 'repo'
         )
     }

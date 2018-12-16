@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, map, startWith, switchMap, withLatestFrom } from 'rxjs/operators'
-import { buildSearchURLQuery } from '..'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchSearchResultStats } from '../backend'
 import { Sparkline } from './Sparkline'
@@ -49,7 +49,7 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
                     debounceTime(250),
                     withLatestFrom(propsChanges),
                     map(([v]) => v),
-                    switchMap(query => fetchSearchResultStats({ query })),
+                    switchMap(query => fetchSearchResultStats(query)),
                     map(results => ({
                         approximateResultCount: results.approximateResultCount,
                         sparkline: results.sparkline,
@@ -81,7 +81,7 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className={`saved-query-row ${this.props.className}`}>
-                <Link onClick={this.logEvent} to={'/search?' + buildSearchURLQuery({ query: this.props.query })}>
+                <Link onClick={this.logEvent} to={'/search?' + buildSearchURLQuery(this.props.query)}>
                     <div className="saved-query-row__row">
                         <div className="saved-query-row__row-column">
                             <div className="saved-query-row__description">

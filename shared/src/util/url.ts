@@ -446,3 +446,15 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
     return uri
 }
+
+/**
+ * Builds a URL query for the given query (without leading `?`).
+ */
+export function buildSearchURLQuery(query: string): string {
+    const searchParams = new URLSearchParams()
+    searchParams.set('q', query)
+    return searchParams
+        .toString()
+        .replace(/%2F/g, '/')
+        .replace(/%3A/g, ':')
+}

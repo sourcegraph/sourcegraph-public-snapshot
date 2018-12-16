@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { makeRepoURI, parseHash, parseRepoURI, toPrettyBlobURL } from './url'
+import { buildSearchURLQuery, makeRepoURI, parseHash, parseRepoURI, toPrettyBlobURL } from './url'
 
 /**
  * Asserts deep object equality using node's assert.deepStrictEqual, except it (1) ignores differences in the
@@ -247,4 +247,13 @@ describe('util/url', () => {
             )
         })
     })
+})
+
+describe('buildSearchURLQuery', () => {
+    it('builds the URL query for a search', () => assert.strictEqual(buildSearchURLQuery('foo'), 'q=foo'))
+    it('handles an empty query', () => assert.strictEqual(buildSearchURLQuery(''), 'q='))
+    it('handles characters that need encoding', () =>
+        assert.strictEqual(buildSearchURLQuery('foo bar%baz'), 'q=foo+bar%25baz'))
+    it('preserves / and : for readability', () =>
+        assert.strictEqual(buildSearchURLQuery('repo:foo/bar'), 'q=repo:foo/bar'))
 })

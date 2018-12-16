@@ -232,10 +232,10 @@ export class MainPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        const searchOptions = parseSearchURLQuery(props.location.search)
+        const query = parseSearchURLQuery(props.location.search)
 
         this.state = {
-            userQuery: (searchOptions && searchOptions.query) || '',
+            userQuery: query || '',
             modalSearchOpen: false,
             modalSearchClosing: false,
             modalIntelligenceOpen: false,
@@ -995,12 +995,12 @@ export class MainPage extends React.Component<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, { query: this.state.userQuery }, 'home')
+        submitSearch(this.props.history, this.state.userQuery, 'home')
     }
 
     private getPageTitle(): string | undefined {
-        const options = parseSearchURLQuery(this.props.location.search)
-        if (options && options.query) {
+        const query = parseSearchURLQuery(this.props.location.search)
+        if (query) {
             return `${limitString(this.state.userQuery, 25, true)}`
         }
         return undefined

@@ -159,7 +159,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                 value,
             },
         })
-        submitSearch(this.props.history, { query: toggleSearchFilter(this.props.query, value) }, 'filter')
+        submitSearch(this.props.history, toggleSearchFilter(this.props.query, value), 'filter')
     }
 }
 
