@@ -1,6 +1,5 @@
-import assert from 'assert'
 import { Observable } from 'rxjs'
-import { bufferCount } from 'rxjs/operators'
+import { bufferCount, first } from 'rxjs/operators'
 import { createConnection } from '../protocol/jsonrpc2/connection'
 import { createMessageTransports } from '../protocol/jsonrpc2/testHelpers'
 import { createProxy, handleRequests } from './proxy'
@@ -31,12 +30,15 @@ describe('Proxy', () => {
             },
         })
 
-        test('to functions', async () => expect(await proxy.$a(1)).toBe(2))
-        test('to async functions', async () => expect(await proxy.$b(1)).toBe(3))
-        test('with multiple arguments ', async () => expect(await proxy.$c(2, 3)).toBe(5))
-        test('with variadic arguments ', async () => expect(await proxy.$d(...[2, 3, 4])).toBe(9))
-        test('to functions returning a rejected promise', async () => assert.rejects(() => proxy.$e()))
-        test('to functions throwing an error', async () => assert.rejects(() => proxy.$f()))
+        test('to functions', async () => expect(proxy.$a(1)).resolves.toBe(2))
+        test('to async functions', async () => expect(proxy.$b(1)).resolves.toBe(3))
+        test('with multiple arguments ', async () => expect(proxy.$c(2, 3)).resolves.toBe(5))
+        test('with variadic arguments ', async () => expect(proxy.$d(...[2, 3, 4])).resolves.toBe(9))
+        test('to functions returning a rejected promise', async () =>
+            expect(proxy.$e()).rejects.toMatchObject({
+                message: 'Request prefix/$e failed unexpectedly without providing any details.',
+            }))
+        test('to functions throwing an error', async () => expect(proxy.$f()).rejects.toMatchObject({ message: 'f' }))
     })
 
     test('proxies Observables', async () => {
@@ -50,11 +52,14 @@ describe('Proxy', () => {
                 }),
         })
 
-        expect(
-            await proxy
+        await expect(
+            proxy
                 .$observe(1, 2, 3, 4)
-                .pipe(bufferCount(4))
+                .pipe(
+                    bufferCount(4),
+                    first()
+                )
                 .toPromise()
-        ).toEqual([2, 3, 4, 5])
+        ).resolves.toEqual([2, 3, 4, 5])
     })
 })

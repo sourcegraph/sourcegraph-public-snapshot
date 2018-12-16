@@ -1,12 +1,10 @@
 import { AbortController } from 'abort-controller'
-import assert from 'assert'
-import { AbortError } from 'p-retry'
 import { Observable, of } from 'rxjs'
 import { bufferCount, delay } from 'rxjs/operators'
 import { createBarrier } from '../../integration-test/testHelpers'
 import { createConnection } from './connection'
+import { ErrorCodes } from './messages'
 import { createMessagePipe, createMessageTransports } from './testHelpers'
-import { ErrorCodes, ResponseError } from './messages'
 
 describe('Connection', () => {
     // Polyfill
@@ -25,7 +23,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        expect(await client.sendRequest(method, ['foo'])).toEqual(['foo'])
+        await expect(client.sendRequest(method, ['foo'])).resolves.toEqual(['foo'])
     })
 
     test('handle single request with async result', async () => {
@@ -41,7 +39,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        expect(await client.sendRequest(method, ['foo'])).toEqual(['foo'])
+        await expect(client.sendRequest(method, ['foo'])).resolves.toEqual(['foo'])
     })
 
     test('abort undispatched request', async () => {
@@ -67,7 +65,7 @@ describe('Connection', () => {
         const result = client.sendRequest('undispatched', ['foo'], abortController.signal)
         abortController.abort()
         b1.done()
-        await assert.rejects(result, (err: AbortError) => err.name === 'AbortError')
+        await expect(result).rejects.toHaveProperty('name', 'AbortError')
     })
 
     test('abort request currently being handled', async () => {
@@ -89,9 +87,9 @@ describe('Connection', () => {
         client.listen()
         const abortController = new AbortController()
         const result = client.sendRequest('m', undefined, abortController.signal)
-        expect(await client.sendRequest('ping')).toBe('pong') // waits until the 'm' message starts to be handled
+        await expect(client.sendRequest('ping')).resolves.toBe('pong') // waits until the 'm' message starts to be handled
         abortController.abort()
-        await assert.rejects(result, (err: AbortError) => err.name === 'AbortError')
+        await expect(result).rejects.toHaveProperty('name', 'AbortError')
     })
 
     test('send request with single observable emission', async () => {
@@ -103,7 +101,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        expect(await client.sendRequest<number>('m', [1])).toBe(2)
+        await expect(client.sendRequest<number>('m', [1])).resolves.toBe(2)
     })
 
     test('observe request with single observable emission', async () => {
@@ -116,7 +114,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         client.listen()
         const result = client.observeRequest<number>('m', [1])
-        expect(await result.toPromise()).toEqual(2)
+        await expect(result.toPromise()).resolves.toEqual(2)
     })
 
     test('observe request with multiple observable emissions', async () => {
@@ -136,12 +134,12 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        expect(
-            await client
+        await expect(
+            client
                 .observeRequest<number>('m', [1, 2, 3, 4])
                 .pipe(bufferCount(4))
                 .toPromise()
-        ).toEqual([2, 3, 4, 5])
+        ).resolves.toEqual([2, 3, 4, 5])
     })
 
     test('handle multiple requests', async () => {
@@ -158,8 +156,7 @@ describe('Connection', () => {
         promises.push(client.sendRequest(method, ['foo']))
         promises.push(client.sendRequest(method, ['bar']))
 
-        const values = await Promise.all(promises)
-        expect(values).toEqual([['foo'], ['bar']])
+        await expect(Promise.all(promises)).resolves.toEqual([['foo'], ['bar']])
     })
 
     test('unhandled request', async () => {
@@ -171,10 +168,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        await assert.rejects(
-            () => client.sendRequest(method, ['foo']),
-            (error: ResponseError<any>) => error.code === ErrorCodes.MethodNotFound
-        )
+        await expect(client.sendRequest(method, ['foo'])).rejects.toHaveProperty('code', ErrorCodes.MethodNotFound)
     })
 
     test('handler throws an Error', async () => {
@@ -189,14 +183,10 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        await assert.rejects(
-            () => client.sendRequest(method, ['foo']),
-            (error: ResponseError<any>) =>
-                error.code === ErrorCodes.InternalError &&
-                error.message === 'test' &&
-                error.data &&
-                typeof error.data.stack === 'string'
-        )
+        const result = client.sendRequest(method, ['foo'])
+        await expect(result).rejects.toMatchObject({ code: ErrorCodes.InternalError, message: 'test' })
+        await expect(result).rejects.toHaveProperty('data')
+        await expect(result.catch(err => typeof err.data.stack)).resolves.toBe('string')
     })
 
     test('handler returns a rejected Promise with an Error', async () => {
@@ -209,14 +199,10 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        await assert.rejects(
-            () => client.sendRequest(method, ['foo']),
-            (error: ResponseError<any>) =>
-                error.code === ErrorCodes.InternalError &&
-                error.message === 'test' &&
-                error.data &&
-                typeof error.data.stack === 'string'
-        )
+        const result = client.sendRequest(method, ['foo'])
+        await expect(result).rejects.toMatchObject({ code: ErrorCodes.InternalError, message: 'test' })
+        await expect(result).rejects.toHaveProperty('data')
+        await expect(result.catch(err => typeof err.data.stack)).resolves.toBe('string')
     })
 
     test('receives undefined request params as null', async () => {
@@ -264,7 +250,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        expect(await client.sendRequest(method, [null])).toBe(null)
+        await expect(client.sendRequest(method, [null])).resolves.toBe(null)
     })
 
     test('receives 0 as 0', async () => {
@@ -280,7 +266,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        expect(await client.sendRequest(method, [0])).toBe(0)
+        await expect(client.sendRequest(method, [0])).resolves.toBe(0)
     })
 
     const testNotification = 'testNotification'
@@ -328,7 +314,11 @@ describe('Connection', () => {
         server.listen()
 
         client.listen()
-        await assert.rejects(() => client.sendRequest(method, ['']))
+        await expect(client.sendRequest(method, [''])).rejects.toMatchObject({
+            message:
+                'The underlying JSON-RPC connection got unsubscribed while responding to this test/handleSingleRequest request.',
+        })
+        server.unsubscribe()
     })
 
     test('unsubscribed connection throws', () => {
@@ -382,7 +372,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        expect(await client.sendRequest(method, [10, 20, 30])).toBe(60)
+        await expect(client.sendRequest(method, [10, 20, 30])).resolves.toBe(60)
     })
 
     test('params in request/response with signal', async () => {
@@ -399,7 +389,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         const signal = new AbortController().signal
         client.listen()
-        expect(await client.sendRequest(method, [10, 20, 30], signal)).toBe(60)
+        await expect(client.sendRequest(method, [10, 20, 30], signal)).resolves.toBe(60)
     })
 
     test('1 param as array in request', async () => {
@@ -419,7 +409,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         const signal = new AbortController().signal
         client.listen()
-        expect(await client.sendRequest(type, [10, 20, 30], signal)).toBe(60)
+        await expect(client.sendRequest(type, [10, 20, 30], signal)).resolves.toBe(60)
     })
 
     test('1 param as array in notification', done => {
@@ -451,7 +441,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         const signal = new AbortController().signal
         client.listen()
-        expect(await client.sendRequest('test', [10, 20, 30], signal)).toBe(60)
+        await expect(client.sendRequest('test', [10, 20, 30], signal)).resolves.toBe(60)
     })
 
     test('untyped notification', done => {
@@ -483,7 +473,7 @@ describe('Connection', () => {
         const client = createConnection(clientTransports)
         const signal = new AbortController().signal
         client.listen()
-        expect(await client.sendRequest('test', [10, 20, 30], signal)).toBe(60)
+        await expect(client.sendRequest('test', [10, 20, 30], signal)).resolves.toBe(60)
     })
 
     test('star notification handler', done => {
@@ -515,7 +505,7 @@ describe('Connection', () => {
 
         const client = createConnection(clientTransports)
         client.listen()
-        expect(await client.sendRequest(type, [10, 20, 30], undefined)).toBe(60)
+        await expect(client.sendRequest(type, [10, 20, 30], undefined)).resolves.toBe(60)
     })
 
     test('null params in request', async () => {
