@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
 import { ContributableMenu, Contributions } from '../../protocol'
-import { Context } from '../context/context'
+import { Context, ContributionScope } from '../context/context'
 import { EMPTY_COMPUTED_CONTEXT } from '../context/expr/evaluator'
 import { EMPTY_MODEL, Model } from '../model'
 import {
@@ -99,7 +99,7 @@ describe('ContributionRegistry', () => {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
                 ): Observable<Contributions> {
-                    return super.getContributionsFromEntries(entries)
+                    return super.getContributionsFromEntries(entries, undefined)
                 }
             }(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) =>
@@ -123,7 +123,7 @@ describe('ContributionRegistry', () => {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
                 ): Observable<Contributions> {
-                    return super.getContributionsFromEntries(entries)
+                    return super.getContributionsFromEntries(entries, undefined)
                 }
             }(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) =>
@@ -169,7 +169,7 @@ describe('ContributionRegistry', () => {
                     public getContributionsFromEntries(
                         entries: Observable<ContributionsEntry[]>
                     ): Observable<Contributions> {
-                        return super.getContributionsFromEntries(entries)
+                        return super.getContributionsFromEntries(entries, undefined)
                     }
                 }()
                 expectObservable(
@@ -199,9 +199,10 @@ describe('ContributionRegistry', () => {
                     }
 
                     public getContributionsFromEntries(
-                        entries: Observable<ContributionsEntry[]>
+                        entries: Observable<ContributionsEntry[]>,
+                        scope?: ContributionScope
                     ): Observable<Contributions> {
-                        return super.getContributionsFromEntries(entries)
+                        return super.getContributionsFromEntries(entries, scope, () => void 0 /* noop log */)
                     }
                 }()
                 expectObservable(

@@ -63,7 +63,8 @@ describe('getLocations', () => {
                     cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
                         a: [() => of(FIXTURE_LOCATION), () => throwError('x')],
                     }),
-                    FIXTURE.TextDocumentPositionParams
+                    FIXTURE.TextDocumentPositionParams,
+                    false
                 )
             ).toBe('-a-|', {
                 a: [FIXTURE_LOCATION],

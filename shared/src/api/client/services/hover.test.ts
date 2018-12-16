@@ -90,7 +90,8 @@ describe('getHover', () => {
                         cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
                             a: [() => of(FIXTURE_RESULT), () => throwError('err')],
                         }),
-                        FIXTURE.TextDocumentPositionParams
+                        FIXTURE.TextDocumentPositionParams,
+                        false
                     )
                 ).toBe('-a-|', {
                     a: FIXTURE_RESULT_MERGED,
