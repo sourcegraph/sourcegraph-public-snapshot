@@ -44,7 +44,7 @@ export class ContributionRegistry {
     public constructor(
         private model: Subscribable<Model>,
         private settingsService: Pick<SettingsService, 'data'>,
-        private context: Subscribable<Context>
+        private context: Subscribable<Context<any>>
     ) {}
 
     /** Register contributions and return an unsubscribable that deregisters the contributions. */
@@ -80,17 +80,26 @@ export class ContributionRegistry {
      * Returns an observable that emits all contributions (merged) evaluated in the current model (with the
      * optional scope). It emits whenever there is any change.
      *
+     * @template T Extra allowed property value types for the {@link Context} value. See {@link Context}'s `T` type
+     * parameter for more information.
      * @param extraContext Extra context values to use when computing the contributions. Properties in this object
      * shadow (take precedence over) properties in the global context for this computation.
      */
-    public getContributions(scope?: ContributionScope | undefined, extraContext?: Context): Observable<Contributions> {
+    public getContributions<T>(
+        scope?: ContributionScope | undefined,
+        extraContext?: Context<T>
+    ): Observable<Contributions> {
         return this.getContributionsFromEntries(this._entries, scope, extraContext)
     }
 
-    protected getContributionsFromEntries(
+    /**
+     * @template T Extra allowed property value types for the {@link Context} value. See {@link Context}'s `T` type
+     * parameter for more information.
+     */
+    protected getContributionsFromEntries<T>(
         entries: Observable<ContributionsEntry[]>,
         scope: ContributionScope | undefined,
-        extraContext?: Context,
+        extraContext?: Context<T>,
         logWarning = (...args: any[]) => console.log(...args)
     ): Observable<Contributions> {
         return combineLatest(
