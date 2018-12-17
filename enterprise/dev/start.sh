@@ -20,6 +20,7 @@ source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
 export DEV_OVERRIDE_CRITICAL_CONFIG=$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json
 export DEV_OVERRIDE_SITE_CONFIG=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
+export DEV_OVERRIDE_EXTSVC_CONFIG=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
 export GOMOD_ROOT=$PWD
 export PROCFILE=$PWD/dev/Procfile
 export ENTERPRISE_COMMANDS="frontend"
