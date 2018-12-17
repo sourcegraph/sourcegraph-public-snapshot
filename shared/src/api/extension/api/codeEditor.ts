@@ -33,7 +33,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
     }
 
     public setDecorations(
-        decorationType: sourcegraph.TextDocumentDecorationType,
+        decorationType: sourcegraph.TextDocumentDecorationType | null,
         decorations: sourcegraph.TextDocumentDecoration[]
     ): void {
         // Backcompat: extensions developed against an older version of the API

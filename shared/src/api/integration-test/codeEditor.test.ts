@@ -63,26 +63,25 @@ describe('CodeEditor (integration)', () => {
                 },
             ])
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
-                    .toPromise(),
-                [
-                    {
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        after: {
-                            hoverMessage: 'foo',
-                        },
+                    .toPromise()
+            ).toEqual([
+                {
+                    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                    after: {
+                        hoverMessage: 'foo',
                     },
-                    {
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        after: {
-                            hoverMessage: 'bar',
-                        },
+                },
+                {
+                    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                    after: {
+                        hoverMessage: 'bar',
                     },
-                ] as clientType.TextDocumentDecoration[]
-            )
+                },
+            ] as clientType.TextDocumentDecoration[])
 
             // Change decorations only for dt1, and check that merged decorations are coherent
             codeEditor.setDecorations(dt1, [
@@ -94,44 +93,42 @@ describe('CodeEditor (integration)', () => {
                 },
             ])
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
-                    .toPromise(),
-                [
-                    {
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        after: {
-                            hoverMessage: 'baz',
-                        },
+                    .toPromise()
+            ).toEqual([
+                {
+                    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                    after: {
+                        hoverMessage: 'baz',
                     },
-                    {
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        after: {
-                            hoverMessage: 'bar',
-                        },
+                },
+                {
+                    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                    after: {
+                        hoverMessage: 'bar',
                     },
-                ] as clientType.TextDocumentDecoration[]
-            )
+                },
+            ] as clientType.TextDocumentDecoration[])
 
             // remove decorations for dt2, and verify that decorations for dt1 are still present
             codeEditor.setDecorations(dt2, [])
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
-                    .toPromise(),
-                [
-                    {
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        after: {
-                            hoverMessage: 'baz',
-                        },
+                    .toPromise()
+            ).toEqual([
+                {
+                    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                    after: {
+                        hoverMessage: 'baz',
                     },
-                ] as clientType.TextDocumentDecoration[]
-            )
+                },
+            ] as clientType.TextDocumentDecoration[])
         })
 
         it('is backwards compatible with extensions that do not provide a decoration type', async () => {
@@ -160,24 +157,23 @@ describe('CodeEditor (integration)', () => {
 
             // Both sets of decorations should be displayed
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
-                    .toPromise(),
-                [
-                    {
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        backgroundColor: 'red',
+                    .toPromise()
+            ).toEqual([
+                {
+                    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                    backgroundColor: 'red',
+                },
+                {
+                    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                    after: {
+                        hoverMessage: 'foo',
                     },
-                    {
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        after: {
-                            hoverMessage: 'foo',
-                        },
-                    },
-                ] as clientType.TextDocumentDecoration[]
-            )
+                },
+            ] as clientType.TextDocumentDecoration[])
         })
     })
 })
