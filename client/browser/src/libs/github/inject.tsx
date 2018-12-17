@@ -8,7 +8,6 @@ import { ContextualSourcegraphButton } from '../../shared/components/ContextualS
 import { ServerAuthButton } from '../../shared/components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
 import { WithResolvedRev } from '../../shared/components/WithResolvedRev'
-import { hideTooltip } from '../../shared/repo/tooltips'
 import { inlineSymbolSearchEnabled, renderMermaidGraphsEnabled } from '../../shared/util/context'
 import { getFileContainers, parseURL } from './util'
 
@@ -22,7 +21,6 @@ async function refreshModules(): Promise<void> {
     for (const el of Array.from(document.querySelectorAll('.sg-annotated'))) {
         el.classList.remove('sg-annotated')
     }
-    hideTooltip()
     await inject()
 }
 
@@ -49,7 +47,7 @@ function injectServerBanner(): void {
         return
     }
 
-    const { isPullRequest, repoPath } = parseURL()
+    const { isPullRequest, repoName } = parseURL()
     if (!isPullRequest) {
         return
     }
@@ -69,7 +67,7 @@ function injectServerBanner(): void {
         }
         container.appendChild(mount)
     }
-    render(<Alerts repoPath={repoPath} />, mount)
+    render(<Alerts repoName={repoName} />, mount)
 }
 
 /**
@@ -90,12 +88,12 @@ function injectOpenOnSourcegraphButton(): void {
         }
         pageheadActions.insertBefore(container, pageheadActions.children[0])
         if (container) {
-            const { repoPath, rev } = parseURL()
-            if (repoPath) {
+            const { repoName, rev } = parseURL()
+            if (repoName) {
                 render(
                     <WithResolvedRev
                         component={ContextualSourcegraphButton}
-                        repoPath={repoPath}
+                        repoName={repoName}
                         rev={rev}
                         defaultBranch={'HEAD'}
                         notFoundComponent={ConfigureSourcegraphButton}
@@ -162,7 +160,7 @@ function injectMermaid(): void {
         clearTimeout(timeout)
         // Need to use window.setTimeout because:
         // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/21310#issuecomment-367919251
-        timeout = window.setTimeout(() => renderMermaidCharts(), 100)
+        timeout = window.setTimeout(() => renderMermaidCharts(), 200)
     }
 
     const observer = new MutationObserver(() => handleDomChange())

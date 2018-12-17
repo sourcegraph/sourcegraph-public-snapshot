@@ -14,6 +14,8 @@ Before debugging your extension, make sure of the following things:
 
 For quick debugging, you can use `console.log` (or [other `console` methods](https://developer.mozilla.org/en-US/docs/Web/API/console)). Sourcegraph extensions just consist of JavaScript code running in your browser in a Web Worker, so all of your favorite JavaScript debugging tricks work.
 
+If debugging on a code host e.g. GitHub, the extension runs as a background script. To view your `console.log` statements, go to the background page in chrome://extensions. If you are unable to see a "Background page" link under the Sourcegraph extension then you need to enable Developer mode.
+
 ## Use the JavaScript debugger
 
 Because Sourcegraph extensions just consist of JavaScript code that runs in a Web Worker in your browser, you can use your browser's JavaScript debugger to set breakpoints and step through execution.

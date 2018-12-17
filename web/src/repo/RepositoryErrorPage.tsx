@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -10,7 +9,7 @@ import { catchError, delay, distinctUntilChanged, map, switchMap, withLatestFrom
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage, HeroPageProps } from '../components/HeroPage'
-import { addRepository, checkMirrorRepositoryConnection, setRepositoryEnabled } from '../site-admin/backend'
+import { checkMirrorRepositoryConnection, setRepositoryEnabled } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
@@ -28,9 +27,6 @@ interface Props {
     /** Whether the viewer is a site admin. */
     viewerCanAdminister: boolean
 
-    /** Called when the repository is successfully added. */
-    onDidAddRepository?: () => void
-
     /** Called when the repository is successfully enabled. */
     onDidUpdateRepository?: (update: Partial<GQL.IRepository>) => void
 }
@@ -45,12 +41,6 @@ interface State {
      * Whether the site admin can add this repository. undefined while loading.
      */
     canAddOrError?: boolean | ErrorLike
-
-    /**
-     * Whether the repository was added successfully. undefined before being triggered, 'loading' while loading,
-     * true if successful, and an error otherwise.
-     */
-    addedOrError?: true | 'loading' | ErrorLike
 
     /**
      * Whether the option to enable the repository should be shown.
@@ -75,7 +65,6 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
     }
 
     private componentUpdates = new Subject<Props>()
-    private addClicks = new Subject<void>()
     private enableClicks = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -106,45 +95,6 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
-        )
-
-        // Handle add.
-        this.subscriptions.add(
-            this.addClicks
-                .pipe(
-                    withLatestFrom(this.componentUpdates),
-                    switchMap(([, { repo }]) =>
-                        merge<Pick<State, 'addedOrError'>>(
-                            of<Pick<State, 'addedOrError'>>({ addedOrError: 'loading' }),
-                            addRepository(repo).pipe(
-                                switchMap(({ id }) => setRepositoryEnabled(id, true)),
-                                map(c => true),
-
-                                // HACK: Delay for gitserver to report the repository as cloning (after
-                                // the call to setRepositoryEnabled above, which will trigger a clone).
-                                // Without this, there is a race condition where immediately after
-                                // clicking this enable button, gitserver reports revision-not-found and
-                                // not cloning-in-progress. We need it to report cloning-in-progress so
-                                // that the browser polls for the clone to be complete.
-                                //
-                                // See https://github.com/sourcegraph/sourcegraph/pull/9304.
-                                delay(1500),
-
-                                catchError(error => [asError(error)]),
-                                map(c => ({ addedOrError: c } as Pick<State, 'addedOrError'>))
-                            )
-                        )
-                    )
-                )
-                .subscribe(
-                    stateUpdate => {
-                        this.setState(stateUpdate)
-                        if (this.props.onDidAddRepository && stateUpdate.addedOrError === true) {
-                            this.props.onDidAddRepository()
-                        }
-                    },
-                    error => console.error(error)
-                )
         )
 
         // Show/hide enable.
@@ -251,34 +201,14 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                         {this.state.canAddOrError === true && (
                                             <>
                                                 As a site admin, you can add this repository to Sourcegraph to allow
-                                                users to search and view it.
+                                                users to search and view it by{' '}
+                                                <a href="/site-admin/external-services">
+                                                    connecting an external service
+                                                </a>.
                                             </>
                                         )}
                                     </div>
-                                    <div className="repository-error-page__section-action">
-                                        <button
-                                            className="btn btn-primary repository-error-page__btn"
-                                            onClick={this.addRepository}
-                                            disabled={
-                                                this.state.canAddOrError !== true ||
-                                                this.state.addedOrError === 'loading'
-                                            }
-                                        >
-                                            {this.state.canAddOrError === undefined ||
-                                            this.state.addedOrError === 'loading' ? (
-                                                <LoadingSpinner className="icon-inline" />
-                                            ) : (
-                                                <AddIcon className="icon-inline" />
-                                            )}{' '}
-                                            Add repository
-                                        </button>
-                                    </div>
                                 </div>
-                                {isErrorLike(this.state.addedOrError) && (
-                                    <div className="alert alert-danger repository-error-page__alert mt-2">
-                                        Error adding repository: {upperFirst(this.state.addedOrError.message)}
-                                    </div>
-                                )}
                             </div>
                         )}
                         {this.state.showEnable && (
@@ -318,6 +248,5 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private addRepository = () => this.addClicks.next()
     private enableRepository = () => this.enableClicks.next()
 }

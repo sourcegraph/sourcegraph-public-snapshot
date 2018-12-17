@@ -5,6 +5,7 @@ import { Connection, createConnection, Logger, MessageTransports } from '../prot
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
 import { ExtContext } from './api/context'
+import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
@@ -190,7 +191,8 @@ function createExtensionAPI(
             get windows(): sourcegraph.Window[] {
                 return windows.getAll()
             },
-            createPanelView: id => views.createPanelView(id),
+            createPanelView: (id: string) => views.createPanelView(id),
+            createDecorationType,
         },
 
         workspace: {
@@ -206,36 +208,57 @@ function createExtensionAPI(
 
         configuration: {
             get: () => configuration.get(),
-            subscribe: next => configuration.subscribe(next),
+            subscribe: (next: () => void) => configuration.subscribe(next),
         },
 
         languages: {
-            registerHoverProvider: (selector, provider) => languageFeatures.registerHoverProvider(selector, provider),
-            registerDefinitionProvider: (selector, provider) =>
-                languageFeatures.registerDefinitionProvider(selector, provider),
-            registerTypeDefinitionProvider: (selector, provider) =>
-                languageFeatures.registerTypeDefinitionProvider(selector, provider),
-            registerImplementationProvider: (selector, provider) =>
-                languageFeatures.registerImplementationProvider(selector, provider),
-            registerReferenceProvider: (selector, provider) =>
-                languageFeatures.registerReferenceProvider(selector, provider),
-            registerLocationProvider: (id, selector, provider) =>
-                languageFeatures.registerLocationProvider(id, selector, provider),
+            registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>
+                languageFeatures.registerHoverProvider(selector, provider),
+
+            registerDefinitionProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.DefinitionProvider
+            ) => languageFeatures.registerDefinitionProvider(selector, provider),
+
+            registerTypeDefinitionProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.TypeDefinitionProvider
+            ) => languageFeatures.registerTypeDefinitionProvider(selector, provider),
+
+            registerImplementationProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.ImplementationProvider
+            ) => languageFeatures.registerImplementationProvider(selector, provider),
+
+            registerReferenceProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.ReferenceProvider
+            ) => languageFeatures.registerReferenceProvider(selector, provider),
+
+            registerLocationProvider: (
+                id: string,
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.LocationProvider
+            ) => languageFeatures.registerLocationProvider(id, selector, provider),
         },
 
         search: {
-            registerQueryTransformer: provider => search.registerQueryTransformer(provider),
-            registerSearchResultProvider: provider => search.registerSearchResultProvider(provider),
+            registerQueryTransformer: (provider: sourcegraph.QueryTransformer) =>
+                search.registerQueryTransformer(provider),
+            registerSearchResultProvider: (provider: sourcegraph.SearchResultProvider) =>
+                search.registerSearchResultProvider(provider),
         },
 
         commands: {
-            registerCommand: (command, callback) => commands.registerCommand({ command, callback }),
-            executeCommand: (command, ...args) => commands.executeCommand(command, args),
+            registerCommand: (command: string, callback: (...args: any[]) => any) =>
+                commands.registerCommand({ command, callback }),
+
+            executeCommand: (command: string, ...args: any[]) => commands.executeCommand(command, args),
         },
 
         internal: {
             sync,
-            updateContext: updates => context.updateContext(updates),
+            updateContext: (updates: sourcegraph.ContextValues) => context.updateContext(updates),
             sourcegraphURL: new URI(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,
         },

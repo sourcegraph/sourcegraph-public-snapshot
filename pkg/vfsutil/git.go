@@ -44,7 +44,7 @@ func (fs *GitRepoVFS) fetchOrWait(ctx context.Context) error {
 	return fs.err
 }
 
-var gitArchiveBasePath = "/tmp/xlang-git-clone-cache"
+var gitArchiveBasePath = "/tmp/vfsutil-clone-cache"
 
 func (fs *GitRepoVFS) fetch(ctx context.Context) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS fetch")

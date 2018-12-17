@@ -54,7 +54,7 @@ export class ClientViews implements ClientViewsAPI {
                             priority,
                             locationProvider: component
                                 ? (params: TextDocumentPositionParams) =>
-                                      this.textDocumentLocations.getLocation(component.locationProvider, params)
+                                      this.textDocumentLocations.getLocations(component.locationProvider, params)
                                 : undefined,
                         } as PanelViewWithComponent)
                 )

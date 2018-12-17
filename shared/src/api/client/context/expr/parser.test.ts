@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { TokenType } from './lexer'
 import { Expression, Parser, TemplateParser } from './parser'
 
@@ -196,16 +195,16 @@ describe('Parser', () => {
     }
     const parser = new Parser()
     for (const [expr, want] of Object.entries(TESTS)) {
-        it(expr, () => assert.deepStrictEqual(parser.parse(expr), want))
+        test(expr, () => expect(parser.parse(expr)).toEqual(want))
     }
 
-    it('throws an error on an invalid argument list', () => assert.throws(() => parser.parse('a(1,,)')))
-    it('throws an error on an unclosed string', () => assert.throws(() => parser.parse('"')))
-    it('throws an error on an unclosed template', () => assert.throws(() => parser.parse('`')))
-    it('throws an error on an invalid unary operator', () => assert.throws(() => parser.parse('!')))
-    it('throws an error on an invalid binary operator', () => assert.throws(() => parser.parse('a*')))
-    it('throws an error on an unclosed function call', () => assert.throws(() => parser.parse('a(')))
-    it('throws an error on an unterminated expression', () => assert.throws(() => parser.parse('(a=')))
+    test('throws an error on an invalid argument list', () => expect(() => parser.parse('a(1,,)')).toThrow())
+    test('throws an error on an unclosed string', () => expect(() => parser.parse('"')).toThrow())
+    test('throws an error on an unclosed template', () => expect(() => parser.parse('`')).toThrow())
+    test('throws an error on an invalid unary operator', () => expect(() => parser.parse('!')).toThrow())
+    test('throws an error on an invalid binary operator', () => expect(() => parser.parse('a*')).toThrow())
+    test('throws an error on an unclosed function call', () => expect(() => parser.parse('a(')).toThrow())
+    test('throws an error on an unterminated expression', () => expect(() => parser.parse('(a=')).toThrow())
 })
 
 describe('TemplateParser', () => {
@@ -291,6 +290,6 @@ describe('TemplateParser', () => {
     }
     const parser = new TemplateParser()
     for (const [template, want] of Object.entries(TESTS)) {
-        it(template, () => assert.deepStrictEqual(parser.parse(template), want))
+        test(template, () => expect(parser.parse(template)).toEqual(want))
     }
 })

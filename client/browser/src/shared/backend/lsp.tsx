@@ -1,16 +1,15 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
+import { Location } from '@sourcegraph/extension-api-types'
 import { from, Observable, of, OperatorFunction, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { TextDocumentIdentifier } from '../../../../../shared/src/api/client/types/textDocument'
 import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
-import { Definition } from '../../../../../shared/src/api/protocol/plainTypes'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import {
     AbsoluteRepo,
-    AbsoluteRepoFile,
     AbsoluteRepoFilePosition,
     FileSpec,
     makeRepoURI,
@@ -19,7 +18,7 @@ import {
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
-} from '../repo'
+} from '../../../../../shared/src/util/url'
 import { canFetchForURL, DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL } from '../util/url'
@@ -100,7 +99,7 @@ function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
             id: 0,
             method: 'initialize',
             params: {
-                rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
+                rootUri: `git://${ctx.repoName}?${ctx.commitID}`,
                 initializationOptions: { mode: `${getModeFromPath(path)}` },
             },
         },
@@ -159,7 +158,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
             method: 'textDocument/hover',
             params: {
                 textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                    uri: `git://${pos.repoName}?${pos.commitID}#${pos.filePath}`,
                 },
                 position: {
                     character: pos.position.character! - 1,
@@ -171,7 +170,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
         pos.filePath
     )
 
-    const url = repoUrlCache[pos.repoPath] || sourcegraphUrl
+    const url = repoUrlCache[pos.repoName] || sourcegraphUrl
     if (!url) {
         throw new Error('Error fetching hover: No URL found.')
     }
@@ -182,7 +181,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
     return request(url, 'textDocument/hover', body).pipe(extractLSPResponse)
 }, makeRepoURI)
 
-const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Definition> => {
+const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Location | Location[] | null> => {
     const mode = getModeFromPath(pos.filePath)
     if (!mode || unsupportedModes.has(mode)) {
         return of([])
@@ -193,7 +192,7 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
             method: 'textDocument/definition',
             params: {
                 textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                    uri: `git://${pos.repoName}?${pos.commitID}#${pos.filePath}`,
                 },
                 position: {
                     character: pos.position.character! - 1,
@@ -205,7 +204,7 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
         pos.filePath
     )
 
-    const url = repoUrlCache[pos.repoPath] || sourcegraphUrl
+    const url = repoUrlCache[pos.repoName] || sourcegraphUrl
     if (!url) {
         throw new Error('Error fetching definition: No URL found.')
     }
@@ -240,9 +239,9 @@ export type JumpURLLocation = RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & 
 export function createJumpURLFetcher(
     fetchDefinition: SimpleProviderFns['fetchDefinition'],
     buildURL: (pos: JumpURLLocation) => string
-): JumpURLFetcher {
-    return ({ line, character, part, commitID, repoPath, ...rest }) =>
-        fetchDefinition({ ...rest, commitID, repoPath, position: { line, character } }).pipe(
+): JumpURLFetcher<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> {
+    return ({ line, character, part, commitID, repoName, ...rest }) =>
+        fetchDefinition({ ...rest, commitID, repoName, position: { line, character } }).pipe(
             map(def => {
                 const defArray = Array.isArray(def) ? def : [def]
                 def = defArray[0]
@@ -252,9 +251,9 @@ export function createJumpURLFetcher(
 
                 const uri = parseRepoURI(def.uri)
                 return buildURL({
-                    repoPath: uri.repoPath,
+                    repoName: uri.repoName,
                     commitID: uri.commitID!, // LSP proxy always includes a commitID in the URI.
-                    rev: uri.repoPath === repoPath && uri.commitID === commitID ? rest.rev : uri.rev!, // If the commitID is the same, keep the rev.
+                    rev: uri.repoName === repoName && uri.commitID === commitID ? rest.rev : uri.rev!, // If the commitID is the same, keep the rev.
                     filePath: uri.filePath!, // There's never going to be a definition without a file.
                     position: def.range
                         ? {
@@ -270,7 +269,7 @@ export function createJumpURLFetcher(
 
 export interface SimpleProviderFns {
     fetchHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
-    fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Definition>
+    fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Location | Location[] | null>
 }
 
 export const lspViaAPIXlang: SimpleProviderFns = {
@@ -278,8 +277,8 @@ export const lspViaAPIXlang: SimpleProviderFns = {
     fetchDefinition,
 }
 
-export const toTextDocumentIdentifier = (pos: AbsoluteRepoFile): TextDocumentIdentifier => ({
-    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+export const toTextDocumentIdentifier = (pos: RepoSpec & ResolvedRevSpec & FileSpec): TextDocumentIdentifier => ({
+    uri: `git://${pos.repoName}?${pos.commitID}#${pos.filePath}`,
 })
 
 const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocumentPositionParams => ({
@@ -299,6 +298,6 @@ export const createLSPFromExtensions = (extensionsController: Controller): Simpl
         ),
     fetchDefinition: pos =>
         from(
-            extensionsController.services.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))
-        ) as Observable<Definition>,
+            extensionsController.services.textDocumentDefinition.getLocations(toTextDocumentPositionParams(pos))
+        ) as Observable<Location | Location[] | null>,
 })

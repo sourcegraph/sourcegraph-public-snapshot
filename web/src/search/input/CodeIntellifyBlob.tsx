@@ -2,24 +2,32 @@ import {
     createHoverifier,
     findPositionsFromEvents,
     HoveredToken,
-    HoveredTokenContext,
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getTokenAtPosition } from '@sourcegraph/codeintellify/lib/token_position'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
+import { Position } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
-import { Subject, Subscription } from 'rxjs'
+import { Subject, Subscribable, Subscription } from 'rxjs'
 import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
-import { Position } from '../../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import {
+    FileSpec,
+    ModeSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+} from '../../../../shared/src/util/url'
 import { getHover, getJumpURL } from '../../backend/features'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { fetchBlob } from '../../repo/blob/BlobPage'
 
 interface Props extends ExtensionsControllerProps {
@@ -83,7 +91,7 @@ const domFunctions = {
     },
 }
 
-const REPO_PATH = 'github.com/gorilla/mux'
+const REPO_NAME = 'github.com/gorilla/mux'
 const COMMIT_ID = '9e1f5955c0d22b55d9e20d6faa28589f83b2faca'
 const REV = undefined
 const FILE_PATH = 'mux.go'
@@ -120,7 +128,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         super(props)
         this.state = {}
 
-        const hoverifier = createHoverifier({
+        const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>({
             closeButtonClicks: this.closeButtonClicks,
             goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -140,8 +148,10 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                 filter(propertyIsDefined('relativeElement')),
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            fetchHover: hoveredToken =>
+                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props) as Subscribable<HoverMerged>,
             fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })
 
         this.subscriptions.add(hoverifier)
@@ -158,7 +168,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
             hoverifier.hoverify({
                 positionEvents,
                 resolveContext: () => ({
-                    repoPath: REPO_PATH,
+                    repoName: REPO_NAME,
                     commitID: COMMIT_ID,
                     rev: REV || '',
                     filePath: FILE_PATH,
@@ -190,7 +200,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     public componentDidMount(): void {
         // Fetch repository revision.
         fetchBlob({
-            repoPath: REPO_PATH,
+            repoName: REPO_NAME,
             commitID: COMMIT_ID,
             filePath: FILE_PATH,
             isLightTheme: false,
@@ -230,10 +240,10 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     }
 
     private getLSPTextDocumentPositionParams(
-        position: HoveredToken & HoveredTokenContext
-    ): LSPTextDocumentPositionParams {
+        position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
-            repoPath: position.repoPath,
+            repoName: position.repoName,
             filePath: position.filePath,
             commitID: position.commitID,
             rev: position.rev,

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -211,7 +210,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	} else if args.CloneURL != nil {
 		// Query by git clone URL
 		var err error
-		name, err = reposource.CloneURLToRepoName(*args.CloneURL)
+		name, err = reposourceCloneURLToRepoName(ctx, *args.CloneURL)
 		if err != nil {
 			return nil, err
 		}
@@ -234,10 +233,6 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := refreshRepo(ctx, repo); err != nil {
-		return nil, err
-	}
-
 	return &repositoryResolver{repo: repo}, nil
 }
 
@@ -255,15 +250,6 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &phabricatorRepoResolver{repo}, nil
-}
-
-var skipRefresh = false // set by tests
-
-func refreshRepo(ctx context.Context, repo *types.Repo) error {
-	if skipRefresh {
-		return nil
-	}
-	return backend.Repos.RefreshIndex(ctx, repo)
 }
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {

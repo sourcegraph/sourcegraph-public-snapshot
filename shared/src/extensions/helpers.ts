@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash'
 import { from, Observable, of, throwError } from 'rxjs'
 import {
     catchError,
@@ -9,7 +10,6 @@ import {
     startWith,
     switchMap,
 } from 'rxjs/operators'
-import { isEqual } from '../api/util'
 import { gql, graphQLContent } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'

@@ -1,6 +1,6 @@
-import { from, Subscription } from 'rxjs'
+import { from, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { ContextValues } from 'sourcegraph'
+import { ContextValues, Progress, ProgressOptions } from 'sourcegraph'
 import { Connection } from '../protocol/jsonrpc2/connection'
 import { Tracer } from '../protocol/jsonrpc2/trace'
 import { ClientCodeEditor } from './api/codeEditor'
@@ -65,7 +65,6 @@ export function createExtensionHostClientConnection(
             services.context.data.next(applyContextUpdate(services.context.data.value, updates))
         )
     )
-    subscription.add(new ClientExtensions(connection, services.extensions))
     subscription.add(
         new ClientWindows(
             connection,
@@ -81,7 +80,12 @@ export function createExtensionHostClientConnection(
             (params: ShowInputParams) =>
                 new Promise<string | null>(resolve => {
                     services.notifications.showInputs.next({ ...params, resolve })
-                })
+                }),
+            ({ title }: ProgressOptions) => {
+                const reporter = new Subject<Progress>()
+                services.notifications.progresses.next({ title, progress: reporter.asObservable() })
+                return reporter
+            }
         )
     )
     subscription.add(new ClientViews(connection, services.views, services.textDocumentLocations))
@@ -120,6 +124,7 @@ export function createExtensionHostClientConnection(
             )
         )
     )
+    subscription.add(new ClientExtensions(connection, services.extensions))
 
     return {
         setTracer: tracer => {

@@ -1,8 +1,8 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { Location } from '../../api/protocol/plainTypes'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../components/RepoLink'
@@ -14,6 +14,7 @@ import { asError } from '../../util/errors'
 import { parseRepoURI } from '../../util/url'
 import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
+import { groupLocations } from './locations'
 
 interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
     /**
@@ -26,7 +27,7 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
      * Usually this is set to the URI to the root of the repository that is currently being viewed to ensure that
      * it is listed first.
      */
-    defaultGroup?: string
+    defaultGroup: string
 
     /** Called when an item in the tree is selected. */
     onSelectTree?: () => void
@@ -128,12 +129,12 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
         const GROUPS: {
             name: string
             defaultSize: number
-            key: (uri: string) => string
+            key: (loc: Location) => string | undefined
         }[] = [
             {
                 name: 'repo',
-                defaultSize: 100,
-                key: (uri: string): string => parseRepoURI(uri).repoPath,
+                defaultSize: 175,
+                key: loc => parseRepoURI(loc.uri).repoName,
             },
         ]
         const groupByFile =
@@ -144,92 +145,83 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
             GROUPS.push({
                 name: 'file',
                 defaultSize: 200,
-                key: (uri: string): string => parseRepoURI(uri).filePath || '',
+                key: loc => parseRepoURI(loc.uri).filePath,
             })
         }
 
-        // Grouped locations.
-        const locationsByGroup: Map<string, Location[]>[] = []
-
-        // Groups with >0 locations, in order (preserving order reduces jitter as more results stream in).
-        const orderedGroups: string[][] = this.props.defaultGroup ? [[GROUPS[0].key(this.props.defaultGroup)]] : []
-
-        // The selected groups, or the first group if none is selected.
-        const { locationsOrError } = this.state
-        const selectedGroups: string[] | undefined = GROUPS.map(
-            ({ key }, i) =>
-                this.state.selectedGroups && this.state.selectedGroups[i]
-                    ? this.state.selectedGroups[i]
-                    : key(this.props.defaultGroup || locationsOrError[0].uri) || key(locationsOrError[0].uri)
+        const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
+            this.state.locationsOrError,
+            this.state.selectedGroups || null,
+            GROUPS.map(({ key }) => key),
+            { uri: this.props.defaultGroup }
         )
 
-        if (selectedGroups) {
-            for (const loc of locationsOrError) {
-                const groups = GROUPS.map(({ key }) => key(loc.uri))
-                for (const [i, group] of groups.entries()) {
-                    if (!locationsByGroup[i]) {
-                        locationsByGroup[i] = new Map<string, Location[]>()
-                    }
-                    let locs = locationsByGroup[i].get(group)
-                    if (!locs) {
-                        locs = []
-                        if (!orderedGroups[i]) {
-                            orderedGroups[i] = []
-                        }
-                        if (!orderedGroups[i].includes(group)) {
-                            orderedGroups[i].push(group)
-                        }
-                    }
-                    locs.push(loc)
-                    locationsByGroup[i].set(group, locs)
-
-                    if (selectedGroups[i] !== group) {
-                        break
-                    }
+        const groupsToDisplay = GROUPS.map(({ name, key, defaultSize }, i) => {
+            const group = { name, key, defaultSize }
+            if (!groups[i]) {
+                // No groups exist at this level. Don't display anything.
+                return null
+            }
+            if (groups[i].length > 1) {
+                // Always display when there is more than 1 group.
+                return group
+            }
+            if (groups[i].length === 1) {
+                if (selectedGroups[i] !== groups[i][0].key) {
+                    // When the only group is not the currently selected group, show it. This occurs when the
+                    // references list changes after the user made an initial selection. The group must be shown so
+                    // that the user can update their selection to the only available group; otherwise they would
+                    // be stuck viewing the (zero) results from the previously selected group that no longer
+                    // exists.
+                    return group
+                }
+                if (key({ uri: this.props.defaultGroup }) !== selectedGroups[i]) {
+                    // When the only group is other than the default group, show it. This is important because it
+                    // often indicates that the match comes from another repository. If it isn't shown, the user
+                    // would likely assume the match is from the current repository.
+                    return group
                 }
             }
-        }
-
-        // Ensure selected groups are valid.
-        for (const [i, group] of selectedGroups.entries()) {
-            if (!orderedGroups[i].includes(group)) {
-                selectedGroups[i] = orderedGroups[i][0]
+            if (groupByFile && name === 'file') {
+                // Always display the file groups when group-by-file is enabled.
+                return group
             }
-        }
+            return null
+        })
 
         return (
             <div className={`hierarchical-locations-view ${this.props.className || ''}`}>
                 {selectedGroups &&
-                    GROUPS.map(
-                        (group, i) =>
-                            ((groupByFile && group.name === 'file') || orderedGroups[i].length > 1) && (
+                    groupsToDisplay.map(
+                        (g, i) =>
+                            g && (
                                 <Resizable
                                     key={i}
                                     className="hierarchical-locations-view__resizable"
                                     handlePosition="right"
-                                    storageKey={`hierarchical-locations-view-resizable:${group.name}`}
-                                    defaultSize={group.defaultSize}
+                                    storageKey={`hierarchical-locations-view-resizable:${g.name}`}
+                                    defaultSize={g.defaultSize}
                                     element={
                                         <div className="list-group list-group-flush hierarchical-locations-view__list">
-                                            {orderedGroups[i].map((groupName, j) => (
+                                            {groups[i].map((group, j) => (
                                                 <span
                                                     key={j}
                                                     className={`list-group-item hierarchical-locations-view__item ${
-                                                        selectedGroups[i] === groupName ? 'active' : ''
+                                                        selectedGroups[i] === group.key ? 'active' : ''
                                                     }`}
                                                     // tslint:disable-next-line:jsx-no-lambda
-                                                    onClick={e => this.onSelectTree(e, i, groupName)}
+                                                    onClick={e => this.onSelectTree(e, selectedGroups, i, group.key)}
                                                 >
                                                     <span
                                                         className="hierarchical-locations-view__item-name"
-                                                        title={groupName}
+                                                        title={group.key}
                                                     >
                                                         <span className="hierarchical-locations-view__item-name-text">
-                                                            <RepoLink to={null} repoPath={groupName} />
+                                                            <RepoLink to={null} repoName={group.key} />
                                                         </span>
                                                     </span>
                                                     <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
-                                                        {locationsByGroup[i].get(groupName)!.length}
+                                                        {group.count}
                                                     </span>
                                                 </span>
                                             ))}
@@ -243,10 +235,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                     )}
                 <FileLocations
                     className="hierarchical-locations-view__content"
-                    locations={of(
-                        locationsByGroup[locationsByGroup.length - 1].get(selectedGroups[selectedGroups.length - 1]) ||
-                            null
-                    )}
+                    locations={of(visibleLocations)}
                     onSelect={this.props.onSelectLocation}
                     icon={RepositoryIcon}
                     isLightTheme={this.props.isLightTheme}
@@ -256,13 +245,14 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
         )
     }
 
-    private onSelectTree = (e: React.MouseEvent<HTMLElement>, i: number, group: string): void => {
+    private onSelectTree = (
+        e: React.MouseEvent<HTMLElement>,
+        selectedGroups: string[],
+        i: number,
+        group: string
+    ): void => {
         e.preventDefault()
-
-        const selectedGroups = [...(this.state.selectedGroups || [])]
-        selectedGroups[i] = group
-        this.setState({ selectedGroups })
-
+        this.setState({ selectedGroups: selectedGroups.slice(0, i).concat(group) })
         if (this.props.onSelectTree) {
             this.props.onSelectTree()
         }

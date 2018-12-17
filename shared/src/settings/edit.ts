@@ -105,7 +105,8 @@ function editSettings(
                     }
                 }
             `[graphQLContent],
-            { subject, lastID, edit }
+            { subject, lastID, edit },
+            false
         )
     )
         .pipe(
@@ -142,7 +143,8 @@ export function overwriteSettings(
                     }
                 }
             `[graphQLContent],
-            { subject, lastID, contents }
+            { subject, lastID, contents },
+            false
         )
     )
         .pipe(

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -100,7 +98,11 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	if gitserverRepo := quickGitserverRepo(name); gitserverRepo != nil {
+	gitserverRepo, err := quickGitserverRepo(ctx, name)
+	if err != nil {
+		return err
+	}
+	if gitserverRepo != nil {
 		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
 			return err
 		}
@@ -202,40 +204,14 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, comm
 	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
-	files, err := git.ReadDir(ctx, CachedGitRepo(repo), commitID, "", true)
+	cachedRepo, err := CachedGitRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := git.ReadDir(ctx, *cachedRepo, commitID, "", true)
 	if err != nil {
 		return nil, err
 	}
 	return inventory.Get(ctx, files)
-}
-
-var indexerAddr = env.Get("SRC_INDEXER", "indexer:3179", "The address of the indexer service.")
-
-func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) {
-	if Mocks.Repos.RefreshIndex != nil {
-		return Mocks.Repos.RefreshIndex(ctx, repo)
-	}
-
-	if !repo.Enabled {
-		return nil
-	}
-
-	ctx, done := trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.Name}, &err)
-	defer done()
-
-	// make staticcheck happy about "this value of ctx is never used (SA4006)". Not
-	// using _ in the actual assignment above in case someone forgets to use it
-	// when ctx is used below.
-	_ = ctx
-
-	go func() {
-		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo.Name))
-		if err != nil {
-			log15.Error("RefreshIndex failed", "error", err)
-			return
-		}
-		resp.Body.Close()
-	}()
-
-	return nil
 }

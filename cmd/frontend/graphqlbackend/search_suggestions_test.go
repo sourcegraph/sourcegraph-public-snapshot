@@ -12,22 +12,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestSearchSuggestions(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	createSearchResolver := func(t *testing.T, query string) *searchResolver {
+	getSuggestions := func(t *testing.T, query string) []string {
 		t.Helper()
 		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
-		return r
-	}
-	getSuggestions := func(t *testing.T, query string) []string {
-		t.Helper()
-		r := createSearchResolver(t, query)
 		results, err := r.Suggestions(context.Background(), &searchSuggestionsArgs{})
 		if err != nil {
 			t.Fatal("Suggestions:", err)
@@ -45,6 +41,12 @@ func TestSearchSuggestions(t *testing.T) {
 			t.Errorf("got != want\ngot:  %v\nwant: %v", got, want)
 		}
 	}
+
+	mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+		// TODO test symbol suggestions
+		return nil, nil, nil
+	}
+	defer func() { mockSearchSymbols = nil }()
 
 	t.Run("empty", func(t *testing.T) {
 		testSuggestions(t, "", []string{})
@@ -73,6 +75,10 @@ func TestSearchSuggestions(t *testing.T) {
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 		defer func() { db.Mocks = db.MockStores{} }()
+		git.Mocks.ResolveRevision = func(rev string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+			return api.CommitID("deadbeef"), nil
+		}
+		defer git.ResetMocks()
 
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
@@ -176,12 +182,6 @@ func TestSearchSuggestions(t *testing.T) {
 			}, nil
 		}
 		defer func() { mockResolveRepoGroups = nil }()
-
-		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
-			// TODO test symbol suggestions
-			return nil, nil, nil
-		}
-		defer func() { mockSearchSymbols = nil }()
 
 		testSuggestions(t, "repogroup:sample foo", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
 		if !calledReposListReposInGroup {

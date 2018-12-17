@@ -1,4 +1,4 @@
-import { concat, Observable, ReplaySubject } from 'rxjs'
+import { concat, Observable, ReplaySubject, throwError } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!../../../shared/src/api/extension/main.worker.ts'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
@@ -9,7 +9,6 @@ import { mutateSettings, updateSettings } from '../../../shared/src/settings/edi
 import { gqlToCascade } from '../../../shared/src/settings/settings'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import { requestGraphQL } from '../backend/graphql'
-import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { fetchViewerSettings } from '../user/settings/backend'
 
@@ -30,7 +29,7 @@ export function createPlatformContext(): PlatformContext {
             // extension is why this logic lives here and not in shared/.)
             if (!window.context.isAuthenticatedUser) {
                 const editDescription =
-                    typeof edit === 'string' ? 'edit settings' : `update setting` + '`' + edit.path.join('.') + '`'
+                    typeof edit === 'string' ? 'edit settings' : `update setting ` + '`' + edit.path.join('.') + '`'
                 const u = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
@@ -51,7 +50,10 @@ export function createPlatformContext(): PlatformContext {
                 `,
                 variables
             ),
-        queryLSP: requests => sendLSPHTTPRequests(requests),
+        backcompatQueryLSP: () =>
+            throwError(
+                'queryLSP is no longer implemented; extensions must manage their own connection to a language server'
+            ),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
         createExtensionHost: () => {
             const worker = new ExtensionHostWorker()

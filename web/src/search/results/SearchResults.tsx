@@ -74,13 +74,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     map(props => parseSearchURLQuery(props.location.search)),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    filter((searchOptions): searchOptions is SearchOptions => !!searchOptions),
-                    tap(searchOptions => {
+                    filter((query): query is string => !!query),
+                    tap(query => {
                         eventLogger.log('SearchResultsQueried', {
-                            code_search: { query_data: queryTelemetryData(searchOptions) },
+                            code_search: { query_data: queryTelemetryData(query) },
                         })
                     }),
-                    switchMap(searchOptions =>
+                    switchMap(query =>
                         concat(
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
@@ -160,7 +160,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     public render(): JSX.Element | null {
-        const searchOptions = parseSearchURLQuery(this.props.location.search)
+        const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
         const extensionFilters = (
             <SearchFiltersContainer
@@ -186,7 +186,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         )
         return (
             <div className="search-results">
-                <PageTitle key="page-title" title={searchOptions && searchOptions.query} />
+                <PageTitle key="page-title" title={query} />
                 {((isSearchResults(this.state.resultsOrError) && filters.length > 0) || extensionFilters) && (
                     <div className="search-results__filters-bar">
                         Filters:
@@ -360,6 +360,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         eventLogger.log('DynamicFilterClicked', {
             search_filter: { value },
         })
-        submitSearch(this.props.history, { query: toggleSearchFilter(this.props.navbarSearchQuery, value) }, 'filter')
+        submitSearch(this.props.history, toggleSearchFilter(this.props.navbarSearchQuery, value), 'filter')
     }
 }

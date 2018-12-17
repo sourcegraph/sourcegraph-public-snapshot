@@ -7,6 +7,7 @@ import { filter } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 
 const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -175,7 +176,7 @@ const diffDomFunctions: DOMFunctions = {
 }
 
 interface Part {
-    repoPath: string
+    repoName: string
     repoID: GQL.ID
     rev: string
     commitID: string
@@ -201,7 +202,7 @@ interface Props extends PlatformContextProps {
     className: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 
 interface State {}
@@ -255,9 +256,9 @@ export class FileDiffHunks extends React.Component<Props, State> {
                 positionJumps: NEVER, // TODO support diff URLs
                 resolveContext: hoveredToken => {
                     // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                    const { repoPath, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']
+                    const { repoName, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']
                     // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                    return { repoPath, filePath: filePath!, rev, commitID }
+                    return { repoName, filePath: filePath!, rev, commitID }
                 },
             })
         )

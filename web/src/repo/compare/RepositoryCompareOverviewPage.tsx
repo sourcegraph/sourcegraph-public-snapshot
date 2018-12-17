@@ -10,6 +10,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -76,11 +77,11 @@ interface Props
         PlatformContextProps,
         ExtensionsControllerProps {
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    base: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
-    hoverifier: Hoverifier
+    head: { repoName: string; repoID: GQL.ID; rev?: string | null }
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 
 interface State {
@@ -152,13 +153,13 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                         <RepositoryCompareDiffPage
                             {...this.props}
                             base={{
-                                repoPath: this.props.base.repoPath,
+                                repoName: this.props.base.repoName,
                                 repoID: this.props.base.repoID,
                                 rev: this.props.base.rev || null,
                                 commitID: this.state.rangeOrError.baseRevSpec.object!.oid,
                             }}
                             head={{
-                                repoPath: this.props.head.repoPath,
+                                repoName: this.props.head.repoName,
                                 repoID: this.props.head.repoID,
                                 rev: this.props.head.rev || null,
                                 commitID: this.state.rangeOrError.headRevSpec.object!.oid,

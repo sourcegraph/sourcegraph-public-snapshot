@@ -1,10 +1,10 @@
-import { Position, Range } from '../api/protocol/plainTypes'
+import { Position, Range } from '@sourcegraph/extension-api-types'
 
 export interface RepoSpec {
     /**
      * Example: github.com/gorilla/mux
      */
-    repoPath: string
+    repoName: string
 }
 
 export interface RevSpec {
@@ -52,7 +52,15 @@ export interface RangeSpec {
     range: Range
 }
 
-export type BlobViewState = 'references' | 'references:external' | 'discussions' | 'impl'
+/**
+ * Specifies an LSP mode.
+ */
+export interface ModeSpec {
+    /** The LSP mode, which identifies the language server to use. */
+    mode: string
+}
+
+export type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -110,11 +118,17 @@ const parsePosition = (str: string): Position => {
 }
 
 /**
- * Parses the properties of a repo URI like git://github.com/gorilla/mux#mux.go
+ * Parses the properties of a legacy Git URI like git://github.com/gorilla/mux#mux.go.
+ *
+ * These URIs were used when communicating with language servers over LSP and with extensions. They are being
+ * phased out in favor of URLs to resources in the Sourcegraph raw API, which do not require out-of-band
+ * information to fetch the contents of.
+ *
+ * @deprecated Migrate to using URLs to the Sourcegraph raw API (or other concrete URLs) instead.
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
-    const repoPath = parsed.hostname + parsed.pathname
+    const repoName = parsed.hostname + parsed.pathname
     const rev = parsed.search.substr('?'.length) || undefined
     let commitID: string | undefined
     if (rev && rev.match(/[0-9a-fA-f]{40}/)) {
@@ -146,7 +160,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         throw new Error('unexpected fragment: ' + parsed.hash)
     }
 
-    return { repoPath, rev, commitID, filePath: filePath || undefined, position, range }
+    return { repoName, rev, commitID, filePath: filePath || undefined, position, range }
 }
 
 /**
@@ -268,7 +282,6 @@ export function isLegacyFragment(hash: string): boolean {
         (hash.includes('$info') ||
             hash.includes('$def') ||
             hash.includes('$references') ||
-            hash.includes('$references:external') ||
             hash.includes('$impl') ||
             hash.includes('$history'))
     )
@@ -305,7 +318,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
         // invalid or empty hash
         return {}
     }
-    const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references:external"
+    const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references"
     const lpr = parseLineOrPositionOrRange(lineCharModalInfo[0]) as LineOrPositionOrRange & { viewState?: V }
     if (lineCharModalInfo[1]) {
         lpr.viewState = lineCharModalInfo[1] as V
@@ -405,7 +418,7 @@ export function encodeRepoRev(repo: string, rev?: string): string {
 export function toPrettyBlobURL(
     ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${encodeRepoRev(ctx.repoPath, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
+    return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
         ctx
     )}${toPositionOrRangeHash(ctx)}${toViewStateHashComponent(ctx.viewState)}`
 }
@@ -430,11 +443,28 @@ const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + po
  */
 export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     const rev = parsed.commitID || parsed.rev
-    let uri = `git://${parsed.repoPath}`
+    let uri = `git://${parsed.repoName}`
     uri += rev ? '?' + rev : ''
     uri += parsed.filePath ? '#' + parsed.filePath : ''
     uri += parsed.position || parsed.range ? ':' : ''
     uri += parsed.position ? positionStr(parsed.position) : ''
     uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
     return uri
+}
+
+export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec) => `git://${ctx.repoName}?${ctx.commitID}`
+export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): string {
+    return `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`
+}
+
+/**
+ * Builds a URL query for the given query (without leading `?`).
+ */
+export function buildSearchURLQuery(query: string): string {
+    const searchParams = new URLSearchParams()
+    searchParams.set('q', query)
+    return searchParams
+        .toString()
+        .replace(/%2F/g, '/')
+        .replace(/%3A/g, ':')
 }

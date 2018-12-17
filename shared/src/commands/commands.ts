@@ -1,10 +1,10 @@
-import { isArray } from 'lodash-es'
+import { Position } from '@sourcegraph/extension-api-types'
+import { isArray } from 'lodash'
 import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Services } from '../api/client/services'
-import { SettingsEdit } from '../api/client/services/settings'
+import { KeyPath, SettingsEdit } from '../api/client/services/settings'
 import { ActionContributionClientCommandUpdateConfiguration } from '../api/protocol'
-import { Position } from '../api/protocol/plainTypes'
 import { PlatformContext } from '../platform/context'
 
 /**
@@ -14,7 +14,7 @@ import { PlatformContext } from '../platform/context'
  */
 export function registerBuiltinClientCommands(
     { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
-    context: Pick<PlatformContext, 'queryGraphQL' | 'queryLSP'>
+    context: Pick<PlatformContext, 'queryGraphQL' | 'backcompatQueryLSP'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -54,7 +54,7 @@ export function registerBuiltinClientCommands(
             command: 'executeLocationProvider',
             run: (id: string, uri: string, position: Position) =>
                 concat(
-                    textDocumentLocations.getLocation(id, { textDocument: { uri }, position }),
+                    textDocumentLocations.getLocations(id, { textDocument: { uri }, position }),
                     // Concat with [] to avoid undefined promise value when the getLocation observable completes
                     // without emitting. See https://github.com/ReactiveX/rxjs/issues/1736.
                     of([])
@@ -98,7 +98,7 @@ export function registerBuiltinClientCommands(
     subscription.add(
         commandRegistry.registerCommand({
             command: 'queryLSP',
-            run: requests => from(context.queryLSP(requests)).toPromise(),
+            run: requests => from(context.backcompatQueryLSP(requests)).toPromise(),
         })
     )
 
@@ -133,14 +133,33 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
 export function convertUpdateConfigurationCommandArgs(
     args: ActionContributionClientCommandUpdateConfiguration['commandArguments']
 ): SettingsEdit {
-    if (
-        !isArray(args) ||
-        !(args.length >= 2 && args.length <= 4) ||
-        !isArray(args[0]) ||
-        !(args[2] === undefined || args[2] === null)
-    ) {
-        throw new Error(`invalid updateConfiguration arguments: ${JSON.stringify(args)}`)
+    if (!isArray(args) || !(args.length >= 2 && args.length <= 4)) {
+        throw new Error(
+            `invalid updateConfiguration arguments: ${JSON.stringify(
+                args
+            )} (must be an array with either 2 or 4 elements)`
+        )
     }
+
+    let keyPath: KeyPath
+    if (isArray(args[0])) {
+        keyPath = args[0]
+    } else if (typeof args[0] === 'string') {
+        // For convenience, allow the 1st arg (the key path) to be a string, and interpret this as referring to the
+        // object property.
+        keyPath = [args[0]]
+    } else {
+        throw new Error(
+            `invalid updateConfiguration arguments: ${JSON.stringify(
+                args
+            )} (1st element, the key path, must be a string (referring to a settings property) or an array of type (string|number)[] (referring to a deeply nested settings property))`
+        )
+    }
+
+    if (!(args[2] === undefined || args[2] === null)) {
+        throw new Error(`invalid updateConfiguration arguments: ${JSON.stringify(args)} (3rd element must be null)`)
+    }
+
     const valueIsJSONEncoded = args.length === 4 && args[3] === 'json'
-    return { path: args[0], value: valueIsJSONEncoded ? JSON.parse(args[1]) : args[1] }
+    return { path: keyPath, value: valueIsJSONEncoded ? JSON.parse(args[1]) : args[1] }
 }

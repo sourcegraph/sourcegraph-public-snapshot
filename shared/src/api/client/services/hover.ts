@@ -1,8 +1,10 @@
-import { combineLatest, from, Observable } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { Hover } from '@sourcegraph/extension-api-types'
+import { isEqual } from 'lodash'
+import { from, Observable } from 'rxjs'
+import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { HoverMerged } from '../../client/types/hover'
 import { TextDocumentPositionParams } from '../../protocol'
-import { Hover } from '../../protocol/plainTypes'
 import { DocumentFeatureProviderRegistry } from './registry'
 
 export type ProvideTextDocumentHoverSignature = (
@@ -33,27 +35,29 @@ export class TextDocumentHoverProviderRegistry extends DocumentFeatureProviderRe
  */
 export function getHover(
     providers: Observable<ProvideTextDocumentHoverSignature[]>,
-    params: TextDocumentPositionParams
+    params: TextDocumentPositionParams,
+    logErrors = true
 ): Observable<HoverMerged | null> {
-    return providers
-        .pipe(
-            switchMap(providers => {
-                if (providers.length === 0) {
-                    return [[null]]
-                }
-                return combineLatest(
-                    providers.map(provider =>
-                        from(
-                            provider(params).pipe(
-                                catchError(err => {
+    return providers.pipe(
+        switchMap(providers =>
+            combineLatestOrDefault(
+                providers.map(provider =>
+                    from(
+                        provider(params).pipe(
+                            catchError(err => {
+                                if (logErrors) {
                                     console.error(err)
-                                    return [null]
-                                })
-                            )
+                                }
+                                return [null]
+                            })
                         )
                     )
                 )
-            })
+            ).pipe(
+                map(HoverMerged.from),
+                defaultIfEmpty(null as HoverMerged | null),
+                distinctUntilChanged((a, b) => isEqual(a, b))
+            )
         )
-        .pipe(map(HoverMerged.from))
+    )
 }

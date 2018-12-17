@@ -54,6 +54,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 <ActionsNavItems
                     menu={ContributableMenu.GlobalNav}
+                    actionItemClass="nav-link"
                     extensionsController={this.props.extensionsController}
                     platformContext={this.props.platformContext}
                     location={this.props.location}

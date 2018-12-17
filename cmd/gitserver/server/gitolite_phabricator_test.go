@@ -1,24 +1,30 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestServer_handleGet(t *testing.T) {
-	conf.Mock(&schema.SiteConfiguration{
-		Gitolite: []*schema.GitoliteConnection{{
-			Blacklist:                  "isblaclist.*",
-			Prefix:                     "mygitolite.host/",
-			Host:                       "git@mygitolite.host",
-			PhabricatorMetadataCommand: `echo ${REPO} | tr a-z A-Z`,
-		}},
-	})
-	defer conf.Mock(nil)
+	conn := []*schema.GitoliteConnection{{
+		Blacklist:                  "isblaclist.*",
+		Prefix:                     "mygitolite.host/",
+		Host:                       "git@mygitolite.host",
+		PhabricatorMetadataCommand: `echo ${REPO} | tr a-z A-Z`,
+	}}
+	api.MockExternalServiceConfigs = func(kind string, result interface{}) error {
+		buf, err := json.Marshal(conn)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(buf, result)
+	}
+	defer func() { api.MockExternalServiceConfigs = nil }()
 
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
@@ -47,15 +53,20 @@ func TestServer_handleGet(t *testing.T) {
 }
 
 func TestServer_handleGet_invalid(t *testing.T) {
-	conf.Mock(&schema.SiteConfiguration{
-		Gitolite: []*schema.GitoliteConnection{{
-			Blacklist:                  "isblaclist.*",
-			Prefix:                     "mygitolite.host/",
-			Host:                       "git@mygitolite.host",
-			PhabricatorMetadataCommand: `echo "Something went wrong this is not a valid callsign"`,
-		}},
-	})
-	defer conf.Mock(nil)
+	conn := []*schema.GitoliteConnection{{
+		Blacklist:                  "isblaclist.*",
+		Prefix:                     "mygitolite.host/",
+		Host:                       "git@mygitolite.host",
+		PhabricatorMetadataCommand: `echo "Something went wrong this is not a valid callsign"`,
+	}}
+	api.MockExternalServiceConfigs = func(kind string, result interface{}) error {
+		buf, err := json.Marshal(conn)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(buf, result)
+	}
+	defer func() { api.MockExternalServiceConfigs = nil }()
 
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()

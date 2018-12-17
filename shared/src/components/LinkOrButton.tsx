@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Key } from 'ts-key-enum'
-import { RouterLinkOrAnchor } from './RouterLinkOrAnchor'
+import { Link } from './Link'
 
 interface Props {
     /** The link destination URL. */
@@ -13,7 +13,7 @@ interface Props {
     /**
      * Called when the user clicks or presses enter on this element.
      */
-    onSelect?: (event: React.MouseEvent | React.KeyboardEvent) => void
+    onSelect?: (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
 
     /** A tooltip to display when the user hovers or focuses this element. */
     ['data-tooltip']?: string
@@ -37,7 +37,10 @@ export class LinkOrButton extends React.PureComponent<Props> {
             this.props.disabled ? 'disabled' : ''
         }`
 
-        const commonProps = {
+        const commonProps: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+            'data-tooltip': string | undefined
+            onAuxClick?: React.MouseEventHandler<HTMLAnchorElement>
+        } = {
             className,
             'data-tooltip': this.props['data-tooltip'],
             'aria-label': this.props['data-tooltip'],
@@ -47,6 +50,9 @@ export class LinkOrButton extends React.PureComponent<Props> {
         }
 
         if (!this.props.to) {
+            // Use onAuxClick so that middle-clicks are caught.
+            commonProps.onAuxClick = this.onAnchorClick
+
             // Render using an <a> with no href, so that we get a focus ring (when using Bootstrap).
             // We need to set up a keypress listener because <a onclick> doesn't get triggered by
             // enter.
@@ -54,9 +60,9 @@ export class LinkOrButton extends React.PureComponent<Props> {
         }
 
         return (
-            <RouterLinkOrAnchor {...commonProps} to={this.props.to} target={this.props.target}>
+            <Link {...commonProps} to={this.props.to} target={this.props.target}>
                 {this.props.children}
-            </RouterLinkOrAnchor>
+            </Link>
         )
     }
 

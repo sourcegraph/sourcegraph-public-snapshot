@@ -21,6 +21,7 @@ import {
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { pluralize } from '../../../shared/src/util/strings'
+import { parseHash } from '../../../shared/src/util/url'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
 
@@ -130,7 +131,9 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
     public componentDidMount(): void {
-        if (this.props.location.hash) {
+        // Scroll to hash. But if the hash is a line number in a blob (or any viewState), then do not scroll,
+        // because the hash is handled separately by the Blob component.
+        if (this.props.location.hash && !parseHash(this.props.location.hash).viewState) {
             this.scrollToHash(this.props.location.hash)
         }
     }

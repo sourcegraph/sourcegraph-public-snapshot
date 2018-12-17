@@ -18,6 +18,15 @@ export function createContextService({
     clientApplication,
 }: Pick<PlatformContext, 'clientApplication'>): ContextService {
     return {
-        data: new BehaviorSubject<Context>({ 'clientApplication.isSourcegraph': clientApplication === 'sourcegraph' }),
+        data: new BehaviorSubject<Context>({
+            'clientApplication.isSourcegraph': clientApplication === 'sourcegraph',
+
+            // Arbitrary, undocumented versioning for extensions that need different behavior for different
+            // Sourcegraph versions.
+            //
+            // TODO: Make this more advanced if many extensions need this (although we should try to avoid
+            // extensions needing this).
+            'clientApplication.extensionAPIVersion.major': 3,
+        }),
     }
 }

@@ -1,5 +1,13 @@
-import * as assert from 'assert'
-import { fuzzyMatches, Span } from './HighlightedMatches'
+import React from 'react'
+import renderer from 'react-test-renderer'
+import { fuzzyMatches, HighlightedMatches, Span } from './HighlightedMatches'
+
+describe('Markdown', () => {
+    test('render', () => {
+        const component = renderer.create(<HighlightedMatches text="abcabcabc" pattern="aab" />)
+        expect(component.toJSON()).toMatchSnapshot()
+    })
+})
 
 describe('fuzzyMatches', () => {
     const TESTS = [
@@ -57,8 +65,8 @@ describe('fuzzyMatches', () => {
         },
     ] as { text: string; pattern: string; want: Span[] }[]
     for (const { text, pattern, want } of TESTS) {
-        it(`matches ${JSON.stringify(pattern)} in ${JSON.stringify(text)}`, () => {
-            assert.deepStrictEqual(fuzzyMatches(text, pattern), want)
+        test(`matches ${JSON.stringify(pattern)} in ${JSON.stringify(text)}`, () => {
+            expect(fuzzyMatches(text, pattern)).toEqual(want)
         })
     }
 })

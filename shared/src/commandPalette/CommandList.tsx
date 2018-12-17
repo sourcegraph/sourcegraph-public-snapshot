@@ -1,6 +1,6 @@
 import { ShortcutProps } from '@slimsag/react-shortcuts'
 import H from 'history'
-import { isArray, sortBy, uniq } from 'lodash-es'
+import { isArray, sortBy, uniq } from 'lodash'
 import MenuIcon from 'mdi-react/MenuIcon'
 import * as React from 'react'
 import { Subscription } from 'rxjs'

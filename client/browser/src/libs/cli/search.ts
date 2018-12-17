@@ -1,9 +1,9 @@
 import storage from '../../browser/storage'
 import * as tabs from '../../browser/tabs'
 
+import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
 import { createSuggestionFetcher } from '../../shared/backend/search'
 import { sourcegraphUrl } from '../../shared/util/context'
-import { buildSearchURLQuery } from '../../shared/util/url'
 
 const isURL = /^https?:\/\//
 

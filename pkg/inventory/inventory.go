@@ -6,7 +6,6 @@ import (
 	"context"
 	"os"
 	"sort"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 )
@@ -35,21 +34,6 @@ type Lang struct {
 	// Type is either "data", "programming", "markup", "prose", or
 	// empty.
 	Type string `json:"Type,omitempty"`
-}
-
-// ConfigName matches the `langservers[].language` field in the site
-// configuration.
-func (l *Lang) ConfigName() string {
-	switch l.Name {
-	case "Shell":
-		return "bash"
-	case "C++":
-		return "cpp"
-	case "C#":
-		return "cs"
-	default:
-		return strings.ToLower(l.Name)
-	}
 }
 
 var byFilename = filelang.Langs.CompileByFilename()

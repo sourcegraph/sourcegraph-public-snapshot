@@ -232,10 +232,10 @@ export class MainPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        const searchOptions = parseSearchURLQuery(props.location.search)
+        const query = parseSearchURLQuery(props.location.search)
 
         this.state = {
-            userQuery: (searchOptions && searchOptions.query) || '',
+            userQuery: query || '',
             modalSearchOpen: false,
             modalSearchClosing: false,
             modalIntelligenceOpen: false,
@@ -366,8 +366,8 @@ export class MainPage extends React.Component<Props, State> {
                                     <p>
                                         Solve problems before they exist, commit by commit. Code intelligence makes
                                         browsing code easier, with IDE-like hovers, go-to-definition, and
-                                        find-references on your code, powered by language servers based on the
-                                        open-source Language Server Protocol.
+                                        find-references on your code, powered by Sourcegraph extensions and language
+                                        servers based on the open-source Language Server Protocol.
                                     </p>
                                     <p>
                                         It even works in code review diffs on GitHub and GitLab with our browser
@@ -995,12 +995,12 @@ export class MainPage extends React.Component<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, { query: this.state.userQuery }, 'home')
+        submitSearch(this.props.history, this.state.userQuery, 'home')
     }
 
     private getPageTitle(): string | undefined {
-        const options = parseSearchURLQuery(this.props.location.search)
-        if (options && options.query) {
+        const query = parseSearchURLQuery(this.props.location.search)
+        if (query) {
             return `${limitString(this.state.userQuery, 25, true)}`
         }
         return undefined

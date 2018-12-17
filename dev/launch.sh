@@ -16,7 +16,8 @@ fi
 
 export GO111MODULE=on
 go build ./pkg/version/minversion || {
-    echo "Go version 1.11.x or newer must be used to build Sourcegraph; found: $(go version)"
+    min=$(grep -o 'go[1-9]\+\.[0-9]*\.[0-9]*' pkg/version/minversion/minversion.go)
+    echo "Minimum Go version: $min; found: $(go version)"
     exit 1
 }
 
@@ -51,9 +52,7 @@ export SRC_GIT_SERVERS=127.0.0.1:3178
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
 export SEARCHER_URL=http://127.0.0.1:3181
 export REPO_UPDATER_URL=http://127.0.0.1:3182
-export LSP_PROXY=127.0.0.1:4388
 export REDIS_ENDPOINT=127.0.0.1:6379
-export SRC_INDEXER=127.0.0.1:3179
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
 export CTAGS_COMMAND=${CTAGS_COMMAND-cmd/symbols/universal-ctags-dev}
@@ -72,8 +71,8 @@ export ZOEKT_HOST=localhost:6070
 export SRC_HTTP_ADDR=":3081"
 export WEBPACK_DEV_SERVER=1
 
-# we want to keep config.json, but allow local config.
-export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE:-./dev/config.json}
+export DEV_OVERRIDE_CRITICAL_CONFIG=${DEV_OVERRIDE_CRITICAL_CONFIG:-./dev/critical-config.json}
+export DEV_OVERRIDE_SITE_CONFIG=${DEV_OVERRIDE_SITE_CONFIG:-./dev/site-config.json}
 
 # WebApp
 export NODE_ENV=development
@@ -105,6 +104,9 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
+
+# Management console webapp
+pushd ./cmd/management-console/web && npm install && popd
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE:-dev/Procfile}"

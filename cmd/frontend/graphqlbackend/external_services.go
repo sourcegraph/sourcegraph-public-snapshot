@@ -3,10 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -83,6 +83,25 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &externalServiceResolver{externalService: externalService}, nil
+}
+
+func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
+	ExternalService graphql.ID
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can delete external services.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalExternalServiceID(args.ExternalService)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.ExternalServices.Delete(ctx, id); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {

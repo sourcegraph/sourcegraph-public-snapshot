@@ -135,7 +135,7 @@ class EventLogger {
         })
         if (match) {
             const u = parseBrowserRepoURL(window.location.href)
-            props.repo = u.repoPath
+            props.repo = u.repoName
             props.rev = u.rev
             if (u.filePath) {
                 props.path = u.filePath
@@ -151,8 +151,8 @@ class EventLogger {
      *
      * Only used on Sourcegraph.com, not on self-hosted Sourcegraph instances.
      */
-    private getTelligentDuid(): string {
-        return telligent.getTelligentDuid() || ''
+    private getTelligentDuid(): string | null {
+        return telligent.getTelligentDuid()
     }
 
     /**
@@ -177,7 +177,7 @@ class EventLogger {
         }
 
         let id = localStorage.getItem(uidKey)
-        if (id === null) {
+        if (id === null || id === '') {
             id = this.generateAnonUserID()
             localStorage.setItem(uidKey, id)
         }

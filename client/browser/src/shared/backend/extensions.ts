@@ -1,5 +1,5 @@
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
-import { TextDocumentDecoration } from '../../../../../shared/src/api/protocol/plainTypes'
 
 const combineUnsubscribables = (...unsubscribables: Unsubscribable[]): Unsubscribable => ({
     unsubscribe: () => {

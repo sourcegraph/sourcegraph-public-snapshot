@@ -13,9 +13,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type testTransport map[string]string
@@ -35,12 +32,6 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestResolveImportPath(t *testing.T) {
-	conf.Mock(&schema.SiteConfiguration{
-		NoGoGetDomains: "mygitolite.aws.me.org",
-		BlacklistGoGet: []string{"nohttp.google.com"},
-	})
-	defer conf.Mock(nil)
-
 	tests := []struct {
 		importPath string
 		dir        *Directory
@@ -85,35 +76,6 @@ func TestResolveImportPath(t *testing.T) {
 			VCS:         "git",
 		}},
 		{"github.com/foo", nil},
-
-		// no go get (see noGoGetDomains)
-		{"mygitolite.aws.me.org/mux.git", &Directory{
-			ImportPath:  "mygitolite.aws.me.org/mux.git",
-			ProjectRoot: "mygitolite.aws.me.org/mux.git",
-			CloneURL:    "http://mygitolite.aws.me.org/mux.git",
-			VCS:         "git",
-		}},
-		{"mygitolite.aws.me.org/mux.git/subpkg", &Directory{
-			ImportPath:  "mygitolite.aws.me.org/mux.git/subpkg",
-			ProjectRoot: "mygitolite.aws.me.org/mux.git",
-			CloneURL:    "http://mygitolite.aws.me.org/mux.git",
-			VCS:         "git",
-		}},
-		{"mygitolite.aws.me.org/org/repo", &Directory{
-			ImportPath:  "mygitolite.aws.me.org/org/repo",
-			ProjectRoot: "mygitolite.aws.me.org/org/repo",
-			CloneURL:    "http://mygitolite.aws.me.org/org/repo",
-			VCS:         "git",
-		}},
-		{"mygitolite.aws.me.org/org/repo/subpkg", &Directory{
-			ImportPath:  "mygitolite.aws.me.org/org/repo/subpkg",
-			ProjectRoot: "mygitolite.aws.me.org/org/repo",
-			CloneURL:    "http://mygitolite.aws.me.org/org/repo",
-			VCS:         "git",
-		}},
-
-		// BlacklistGoGet
-		{"nohttp.google.com/pkg", nil},
 
 		// dynamic (see client setup below)
 		{"alice.org/pkg", &Directory{

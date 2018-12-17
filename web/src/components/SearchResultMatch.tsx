@@ -1,12 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { decode } from 'he'
-import _ from 'lodash'
+import { isEqual } from 'lodash'
 import { range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
-import { catchError, filter, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -16,7 +16,7 @@ import { highlightCode } from '../search/backend'
 import { HighlightRange } from './SearchResult'
 
 interface SearchResultMatchProps {
-    item: GQL.ISearchMatch
+    item: GQL.ISearchResultMatch
     highlightRanges: HighlightRange[]
     isLightTheme: boolean
 }
@@ -56,6 +56,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             combineLatest(this.propsChanges, this.visibilityChanges)
                 .pipe(
                     filter(([, isVisible]) => isVisible),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
                     switchMap(
                         ([props]) =>
                             props.item.body.html
@@ -102,6 +103,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     public componentDidUpdate(): void {
+        this.propsChanges.next(this.props)
         this.highlightNodes()
     }
 
@@ -129,6 +131,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
 
     private getFirstLine(): number {
         if (this.props.highlightRanges.length === 0) {
+            // If there are no highlights, the calculation below results in -Infinity.
             return 0
         }
         return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - 1)
@@ -136,7 +139,9 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
 
     private getLastLine(): number {
         if (this.props.highlightRanges.length === 0) {
-            return 1
+            // If there are no highlights, the calculation below results in Infinity,
+            // so we set lastLine to 5, which is a just a heuristic for a medium-sized result.
+            return 5
         }
         const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + 1
         return this.props.highlightRanges ? Math.min(lastLine, this.props.highlightRanges.length) : lastLine

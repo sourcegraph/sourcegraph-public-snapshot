@@ -16,12 +16,10 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -103,11 +101,11 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 
 	srv := httptest.NewServer(s)
 
-	auth.MockCreateOrUpdateUser = func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
-		if a.ServiceType == "openidconnect" && a.ServiceID == oidcProvider.Issuer && a.ClientID == testClientID && a.AccountID == testOIDCUser {
-			return 123, nil
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		if op.ExternalAccount.ServiceType == "openidconnect" && op.ExternalAccount.ServiceID == oidcProvider.Issuer && op.ExternalAccount.ClientID == testClientID && op.ExternalAccount.AccountID == testOIDCUser {
+			return 123, "", nil
 		}
-		return 0, fmt.Errorf("account %v not found in mock", a)
+		return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
 	}
 
 	return srv, &email
@@ -141,7 +139,7 @@ func TestMiddleware(t *testing.T) {
 
 	oidcIDServer, emailPtr := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
 	defer oidcIDServer.Close()
-	defer func() { auth.MockCreateOrUpdateUser = nil }()
+	defer func() { auth.MockGetAndSaveUser = nil }()
 	mockGetProviderValue.config.Issuer = oidcIDServer.URL
 
 	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
@@ -320,7 +318,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	oidcIDServer, _ := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
 	defer oidcIDServer.Close()
-	defer func() { auth.MockCreateOrUpdateUser = nil }()
+	defer func() { auth.MockGetAndSaveUser = nil }()
 	mockGetProviderValue.config.Issuer = oidcIDServer.URL
 
 	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {

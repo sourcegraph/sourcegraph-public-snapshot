@@ -17,10 +17,8 @@
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json 'src/**/*.ts?(x)'",
     "stylelint": "stylelint 'app/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
-    "test:e2e": "cross-env OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require ../../web/src/util/long-stack-traces.ts --timeout 60000 --slow 5000 --exit './src/**/*.test.e2e.ts?(x)'",
-    "test:e2e-ci": "env OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require ../../web/src/util/long-stack-traces.ts --timeout 60000 --slow 5000 --exit './src/**/*.test.e2e.ts?(x)'",
-    "test": "mocha --require ts-node/register/transpile-only --require jsdom-global/register --watch --watch-extensions 'ts?(x)' './src/**/*.test.ts?(x)'",
-    "test:ci": "mocha --require ts-node/register/transpile-only --require jsdom-global/register './src/**/*.test.ts?(x)'",
+    "test": "jest --testPathIgnorePatterns e2e",
+    "test-e2e": "cross-env OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ jest --coverage=false e2e",
     "storybook": "start-storybook -s ./src/extension/assets -c ./config/storybook -p 6006",
     "build-storybook": "build-storybook -c ./config/storybook"
   },

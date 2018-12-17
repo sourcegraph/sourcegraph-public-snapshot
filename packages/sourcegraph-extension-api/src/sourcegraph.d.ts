@@ -46,8 +46,10 @@ declare module 'sourcegraph' {
     export class Position {
         /** Zero-based line number. */
         readonly line: number
-        /** Zero-based line number. */
+
+        /** Zero-based character on the line. */
         readonly character: number
+
         /**
          * Constructs a Position from a line and character.
          *
@@ -394,6 +396,39 @@ declare module 'sourcegraph' {
         value?: string
     }
 
+    export interface ProgressOptions {
+        title?: string
+    }
+
+    export interface Progress {
+        /** Optional message. If not set, the previous message is still shown. */
+        message?: string
+
+        /** Integer from 0 to 100. If not set, the previous percentage is still shown. */
+        percentage?: number
+    }
+
+    export interface ProgressReporter {
+        /**
+         * Updates the progress display with a new message and/or percentage.
+         */
+        next(status: Progress): void
+
+        /**
+         * Turns the progress display into an error display for the given error or message.
+         * Use if the operation failed.
+         * No further progress updates can be sent after this.
+         */
+        error(error: any): void
+
+        /**
+         * Completes the progress bar and hides the display.
+         * Sending a percentage of 100 has the same effect.
+         * No further progress updates can be sent after this.
+         */
+        complete(): void
+    }
+
     /**
      * A window in the client application that is running the extension.
      */
@@ -416,6 +451,25 @@ declare module 'sourcegraph' {
          * @return A promise that resolves when the user dismisses the message.
          */
         showNotification(message: string): void
+
+        /**
+         * Show progress in the window. Progress is shown while running the given callback
+         * and while the promise it returned isn't resolved nor rejected.
+         *
+         * @param task A callback returning a promise. Progress state can be reported with
+         * the provided [ProgressReporter](#ProgressReporter)-object.
+         *
+         * @return The Promise the task-callback returned.
+         */
+        withProgress<R>(options: ProgressOptions, task: (reporter: ProgressReporter) => Promise<R>): Promise<R>
+
+        /**
+         * Show progress in the window. The returned ProgressReporter can be used to update the
+         * progress bar, complete it or turn the notification into an error notification in case the operation failed.
+         *
+         * @return A ProgressReporter that allows updating the progress display.
+         */
+        showProgress(options: ProgressOptions): Promise<ProgressReporter>
 
         /**
          * Show a modal message to the user that the user must dismiss before continuing.
@@ -520,6 +574,15 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * Represents a handle to a set of decorations.
+     *
+     * To get an instance of {@link TextDocumentDecorationType}, use {@link createDecorationType}
+     */
+    export interface TextDocumentDecorationType {
+        key: string
+    }
+
+    /**
      * A text editor for code files (as opposed to a rich text editor for documents or other kinds of file format
      * editors).
      */
@@ -549,12 +612,13 @@ declare module 'sourcegraph' {
         readonly selections: Selection[]
 
         /**
-         * Draw decorations on this editor.
+         * Add a set of decorations to this editor. If a set of decorations already exists with the given
+         * {@link DecorationType}, they will be replaced.
          *
-         * @todo Implement a "decoration type" as in VS Code to make deltas more efficient.
-         * @param decorationType Currently unused. Always pass `null`.
+         * @see {@link TextDocumentDecorationType}
+         *
          */
-        setDecorations(decorationType: null, decorations: TextDocumentDecoration[]): void
+        setDecorations(decorationType: TextDocumentDecorationType, decorations: TextDocumentDecoration[]): void
     }
 
     /**
@@ -614,6 +678,14 @@ declare module 'sourcegraph' {
          * @returns The panel view.
          */
         export function createPanelView(id: string): PanelView
+
+        /**
+         * Creates a decorationType that can be used to add decorations to code views.
+         *
+         * Use this to create a unique handle to a set of decorations, that can be applied to
+         * text editors using {@link setDecorations}.
+         */
+        export function createDecorationType(): TextDocumentDecorationType
     }
 
     /**
@@ -1172,17 +1244,39 @@ declare module 'sourcegraph' {
         export const clientApplication: 'sourcegraph' | 'other'
     }
 
+    /** Support types for {@link Subscribable}. */
+    interface NextObserver<T> {
+        closed?: boolean
+        next: (value: T) => void
+        error?: (err: any) => void
+        complete?: () => void
+    }
+    interface ErrorObserver<T> {
+        closed?: boolean
+        next?: (value: T) => void
+        error: (err: any) => void
+        complete?: () => void
+    }
+    interface CompletionObserver<T> {
+        closed?: boolean
+        next?: (value: T) => void
+        error?: (err: any) => void
+        complete: () => void
+    }
+    type PartialObserver<T> = NextObserver<T> | ErrorObserver<T> | CompletionObserver<T>
+
     /**
      * A stream of values that may be subscribed to.
      */
     export interface Subscribable<T> {
         /**
-         * Subscribes to the stream of values, calling {@link next} for each value until unsubscribed.
+         * Subscribes to the stream of values.
          *
          * @returns An unsubscribable that, when its {@link Unsubscribable#unsubscribe} method is called, causes
-         *          the subscription to stop calling {@link next} with values.
+         * the subscription to stop reacting to the stream.
          */
-        subscribe(next: (value: T) => void): Unsubscribable
+        subscribe(observer?: PartialObserver<T>): Unsubscribable
+        subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
     }
 
     /**

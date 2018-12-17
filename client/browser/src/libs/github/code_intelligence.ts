@@ -1,6 +1,7 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { JumpURLLocation } from '../../shared/backend/lsp'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
@@ -47,7 +48,11 @@ const singleFileCodeView: CodeViewWithOutSelector = {
  * Some code snippets get leading white space trimmed. This adjusts based on
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
-const adjustPositionForSnippet: PositionAdjuster = ({ direction, codeView, position }) =>
+const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+    direction,
+    codeView,
+    position,
+}) =>
     fetchBlobContentLines(position).pipe(
         map(lines => {
             const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
@@ -95,7 +100,11 @@ const commentSnippetCodeView: CodeView = {
     isDiff: false,
 }
 
-const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector => {
+const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
+    if (elem.querySelector('.markdown-body:not(.comment-body)')) {
+        return null
+    }
+
     const files = document.getElementsByClassName('file')
     const { filePath } = parseURL()
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
@@ -147,11 +156,11 @@ export const githubCodeHost: CodeHost = {
     getCommandPaletteMount,
     getGlobalDebugMount,
     buildJumpURLLocation: (def: JumpURLLocation) => {
-        const rev = def.rev
+        const rev = def.rev || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
-        const { repoPath } = parseURL()
+        const { repoName } = parseURL()
 
-        const sameRepo = repoPath === def.repoPath
+        const sameRepo = repoName === def.repoName
         // Stay on same page in PR if possible.
         if (sameRepo && def.part) {
             const containers = getFileContainers()
@@ -169,7 +178,7 @@ export const githubCodeHost: CodeHost = {
             }
         }
 
-        return `https://${def.repoPath}/blob/${rev}/${def.filePath}#L${def.position.line}${
+        return `https://${def.repoName}/blob/${rev}/${def.filePath}#L${def.position.line}${
             def.position.character ? ':' + def.position.character : ''
         }`
     },

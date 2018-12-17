@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
@@ -14,16 +15,16 @@ export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsContr
     node: GQL.IFileDiff
 
     /** The base repository and revision. */
-    base: { repoPath: string; repoID: GQL.ID; rev: string; commitID: string }
+    base: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
 
     /** The head repository and revision. */
-    head: { repoPath: string; repoID: GQL.ID; rev: string; commitID: string }
+    head: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
 
     lineNumbers: boolean
     className?: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 }
 
 interface State {

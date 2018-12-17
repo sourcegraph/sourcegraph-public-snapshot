@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -250,20 +251,6 @@ func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message)
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
-func (c *internalClient) DefsRefreshIndex(ctx context.Context, repo RepoName, commitID CommitID) error {
-	return c.postInternal(ctx, "defs/refresh-index", &DefsRefreshIndexRequest{
-		RepoName: repo,
-		CommitID: commitID,
-	}, nil)
-}
-
-func (c *internalClient) PkgsRefreshIndex(ctx context.Context, repo RepoName, commitID CommitID) error {
-	return c.postInternal(ctx, "pkgs/refresh-index", &PkgsRefreshIndexRequest{
-		RepoName: repo,
-		CommitID: commitID,
-	}, nil)
-}
-
 func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCreateOrUpdateRequest) (*Repo, error) {
 	var repo Repo
 	err := c.postInternal(ctx, "repos/create-if-not-exists", op, &repo)
@@ -280,10 +267,10 @@ func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, erro
 	return names, err
 }
 
-func (c *internalClient) Configuration(ctx context.Context) (string, error) {
-	var raw string
-	err := c.postInternal(ctx, "configuration", nil, &raw)
-	return raw, err
+func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnified, error) {
+	var cfg conftypes.RawUnified
+	err := c.postInternal(ctx, "configuration", nil, &cfg)
+	return cfg, err
 }
 
 func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName, description string, fork bool, archived bool) error {
@@ -292,14 +279,6 @@ func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName,
 		Description: description,
 		Fork:        fork,
 		Archived:    archived,
-	}, nil)
-}
-
-func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, commitID CommitID, lang string) error {
-	return c.postInternal(ctx, "repos/update-index", RepoUpdateIndexRequest{
-		RepoID:   repo,
-		CommitID: commitID,
-		Language: lang,
 	}, nil)
 }
 
@@ -336,6 +315,19 @@ func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoNam
 		Callsign: callsign,
 		URL:      url,
 	}, nil)
+}
+
+var MockExternalServiceConfigs func(kind string, result interface{}) error
+
+// ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
+// which should be a slice of the expected config type.
+func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result interface{}) error {
+	if MockExternalServiceConfigs != nil {
+		return MockExternalServiceConfigs(kind, result)
+	}
+	return c.postInternal(ctx, "external-services/configs", ExternalServiceConfigsRequest{
+		Kind: kind,
+	}, &result)
 }
 
 func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody interface{}) error {

@@ -1,4 +1,3 @@
-import * as assert from 'assert'
 import { Observable, Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
@@ -23,7 +22,7 @@ export const FIXTURE = {
     },
 }
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocumentRegistrationOptions, {}> {
     /**
@@ -45,11 +44,11 @@ class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocume
 }
 
 describe('FeatureProviderRegistry', () => {
-    it('is initially empty', () => {
-        assert.deepStrictEqual(new FeatureProviderRegistry().providersSnapshot, [])
+    test('is initially empty', () => {
+        expect(new FeatureProviderRegistry().providersSnapshot).toEqual([])
     })
 
-    it('registers and unregisters providers', () => {
+    test('registers and unregisters providers', () => {
         const subscriptions = new Subscription()
         const registry = new FeatureProviderRegistry()
         const provider1 = () => ({})
@@ -58,18 +57,18 @@ describe('FeatureProviderRegistry', () => {
         const unregister1 = subscriptions.add(
             registry.registerProvider(FIXTURE.PartialEntry.registrationOptions, provider1)
         )
-        assert.deepStrictEqual(registry.providersSnapshot, [provider1])
+        expect(registry.providersSnapshot).toEqual([provider1])
 
         const unregister2 = subscriptions.add(
             registry.registerProvider(FIXTURE.PartialEntry.registrationOptions, provider2)
         )
-        assert.deepStrictEqual(registry.providersSnapshot, [provider1, provider2])
+        expect(registry.providersSnapshot).toEqual([provider1, provider2])
 
         unregister1.unsubscribe()
-        assert.deepStrictEqual(registry.providersSnapshot, [provider2])
+        expect(registry.providersSnapshot).toEqual([provider2])
 
         unregister2.unsubscribe()
-        assert.deepStrictEqual(registry.providersSnapshot, [])
+        expect(registry.providersSnapshot).toEqual([])
     })
 })
 
@@ -92,7 +91,7 @@ class DocumentFeatureProviderRegistry extends AbstractDocumentFeatureProviderReg
 
 describe('DocumentFeatureProviderRegistry', () => {
     describe('providersForDocument', () => {
-        it('is initially empty', () =>
+        test('is initially empty', () =>
             scheduler().run(({ expectObservable }) =>
                 expectObservable(new DocumentFeatureProviderRegistry().providersForDocument({ uri: 'file:///a' })).toBe(
                     'a',
@@ -102,7 +101,7 @@ describe('DocumentFeatureProviderRegistry', () => {
                 )
             ))
 
-        it('registers and unregisters a provider', () =>
+        test('registers and unregisters a provider', () =>
             scheduler().run(({ expectObservable, cold }) =>
                 expectObservable(
                     new DocumentFeatureProviderRegistry(

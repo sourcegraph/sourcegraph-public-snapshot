@@ -110,12 +110,11 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
-	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
 
 func authProviderTypes() []string {
-	ps := conf.Get().AuthProviders
+	ps := conf.Get().Critical.AuthProviders
 	types := make([]string, len(ps))
 	for i, p := range ps {
 		types[i] = conf.AuthProviderType(p)

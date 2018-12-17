@@ -49,7 +49,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
 		return &searchAlert{
 			title:       "Add repositories or connect repository hosts",
-			description: "There are no repositories to search. Go to the site admin area or see the documentation for setup instructions.",
+			description: "There are no repositories to search. Add an external service connection to your code host.",
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
@@ -160,7 +160,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if !envvar.SourcegraphDotComMode() {
 			if noRepositoriesEnabled, err := noRepositoriesEnabled(ctx); err == nil && noRepositoriesEnabled {
 				proposeQueries = false
-				if needsRepositoryConfiguration() {
+				ok, err := needsRepositoryConfiguration(ctx)
+				if err != nil {
+					return nil, err
+				}
+				if ok {
 					a.title = "No repositories or code hosts configured"
 					a.description = "To start searching code, "
 					if isSiteAdmin {

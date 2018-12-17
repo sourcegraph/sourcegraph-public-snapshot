@@ -1,29 +1,30 @@
-import {
-    createHoverifier,
-    HoveredToken,
-    HoveredTokenContext,
-    Hoverifier,
-    HoverOverlay,
-    HoverState,
-} from '@sourcegraph/codeintellify'
+import { createHoverifier, HoveredToken, Hoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
-import { Subject, Subscription } from 'rxjs'
+import { Subject, Subscribable, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
-import { escapeRevspecForURL } from '../../../../shared/src/util/url'
+import {
+    escapeRevspecForURL,
+    FileSpec,
+    ModeSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+} from '../../../../shared/src/util/url'
 import { getHover, getJumpURL } from '../../backend/features'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
-import { eventLogger } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -58,16 +59,15 @@ export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     repo: GQL.IRepository
 
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    base: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    head: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The URL route prefix for the comparison. */
     routePrefix: string
 }
 
-const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
 const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 /**
@@ -94,11 +94,11 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier
+    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
 
     constructor(props: Props) {
         super(props)
-        this.hoverifier = createHoverifier({
+        this.hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>({
             closeButtonClicks: this.closeButtonClicks,
             goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -113,9 +113,10 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
             pushHistory: path => this.props.history.push(path),
-            logTelemetryEvent,
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            fetchHover: hoveredToken =>
+                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props) as Subscribable<HoverMerged>,
             fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -123,10 +124,10 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
     }
 
     private getLSPTextDocumentPositionParams(
-        hoveredToken: HoveredToken & HoveredTokenContext
-    ): LSPTextDocumentPositionParams {
+        hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
-            repoPath: hoveredToken.repoPath,
+            repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,
             filePath: hoveredToken.filePath,
             commitID: hoveredToken.commitID,
@@ -163,8 +164,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
         const commonProps: RepositoryCompareAreaPageProps = {
             repo: this.props.repo,
-            base: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.base },
-            head: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.head },
+            base: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec && spec.base },
+            head: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec && spec.head },
             routePrefix: this.props.match.url,
             platformContext: this.props.platformContext,
         }
@@ -209,7 +210,6 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
-                        logTelemetryEvent={logTelemetryEvent}
                         linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}

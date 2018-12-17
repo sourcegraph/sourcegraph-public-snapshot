@@ -11,9 +11,9 @@ type AWS struct {
 	*schema.AWSCodeCommitConnection
 }
 
-var _ repoSource = AWS{}
+var _ RepoSource = AWS{}
 
-func (c AWS) cloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+func (c AWS) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
 	parsedCloneURL, _, _, err := parseURLs(cloneURL, "")
 	if err != nil {
 		return "", err

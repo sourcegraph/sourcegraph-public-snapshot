@@ -1,4 +1,4 @@
-import { isPlainObject } from 'lodash-es'
+import { isPlainObject } from 'lodash'
 import { ExtensionManifest as ExtensionManifestSchema } from '../schema/extension.schema'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'

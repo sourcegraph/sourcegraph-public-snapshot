@@ -6,7 +6,7 @@ import (
 
 	"context"
 
-	"gopkg.in/redsync.v1"
+	"github.com/go-redsync/redsync"
 )
 
 var (

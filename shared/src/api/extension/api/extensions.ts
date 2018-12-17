@@ -1,4 +1,5 @@
 import { Subscription, Unsubscribable } from 'rxjs'
+import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'
 
 /** @internal */
@@ -6,6 +7,9 @@ export interface ExtExtensionsAPI {
     $activateExtension(extensionID: string, bundleURL: string): Promise<void>
     $deactivateExtension(extensionID: string): Promise<void>
 }
+
+/** The WebWorker's global scope */
+declare const self: any
 
 /** @internal */
 export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
@@ -28,9 +32,9 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
         // Load the extension bundle and retrieve the extension entrypoint module's exports on
         // the global `module` property.
         try {
-            ;(self as any).exports = {}
-            ;(self as any).module = {}
-            ;(self as any).importScripts(bundleURL)
+            self.exports = {}
+            self.module = {}
+            self.importScripts(bundleURL)
         } catch (err) {
             throw new Error(
                 `error thrown while executing extension ${JSON.stringify(
@@ -38,9 +42,9 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
                 )} bundle (in importScripts of ${bundleURL}): ${err}`
             )
         }
-        const extensionExports = (self as any).module.exports
-        delete (self as any).exports
-        delete (self as any).module
+        const extensionExports = self.module.exports
+        delete self.exports
+        delete self.module
 
         if (!('activate' in extensionExports)) {
             throw new Error(
@@ -72,11 +76,13 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
         // significantly delaying other extensions.
         return tryCatchPromise<void>(() => extensionExports.activate({ subscriptions: extensionSubscriptions })).catch(
             error => {
+                error = asError(error)
                 throw Object.assign(
-                    new Error(`error during extension ${JSON.stringify(extensionID)} activate function: ${error}`),
-                    {
-                        error,
-                    }
+                    new Error(
+                        `error during extension ${JSON.stringify(extensionID)} activate function: ${error.stack ||
+                            error}`
+                    ),
+                    { error }
                 )
             }
         )

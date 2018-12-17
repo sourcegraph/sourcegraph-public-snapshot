@@ -16,15 +16,11 @@ import (
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	createSearchResolver := func(t *testing.T, query string) *searchResolver {
+	getResults := func(t *testing.T, query string) []string {
 		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
-		return r
-	}
-	getResults := func(t *testing.T, query string) []string {
-		r := createSearchResolver(t, query)
 		results, err := r.Results(context.Background())
 		if err != nil {
 			t.Fatal("Results:", err)
@@ -283,6 +279,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: struct{}{},
+				`case:yes`:        struct{}{},
 			},
 		},
 
@@ -296,6 +293,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: struct{}{},
 				`file:\.md$`:      struct{}{},
+				`case:yes`:        struct{}{},
 			},
 		},
 
@@ -309,7 +307,15 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$@develop`: struct{}{},
 				`file:\.md$`:              struct{}{},
+				`case:yes`:                struct{}{},
 			},
+		},
+
+		// If there are no search results, no filters should be displayed.
+		testCase{
+			descr:                     "no results",
+			searchResults:             []*searchResultResolver{},
+			expectedDynamicFilterStrs: map[string]struct{}{},
 		},
 	}
 

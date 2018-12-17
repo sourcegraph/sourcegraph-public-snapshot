@@ -1,14 +1,7 @@
-import {
-    BehaviorSubject,
-    combineLatest,
-    isObservable,
-    Observable,
-    ObservableInput,
-    of,
-    Subscribable,
-    Unsubscribable,
-} from 'rxjs'
+import { flatten, isEqual } from 'lodash'
+import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import {
     ActionContribution,
     ActionItem,
@@ -17,7 +10,6 @@ import {
     MenuContributions,
     MenuItemContribution,
 } from '../../protocol'
-import { flatten, isEqual } from '../../util'
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
@@ -33,7 +25,7 @@ export interface ContributionsEntry {
      * subscription. The {@link ContributionRegistry#contributions} observable blocks until all observables have
      * emitted.
      */
-    contributions: Contributions | ObservableInput<Contributions | Contributions[]>
+    contributions: Contributions | Observable<Contributions | Contributions[]>
 }
 
 /**
@@ -52,7 +44,7 @@ export class ContributionRegistry {
     public constructor(
         private model: Subscribable<Model>,
         private settingsService: Pick<SettingsService, 'data'>,
-        private context: Subscribable<Context>
+        private context: Subscribable<Context<any>>
     ) {}
 
     /** Register contributions and return an unsubscribable that deregisters the contributions. */
@@ -87,22 +79,40 @@ export class ContributionRegistry {
     /**
      * Returns an observable that emits all contributions (merged) evaluated in the current model (with the
      * optional scope). It emits whenever there is any change.
+     *
+     * @template T Extra allowed property value types for the {@link Context} value. See {@link Context}'s `T` type
+     * parameter for more information.
+     * @param extraContext Extra context values to use when computing the contributions. Properties in this object
+     * shadow (take precedence over) properties in the global context for this computation.
      */
-    public getContributions(scope?: ContributionScope): Observable<Contributions> {
-        return this.getContributionsFromEntries(this._entries, scope)
+    public getContributions<T>(
+        scope?: ContributionScope | undefined,
+        extraContext?: Context<T>
+    ): Observable<Contributions> {
+        return this.getContributionsFromEntries(this._entries, scope, extraContext)
     }
 
-    protected getContributionsFromEntries(
+    /**
+     * @template T Extra allowed property value types for the {@link Context} value. See {@link Context}'s `T` type
+     * parameter for more information.
+     */
+    protected getContributionsFromEntries<T>(
         entries: Observable<ContributionsEntry[]>,
-        scope?: ContributionScope
+        scope: ContributionScope | undefined,
+        extraContext?: Context<T>,
+        logWarning = (...args: any[]) => console.log(...args)
     ): Observable<Contributions> {
         return combineLatest(
             entries.pipe(
                 switchMap(entries =>
-                    combineLatest(
-                        ...entries.map(
-                            entry => (isObservable(entry.contributions) ? entry.contributions : of(entry.contributions))
-                        )
+                    combineLatestOrDefault(
+                        entries.map(
+                            entry =>
+                                isObservable<Contributions | Contributions[]>(entry.contributions)
+                                    ? entry.contributions
+                                    : of<Contributions>(entry.contributions)
+                        ),
+                        []
                     )
                 )
             ),
@@ -111,6 +121,11 @@ export class ContributionRegistry {
             this.context
         ).pipe(
             map(([multiContributions, model, settings, context]) => {
+                // Merge in extra context.
+                if (extraContext) {
+                    context = { ...context, ...extraContext }
+                }
+
                 // TODO(sqs): use {@link ContextService#observeValue}
                 const computedContext = {
                     get: (key: string) => getComputedContextProperty(model, settings, context, key, scope),
@@ -124,7 +139,7 @@ export class ContributionRegistry {
                     } catch (err) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
-                        console.error('Discarding contributions: evaluating expressions or templates failed.', {
+                        logWarning('Discarding contributions: evaluating expressions or templates failed.', {
                             contributions,
                             err,
                         })
@@ -180,6 +195,13 @@ export function mergeContributions(contributions: Contributions[]): Contribution
                         merged.menus[menu] = [...merged.menus[menu]!, ...items]
                     }
                 }
+            }
+        }
+        if (c.searchFilters) {
+            if (!merged.searchFilters) {
+                merged.searchFilters = [...c.searchFilters]
+            } else {
+                merged.searchFilters = [...merged.searchFilters, ...c.searchFilters]
             }
         }
     }

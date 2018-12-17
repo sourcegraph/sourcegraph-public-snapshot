@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "--- require changelog"
+
 set -x
 
 if [ "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" != "master" ]; then
@@ -14,7 +16,7 @@ changed_files=$(git diff --name-only origin/master...)
 
 # If the changed files don't match any of these regular expressions
 # then no changelog entry is required.
-if ! echo "${changed_files}" | grep -qE -e '(cmd|pkg|schema|xlang)/.*\.go$' -e '(shared|web)/.*\.(tsx?|json)$'; then
+if ! echo "${changed_files}" | grep -qE -e '(cmd|pkg|schema)/.*\.go$' -e '(shared|web)/.*\.(tsx?|json)$'; then
     set +x
     echo "CHANGELOG.md entry not required for these file changes"
     exit 0

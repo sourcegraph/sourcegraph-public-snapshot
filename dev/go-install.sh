@@ -6,7 +6,7 @@
 # This will install binaries into the `.bin` directory under the repository root by default or, if
 # $GOMOD_ROOT is set, under that directory.
 
-all_oss_commands=" gitserver indexer query-runner github-proxy lsp-proxy management-console searcher frontend repo-updater symbols "
+all_oss_commands=" gitserver query-runner github-proxy management-console searcher frontend repo-updater symbols "
 
 # GOMOD_ROOT is the directory from which `go install` commands are run. It should contain a go.mod
 # file. The go.mod file may be updated as a side effect of updating the dependencies before the `go
@@ -64,6 +64,7 @@ export GO111MODULE=on
 
 if ! go install \
 	github.com/mattn/goreman \
+	github.com/derekparker/delve/cmd/dlv \
 	github.com/google/zoekt/cmd/zoekt-archive-index \
 	github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
 	github.com/google/zoekt/cmd/zoekt-webserver; then

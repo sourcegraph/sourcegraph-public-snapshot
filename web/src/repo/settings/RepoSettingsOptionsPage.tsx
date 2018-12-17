@@ -2,7 +2,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { REPO_DELETE_CONFIRMATION_MESSAGE } from '.'
@@ -82,18 +81,6 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             autoCorrect="off"
                             aria-describedby="repo-settings-options-page__name-help"
                         />
-                        <small id="repo-settings-options-page__name-help" className="form-text text-muted">
-                            This repository's name is set by its{' '}
-                            {this.state.repo.viewerCanAdminister ? (
-                                <Link to="/site-admin/configuration">code host configuration</Link>
-                            ) : (
-                                'code host configuration'
-                            )}{' '}
-                            and can't be changed.
-                        </small>
-                        <button className="btn btn-primary mt-1" disabled={true} type="submit">
-                            Rename
-                        </button>
                     </div>
                 </Form>
                 <ActionContainer

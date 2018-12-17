@@ -20,6 +20,7 @@ import { queryGraphQL } from '../backend/graphql'
 import { OverviewItem, OverviewList } from '../components/Overview'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 
 interface Props {
@@ -104,6 +105,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
+                <div className="mb-3">
+                    <SiteAdminManagementConsolePassword />
+                </div>
                 {this.props.overviewComponents.length > 0 && (
                     <div className="mb-4">{this.props.overviewComponents.map((C, i) => <C key={i} />)}</div>
                 )}
@@ -126,8 +130,8 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 icon={RepositoryIcon}
                                 actions={
                                     <>
-                                        <Link to="/site-admin/configuration" className="btn btn-primary btn-sm">
-                                            <SettingsIcon className="icon-inline" /> Configure repositories
+                                        <Link to="/site-admin/external-services" className="btn btn-primary btn-sm">
+                                            <SettingsIcon className="icon-inline" /> Configure external services
                                         </Link>
                                         <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
                                             <OpenInNewIcon className="icon-inline" /> View all

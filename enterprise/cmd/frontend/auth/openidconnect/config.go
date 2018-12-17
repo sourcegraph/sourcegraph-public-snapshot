@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -28,12 +27,6 @@ func getProvider(id string) *provider {
 
 func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p *provider, handled bool) {
 	handled = true // safer default
-
-	// License check.
-	if !licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
-		licensing.WriteSubscriptionErrorResponseForFeature(w, "OpenID Connect user authentication (SSO)")
-		return nil, true
-	}
 
 	p = getProvider(id)
 	if p == nil {
@@ -58,17 +51,17 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c schema.SiteConfiguration) (problems []string) {
+func validateConfig(c conf.Unified) (problems []string) {
 	var loggedNeedsExternalURL bool
-	for _, p := range c.AuthProviders {
-		if p.Openidconnect != nil && c.ExternalURL == "" && !loggedNeedsExternalURL {
+	for _, p := range c.Critical.AuthProviders {
+		if p.Openidconnect != nil && c.Critical.ExternalURL == "" && !loggedNeedsExternalURL {
 			problems = append(problems, `openidconnect auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
 			loggedNeedsExternalURL = true
 		}
 	}
 
 	seen := map[schema.OpenIDConnectAuthProvider]int{}
-	for i, p := range c.AuthProviders {
+	for i, p := range c.Critical.AuthProviders {
 		if p.Openidconnect != nil {
 			if j, ok := seen[*p.Openidconnect]; ok {
 				problems = append(problems, fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j))

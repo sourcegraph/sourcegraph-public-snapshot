@@ -1,11 +1,11 @@
-import { assertToJSON } from './common.test'
 import { Location } from './location'
 import { Position } from './position'
 import { Range } from './range'
+import { assertToJSON } from './testHelpers'
 import { URI } from './uri'
 
 describe('Location', () => {
-    it('toJSON', () => {
+    test('toJSON', () => {
         assertToJSON(new Location(URI.file('u.ts'), new Position(3, 4)), {
             uri: URI.parse('file://u.ts').toJSON(),
             range: { start: { line: 3, character: 4 }, end: { line: 3, character: 4 } },

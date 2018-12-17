@@ -236,9 +236,7 @@ export class SymbolsDropdownContainer extends React.Component<Props, State> {
 
         const { repoKey } = getContext()
 
-        const symbolResults = fetchSymbols({
-            query: `repo:^${repoKey}\$ type:symbol ${queryText}`,
-        }).pipe(
+        const symbolResults = fetchSymbols(`repo:^${repoKey}\$ type:symbol ${queryText}`).pipe(
             catchError(err => {
                 console.error(err)
                 return [asError(err)]

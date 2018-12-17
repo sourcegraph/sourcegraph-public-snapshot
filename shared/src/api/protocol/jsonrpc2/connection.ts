@@ -383,9 +383,8 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                                 replyError(error as ResponseError<any>)
                             } else if (error && typeof error.message === 'string') {
                                 replyError(
-                                    new ResponseError<void>(ErrorCodes.InternalError, error.message, {
+                                    new ResponseError<any>(ErrorCodes.InternalError, error.message, {
                                         stack: error.stack,
-                                        ...error,
                                     })
                                 )
                             } else {
@@ -414,9 +413,8 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                     reply(error as ResponseError<any>, true)
                 } else if (error && typeof error.message === 'string') {
                     replyError(
-                        new ResponseError<void>(ErrorCodes.InternalError, error.message, {
+                        new ResponseError<any>(ErrorCodes.InternalError, error.message, {
                             stack: error.stack,
-                            ...error,
                         })
                     )
                 } else {
