@@ -1157,11 +1157,6 @@
   resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-2.2.0.tgz#af4a6fcd465b0a39a07ffbd8f2d3414d01e603e8"
   integrity sha512-kRdHxdAppxYnN7qAQjNTyuG05pjYHFtEUquZauXVXBeaGB4sye3uSkb8wgi34jeaUHG/gWp2f5hQgCCBMizjjA==
 
-"@sourcegraph/react-loading-spinner@0.0.6":
-  version "0.0.6"
-  resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.6.tgz#9729c833cc250b788407194c2abacbbc3f68a6f4"
-  integrity sha512-ouE4HeOvDiuBsQ04BAS0plhF1dn9Q5NEiWEpAlxj7uTXlFMiXCO4NL2hejsuSA9+N1ZIysPQL4HrKQZ835ny3w==
-
 "@sourcegraph/react-loading-spinner@0.0.7":
   version "0.0.7"
   resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
