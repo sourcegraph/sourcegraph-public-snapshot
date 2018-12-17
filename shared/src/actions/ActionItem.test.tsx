@@ -77,12 +77,64 @@ describe('ActionItem', () => {
         expect(tree).toMatchSnapshot()
     })
 
+    test('run command with showLoadingSpinnerDuringExecution', async () => {
+        const { wait, done } = createBarrier()
+
+        const component = renderer.create(
+            <ActionItem
+                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                variant="actionItem"
+                showLoadingSpinnerDuringExecution={true}
+                location={history.location}
+                extensionsController={{ ...NOOP_EXTENSIONS_CONTROLLER, executeCommand: async () => wait }}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )
+
+        // Run command and wait for execution to finish.
+        let tree = component.toJSON()
+        tree!.props.onClick({ preventDefault: () => void 0, currentTarget: { blur: () => void 0 } })
+        tree = component.toJSON()
+        expect(tree).toMatchSnapshot()
+
+        // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
+        // call.)
+        done()
+        await new Promise<void>(r => setTimeout(r))
+        tree = component.toJSON()
+        expect(tree).toMatchSnapshot()
+    })
+
     test('run command with error', async () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 variant="actionItem"
                 disabledDuringExecution={true}
+                location={history.location}
+                extensionsController={{
+                    ...NOOP_EXTENSIONS_CONTROLLER,
+                    executeCommand: async () => Promise.reject('x'),
+                }}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )
+
+        // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
+        // to result in the setState call.)
+        let tree = component.toJSON()
+        tree!.props.onClick({ preventDefault: () => void 0, currentTarget: { blur: () => void 0 } })
+        await new Promise<void>(r => setTimeout(r))
+        tree = component.toJSON()
+        expect(tree).toMatchSnapshot()
+    })
+
+    test('run command with error with showInlineError', async () => {
+        const component = renderer.create(
+            <ActionItem
+                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                variant="actionItem"
+                showInlineError={true}
                 location={history.location}
                 extensionsController={{
                     ...NOOP_EXTENSIONS_CONTROLLER,
