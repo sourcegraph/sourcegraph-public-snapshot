@@ -1,13 +1,9 @@
-import { assert } from 'chai'
-import mkdirp from 'mkdirp-promise'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { retry } from '../util/e2e-test-utils'
 
-const REPO_ROOT = path.resolve(__dirname, '..', '..', '..')
-const SCREENSHOT_DIRECTORY = path.resolve(__dirname, '..', '..', 'puppeteer')
-
-describe('e2e test suite', () => {
+describe('e2e test suite', function(this: any): void {
     let authenticate: (page: puppeteer.Page) => Promise<void>
     let baseURL: string
 
@@ -38,16 +34,23 @@ describe('e2e test suite', () => {
     let browser: puppeteer.Browser
     let page: puppeteer.Page
     if (browserWSEndpoint) {
-        before('Connect to browser', async () => {
+        // Connect to browser.
+        beforeAll(async () => {
             browser = await puppeteer.connect({ browserWSEndpoint })
         })
-        after('Disconnect from browser', async () => {
+
+        // Disconnect from browser.
+        afterAll(async () => {
             if (browser) {
+                if (page && !page.isClosed()) {
+                    await page.close()
+                }
                 await browser.disconnect()
             }
         })
     } else {
-        before('Start browser', async () => {
+        // Start browser.
+        beforeAll(async () => {
             let args: string[] | undefined
             if (process.getuid() === 0) {
                 // TODO don't run as root in CI
@@ -56,36 +59,31 @@ describe('e2e test suite', () => {
             }
             browser = await puppeteer.launch({ args })
         })
-        after('Close browser', async () => {
+
+        // Close browser.
+        afterAll(async () => {
             if (browser) {
+                if (page && !page.isClosed()) {
+                    await page.close()
+                }
                 await browser.close()
             }
         })
     }
-    beforeEach('Open page', async () => {
+
+    // Open page.
+    beforeEach(async () => {
         page = await browser.newPage()
         await authenticate(page)
         await disableDefaultFeatureFlags(page)
     })
-    afterEach('Close page', async function(): Promise<void> {
-        if (page) {
-            if (this.currentTest && this.currentTest.state === 'failed') {
-                await mkdirp(SCREENSHOT_DIRECTORY)
-                const filePath = path.join(
-                    SCREENSHOT_DIRECTORY,
-                    this.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
-                )
-                await page.screenshot({ path: filePath })
-                if (process.env.CI) {
-                    // Print image with ANSI escape code for Buildkite
-                    // https://buildkite.com/docs/builds/images-in-log-output
-                    const relativePath = path.relative(REPO_ROOT, filePath)
-                    console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
-                }
-            }
-            await page.close()
-        }
-    })
+
+    // Take a screenshot when a test fails.
+    saveScreenshotsUponFailuresAndClosePage(
+        path.resolve(__dirname, '..', '..', '..'),
+        path.resolve(__dirname, '..', '..', 'puppeteer'),
+        () => page
+    )
 
     const enableOrAddRepositoryIfNeeded = async (): Promise<any> => {
         // Disable any toasts, which can interfere with clicking on the enable/add button.
@@ -120,7 +118,7 @@ describe('e2e test suite', () => {
     const assertWindowLocation = async (location: string, isAbsolute = false): Promise<any> => {
         const url = isAbsolute ? location : baseURL + location
         await retry(async () => {
-            assert.equal(await page.evaluate(() => window.location.href), url)
+            expect(await page.evaluate(() => window.location.href)).toEqual(url)
         })
     }
 
@@ -128,17 +126,16 @@ describe('e2e test suite', () => {
         const prefix = isAbsolute ? locationPrefix : baseURL + locationPrefix
         await retry(async () => {
             const loc: string = await page.evaluate(() => window.location.href)
-            assert.ok(loc.startsWith(prefix), `expected window.location to start with ${prefix}, but got ${loc}`)
+            expect(loc.startsWith(prefix)).toBeTruthy()
         })
     }
 
     const assertStickyHighlightedToken = async (label: string): Promise<void> => {
         await page.waitForSelector('.selection-highlight-sticky') // make sure matched token is highlighted
         await retry(async () =>
-            assert.equal(
-                await page.evaluate(() => document.querySelector('.selection-highlight-sticky')!.textContent),
-                label
-            )
+            expect(
+                await page.evaluate(() => document.querySelector('.selection-highlight-sticky')!.textContent)
+            ).toEqual(label)
         )
     }
 
@@ -146,69 +143,63 @@ describe('e2e test suite', () => {
         const highlightedTokens: string[] = await page.evaluate(() =>
             Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent)
         )
-        assert.ok(
-            highlightedTokens.every(txt => txt === label),
-            `unexpected tokens highlighted (expected '${label}'): ${highlightedTokens}`
-        )
+        expect(highlightedTokens.every(txt => txt === label)).toBeTruthy()
     }
 
     const assertNonemptyLocalRefs = async (): Promise<void> => {
         // verify active group is local references
         await page.waitForSelector('.panel__tabs .tab-bar__tab--active')
-        assert.equal(
+        expect(
             await page.evaluate(() =>
                 document.querySelector('.panel__tabs .tab-bar__tab--active')!.textContent!.replace(/\d/g, '')
-            ),
-            'References'
-        )
+            )
+        ).toEqual('References')
 
         await page.waitForSelector('.panel__tabs-content .file-match__list')
         await retry(async () =>
-            assert.ok(
+            expect(
+                // assert some (local) refs fetched
                 (await page.evaluate(
                     () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
-                )) > 0, // assert some (local) refs fetched
-                'expected some local references, got none'
-            )
+                )) > 0
+            ).toBeTruthy()
         )
     }
 
     const assertNonemptyExternalRefs = async (): Promise<void> => {
         // verify active group is external references
         await page.waitForSelector('.panel__tabs .tab-bar__tab--active')
-        assert.equal(
-            await page.evaluate(() => document.querySelector('.panel__tabs .tab-bar__tab--active')!.textContent),
-            'External references'
-        )
+        expect(
+            await page.evaluate(() => document.querySelector('.panel__tabs .tab-bar__tab--active')!.textContent)
+        ).toEqual('External references')
         await page.waitForSelector('.panel__tabs .file-match__list')
         await retry(async () => {
-            assert.ok(
+            expect(
+                // assert some external refs fetched
                 (await page.evaluate(
                     () => document.querySelectorAll('.panel__tabs .hierarchical-locations-view__item').length // get the external refs count
-                )) > 0, // assert some external refs fetched
-                'expected some external references, got none'
-            )
+                )) > 0
+            ).toBeTruthy()
         })
     }
 
     describe('Theme switcher', () => {
-        it('changes the theme when toggle is clicked', async () => {
+        test('changes the theme when toggle is clicked', async () => {
             await page.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
             await enableOrAddRepositoryIfNeeded()
             await page.waitForSelector('.theme')
             const currentThemes: string[] = await page.evaluate(() =>
                 Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
             )
-            assert.equal(currentThemes.length, 1, 'Expected 1 theme')
+            expect(currentThemes.length).toEqual(1)
             const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
             await page.click('.e2e-user-nav-item-toggle')
             await page.click('.e2e-user-nav-item__theme')
-            assert.deepEqual(
+            expect(
                 await page.evaluate(() =>
                     Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-                ),
-                [expectedTheme]
-            )
+                )
+            ).toEqual([expectedTheme])
         })
     })
 
@@ -235,7 +226,7 @@ describe('e2e test suite', () => {
             )
         }
         const assertHoverContentContains = async (val: string, count?: number) => {
-            assert.include(await getHoverContents(count), val, 'hover contains expected contents')
+            expect(await getHoverContents(count)).toContain(val)
         }
 
         const clickHoverJ2D = async (): Promise<void> => {
@@ -250,7 +241,7 @@ describe('e2e test suite', () => {
         }
 
         describe('file tree', () => {
-            it('does navigation on file click', async () => {
+            test('does navigation on file click', async () => {
                 await page.goto(
                     baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
@@ -262,7 +253,7 @@ describe('e2e test suite', () => {
                 )
             })
 
-            it('expands directory on row click (no navigation)', async () => {
+            test('expands directory on row click (no navigation)', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row-icon')
@@ -272,7 +263,7 @@ describe('e2e test suite', () => {
                 await assertWindowLocation('/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
             })
 
-            it('does navigation on directory row click', async () => {
+            test('does navigation on directory row click', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row-label')
@@ -284,7 +275,7 @@ describe('e2e test suite', () => {
                 )
             })
 
-            it('selects the current file', async () => {
+            test('selects the current file', async () => {
                 await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
@@ -293,20 +284,19 @@ describe('e2e test suite', () => {
                 await page.waitForSelector('.tree__row--active [data-tree-path="godockerize.go"]')
             })
 
-            it('shows partial tree when opening directory', async () => {
+            test('shows partial tree when opening directory', async () => {
                 await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row')
-                assert.equal(await page.evaluate(() => document.querySelectorAll('.tree__row').length), 1)
+                expect(await page.evaluate(() => document.querySelectorAll('.tree__row').length)).toEqual(1)
             })
 
-            it('responds to keyboard shortcuts', async () => {
+            test('responds to keyboard shortcuts', async () => {
                 const assertNumRowsExpanded = async (expectedCount: number) => {
-                    assert.equal(
-                        await page.evaluate(() => document.querySelectorAll('.tree__row--expanded').length),
+                    expect(await page.evaluate(() => document.querySelectorAll('.tree__row--expanded').length)).toEqual(
                         expectedCount
                     )
                 }
@@ -378,33 +368,28 @@ describe('e2e test suite', () => {
             })
             */
 
-            it('shows commit information on a row', async () => {
+            test('shows commit information on a row', async () => {
                 await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983', {
                     waitUntil: 'domcontentloaded',
                 })
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.git-commit-node__message')
                 await retry(async () =>
-                    assert.include(
-                        await page.evaluate(
-                            () => document.querySelectorAll('.git-commit-node__message')[2].textContent
-                        ),
-                        'Add fuzz testing corpus.'
-                    )
+                    expect(
+                        await page.evaluate(() => document.querySelectorAll('.git-commit-node__message')[2].textContent)
+                    ).toContain('Add fuzz testing corpus.')
                 )
                 await retry(async () =>
-                    assert.include(
+                    expect(
                         await page.evaluate(() =>
                             document.querySelectorAll('.git-commit-node-byline')[2].textContent!.trim()
-                        ),
-                        'Kamil Kisiel'
-                    )
+                        )
+                    ).toContain('Kamil Kisiel')
                 )
                 await retry(async () =>
-                    assert.equal(
-                        await page.evaluate(() => document.querySelectorAll('.git-commit-node__oid')[2].textContent),
-                        'c13558c'
-                    )
+                    expect(
+                        await page.evaluate(() => document.querySelectorAll('.git-commit-node__oid')[2].textContent)
+                    ).toEqual('c13558c')
                 )
             })
 
@@ -424,33 +409,31 @@ describe('e2e test suite', () => {
         })
 
         describe('rev resolution', () => {
-            it('shows clone in progress interstitial page', async () => {
+            test('shows clone in progress interstitial page', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraphtest/AlwaysCloningTest')
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.hero-page__subtitle')
                 await retry(async () =>
-                    assert.equal(
-                        await page.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent),
-                        'Cloning in progress'
-                    )
+                    expect(
+                        await page.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent)
+                    ).toEqual('Cloning in progress')
                 )
             })
 
-            it('resolves default branch when unspecified', async () => {
+            test('resolves default branch when unspecified', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.repo-header__rev')
                 await retry(async () => {
-                    assert.equal(
-                        await page.evaluate(() => document.querySelector('.repo-header__rev')!.textContent!.trim()),
-                        'master'
-                    )
+                    expect(
+                        await page.evaluate(() => document.querySelector('.repo-header__rev')!.textContent!.trim())
+                    ).toEqual('master')
                 })
                 // Verify file contents are loaded.
                 await page.waitForSelector(blobTableSelector)
             })
 
-            it('updates rev with switcher', async () => {
+            test('updates rev with switcher', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
                 await enableOrAddRepositoryIfNeeded()
                 // Open rev switcher
@@ -467,7 +450,7 @@ describe('e2e test suite', () => {
         describe('hovers', () => {
             describe(`Blob`, () => {
                 // Temporarely skipped because of flakiness. TODO find cause
-                it.skip('gets displayed and updates URL when clicking on a token', async () => {
+                test.skip('gets displayed and updates URL when clicking on a token', async () => {
                     await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
@@ -485,7 +468,7 @@ describe('e2e test suite', () => {
                 // access to sourcegraph-frontend's internal API)
                 // TODO@ggilmore
                 // TODO@chrismwendt
-                it.skip('gets displayed when navigating to a URL with a token position', async () => {
+                test.skip('gets displayed when navigating to a URL with a token position', async () => {
                     await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
@@ -505,7 +488,7 @@ describe('e2e test suite', () => {
                 // TODO@ggilmore
                 // TODO@chrismwendt
                 describe.skip('jump to definition', () => {
-                    it('noops when on the definition', async () => {
+                    test('noops when on the definition', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
@@ -517,7 +500,7 @@ describe('e2e test suite', () => {
                         )
                     })
 
-                    it('does navigation (same repo, same file)', async () => {
+                    test('does navigation (same repo, same file)', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L25:10'
@@ -529,7 +512,7 @@ describe('e2e test suite', () => {
                         )
                     })
 
-                    it('does navigation (same repo, different file)', async () => {
+                    test('does navigation (same repo, different file)', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go#L13:31'
@@ -543,7 +526,7 @@ describe('e2e test suite', () => {
                         return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]')
                     })
 
-                    it('does navigation (external repo)', async () => {
+                    test('does navigation (external repo)', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
@@ -561,8 +544,8 @@ describe('e2e test suite', () => {
                     // access to sourcegraph-frontend's internal API)
                     // TODO@ggilmore
                     // TODO@chrismwendt
-                    it.skip('opens widget and fetches local references', async function(): Promise<void> {
-                        this.timeout(120000)
+                    test.skip('opens widget and fetches local references', async (): Promise<void> => {
+                        jest.setTimeout(120000)
 
                         await page.goto(
                             baseURL +
@@ -579,11 +562,13 @@ describe('e2e test suite', () => {
                         // verify the appropriate # of references are fetched
                         await page.waitForSelector('.panel__tabs-content .file-match__list')
                         await retry(async () =>
-                            assert.equal(
+                            expect(
                                 await page.evaluate(
                                     () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
-                                ),
-                                3 // 4 references, two of which got merged into one because their context overlaps
+                                )
+                            ).toEqual(
+                                // 4 references, two of which got merged into one because their context overlaps
+                                3
                             )
                         )
 
@@ -591,35 +576,34 @@ describe('e2e test suite', () => {
                         await assertAllHighlightedTokens('MultiFileDiffReader')
                     })
 
-                    it('opens widget and fetches external references', async function(): Promise<void> {
-                        // Testing external references on localhost is unreliable, since different dev environments will
-                        // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
-                        // 1 repo, in which case there would never be external references. So we *only* run this test against
-                        // non-localhost servers.
-                        if (baseURL === 'http://localhost:3080') {
-                            this.skip()
-                            return
+                    // Testing external references on localhost is unreliable, since different dev environments will
+                    // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
+                    // 1 repo, in which case there would never be external references. So we *only* run this test against
+                    // non-localhost servers.
+                    const skipExternalReferences = baseURL === 'http://localhost:3080'
+                    ;(skipExternalReferences ? test.skip : test)(
+                        'opens widget and fetches external references',
+                        async () => {
+                            await page.goto(
+                                baseURL +
+                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
+                            )
+                            await enableOrAddRepositoryIfNeeded()
+
+                            // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
+                            // look like they're for the appropriate token)
+                            await assertNonemptyExternalRefs()
+
+                            // verify all the matches highlight a `Reader` token
+                            await assertAllHighlightedTokens('Reader')
                         }
-
-                        await page.goto(
-                            baseURL +
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
-                        )
-                        await enableOrAddRepositoryIfNeeded()
-
-                        // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
-                        // look like they're for the appropriate token)
-                        await assertNonemptyExternalRefs()
-
-                        // verify all the matches highlight a `Reader` token
-                        await assertAllHighlightedTokens('Reader')
-                    })
+                    )
                 })
             })
         })
 
         describe.skip('godoc.org "Uses" links', () => {
-            it('resolves standard library function', async () => {
+            test('resolves standard library function', async () => {
                 // https://godoc.org/bytes#Compare
                 await page.goto(baseURL + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
                 await enableOrAddRepositoryIfNeeded()
@@ -629,7 +613,7 @@ describe('e2e test suite', () => {
                 await assertAllHighlightedTokens('Compare')
             })
 
-            it('resolves standard library function (from stdlib repo)', async () => {
+            test('resolves standard library function (from stdlib repo)', async () => {
                 // https://godoc.org/github.com/golang/go/src/bytes#Compare
                 await page.goto(
                     baseURL +
@@ -642,7 +626,7 @@ describe('e2e test suite', () => {
                 await assertAllHighlightedTokens('Compare')
             })
 
-            it('resolves external package function (from gorilla/mux)', async () => {
+            test('resolves external package function (from gorilla/mux)', async () => {
                 // https://godoc.org/github.com/gorilla/mux#Router
                 await page.goto(
                     baseURL + '/-/godoc/refs?def=Router&pkg=github.com%2Fgorilla%2Fmux&repo=github.com%2Fgorilla%2Fmux'
@@ -656,7 +640,7 @@ describe('e2e test suite', () => {
         })
 
         describe('external code host links', () => {
-            it('on repo navbar ("View on GitHub")', async () => {
+            test('on repo navbar ("View on GitHub")', async () => {
                 await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19',
@@ -665,11 +649,12 @@ describe('e2e test suite', () => {
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.nav-link[href*="https://github"]')
                 await retry(async () =>
-                    assert.equal(
+                    expect(
                         await page.evaluate(
                             () =>
                                 (document.querySelector('.nav-link[href*="https://github"]') as HTMLAnchorElement).href
-                        ),
+                        )
+                    ).toEqual(
                         'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'
                     )
                 )
@@ -678,7 +663,7 @@ describe('e2e test suite', () => {
     })
 
     describe('Search component', () => {
-        it.skip('renders results for sourcegraph/go-diff (no search group)', async () => {
+        test.skip('renders results for sourcegraph/go-diff (no search group)', async () => {
             await page.goto(
                 baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
             )
@@ -687,21 +672,19 @@ describe('e2e test suite', () => {
                 const label: string = await page.evaluate(
                     () => document.querySelector('.search-results__stats')!.textContent
                 )
-                assert.equal(label.includes('results'), true, 'incorrect label for search results')
+                expect(label.includes('results')).toEqual(true)
             })
             // navigate to result on click
             await page.click('.file-match__item')
             await retry(async () => {
-                assert.equal(
-                    await page.evaluate(() => window.location.href),
+                expect(await page.evaluate(() => window.location.href)).toEqual(
                     baseURL +
-                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/testdata/sample_file_extended_empty_rename.diff#L1:1a',
-                    'Unexpected window.location.href after clicking result'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/testdata/sample_file_extended_empty_rename.diff#L1:1a'
                 )
             })
         })
 
-        it('accepts query for sourcegraph/jsonrpc2', async () => {
+        test('accepts query for sourcegraph/jsonrpc2', async () => {
             await page.goto(baseURL + '/search')
 
             // Update the input value
@@ -725,7 +708,7 @@ describe('e2e test suite', () => {
                     )
                 }
                 const numberOfResults = parseInt(match[1], 10)
-                assert.isAbove(numberOfResults, 0, 'Expected >0 search results')
+                expect(numberOfResults).toBeGreaterThan(0)
             })
         })
     })

@@ -4,6 +4,11 @@
   "rules": {
     "await-promise": false,
     "import-blacklist": [true, "highlight.js"],
+    "ban": [
+      true,
+      { "name": ["assert", "strictEqual"], "message": "Use jest matchers instead." },
+      { "name": ["assert", "deepStrictEqual"], "message": "Use jest matchers instead." }
+    ],
     "jsx-ban-elements": [
       true,
       [

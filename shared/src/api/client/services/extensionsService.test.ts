@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { from, of, Subscribable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
@@ -7,7 +6,7 @@ import { Model } from '../model'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 class TestExtensionsService extends ExtensionsService {
     constructor(
@@ -35,7 +34,7 @@ class TestExtensionsService extends ExtensionsService {
 }
 
 describe('activeExtensions', () => {
-    it('emits an empty set', () =>
+    test('emits an empty set', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 from(
@@ -54,7 +53,7 @@ describe('activeExtensions', () => {
         ))
 
     const manifest = { url: 'u', activationEvents: [] }
-    it('previously activated extensions remain activated when their activationEvents no longer match', () =>
+    test('previously activated extensions remain activated when their activationEvents no longer match', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 from(

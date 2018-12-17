@@ -1,12 +1,11 @@
 import * as clientType from '@sourcegraph/extension-api-types'
-import * as assert from 'assert'
 import { take } from 'rxjs/operators'
 import { Range } from '../extension/types/range'
-import { integrationTestContext } from './helpers.test'
+import { integrationTestContext } from './testHelpers'
 
 describe('CodeEditor (integration)', () => {
     describe('setDecorations', () => {
-        it('adds decorations', async () => {
+        test('adds decorations', async () => {
             const { services, extensionHost } = await integrationTestContext()
 
             // Set some decorations and check they are present on the client.
@@ -18,29 +17,27 @@ describe('CodeEditor (integration)', () => {
                 },
             ])
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
-                    .toPromise(),
-                [
-                    {
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                        backgroundColor: 'red',
-                    },
-                ] as clientType.TextDocumentDecoration[]
-            )
+                    .toPromise()
+            ).toEqual([
+                {
+                    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                    backgroundColor: 'red',
+                },
+            ] as clientType.TextDocumentDecoration[])
 
             // Clear the decorations and ensure they are removed.
             codeEditor.setDecorations(null, [])
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
                     .pipe(take(1))
-                    .toPromise(),
-                null
-            )
+                    .toPromise()
+            ).toEqual(null)
         })
     })
 })

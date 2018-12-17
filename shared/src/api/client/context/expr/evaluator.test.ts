@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { evaluate, evaluateTemplate } from './evaluator'
 
 const FIXTURE_CONTEXT = new Map<string, any>(
@@ -41,9 +40,9 @@ describe('evaluate', () => {
     }
     // tslint:enable:no-invalid-template-strings
     for (const [expr, want] of Object.entries(TESTS)) {
-        it(expr, () => {
+        test(expr, () => {
             const value = evaluate(expr, FIXTURE_CONTEXT)
-            assert.deepStrictEqual(value, want)
+            expect(value).toBe(want)
         })
     }
 })
@@ -59,9 +58,9 @@ describe('evaluateTemplate', () => {
     }
     // tslint:enable:no-invalid-template-strings
     for (const [template, want] of Object.entries(TESTS)) {
-        it(template, () => {
+        test(template, () => {
             const value = evaluateTemplate(template, FIXTURE_CONTEXT)
-            assert.strictEqual(value, want)
+            expect(value).toBe(want)
         })
     }
 })

@@ -1,13 +1,12 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import * as assert from 'assert'
 import { Observable } from 'rxjs'
 import { bufferCount, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
-import { assertToJSON } from '../extension/types/common.test'
+import { assertToJSON } from '../extension/types/testHelpers'
 import { URI } from '../extension/types/uri'
-import { createBarrier, integrationTestContext } from './helpers.test'
+import { createBarrier, integrationTestContext } from './testHelpers'
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider<sourcegraph.HoverProvider>(
@@ -141,30 +140,28 @@ function testLocationProvider<P>(
     getResult: (services: Services) => Observable<any>
 ): void {
     describe(`languages.${name}`, () => {
-        it('registers and unregisters a single provider', async () => {
+        test('registers and unregisters a single provider', async () => {
             const { services, extensionHost } = await integrationTestContext()
 
             // Register the provider and call it.
             const unsubscribe = registerProvider(extensionHost)(['*'], labeledProvider('a'))
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            expect(
                 await getResult(services)
                     .pipe(take(1))
-                    .toPromise(),
-                labeledProviderResults(['a'])
-            )
+                    .toPromise()
+            ).toEqual(labeledProviderResults(['a']))
 
             // Unregister the provider and ensure it's removed.
             unsubscribe.unsubscribe()
-            assert.deepStrictEqual(
+            expect(
                 await getResult(services)
                     .pipe(take(1))
-                    .toPromise(),
-                null
-            )
+                    .toPromise()
+            ).toEqual(null)
         })
 
-        it('supplies params to the provideXyz method', async () => {
+        test('supplies params to the provideXyz method', async () => {
             const { services, extensionHost } = await integrationTestContext()
             const { wait, done } = createBarrier()
             registerProvider(extensionHost)(
@@ -182,7 +179,7 @@ function testLocationProvider<P>(
             await wait
         })
 
-        it('supports multiple providers', async () => {
+        test('supports multiple providers', async () => {
             const { services, extensionHost } = await integrationTestContext()
 
             // Register 2 providers with different results.
@@ -191,15 +188,14 @@ function testLocationProvider<P>(
             await extensionHost.internal.sync()
 
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
-            assert.deepStrictEqual(
+            expect(
                 await getResult(services)
                     .pipe(
                         take(2),
                         bufferCount(2)
                     )
-                    .toPromise(),
-                [labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])]
-            )
+                    .toPromise()
+            ).toEqual([labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])])
         })
     })
 }

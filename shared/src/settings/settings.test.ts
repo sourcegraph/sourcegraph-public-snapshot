@@ -1,5 +1,3 @@
-import assert from 'assert'
-import { cloneDeep } from 'lodash'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import {
     CustomMergeFunctions,
@@ -41,38 +39,36 @@ const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContent
 const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([new Error('parse error (code: 0, offset: 0, length: 1)')])
 
 describe('gqlToCascade', () => {
-    it('converts a value', () =>
-        assert.deepStrictEqual(
+    test('converts a value', () =>
+        expect(
             gqlToCascade({
                 subjects: [FIXTURE_ORG, FIXTURE_USER],
-            }),
-            {
-                subjects: [
-                    { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
-                    { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
-                ],
-                final: { a: 1, b: 2 },
-            } as SettingsCascade
-        ))
-    it('preserves errors', () => {
+            })
+        ).toEqual({
+            subjects: [
+                { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+            ],
+            final: { a: 1, b: 2 },
+        } as SettingsCascade))
+    test('preserves errors', () => {
         const value = gqlToCascade({
             subjects: [FIXTURE_ORG, FIXTURE_USER_WITH_SETTINGS_ERROR, FIXTURE_USER],
         })
-        assert.strictEqual(isErrorLike(value.final) && value.final.message, SETTINGS_ERROR_FOR_FIXTURE_USER.message)
-        assert.strictEqual(
+        expect(isErrorLike(value.final) && value.final.message).toBe(SETTINGS_ERROR_FOR_FIXTURE_USER.message)
+        expect(
             value.subjects &&
                 !isErrorLike(value.subjects) &&
                 isErrorLike(value.subjects[1].settings) &&
-                (value.subjects[1].settings as ErrorLike).message,
-            SETTINGS_ERROR_FOR_FIXTURE_USER.message
-        )
+                (value.subjects[1].settings as ErrorLike).message
+        ).toBe(SETTINGS_ERROR_FOR_FIXTURE_USER.message)
     })
 })
 
 describe('mergeSettings', () => {
-    it('handles an empty array', () => assert.strictEqual(mergeSettings([]), null))
-    it('merges multiple values', () =>
-        assert.deepStrictEqual(mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }]), {
+    test('handles an empty array', () => expect(mergeSettings([])).toBe(null))
+    test('merges multiple values', () =>
+        expect(mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }])).toEqual({
             a: 3,
             b: 2,
         }))
@@ -80,24 +76,17 @@ describe('mergeSettings', () => {
 
 describe('merge', () => {
     function assertMerged(base: any, add: any, expected: any, custom?: CustomMergeFunctions): void {
-        const origBase = cloneDeep(base)
         merge(base, add, custom)
-        assert.deepStrictEqual(
-            base,
-            expected,
-            `merge ${JSON.stringify(origBase)} into ${JSON.stringify(add)}:\ngot:  ${JSON.stringify(
-                base
-            )}\nwant: ${JSON.stringify(expected)}`
-        )
+        expect(base).toEqual(expected)
     }
 
-    it('merges with empty', () => {
+    test('merges with empty', () => {
         assertMerged({ a: 1 }, {}, { a: 1 })
         assertMerged({}, { a: 1 }, { a: 1 })
     })
-    it('merges top-level objects deeply', () => assertMerged({ a: 1 }, { b: 2 }, { a: 1, b: 2 }))
-    it('merges nested objects deeply', () => assertMerged({ a: { b: 1 } }, { a: { c: 2 } }, { a: { b: 1, c: 2 } }))
-    it('overwrites arrays', () => assertMerged({ a: [1] }, { a: [2] }, { a: [2] }))
-    it('uses custom merge functions', () =>
+    test('merges top-level objects deeply', () => assertMerged({ a: 1 }, { b: 2 }, { a: 1, b: 2 }))
+    test('merges nested objects deeply', () => assertMerged({ a: { b: 1 } }, { a: { c: 2 } }, { a: { b: 1, c: 2 } }))
+    test('overwrites arrays', () => assertMerged({ a: [1] }, { a: [2] }, { a: [2] }))
+    test('uses custom merge functions', () =>
         assertMerged({ a: [1] }, { a: [2] }, { a: [1, 2] }, { a: (base, add) => [...base, ...add] }))
 })

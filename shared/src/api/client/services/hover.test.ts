@@ -1,4 +1,3 @@
-import * as assert from 'assert'
 import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Hover, MarkupKind } from 'sourcegraph'
@@ -6,14 +5,14 @@ import { HoverMerged } from '../../client/types/hover'
 import { getHover, ProvideTextDocumentHoverSignature } from './hover'
 import { FIXTURE } from './registry.test'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_RESULT: Hover | null = { contents: { value: 'c', kind: MarkupKind.PlainText } }
 const FIXTURE_RESULT_MERGED: HoverMerged | null = { contents: [{ value: 'c', kind: MarkupKind.PlainText }] }
 
 describe('getHover', () => {
     describe('0 providers', () => {
-        it('returns null', () =>
+        test('returns null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
@@ -27,7 +26,7 @@ describe('getHover', () => {
     })
 
     describe('1 provider', () => {
-        it('returns null result from provider', () =>
+        test('returns null result from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
@@ -39,7 +38,7 @@ describe('getHover', () => {
                 })
             ))
 
-        it('returns result from provider', () =>
+        test('returns result from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
@@ -55,7 +54,7 @@ describe('getHover', () => {
     })
 
     describe('2 providers', () => {
-        it('returns null result if both providers return null', () =>
+        test('returns null result if both providers return null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
@@ -69,7 +68,7 @@ describe('getHover', () => {
                 })
             ))
 
-        it('omits null result from 1 provider', () =>
+        test('omits null result from 1 provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
@@ -83,7 +82,7 @@ describe('getHover', () => {
                 })
             ))
 
-        it('omits error result from 1 provider', () =>
+        test('omits error result from 1 provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
@@ -98,7 +97,7 @@ describe('getHover', () => {
                 })
             ))
 
-        it('merges results from providers', () =>
+        test('merges results from providers', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
@@ -131,7 +130,7 @@ describe('getHover', () => {
     })
 
     describe('multiple emissions', () => {
-        it('returns stream of results', () =>
+        test('returns stream of results', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(

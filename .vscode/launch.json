@@ -4,40 +4,6 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Mocha Tests",
-      "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "args": ["--require", "ts-node/register", "--colors", "--no-timeouts", "src/**/*.test.ts?(x)"],
-      "env": {
-        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
-      },
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Mocha E2E Tests",
-      "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "args": [
-        "--require",
-        "ts-node/register",
-        "--require",
-        "src/util/long-stack-traces.ts",
-        "--colors",
-        "--no-timeouts",
-        "src/**/*.test.e2e.ts?(x)",
-        "--bail"
-      ],
-      "internalConsoleOptions": "openOnSessionStart",
-      "env": {
-        // "SOURCEGRAPH_BASE_URL": "https://sourcegraph.com",
-        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
       "name": "Gulp",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",

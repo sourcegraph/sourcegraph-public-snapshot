@@ -1,4 +1,3 @@
-import * as assert from 'assert'
 import { Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ContributableViewContainer } from '../../protocol'
@@ -19,11 +18,11 @@ const FIXTURE_ENTRY_2: Entry<ViewProviderRegistrationOptions, Observable<PanelVi
 }
 const FIXTURE_RESULT_2 = { container: FIXTURE_CONTAINER, id: '2', title: 't2', content: 'c2', priority: 0 }
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getView', () => {
     describe('0 providers', () => {
-        it('returns null', () =>
+        test('returns null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getView(
@@ -38,7 +37,7 @@ describe('getView', () => {
             ))
     })
 
-    it('returns result from provider', () =>
+    test('returns result from provider', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 getView(
@@ -53,7 +52,7 @@ describe('getView', () => {
         ))
 
     describe('multiple emissions', () => {
-        it('returns stream of results', () =>
+        test('returns stream of results', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getView(
@@ -73,7 +72,7 @@ describe('getView', () => {
 
 describe('getViews', () => {
     describe('0 providers', () => {
-        it('returns null', () =>
+        test('returns null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getViews(
@@ -88,7 +87,7 @@ describe('getViews', () => {
             ))
     })
 
-    it('returns result from provider', () =>
+    test('returns result from provider', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 getViews(
@@ -102,7 +101,7 @@ describe('getViews', () => {
             })
         ))
 
-    it('continues if provider has error', () =>
+    test('continues if provider has error', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 getViews(
@@ -124,7 +123,7 @@ describe('getViews', () => {
         ))
 
     describe('multiple emissions', () => {
-        it('returns stream of results', () =>
+        test('returns stream of results', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getViews(

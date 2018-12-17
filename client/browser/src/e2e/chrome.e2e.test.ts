@@ -1,11 +1,8 @@
-import { mkdirp } from 'fs-extra'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../../shared/src/util/screenshotReporter'
 
 const chromeExtensionPath = path.resolve(__dirname, '..', '..', 'build/chrome')
-
-const repoRoot = path.resolve(__dirname, '..', '..', '..', '..')
-const screenshotDirectory = path.resolve(__dirname, '..', '..', '..', 'puppeteer')
 
 async function getTokenWithSelector(
     page: puppeteer.Page,
@@ -49,8 +46,9 @@ describe('Sourcegraph Chrome extension', () => {
 
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
-    before('Open Browser', async function(): Promise<void> {
-        this.timeout(90 * 1000)
+    // Open browser.
+    beforeAll(async (): Promise<void> => {
+        jest.setTimeout(90 * 1000)
 
         let args: string[] = [
             `--disable-extensions-except=${chromeExtensionPath}`,
@@ -69,51 +67,42 @@ describe('Sourcegraph Chrome extension', () => {
         })
     })
 
-    beforeEach('Open page', async () => {
+    // Open page.
+    beforeEach(async () => {
         page = await browser.newPage()
         await authenticate(page)
     })
 
-    afterEach('Close page', async function(): Promise<void> {
-        if (page) {
-            if (this.currentTest && this.currentTest.state === 'failed') {
-                await mkdirp(screenshotDirectory)
-                const filePath = path.join(
-                    screenshotDirectory,
-                    this.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
-                )
-                await page.screenshot({ path: filePath })
-                if (process.env.CI) {
-                    // Print image with ANSI escape code for Buildkite
-                    // https://buildkite.com/docs/builds/images-in-log-output
-                    const relativePath = path.relative(repoRoot, filePath)
-                    console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
-                }
-            }
+    // Take a screenshot when a test fails.
+    saveScreenshotsUponFailuresAndClosePage(
+        path.resolve(__dirname, '..', '..', '..', '..'),
+        path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
+        () => page
+    )
 
-            await page.close()
-        }
-    })
-
-    after('Close browser', async () => {
+    // Close browser.
+    afterAll(async () => {
         if (browser) {
+            if (page && !page.isClosed()) {
+                await page.close()
+            }
             await browser.close()
         }
     })
 
     const repoBaseURL = 'https://github.com/gorilla/mux'
 
-    it('injects View on Sourcegraph', async () => {
+    test('injects View on Sourcegraph', async () => {
         await page.goto(repoBaseURL)
         await page.waitForSelector('li#open-on-sourcegraph')
     })
 
-    it('injects toolbar for code views', async () => {
+    test('injects toolbar for code views', async () => {
         await page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
         await page.waitForSelector('.code-view-toolbar')
     })
 
-    it('provides tooltips for single file', async () => {
+    test('provides tooltips for single file', async () => {
         await page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
 
         const element = await getTokenWithSelector(page, 'NewRouter', 'span.pl-en')
@@ -130,7 +119,7 @@ describe('Sourcegraph Chrome extension', () => {
 
     for (const diffType of ['unified', 'split']) {
         for (const side of ['base', 'head']) {
-            it(`provides tooltips for diff files (${diffType}, ${side})`, async () => {
+            test(`provides tooltips for diff files (${diffType}, ${side})`, async () => {
                 await page.goto(`https://github.com/gorilla/mux/pull/328/files?diff=${diffType}`)
 
                 const token = tokens[side]

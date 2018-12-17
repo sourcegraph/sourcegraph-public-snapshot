@@ -7,7 +7,7 @@ import { Model } from '../client/model'
 import { Services } from '../client/services'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 import { createConnection } from '../protocol/jsonrpc2/connection'
-import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
+import { createMessageTransports } from '../protocol/jsonrpc2/testHelpers'
 
 const FIXTURE_MODEL: Model = {
     roots: [{ uri: 'file:///' }],
