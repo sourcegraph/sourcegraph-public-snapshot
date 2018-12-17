@@ -43,7 +43,7 @@ Publish your extension to apply this change and now, you will see hovers only wh
 
 Language providers e.g. the `HoverProvider`, control if they provide content by accepting an array of language filters when registered.
 
-In the extension code, replace the contents of the array supplied to `registerHoverProvider` from `['*']` to `{ language: 'python' }`. It should now look like this:
+In the extension code, replace the contents of the array supplied to `registerHoverProvider` from `['*']` to `[{ language: 'python' }]`. It should now look like this:
 
 ```typescript
 sourcegraph.languages.registerHoverProvider([{ language: 'python' }], {
@@ -57,7 +57,7 @@ More details can be found in the [activation documentation](../activation.md), s
 
 ## Conditional button display
 
-Now we'll define the properties of the button. This sample code includes how to specify an icon which cann help reduce the text and therefore, size of your button.
+Now we'll define the properties of the button. This sample code includes how to specify an icon which can help reduce the text and therefore, the size of your button.
 
 To create the button, the contents of the  `contributes` object in `package.json` should be:
 
@@ -95,11 +95,11 @@ Publish the extension to see the button when [viewing a Python file](https://sou
 
 ![Sourcegraph extension button](img/python-button.png)
 
-The button when clicked, will call the built-in [`open command`](../builtin_commands.md#open) to load Python's home page.
+The button when clicked will call the built-in [`open command`](../builtin_commands.md#open) to load Python's home page.
 
 ## Summary
 
-You can now conditionally activate and show a button for an extension, good skills to have when building a language specific extension.
+You can now conditionally activate and show a button for an extension, essential when building a language-specific extension.
 
 ## Next Steps
 
