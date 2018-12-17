@@ -5,6 +5,7 @@ import { Connection, createConnection, Logger, MessageTransports } from '../prot
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
 import { ExtContext } from './api/context'
+import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
@@ -191,6 +192,7 @@ function createExtensionAPI(
                 return windows.getAll()
             },
             createPanelView: (id: string) => views.createPanelView(id),
+            createDecorationType,
         },
 
         workspace: {

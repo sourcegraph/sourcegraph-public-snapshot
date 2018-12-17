@@ -574,6 +574,15 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * Represents a handle to a set of decorations.
+     *
+     * To get an instance of {@link TextDocumentDecorationType}, use {@link createDecorationType}
+     */
+    export interface TextDocumentDecorationType {
+        key: string
+    }
+
+    /**
      * A text editor for code files (as opposed to a rich text editor for documents or other kinds of file format
      * editors).
      */
@@ -603,12 +612,13 @@ declare module 'sourcegraph' {
         readonly selections: Selection[]
 
         /**
-         * Draw decorations on this editor.
+         * Add a set of decorations to this editor. If a set of decorations already exists with the given
+         * {@link DecorationType}, they will be replaced.
          *
-         * @todo Implement a "decoration type" as in VS Code to make deltas more efficient.
-         * @param decorationType Currently unused. Always pass `null`.
+         * @see {@link TextDocumentDecorationType}
+         *
          */
-        setDecorations(decorationType: null, decorations: TextDocumentDecoration[]): void
+        setDecorations(decorationType: TextDocumentDecorationType, decorations: TextDocumentDecoration[]): void
     }
 
     /**
@@ -668,6 +678,14 @@ declare module 'sourcegraph' {
          * @returns The panel view.
          */
         export function createPanelView(id: string): PanelView
+
+        /**
+         * Creates a decorationType that can be used to add decorations to code views.
+         *
+         * Use this to create a unique handle to a set of decorations, that can be applied to
+         * text editors using {@link setDecorations}.
+         */
+        export function createDecorationType(): TextDocumentDecorationType
     }
 
     /**

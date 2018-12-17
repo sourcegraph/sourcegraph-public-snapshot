@@ -1,4 +1,5 @@
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { flatten, values } from 'lodash'
 import { BehaviorSubject, Observable, Subscription } from 'rxjs'
 import { handleRequests } from '../../common/proxy'
 import { Connection } from '../../protocol/jsonrpc2/connection'
@@ -8,7 +9,13 @@ import { TextDocumentIdentifier } from '../types/textDocument'
 
 /** @internal */
 export interface ClientCodeEditorAPI {
-    $setDecorations(resource: string, decorations: TextDocumentDecoration[]): void
+    $setDecorations(resource: string, decorationType: string, decorations: TextDocumentDecoration[]): void
+}
+
+interface PreviousDecorations {
+    [resource: string]: {
+        [decorationType: string]: TextDocumentDecoration[]
+    }
 }
 
 /** @internal */
@@ -16,7 +23,9 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
     private subscriptions = new Subscription()
 
     /** Map of document URI to its decorations (last published by the server). */
-    private decorations = new Map<string, BehaviorSubject<TextDocumentDecoration[] | null>>()
+    private decorations = new Map<string, BehaviorSubject<TextDocumentDecoration[]>>()
+
+    private previousDecorations: PreviousDecorations = {}
 
     constructor(
         connection: Connection,
@@ -25,7 +34,7 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
         this.subscriptions.add(
             this.registry.registerProvider(
                 undefined,
-                (textDocument: TextDocumentIdentifier): Observable<TextDocumentDecoration[] | null> =>
+                (textDocument: TextDocumentIdentifier): Observable<TextDocumentDecoration[]> =>
                     this.getDecorationsSubject(textDocument.uri)
             )
         )
@@ -33,21 +42,28 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
         handleRequests(connection, 'codeEditor', this)
     }
 
-    public $setDecorations(resource: string, decorations: TextDocumentDecoration[]): void {
-        this.getDecorationsSubject(resource, decorations)
+    public $setDecorations(resource: string, decorationType: string, decorations: TextDocumentDecoration[]): void {
+        this.getDecorationsSubject(resource, decorationType, decorations)
     }
 
     private getDecorationsSubject(
         resource: string,
-        value?: TextDocumentDecoration[] | null
-    ): BehaviorSubject<TextDocumentDecoration[] | null> {
+        decorationType?: string,
+        decorations?: TextDocumentDecoration[]
+    ): BehaviorSubject<TextDocumentDecoration[]> {
         let subject = this.decorations.get(resource)
         if (!subject) {
-            subject = new BehaviorSubject<TextDocumentDecoration[] | null>(value || null)
+            subject = new BehaviorSubject<TextDocumentDecoration[]>(decorations || [])
             this.decorations.set(resource, subject)
+            this.previousDecorations[resource] = {}
         }
-        if (value !== undefined) {
-            subject.next(value)
+        if (decorations !== undefined) {
+            // Replace previous decorations for this resource + decorationType
+            this.previousDecorations[resource][decorationType!] = decorations
+
+            // Merge decorations for all types for this resource, and emit them
+            const nextDecorations = flatten(values(this.previousDecorations[resource]))
+            subject.next(nextDecorations)
         }
         return subject
     }
@@ -55,7 +71,7 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
     public unsubscribe(): void {
         // Clear decorations.
         for (const subject of this.decorations.values()) {
-            subject.next(null)
+            subject.next([])
         }
 
         this.subscriptions.unsubscribe()
