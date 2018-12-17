@@ -285,10 +285,9 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 
 		if rawResult.Diff != nil && op.diff {
-			highlights = fromVCSHighlights(rawResult.DiffHighlights)
 			results[i].diffPreview = &highlightedString{
 				value:      rawResult.Diff.Raw,
-				highlights: highlights,
+				highlights: fromVCSHighlights(rawResult.DiffHighlights),
 			}
 			matchBody, matchHighlights = cleanDiffPreview(fromVCSHighlights(rawResult.DiffHighlights), rawResult.Diff.Raw)
 		}
