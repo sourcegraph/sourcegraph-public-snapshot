@@ -1,7 +1,6 @@
 import { Observable, of, Unsubscribable } from 'rxjs'
-import { QueryTransformer, SearchResultProvider, Subscribable } from 'sourcegraph'
+import { QueryTransformer, SearchResult, SearchResultProvider, Subscribable } from 'sourcegraph'
 import { SearchAPI } from '../../client/api/search'
-import { SearchResult } from '../../protocol/plainTypes'
 import { ProviderMap, toProviderResultObservable } from './common'
 
 export interface ExtSearchAPI {

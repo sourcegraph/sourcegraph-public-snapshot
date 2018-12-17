@@ -991,30 +991,57 @@ declare module 'sourcegraph' {
         ): Unsubscribable
     }
 
+    /**
+     * A highlighted region in a string (e.g., matched by a query).
+     * */
     export interface Highlight {
+        /** The 1-indexed line number. */
         line: number
+        /** The 1-indexed character on the line. */
         character: number
+        /** The length of the highlight, in characters (on the same line). */
         length: number
     }
 
-    /** A search result from a search result provider. */
-    export interface SearchMatch {
+    /**
+     * A markdown object. Extensions should always provide a value for text.
+     * If the extension wants to provide its own rendered Markdown, it can specify an HTML string
+     * in the html field. Otherwise, Sourcegraph clients will handle Markdown rendering when necessary,
+     * so the html field should be an empty string in almost all cases.
+     */
+    export interface Markdown {
+        /** The raw markdown string. */
+        text: string
+        /** The HTML for the rendered markdown string. This should be an empty string in almost all cases, as Sourcegraph clients will handle markdown rendering when necessary. */
+        html: string
+    }
+
+    /** A match in a search result from a search result provider. */
+    export interface SearchResultMatch {
+        /** A URL to an individual search resutl match. */
         url: string
+        /** A markdown string containing the preview contents of the result match. */
         body: Markdown
+        /**
+         * Highlights are currently only applied if the body is a code block. The highlights
+         * are applied after the markdown is rendered; therefore, the line and character count
+         * should exclude the markdown code fences.
+         */
         highlights: Highlight[]
     }
 
+    /** A search result from a search provider. A search result may contain multiple matches. */
     export interface SearchResult {
+        /** A URL to an icon to be displayed with each search result. */
         icon: string
+        /** A markdonw string displayed prominently. */
         label: Markdown
+        /** A URL to the search result. */
         url: string
+        /** A markdown string rendered less prominently. */
         detail: Markdown
-        matches: SearchMatch[]
-    }
-
-    export interface Markdown {
-        text: string
-        html: string
+        /** A list of matches in this search result. */
+        matches: SearchResultMatch[]
     }
 
     /** A search result provider accepts a query and returns a list of results. */
@@ -1057,6 +1084,14 @@ declare module 'sourcegraph' {
          * @param provider A query transformer.
          */
         export function registerQueryTransformer(provider: QueryTransformer): Unsubscribable
+        /**
+         * Registers a search result provider.
+         *
+         * Multiple providers can be registered. In that case, results will be returned grouped by
+         * provider. The order in which results from providers are returned is not defined.
+         *
+         * @param provider A search result provider.
+         */
         export function registerSearchResultProvider(provider: SearchResultProvider): Unsubscribable
     }
 

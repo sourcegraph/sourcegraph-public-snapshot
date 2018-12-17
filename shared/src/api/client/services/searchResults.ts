@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { SearchResult } from '../../protocol/plainTypes'
+import { SearchResult } from 'sourcegraph'
 import { FeatureProviderRegistry } from './registry'
+
 export type ProvideSearchResultSignature = (query: string) => Observable<SearchResult[] | null | undefined>
 export class SearchResultProviderRegistry extends FeatureProviderRegistry<{}, ProvideSearchResultSignature> {
     public provideSearchResult(query: string): Observable<SearchResult[] | null | undefined> {
