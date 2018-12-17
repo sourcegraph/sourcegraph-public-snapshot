@@ -1450,7 +1450,7 @@
     "@types/connect" "*"
     "@types/node" "*"
 
-"@types/chai-as-promised@^7.1.0":
+"@types/chai-as-promised@7.1.0":
   version "7.1.0"
   resolved "https://registry.npmjs.org/@types/chai-as-promised/-/chai-as-promised-7.1.0.tgz#010b04cde78eacfb6e72bfddb3e58fe23c2e78b9"
   integrity sha512-MFiW54UOSt+f2bRw8J7LgQeIvE/9b4oGvwU7XW30S9QGAiHGnU/fmiOprsyMkdmH2rl8xSPc0/yrQw8juXU6bQ==
@@ -1685,7 +1685,7 @@
     "@types/events" "*"
     "@types/node" "*"
 
-"@types/jest@^23.3.10":
+"@types/jest@23.3.10":
   version "23.3.10"
   resolved "https://registry.npmjs.org/@types/jest/-/jest-23.3.10.tgz#4897974cc317bf99d4fe6af1efa15957fa9c94de"
   integrity sha512-DC8xTuW/6TYgvEg3HEXS7cu9OijFqprVDXXiOcdOKZCU/5PJNLZU37VVvmZHdtMiGOa8wAA/We+JzbdxFzQTRQ==
@@ -1846,7 +1846,7 @@
     "@types/react" "*"
     "@types/stripe-v3" "*"
 
-"@types/react-test-renderer@^16.0.3":
+"@types/react-test-renderer@16.0.3":
   version "16.0.3"
   resolved "https://registry.npmjs.org/@types/react-test-renderer/-/react-test-renderer-16.0.3.tgz#cce5c983d66cc5c3582e7c2f44b274ab635a8acc"
   integrity sha512-NWOAxVQeJxpXuNKgw83Hah0nquiw1nUexM9qY/Hk3a+XhZwgMtaa6GLA9E1TKMT75Odb3/KE/jiBO4enTuEJjQ==
