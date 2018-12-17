@@ -27,3 +27,4 @@ schema/
 cmd/management-console/assets/
 **/.cache
 shared/dev/**/*.js
+**/__snapshots__

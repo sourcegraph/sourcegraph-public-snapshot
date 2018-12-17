@@ -1,4 +1,13 @@
-import { fuzzyMatches, Span } from './HighlightedMatches'
+import React from 'react'
+import renderer from 'react-test-renderer'
+import { fuzzyMatches, HighlightedMatches, Span } from './HighlightedMatches'
+
+describe('Markdown', () => {
+    test('render', () => {
+        const component = renderer.create(<HighlightedMatches text="abcabcabc" pattern="aab" />)
+        expect(component.toJSON()).toMatchSnapshot()
+    })
+})
 
 describe('fuzzyMatches', () => {
     const TESTS = [
