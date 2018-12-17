@@ -38,7 +38,11 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-interface Props extends ActionItemProps, ExtensionsControllerProps, PlatformContextProps {
+interface Props extends ActionItemProps {
+    extensionsController:
+        | ExtensionsControllerProps['extensionsController']
+        | { executeCommand: (params: ExecuteCommandParams) => Promise<any> }
+    platformContext: PlatformContextProps['platformContext'] | { forceUpdateTooltip: () => void }
     location: H.Location
 }
 
