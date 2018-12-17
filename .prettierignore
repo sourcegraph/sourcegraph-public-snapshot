@@ -26,3 +26,4 @@ client/browser/src/extension/*.json
 schema/
 cmd/management-console/assets/
 **/.cache
+shared/dev/**/*.js

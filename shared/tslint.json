@@ -1,5 +1,5 @@
 {
-  "extends": "@sourcegraph/tslint-config",
+  "extends": ["../tslint.json"],
   "linterOptions": { "exclude": ["node_modules/**", "coverage/**"] },
   "rulesDirectory": "dev/tslint",
   "rules": {
