@@ -1,4 +1,3 @@
-import idCreator from '../../../util/idCreator'
+import { uniqueId } from 'lodash'
 
-const nextDecorationType = idCreator('TextDocumentDecorationType')
-export const createDecorationType = () => ({ key: nextDecorationType() })
+export const createDecorationType = () => ({ key: uniqueId('TextDocumentDecorationType') })
