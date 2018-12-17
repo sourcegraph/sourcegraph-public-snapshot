@@ -16,7 +16,8 @@ fi
 
 export GO111MODULE=on
 go build ./pkg/version/minversion || {
-    echo "Go version 1.11.x or newer must be used to build Sourcegraph; found: $(go version)"
+    min=$(grep -o 'go[1-9]\+\.[0-9]*\.[0-9]*' pkg/version/minversion/minversion.go)
+    echo "Minimum Go version: $min; found: $(go version)"
     exit 1
 }
 
