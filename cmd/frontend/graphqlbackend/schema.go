@@ -817,29 +817,6 @@ type Search {
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository | GenericSearchResult
 
-# An object representing a markdown string.
-type Markdown {
-    # The raw markdown string.
-    text: String!
-    # HTML for the rendered markdown string, or null if there is no HTML representation provided.
-    # If specified, clients should render this directly.
-    html: String!
-}
-
-# A search result. Every type of search result, except FileMatch, must implement this interface.
-interface GenericSearchResultInterface {
-    # URL to an icon that is displayed with every search result.
-    icon: String!
-    # A markdown string that is rendered prominently.
-    label: Markdown!
-    # The URL of the result.
-    url: String!
-    # A markdown string that is rendered less prominently.
-    detail: Markdown!
-    # A list of matches in this search result.
-    matches: [SearchResultMatch!]!
-}
-
 # A search result.
 type GenericSearchResult implements GenericSearchResultInterface {
     # Base64 data URI to an icon that is displayed with every search result.
@@ -852,19 +829,6 @@ type GenericSearchResult implements GenericSearchResultInterface {
     detail: Markdown!
     # A list of individual matches in a result.
     matches: [SearchResultMatch!]!
-}
-
-# A match in a search result. Matches make up the body content of a search result.
-type SearchResultMatch {
-    # URL for the individual result match.
-    url: String!
-    # A markdown string containing the preview contents of the result match.
-    body: Markdown!
-    # A list of highlights that specify locations of matches of the query in the body. Each highlight is
-    # a line number, character offset, and length. Currently, highlights are only displayed on match bodies
-    # that are code blocks. If the result body is a code block, exclude the markdown code fence lines in
-    # the line and character count. Leave as an empty list if no highlights are available.
-    highlights: [Highlight!]!
 }
 
 # An object representing a markdown string.
