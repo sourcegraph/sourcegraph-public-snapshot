@@ -1,6 +1,6 @@
 # Proposal process
 
-Changes to our architecture are proposed, discussed, and approved according to the following process:
+Changes to our product or architecture are proposed, discussed, and approved according to the following process:
 
 1. Propose a change by opening a PR to add a new document to this directory that follows the [template](0000-00-00-template.md). The file name has the following components:
   - The date the proposal was first authored (YYYY-MM-DD).
