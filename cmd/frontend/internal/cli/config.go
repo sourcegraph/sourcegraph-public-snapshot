@@ -2,16 +2,20 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
-
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -62,6 +66,41 @@ func handleConfigOverrides() {
 			err := (&configurationSource{}).Write(context.Background(), raw)
 			if err != nil {
 				log.Fatal(err)
+			}
+		}
+
+		devOverrideExtSvcConfig := os.Getenv("DEV_OVERRIDE_EXTSVC_CONFIG")
+		if devOverrideExtSvcConfig != "" {
+			existing, err := db.ExternalServices.List(context.Background(), db.ExternalServicesListOptions{})
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(existing) > 0 {
+				return
+			}
+
+			extsvc, err := ioutil.ReadFile(devOverrideExtSvcConfig)
+			if err != nil {
+				log.Fatal(err)
+			}
+			var configs map[string][]*json.RawMessage
+			if err := jsonc.Unmarshal(string(extsvc), &configs); err != nil {
+				log.Fatal(err)
+			}
+			for key, cfgs := range configs {
+				for i, cfg := range cfgs {
+					marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
+					if err != nil {
+						log.Fatal(err)
+					}
+					if err := db.ExternalServices.Create(context.Background(), &types.ExternalService{
+						Kind:        key,
+						DisplayName: fmt.Sprintf("Dev %s #%d", key, i+1),
+						Config:      string(marshaledCfg),
+					}); err != nil {
+						log.Fatal(err)
+					}
+				}
 			}
 		}
 	}
