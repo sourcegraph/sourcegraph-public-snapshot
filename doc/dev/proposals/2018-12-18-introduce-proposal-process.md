@@ -35,7 +35,7 @@ Other reading:
 
 Adopt the proposal process documented in [README.md](README.md).
 
-## Rational
+## Rationale
 
 This is the next step in the evolution of our planning process.
 - We want to re-capture the benefits of the old process (written, searchable, record of markdown files for why we did things) now that we no longer have the same constraints that caused us to switch away from the old docs-private process (i.e. get all planning for the month done in 1 week).
