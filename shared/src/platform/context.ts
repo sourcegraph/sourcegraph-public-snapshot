@@ -56,18 +56,6 @@ export interface PlatformContext {
     ): Subscribable<GraphQLResult<R>>
 
     /**
-     * Sends a batch of LSP requests to the Sourcegraph LSP gateway API and returns the result.
-     *
-     * @todo This only remains for backcompat in the browser extension's communication with old Sourcegraph
-     * instances pre-3.0.
-     * @param requests An array of LSP requests (with methods `initialize`, the (optional) request, `shutdown`,
-     *                 `exit`).
-     * @return Observable that emits the result and then completes, or an error if the request fails. The value is
-     *         an array of LSP responses.
-     */
-    backcompatQueryLSP(requests: object[]): Subscribable<object[]>
-
-    /**
      * Forces the currently displayed tooltip, if any, to update its contents.
      */
     forceUpdateTooltip(): void

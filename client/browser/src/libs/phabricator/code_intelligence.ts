@@ -5,9 +5,9 @@ import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import storage from '../../browser/storage'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { CodeHost, CodeView } from '../code_intelligence'
-import { diffDomFunctions, diffusionDOMFns, getLineRanges } from './dom_functions'
-import { resolveDiffFileInfo, resolveDiffusionFileInfo } from './file_info'
+import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
+import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
 
 function createMount(
     findMountLocation: (file: HTMLElement, part?: DiffPart) => HTMLElement
@@ -102,39 +102,76 @@ const toolbarButtonProps = {
     iconStyle: { marginTop: '-1px', paddingRight: '4px', fontSize: '18px', height: '.8em', width: '.8em' },
     style: {},
 }
+const commitCodeView: CodeViewWithOutSelector = {
+    dom: diffDomFunctions,
+    resolveFileInfo: resolveRevisionFileInfo,
+    adjustPosition,
+    getToolbarMount: codeView => {
+        const actions = codeView.querySelector('.differential-changeset-buttons')
+        if (!actions) {
+            throw new Error('Unable to find action links for revision')
+        }
+
+        const mount = document.createElement('div')
+        mount.style.display = 'inline-block'
+        mount.classList.add('sourcegraph-app-annotator')
+
+        actions.insertAdjacentElement('afterbegin', mount)
+
+        return mount
+    },
+    toolbarButtonProps,
+    isDiff: true,
+}
+const diffCodeView: CodeViewWithOutSelector = {
+    dom: diffDomFunctions,
+    resolveFileInfo: resolveDiffFileInfo,
+    adjustPosition,
+    getToolbarMount: createMount(file => {
+        const actionLinks = file.querySelector('.differential-changeset-buttons')
+        if (!actionLinks) {
+            throw new Error('Unable to find action links for changeset')
+        }
+
+        return actionLinks as HTMLElement
+    }),
+    toolbarButtonProps,
+    isDiff: true,
+}
+
+const resolveCodeView: CodeViewResolver['resolveCodeView'] = (codeView: HTMLElement) => {
+    if (window.location.pathname.match(/^\/r/)) {
+        return commitCodeView
+    }
+
+    return diffCodeView
+}
+
+const codeViewResolver: CodeViewResolver = {
+    selector: '.differential-changeset',
+    resolveCodeView,
+}
 
 export const phabCodeViews: CodeView[] = [
     {
-        selector: '.differential-changeset',
-        dom: diffDomFunctions,
-        resolveFileInfo: resolveDiffFileInfo,
-        adjustPosition,
-        getToolbarMount: createMount(file => {
-            const actionLinks = file.querySelector('.differential-changeset-buttons')
-            if (!actionLinks) {
-                throw new Error('Unable to find action links for changeset')
-            }
-
-            return actionLinks as HTMLElement
-        }),
-        toolbarButtonProps,
-        getLineRanges,
-        isDiff: true,
-    },
-    {
-        selector: '.phabricator-source-code-container',
+        selector: '.diffusion-source',
         dom: diffusionDOMFns,
         resolveFileInfo: resolveDiffusionFileInfo,
-        getToolbarMount: createMount(() => {
-            const actionLinks = document.querySelector('.diffusion-action-bar .phui-right-view')
-            if (!actionLinks) {
-                throw new Error('Unable to find action links for diffusion')
+        getToolbarMount: () => {
+            const actions = document.querySelector<HTMLElement>('.phui-two-column-content .phui-header-action-links')
+            if (!actions) {
+                throw new Error('unable to find file actions')
             }
 
-            return actionLinks as HTMLElement
-        }),
+            const mount = document.createElement('div')
+            mount.style.display = 'inline-block'
+            mount.classList.add('sourcegraph-app-annotator')
+
+            actions.insertAdjacentElement('afterbegin', mount)
+
+            return mount
+        },
         toolbarButtonProps,
-        getLineRanges,
         isDiff: false,
     },
 ]
@@ -151,6 +188,7 @@ function checkIsPhabricator(): Promise<boolean> {
 
 export const phabricatorCodeHost: CodeHost = {
     codeViews: phabCodeViews,
+    codeViewResolver,
     name: 'phabricator',
     check: checkIsPhabricator,
 }

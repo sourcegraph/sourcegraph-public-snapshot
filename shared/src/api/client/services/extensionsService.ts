@@ -47,7 +47,7 @@ export class ExtensionsService {
      * Most callers should use {@link ExtensionsService#activeExtensions}.
      */
     private get enabledExtensions(): Subscribable<ConfiguredExtension[]> {
-        return combineLatest(from(this.settingsService.data), this.configuredExtensions).pipe(
+        return combineLatest(from(this.settingsService.data), from(this.configuredExtensions)).pipe(
             map(([settings, configuredExtensions]) =>
                 configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))
             )
@@ -74,7 +74,7 @@ export class ExtensionsService {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs: string[] = []
-        return combineLatest(from(this.model), this.enabledExtensions).pipe(
+        return combineLatest(from(this.model).pipe(), from(this.enabledExtensions).pipe()).pipe(
             tap(([model, enabledExtensions]) => {
                 const activeExtensions = this.extensionActivationFilter(enabledExtensions, model)
                 for (const x of activeExtensions) {

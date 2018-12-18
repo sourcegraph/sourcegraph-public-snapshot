@@ -1,18 +1,56 @@
 import { from, Observable, zip } from 'rxjs'
 import { catchError, filter, map, switchMap } from 'rxjs/operators'
-import { DifferentialState, DiffusionState, PhabricatorMode } from '.'
+import { DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { resolveDiffRev } from './backend'
-import { getFilepathFromFile, getPhabricatorState } from './util'
+import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'
+import { getPhabricatorState } from './util'
+
+export const resolveRevisionFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
+    from(getPhabricatorState(window.location)).pipe(
+        filter((state): state is RevisionState => state !== null && state.mode === PhabricatorMode.Revision),
+        map(state => ({
+            repoName: state.repoName,
+            commitID: state.headCommitID,
+            baseCommitID: state.baseCommitID,
+        })),
+        map(info => ({
+            ...info,
+            filePath: getFilePathFromFileForRevision(codeView),
+        })),
+        switchMap(info => {
+            const fetchingBaseFile = fetchBlobContentLines({
+                repoName: info.repoName,
+                filePath: info.filePath || info.filePath,
+                commitID: info.baseCommitID,
+            })
+
+            const fetchingHeadFile = fetchBlobContentLines({
+                repoName: info.repoName,
+                filePath: info.filePath,
+                commitID: info.commitID,
+            })
+
+            return zip(fetchingBaseFile, fetchingHeadFile).pipe(
+                map(([baseFileContent, headFileContent]) => ({
+                    ...info,
+                    baseContent: baseFileContent.join('\n'),
+                    content: headFileContent.join('\n'),
+                    headHasFileContents: headFileContent.length > 0,
+                    baseHasFileContents: baseFileContent.length > 0,
+                }))
+            )
+        })
+    )
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     from(getPhabricatorState(window.location)).pipe(
         filter(state => state !== null && state.mode === PhabricatorMode.Differential),
         map(state => state as DifferentialState),
         map(state => {
-            const { filePath, baseFilePath } = getFilepathFromFile(codeView)
+            const { filePath, baseFilePath } = getFilepathFromFileForDiff(codeView)
 
             return {
                 ...state,
@@ -99,6 +137,9 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
 
             headHasFileContents: info.headFileContent.length > 0,
             baseHasFileContents: info.baseFileContent.length > 0,
+
+            content: info.headFileContent.join('\n'),
+            baseContent: info.baseFileContent.join('\n'),
         })),
         ensureRevisionsAreCloned
     )
@@ -106,5 +147,17 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
 export const resolveDiffusionFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     from(getPhabricatorState(window.location)).pipe(
         filter(state => state !== null && state.mode === PhabricatorMode.Diffusion),
-        map(state => state as DiffusionState)
+        map(state => state as DiffusionState),
+        switchMap(info => {
+            const fetchingBaseFile = fetchBlobContentLines({
+                repoName: info.repoName,
+                filePath: info.filePath || info.filePath,
+                commitID: info.commitID,
+            })
+
+            return fetchingBaseFile.pipe(
+                map(lines => lines.join('\n')),
+                map(content => ({ ...info, content }))
+            )
+        })
     )

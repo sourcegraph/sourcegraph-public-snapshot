@@ -142,6 +142,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		// to the incoming header URL. Otherwise use the configured CORS origin.
 		headerOrigin := r.Header.Get("Origin")
 		isExtensionRequest := (headerOrigin == devExtension || headerOrigin == prodExtension) && !conf.Get().DisableBrowserExtension
+
 		if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 

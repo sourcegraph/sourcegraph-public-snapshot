@@ -4,6 +4,11 @@ import * as React from 'react'
 import { OptionsHeader, OptionsHeaderProps } from './Header'
 import { ServerURLForm, ServerURLFormProps } from './ServerURLForm'
 
+interface ConfigurableFeatureFlag {
+    key: string
+    value: boolean
+}
+
 export interface OptionsMenuProps
     extends OptionsHeaderProps,
         Pick<ServerURLFormProps, Exclude<keyof ServerURLFormProps, 'value' | 'onChange' | 'onSubmit'>> {
@@ -13,15 +18,14 @@ export interface OptionsMenuProps
 
     isSettingsOpen?: boolean
     toggleFeatureFlag: (key: string) => void
-    featureFlags: { key: string; value: boolean }[]
+    featureFlags?: ConfigurableFeatureFlag[]
 }
 
 const buildFeatureFlagToggleHandler = (key: string, handler: OptionsMenuProps['toggleFeatureFlag']) => () =>
     handler(key)
 
-const withSentry = (flags: OptionsMenuProps['featureFlags']) => flags.filter(({ key }) => key === 'allowErrorReporting')
-const withOutSentry = (flags: OptionsMenuProps['featureFlags']) =>
-    flags.filter(({ key }) => key !== 'allowErrorReporting')
+const withSentry = (flags: ConfigurableFeatureFlag[]) => flags.filter(({ key }) => key === 'allowErrorReporting')
+const withOutSentry = (flags: ConfigurableFeatureFlag[]) => flags.filter(({ key }) => key !== 'allowErrorReporting')
 
 const isFullPage = (): boolean =>
     !new URLSearchParams(window.location.search).get('popup')
@@ -44,47 +48,49 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
             onSubmit={onURLSubmit}
             className="options-menu__section"
         />
-        {isSettingsOpen && (
-            <div className="options-menu__section">
-                <label>Configuration</label>
-                <div>
-                    {withSentry(featureFlags).map(({ key, value }) => (
-                        <div className="form-check" key={key}>
-                            <label className="form-check-label">
-                                <input
-                                    id={key}
-                                    onClick={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    checked={value}
-                                />{' '}
-                                {upperFirst(lowerCase(key))}
-                            </label>
-                        </div>
-                    ))}
+        {isSettingsOpen &&
+            featureFlags && (
+                <div className="options-menu__section">
+                    <label>Configuration</label>
+                    <div>
+                        {withSentry(featureFlags).map(({ key, value }) => (
+                            <div className="form-check" key={key}>
+                                <label className="form-check-label">
+                                    <input
+                                        id={key}
+                                        onClick={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        checked={value}
+                                    />{' '}
+                                    {upperFirst(lowerCase(key))}
+                                </label>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
-        )}
-        {isSettingsOpen && (
-            <div className="options-menu__section">
-                <label>Experimental configuration</label>
-                <div>
-                    {withOutSentry(featureFlags).map(({ key, value }) => (
-                        <div className="form-check" key={key}>
-                            <label className="form-check-label">
-                                <input
-                                    id={key}
-                                    onClick={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    checked={value}
-                                />{' '}
-                                {upperFirst(lowerCase(key))}
-                            </label>
-                        </div>
-                    ))}
+            )}
+        {isSettingsOpen &&
+            featureFlags && (
+                <div className="options-menu__section">
+                    <label>Experimental configuration</label>
+                    <div>
+                        {withOutSentry(featureFlags).map(({ key, value }) => (
+                            <div className="form-check" key={key}>
+                                <label className="form-check-label">
+                                    <input
+                                        id={key}
+                                        onClick={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        checked={value}
+                                    />{' '}
+                                    {upperFirst(lowerCase(key))}
+                                </label>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
-        )}
+            )}
     </div>
 )

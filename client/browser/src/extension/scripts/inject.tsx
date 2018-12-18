@@ -18,7 +18,6 @@ import {
     setInlineSymbolSearchEnabled,
     setRenderMermaidGraphsEnabled,
     setSourcegraphUrl,
-    setUseExtensions,
 } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
@@ -120,8 +119,6 @@ function injectApplication(): void {
                 window.addEventListener('unload', () => subscriptions.unsubscribe())
             }
         }
-
-        setUseExtensions(items.featureFlags.useExtensions === undefined ? false : items.featureFlags.useExtensions)
     }
 
     storage.getSync(handleGetStorage)

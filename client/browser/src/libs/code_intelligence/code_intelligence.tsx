@@ -38,10 +38,10 @@ import {
 import { sendMessage } from '../../browser/runtime'
 import { isInPage } from '../../context'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
-import { createLSPFromExtensions, lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/lsp'
+import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
-import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { eventLogger, sourcegraphUrl } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
@@ -250,8 +250,7 @@ function initCodeIntelligence(
         extensionsController,
     }: PlatformContextProps & ExtensionsControllerProps = initializeExtensions(codeHost)
 
-    const shouldUseExtensions = useExtensions || sourcegraphUrl === 'https://sourcegraph.com'
-    const { getHover } = shouldUseExtensions ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
+    const { getHover } = createLSPFromExtensions(extensionsController)
 
     /** Emits when the close button was clicked */
     const closeButtonClicks = new Subject<MouseEvent>()
