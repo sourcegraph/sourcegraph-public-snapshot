@@ -68,10 +68,7 @@ func TestGetOrCreateUser(t *testing.T) {
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, no emails -> no session created",
-				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("alice")},
-			}, {
-				description: "ghUser, no emails but none primary and verified -> no session created",
+				description: "ghUser, primary email not verified but another is -> no session created",
 				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("alice")},
 				ghUserEmails: []*githubsvc.UserEmail{{
 					Email:    "alice@example1.com",
@@ -86,10 +83,37 @@ func TestGetOrCreateUser(t *testing.T) {
 					Primary:  false,
 					Verified: true,
 				}},
+			}},
+			expActor: &actor.Actor{UID: 1},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps:       u("alice", "alice@example3.com", true),
+				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
+			},
+		},
+		{
+			inputs: []input{{
+				description: "ghUser, no emails -> no session created",
+				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("alice")},
 			}, {
-				description:     "ghUser, no emails but none primary and verified -> no session created",
+				description:     "ghUser, email fetching err -> no session created",
 				ghUser:          &github.User{ID: github.Int64(101), Login: github.String("alice")},
 				ghUserEmailsErr: errors.New("x"),
+			}, {
+				description: "ghUser, plenty of emails but none verified -> no session created",
+				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("alice")},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example1.com",
+					Primary:  true,
+					Verified: false,
+				}, {
+					Email:    "alice@example2.com",
+					Primary:  false,
+					Verified: false,
+				}, {
+					Email:    "alice@example3.com",
+					Primary:  false,
+					Verified: false,
+				}},
 			}, {
 				description: "no ghUser -> no session created",
 			}, {
