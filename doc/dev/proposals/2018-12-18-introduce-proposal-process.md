@@ -8,7 +8,7 @@ Our engineering planning process has evolved over time.
 
 From 2017-08 to 2018-09, we checked in proposals to [sourcegraph/docs-private/](https://github.com/sourcegraph/docs-private/).
 - We were on a monthly planning and release cycle (1 week planning, 2 weeks build, 1 week endgame and testing).
-- It was hard for plan N projects in one week and get them reviewed and approved by the smaller number of appropriate owners/reviewers.
+- It was hard to plan N projects in one week and get them reviewed and approved by the smaller number of appropriate owners/reviewers.
 - 1 week wasn't enough time to fully spec out certain projects so the proposal documents had underspecified design that needed to be figured out during the course of the project (but was never retroactively reflected in the proposal).
 
 Around October 2018, we made some changes to our planning process:
