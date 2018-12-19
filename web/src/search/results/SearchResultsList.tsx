@@ -229,7 +229,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     public render(): React.ReactNode {
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
-
         return (
             <React.Fragment>
                 {this.state.didScrollToItem && (
@@ -408,10 +407,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(
-        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
-        expanded: boolean
-    ): JSX.Element | undefined {
+    private renderResult(result: GQL.GenericSearchResultInterface | GQL.IFileMatch, expanded: boolean): JSX.Element {
         switch (result.__typename) {
             case 'FileMatch':
                 return (

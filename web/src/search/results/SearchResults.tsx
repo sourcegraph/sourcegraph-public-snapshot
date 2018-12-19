@@ -1,8 +1,9 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { combineLatest, concat, Subject, Subscription } from 'rxjs'
+import { combineLatest, concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { SearchResult } from 'sourcegraph'
 import { parseSearchURLQuery } from '..'
 import { SearchFiltersContainer } from '../../../../shared/src/actions/SearchFiltersContainer'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -67,6 +68,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public componentDidMount(): void {
         eventLogger.logViewEvent('SearchResults')
 
+        const extResults: (query: string) => Observable<SearchResult[] | null | undefined> = (query: string) =>
+            this.props.extensionsController.services.searchResultProvider.provideSearchResult(query)
+
+        this.subscriptions.add(extResults)
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -87,7 +92,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             combineLatest(
                                 // Do async search request
                                 search(query, this.props),
-                                this.props.extensionsController.services.searchResultProvider.provideSearchResult(query)
+                                extResults(query)
                             ).pipe(
                                 // Log telemetry
                                 tap(
@@ -116,11 +121,16 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 map(([results, extensionsResults]) => {
                                     if (extensionsResults && !isErrorLike(results)) {
                                         // if empty, it's not iterable.
-                                        results.results = [
-                                            ...results.results,
-                                            ...(extensionsResults as GQL.IGenericSearchResult[]),
-                                        ]
-                                        return { resultsOrError: results }
+
+                                        return {
+                                            resultsOrError: {
+                                                ...results,
+                                                results: [
+                                                    ...results.results,
+                                                    ...(extensionsResults as GQL.IGenericSearchResult[]),
+                                                ],
+                                            },
+                                        }
                                     }
 
                                     return { resultsOrError: results }
