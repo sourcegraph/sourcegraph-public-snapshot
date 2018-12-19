@@ -1,5 +1,6 @@
 import { Observable, of, Unsubscribable } from 'rxjs'
-import { QueryTransformer, SearchResult, SearchResultProvider, Subscribable } from 'sourcegraph'
+import { SearchResult } from 'sourcegraph'
+import { QueryTransformer, SearchResultProvider, Subscribable } from 'sourcegraph'
 import { SearchAPI } from '../../client/api/search'
 import { ProviderMap, toProviderResultObservable } from './common'
 
