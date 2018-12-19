@@ -66,7 +66,7 @@ fetches from the Sourcegraph raw API. We reject this option for the following re
    very reliable or performant.
 3. Future extensibility: We would like to build institutional knowledge of how the Java language
    server works, so we can modify and extend it in response to customer asks in the future. Doing it
-   these way effectively treats `eclipse.jdt.ls` as a black box.
+   this way effectively treats `eclipse.jdt.ls` as a black box.
 
 Note: I am not entirely sold on the above arguments. In particular, I think the primary bottlenecks
 for language servers will be dependency resolution/fetching, not source file fetching. Furthermore,
