@@ -92,7 +92,6 @@ each language server:
 
 ## Implementation
 
-[An ordered checklist that enumerates exactly what needs to be done with as much detail and granularity as possible. Anyone should be able to follow this checklist and end up with the desired result.]
 
 - [ ] By Jan 1: deploy alpha Java extension to sourcegraph.com. It supports a minimal set of Java
       repositories (e.g., Eclipse-based projects, vanilla Maven)
