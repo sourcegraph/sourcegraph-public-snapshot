@@ -1,6 +1,7 @@
 import { isEqual } from 'lodash'
-import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
-import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
+import { BehaviorSubject, combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
+import { ajax } from 'rxjs/ajax'
+import { catchError, distinctUntilChanged, flatMap, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
     getScriptURLFromExtensionManifest,
@@ -20,6 +21,23 @@ import { SettingsService } from './settings'
 export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'manifest'> {
     /** The URL to the JavaScript bundle of the extension. */
     scriptURL: string
+}
+
+const getConfiguredUnpackedExtension = async (baseUrl: string) => {
+    const { response } = await ajax({
+        url: `${baseUrl}/package.json`,
+        responseType: 'json',
+        crossDomain: true,
+    }).toPromise()
+    const ext: ConfiguredExtension = {
+        id: response.name,
+        manifest: {
+            url: `${baseUrl}/${response.main.replace('dist/', '')}`,
+            ...response,
+        },
+        rawManifest: null,
+    }
+    return ext
 }
 
 /**
@@ -47,12 +65,27 @@ export class ExtensionsService {
      * Most callers should use {@link ExtensionsService#activeExtensions}.
      */
     private get enabledExtensions(): Subscribable<ConfiguredExtension[]> {
-        return combineLatest(from(this.settingsService.data), from(this.configuredExtensions)).pipe(
-            map(([settings, configuredExtensions]) =>
-                configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))
-            )
+        return combineLatest(
+            from(this.settingsService.data),
+            from(this.configuredExtensions),
+            from(this.unpackedExtension)
+        ).pipe(
+            flatMap(async ([settings, configuredExtensions, unpackedExtensionURL]) => {
+                const enabled = [...configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))]
+                if (unpackedExtensionURL) {
+                    try {
+                        const unpackedExtension = await getConfiguredUnpackedExtension(unpackedExtensionURL)
+                        enabled.push(unpackedExtension)
+                    } catch (err) {
+                        console.error(`Could not load unpacked extension from '${unpackedExtensionURL}': ${err}`)
+                    }
+                }
+                return enabled
+            })
         )
     }
+
+    public unpackedExtension = new BehaviorSubject<string>('')
 
     /**
      * Returns an observable that emits the set of extensions that should be active, based on the previous and
@@ -89,15 +122,14 @@ export class ExtensionsService {
                 combineLatestOrDefault(
                     extensions.map(x =>
                         this.memoizedGetScriptURLForExtension(getScriptURLFromExtensionManifest(x)).pipe(
-                            map(
-                                scriptURL =>
-                                    scriptURL === null
-                                        ? null
-                                        : {
-                                              id: x.id,
-                                              manifest: x.manifest,
-                                              scriptURL,
-                                          }
+                            map(scriptURL =>
+                                scriptURL === null
+                                    ? null
+                                    : {
+                                          id: x.id,
+                                          manifest: x.manifest,
+                                          scriptURL,
+                                      }
                             )
                         )
                     )
