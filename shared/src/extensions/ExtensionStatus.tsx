@@ -20,6 +20,7 @@ interface State {
 
     /** Whether to log traces of communication with extensions. */
     traceExtensionHostCommunication?: boolean
+    unpackedExtensionURL?: string
 }
 
 export class ExtensionStatus extends React.PureComponent<Props, State> {
@@ -53,7 +54,16 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     switchMap(({ traceExtensionHostCommunication }) => traceExtensionHostCommunication),
                     map(traceExtensionHostCommunication => ({ traceExtensionHostCommunication }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => this.setState({ ...this.state, ...stateUpdate }))
+        )
+
+        this.subscriptions.add(
+            platformContext
+                .pipe(
+                    switchMap(({ unpackedExtensionURL }) => unpackedExtensionURL),
+                    map(unpackedExtensionURL => ({ unpackedExtensionURL }))
+                )
+                .subscribe(unpackedExtensionURL => this.setState({ ...this.state, ...unpackedExtensionURL }))
         )
 
         this.componentUpdates.next(this.props)
@@ -104,12 +114,29 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                         title="Toggle extension trace logging to devtools console"
                     />
                 </div>
+                <div className="card-body border-top">
+                    <label htmlFor="extension-status__unpackedurl" className="mr-2 mb-0">
+                        Load unpacked extension
+                    </label>
+                    <div>
+                        <input
+                            type="text"
+                            id="extension-status__unpackedurl"
+                            onChange={this.onUnpackedURLChange}
+                            value={this.state.unpackedExtensionURL || ''}
+                        />
+                    </div>
+                </div>
             </div>
         )
     }
 
     private onToggleTrace = () => {
         this.props.platformContext.traceExtensionHostCommunication.next(!this.state.traceExtensionHostCommunication)
+    }
+
+    private onUnpackedURLChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.props.platformContext.unpackedExtensionURL.next(e.target.value || '')
     }
 }
 
