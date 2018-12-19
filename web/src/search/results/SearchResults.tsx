@@ -36,6 +36,7 @@ interface SearchScope {
     name?: string
     value: string
 }
+
 interface SearchResultsState {
     /** The loaded search results, error or undefined while loading */
     resultsOrError?: GQL.ISearchResults
@@ -68,10 +69,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public componentDidMount(): void {
         eventLogger.logViewEvent('SearchResults')
 
-        const extResults: (query: string) => Observable<SearchResult[] | null | undefined> = (query: string) =>
+        const extensionSearch: (query: string) => Observable<SearchResult[] | null | undefined> = (query: string) =>
             this.props.extensionsController.services.searchResultProvider.provideSearchResult(query)
 
-        this.subscriptions.add(extResults)
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -92,7 +92,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             combineLatest(
                                 // Do async search request
                                 search(query, this.props),
-                                extResults(query)
+                                extensionSearch(query)
                             ).pipe(
                                 // Log telemetry
                                 tap(
