@@ -280,9 +280,11 @@ func main() {
 		// pipeline.AddWait()
 
 		// Deploy to prod
-		pipeline.AddStep(":rocket:",
-			bk.Env("VERSION", version),
-			bk.Cmd("./dev/ci/deploy-prod.sh"))
+		// TODO@ggilmore: disabled until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976
+		// is completed.
+		// pipeline.AddStep(":rocket:",
+		// 	bk.Env("VERSION", version),
+		// 	bk.Cmd("./dev/ci/deploy-prod.sh"))
 	}
 
 	switch {
