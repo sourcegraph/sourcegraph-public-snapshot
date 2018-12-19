@@ -120,6 +120,8 @@ export interface PlatformContext {
      * Whether to log all messages sent between the client and the extension host.
      */
     traceExtensionHostCommunication: Subscribable<boolean> & NextObserver<boolean>
+
+    unpackedExtensionURL: Subscribable<string> & NextObserver<string>
 }
 
 /**
