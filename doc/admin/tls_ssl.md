@@ -18,7 +18,7 @@ Once you have HTTPS, working we suggest configuring `httpToHttpsRedirect` to `tr
 [Let's Encrypt requires that port `80` be reachable in order to prove that you own your domain](https://letsencrypt.readthedocs.io/en/latest/challenges.html#http-01-challenge). If port `80` is unreachable, HTTPS will fail with errors such as the following:
 
 ```bash
-http: TLS handshake error from 10.240.0.17:11486: acme/autocert: unable to authorize "example.com"; challenge "tls-alpn-01" failed with error: acme: authorization error for example.com: 403 urn:acme:error:unauthorized: Cannot negotiate ALPN protocol "acme-tls/1" for tls-alpn-01 challenge; challenge "http-01" failed with error: acme: authorization error for example.com: 403 urn:acme:error:unauthorized: Invalid response from http://example.com/.well-known/acme-challenge/gHyMIbdfCVRvnz0FUJuezDsDJYD7flbVBzr348MrfLg: "<!DOCTYPE html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 7]>    <html class=\"no-js "
+http: TLS handshake error from 10.240.0.17:11486: acme/autocert: unable to authorize "example.com"; challenge "tls-alpn-01" failed with error: acme: authorization error for example.com: 403 urn:acme:error:unauthorized: Cannot negotiate ALPN protocol "acme-tls/1" for tls-alpn-01 challenge; challenge "http-01" failed with error: acme: authorization error for example.com: 403 urn:acme:error:unauthorized: Invalid response from http://example.com/.well-known/acme-challenge/gHyMIbdfCVRvnz0FUJuezDsDJYD7flbVBzr348MrfLg: ... DOCTYPE html 
 
 ...
 
