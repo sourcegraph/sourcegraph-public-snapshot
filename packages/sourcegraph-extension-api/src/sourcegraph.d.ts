@@ -1064,26 +1064,12 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A highlighted region in a string (e.g., matched by a query).
-     * */
-    export interface Highlight {
-        __typename: 'Highlight'
-        /** The 1-indexed line number. */
-        line: number
-        /** The 1-indexed character on the line. */
-        character: number
-        /** The length of the highlight, in characters (on the same line). */
-        length: number
-    }
-
-    /**
      * A markdown object. Extensions should always provide a value for text.
      * If the extension wants to provide its own rendered Markdown, it can specify an HTML string
      * in the html field. Otherwise, Sourcegraph clients will handle Markdown rendering when necessary,
      * so the html field should be an empty string in almost all cases.
      */
     export interface Markdown {
-        __typename: 'Markdown'
         /** The raw markdown string. */
         text: string
         /** The HTML for the rendered markdown string. This should be an empty string in almost all cases, as Sourcegraph clients will handle markdown rendering when necessary. */
@@ -1092,7 +1078,6 @@ declare module 'sourcegraph' {
 
     /** A match in a search result from a search result provider. */
     export interface SearchResultMatch {
-        __typename: 'SearchResultMatch'
         /** A URL to an individual search resutl match. */
         url: string
         /** A markdown string containing the preview contents of the result match. */
@@ -1102,12 +1087,11 @@ declare module 'sourcegraph' {
          * are applied after the markdown is rendered; therefore, the line and character count
          * should exclude the markdown code fences.
          */
-        highlights: Highlight[]
+        highlights: Range[]
     }
 
     /** A search result from a search provider. A search result may contain multiple matches. */
     export interface SearchResult {
-        __typename: 'GenericSearchResult'
         /** A URL to an icon to be displayed with each search result. */
         icon: string
         /** A markdonw string displayed prominently. */

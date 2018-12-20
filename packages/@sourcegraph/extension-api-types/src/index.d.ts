@@ -1,4 +1,5 @@
 export * from './hover'
 export * from './location'
 export * from './textDocument'
+export * from './searchResult'
 export * from './workspace'
