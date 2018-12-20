@@ -1,5 +1,5 @@
 import * as clientTypes from '@sourcegraph/extension-api-types'
-import { Observable, of, Unsubscribable } from 'rxjs'
+import { Observable, Unsubscribable } from 'rxjs'
 import { SearchResult } from 'sourcegraph'
 import { QueryTransformer, SearchResultProvider, Subscribable } from 'sourcegraph'
 import { SearchAPI } from '../../client/api/search'
