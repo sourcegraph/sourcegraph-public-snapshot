@@ -1176,10 +1176,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-3.0.0.tgz#dfd8a0072d55a219118f58cfbca71336b58991b2"
   integrity sha512-/2Q4lAQvHPGkddV7+4FRBgJPIzWw0e364kYq3IkD22H9eHJdA0KHfKXAKmWQjbtVpWSQeNPyVJ1pT5emfef4TQ==
 
-"@sourcegraph/tslint-config@^12.2.0":
-  version "12.2.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-12.2.0.tgz#2bd94c4638b553e373339aa2a923c0457e40b5bd"
-  integrity sha512-kGTfY2paqyrEg7NBw2zpBRiQz3YdZpYa1xsiAUg5QUY5fa7DI/e7xpbVMkWmKi9p41SHkX3dzbYAiLfpDriioQ==
+"@sourcegraph/tslint-config@^12.3.0":
+  version "12.3.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-12.3.0.tgz#391af14525b7b55d95dd1739b9dae825df60c46e"
+  integrity sha512-/Rm8FA/oSszbde+hBM6guX4MJIGiY6paItQ7dWANZlDRAbCNDOS5zT+SDRc0bqW0AYdUdaCfVJjtf/2kfh0XVQ==
   dependencies:
     rxjs-tslint-rules "^4.12.0"
     tslint-config-prettier "^1.6.0"
@@ -14028,7 +14028,7 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "19.5.0"
+  version "20.0.0"
 
 sparkles@^1.0.0:
   version "1.0.1"
