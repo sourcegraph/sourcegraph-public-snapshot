@@ -48,6 +48,27 @@ This is the next step in the evolution of our planning process.
   - Explicit checklist for action items serves as a proof of understanding what needs to happen.
   - Checklist is dynamically updated to communicate the current state of the project.
 
-## Implementation
+## Checklist 
 
-- [ ] Document the proposal process in [README.md](README.md)
+- [ ] Merge https://github.com/sourcegraph/sourcegraph/pull/1492 by Dec 21, 2018.
+- [ ] Discuss proposal process during team meeting on Jan 7, 2019
+- [ ] Get written confirmation for each engineer that they have read https://github.com/sourcegraph/sourcegraph/pull/1492 and have raised any concerns by Jan 14, 2019.
+- [ ] Have open or merged proposal PRs for all projects in the 3.1 milestone by Jan 22, 2019.
+
+Live checklist: https://github.com/sourcegraph/sourcegraph/issues/1534
+
+## Done date
+
+Jan 22, 2019
+
+## Retrospective
+
+[This section is completed after the project is completely done (i.e. the checklist is complete).]
+
+### Actual checklist
+
+[What is the actual checklist the you completed (i.e. paste the final checklist from the issue here)? Explain any differences from the original checklist in the proposal.]
+
+### Actual done date
+
+[What is the date that the project was actually finished? Explain why this is earlier or later than originally planned or explain why the project was not completed.]
