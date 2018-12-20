@@ -3,11 +3,11 @@ import { decode } from 'he'
 import { isEqual } from 'lodash'
 import { range } from 'lodash'
 import React from 'react'
-import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
+import { Link } from '../../../shared/src/components/Link'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
@@ -164,7 +164,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             >
                 <>
                     {this.state.HTML && (
-                        <a key={this.props.item.url} href={this.props.item.url} className="search-result-match">
+                        <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
                             <Markdown
                                 refFn={this.setTableContainerElement}
                                 className={`search-result-match__markdown ${
@@ -172,7 +172,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                 }`}
                                 dangerousInnerHTML={this.state.HTML}
                             />
-                        </a>
+                        </Link>
                     )}
                     {!this.state.HTML && (
                         <>
