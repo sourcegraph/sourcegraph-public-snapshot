@@ -71,7 +71,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         const extensionSearch: (query: string) => Observable<clientType.SearchResult[] | null | undefined> = (
             query: string
-        ) => this.props.extensionsController.services.searchResultProvider.provideSearchResult(query)
+        ) => this.props.extensionsController.services.searchResultProvider.provideSearchResults(query)
 
         this.subscriptions.add(
             this.componentUpdates

@@ -1,7 +1,7 @@
 import { SearchResult } from '@sourcegraph/extension-api-types'
 import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { provideSearchResult, ProvideSearchResultSignature } from './searchResults'
+import { provideSearchResults, ProvideSearchResultsSignature } from './searchResults'
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -21,12 +21,12 @@ const FIXTURE_SEARCH_RESULT: SearchResult = {
 
 const FIXTURE_SEARCH_RESULTS: SearchResult | SearchResult[] | null = [FIXTURE_SEARCH_RESULT, FIXTURE_SEARCH_RESULT]
 
-describe('provideSearchResult', () => {
+describe('provideSearchResults', () => {
     describe('0 providers', () => {
         test('returns null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    provideSearchResult(cold<ProvideSearchResultSignature[]>('-a-|', { a: [] }), 'foo')
+                    provideSearchResults(cold<ProvideSearchResultsSignature[]>('-a-|', { a: [] }), 'foo')
                 ).toBe('-a-|', {
                     a: null,
                 })
@@ -37,7 +37,7 @@ describe('provideSearchResult', () => {
         test('returns null result from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    provideSearchResult(cold<ProvideSearchResultSignature[]>('-a-|', { a: [() => of(null)] }), 'foo')
+                    provideSearchResults(cold<ProvideSearchResultsSignature[]>('-a-|', { a: [() => of(null)] }), 'foo')
                 ).toBe('-a-|', {
                     a: null,
                 })
@@ -46,8 +46,8 @@ describe('provideSearchResult', () => {
         test('returns result array from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    provideSearchResult(
-                        cold<ProvideSearchResultSignature[]>('-a-|', {
+                    provideSearchResults(
+                        cold<ProvideSearchResultsSignature[]>('-a-|', {
                             a: [() => of(FIXTURE_SEARCH_RESULTS)],
                         }),
                         'fpp'
@@ -61,8 +61,8 @@ describe('provideSearchResult', () => {
     test('errors do not propagate', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
-                provideSearchResult(
-                    cold<ProvideSearchResultSignature[]>('-a-|', {
+                provideSearchResults(
+                    cold<ProvideSearchResultsSignature[]>('-a-|', {
                         a: [() => of([FIXTURE_SEARCH_RESULT]), () => throwError('x')],
                     }),
                     'foo',
@@ -77,8 +77,8 @@ describe('provideSearchResult', () => {
         test('returns null result if both providers return null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    provideSearchResult(
-                        cold<ProvideSearchResultSignature[]>('-a-|', {
+                    provideSearchResults(
+                        cold<ProvideSearchResultsSignature[]>('-a-|', {
                             a: [() => of(null), () => of(null)],
                         }),
                         'foo'
@@ -91,8 +91,8 @@ describe('provideSearchResult', () => {
         test('omits null result from 1 provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    provideSearchResult(
-                        cold<ProvideSearchResultSignature[]>('-a-|', {
+                    provideSearchResults(
+                        cold<ProvideSearchResultsSignature[]>('-a-|', {
                             a: [() => of([FIXTURE_SEARCH_RESULT]), () => of(null)],
                         }),
                         'foo'
@@ -105,8 +105,8 @@ describe('provideSearchResult', () => {
         test('merges results from providers', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    provideSearchResult(
-                        cold<ProvideSearchResultSignature[]>('-a-|', {
+                    provideSearchResults(
+                        cold<ProvideSearchResultsSignature[]>('-a-|', {
                             a: [() => of([FIXTURE_SEARCH_RESULT]), () => of([FIXTURE_SEARCH_RESULT])],
                         }),
                         'foo'
@@ -121,8 +121,8 @@ describe('provideSearchResult', () => {
         test('returns stream of results', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    provideSearchResult(
-                        cold<ProvideSearchResultSignature[]>('-a-b-|', {
+                    provideSearchResults(
+                        cold<ProvideSearchResultsSignature[]>('-a-b-|', {
                             a: [() => of([FIXTURE_SEARCH_RESULT])],
                             b: [() => of(null)],
                         }),

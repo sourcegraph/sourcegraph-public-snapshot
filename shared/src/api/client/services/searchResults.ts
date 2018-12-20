@@ -5,14 +5,14 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
-export type ProvideSearchResultSignature = (query: string) => Observable<clientType.SearchResult[] | null>
-export class SearchResultProviderRegistry extends FeatureProviderRegistry<{}, ProvideSearchResultSignature> {
-    public provideSearchResult(query: string): Observable<clientType.SearchResult[] | null> {
-        return provideSearchResult(this.providers, query)
+export type ProvideSearchResultsSignature = (query: string) => Observable<clientType.SearchResult[] | null>
+export class SearchResultProviderRegistry extends FeatureProviderRegistry<{}, ProvideSearchResultsSignature> {
+    public provideSearchResults(query: string): Observable<clientType.SearchResult[] | null> {
+        return provideSearchResults(this.providers, query)
     }
 }
-export function provideSearchResult(
-    providers: Observable<ProvideSearchResultSignature[]>,
+export function provideSearchResults(
+    providers: Observable<ProvideSearchResultsSignature[]>,
     query: string,
     logError = true
 ): Observable<clientType.SearchResult[] | null> {

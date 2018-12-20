@@ -6,7 +6,7 @@ import { ExtSearch } from '../../extension/api/search'
 import { Connection } from '../../protocol/jsonrpc2/connection'
 import { TransformQuerySignature } from '../services/queryTransformer'
 import { FeatureProviderRegistry } from '../services/registry'
-import { ProvideSearchResultSignature } from '../services/searchResults'
+import { ProvideSearchResultsSignature } from '../services/searchResults'
 import { SubscriptionMap } from './common'
 
 /** @internal */
@@ -25,7 +25,7 @@ export class Search implements SearchAPI {
     constructor(
         connection: Connection,
         private queryTransformerRegistry: FeatureProviderRegistry<{}, TransformQuerySignature>,
-        private searchResultProviderRegistry: FeatureProviderRegistry<{}, ProvideSearchResultSignature>
+        private searchResultProviderRegistry: FeatureProviderRegistry<{}, ProvideSearchResultsSignature>
     ) {
         this.subscriptions.add(this.registrations)
 
@@ -48,7 +48,7 @@ export class Search implements SearchAPI {
             this.searchResultProviderRegistry.registerProvider(
                 {},
                 (query: string): Observable<clientType.SearchResult[]> =>
-                    from(this.proxy.$provideSearchResult(id, query)).pipe(map(result => result || []))
+                    from(this.proxy.$provideSearchResults(id, query)).pipe(map(result => result || []))
             )
         )
     }

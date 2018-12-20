@@ -8,7 +8,7 @@ import { fromSearchResult } from './types'
 
 export interface ExtSearchAPI {
     $transformQuery: (id: number, query: string) => Promise<string>
-    $provideSearchResult: (id: number, query: string) => Observable<clientTypes.SearchResult[] | null | undefined>
+    $provideSearchResults: (id: number, query: string) => Observable<clientTypes.SearchResult[] | null | undefined>
 }
 
 export class ExtSearch implements ExtSearchAPI, Unsubscribable {
@@ -31,11 +31,11 @@ export class ExtSearch implements ExtSearchAPI, Unsubscribable {
         this.proxy.$registerSearchResultProvider(id)
         return subscription
     }
-    public $provideSearchResult(id: number, query: string): Observable<clientTypes.SearchResult[] | null | undefined> {
+    public $provideSearchResults(id: number, query: string): Observable<clientTypes.SearchResult[] | null | undefined> {
         const provider = this.registrations.get<SearchResultProvider>(id)
         return toProviderResultObservable(
             new Promise<SearchResult[] | null | Subscribable<SearchResult[] | null | undefined> | undefined>(resolve =>
-                resolve(provider.provideSearchResult(query))
+                resolve(provider.provideSearchResults(query))
             ),
             result => (result ? result.map((r: SearchResult) => fromSearchResult(r)) : result)
         )
