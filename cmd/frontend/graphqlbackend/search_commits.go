@@ -360,7 +360,7 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 }
 
 func highlightedRangeToRange(highlightedRanges []*highlightedRange) []*rangeResolver {
-	var ranges []*rangeResolver
+	var ranges = []*rangeResolver{}
 	for _, h := range highlightedRanges {
 		line := int(h.line)
 		startCharacter := int(h.character)
