@@ -861,10 +861,10 @@ type SearchResultMatch {
     # A markdown string containing the preview contents of the result match.
     body: Markdown!
     # A list of highlights that specify locations of matches of the query in the body. Each highlight is
-    # a line number, character offset, and length. Currently, highlights are only displayed on match bodies
+    # a range, which consists of a start and end position. Currently, highlights are only displayed on match bodies
     # that are code blocks. If the result body is a code block, exclude the markdown code fence lines in
     # the line and character count. Leave as an empty list if no highlights are available.
-    highlights: [Highlight!]!
+    highlights: [Range!]!
 }
 
 # Search results.

@@ -4,7 +4,7 @@ package graphqlbackend
 type searchResultMatchResolver struct {
 	url        string
 	body       string
-	highlights []*highlightedRange
+	highlights []*rangeResolver
 }
 
 func (m *searchResultMatchResolver) URL() string {
@@ -15,6 +15,6 @@ func (m *searchResultMatchResolver) Body() *markdownResolver {
 	return &markdownResolver{text: m.body}
 }
 
-func (m *searchResultMatchResolver) Highlights() []*highlightedRange {
+func (m *searchResultMatchResolver) Highlights() []*rangeResolver {
 	return m.highlights
 }

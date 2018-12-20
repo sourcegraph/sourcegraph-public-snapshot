@@ -14,6 +14,7 @@ import (
 	"github.com/xeonx/timeago"
 
 	"github.com/pkg/errors"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
@@ -302,7 +303,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), commitResolver.URL())
 		results[i].url = commitResolver.URL()
 		results[i].icon = commitIcon
-		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: commitResolver.URL()}
+		match := &searchResultMatchResolver{body: matchBody, highlights: highlightedRangeToLSPRange(matchHighlights), url: commitResolver.URL()}
 		matches := []*searchResultMatchResolver{match}
 		results[i].matches = matches
 	}
@@ -356,6 +357,19 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 
 	body := fmt.Sprintf("```diff\n%v```", strings.Join(finalLines, "\n"))
 	return body, highlights
+}
+
+func highlightedRangeToLSPRange(highlights []*highlightedRange) []*rangeResolver {
+	ranges := make([]*rangeResolver, len(highlights))
+	for _, h := range highlights {
+		line := int(h.line)
+		startCharacter := int(h.character)
+		endCharacter := int(h.character + h.length)
+		r := lsp.Range{Start: lsp.Position{Line: line, Character: startCharacter}, End: lsp.Position{Line: line, Character: endCharacter}}
+		rangeResolve := rangeResolver{lspRange: r}
+		ranges = append(ranges, &rangeResolve)
+	}
+	return ranges
 }
 
 func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) string {
