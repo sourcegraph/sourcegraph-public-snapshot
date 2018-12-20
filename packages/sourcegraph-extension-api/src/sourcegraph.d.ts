@@ -439,9 +439,14 @@ declare module 'sourcegraph' {
         visibleViewComponents: ViewComponent[]
 
         /**
-         * The currently active view component in the window.
+         * The currently active view component in the window, if any. The active view component
+         * is the component that has focus in the {@link activeWindow}
+         *
+         * Can be synchronously inspected using `activeViewComponent.getValue()`, or
+         * subscribed to using `activeViewComponent.subscribe()`.
+         * The currently active view component will be emitted on subscription.
          */
-        activeViewComponent: ViewComponent | undefined
+        activeViewComponent: SubscribableValue<ViewComponent | undefined>
 
         /**
          * Show a notification message to the user that does not require interaction or steal focus.
@@ -657,8 +662,12 @@ declare module 'sourcegraph' {
         /**
          * The currently active window, or `undefined`. The active window is the window that has focus, or when
          * none has focus, the window that was most recently focused.
+         *
+         * Can be synchronously inspected using `activeWindow.getValue()`,
+         * or subscribed to using `activeWindow.subscribe(window => ...)`.
+         * The currently active window will be emitted on subscription.
          */
-        export const activeWindow: Window | undefined
+        export const activeWindow: SubscribableValue<Window | undefined>
 
         /**
          * All application windows that are accessible by the extension.
@@ -717,8 +726,20 @@ declare module 'sourcegraph' {
 
         /**
          * An event that is fired when a new text document is opened.
+         *
+         * @deprecated this event will be removed soon. Use {@link activeTextDocument} instead
          */
         export const onDidOpenTextDocument: Subscribable<TextDocument>
+
+        /**
+         * The currently active text document, if any. The active text document is the document
+         * that has focus in the current {@link activeWindow}
+         *
+         * Can be synchronously inspected using `activeTextDocument.getValue()`,
+         * or subscribed to using `activeTextDocument.subscribe()`.
+         * The currently acrive text document will be emitted on subscription.
+         */
+        export const activeTextDocument: SubscribableValue<TextDocument | null>
 
         /**
          * The root directories of the workspace, if any.
@@ -1205,6 +1226,10 @@ declare module 'sourcegraph' {
          */
         subscribe(observer?: PartialObserver<T>): Unsubscribable
         subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
+    }
+
+    export interface SubscribableValue<T> extends Subscribable<T>, Unsubscribable<T> {
+        getValue(): T
     }
 
     /**
