@@ -62,9 +62,14 @@ export function search(
                                                 html
                                             }
                                             highlights {
-                                                line
-                                                character
-                                                length
+                                                start {
+                                                    line
+                                                    character
+                                                }
+                                                end {
+                                                    line
+                                                    character
+                                                }
                                             }
                                         }
                                     }
@@ -111,9 +116,14 @@ export function search(
                                                 html
                                             }
                                             highlights {
-                                                line
-                                                character
-                                                length
+                                                start {
+                                                    line
+                                                    character
+                                                }
+                                                end {
+                                                    line
+                                                    character
+                                                }
                                             }
                                         }
                                     }

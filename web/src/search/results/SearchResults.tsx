@@ -1,9 +1,9 @@
+import * as clientType from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { combineLatest, concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { SearchResult } from 'sourcegraph'
 import { parseSearchURLQuery } from '..'
 import { SearchFiltersContainer } from '../../../../shared/src/actions/SearchFiltersContainer'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -69,8 +69,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public componentDidMount(): void {
         eventLogger.logViewEvent('SearchResults')
 
-        const extensionSearch: (query: string) => Observable<SearchResult[] | null | undefined> = (query: string) =>
-            this.props.extensionsController.services.searchResultProvider.provideSearchResult(query)
+        const extensionSearch: (query: string) => Observable<clientType.SearchResult[] | null | undefined> = (
+            query: string
+        ) => this.props.extensionsController.services.searchResultProvider.provideSearchResult(query)
 
         this.subscriptions.add(
             this.componentUpdates

@@ -59,13 +59,13 @@ export class SearchResult extends React.Component<Props> {
         <>
             {this.props.result.matches.map((match, index) => {
                 const highlightRanges: HighlightRange[] = []
-                match.highlights.map(highlight =>
+                match.highlights.map(highlight => {
                     highlightRanges.push({
-                        line: highlight.line,
-                        character: highlight.character,
-                        length: highlight.length,
+                        line: highlight.start.line,
+                        character: highlight.start.character,
+                        length: highlight.end.character - highlight.start.character,
                     })
-                )
+                })
 
                 return (
                     <SearchResultMatch
