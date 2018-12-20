@@ -9,9 +9,6 @@
   "repoListUpdateInterval": 1,
   "update.channel": "release",
   "corsOrigin": "https://github.com",
-  "extensions": {
-    "remoteRegistry": "https://sourcegraph.com/.api/registry"
-  },
   "auth.providers": [
     {
       "type": "builtin",
