@@ -48,3 +48,31 @@ export function fromRange(range: Range | sourcegraph.Range | undefined): clientT
     }
     return range instanceof Range ? range.toJSON() : range
 }
+
+/**
+ * Converts from an instance of {@link SearchResult} to the plain object {@link clientType.SearchResult}.
+ *
+ * @internal
+ */
+export function fromSearchResult(searchResult: sourcegraph.SearchResult): clientType.SearchResult {
+    return {
+        icon: searchResult.icon,
+        label: searchResult.label,
+        url: searchResult.url,
+        detail: searchResult.detail,
+        matches: searchResult.matches.map(match => fromSearchResultMatch(match)),
+    }
+}
+
+/**
+ * Converts from an instance of {@link SearchResultMatch} to the plain object {@link clientType.SearchResultMatch}.
+ *
+ * @internal
+ */
+export function fromSearchResultMatch(searchMatch: sourcegraph.SearchResultMatch): clientType.SearchResultMatch {
+    return {
+        body: searchMatch.body,
+        highlights: searchMatch.highlights.map(match => fromRange(match)) as clientType.Range[],
+        url: searchMatch.url,
+    }
+}

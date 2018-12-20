@@ -1,6 +1,6 @@
+import * as clientType from '@sourcegraph/extension-api-types'
 import { from, Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { SearchResult } from 'sourcegraph'
 import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtSearch } from '../../extension/api/search'
 import { Connection } from '../../protocol/jsonrpc2/connection'
@@ -47,7 +47,7 @@ export class Search implements SearchAPI {
             id,
             this.searchResultProviderRegistry.registerProvider(
                 {},
-                (query: string): Observable<SearchResult[] | null | undefined> =>
+                (query: string): Observable<clientType.SearchResult[] | null | undefined> =>
                     from(this.proxy.$provideSearchResult(id, query)).pipe(map(result => result || []))
             )
         )
