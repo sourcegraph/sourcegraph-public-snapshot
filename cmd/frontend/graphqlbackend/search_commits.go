@@ -303,7 +303,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), commitResolver.URL())
 		results[i].url = commitResolver.URL()
 		results[i].icon = commitIcon
-		match := &searchResultMatchResolver{body: matchBody, highlights: highlightedRangeToLSPRange(matchHighlights), url: commitResolver.URL()}
+		match := &searchResultMatchResolver{body: matchBody, highlights: highlightedRangeToRange(matchHighlights), url: commitResolver.URL()}
 		matches := []*searchResultMatchResolver{match}
 		results[i].matches = matches
 	}
@@ -359,15 +359,15 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 	return body, highlights
 }
 
-func highlightedRangeToLSPRange(highlights []*highlightedRange) []*rangeResolver {
-	ranges := make([]*rangeResolver, len(highlights))
-	for _, h := range highlights {
+func highlightedRangeToRange(highlightedRanges []*highlightedRange) []*rangeResolver {
+	var ranges []*rangeResolver
+	for _, h := range highlightedRanges {
 		line := int(h.line)
 		startCharacter := int(h.character)
 		endCharacter := int(h.character + h.length)
 		r := lsp.Range{Start: lsp.Position{Line: line, Character: startCharacter}, End: lsp.Position{Line: line, Character: endCharacter}}
-		rangeResolve := rangeResolver{lspRange: r}
-		ranges = append(ranges, &rangeResolve)
+		resolvedRange := rangeResolver{lspRange: r}
+		ranges = append(ranges, &resolvedRange)
 	}
 	return ranges
 }
