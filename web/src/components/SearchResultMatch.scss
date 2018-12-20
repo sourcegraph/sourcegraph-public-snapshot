@@ -73,6 +73,20 @@
                 display: inline;
             }
         }
+
+        &.markdown {
+            table,
+            th,
+            td {
+                border: none;
+                padding: 0;
+            }
+            code,
+            pre {
+                background-color: transparent;
+                padding: 0;
+            }
+        }
     }
 
     &__code-excerpt {
@@ -123,10 +137,12 @@
         }
 
         &__markdown {
-            code,
-            pre {
-                background-color: transparent;
-                padding: 0;
+            &.markdown {
+                code,
+                pre {
+                    background-color: transparent;
+                    padding: 0;
+                }
             }
         }
 
