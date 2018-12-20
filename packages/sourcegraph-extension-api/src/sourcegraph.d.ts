@@ -1094,7 +1094,7 @@ declare module 'sourcegraph' {
     export interface SearchResult {
         /** A URL to an icon to be displayed with each search result. */
         icon: string
-        /** A markdonw string displayed prominently. */
+        /** A markdown string displayed prominently. */
         label: Markdown
         /** A URL to the search result. */
         url: string

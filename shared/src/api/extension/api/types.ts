@@ -56,10 +56,7 @@ export function fromRange(range: Range | sourcegraph.Range | undefined): clientT
  */
 export function fromSearchResult(searchResult: sourcegraph.SearchResult): clientType.SearchResult {
     return {
-        icon: searchResult.icon,
-        label: searchResult.label,
-        url: searchResult.url,
-        detail: searchResult.detail,
+        ...searchResult,
         matches: searchResult.matches.map(match => fromSearchResultMatch(match)),
     }
 }

@@ -2,7 +2,7 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { combineLatest, concat, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, concat, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery } from '..'
 import { SearchFiltersContainer } from '../../../../shared/src/actions/SearchFiltersContainer'
@@ -10,7 +10,7 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { fetchHighlightedFileLines } from '../../repo/backend'
 import { Settings } from '../../schema/settings.schema'
@@ -92,22 +92,25 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             [{ resultsOrError: undefined, didSave: false }],
                             combineLatest(
                                 // Do async search request
-                                search(query, this.props),
+                                search(query, this.props).pipe(
+                                    catchError(error => {
+                                        console.error(error)
+                                        return [asError(error) as ErrorLike]
+                                    })
+                                ),
                                 extensionSearch(query)
                             ).pipe(
                                 // Log telemetry
                                 tap(
-                                    results =>
+                                    ([results]) =>
                                         eventLogger.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
                                                 results: {
-                                                    // isErrorLike(results) ? 0 : results.results.length
-                                                    results_count: 0,
-                                                    any_cloning: 0,
-                                                    // isErrorLike(results)
-                                                    //     ? false
-                                                    //     : results.cloning.length > 0,
+                                                    results_count: isErrorLike(results) ? 0 : results.results.length,
+                                                    any_cloning: isErrorLike(results)
+                                                        ? false
+                                                        : results.cloning.length > 0,
                                                 },
                                             },
                                         }),
@@ -120,24 +123,45 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 ),
                                 // Update view with results or error
                                 map(([results, extensionsResults]) => {
-                                    if (extensionsResults && !isErrorLike(results)) {
-                                        // if empty, it's not iterable.
-
+                                    if (extensionsResults) {
+                                        if (!isErrorLike(results)) {
+                                            // Append extension results to the list of search results.
+                                            return {
+                                                resultsOrError: {
+                                                    ...results,
+                                                    results: [
+                                                        ...results.results,
+                                                        ...(extensionsResults as GQL.IGenericSearchResult[]),
+                                                    ],
+                                                },
+                                            }
+                                        }
+                                        // If search errors out, but we have extension results, display the extension results.
                                         return {
+                                            // Return a GQL.ISearchResult object with results set to the extension results, and fields set to default/empty values.
                                             resultsOrError: {
-                                                ...results,
-                                                results: [
-                                                    ...results.results,
-                                                    ...(extensionsResults as GQL.IGenericSearchResult[]),
-                                                ],
+                                                __typename: 'SearchResults',
+                                                results: extensionsResults as GQL.IGenericSearchResult[],
+                                                resultCount: 0,
+                                                approximateResultCount: 0,
+                                                limitHit: false,
+                                                sparkline: [],
+                                                repositories: [],
+                                                repositoriesSearched: [],
+                                                indexedRepositoriesSearched: [],
+                                                cloning: [],
+                                                missing: [],
+                                                timedout: [],
+                                                indexUnavailable: true,
+                                                alert: null,
+                                                elapsedMilliseconds: 0,
+                                                dynamicFilters: [],
                                             },
                                         }
+                                    } else {
+                                        return { resultsOrError: results }
                                     }
-
-                                    return { resultsOrError: results }
-                                }),
-
-                                catchError(error => [{ resultsOrError: error }])
+                                })
                             )
                         )
                     )
