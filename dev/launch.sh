@@ -15,12 +15,16 @@ if [ -f .env ]; then
 fi
 
 export GO111MODULE=on
-go build ./pkg/version/minversion || {
-    echo "Go version 1.11.x or newer must be used to build Sourcegraph; found: $(go version)"
-    exit 1
-}
-
 export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
+
+minimumgo="1.11.4"
+goversion=$(go version | grep -Eo '[1-9]+\.[0-9]+(\.[0-9]+)?')
+min=$(./node_modules/semver/bin/semver $goversion $minimumgo | head -n 1)
+
+if [ "$goversion" == "$min" ] && [ "$goversion" != "$minimumgo" ] ; then
+    echo "Go version $minimumgo is required; found $goversion"
+    exit 1
+fi
 
 # Verify postgresql config.
 hash psql 2>/dev/null || {
