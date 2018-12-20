@@ -284,7 +284,7 @@ func main() {
 		// is completed.
 		// pipeline.AddStep(":rocket:",
 		// 	bk.Env("VERSION", version),
-		// 	bk.Cmd("./dev/ci/deploy-prod.sh"))
+		// 	bk.Cmd("./dev/enterprise/ci/deploy-prod.sh"))
 	}
 
 	switch {
