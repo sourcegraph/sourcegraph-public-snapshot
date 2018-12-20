@@ -129,6 +129,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             return {
                                                 resultsOrError: {
                                                     ...results,
+                                                    resultCount: results.resultCount + extensionsResults.length,
+                                                    approximateResultCount:
+                                                        results.resultCount + extensionsResults.length,
                                                     results: [
                                                         ...results.results,
                                                         ...(extensionsResults as GQL.IGenericSearchResult[]),
@@ -142,8 +145,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             resultsOrError: {
                                                 __typename: 'SearchResults',
                                                 results: extensionsResults as GQL.IGenericSearchResult[],
-                                                resultCount: 0,
-                                                approximateResultCount: 0,
+                                                resultCount: extensionsResults.length,
+                                                approximateResultCount: extensionsResults.length,
                                                 limitHit: false,
                                                 sparkline: [],
                                                 repositories: [],
