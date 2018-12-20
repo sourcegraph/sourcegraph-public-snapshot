@@ -50,7 +50,7 @@ This is the next step in the evolution of our planning process.
 
 ## Checklist 
 
-- [ ] Merge https://github.com/sourcegraph/sourcegraph/pull/1492 by Dec 21, 2018.
+- [ ] Merge https://github.com/sourcegraph/sourcegraph/pull/1492 by Dec 21, 2018 to unblock the creation of new proposals.
 - [ ] Discuss proposal process during team meeting on Jan 7, 2019
 - [ ] Get written confirmation for each engineer that they have read https://github.com/sourcegraph/sourcegraph/pull/1492 and have raised any concerns by Jan 14, 2019.
 - [ ] Have open or merged proposal PRs for all projects in the 3.1 milestone by Jan 22, 2019.
