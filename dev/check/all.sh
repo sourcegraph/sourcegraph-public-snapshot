@@ -15,7 +15,6 @@ go env
 ./todo-security.sh
 ./no-localhost-guard.sh
 ./bash-syntax.sh
-./require-changelog.sh
 
 # TODO(sqs): Reenable this check when about.sourcegraph.com is reliable. Most failures come from its
 # downtime, not from broken URLs.
