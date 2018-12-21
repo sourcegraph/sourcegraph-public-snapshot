@@ -10,7 +10,6 @@ import { Controller } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import {
     AbsoluteRepo,
-    AbsoluteRepoFile,
     AbsoluteRepoFilePosition,
     FileSpec,
     makeRepoURI,
@@ -19,7 +18,7 @@ import {
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
-} from '../repo'
+} from '../../../../../shared/src/util/url'
 import { canFetchForURL, DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL } from '../util/url'
@@ -278,7 +277,7 @@ export const lspViaAPIXlang: SimpleProviderFns = {
     fetchDefinition,
 }
 
-export const toTextDocumentIdentifier = (pos: AbsoluteRepoFile): TextDocumentIdentifier => ({
+export const toTextDocumentIdentifier = (pos: RepoSpec & ResolvedRevSpec & FileSpec): TextDocumentIdentifier => ({
     uri: `git://${pos.repoName}?${pos.commitID}#${pos.filePath}`,
 })
 

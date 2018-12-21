@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
@@ -10,7 +11,6 @@ import { PlatformContext } from '../../../platform/context'
 import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { isEqual } from '../../util'
 import { Model } from '../model'
 import { SettingsService } from './settings'
 

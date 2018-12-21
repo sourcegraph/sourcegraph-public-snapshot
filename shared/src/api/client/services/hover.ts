@@ -1,10 +1,10 @@
 import { Hover } from '@sourcegraph/extension-api-types'
+import { isEqual } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { HoverMerged } from '../../client/types/hover'
 import { TextDocumentPositionParams } from '../../protocol'
-import { isEqual } from '../../util'
 import { DocumentFeatureProviderRegistry } from './registry'
 
 export type ProvideTextDocumentHoverSignature = (
@@ -35,7 +35,8 @@ export class TextDocumentHoverProviderRegistry extends DocumentFeatureProviderRe
  */
 export function getHover(
     providers: Observable<ProvideTextDocumentHoverSignature[]>,
-    params: TextDocumentPositionParams
+    params: TextDocumentPositionParams,
+    logErrors = true
 ): Observable<HoverMerged | null> {
     return providers.pipe(
         switchMap(providers =>
@@ -44,7 +45,9 @@ export function getHover(
                     from(
                         provider(params).pipe(
                             catchError(err => {
-                                console.error(err)
+                                if (logErrors) {
+                                    console.error(err)
+                                }
                                 return [null]
                             })
                         )

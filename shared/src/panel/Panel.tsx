@@ -115,6 +115,7 @@ export class Panel extends React.PureComponent<Props, State> {
                         toolbarFragment={
                             <ActionsNavItems
                                 listClass="w-100 justify-content-end"
+                                actionItemClass="nav-link"
                                 menu={ContributableMenu.PanelToolbar}
                                 extensionsController={this.props.extensionsController}
                                 platformContext={this.props.platformContext}

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Text is a searcher which routes requests for indexed commits to indexed
@@ -115,51 +116,132 @@ func (t *TextJIT) Search(ctx context.Context, q query.Q, opts *search.Options) (
 		return nil, err
 	}
 
-	all := &search.Result{}
+	var cancel context.CancelFunc
+	if opts.MaxWallTime > 0 {
+		ctx, cancel = context.WithTimeout(ctx, opts.MaxWallTime)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+	defer cancel()
 
-	// TODO parallize, delete missing endpoints, respect MaxWallTime
-	origOpts := opts
-	for _, r := range repos {
-		commit, err := t.Resolve(ctx, r.Name, r.RefPattern)
-		if err != nil {
-			s, err := handleError(SourceSearcher, r, err)
-			if err != nil {
-				return all, err
+	sem, err := t.semaphore()
+	if err != nil {
+		return nil, err
+	}
+
+	resC := make(chan searchResponse)
+	go func() {
+		defer close(resC)
+
+		var wg sync.WaitGroup
+		defer wg.Wait()
+
+		origOpts := opts
+		for _, r := range repos {
+			if err := sem.Acquire(ctx); err != nil {
+				return
 			}
-			all.Stats.Status = append(all.Stats.Status, *s)
-			continue
-		}
-		r.Commit = commit
-		opts := *origOpts
-		opts.Repositories = []api.RepoName{r.Name}
 
-		qSearcher, err := expandForRepoAtCommit(q, r)
-		if err != nil {
-			return nil, err
-		}
+			wg.Add(1)
+			go func(r search.Repository) {
+				defer sem.Release()
+				defer wg.Done()
 
-		client, err := t.client(r)
-		if err != nil {
-			return nil, err
-		}
+				commit, err := t.Resolve(ctx, r.Name, r.RefPattern)
+				if err != nil {
+					if s, err := handleError(SourceSearcher, r, err); err != nil {
+						resC <- searchResponse{error: err}
+					} else {
+						var result search.Result
+						result.Stats.Status = append(result.Stats.Status, *s)
+						resC <- searchResponse{Result: &result}
+					}
+					return
+				}
+				r.Commit = commit
+				opts := *origOpts
+				opts.Repositories = []api.RepoName{r.Name}
 
-		result, err := client.Search(ctx, qSearcher, &opts)
-		if err != nil {
-			return all, err
-		}
+				qSearcher, err := expandForRepoAtCommit(q, r)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
 
-		// Searcher doesn't know the repo.RefPattern used, so we set it.
-		for i := range result.Stats.Status {
-			result.Stats.Status[i].Repository = r
-		}
-		for i := range result.Files {
-			result.Files[i].Repository = r
-		}
+				client, err := t.client(r)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
 
-		all.Add(result)
+				result, err := client.Search(ctx, qSearcher, &opts)
+				if err != nil {
+					resC <- searchResponse{error: err}
+					return
+				}
+
+				// Searcher doesn't know the repo.RefPattern used, so we set it.
+				for i := range result.Stats.Status {
+					result.Stats.Status[i].Repository = r
+				}
+				for i := range result.Files {
+					result.Files[i].Repository = r
+				}
+
+				resC <- searchResponse{Result: result}
+			}(r)
+		}
+	}()
+
+	all := &search.Result{}
+	for r := range resC {
+		if r.error != nil {
+			// Drain resC
+			cancel()
+			for range resC {
+			}
+			return nil, r.error
+		}
+		all.Add(r.Result)
 	}
 
 	return all, nil
+}
+
+// semaphore returns a semaphore for limiting search concurrency.
+func (t *TextJIT) semaphore() (semaphore, error) {
+	// We don't want to overload searcher instances. So we use the heuristic
+	// of 5 searchers per replica.
+	eps, err := t.Endpoints.Endpoints()
+	if err != nil {
+		return nil, err
+	}
+
+	// Additionally we use this opportunity to check if we need to do a GC
+	t.maybeGC(len(eps))
+
+	return make(semaphore, len(eps)*5), nil
+}
+
+func (t *TextJIT) maybeGC(expectedClientCount int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if len(t.clients) == expectedClientCount {
+		return
+	}
+
+	eps, err := t.Endpoints.Endpoints()
+	if err != nil {
+		log15.Warn("TextJIT.maybeGC unexpected error listing endpoints", "error", err)
+		return
+	}
+	for k, c := range t.clients {
+		if _, ok := eps[k]; !ok {
+			c.Close()
+			delete(eps, k)
+		}
+	}
 }
 
 func expandForRepoAtCommit(q query.Q, repo search.Repository) (query.Q, error) {
@@ -308,6 +390,7 @@ type Zoekt struct {
 	state    int32 // 0 not running, 1 running, 2 stopped
 	listResp *zoekt.RepoList
 	listErr  error
+	disabled bool
 }
 
 // Close will tear down the background goroutines.
@@ -319,6 +402,10 @@ func (c *Zoekt) Close() {
 
 // Search implements Searcher.Search
 func (c *Zoekt) Search(ctx context.Context, q query.Q, opts *search.Options) (res *search.Result, err error) {
+	if !c.Enabled() {
+		return nil, errors.New("indexed search is disabled")
+	}
+
 	repos := opts.Repositories
 	if len(repos) == 0 {
 		return nil, errors.Errorf("repository list empty for indexed text search on %s", q.String())
@@ -609,6 +696,12 @@ func (c *Zoekt) SplitRepositories(ctx context.Context, q query.Q, opts *search.O
 
 // ListAll returns the response of List without any restrictions.
 func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
+	if !c.Enabled() {
+		// By returning an empty list Text.Search won't send any queries to
+		// Zoekt.
+		return &zoekt.RepoList{}, nil
+	}
+
 	c.mu.Lock()
 	r, err := c.listResp, c.listErr
 	c.mu.Unlock()
@@ -624,6 +717,22 @@ func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
 	return r, err
 }
 
+// SetEnabled will disable zoekt if b is false.
+func (c *Zoekt) SetEnabled(b bool) {
+	c.mu.Lock()
+	c.disabled = !b
+	c.mu.Unlock()
+}
+
+// Enabled returns true if Zoekt is enabled. It is enabled if Client is
+// non-nil and it hasn't been disabled by SetEnable.
+func (c *Zoekt) Enabled() bool {
+	c.mu.Lock()
+	b := c.disabled
+	c.mu.Unlock()
+	return c.Client != nil && !b
+}
+
 func (c *Zoekt) start() {
 	c.mu.Lock()
 	if c.state != 0 {
@@ -637,6 +746,19 @@ func (c *Zoekt) start() {
 	errorCount := 0
 	state := int32(1)
 	for state == 1 {
+		if !c.Enabled() {
+			// If we haven't been stopped, reset state so start() is called
+			// again when we are enabled. We can defer unlocking since we will
+			// return.
+			c.mu.Lock()
+			defer c.mu.Unlock()
+			if c.state == 1 {
+				c.state = 0
+				c.listResp, c.listErr = nil, nil
+			}
+			return
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		listResp, listErr := c.Client.List(ctx, &zoektquery.Const{Value: true})
 		cancel()

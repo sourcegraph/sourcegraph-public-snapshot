@@ -4,7 +4,6 @@
 - [Add repositories from GitLab](../../integration/gitlab.md)
 - [Add repositories from Bitbucket Server](../../integration/bitbucket_server.md)
 - [Add repositories from AWS CodeCommit](../../integration/aws_codecommit.md)
-- [Add repositories from any Git host](add_from_git_repository.md)
 - [Add repositories from the local disk](add_from_local_disk.md)
 
 ## Troubleshooting
@@ -23,7 +22,7 @@ If your repositories are showing up but are not cloning or updating from the ori
 
 ## Example configuration
 
-Here is an example configuration of a Sourcegraph that is integrated with both GitHub Enterprise and GitHub.com, and has repositories added from gitolite:
+Here is an example configuration of a Sourcegraph that is integrated with GitHub Enterprise, GitHub.com and a Gitolite server.
 
 ```json
 # Replace 🔒 with a personal access token generated at https://GITHUB_URL/settings/tokens
@@ -47,10 +46,10 @@ Here is an example configuration of a Sourcegraph that is integrated with both G
             "token": "🔒"
         },
     ],
-    "repos.list": [
+    "gitolite": [
         {
-            "url": "https://gitolite.example.com/my/repo.git",
-            "path": "gitolite/my/repo"
+            "prefix": "gitolite.example.com/",
+            "host": "git@gitolite.example.com"
         }
     ]
     // ...

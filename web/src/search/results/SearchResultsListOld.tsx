@@ -8,13 +8,14 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import { buildSearchURLQuery, parseSearchURLQuery } from '..'
+import { parseSearchURLQuery } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { ModalContainer } from '../../components/ModalContainer'
 import { eventLogger } from '../../tracking/eventLogger'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
@@ -59,7 +60,7 @@ export class SearchResultsListOld extends React.PureComponent<SearchResultsListP
                         component={
                             <SavedQueryCreateForm
                                 authenticatedUser={this.props.authenticatedUser}
-                                values={{ query: parsedQuery ? parsedQuery.query : '' }}
+                                values={{ query: parsedQuery || '' }}
                                 onDidCancel={this.props.onSavedQueryModalClose}
                                 onDidCreate={this.props.onDidCreateSavedQuery}
                                 settingsCascade={this.props.settingsCascade}
@@ -125,7 +126,10 @@ export class SearchResultsListOld extends React.PureComponent<SearchResultsListP
                                                         <li key={proposedQuery.query}>
                                                             <Link
                                                                 className="btn btn-secondary btn-sm"
-                                                                to={'/search?' + buildSearchURLQuery(proposedQuery)}
+                                                                to={
+                                                                    '/search?' +
+                                                                    buildSearchURLQuery(proposedQuery.query)
+                                                                }
                                                             >
                                                                 {proposedQuery.query || proposedQuery.description}
                                                             </Link>

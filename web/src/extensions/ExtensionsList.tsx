@@ -279,7 +279,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                     )
                 ).pipe(
                     map(({ data, errors }) => {
-                        if (!data || !data.extensionRegistry || !data.extensionRegistry.extensions || errors) {
+                        if (!data || !data.extensionRegistry || !data.extensionRegistry.extensions) {
                             throw createAggregateError(errors)
                         }
                         return {

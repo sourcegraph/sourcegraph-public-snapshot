@@ -2,7 +2,7 @@ import { NEVER } from 'rxjs'
 import { Services } from './services'
 
 describe('Services', () => {
-    it('initializes empty services', () => {
+    test('initializes empty services', () => {
         // tslint:disable-next-line:no-unused-expression
         new Services({
             settings: NEVER,

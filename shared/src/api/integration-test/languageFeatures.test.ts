@@ -1,22 +1,22 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import * as assert from 'assert'
 import { Observable } from 'rxjs'
 import { bufferCount, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
-import { assertToJSON } from '../extension/types/common.test'
+import { assertToJSON } from '../extension/types/testHelpers'
 import { URI } from '../extension/types/uri'
-import { createBarrier, integrationTestContext } from './helpers.test'
+import { createBarrier, integrationTestContext } from './testHelpers'
 
 describe('LanguageFeatures (integration)', () => {
-    testLocationProvider(
+    testLocationProvider<sourcegraph.HoverProvider>(
         'registerHoverProvider',
         extensionHost => extensionHost.languages.registerHoverProvider,
-        label =>
-            ({
-                provideHover: (doc, pos) => ({ contents: { value: label, kind: sourcegraph.MarkupKind.PlainText } }),
-            } as sourcegraph.HoverProvider),
+        label => ({
+            provideHover: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => ({
+                contents: { value: label, kind: sourcegraph.MarkupKind.PlainText },
+            }),
+        }),
         labels => ({
             contents: labels.map(label => ({ value: label, kind: sourcegraph.MarkupKind.PlainText })),
         }),
@@ -27,13 +27,14 @@ describe('LanguageFeatures (integration)', () => {
                 position: { line: 1, character: 2 },
             })
     )
-    testLocationProvider(
+    testLocationProvider<sourcegraph.DefinitionProvider>(
         'registerDefinitionProvider',
         extensionHost => extensionHost.languages.registerDefinitionProvider,
-        label =>
-            ({
-                provideDefinition: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.DefinitionProvider),
+        label => ({
+            provideDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
+                { uri: new URI(`file:///${label}`) },
+            ],
+        }),
         labeledDefinitionResults,
         run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
         services =>
@@ -46,10 +47,11 @@ describe('LanguageFeatures (integration)', () => {
     testLocationProvider(
         'registerTypeDefinitionProvider',
         extensionHost => extensionHost.languages.registerTypeDefinitionProvider,
-        label =>
-            ({
-                provideTypeDefinition: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.TypeDefinitionProvider),
+        label => ({
+            provideTypeDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
+                { uri: new URI(`file:///${label}`) },
+            ],
+        }),
         labeledDefinitionResults,
         run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
         services =>
@@ -58,13 +60,14 @@ describe('LanguageFeatures (integration)', () => {
                 position: { line: 1, character: 2 },
             })
     )
-    testLocationProvider(
+    testLocationProvider<sourcegraph.ImplementationProvider>(
         'registerImplementationProvider',
         extensionHost => extensionHost.languages.registerImplementationProvider,
-        label =>
-            ({
-                provideImplementation: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.ImplementationProvider),
+        label => ({
+            provideImplementation: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
+                { uri: new URI(`file:///${label}`) },
+            ],
+        }),
         labeledDefinitionResults,
         run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
         services =>
@@ -74,17 +77,24 @@ describe('LanguageFeatures (integration)', () => {
             })
     )
     // tslint:enable deprecation
-    testLocationProvider(
+    testLocationProvider<sourcegraph.ReferenceProvider>(
         'registerReferenceProvider',
         extensionHost => extensionHost.languages.registerReferenceProvider,
-        label =>
-            ({
-                provideReferences: (doc, pos, context) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.ReferenceProvider),
+        label => ({
+            provideReferences: (
+                doc: sourcegraph.TextDocument,
+                pos: sourcegraph.Position,
+                context: sourcegraph.ReferenceContext
+            ) => [{ uri: new URI(`file:///${label}`) }],
+        }),
         labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
         run =>
             ({
-                provideReferences: (doc, pos, _context: sourcegraph.ReferenceContext) => run(doc, pos),
+                provideReferences: (
+                    doc: sourcegraph.TextDocument,
+                    pos: sourcegraph.Position,
+                    _context: sourcegraph.ReferenceContext
+                ) => run(doc, pos),
             } as sourcegraph.ReferenceProvider),
         services =>
             services.textDocumentReferences.getLocations({
@@ -97,14 +107,15 @@ describe('LanguageFeatures (integration)', () => {
         'registerLocationProvider',
         extensionHost => (selector, provider) =>
             extensionHost.languages.registerLocationProvider('x', selector, provider),
-        label =>
-            ({
-                provideLocations: (doc, pos) => [{ uri: new URI(`file:///${label}`) }],
-            } as sourcegraph.LocationProvider),
+        label => ({
+            provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
+                { uri: new URI(`file:///${label}`) },
+            ],
+        }),
         labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
         run =>
             ({
-                provideLocations: (doc, pos) => run(doc, pos),
+                provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => run(doc, pos),
             } as sourcegraph.LocationProvider),
         services =>
             services.textDocumentLocations.getLocations('x', {
@@ -129,30 +140,28 @@ function testLocationProvider<P>(
     getResult: (services: Services) => Observable<any>
 ): void {
     describe(`languages.${name}`, () => {
-        it('registers and unregisters a single provider', async () => {
+        test('registers and unregisters a single provider', async () => {
             const { services, extensionHost } = await integrationTestContext()
 
             // Register the provider and call it.
             const unsubscribe = registerProvider(extensionHost)(['*'], labeledProvider('a'))
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(
+            expect(
                 await getResult(services)
                     .pipe(take(1))
-                    .toPromise(),
-                labeledProviderResults(['a'])
-            )
+                    .toPromise()
+            ).toEqual(labeledProviderResults(['a']))
 
             // Unregister the provider and ensure it's removed.
             unsubscribe.unsubscribe()
-            assert.deepStrictEqual(
+            expect(
                 await getResult(services)
                     .pipe(take(1))
-                    .toPromise(),
-                null
-            )
+                    .toPromise()
+            ).toEqual(null)
         })
 
-        it('supplies params to the provideXyz method', async () => {
+        test('supplies params to the provideXyz method', async () => {
             const { services, extensionHost } = await integrationTestContext()
             const { wait, done } = createBarrier()
             registerProvider(extensionHost)(
@@ -170,7 +179,7 @@ function testLocationProvider<P>(
             await wait
         })
 
-        it('supports multiple providers', async () => {
+        test('supports multiple providers', async () => {
             const { services, extensionHost } = await integrationTestContext()
 
             // Register 2 providers with different results.
@@ -179,15 +188,14 @@ function testLocationProvider<P>(
             await extensionHost.internal.sync()
 
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
-            assert.deepStrictEqual(
+            expect(
                 await getResult(services)
                     .pipe(
                         take(2),
                         bufferCount(2)
                     )
-                    .toPromise(),
-                [labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])]
-            )
+                    .toPromise()
+            ).toEqual([labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])])
         })
     })
 }

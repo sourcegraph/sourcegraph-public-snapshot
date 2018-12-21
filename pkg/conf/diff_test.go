@@ -29,37 +29,37 @@ func TestDiff(t *testing.T) {
 		{
 			name: "slice_diff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "a"}}},
+				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "a"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "b"}}},
+				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "b"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
-			want: []string{"repos.list"},
+			want: []string{"reviewBoard"},
 		},
 		{
 			name: "slice_nodiff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "a"}}},
+				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "a"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "a"}}},
+				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "a"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
 		},
 		{
 			name: "multi_diff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "b"}}},
+				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "b"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReposList: []*schema.Repository{{Path: "a"}}},
+				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "a"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "b"},
 			},
-			want: []string{"critical::externalURL", "repos.list"},
+			want: []string{"critical::externalURL", "reviewBoard"},
 		},
 		{
 			name: "experimental_features",

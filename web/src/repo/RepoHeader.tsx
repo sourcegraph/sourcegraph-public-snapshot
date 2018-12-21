@@ -239,6 +239,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <ul className="navbar-nav">
                     <ActionsNavItems
                         menu={ContributableMenu.EditorTitle}
+                        actionItemClass="nav-link"
                         extensionsController={this.props.extensionsController}
                         platformContext={this.props.platformContext}
                         location={this.props.location}

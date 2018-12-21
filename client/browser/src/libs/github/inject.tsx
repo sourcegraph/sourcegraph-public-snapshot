@@ -8,7 +8,6 @@ import { ContextualSourcegraphButton } from '../../shared/components/ContextualS
 import { ServerAuthButton } from '../../shared/components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
 import { WithResolvedRev } from '../../shared/components/WithResolvedRev'
-import { hideTooltip } from '../../shared/repo/tooltips'
 import { inlineSymbolSearchEnabled, renderMermaidGraphsEnabled } from '../../shared/util/context'
 import { getFileContainers, parseURL } from './util'
 
@@ -22,7 +21,6 @@ async function refreshModules(): Promise<void> {
     for (const el of Array.from(document.querySelectorAll('.sg-annotated'))) {
         el.classList.remove('sg-annotated')
     }
-    hideTooltip()
     await inject()
 }
 

@@ -44,6 +44,25 @@ func init() {
 
 		var criticalDecoded schema.CriticalConfiguration
 		_ = json.Unmarshal(legacyConf, &criticalDecoded)
+
+		// Backwards compatability for deprecated environment variables
+		// that we previously considered deprecated but are actually
+		// widespread in use in user's deployments and/or are suggested for
+		// use in our public documentation (i.e., even though these were
+		// long deprecated, our docs were not up to date).
+		criticalBackcompatVars := map[string]func(value string){
+			"TLS_CERT":               func(v string) { criticalDecoded.TlsCert = v },
+			"TLS_KEY":                func(v string) { criticalDecoded.TlsKey = v },
+			"LIGHTSTEP_PROJECT":      func(v string) { criticalDecoded.LightstepProject = v },
+			"LIGHTSTEP_ACCESS_TOKEN": func(v string) { criticalDecoded.LightstepAccessToken = v },
+		}
+		for envVar, setter := range criticalBackcompatVars {
+			val := os.Getenv(envVar)
+			if val != "" {
+				setter(val)
+			}
+		}
+
 		critical, err := json.MarshalIndent(criticalDecoded, "", "  ")
 		if string(critical) != "{}" && err == nil {
 			defaultConfig.Critical = string(critical)
@@ -98,20 +117,7 @@ func UpdateScheduler2Enabled() bool {
 	return p != "disabled"
 }
 
-// ExternalServicesEnabled returns true if the ExternalService experiment is enabled.
-func ExternalServicesEnabled() bool {
-	var v string
-	if ef := Get().ExperimentalFeatures; ef != nil {
-		v = ef.ExternalServices
-	}
-	// default is enabled
-	return v != "disabled"
-}
-
 func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().AwsCodeCommit, nil
-	}
 	var config []*schema.AWSCodeCommitConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
 		return nil, err
@@ -120,9 +126,6 @@ func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnectio
 }
 
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().BitbucketServer, nil
-	}
 	var config []*schema.BitbucketServerConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
 		return nil, err
@@ -131,9 +134,6 @@ func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConne
 }
 
 func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().Github, nil
-	}
 	var config []*schema.GitHubConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITHUB", &config); err != nil {
 		return nil, err
@@ -142,9 +142,6 @@ func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
 }
 
 func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().Gitlab, nil
-	}
 	var config []*schema.GitLabConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITLAB", &config); err != nil {
 		return nil, err
@@ -153,9 +150,6 @@ func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
 }
 
 func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().Gitolite, nil
-	}
 	var config []*schema.GitoliteConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
 		return nil, err
@@ -164,9 +158,6 @@ func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) 
 }
 
 func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	if !ExternalServicesEnabled() {
-		return Get().Phabricator, nil
-	}
 	var config []*schema.PhabricatorConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &config); err != nil {
 		return nil, err

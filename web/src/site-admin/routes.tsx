@@ -1,4 +1,5 @@
 import React from 'react'
+import { eventLogger } from '../tracking/eventLogger'
 import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
@@ -40,7 +41,7 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     },
     {
         path: '/external-services/add',
-        render: props => <SiteAdminAddExternalServicePage {...props} />,
+        render: props => <SiteAdminAddExternalServicePage {...props} eventLogger={eventLogger} />,
         exact: true,
     },
     {

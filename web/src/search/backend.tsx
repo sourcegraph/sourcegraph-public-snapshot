@@ -1,6 +1,5 @@
 import { Observable } from 'rxjs'
 import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
-import { SearchOptions } from '.'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -9,13 +8,13 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export function search(
-    options: SearchOptions,
+    query: string,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
-    return extensionsController.services.queryTransformer.transformQuery(options.query).pipe(
+    return extensionsController.services.queryTransformer.transformQuery(query).pipe(
         switchMap(query =>
             queryGraphQL(
                 gql`
@@ -146,7 +145,7 @@ export function search(
     )
 }
 
-export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.ISearchResultsStats> {
+export function fetchSearchResultStats(query: string): Observable<GQL.ISearchResultsStats> {
     return queryGraphQL(
         gql`
             query SearchResultsStats($query: String!) {
@@ -158,7 +157,7 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
                 }
             }
         `,
-        { query: options.query }
+        { query }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.stats) {
@@ -169,7 +168,7 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
     )
 }
 
-export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchSuggestion> {
+export function fetchSuggestions(query: string): Observable<GQL.SearchSuggestion> {
     return queryGraphQL(
         gql`
             query SearchSuggestions($query: String!) {
@@ -206,7 +205,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                 }
             }
         `,
-        { query: options.query }
+        { query }
     ).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.search || !data.search.suggestions) {

@@ -13,7 +13,7 @@ import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands } from '../commands/commands'
 import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
-import { isErrorLike } from '../util/errors'
+import { asError, isErrorLike } from '../util/errors'
 import { ExtensionManifest } from './extensionManifest'
 
 export interface Controller extends Unsubscribable {
@@ -32,10 +32,13 @@ export interface Controller extends Unsubscribable {
      * error is returned *and* emitted on the {@link Controller#notifications} observable.
      *
      * All callers should execute commands using this method instead of calling
-     * {@link sourcegraph:CommandRegistry#executeCommand} directly (to ensure errors are
-     * emitted as notifications).
+     * {@link sourcegraph:CommandRegistry#executeCommand} directly (to ensure errors are emitted as notifications).
+     *
+     * @param suppressNotificationOnError By default, if command execution throws (or rejects with) an error, the
+     * error will be shown in the global notification UI component. Pass suppressNotificationOnError as true to
+     * skip this. The error is always returned to the caller.
      */
-    executeCommand(params: ExecuteCommandParams): Promise<any>
+    executeCommand(params: ExecuteCommandParams, suppressNotificationOnError?: boolean): Promise<any>
 
     /**
      * Frees all resources associated with this client.
@@ -97,6 +100,11 @@ export function createController(context: PlatformContext): Controller {
     subscriptions.add(
         services.notifications.showMessages.subscribe(({ message, type }) => notifications.next({ message, type }))
     )
+    subscriptions.add(
+        services.notifications.progresses.subscribe(({ title, progress }) => {
+            notifications.next({ message: title, progress, type: MessageType.Log })
+        })
+    )
 
     function messageFromExtension(message: string): string {
         return `From extension:\n\n${message}`
@@ -148,9 +156,15 @@ export function createController(context: PlatformContext): Controller {
     return {
         notifications,
         services,
-        executeCommand: params =>
+        executeCommand: (params, suppressNotificationOnError) =>
             services.commands.executeCommand(params).catch(err => {
-                notifications.next({ message: err, type: MessageType.Error, source: params.command })
+                if (!suppressNotificationOnError) {
+                    notifications.next({
+                        message: asError(err).message,
+                        type: MessageType.Error,
+                        source: params.command,
+                    })
+                }
                 return Promise.reject(err)
             }),
         unsubscribe: () => subscriptions.unsubscribe(),

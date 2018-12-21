@@ -1,5 +1,5 @@
 import { Position } from '@sourcegraph/extension-api-types'
-import { isArray } from 'lodash-es'
+import { isArray } from 'lodash'
 import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Services } from '../api/client/services'

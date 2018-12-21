@@ -1,10 +1,9 @@
-import * as assert from 'assert'
-import { integrationTestContext } from './helpers.test'
+import { integrationTestContext } from './testHelpers'
 
 describe('Internal (integration)', () => {
-    it('constant values', async () => {
+    test('constant values', async () => {
         const { extensionHost } = await integrationTestContext()
-        assert.deepStrictEqual(extensionHost.internal.sourcegraphURL.toString(), 'https://example.com')
-        assert.deepStrictEqual(extensionHost.internal.clientApplication, 'sourcegraph')
+        expect(extensionHost.internal.sourcegraphURL.toString()).toEqual('https://example.com')
+        expect(extensionHost.internal.clientApplication).toEqual('sourcegraph')
     })
 })

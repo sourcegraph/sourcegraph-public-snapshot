@@ -146,8 +146,6 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c})
 	}
 
-	repoSources = append(repoSources, reposource.GetReposListInstance())
-
 	gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
 	if err != nil {
 		return "", err

@@ -41,65 +41,11 @@ func readConfig() (string, error) {
 	return string(data), err
 }
 
-/*
-// ParseConfigData reads the provided config string, but NOT the environment
-func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
-	var tmpConfig schema.SiteConfiguration
-
-	if data != "" {
-		data, err := jsonc.Parse(data)
-		if err != nil {
-			return nil, err
-		}
-		if err := json.Unmarshal(data, &tmpConfig); err != nil {
-			fmt.Println("HERE2", err)
-			return nil, err
-		}
-	}
-
-	// For convenience, make sure this is not nil.
-	if tmpConfig.ExperimentalFeatures == nil {
-		tmpConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-	}
-	return &tmpConfig, nil
-}
-
-// parseConfig reads the provided string, then merges in additional
-// data from the (deprecated) environment.
-func parseConfig(data string) (*schema.SiteConfiguration, error) {
-	tmpConfig, err := ParseConfigData(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := configFromEnv(); err != nil {
-		return nil, err
-	} else if len(envVarNames) > 0 {
-		// We don't care about any errors unmarshalling.
-		_ = json.Unmarshal(v, tmpConfig)
-	}
-	return tmpConfig, nil
-}
-*/
-
 func initConfig() error {
 	rawConfig, err := readConfig()
 	if err != nil {
 		return err
 	}
-
-	/*
-		cfg, err := parseConfig(rawConfig)
-		if err != nil {
-			return err
-		}
-		_ = cfg
-	*/
-
-	/*if err := jsonc.Unmarshal(oldConfig, &config); err != nil {
-		return nil, err
-	}*/
 
 	rawMu.Lock()
 	raw = rawConfig

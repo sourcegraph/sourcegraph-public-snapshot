@@ -21,5 +21,9 @@
     }
   ],
   "editor.formatOnSave": true,
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "go.docsTool": "gogetdoc",
+  "jest.pathToJest": "yarn -s test",
+  "jest.showCoverageOnLoad": false,
+  "jest.autoEnable": false // until we confirm people like it
 }

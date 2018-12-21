@@ -6,20 +6,28 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getTokenAtPosition } from '@sourcegraph/codeintellify/lib/token_position'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { Position } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
-import { Subject, Subscription } from 'rxjs'
+import { Subject, Subscribable, Subscription } from 'rxjs'
 import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toPrettyBlobURL } from '../../../../shared/src/util/url'
+import {
+    FileSpec,
+    ModeSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+} from '../../../../shared/src/util/url'
 import { getHover, getJumpURL } from '../../backend/features'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { fetchBlob } from '../../repo/blob/BlobPage'
 
 interface Props extends ExtensionsControllerProps {
@@ -140,7 +148,8 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                 filter(propertyIsDefined('relativeElement')),
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            fetchHover: hoveredToken =>
+                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props) as Subscribable<HoverMerged>,
             fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getReferencesURL: position => toPrettyBlobURL({ ...position, position, viewState: 'references' }),
         })
@@ -232,7 +241,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
 
     private getLSPTextDocumentPositionParams(
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): LSPTextDocumentPositionParams {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
             repoName: position.repoName,
             filePath: position.filePath,

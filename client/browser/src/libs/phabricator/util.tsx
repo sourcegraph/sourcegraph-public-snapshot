@@ -1,5 +1,4 @@
 import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
-import { CodeCell } from '../../shared/repo'
 import { getRepoDetailsFromCallsign, getRepoDetailsFromDifferentialID } from './backend'
 
 const TAG_PATTERN = /r([0-9A-z]+)([0-9a-f]{40})/
@@ -11,7 +10,7 @@ function matchPageTag(): RegExpExecArray | null {
     return TAG_PATTERN.exec(el.children[0].getAttribute('href') as string)
 }
 
-export function getCallsignFromPageTag(): string | null {
+function getCallsignFromPageTag(): string | null {
     const match = matchPageTag()
     if (!match) {
         return null
@@ -456,151 +455,6 @@ export function getFilepathFromFile(fileContainer: HTMLElement): { filePath: str
     return { filePath, baseFilePath }
 }
 
-export function tryGetBlobElement(file: HTMLElement): HTMLElement | null {
-    return (
-        (file.querySelector('.repository-crossreference') as HTMLElement) ||
-        (file.querySelector('.phabricator-source-code-container') as HTMLElement)
-    )
-}
-
-export function rowIsNotCode(row: HTMLElement): boolean {
-    let el = row
-    while (el.tagName !== 'TR' && el.parentElement !== null) {
-        el = el.parentElement
-    }
-    return !!el.getAttribute('data-sigil')
-}
-
-export function getNodeToConvert(row: HTMLElement): HTMLElement | null {
-    if (rowIsNotCode(row)) {
-        return null
-    }
-
-    return row
-}
-
-/**
- * getCodeCellsForAnnotation code cells which should be annotated
- */
-export function getCodeCellsForAnnotation(table: HTMLTableElement): CodeCell[] {
-    const cells: CodeCell[] = []
-    for (const row of Array.from(table.rows)) {
-        if (rowIsNotCode(row)) {
-            continue
-        }
-        let line: number // line number of the current line
-        let codeCell: HTMLTableDataCellElement // the actual cell that has code inside; each row contains multiple columns
-        let isBlameEnabled = false
-        if (
-            row.cells[0].classList.contains('diffusion-blame-link') ||
-            row.cells[0].classList.contains('phabricator-source-blame-skip')
-        ) {
-            isBlameEnabled = true
-        }
-        const lineElem = row.cells[isBlameEnabled ? 2 : 0].childNodes[0]
-        if (!lineElem) {
-            // No line number; this is likely the empty side of an added or removed file in a diff
-            continue
-        }
-        const lineNumber = getlineNumberForCell(lineElem as Element)
-        if (!lineNumber) {
-            continue
-        }
-        line = lineNumber
-        codeCell = row.cells[isBlameEnabled ? 3 : 1]
-        if (!codeCell) {
-            continue
-        }
-
-        const innerCode = codeCell.querySelector('.blob-code-inner') // ignore extraneous inner elements, like "comment" button on diff views
-        cells.push({
-            eventHandler: codeCell, // TODO(john): fix
-            cell: (innerCode || codeCell) as HTMLElement,
-            line,
-        })
-    }
-    return cells
-}
-
-/**
- * getCodeCellsForAnnotation code cells which should be annotated
- */
-export function getCodeCellsForDifferentialAnnotations(
-    table: HTMLTableElement,
-    isSplitView: boolean,
-    isBase: boolean
-): CodeCell[] {
-    const cells: CodeCell[] = []
-    // tslint:disable-next-line:prefer-for-of
-    for (const row of Array.from(table.rows)) {
-        if (rowIsNotCode(row)) {
-            continue
-        }
-        if (isSplitView) {
-            const base = row.cells[0]
-            const head = row.cells[2]
-            const baseLine = getlineNumberForCell(base)
-            const headLine = getlineNumberForCell(head)
-            const baseCodeCell = row.cells[1]
-            const headCodeCell = row.cells[4]
-
-            if (isBase && baseLine && baseCodeCell) {
-                cells.push({
-                    cell: baseCodeCell,
-                    eventHandler: baseCodeCell, // TODO(john): fix
-                    line: baseLine,
-                    isAddition: false,
-                    isDeletion: false,
-                })
-            } else if (!isBase && headLine && headCodeCell) {
-                cells.push({
-                    cell: headCodeCell,
-                    eventHandler: headCodeCell, // TODO(john): fix
-                    line: headLine,
-                    isAddition: false,
-                    isDeletion: false,
-                })
-            }
-        } else {
-            const base = row.cells[0]
-            const head = row.cells[1]
-            const baseLine = getlineNumberForCell(base)
-            const headLine = getlineNumberForCell(head)
-
-            // find first cell that is not <th> and also has code in it
-            const codeCell = Array.from(row.cells).find((c, idx) => c.tagName !== 'TH' && !c.matches('td.copy'))
-
-            if (isBase && baseLine && codeCell) {
-                cells.push({
-                    cell: codeCell,
-                    eventHandler: codeCell, // TODO(john): fix
-                    line: baseLine,
-                    isAddition: false,
-                    isDeletion: false,
-                })
-            } else if (!isBase && headLine && codeCell) {
-                cells.push({
-                    cell: codeCell,
-                    eventHandler: codeCell, // TODO(john): fix
-                    line: headLine,
-                    isAddition: false,
-                    isDeletion: false,
-                })
-            }
-        }
-    }
-
-    return cells
-}
-
-export function getlineNumberForCell(cell: Element): number | undefined {
-    // Newer versions of Phabricator (end of 2017) rely on the data-n attribute for setting the line number.
-    const lineString = cell.textContent || cell.getAttribute('data-n')
-    return parseInt(lineString as string, 10)
-}
-
-export const PHAB_PAGE_LOAD_EVENT_NAME = 'phabPageLoaded'
-
 /**
  * This hacks javelin Stratcom to ignore command + click actions on sg-clickable tokens.
  * Without this, two windows open when a user command + clicks on a token.
@@ -640,32 +494,4 @@ export function normalizeRepoName(origin: string): string {
         repoName = repoName.replace(':', '/')
     }
     return repoName.replace(/.git$/, '')
-}
-
-export function getContainerForBlobAnnotation(): {
-    file: HTMLElement | null
-    diffusionButtonProps: {
-        className: string
-        iconStyle: any
-        style: any
-    }
-} {
-    const diffusionButtonProps = {
-        className: 'button grey has-icon msl phui-header-action-link',
-        iconStyle: { marginTop: '-1px', paddingRight: '4px', fontSize: '18px', height: '.8em', width: '.8em' },
-        style: {},
-    }
-    const blobContainer = document.querySelector('.repository-crossreference')
-    if (blobContainer && blobContainer.parentElement) {
-        return { file: blobContainer.parentElement, diffusionButtonProps }
-    }
-
-    let file = document.querySelector('.phui-two-column-content.phui-two-column-footer') as HTMLElement
-    if (file) {
-        diffusionButtonProps.className = 'button button-grey has-icon has-text phui-button-default'
-        return { file, diffusionButtonProps }
-    }
-    file = document.getElementsByClassName('phui-main-column')[0] as HTMLElement
-
-    return { file, diffusionButtonProps }
 }

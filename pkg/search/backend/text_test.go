@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/zoekt"
@@ -511,6 +512,7 @@ func diff(b1, b2 string) (string, error) {
 }
 
 type mockCollectRepos struct {
+	mu    sync.Mutex
 	Repos []search.Repository
 }
 
@@ -526,6 +528,8 @@ func (m *mockCollectRepos) Search(ctx context.Context, q query.Q, opts *search.O
 			}
 		}
 	})
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for _, name := range opts.Repositories {
 		if len(commits) == 0 && len(patterns) == 0 {
 			m.Repos = append(m.Repos, search.Repository{

@@ -18,17 +18,12 @@ import (
 func TestSearchSuggestions(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	createSearchResolver := func(t *testing.T, query string) *searchResolver {
+	getSuggestions := func(t *testing.T, query string) []string {
 		t.Helper()
 		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
-		return r
-	}
-	getSuggestions := func(t *testing.T, query string) []string {
-		t.Helper()
-		r := createSearchResolver(t, query)
 		results, err := r.Suggestions(context.Background(), &searchSuggestionsArgs{})
 		if err != nil {
 			t.Fatal("Suggestions:", err)

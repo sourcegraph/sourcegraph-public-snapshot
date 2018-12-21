@@ -1,22 +1,21 @@
-import * as assert from 'assert'
 import { mergeContext } from './FileMatchContext'
 
 describe('components/FileMatchContext', () => {
     describe('mergeContext', () => {
-        it('handles empty input', () => {
-            assert.deepStrictEqual(mergeContext(1, []), [])
+        test('handles empty input', () => {
+            expect(mergeContext(1, [])).toEqual([])
         })
-        it('does not merge context when there is only one line', () => {
-            assert.deepStrictEqual(mergeContext(1, [{ line: 5 }]), [[{ line: 5 }]])
+        test('does not merge context when there is only one line', () => {
+            expect(mergeContext(1, [{ line: 5 }])).toEqual([[{ line: 5 }]])
         })
-        it('merges overlapping context', () => {
-            assert.deepStrictEqual(mergeContext(1, [{ line: 5 }, { line: 6 }]), [[{ line: 5 }, { line: 6 }]])
+        test('merges overlapping context', () => {
+            expect(mergeContext(1, [{ line: 5 }, { line: 6 }])).toEqual([[{ line: 5 }, { line: 6 }]])
         })
-        it('merges adjacent context', () => {
-            assert.deepStrictEqual(mergeContext(1, [{ line: 5 }, { line: 8 }]), [[{ line: 5 }, { line: 8 }]])
+        test('merges adjacent context', () => {
+            expect(mergeContext(1, [{ line: 5 }, { line: 8 }])).toEqual([[{ line: 5 }, { line: 8 }]])
         })
-        it('does not merge context when far enough apart', () => {
-            assert.deepStrictEqual(mergeContext(1, [{ line: 5 }, { line: 9 }]), [[{ line: 5 }], [{ line: 9 }]])
+        test('does not merge context when far enough apart', () => {
+            expect(mergeContext(1, [{ line: 5 }, { line: 9 }])).toEqual([[{ line: 5 }], [{ line: 9 }]])
         })
     })
 })

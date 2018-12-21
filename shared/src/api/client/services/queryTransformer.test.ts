@@ -1,9 +1,8 @@
-import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { transformQuery, TransformQuerySignature } from './queryTransformer'
 
-const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_INPUT = 'foo'
 const FIXTURE_RESULT = 'bar'
@@ -12,7 +11,7 @@ const FIXTURE_RESULT_MERGED = 'foo bar qux'
 
 describe('transformQuery', () => {
     describe('0 providers', () => {
-        it('returns original query', () =>
+        test('returns original query', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     transformQuery(cold<TransformQuerySignature[]>('-a-|', { a: [] }), FIXTURE_INPUT)
@@ -23,7 +22,7 @@ describe('transformQuery', () => {
     })
 
     describe('1 provider', () => {
-        it('returns result from provider', () =>
+        test('returns result from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     transformQuery(
@@ -37,7 +36,7 @@ describe('transformQuery', () => {
     })
 
     describe('2 providers', () => {
-        it('returns a single query transformed by both providers', () =>
+        test('returns a single query transformed by both providers', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     transformQuery(
@@ -51,7 +50,7 @@ describe('transformQuery', () => {
     })
 
     describe('Multiple emissions', () => {
-        it('returns stream of results', () =>
+        test('returns stream of results', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     transformQuery(

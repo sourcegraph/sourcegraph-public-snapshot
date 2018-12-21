@@ -7,17 +7,21 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
 import { ALL_EXTERNAL_SERVICES } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
 interface Props {
     history: H.History
+    location: H.Location
     isLightTheme: boolean
+    eventLogger: {
+        logViewEvent: (event: 'AddExternalService') => void
+        log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
+    }
 }
 
 interface State {
-    input: GQL.IAddExternalServiceInput
+    input: Pick<GQL.IAddExternalServiceInput, 'displayName' | 'config'>
 
     /**
      * Holds any error returned by the remote GraphQL endpoint on failed requests.
@@ -38,17 +42,6 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     public state: State = {
         loading: false,
         input: {
-            kind: (() => {
-                const params = new URLSearchParams(this.props.history.location.search)
-                const kind = params.get('kind')
-                if (kind) {
-                    const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind.toUpperCase())
-                    if (service) {
-                        return service.kind
-                    }
-                }
-                return GQL.ExternalServiceKind.GITHUB
-            })(),
             displayName: '',
             config: defaultConfig,
         },
@@ -57,14 +50,30 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     private submits = new Subject<GQL.IAddExternalServiceInput>()
     private subscriptions = new Subscription()
 
+    private getExternalServiceKind(): GQL.ExternalServiceKind {
+        const params = new URLSearchParams(this.props.history.location.search)
+        const kind = params.get('kind')
+        if (kind) {
+            const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind.toUpperCase())
+            if (service) {
+                return service.kind
+            }
+        }
+        return GQL.ExternalServiceKind.GITHUB
+    }
+
+    private getExternalServiceInput(): GQL.IAddExternalServiceInput {
+        return { ...this.state.input, kind: this.getExternalServiceKind() }
+    }
+
     public componentDidMount(): void {
-        eventLogger.logViewEvent('AddExternalService')
+        this.props.eventLogger.logViewEvent('AddExternalService')
         this.subscriptions.add(
             this.submits
                 .pipe(
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
-                        addExternalService(input).pipe(
+                        addExternalService(input, this.props.eventLogger).pipe(
                             map(externalService => {
                                 this.setState({ loading: false })
                                 this.props.history.push(`/site-admin/external-services/${externalService.id}`)
@@ -93,7 +102,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                 <p>Sourcegraph can synchronize data (e.g. code) from external services.</p>
                 <SiteAdminExternalServiceForm
                     error={this.state.error}
-                    input={this.state.input}
+                    input={this.getExternalServiceInput()}
                     history={this.props.history}
                     isLightTheme={this.props.isLightTheme}
                     mode="create"
@@ -107,17 +116,34 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
 
     private onChange = (input: GQL.IAddExternalServiceInput) => {
         this.setState({ input })
+
+        if (input.kind.toLowerCase() === this.getExternalServiceKind().toLowerCase()) {
+            return
+        }
+
+        const { search, ...loc } = this.props.location
+
+        const params = new URLSearchParams(search)
+        params.set('kind', input.kind.toLowerCase())
+
+        this.props.history.replace({
+            ...loc,
+            search: params.toString(),
+        })
     }
 
     private onSubmit = (event?: React.FormEvent<HTMLFormElement>): void => {
         if (event) {
             event.preventDefault()
         }
-        this.submits.next(this.state.input)
+        this.submits.next(this.getExternalServiceInput())
     }
 }
 
-function addExternalService(input: GQL.IAddExternalServiceInput): Observable<GQL.IExternalService> {
+function addExternalService(
+    input: GQL.IAddExternalServiceInput,
+    eventLogger: Pick<Props['eventLogger'], 'log'>
+): Observable<GQL.IExternalService> {
     return mutateGraphQL(
         gql`
             mutation addExternalService($input: AddExternalServiceInput!) {

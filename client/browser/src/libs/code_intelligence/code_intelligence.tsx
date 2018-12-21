@@ -11,18 +11,26 @@ import {
     PositionAdjuster,
 } from '@sourcegraph/codeintellify'
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
 import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
+import {
+    FileSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPrettyBlobURL,
+    toRootURI,
+    toURIWithPath,
+} from '../../../../../shared/src/util/url'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
@@ -31,7 +39,6 @@ import {
     toTextDocumentIdentifier,
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toRootURI, toURIWithPath } from '../../shared/repo'
 import { sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'

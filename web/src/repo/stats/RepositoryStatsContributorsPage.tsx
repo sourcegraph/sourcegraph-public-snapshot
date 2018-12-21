@@ -8,12 +8,13 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { buildSearchURLQuery, quoteIfNeeded, searchQueryForRepoRev } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRev } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
@@ -72,9 +73,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                 </div>
                 <div className="repository-contributor-node__count">
                     <Link
-                        to={`/search?${buildSearchURLQuery({
-                            query,
-                        })}`}
+                        to={`/search?${buildSearchURLQuery(query)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange &&

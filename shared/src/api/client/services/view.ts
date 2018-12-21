@@ -75,7 +75,8 @@ export function getView(
  */
 export function getViews(
     entries: Observable<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>[]>,
-    container: ContributableViewContainer
+    container: ContributableViewContainer,
+    logErrors = true
 ): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[]> {
     return entries.pipe(
         switchMap(entries =>
@@ -83,7 +84,9 @@ export function getViews(
                 entries.filter(e => e.registrationOptions.container === container).map(entry =>
                     addRegistrationOptions(entry).pipe(
                         catchError(err => {
-                            console.error(err)
+                            if (logErrors) {
+                                console.error(err)
+                            }
                             return [null]
                         })
                     )

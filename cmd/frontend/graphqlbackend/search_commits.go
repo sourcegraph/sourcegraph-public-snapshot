@@ -365,7 +365,7 @@ func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommit
 	repoURL := commitResolver.Repository().URL()
 	url := commitResolver.URL()
 
-	return fmt.Sprintf("[%s](%s) &nbsp; [%s](%s) &nbsp; [%s](%s)", repoName, repoURL, author, url, message, url)
+	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, url, message, url)
 }
 
 func commitSubject(message string) string {

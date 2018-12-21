@@ -2,8 +2,6 @@
 
 Sourcegraph integrates with Bitbucket Server and Bitbucket Data Center.
 
-> NOTE: Support for [Bitbucket Cloud](https://bitbucket.org) is coming soon. In the meantime, you can add Bitbucket Cloud repositories using [`repos.list`](../admin/repo/add_from_git_repository.md).
-
 ## Syncing Bitbucket Server repositories
 
 Sourcegraph supports automatically syncing repositories from [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server).

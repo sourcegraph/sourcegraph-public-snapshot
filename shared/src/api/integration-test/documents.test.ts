@@ -1,17 +1,16 @@
-import * as assert from 'assert'
 import { TextDocument } from 'sourcegraph'
-import { collectSubscribableValues, integrationTestContext } from './helpers.test'
+import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {
-        it('lists text documents', async () => {
+        test('lists text documents', async () => {
             const { extensionHost } = await integrationTestContext()
-            assert.deepStrictEqual(extensionHost.workspace.textDocuments, [
+            expect(extensionHost.workspace.textDocuments).toEqual([
                 { uri: 'file:///f', languageId: 'l', text: 't' },
             ] as TextDocument[])
         })
 
-        it('adds new text documents', async () => {
+        test('adds new text documents', async () => {
             const { model, extensionHost } = await integrationTestContext()
             model.next({
                 ...model.value,
@@ -25,7 +24,7 @@ describe('Documents (integration)', () => {
                 ],
             })
             await extensionHost.internal.sync()
-            assert.deepStrictEqual(extensionHost.workspace.textDocuments, [
+            expect(extensionHost.workspace.textDocuments).toEqual([
                 { uri: 'file:///f', languageId: 'l', text: 't' },
                 { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             ] as TextDocument[])
@@ -33,11 +32,11 @@ describe('Documents (integration)', () => {
     })
 
     describe('workspace.onDidOpenTextDocument', () => {
-        it('fires when a text document is opened', async () => {
+        test('fires when a text document is opened', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
             const values = collectSubscribableValues(extensionHost.workspace.onDidOpenTextDocument)
-            assert.deepStrictEqual(values, [] as TextDocument[])
+            expect(values).toEqual([] as TextDocument[])
 
             model.next({
                 ...model.value,
@@ -52,7 +51,7 @@ describe('Documents (integration)', () => {
             })
             await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(values, [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
+            expect(values).toEqual([{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
         })
     })
 })

@@ -1,16 +1,15 @@
-import * as assert from 'assert'
 import { WorkspaceRoot } from 'sourcegraph'
 import { URI } from '../extension/types/uri'
-import { collectSubscribableValues, integrationTestContext } from './helpers.test'
+import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Workspace roots (integration)', () => {
     describe('workspace.roots', () => {
-        it('lists roots', async () => {
+        test('lists roots', async () => {
             const { extensionHost } = await integrationTestContext()
-            assert.deepStrictEqual(extensionHost.workspace.roots, [{ uri: new URI('file:///') }] as WorkspaceRoot[])
+            expect(extensionHost.workspace.roots).toEqual([{ uri: new URI('file:///') }] as WorkspaceRoot[])
         })
 
-        it('adds new text documents', async () => {
+        test('adds new text documents', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
             model.next({
@@ -19,7 +18,7 @@ describe('Workspace roots (integration)', () => {
             })
             await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(extensionHost.workspace.roots, [
+            expect(extensionHost.workspace.roots).toEqual([
                 { uri: new URI('file:///a') },
                 { uri: new URI('file:///b') },
             ] as WorkspaceRoot[])
@@ -27,11 +26,11 @@ describe('Workspace roots (integration)', () => {
     })
 
     describe('workspace.onDidChangeRoots', () => {
-        it('fires when a root is added or removed', async () => {
+        test('fires when a root is added or removed', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
             const values = collectSubscribableValues(extensionHost.workspace.onDidChangeRoots)
-            assert.deepStrictEqual(values, [] as void[])
+            expect(values).toEqual([] as void[])
 
             model.next({
                 ...model.value,
@@ -39,7 +38,7 @@ describe('Workspace roots (integration)', () => {
             })
             await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(values, [void 0])
+            expect(values).toEqual([void 0])
         })
     })
 })

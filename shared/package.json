@@ -18,28 +18,11 @@
   "scripts": {
     "tslint:build-rules": "tsc --skipLibCheck --lib es6 --module commonjs dev/tslint/*.ts",
     "tslint": "yarn -s run tslint:build-rules && tslint -c tslint.json -p tsconfig.json",
-    "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
-    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
+    "test": "jest",
     "graphql": "gulp graphQLTypes",
     "schema": "gulp schema",
     "watch-schema": "gulp watchSchema",
     "prepublish": "yarn run tslint:build-rules"
-  },
-  "nyc": {
-    "extension": [
-      ".ts",
-      ".tsx"
-    ],
-    "exclude": [
-      "**/*.d.ts",
-      "**/*.test.ts",
-      "**/*.js"
-    ],
-    "cache": true,
-    "reporter": [
-      "text",
-      "lcovonly"
-    ]
   },
   "sideEffects": false
 }

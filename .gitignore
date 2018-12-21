@@ -113,6 +113,7 @@ sourcegraph-webapp-*.tgz
 !cmd/management-console/web/package-lock.json
 cmd/management-console/assets/*.go
 !cmd/management-console/assets/gen.go
+!cmd/management-console/assets/replace_hack.go
 !cmd/management-console/assets/assets.go
 cmd/management-console/assets/*.map
 cmd/management-console/assets/*.js

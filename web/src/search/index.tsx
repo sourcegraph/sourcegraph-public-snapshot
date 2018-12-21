@@ -1,38 +1,12 @@
 import { escapeRegExp } from 'lodash'
 
-/** The options that describe a search */
-export interface SearchOptions {
-    /** The query entered by the user */
-    query: string
-}
-
 /**
- * Builds a URL query for given SearchOptions (without leading `?`)
+ * Parses the query out of the URL search params (the 'q' parameter). If the 'q' parameter is not present, it
+ * returns undefined.
  */
-export function buildSearchURLQuery(options: SearchOptions): string {
-    const searchParams = new URLSearchParams()
-    searchParams.set('q', options.query)
-    return searchParams
-        .toString()
-        .replace(/%2F/g, '/')
-        .replace(/%3A/g, ':')
-}
-
-/**
- * Parses the SearchOptions out of URL search params. If neither the 'q' nor
- * 'sq' params are present, it returns undefined.
- */
-export function parseSearchURLQuery(query: string): SearchOptions | undefined {
+export function parseSearchURLQuery(query: string): string | undefined {
     const searchParams = new URLSearchParams(query)
-    if (!searchParams.has('q') && !searchParams.has('sq')) {
-        return undefined
-    }
-    return {
-        query: ['sq', 'q']
-            .map(param => searchParams.get(param))
-            .filter(s => s)
-            .join(' '),
-    }
+    return searchParams.get('q') || undefined
 }
 
 export function searchQueryForRepoRev(repoName: string, rev?: string): string {
