@@ -101,7 +101,8 @@ const commentSnippetCodeView: CodeView = {
 }
 
 const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
-    if (elem.querySelector('.markdown-body:not(.comment-body)')) {
+    if (elem.querySelector('article.markdown-body')) {
+        // This code view is rendered markdown, we shouldn't add code intelligence
         return null
     }
 
