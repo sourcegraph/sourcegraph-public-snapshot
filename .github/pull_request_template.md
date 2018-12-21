@@ -1,3 +1,1 @@
-<!--
-Remember to update the changelog for user facing changes.
--->
+<!-- Remember to update the changelog for user-facing changes. -->
