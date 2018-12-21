@@ -226,7 +226,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                                                 </span>
                                             ))}
                                             {!this.state.locationsComplete && (
-                                                <LoadingSpinner className="icon-inline m-2" />
+                                                <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
                                             )}
                                         </div>
                                     }
