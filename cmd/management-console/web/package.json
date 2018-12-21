@@ -1,17 +1,18 @@
 {
   "name": "management-console",
+  "private": true,
   "dependencies": {
     "deasync": "^0.1.14",
     "react": "^16.6.3",
     "rxjs": "^6.3.3"
   },
   "scripts": {
-    "serve": "cp ../../../ui/assets/img/favicon.png ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel serve --out-dir=../assets --no-source-maps --no-minify -p 2680 src/index.html",
+    "serve": "cp ../../../ui/assets/img/favicon.png ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel serve --out-dir=../assets --no-source-maps -p 2680 src/index.html",
     "build": "cp ../../../ui/assets/img/favicon.png ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel build --out-dir=../assets --no-source-maps --no-minify src/index.html"
   },
   "devDependencies": {
     "monaco-editor": "^0.14.3",
-    "parcel-bundler": "^1.10.1",
+    "parcel-bundler": "^1.11.0",
     "sass": "^1.15.2",
     "typescript": "^3.2.2"
   }
