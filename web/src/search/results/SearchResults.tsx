@@ -141,7 +141,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             // Return a GQL.ISearchResult object with results set to the extension results, and fields set to default/empty values.
                                             resultsOrError: {
                                                 __typename: 'SearchResults',
-                                                results: extensionsResults as GQL.IGenericSearchResult[],
+                                                results: extensionsResults,
                                                 resultCount: extensionsResults.length,
                                                 approximateResultCount: extensionsResults.length,
                                                 limitHit: false,
