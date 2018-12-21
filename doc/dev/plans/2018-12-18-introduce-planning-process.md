@@ -1,10 +1,10 @@
-# Introduce proposal process
+# Introduce planning process
 
-This is a proposal to define a proposal process.
+This is a proposal to define a planning process for product and engineering.
 
 ## Background
 
-Our engineering planning process has evolved over time.
+Our product and engineering planning process has evolved over time.
 
 From 2017-08 to 2018-09, we checked in proposals to [sourcegraph/docs-private/](https://github.com/sourcegraph/docs-private/).
 
@@ -35,9 +35,25 @@ Other reading:
 - [Go proposal template](https://github.com/golang/proposal/blob/master/design/TEMPLATE.md)
 - [Rust RFC template](https://github.com/rust-lang/rfcs/blob/master/0000-template.md)
 
-## Proposal
+## Plan
 
-Adopt the proposal process documented in [README.md](README.md).
+Adopt the planning process documented in [README.md](README.md).
+
+### Test plan
+
+The new process will be tested by using it and iterating on it based on our experience.
+
+### Release plan
+
+All new projects will use this planning process.
+
+### Success metrics
+
+This project is successful if/when every engineer's primary project is planned using this process.
+
+### Company goals
+
+This will help us plan and prioritize all of the features that will help us achieve our [Q1 goal to increase the number of companies that get from 1 to 20 daily users](company-goals.md#2018-Q1).
 
 ## Rationale
 
