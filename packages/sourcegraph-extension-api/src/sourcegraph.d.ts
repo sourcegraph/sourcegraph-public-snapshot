@@ -1064,16 +1064,11 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A markdown object. Extensions should always provide a value for text.
-     * If the extension wants to provide its own rendered Markdown, it can specify an HTML string
-     * in the html field. Otherwise, Sourcegraph clients will handle Markdown rendering when necessary,
-     * so the html field should be an empty string in almost all cases.
+     * A markdown string.
      */
     export interface Markdown {
         /** The raw markdown string. */
         text: string
-        /** The HTML for the rendered markdown string. This should be an empty string in almost all cases, as Sourcegraph clients will handle markdown rendering when necessary. */
-        html: string
     }
 
     /** A match in a search result from a search result provider. */

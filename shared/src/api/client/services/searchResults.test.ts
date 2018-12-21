@@ -6,14 +6,14 @@ import { provideSearchResults, ProvideSearchResultsSignature } from './searchRes
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_SEARCH_RESULT: SearchResult = {
-    label: { text: 'Label', html: '' },
-    detail: { text: 'Detail', html: '' },
+    label: { text: 'Label' },
+    detail: { text: 'Detail' },
     icon: '',
     url: 'http://example.com',
     matches: [
         {
             url: 'http://example.com',
-            body: { text: 'Result body', html: '' },
+            body: { text: 'Result body' },
             highlights: [{ start: { line: 0, character: 2 }, end: { line: 0, character: 4 } }],
         },
     ],
