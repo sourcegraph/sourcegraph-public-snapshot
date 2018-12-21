@@ -6,25 +6,36 @@
         height: 0.25rem;
         transition: width 0.6s ease;
     }
-}
 
-.sourcegraph-notification-item__content > :last-child {
-    margin-bottom: 0;
-}
+    &__title {
+        margin-bottom: 0;
 
-.sourcegraph-notification-item__close {
-    cursor: pointer;
-    flex: 0;
-    font-size: 1.25rem;
-    line-height: 1.25rem;
-    background-color: transparent;
-    border-width: 0;
-    outline: 0 !important;
-    color: inherit;
-    opacity: 0.7;
-}
+        > p {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    }
 
-.sourcegraph-notification-item__close:hover,
-.sourcegraph-notification-item__close:focus {
-    opacity: 1;
+    &__content > :last-child,
+    &__title > :last-child {
+        margin-bottom: 0;
+    }
+
+    &__close {
+        cursor: pointer;
+        flex: 0;
+        font-size: 1.25rem;
+        line-height: 1.25rem;
+        background-color: transparent;
+        border-width: 0;
+        outline: 0 !important;
+        color: inherit;
+        opacity: 0.7;
+
+        &:hover,
+        &:focus {
+            opacity: 1;
+        }
+    }
 }
