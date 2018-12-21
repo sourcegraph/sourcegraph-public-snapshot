@@ -1073,7 +1073,7 @@ declare module 'sourcegraph' {
 
     /** A match in a search result from a search result provider. */
     export interface SearchResultMatch {
-        /** A URL to an individual search resutl match. */
+        /** A URL to an individual search result match. */
         url: string
         /** A markdown string containing the preview contents of the result match. */
         body: Markdown
