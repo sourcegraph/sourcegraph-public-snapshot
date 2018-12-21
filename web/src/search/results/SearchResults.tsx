@@ -132,10 +132,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                     resultCount: results.resultCount + extensionsResults.length,
                                                     approximateResultCount:
                                                         results.resultCount + extensionsResults.length,
-                                                    results: [
-                                                        ...results.results,
-                                                        ...(extensionsResults as GQL.IGenericSearchResult[]),
-                                                    ],
+                                                    results: [...results.results, ...extensionsResults],
                                                 },
                                             }
                                         }
