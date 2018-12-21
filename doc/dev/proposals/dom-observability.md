@@ -42,11 +42,12 @@ interface DOMObserver {
 
 ### Test plan
 
-The end result will be hard to test in an automated way. It will rely on
-the browser extension's e2e tests. However, I plan on creating a library
-for observing the DOM and will use Karma/mocha to run unit tests for
-this in actual browsers. The reason for using Karma/mocha is [JSDom
-doesn't support `MutaionObserver`'s
+This will be hard to test in an automated way. This is simply because its a
+hard problem, not because the code is making it harder. After this project,
+we will have higher test coverage. It will rely on the browser extension's
+e2e tests. The library that this will live in will use Karma/mocha to run
+unit tests for this in actual browsers. The reason for using Karma/mocha is
+[JSDom doesn't support `MutaionObserver`'s
 yet.](https://github.com/jsdom/jsdom/pull/2398)
 
 ### Release plan
@@ -82,5 +83,7 @@ in real browsers.
 - [ ] Replace usages of `document.querySelector` and the like in the
     browser extension. This will require a change to the
     [MountGetter](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/browser/src/libs/code_intelligence/code_intelligence.tsx#L109:8)
-    type. It will either return an observable or we will just accept a
-    selector and internally use our library.
+    type. We will remove this type and only accept an object with the selector
+    and [insert
+    position](https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentElement#Parameters)
+    where we will create a new node and add it to the DOM.
