@@ -93,6 +93,29 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             combineLatest(
                                 // Do async search request
                                 search(query, this.props).pipe(
+                                    // Log telemetry
+                                    tap(
+                                        results =>
+                                            eventLogger.log('SearchResultsFetched', {
+                                                code_search: {
+                                                    // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
+                                                    results: {
+                                                        results_count: isErrorLike(results)
+                                                            ? 0
+                                                            : results.results.length,
+                                                        any_cloning: isErrorLike(results)
+                                                            ? false
+                                                            : results.cloning.length > 0,
+                                                    },
+                                                },
+                                            }),
+                                        error => {
+                                            eventLogger.log('SearchResultsFetchFailed', {
+                                                code_search: { error_message: error.message },
+                                            })
+                                            console.error(error)
+                                        }
+                                    ),
                                     catchError(error => {
                                         console.error(error)
                                         return [asError(error) as ErrorLike]
@@ -100,27 +123,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 ),
                                 extensionSearch(query)
                             ).pipe(
-                                // Log telemetry
-                                tap(
-                                    ([results]) =>
-                                        eventLogger.log('SearchResultsFetched', {
-                                            code_search: {
-                                                // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
-                                                results: {
-                                                    results_count: isErrorLike(results) ? 0 : results.results.length,
-                                                    any_cloning: isErrorLike(results)
-                                                        ? false
-                                                        : results.cloning.length > 0,
-                                                },
-                                            },
-                                        }),
-                                    error => {
-                                        eventLogger.log('SearchResultsFetchFailed', {
-                                            code_search: { error_message: error.message },
-                                        })
-                                        console.error(error)
-                                    }
-                                ),
                                 // Update view with results or error
                                 map(([results, extensionsResults]) => {
                                     if (extensionsResults) {
