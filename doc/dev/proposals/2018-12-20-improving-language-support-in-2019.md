@@ -2,7 +2,10 @@
 
 ## Background
 
-Improving language support contributes to the Q1 2019 goal of increasing the number of Sourcegraph instances that go from 1 to 20 users by providing strict value add in the browser extension, attracting and retaining developers who spend time navigating code on Sourcegraph and share links with teammates.
+Improving language support contributes to the Q1 2019 goal of increasing the number of Sourcegraph instances that go from 1 to 20 users because: 
+
+- many admins want to see their language(s) supported before sharing Sourcegraph with their team; and
+- good language support is necessary for the code host integration (via the browser extension) to be useful, and that's easy to spread.
 
 Despite deploying a ton of experimental language servers in 2018, language support has not improved much in the past year - why?
 
@@ -10,15 +13,15 @@ Despite deploying a ton of experimental language servers in 2018, language suppo
 - lsp-proxy was complex and no single Sourcegrapher fully understood how lsp-proxy, lsp-adapter, and indexer worked
 - Aside from Swift, we simply didn’t prioritize work on language servers (partly because of the complexity of lsp-proxy, partly because of other priorities)
 
-Now that we have removed LSP proxy and added Sourcegraph extensions, the landscape has changed:
+Many things have changed in the last year to make it possible to improve language support now:
 
-- With Sourcegraph extensions, it’s easier to understand how code intelligence on Sourcegraph works, which makes it easier to build on and all you need to understand is the Sourcegraph extension API (no need to understand xfiles/xcontents, xcache, lsp-adapter, lsp-proxy, etc.) in order to add language support
-- There’s a new Swift language server https://github.com/apple/sourcekit-lsp
-- There’s a new Python language server https://github.com/Microsoft/python-language-server
-- We’ve learned that it’s practical (technically) to add zip archive fetching and WebSocket support directly to language servers (implemented for Go, TypeScript, and Python), and zip archives of the whole repo are usually fast enough for our purposes (whether or not these will be upstreamed is mentioned under risks below)
-- We’ve learned that a poorly implemented language server is worse than no language server at all (forever loading hover tooltip spinner wastes time, empty or trivial hover tooltip is distracting, jump-to-definition not working is frustrating, and all of this reflected poorly on Sourcegraph)
+- With [Sourcegraph extensions](https://docs.sourcegraph.com/extensions), it’s easier to understand how code intelligence on Sourcegraph works, which makes it easier to build on and all you need to understand is the Sourcegraph extension API (no need to understand [xfiles/xcontents](https://github.com/sourcegraph/language-server-protocol/blob/master/extension-files.md), [xcache](https://github.com/sourcegraph/language-server-protocol/blob/master/extension-cache.md), [lsp-adapter](https://github.com/sourcegraph/lsp-adapter), lsp-proxy, etc.) in order to add language support
+- There’s a new [Swift language server (apple/sourcekit-lsp)](https://github.com/apple/sourcekit-lsp)
+- There’s a new [Python language server (Microsoft/python-language-server)](https://github.com/Microsoft/python-language-server)
+- We’ve learned that it’s fairly easy to patch existing language servers (Go, TypeScript, and Python) to support zip archive fetching and WebSockets. This results in a more maintainable and "pure" language server than wrapping a language server with lsp-adapter.
+- We’ve learned that shipping experimental language servers is not an effective way to attract community/contractor help or useful feedback. (We [deactivated experimental language servers](https://about.sourcegraph.com/blog/java-php-experimental-language-servers-temporarily-unavailable).)
 
-These principles will guide future improvements:
+Based on these learnings, the following principles will guide future improvements:
 
 - Prioritize languages by a combination of popularity and ease of analysis (statically-typed languages, ones that already have solid language servers, ones that customers are asking for, etc.)
 - Focus on quality over quantity (already tried quantity in 2018 with lsp-adapter and cold emails, and this stagnated)
@@ -35,17 +38,17 @@ Put effort towards one language at a time in rough order of prospective deals fo
 - ✅ Go using https://github.com/sourcegraph/lang-go
 - 📝 Swift using https://github.com/apple/sourcekit-lsp
 
-For each language, build a Sourcegraph extension that communicates with the language server, aiming to check boxes in the test plan.
+For each language, patch the language server as needed and build a Sourcegraph extension that communicates with it and satisfies the test plan below.
 
 ### Test plan
 
 Manually open each link to verify that the language server is working. In rough order of increasing difficulty:
 
 - [ ] Link to ANY working {hover,definition,references}
-- [ ] Link to 3 working {hover,definnition,references}, each in a different popular repo (e.g. for Go https://github.com/search?q=stars%3A%3E0+language%3Ago&type=Repositories)
+- [ ] Link to 3 working {hover,definition,references}, each in a different popular repo (e.g. for Go https://github.com/search?q=stars%3A%3E0+language%3Ago&type=Repositories)
 - [ ] Initialization time on popular repos is <10s
 - [ ] After initialization on popular repos, most response times are <3s
-- [ ] Monorepo support (inintialization time and response time scale sublinearly with repo size)
+- [ ] Monorepo support (initialization time and response time scale sublinearly with repo size)
 - [ ] Cross-repo code intelligence on popular repos
 
 ### Release plan
