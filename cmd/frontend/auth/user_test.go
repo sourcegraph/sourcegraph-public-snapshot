@@ -106,7 +106,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					1: []extsvc.ExternalAccountSpec{ext("st1", "s1", "c1", "s1/u1")},
+					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
 			{
@@ -120,7 +120,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					1: []extsvc.ExternalAccountSpec{ext("st1", "s1", "c1", "s1/u1")},
+					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
 			{
@@ -134,7 +134,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					1: []extsvc.ExternalAccountSpec{ext("st1", "s1", "c1", "s1/u1")},
+					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
 			{
@@ -146,7 +146,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					1: []extsvc.ExternalAccountSpec{ext("st1", "s-new", "c1", "s-new/u1")},
+					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 			},
 			{
@@ -170,7 +170,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					1: []extsvc.ExternalAccountSpec{ext("st1", "s-new", "c1", "s-new/u1")},
+					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 			},
 			{
@@ -182,7 +182,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expUserID: 10001,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					10001: []extsvc.ExternalAccountSpec{ext("st1", "s1", "c1", "s1/u-new")},
+					10001: {ext("st1", "s1", "c1", "s1/u-new")},
 				},
 				expCreatedUsers: map[int32]db.NewUser{
 					10001: userProps("u-new", "u-new@example.com", true),
@@ -208,7 +208,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				actorUID:                   2,
 				expUserID:                  2,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					2: []extsvc.ExternalAccountSpec{ext("st1", "s1", "c1", "s1/u2")},
+					2: {ext("st1", "s1", "c1", "s1/u2")},
 				},
 			},
 			{
@@ -221,7 +221,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					1: []extsvc.ExternalAccountSpec{ext("st1", "s1", "c1", "s1/u1")},
+					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
 			{
@@ -235,7 +235,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					1: []extsvc.ExternalAccountSpec{ext("st1", "s1", "c1", "s1/u1")},
+					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
 			{
@@ -252,7 +252,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
-					1: []extsvc.ExternalAccountSpec{ext("st1", "s-new", "c1", "s-new/u1")},
+					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 			},
 		},

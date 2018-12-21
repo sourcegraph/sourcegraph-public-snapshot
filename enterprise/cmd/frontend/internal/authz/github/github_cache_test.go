@@ -21,8 +21,8 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 		{ID: "u1/r1", IsPrivate: true},
 		{ID: "u1/public"},
 	}, map[string][]string{
-		"t0": []string{"u0/r0"},
-		"t1": []string{"u1/r1"},
+		"t0": {"u0/r0"},
+		"t1": {"u1/r1"},
 	})
 	github.GetRepositoryByNodeIDMock = githubMock.GetRepositoryByNodeID
 	defer func() { github.GetRepositoryByNodeIDMock = nil }()
@@ -33,9 +33,9 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 	githubMock.getRepositoryByNodeIDCount = 0
 	userAccount := ua("u0", "t0")
 	repos := map[authz.Repo]struct{}{
-		rp("r0", "u0/r0", "https://github.com/"):     struct{}{},
-		rp("r1", "u1/r1", "https://github.com/"):     struct{}{},
-		rp("r2", "u1/public", "https://github.com/"): struct{}{},
+		rp("r0", "u0/r0", "https://github.com/"):     {},
+		rp("r1", "u1/r1", "https://github.com/"):     {},
+		rp("r2", "u1/public", "https://github.com/"): {},
 	}
 	wantPerms := map[api.RepoName]map[authz.Perm]bool{
 		"r0": readPerms,

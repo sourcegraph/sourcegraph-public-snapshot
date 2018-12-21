@@ -104,15 +104,15 @@ var (
 	gitCmdWhitelist = map[string][]string{
 		"log":    append([]string{}, gitCommonWhitelist...),
 		"show":   append([]string{}, gitCommonWhitelist...),
-		"remote": []string{"-v"},
+		"remote": {"-v"},
 		"diff":   append([]string{}, gitCommonWhitelist...),
-		"blame":  []string{"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
-		"branch": []string{"-r", "-a", "--contains"},
+		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
+		"branch": {"-r", "-a", "--contains"},
 
-		"rev-parse":    []string{"--abbrev-ref", "--symbolic-full-name"},
-		"rev-list":     []string{"--max-parents", "--reverse", "--max-count"},
-		"ls-remote":    []string{"--get-url"},
-		"symbolic-ref": []string{"--short"},
+		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name"},
+		"rev-list":     {"--max-parents", "--reverse", "--max-count"},
+		"ls-remote":    {"--get-url"},
+		"symbolic-ref": {"--short"},
 	}
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of whitelisted args.
