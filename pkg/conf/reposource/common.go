@@ -54,6 +54,11 @@ func parseCloneURL(cloneURL string) (*url.URL, error) {
 	return u, nil
 }
 
+// hostname returns the hostname of a URL without www.
+func hostname(url *url.URL) string {
+	return strings.TrimPrefix(url.Hostname(), "www.")
+}
+
 // parseURLs parses the clone URL and repository host base URL into structs. It also returns a
 // boolean indicating whether the hostnames of the URLs match.
 func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL, equalHosts bool, err error) {
@@ -69,6 +74,6 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("Error parsing cloneURL: %s", err)
 	}
-
-	return parsedCloneURL, parsedBaseURL, parsedBaseURL != nil && parsedBaseURL.Hostname() == parsedCloneURL.Hostname(), nil
+	hostsMatch := parsedBaseURL != nil && hostname(parsedBaseURL) == hostname(parsedCloneURL)
+	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
 }
