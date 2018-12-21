@@ -48,7 +48,7 @@ func Test_parseConfig(t *testing.T) {
 				}},
 			}}},
 			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{
-				schema.GitLabAuthProvider{
+				{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitLab",
@@ -89,7 +89,7 @@ func Test_parseConfig(t *testing.T) {
 				}},
 			}}},
 			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{
-				schema.GitLabAuthProvider{
+				{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitLab",
@@ -105,7 +105,7 @@ func Test_parseConfig(t *testing.T) {
 					},
 					Scopes: []string{"api", "read_user"},
 				}),
-				schema.GitLabAuthProvider{
+				{
 					ClientID:     "my-client-id-2",
 					ClientSecret: "my-client-secret-2",
 					DisplayName:  "GitLab Enterprise",

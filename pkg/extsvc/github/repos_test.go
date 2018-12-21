@@ -274,14 +274,14 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 	c.httpClient.Transport = &mock
 
 	wantRepos := []*Repository{
-		&Repository{
+		{
 			ID:            "i",
 			NameWithOwner: "o/r",
 			Description:   "d",
 			URL:           "https://github.example.com/o/r",
 			IsFork:        true,
 		},
-		&Repository{
+		{
 			ID:            "j",
 			NameWithOwner: "a/b",
 			Description:   "c",

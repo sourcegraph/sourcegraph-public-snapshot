@@ -18,12 +18,12 @@ func TestScan(t *testing.T) {
 	}{
 		"empty file": {
 			files: []fi{
-				fi{"a", ""},
+				{"a", ""},
 			},
 			want: &Inventory{},
 		},
 		"java": {
-			files: []fi{fi{"a.java", "a"}},
+			files: []fi{{"a.java", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 1, Type: "programming"},
@@ -31,7 +31,7 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"go": {
-			files: []fi{fi{"a.go", "a"}},
+			files: []fi{{"a.go", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Go", TotalBytes: 1, Type: "programming"},
@@ -39,7 +39,7 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"java and go": {
-			files: []fi{fi{"a.java", "aa"}, fi{"a.go", "a"}},
+			files: []fi{{"a.java", "aa"}, {"a.go", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 2, Type: "programming"},
@@ -49,11 +49,11 @@ func TestScan(t *testing.T) {
 		},
 		"large": {
 			files: []fi{
-				fi{"a.java", "aaaaaaaaa"},
-				fi{"b.java", "bbbbbbb"},
-				fi{"a.go", "aaaaa"},
-				fi{"b.go", "bbb"},
-				fi{"c.txt", "ccccc"},
+				{"a.java", "aaaaaaaaa"},
+				{"b.java", "bbbbbbb"},
+				{"a.go", "aaaaa"},
+				{"b.go", "bbb"},
+				{"c.txt", "ccccc"},
 			},
 			want: &Inventory{
 				Languages: []*Lang{

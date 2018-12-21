@@ -47,7 +47,7 @@ func Test_parseConfig(t *testing.T) {
 				}},
 			}}},
 			wantProviders: map[schema.GitHubAuthProvider]auth.Provider{
-				schema.GitHubAuthProvider{
+				{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitHub",
@@ -86,7 +86,7 @@ func Test_parseConfig(t *testing.T) {
 				}},
 			}}},
 			wantProviders: map[schema.GitHubAuthProvider]auth.Provider{
-				schema.GitHubAuthProvider{
+				{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitHub",
@@ -101,7 +101,7 @@ func Test_parseConfig(t *testing.T) {
 					},
 					Scopes: []string{"repo", "user:email"},
 				}),
-				schema.GitHubAuthProvider{
+				{
 					ClientID:     "my-client-id-2",
 					ClientSecret: "my-client-secret-2",
 					DisplayName:  "GitHub Enterprise",

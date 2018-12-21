@@ -62,7 +62,7 @@ func Test_providersFromConfig(t *testing.T) {
 			cfg: conf.Unified{
 				Critical: schema.CriticalConfiguration{
 					AuthProviders: []schema.AuthProviders{
-						schema.AuthProviders{
+						{
 							Saml: &schema.SAMLAuthProvider{
 								ConfigID: "okta-config-id",
 								Type:     "saml",
@@ -103,13 +103,13 @@ func Test_providersFromConfig(t *testing.T) {
 			cfg: conf.Unified{
 				Critical: schema.CriticalConfiguration{
 					AuthProviders: []schema.AuthProviders{
-						schema.AuthProviders{
+						{
 							Saml: &schema.SAMLAuthProvider{
 								ConfigID: "okta-config-id",
 								Type:     "saml",
 							},
 						},
-						schema.AuthProviders{
+						{
 							Openidconnect: &schema.OpenIDConnectAuthProvider{
 								ConfigID: "onelogin-config-id",
 								Type:     "openidconnect",
@@ -211,7 +211,7 @@ func Test_providersFromConfig(t *testing.T) {
 			cfg: conf.Unified{
 				Critical: schema.CriticalConfiguration{
 					AuthProviders: []schema.AuthProviders{
-						schema.AuthProviders{
+						{
 							Saml: &schema.SAMLAuthProvider{
 								ConfigID: "okta-config-id",
 								Type:     "saml",
@@ -241,7 +241,7 @@ func Test_providersFromConfig(t *testing.T) {
 			cfg: conf.Unified{
 				Critical: schema.CriticalConfiguration{
 					AuthProviders: []schema.AuthProviders{
-						schema.AuthProviders{
+						{
 							Saml: &schema.SAMLAuthProvider{
 								ConfigID: "okta-config-id",
 								Type:     "saml",

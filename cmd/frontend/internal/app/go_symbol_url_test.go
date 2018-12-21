@@ -49,7 +49,7 @@ func TestSymbolLocation(t *testing.T) {
 	}
 
 	tests := []test{
-		test{
+		{
 			args: symbolLocationArgs{
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -60,7 +60,7 @@ func TestSymbolLocation(t *testing.T) {
 			},
 			want: nil,
 		},
-		test{
+		{
 			args: symbolLocationArgs{
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -71,7 +71,7 @@ func TestSymbolLocation(t *testing.T) {
 			},
 			want: mkLocation("https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go", 1, 6),
 		},
-		test{
+		{
 			args: symbolLocationArgs{
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -82,7 +82,7 @@ func TestSymbolLocation(t *testing.T) {
 			},
 			want: mkLocation("https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go", 2, 5),
 		},
-		test{
+		{
 			args: symbolLocationArgs{
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -93,7 +93,7 @@ func TestSymbolLocation(t *testing.T) {
 			},
 			want: mkLocation("https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go", 3, 13),
 		},
-		test{
+		{
 			args: symbolLocationArgs{
 				vfs:        vfs,
 				commitID:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",

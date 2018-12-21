@@ -63,10 +63,10 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 	}
 
 	for _, test := range []test{
-		test{
+		{
 			name: "create_one",
 			sequence: []pair{
-				pair{
+				{
 					input{
 						lastID:   0,
 						contents: `"This is a test."`,
@@ -78,10 +78,10 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 				},
 			},
 		},
-		test{
+		{
 			name: "create_two",
 			sequence: []pair{
-				pair{
+				{
 					input{
 						lastID:   0,
 						contents: `"This is the first one."`,
@@ -91,7 +91,7 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 						contents: `"This is the first one."`,
 					},
 				},
-				pair{
+				{
 					input{
 						lastID:   2,
 						contents: `"This is the second one."`,
@@ -103,10 +103,10 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 				},
 			},
 		},
-		test{
+		{
 			name: "do_not_update_if_outdated",
 			sequence: []pair{
-				pair{
+				{
 					input{
 						lastID:   0,
 						contents: `"This is the first one."`,
@@ -116,7 +116,7 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 						contents: `"This is the first one."`,
 					},
 				},
-				pair{
+				{
 					input{
 						lastID:   0,
 						contents: `"This configuration is now behind the first one, so it shouldn't be saved."`,
@@ -129,10 +129,10 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 				},
 			},
 		},
-		test{
+		{
 			name: "maintain_commments_and_whitespace",
 			sequence: []pair{
-				pair{
+				{
 					input{
 						lastID: 0,
 						contents: `{"fieldA": "valueA",

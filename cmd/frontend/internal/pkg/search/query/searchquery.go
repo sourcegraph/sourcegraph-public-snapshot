@@ -42,11 +42,11 @@ var (
 			FieldDefault:   {Literal: types.RegexpType, Quoted: types.StringType},
 			FieldCase:      {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
 			FieldRepo:      regexpNegatableFieldType,
-			FieldRepoGroup: types.FieldType{Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldRepoGroup: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldFile:      regexpNegatableFieldType,
 			FieldFork:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldLang:      types.FieldType{Literal: types.StringType, Quoted: types.StringType, Negatable: true},
+			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:      stringFieldType,
 
 			FieldBefore:    stringFieldType,
