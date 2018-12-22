@@ -163,7 +163,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                                     pattern={query}
                                 />
                             }
-                            onRun={this.onActionRun}
+                            onDidExecute={this.onActionDidExecute}
                             extensionsController={this.props.extensionsController}
                             platformContext={this.props.platformContext}
                             location={this.props.location}
@@ -207,7 +207,7 @@ export class CommandList extends React.PureComponent<Props, State> {
         this.setState(prevState => ({ selectedIndex: prevState.selectedIndex + delta }))
     }
 
-    private onActionRun = (actionID: string) => {
+    private onActionDidExecute = (actionID: string) => {
         const KEEP_RECENT_ACTIONS = 10
         this.setState(prevState => {
             const { recentActions } = prevState
