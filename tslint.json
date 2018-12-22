@@ -7,7 +7,9 @@
     "ban": [
       true,
       { "name": ["assert", "strictEqual"], "message": "Use jest matchers instead." },
-      { "name": ["assert", "deepStrictEqual"], "message": "Use jest matchers instead." }
+      { "name": ["assert", "deepStrictEqual"], "message": "Use jest matchers instead." },
+      { "name": ["describe", "only"], "message": "Don't commit 'only' test directives." },
+      { "name": ["test", "only"], "message": "Don't commit 'only' test directives." }
     ],
     "jsx-ban-elements": [
       true,
