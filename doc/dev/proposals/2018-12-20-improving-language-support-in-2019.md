@@ -2,7 +2,7 @@
 
 ## Background
 
-Improving language support contributes to the Q1 2019 goal of increasing the number of Sourcegraph instances that go from 1 to 20 users because: 
+Improving language support contributes to the Q1 2019 goal of increasing the number of Sourcegraph instances that go from 1 to 20 users because:
 
 - many admins want to see their language(s) supported before sharing Sourcegraph with their team; and
 - good language support is necessary for the code host integration (via the browser extension) to be useful, and that's easy to spread.
@@ -23,14 +23,14 @@ Many things have changed in the last year to make it possible to improve languag
 
 Based on these learnings, the following principles will guide future improvements:
 
-- Prioritize languages by a combination of popularity and ease of analysis (statically-typed languages, ones that already have solid language servers, ones that customers are asking for, etc.)
+- Prioritize languages by a combination of popularity, ease of analysis, and Sourcegraph customer needs (statically-typed languages, ones that already have solid language servers, ones that customers are asking for, etc.)
 - Focus on quality over quantity (already tried quantity in 2018 with lsp-adapter and cold emails, and this stagnated)
 - Pay contractors if it saves us time and effort (they’re experts in the respective language and will likely be able to hit the ground running)
 - UI/UX ergonomics matter: suppress non-actionable errors and indicate when some analysis is taking a long time
 
 ## Proposal
 
-Put effort towards one language at a time in rough order of prospective deals for Sourcegraph:
+Put effort towards one language at a time:
 
 - ✅ JavaScript/TypeScript using https://github.com/sourcegraph/lang-typescript
 - 📝 Java using https://github.com/beyang/eclipse.jdt.ls/tree/wip
@@ -42,6 +42,8 @@ For each language, patch the language server as needed and build a Sourcegraph e
 
 ### Test plan
 
+When developing support for a language, copy this template below and customize it for the particular language you're working on.
+
 Manually open each link to verify that the language server is working. In rough order of increasing difficulty:
 
 - [ ] Link to ANY working {hover,definition,references}
@@ -51,30 +53,48 @@ Manually open each link to verify that the language server is working. In rough 
 - [ ] Monorepo support (initialization time and response time scale sublinearly with repo size)
 - [ ] Cross-repo code intelligence on popular repos
 
+@chrismwendt and @felixfbecker will review the repository and performance benchmark choices and modify them in order to accurately represent common usage on Sourcegraph.
+
 ### Release plan
 
-For each language, publish a Sourcegraph extension with usage instructions in their READMEs and then iterate and address feedback until customers actually use the language extension on a regular basis.
+For each language:
+
+- Publish a Sourcegraph extension with usage instructions in their READMEs
+- Iterate and address feedback until customers actually use the language extension on a regular basis
 
 ## Rationale
 
-[A discussion of alternate approaches and the trade offs, advantages, and disadvantages (including risks and uncertainties) of the specified approach.]
+One alternative is for Sourcegraphers to try to implement everything. That would probably be be inefficient considering our lack of expertise in some languages.
+
+Risks and unknowns:
+
+- Communication between browser <-> language server: most language servers speak STDIO only (possible solution: support WebSockets or HTTP)
+- Obtaining files: most language servers expect the repository to already exist somewhere on disk (possible solution: fetch zip URL)
+- Arbitrary code execution in package managers (possible solutions: disable running scripts in the package manager like yarn’s --ignore-scripts, run in gvisor/VM)
+- Slow initialization: many language servers build the entire project before responding to requests (possible solutions: cache build results, lazily fetch dependencies, lazily build the AST, lazy everything)
+- Inability to build the project due to varying (i.e. commit-specific and/or ambiguous) versions of compiler, package manager, etc.
+- Language server authors might not accept the changes we make (WebSocket support, zip archive fetching, etc.)
 
 ## Checklist
 
-- [ ] By Dec 21, publish a modified version of this proposal that communicates our high level plan and states what Sourcegraph wants in terms of language support. Briefly summarize and link to the master plan. Mention that we'll help with sponsorship, technical advice, getting feedback, etc.
+- [ ] By Dec 21, publish a blog post with modified version of this proposal that communicates our high level plan and states what Sourcegraph wants in terms of language support. Briefly summarize and link to the master plan. Mention that we'll help with sponsorship, technical advice, getting feedback, etc.
 - [ ] By Dec 21, update langserver.org and our careers repo to link to this blog post and have @sqs to tweet this to Future of Coding
 - [ ] By Dec 21, after doing an initial triage, publish one blog post per language similar to the above blog post but with more details about the particular language.
 - [ ] By Jan 2, add an Implementation section to the README of lang-{go,typescript,python}
 - [ ] By Jan 2, prepare a doc outlining how to build language extensions building off of https://github.com/sourcegraph/sourcegraph/pull/628 but avoid recommending certain approaches (leave it up to the language server author), link to the Implementation sections above
+- [ ] By Jan 2, update langserver.org entries with check boxes for any new and relevant pieces of functionality based on the Implementation sections above
 - [ ] By Jan 4, basic Python support is deployed to Sourcegraph.com (@sqs has already implemented most of this)
-- [ ] By Jan 11, Python has cross-repo support
+- [ ] By Jan 9, same-file Ruby hovers work on GitHub.com
+- [ ] By Jan 11, Ruby hovers work for full projects
+- [ ] By Jan 14, Python has cross-repo support
+- [ ] By Jan 18, determine quality of Swift language server
+- [ ] By Jan 21, find a Swift contractor
 - [ ] By Jan 25, basic Swift support is deployed on Sourcegraph.com
 - [ ] By Feb 1, Swift has cross-repo support
-- (these dates are highly tentative because they depend on external factors such as the quality of the new Swift language server and how hard it might be to find contractor(s))
 
 ## Done date
 
-Tentatively 1-3 months per language throughout the year.
+Python, Swift, and (some) Ruby support will be done by Feb 1.
 
 ## Retrospective
 
