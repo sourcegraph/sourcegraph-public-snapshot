@@ -5,8 +5,10 @@ import { PlatformContext } from '../../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../../shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '../../../../shared/src/settings/settings'
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
+import { toPrettyBlobURL } from '../../../../shared/src/util/url'
 import * as runtime from '../browser/runtime'
 import storage from '../browser/storage'
+import { CodeHost } from '../libs/code_intelligence'
 import { getContext } from '../shared/backend/context'
 import { requestGraphQL } from '../shared/backend/graphql'
 import { sendLSPHTTPRequests } from '../shared/backend/lsp'
@@ -17,7 +19,7 @@ import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettings
 /**
  * Creates the {@link PlatformContext} for the browser extension.
  */
-export function createPlatformContext(): PlatformContext {
+export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>): PlatformContext {
     // TODO: support listening for changes to sourcegraphUrl
     const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
     sourcegraphLanguageServerURL.pathname = '.api/xlang'
@@ -105,6 +107,14 @@ export function createPlatformContext(): PlatformContext {
                 )
             )
             return blobURL
+        },
+        urlToFile: location => {
+            if (urlToFile) {
+                // Construct URL to file on code host, if possible.
+                return urlToFile(location)
+            }
+            // Otherwise fall back to linking to Sourcegraph (with an absolute URL).
+            return `${sourcegraphUrl}${toPrettyBlobURL(location)}`
         },
         sourcegraphURL: sourcegraphUrl,
         clientApplication: 'other',
