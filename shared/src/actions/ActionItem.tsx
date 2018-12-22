@@ -9,6 +9,7 @@ import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
+import { TelemetryContext } from '../telemetry/telemetryContext'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
 export interface ActionItemProps {
@@ -75,6 +76,9 @@ interface State {
 
 export class ActionItem extends React.PureComponent<Props, State> {
     public state: State = { actionOrError: null }
+
+    public static contextType = TelemetryContext
+    public context!: React.ContextType<typeof TelemetryContext>
 
     private commandExecutions = new Subject<ExecuteCommandParams>()
     private subscriptions = new Subscription()
@@ -192,6 +196,10 @@ export class ActionItem extends React.PureComponent<Props, State> {
 
     public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
         const action = (isAltEvent(e) && this.props.altAction) || this.props.action
+
+        // Record action ID (but not args, which might leak sensitive data).
+        this.context.log(action.id)
+
         if (urlForClientCommandOpen(action, this.props.location)) {
             if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which

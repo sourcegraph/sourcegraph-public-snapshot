@@ -1,11 +1,12 @@
 import uuid from 'uuid'
+import { TelemetryService } from '../../../../../shared/src/telemetry/telemetryService'
 import storage from '../../browser/storage'
 import { isInPage } from '../../context'
 import { logUserEvent } from '../backend/userEvents'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
-export class EventLogger {
+export class EventLogger implements TelemetryService {
     private uid: string
 
     constructor() {
@@ -71,5 +72,16 @@ export class EventLogger {
                 /* noop */
             }
         )
+    }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @todo Use the eventName. It is currently ignored.
+     *
+     * @param _eventName This parameter is ignored; see the @todo.
+     */
+    public log(_eventName: string): void {
+        this.logCodeIntelligenceEvent()
     }
 }
