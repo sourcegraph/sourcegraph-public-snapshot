@@ -1,5 +1,6 @@
 import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
+import { SearchResult, SearchResultMatch } from '../../client/types/searchResult'
 import { Position } from '../types/position'
 import { Range } from '../types/range'
 
@@ -50,11 +51,11 @@ export function fromRange(range: Range | sourcegraph.Range | undefined): clientT
 }
 
 /**
- * Converts from an instance of {@link SearchResult} to the plain object {@link clientType.SearchResult}.
+ * Converts from an instance of {@link SearchResult} to the plain object {@link SearchResult}.
  *
  * @internal
  */
-export function fromSearchResult(searchResult: sourcegraph.SearchResult): clientType.SearchResult {
+export function fromSearchResult(searchResult: sourcegraph.SearchResult): SearchResult {
     return {
         ...searchResult,
         matches: searchResult.matches.map(match => fromSearchResultMatch(match)),
@@ -62,11 +63,11 @@ export function fromSearchResult(searchResult: sourcegraph.SearchResult): client
 }
 
 /**
- * Converts from an instance of {@link SearchResultMatch} to the plain object {@link clientType.SearchResultMatch}.
+ * Converts from an instance of {@link SearchResultMatch} to the plain object {@link SearchResultMatch}.
  *
  * @internal
  */
-export function fromSearchResultMatch(searchMatch: sourcegraph.SearchResultMatch): clientType.SearchResultMatch {
+export function fromSearchResultMatch(searchMatch: sourcegraph.SearchResultMatch): SearchResultMatch {
     return {
         body: searchMatch.body,
         highlights: searchMatch.highlights.map(match => fromRange(match)) as clientType.Range[],

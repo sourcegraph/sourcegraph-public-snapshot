@@ -1,4 +1,3 @@
-import * as clientType from '@sourcegraph/extension-api-types'
 import { from, Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { createProxyAndHandleRequests } from '../../common/proxy'
@@ -7,6 +6,7 @@ import { Connection } from '../../protocol/jsonrpc2/connection'
 import { TransformQuerySignature } from '../services/queryTransformer'
 import { FeatureProviderRegistry } from '../services/registry'
 import { ProvideSearchResultsSignature } from '../services/searchResults'
+import { SearchResult } from '../types/searchResult'
 import { SubscriptionMap } from './common'
 
 /** @internal */
@@ -47,7 +47,7 @@ export class Search implements SearchAPI {
             id,
             this.searchResultProviderRegistry.registerProvider(
                 {},
-                (query: string): Observable<clientType.SearchResult[]> =>
+                (query: string): Observable<SearchResult[]> =>
                     from(this.proxy.$provideSearchResults(id, query)).pipe(map(result => result || []))
             )
         )
