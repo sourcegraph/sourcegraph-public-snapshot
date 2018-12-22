@@ -35,7 +35,6 @@ import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -242,12 +241,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     private onThemeChange = () => {
-        this.setState(
-            state => ({ isLightTheme: !state.isLightTheme }),
-            () => {
-                eventLogger.log(this.state.isLightTheme ? 'LightThemeClicked' : 'DarkThemeClicked')
-            }
-        )
+        this.setState(state => ({ isLightTheme: !state.isLightTheme }))
     }
 
     private onMainPage = (mainPage: boolean) => {
