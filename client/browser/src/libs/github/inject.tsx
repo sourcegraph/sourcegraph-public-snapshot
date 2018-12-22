@@ -1,6 +1,7 @@
 import mermaid from 'mermaid'
 import * as React from 'react'
 import { render } from 'react-dom'
+import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
 import storage from '../../browser/storage'
 import { Alerts } from '../../shared/components/Alerts'
 import { ConfigureSourcegraphButton } from '../../shared/components/ConfigureSourcegraphButton'
@@ -8,7 +9,7 @@ import { ContextualSourcegraphButton } from '../../shared/components/ContextualS
 import { ServerAuthButton } from '../../shared/components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
 import { WithResolvedRev } from '../../shared/components/WithResolvedRev'
-import { inlineSymbolSearchEnabled, renderMermaidGraphsEnabled } from '../../shared/util/context'
+import { eventLogger, inlineSymbolSearchEnabled, renderMermaidGraphsEnabled } from '../../shared/util/context'
 import { getFileContainers, parseURL } from './util'
 
 async function refreshModules(): Promise<void> {
@@ -67,7 +68,12 @@ function injectServerBanner(): void {
         }
         container.appendChild(mount)
     }
-    render(<Alerts repoName={repoName} />, mount)
+    render(
+        <TelemetryContext.Provider value={eventLogger}>
+            <Alerts repoName={repoName} />
+        </TelemetryContext.Provider>,
+        mount
+    )
 }
 
 /**

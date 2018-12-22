@@ -22,6 +22,7 @@ import { Model, ViewComponentData } from '../../../../../shared/src/api/client/m
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
 import {
     FileSpec,
     PositionSpec,
@@ -40,7 +41,7 @@ import {
     toTextDocumentIdentifier,
 } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
@@ -380,7 +381,12 @@ function initCodeIntelligence(
         }
     }
 
-    render(<HoverOverlayContainer />, overlayContainerMount)
+    render(
+        <TelemetryContext.Provider value={eventLogger}>
+            <HoverOverlayContainer />
+        </TelemetryContext.Provider>,
+        overlayContainerMount
+    )
 
     return { hoverifier, controllers: { platformContext, extensionsController } }
 }
@@ -538,18 +544,20 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     const mount = getToolbarMount(codeView)
 
                     render(
-                        <CodeViewToolbar
-                            {...info}
-                            platformContext={platformContext}
-                            extensionsController={extensionsController}
-                            buttonProps={
-                                toolbarButtonProps || {
-                                    className: '',
-                                    style: {},
+                        <TelemetryContext.Provider value={eventLogger}>
+                            <CodeViewToolbar
+                                {...info}
+                                platformContext={platformContext}
+                                extensionsController={extensionsController}
+                                buttonProps={
+                                    toolbarButtonProps || {
+                                        className: '',
+                                        style: {},
+                                    }
                                 }
-                            }
-                            location={H.createLocation(window.location)}
-                        />,
+                                location={H.createLocation(window.location)}
+                            />
+                        </TelemetryContext.Provider>,
                         mount
                     )
                 }

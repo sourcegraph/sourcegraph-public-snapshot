@@ -16,9 +16,11 @@ import {
     ExtensionsControllerProps,
 } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
 import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
+import { eventLogger } from '../../shared/util/context'
 import { getGlobalDebugMount } from '../github/extensions'
 import { CodeHost } from './code_intelligence'
 
@@ -40,14 +42,16 @@ export function initializeExtensions({
     if (getCommandPaletteMount) {
         render(
             <ShortcutProvider>
-                <CommandListPopoverButton
-                    extensionsController={extensionsController}
-                    menu={ContributableMenu.CommandPalette}
-                    platformContext={platformContext}
-                    autoFocus={false}
-                    location={history.location}
-                />
-                <Notifications extensionsController={extensionsController} />
+                <TelemetryContext.Provider value={eventLogger}>
+                    <CommandListPopoverButton
+                        extensionsController={extensionsController}
+                        menu={ContributableMenu.CommandPalette}
+                        platformContext={platformContext}
+                        autoFocus={false}
+                        location={history.location}
+                    />
+                    <Notifications extensionsController={extensionsController} />
+                </TelemetryContext.Provider>
             </ShortcutProvider>,
             getCommandPaletteMount()
         )

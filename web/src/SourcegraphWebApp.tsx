@@ -15,6 +15,7 @@ import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
+import { TelemetryContext } from '../../shared/src/telemetry/telemetryContext'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { FeedbackText } from './components/FeedbackText'
@@ -35,6 +36,7 @@ import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -208,34 +210,36 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         return (
             <ShortcutProvider>
-                <BrowserRouter key={0}>
-                    <Route
-                        path="/"
-                        // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                        render={routeComponentProps => (
-                            <Layout
-                                {...props}
-                                {...routeComponentProps}
-                                authenticatedUser={authenticatedUser}
-                                viewerSubject={this.state.viewerSubject}
-                                settingsCascade={this.state.settingsCascade}
-                                // Theme
-                                isLightTheme={this.state.isLightTheme}
-                                onThemeChange={this.onThemeChange}
-                                isMainPage={this.state.isMainPage}
-                                onMainPage={this.onMainPage}
-                                // Search query
-                                navbarSearchQuery={this.state.navbarSearchQuery}
-                                onNavbarQueryChange={this.onNavbarQueryChange}
-                                // Extensions
-                                platformContext={this.state.platformContext}
-                                extensionsController={this.state.extensionsController}
-                            />
-                        )}
-                    />
-                </BrowserRouter>
-                <Tooltip key={1} />
-                <Notifications key={2} extensionsController={this.state.extensionsController} />
+                <TelemetryContext.Provider value={eventLogger}>
+                    <BrowserRouter key={0}>
+                        <Route
+                            path="/"
+                            // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                            render={routeComponentProps => (
+                                <Layout
+                                    {...props}
+                                    {...routeComponentProps}
+                                    authenticatedUser={authenticatedUser}
+                                    viewerSubject={this.state.viewerSubject}
+                                    settingsCascade={this.state.settingsCascade}
+                                    // Theme
+                                    isLightTheme={this.state.isLightTheme}
+                                    onThemeChange={this.onThemeChange}
+                                    isMainPage={this.state.isMainPage}
+                                    onMainPage={this.onMainPage}
+                                    // Search query
+                                    navbarSearchQuery={this.state.navbarSearchQuery}
+                                    onNavbarQueryChange={this.onNavbarQueryChange}
+                                    // Extensions
+                                    platformContext={this.state.platformContext}
+                                    extensionsController={this.state.extensionsController}
+                                />
+                            )}
+                        />
+                    </BrowserRouter>
+                    <Tooltip key={1} />
+                    <Notifications key={2} extensionsController={this.state.extensionsController} />
+                </TelemetryContext.Provider>
             </ShortcutProvider>
         )
     }
