@@ -824,7 +824,10 @@ type Search {
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository | GenericSearchResult
 
-# A search result.
+# EXPERIMENTAL (subject to change until Sourcegraph 3.1):
+# Any search result that is not a FileMatch, CommitSearchResult, or Repository.
+# All new search result types added to Sourcegraph, and any result contributed by
+# Sourcegraph extensions should be of this type.
 type GenericSearchResult implements GenericSearchResultInterface {
     # Base64 data URI to an icon that is displayed with every search result.
     icon: String!
@@ -1216,9 +1219,9 @@ type Repository implements Node & GenericSearchResultInterface {
     viewerCanAdminister: Boolean!
     # Base64 data uri to an icon.
     icon: String!
-    # A markdown string that is rendered prominently.
+    # A Markdown string that is rendered prominently.
     label: Markdown!
-    # A markdown string of that is rendered less prominently.
+    # A Markdown string that is rendered less prominently.
     detail: Markdown!
     # The result previews of the result.
     matches: [SearchResultMatch!]!
