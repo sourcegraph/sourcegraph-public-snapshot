@@ -56,11 +56,13 @@ export function modelToTextDocumentPositionParams({
         return null
     }
     const sel = activeViewComponent.selections[0]
+    if (!sel) {
+        return null
+    }
     // TODO(sqs): Return null for empty selections (but currently all selected tokens are treated as an empty
-    // selection at the beginning of the token, so this would break a lot of things).
-    //
-    // HACK(sqs): Character === -1 means that the whole line is selected (this is a bug in the caller, but it is
-    // useful here).
+    // selection at the beginning of the token, so this would break a lot of things, so we only do this for empty
+    // selections when the start character is -1). HACK(sqs): Character === -1 means that the whole line is
+    // selected (this is a bug in the caller, but it is useful here).
     const isEmpty =
         sel.start.line === sel.end.line && sel.start.character === sel.end.character && sel.start.character === -1
     if (isEmpty) {
