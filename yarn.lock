@@ -1122,21 +1122,16 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^5.1.0":
-  version "5.1.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-5.1.0.tgz#1f3801f9f92713b6b18eb88a0cd0e0c329448423"
-  integrity sha512-Qxvw5QwuMxGJK33kvDAryeSKGU05WtNmaKXayly8v4UjORKXzJ7uowTExWXiNrU3BWWvo+L2fetZJmbs/+yhfA==
+"@sourcegraph/codeintellify@^6.0.1":
+  version "6.0.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-6.0.1.tgz#40524c6d4b934a1217b8a876c608699e48bfaa7f"
+  integrity sha512-W5xq6wjZN9r6h+Ncf8r8OVL0R3mmtVUtg4ycBJpCeilHEHn/1L9iSMoyN+IvZ6QkMh/4tGYUzimG64vJBkpm5w==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.0"
-    "@sourcegraph/react-loading-spinner" "0.0.7"
-    highlight.js "^9.12.0"
+    "@sourcegraph/extension-api-types" "^1.0.1"
     lodash "^4.17.10"
-    marked "^0.4.0 || ^0.5.0"
-    mdi-react "^5.1.0"
     rxjs "^6.3.3"
-    sanitize-html "^1.18.2"
     ts-key-enum "^2.0.0"
-    vscode-languageserver-types "^3.8.2"
 
 "@sourcegraph/event-positions@^1.0.0":
   version "1.0.0"
@@ -1147,9 +1142,17 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
+"@sourcegraph/extension-api-types@^1.0.1":
+  version "1.0.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/extension-api-types/-/extension-api-types-1.0.2.tgz#ffe22b7b7bc267c814f85e3531813d8f908d3ce7"
+  integrity sha512-ziJ/c/iV1Cfb7MbxSjlHCR5Aw7OtON7HefZS/sxEZhLR4VK8rISxBjl9C0qyd6zVfP3/IwJ5FzUQ2iIUso84/g==
+  dependencies:
+    sourcegraph "*"
+
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "1.0.2"
+  dependencies:
+    sourcegraph "*"
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -2646,7 +2649,7 @@ array-union@^1.0.1:
   dependencies:
     array-uniq "^1.0.1"
 
-array-uniq@^1.0.1, array-uniq@^1.0.2:
+array-uniq@^1.0.1:
   version "1.0.3"
   resolved "https://registry.npmjs.org/array-uniq/-/array-uniq-1.0.3.tgz#af6ac877a25cc7f74e058894753858dfdb24fdb6"
   integrity sha1-r2rId6Jcx/dOBYiUdThY39sk/bY=
@@ -7877,7 +7880,7 @@ he@^1.1.1, he@^1.2.0:
   resolved "https://registry.npmjs.org/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
 
-highlight.js@^9.0.0, highlight.js@^9.12.0, highlight.js@^9.13.1:
+highlight.js@^9.0.0, highlight.js@^9.13.1:
   version "9.13.1"
   resolved "https://registry.npmjs.org/highlight.js/-/highlight.js-9.13.1.tgz#054586d53a6863311168488a0f58d6c505ce641e"
   integrity sha512-Sc28JNQNDzaH6PORtRLMvif9RSn1mYuOoX3omVjnb0+HbpPygU2ALBI0R/wsiqCb4/fcp07Gdo8g+fhtFrQl6A==
@@ -7965,7 +7968,7 @@ html-tags@^2.0.0:
   resolved "https://registry.npmjs.org/html-tags/-/html-tags-2.0.0.tgz#10b30a386085f43cede353cc8fa7cb0deeea668b"
   integrity sha1-ELMKOGCF9Dzt41PMj6fLDe7qZos=
 
-htmlparser2@^3.8.3, htmlparser2@^3.9.0, htmlparser2@^3.9.2:
+htmlparser2@^3.8.3, htmlparser2@^3.9.2:
   version "3.10.0"
   resolved "https://registry.npmjs.org/htmlparser2/-/htmlparser2-3.10.0.tgz#5f5e422dcf6119c0d983ed36260ce9ded0bee464"
   integrity sha512-J1nEUGv+MkXS0weHNWVKJJ+UrLfePxRWpN3C9bEi9fLxL2+ggW94DQvgYVXsaT30PGwYRIZKNZXuyMhp3Di4bQ==
@@ -9726,7 +9729,7 @@ lodash.capitalize@^4.2.1:
   resolved "https://registry.npmjs.org/lodash.capitalize/-/lodash.capitalize-4.2.1.tgz#f826c9b4e2a8511d84e3aca29db05e1a4f3b72a9"
   integrity sha1-+CbJtOKoUR2E46yinbBeGk87cqk=
 
-lodash.clonedeep@^4.3.2, lodash.clonedeep@^4.5.0, lodash.clonedeep@~4.5.0:
+lodash.clonedeep@^4.3.2, lodash.clonedeep@~4.5.0:
   version "4.5.0"
   resolved "https://registry.npmjs.org/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
   integrity sha1-4j8/nE+Pvd6HJSnBBxhXoIblzO8=
@@ -10039,7 +10042,7 @@ marked@^0.4.0:
   resolved "https://registry.npmjs.org/marked/-/marked-0.4.0.tgz#9ad2c2a7a1791f10a852e0112f77b571dce10c66"
   integrity sha512-tMsdNBgOsrUophCAFQl0XPe6Zqk/uy9gnue+jIIKhykO51hxyu6uNx7zBPy0+y/WKYVZZMspV9YeXLNdKk+iYw==
 
-"marked@^0.4.0 || ^0.5.0", marked@^0.5.0, marked@^0.5.1:
+marked@^0.5.0, marked@^0.5.1:
   version "0.5.1"
   resolved "https://registry.npmjs.org/marked/-/marked-0.5.1.tgz#062f43b88b02ee80901e8e8d8e6a620ddb3aa752"
   integrity sha512-iUkBZegCZou4AdwbKTwSW/lNDcz5OuRSl3qdcl31Ia0B2QPG0Jn+tKblh/9/eP9/6+4h27vpoh8wel/vQOV0vw==
@@ -12035,7 +12038,7 @@ postcss-value-parser@^3.3.0, postcss-value-parser@^3.3.1:
   resolved "https://registry.npmjs.org/postcss-value-parser/-/postcss-value-parser-3.3.1.tgz#9ff822547e2893213cf1c30efa51ac5fd1ba8281"
   integrity sha512-pISE66AbVkp4fDQ7VHBwRNXzAAKJjw4Vw7nWI/+Q3vuly7SNfgYXvm6i5IgFylHGK5sP/xHAbB7N49OS4gWNyQ==
 
-postcss@^6.0.1, postcss@^6.0.14, postcss@^6.0.23:
+postcss@^6.0.1, postcss@^6.0.23:
   version "6.0.23"
   resolved "https://registry.npmjs.org/postcss/-/postcss-6.0.23.tgz#61c82cc328ac60e677645f979054eb98bc0e3324"
   integrity sha512-soOk1h6J3VMTZtVeVpv15/Hpdl2cBLX3CAw4TAbkpTJiNPk9YP/zWcD1ND+xEtvyuuvKzbxliTOIyvkSeSJ6ag==
@@ -13398,22 +13401,6 @@ sane@^2.0.0:
   optionalDependencies:
     fsevents "^1.2.3"
 
-sanitize-html@^1.18.2:
-  version "1.19.1"
-  resolved "https://registry.npmjs.org/sanitize-html/-/sanitize-html-1.19.1.tgz#e8b33c69578054d6ee4f57ea152d6497f3f6fb7d"
-  integrity sha512-zNYr6FvBn4bZukr9x2uny6od/9YdjCLwF+FqxivqI0YOt/m9GIxfX+tWhm52tBAPUXiTTb4bJTGVagRz5b06bw==
-  dependencies:
-    chalk "^2.3.0"
-    htmlparser2 "^3.9.0"
-    lodash.clonedeep "^4.5.0"
-    lodash.escaperegexp "^4.1.2"
-    lodash.isplainobject "^4.0.6"
-    lodash.isstring "^4.0.1"
-    lodash.mergewith "^4.6.0"
-    postcss "^6.0.14"
-    srcset "^1.0.0"
-    xtend "^4.0.0"
-
 sass-graph@^2.2.4:
   version "2.2.4"
   resolved "https://registry.npmjs.org/sass-graph/-/sass-graph-2.2.4.tgz#13fbd63cd1caf0908b9fd93476ad43a51d1e0b49"
@@ -14057,8 +14044,7 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "20.0.0"
 
 sparkles@^1.0.0:
   version "1.0.1"
@@ -14163,14 +14149,6 @@ sprintf-js@~1.0.2:
   version "1.0.3"
   resolved "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=
-
-srcset@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/srcset/-/srcset-1.0.0.tgz#a5669de12b42f3b1d5e83ed03c71046fc48f41ef"
-  integrity sha1-pWad4StC87HV6D7QPHEEb8SPQe8=
-  dependencies:
-    array-uniq "^1.0.2"
-    number-is-nan "^1.0.0"
 
 sshpk@^1.7.0:
   version "1.15.2"
