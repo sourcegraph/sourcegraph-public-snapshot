@@ -35,7 +35,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     private propsChanges = new Subject<SearchResultMatchProps>()
 
     private getLanguage(): string | undefined {
-        const matches = /(?:```)([^\s]+)\s/.exec(this.props.item.body.value)
+        const matches = /(?:```)([^\s]+)\s/.exec(this.props.item.preview.value)
         if (!matches) {
             return undefined
         }
@@ -43,7 +43,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     private bodyIsCode(): boolean {
-        return this.props.item.body.value.startsWith('```') && this.props.item.body.value.endsWith('```')
+        return this.props.item.preview.value.startsWith('```') && this.props.item.preview.value.endsWith('```')
     }
 
     public constructor(props: SearchResultMatchProps) {
@@ -59,9 +59,9 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     switchMap(
                         ([props]) =>
-                            props.item.body.html
-                                ? of(sanitizeHtml(props.item.body.html))
-                                : renderMarkdown({ markdown: props.item.body.value })
+                            props.item.preview.html
+                                ? of(sanitizeHtml(props.item.preview.html))
+                                : renderMarkdown({ markdown: props.item.preview.value })
                     ),
                     switchMap(markdownHTML => {
                         if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
@@ -91,7 +91,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                         return of(markdownHTML)
                     }),
                     // Return the raw body if markdown rendering fails, maintaing the text structure.
-                    catchError(() => of('<pre>' + sanitizeHtml(props.item.body.value) + '</pre>'))
+                    catchError(() => of('<pre>' + sanitizeHtml(props.item.preview.value) + '</pre>'))
                 )
                 .subscribe(str => this.setState({ HTML: str }), error => console.error(error))
         )

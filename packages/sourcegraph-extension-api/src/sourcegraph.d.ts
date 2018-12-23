@@ -1064,7 +1064,7 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A match in a search result from a search result provider.
+     * A match in a search result from a {@link SearchResultProvider}.
      */
     export interface SearchResultMatch {
         /**
@@ -1072,10 +1072,10 @@ declare module 'sourcegraph' {
          */
         url: string
         /**
-         * Text containing the contents of the result match. This is displayed in its entirety.
-         * Can be plain text or Markdown.
+         * A string containing the preview text of the result match, including any context to be displayed.
+         * The preview can be any length, and is displayed in its entirety. Can be plain text or Markdown.
          */
-        body: MarkupContent
+        preview: MarkupContent
         /**
          * Highlights are currently only applied if the body is a code block. The highlights
          * are applied after the markdown is rendered; therefore, the line and character count

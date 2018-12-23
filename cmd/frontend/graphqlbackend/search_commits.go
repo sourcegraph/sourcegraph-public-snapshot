@@ -303,7 +303,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), commitResolver.URL())
 		results[i].url = commitResolver.URL()
 		results[i].icon = commitIcon
-		match := &searchResultMatchResolver{body: matchBody, highlights: highlightedRangeToRange(matchHighlights), url: commitResolver.URL()}
+		match := &searchResultMatchResolver{preview: matchBody, highlights: highlightedRangeToRange(matchHighlights), url: commitResolver.URL()}
 		matches := []*searchResultMatchResolver{match}
 		results[i].matches = matches
 	}
@@ -355,8 +355,8 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 		}
 	}
 
-	body := fmt.Sprintf("```diff\n%v```", strings.Join(finalLines, "\n"))
-	return body, highlights
+	preview := fmt.Sprintf("```diff\n%v```", strings.Join(finalLines, "\n"))
+	return preview, highlights
 }
 
 func highlightedRangeToRange(highlightedRanges []*highlightedRange) []*rangeResolver {

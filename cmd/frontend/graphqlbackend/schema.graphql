@@ -869,7 +869,7 @@ type SearchResultMatch {
     # URL for the individual result match.
     url: String!
     # A markdown string containing the preview contents of the result match.
-    body: Markdown!
+    preview: Markdown!
     # A list of highlights that specify locations of matches of the query in the body. Each highlight is
     # a range, which consists of a start and end position. Currently, highlights are only displayed on match bodies
     # that are code blocks. If the result body is a code block, exclude the markdown code fence lines in

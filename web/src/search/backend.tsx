@@ -57,7 +57,7 @@ export function search(
                                         }
                                         matches {
                                             url
-                                            body {
+                                            preview {
                                                 value
                                                 html
                                             }
@@ -111,7 +111,7 @@ export function search(
                                         }
                                         matches {
                                             url
-                                            body {
+                                            preview {
                                                 value
                                                 html
                                             }
