@@ -823,7 +823,7 @@ union SearchResult = FileMatch | CommitSearchResult | Repository | GenericSearch
 # Sourcegraph extensions should be of this type.
 type GenericSearchResult implements GenericSearchResultInterface {
     # Base64 data URI to an icon that is displayed with every search result.
-    icon: String!
+    iconUrl: String!
     # A markdown string that is rendered prominently.
     label: Markdown!
     # The URL of the result.
@@ -1003,7 +1003,7 @@ type Diff {
 # A search result that is a Git commit.
 type CommitSearchResult implements GenericSearchResultInterface {
     # Base64 data uri to an icon.
-    icon: String!
+    iconUrl: String!
     # A markdown string that is rendered prominently.
     label: Markdown!
     # The URL of the result.
@@ -1211,7 +1211,7 @@ type Repository implements Node & GenericSearchResultInterface {
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
     # Base64 data uri to an icon.
-    icon: String!
+    iconUrl: String!
     # A Markdown string that is rendered prominently.
     label: Markdown!
     # A Markdown string that is rendered less prominently.
