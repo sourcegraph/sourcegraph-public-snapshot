@@ -46,9 +46,6 @@ export default {
                 use: ExtractTextPlugin.extract(
                     buildStylesLoaders({
                         loader: 'css-loader',
-                        options: {
-                            minimize: process.env.NODE_ENV === 'production',
-                        },
                     })
                 ),
             },

@@ -132,9 +132,6 @@ const config: webpack.Configuration = {
                     MiniCssExtractPlugin.loader,
                     {
                         loader: 'css-loader',
-                        options: {
-                            minimize: mode === 'production',
-                        },
                     },
                     {
                         loader: 'postcss-loader',

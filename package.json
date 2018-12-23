@@ -113,7 +113,7 @@
     "concurrently": "^4.0.1",
     "cpy": "^7.0.1",
     "cross-env": "^5.2.0",
-    "css-loader": "^1.0.0",
+    "css-loader": "^2.0.2",
     "esm": "^3.0.82",
     "execa": "^1.0.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
