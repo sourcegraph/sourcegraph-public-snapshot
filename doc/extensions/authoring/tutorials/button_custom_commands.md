@@ -64,17 +64,19 @@ Add the following code to the `contributes` object in `package.json`:
 }
 ```
 
-The object in the `actions` array configures the button display properties and what `command` to call on button click.
+The object in the [`actions` array](../contributions.md#actions) configures the button display properties and what `command` to call on button click.
 
-The object in the `editor/title` array means the `action` it refers to should be placed in the file header. The value of `resource` for `when` means display a button only if there is a resource (file) present.
+The object in the [`editor/title` array](../contributions.md#menus) means the action it refers to should be placed in the file header. The value of `resource` for `when` means display a button only if there is a resource (file) present.
 
-See the [menus section of the extension.schema](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/schema/extension.schema.json#L147:10) for additional menu locations, e.g. `help` and `commandPalette`.
+See the [menu contributions documentation](../contributions.md#menus) for additional menu locations, such as `commandPalette` and `directory/page`.
 
 ## Check for button display
 
 Now publish the extension to see the button in action:
 
-```src extension publish```
+```
+src extension publish
+```
 
 As an example, view the [`tuf_store.go`](https://github.com/theupdateframework/notary/blob/master/server/storage/tuf_store.go) file on GitHub and you should see the **Line Count** button in the file header.
 
@@ -179,10 +181,11 @@ Publish the extension, then trigger the notification from the command palette.
 
 ## Summary
 
-You've now learnt how to add a button and command palette item that calls a custom method defined by your extension.
+You've now learned how to add a button and command palette item that calls a custom method defined by your extension.
 
 ## Next Steps
 
+- [Extension contribution points](../contributions.md)
 - [Built-in Sourcegraph extension commands](../builtin_commands.md)
 - [Cookbook for writing Sourcegraph extensions](../cookbook.md)
 - [Debugging a Sourcegraph extension](../debugging.md)

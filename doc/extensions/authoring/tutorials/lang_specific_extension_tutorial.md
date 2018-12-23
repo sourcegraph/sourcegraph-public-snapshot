@@ -45,7 +45,7 @@ Publish your extension to apply this change and now, you will see hovers only wh
 
 This code defines an action that will be placed in `editor/title` section. It uses an icon and a small label to leave space for other other extension buttons.
 
-Replace the contents of the  `contributes` object in `package.json`:
+Replace the contents of the [`contributes` object](../contributions.md) in `package.json`:
 
 ```json
 {
@@ -112,4 +112,5 @@ You can now conditionally activate, show a button, and hover content for a speci
 
 - [Extension activation](../builtin_commands.md)
 - [Buttons and custom commands tutorial](button_custom_commands.md)
+- [Extension contribution points](../contributions.md)
 - [Builtin commands](../builtin_commands.md)
