@@ -16,6 +16,7 @@ import * as React from 'react'
 import { createPortal, render } from 'react-dom'
 import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
 import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
+import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
@@ -48,6 +49,8 @@ import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews, getContentOfCodeView } from './code_views'
 import { applyDecorations, initializeExtensions } from './extensions'
+
+registerHighlightContributions()
 
 /**
  * Defines a type of code view a given code host can have. It tells us how to
