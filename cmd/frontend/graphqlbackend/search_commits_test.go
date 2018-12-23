@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kylelemons/godebug/pretty"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
@@ -70,11 +71,11 @@ func TestSearchCommitsInRepo(t *testing.T) {
 				author: *toSignatureResolver(&gitSignatureWithDate),
 			},
 			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
-			icon:        "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=",
+			iconURL:     "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=",
 			label:       "[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)",
 			url:         "/repo/-/commit/c1",
 			detail:      "[`c1` one day ago](/repo/-/commit/c1)",
-			matches:     []*searchResultMatchResolver{&searchResultMatchResolver{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*rangeResolver{}}},
+			matches:     []*searchResultMatchResolver{&searchResultMatchResolver{url: "/repo/-/commit/c1", preview: "```diff\nx```", highlights: []*rangeResolver{}}},
 		},
 	}; !reflect.DeepEqual(results, want) {
 		t.Errorf("results\ngot  %v\nwant %v\ndiff: %v", results, want, pretty.Compare(results, want))
@@ -87,6 +88,30 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	if !calledVCSRawLogDiffSearch {
 		t.Error("!calledVCSRawLogDiffSearch")
+	}
+}
+
+func TestHighlightedRangeToRange(t *testing.T) {
+	tests := []struct {
+		highlightedRange []*highlightedRange
+		want             []*rangeResolver
+	}{
+		{
+			highlightedRange: []*highlightedRange{{line: 1, character: 5, length: 5}},
+			want:             []*rangeResolver{{lsp.Range{Start: lsp.Position{Line: 1, Character: 5}, End: lsp.Position{Line: 1, Character: 10}}}},
+		},
+		{
+			highlightedRange: []*highlightedRange{{line: 1, character: 5, length: 5}, {line: 10, character: 50, length: 55}},
+			want:             []*rangeResolver{{lsp.Range{Start: lsp.Position{Line: 1, Character: 5}, End: lsp.Position{Line: 1, Character: 10}}}, {lsp.Range{Start: lsp.Position{Line: 10, Character: 50}, End: lsp.Position{Line: 10, Character: 105}}}},
+		},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("HighlightedRangeToRange, input: %v", test.highlightedRange), func(t *testing.T) {
+			got := highlightedRangeToRange(test.highlightedRange)
+			if !reflect.DeepEqual(got, test.want) {
+				t.Errorf("got %v, want %v", got, test.want)
+			}
+		})
 	}
 }
 
