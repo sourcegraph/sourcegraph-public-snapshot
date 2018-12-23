@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -84,7 +83,7 @@ func (r *extensionManifest) Repository(ctx context.Context) (*graphqlbackend.Rep
 	if parsed.Repository.Url == "" {
 		return nil, nil
 	}
-	repoName, err := reposource.CloneURLToRepoName(parsed.Repository.Url)
+	repoName, err := graphqlbackend.ReposourceCloneURLToRepoName(ctx, parsed.Repository.Url)
 	if err != nil {
 		return nil, err
 	}

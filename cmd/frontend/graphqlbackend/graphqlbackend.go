@@ -210,7 +210,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	} else if args.CloneURL != nil {
 		// Query by git clone URL
 		var err error
-		name, err = reposourceCloneURLToRepoName(ctx, *args.CloneURL)
+		name, err = ReposourceCloneURLToRepoName(ctx, *args.CloneURL)
 		if err != nil {
 			return nil, err
 		}

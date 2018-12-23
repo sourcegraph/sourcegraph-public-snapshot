@@ -85,7 +85,7 @@ func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
-	repoName, err := reposourceCloneURLToRepoName(ctx, cloneURL)
+	repoName, err := ReposourceCloneURLToRepoName(ctx, cloneURL)
 	if err != nil {
 		return "", err
 	}
@@ -95,13 +95,13 @@ func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
 	return string(repoName), nil
 }
 
-// reposourceCloneURLToRepoName maps a Git clone URL (format documented here:
+// ReposourceCloneURLToRepoName maps a Git clone URL (format documented here:
 // https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
 // exists a code host configuration that matches the clone URL. Implicitly, it includes a code host
 // configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
-func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoName api.RepoName, err error) {
+func ReposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoName api.RepoName, err error) {
 	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
 		return repoName, nil
 	}
