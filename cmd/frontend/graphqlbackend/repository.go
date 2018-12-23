@@ -27,7 +27,7 @@ import (
 type repositoryResolver struct {
 	repo        *types.Repo
 	redirectURL *string
-	icon        string
+	iconURL     string
 	matches     []*searchResultMatchResolver
 }
 
@@ -188,8 +188,8 @@ func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.
 	return externallink.Repository(ctx, r.repo)
 }
 
-func (r *repositoryResolver) Icon() string {
-	return r.icon
+func (r *repositoryResolver) IconURL() string {
+	return r.iconURL
 }
 func (r *repositoryResolver) Label() (*markdownResolver, error) {
 	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"

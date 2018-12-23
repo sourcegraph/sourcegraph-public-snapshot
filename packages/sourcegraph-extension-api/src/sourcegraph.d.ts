@@ -1064,7 +1064,7 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A match in a search result from a {@link SearchResultProvider}.
+     * A match in a {@link SearchResult} from a {@link SearchResultProvider}.
      */
     export interface SearchResultMatch {
         /**
@@ -1090,14 +1090,19 @@ declare module 'sourcegraph' {
     export interface SearchResult {
         /**
          * URL to an icon to be displayed with each search result.
+         * Can be a URL to an image or base-64 encoded data uri.
          */
-        icon: string
+        iconUrl: string
         /**
          * A prominently-displayed string describing the result. Can be plain text or Markdown.
          */
         label: MarkupContent
         /**
-         * URL to the search result.
+         * URL to the search result. This is a URL to the containing corpus of the {@link SearchResult#matches} (e.g.
+         * a file), whereas {@link SearchResultMatch#url} will link to the specific match (e.g. a line in the file).
+         * For SearchResults with a single match, this value is often the same as {@link SearchResultMatch#url}.
+         *
+         * This is used to display a URL associated with search results in text-based clients such as the src-cli.
          */
         url: string
         /**

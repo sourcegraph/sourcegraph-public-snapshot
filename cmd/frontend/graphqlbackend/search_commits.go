@@ -30,7 +30,7 @@ type commitSearchResultResolver struct {
 	sourceRefs     []*gitRefResolver
 	messagePreview *highlightedString
 	diffPreview    *highlightedString
-	icon           string
+	iconURL        string
 	label          string
 	url            string
 	detail         string
@@ -42,8 +42,8 @@ func (r *commitSearchResultResolver) Refs() []*gitRefResolver            { retur
 func (r *commitSearchResultResolver) SourceRefs() []*gitRefResolver      { return r.sourceRefs }
 func (r *commitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
-func (r *commitSearchResultResolver) Icon() string {
-	return r.icon
+func (r *commitSearchResultResolver) IconURL() string {
+	return r.iconURL
 }
 func (r *commitSearchResultResolver) Label() *markdownResolver {
 	return &markdownResolver{text: r.label}
@@ -302,7 +302,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		timeagoConfig := timeago.NoMax(timeago.English)
 		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), commitResolver.URL())
 		results[i].url = commitResolver.URL()
-		results[i].icon = commitIcon
+		results[i].iconURL = commitIcon
 		match := &searchResultMatchResolver{preview: matchBody, highlights: highlightedRangeToRange(matchHighlights), url: commitResolver.URL()}
 		matches := []*searchResultMatchResolver{match}
 		results[i].matches = matches

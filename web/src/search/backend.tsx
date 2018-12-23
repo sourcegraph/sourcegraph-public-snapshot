@@ -51,7 +51,7 @@ export function search(
                                         label {
                                             html
                                         }
-                                        icon
+                                        iconUrl
                                         detail {
                                             html
                                         }
@@ -105,7 +105,7 @@ export function search(
                                             html
                                         }
                                         url
-                                        icon
+                                        iconUrl
                                         detail {
                                             html
                                         }

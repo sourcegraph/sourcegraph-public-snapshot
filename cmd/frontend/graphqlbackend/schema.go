@@ -846,7 +846,7 @@ type Markdown {
 # A search result. Every type of search result, except FileMatch, must implement this interface.
 interface GenericSearchResultInterface {
     # URL to an icon that is displayed with every search result.
-    icon: String!
+    iconUrl: String!
     # A markdown string that is rendered prominently.
     label: Markdown!
     # The URL of the result.

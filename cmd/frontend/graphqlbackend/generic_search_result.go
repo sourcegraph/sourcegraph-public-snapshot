@@ -9,7 +9,7 @@ type genericSearchResultResolver struct {
 	matches []*searchResultMatchResolver
 }
 
-func (r *genericSearchResultResolver) Icon() string {
+func (r *genericSearchResultResolver) IconURL() string {
 	return r.icon
 }
 

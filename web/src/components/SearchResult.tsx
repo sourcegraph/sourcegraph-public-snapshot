@@ -82,7 +82,7 @@ export class SearchResult extends React.Component<Props> {
     public render(): JSX.Element {
         return (
             <ResultContainer
-                stringIcon={this.props.result.icon}
+                stringIcon={this.props.result.iconUrl}
                 icon={FileIcon}
                 collapsible={this.props.result && this.props.result.matches.length > 0}
                 defaultExpanded={true}
