@@ -476,7 +476,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         // All the currently open documents, which are all now considered inactive.
                         ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
                     ]
-                    const roots: Model['roots'] = [{ uri: toRootURI(info) }]
+                    const roots: Model['roots'] = [{ uri: toRootURI(info), inputRevision: info.rev || '' }]
 
                     // When codeView is a diff, add BASE too.
                     if (baseContent! && info.baseRepoName && info.baseCommitID && info.baseFilePath) {
@@ -503,6 +503,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                 repoName: info.baseRepoName,
                                 commitID: info.baseCommitID,
                             }),
+                            inputRevision: info.baseRev || '',
                         })
                     }
 

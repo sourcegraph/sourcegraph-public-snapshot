@@ -1,4 +1,3 @@
-import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -6,6 +5,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
+import { WorkspaceRootWithMetadata } from '../../../shared/src/api/client/model'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -149,7 +149,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             this.revResolves
                 .pipe(
                     map(resolvedRevOrError => {
-                        let roots: WorkspaceRoot[] | null = null
+                        let roots: WorkspaceRootWithMetadata[] | null = null
                         if (resolvedRevOrError && !isErrorLike(resolvedRevOrError)) {
                             roots = [
                                 {
@@ -157,6 +157,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                         repoName: this.state.repoName,
                                         rev: resolvedRevOrError.commitID,
                                     }),
+                                    inputRevision: this.state.rev || '',
                                 },
                             ]
                         }
