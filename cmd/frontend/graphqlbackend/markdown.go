@@ -6,7 +6,7 @@ type markdownResolver struct {
 	text string
 }
 
-func (m *markdownResolver) Text() string {
+func (m *markdownResolver) Value() string {
 	return m.text
 }
 

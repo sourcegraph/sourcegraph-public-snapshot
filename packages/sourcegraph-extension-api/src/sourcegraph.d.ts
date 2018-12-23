@@ -1064,19 +1064,18 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A markdown string.
+     * A match in a search result from a search result provider.
      */
-    export interface Markdown {
-        /** The raw markdown string. */
-        text: string
-    }
-
-    /** A match in a search result from a search result provider. */
     export interface SearchResultMatch {
-        /** A URL to an individual search result match. */
+        /**
+         * URL to the matched item.
+         */
         url: string
-        /** A markdown string containing the preview contents of the result match. */
-        body: Markdown
+        /**
+         * Text containing the contents of the result match. This is displayed in its entirety.
+         * Can be plain text or Markdown.
+         */
+        body: MarkupContent
         /**
          * Highlights are currently only applied if the body is a code block. The highlights
          * are applied after the markdown is rendered; therefore, the line and character count
@@ -1085,21 +1084,36 @@ declare module 'sourcegraph' {
         highlights: Range[]
     }
 
-    /** A search result from a search provider. A search result may contain multiple matches. */
+    /**
+     * A search result from a {@link SearchResultProvider}. A search result may contain multiple matches.
+     */
     export interface SearchResult {
-        /** A URL to an icon to be displayed with each search result. */
+        /**
+         * URL to an icon to be displayed with each search result.
+         */
         icon: string
-        /** A markdown string displayed prominently. */
-        label: Markdown
-        /** A URL to the search result. */
+        /**
+         * A prominently-displayed string describing the result. Can be plain text or Markdown.
+         */
+        label: MarkupContent
+        /**
+         * URL to the search result.
+         */
         url: string
-        /** A markdown string rendered less prominently. */
-        detail: Markdown
-        /** A list of matches in this search result. */
+        /**
+         * A less prominently-displayed string with secondary information about the result. Can
+         * be plain text or Markdown.
+         */
+        detail: MarkupContent
+        /**
+         * A list of matches in this search result.
+         */
         matches: SearchResultMatch[]
     }
 
-    /** A search result provider accepts a query and returns a list of results. */
+    /**
+     * A search result provider accepts a query and returns a list of results.
+     */
     export interface SearchResultProvider {
         /**
          * Provide results for a search query.

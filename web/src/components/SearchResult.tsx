@@ -37,7 +37,7 @@ export class SearchResult extends React.Component<Props> {
                 dangerouslySetInnerHTML={{
                     __html: this.props.result.label.html
                         ? decode(this.props.result.label.html)
-                        : marked(this.props.result.label.text, { gfm: true, breaks: true, sanitize: true }),
+                        : marked(this.props.result.label.value, { gfm: true, breaks: true, sanitize: true }),
                 }}
             />
             {this.props.result.detail && (
@@ -47,7 +47,7 @@ export class SearchResult extends React.Component<Props> {
                         dangerouslySetInnerHTML={{
                             __html: this.props.result.detail.html
                                 ? decode(this.props.result.detail.html)
-                                : marked(this.props.result.detail.text, { gfm: true, breaks: true, sanitize: true }),
+                                : marked(this.props.result.detail.value, { gfm: true, breaks: true, sanitize: true }),
                         }}
                     />
                 </>

@@ -58,7 +58,7 @@ export function search(
                                         matches {
                                             url
                                             body {
-                                                text
+                                                value
                                                 html
                                             }
                                             highlights {
@@ -112,7 +112,7 @@ export function search(
                                         matches {
                                             url
                                             body {
-                                                text
+                                                value
                                                 html
                                             }
                                             highlights {

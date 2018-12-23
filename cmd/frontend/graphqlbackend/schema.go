@@ -837,7 +837,7 @@ type GenericSearchResult implements GenericSearchResultInterface {
 # An object representing a markdown string.
 type Markdown {
     # The raw markdown string.
-    text: String!
+    value: String!
     # HTML for the rendered markdown string, or null if there is no HTML representation provided.
     # If specified, clients should render this directly.
     html: String!
