@@ -6,6 +6,7 @@ import { ResizablePanel } from '../../shared/src/panel/Panel'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { parseHash } from '../../shared/src/util/url'
+import { GlobalContributions } from './contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
@@ -131,6 +132,12 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                 />
             )}
+            <GlobalContributions
+                key={3}
+                extensionsController={props.extensionsController}
+                platformContext={props.platformContext}
+                history={props.history}
+            />
             <GlobalDebug {...props} />
         </div>
     )
