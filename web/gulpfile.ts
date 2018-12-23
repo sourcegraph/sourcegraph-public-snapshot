@@ -6,7 +6,7 @@ import { phabricator, watchPhabricator } from '../client/browser/gulpfile'
 import { graphQLTypes, schema, watchGraphQLTypes, watchSchema } from '../shared/gulpfile'
 import webpackConfig from './webpack.config'
 
-const WEBPACK_STATS_OPTIONS: Stats.ToStringOptions = {
+const WEBPACK_STATS_OPTIONS: Stats.ToStringOptions & { colors?: boolean } = {
     all: false,
     timings: true,
     errors: true,

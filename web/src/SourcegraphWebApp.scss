@@ -23,8 +23,13 @@ $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
 $grid-gutter-width: 1.5rem;
+
+// No max width except for xl.
 $container-max-widths: (
-    xl: 74rem,
+    sm: null,
+    md: null,
+    lg: null,
+    xl: 1140px,
 );
 
 // Tell Bootstrap to use colors from OpenColor

@@ -20,12 +20,11 @@ export interface ExtensionsAreaHeaderActionButton extends ActionButtonDescriptor
 export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderProps> = (
     props: ExtensionsAreaHeaderProps
 ) => (
-    <div className="">
+    <div>
         {props.isPrimaryHeader && (
             <div className="navbar navbar-expand">
                 <div className="container">
                     <h2 className="mb-0">Extensions</h2>
-
                     <div className="spacer" />
                     <ul className="navbar-nav nav">
                         {props.actionButtons.map(
