@@ -13,7 +13,7 @@ Name | Required | Type | Details
 `publisher` | ✔️ | `string` | Your [Sourcegraph username](development_environment#sourcegraph-com-account-and-the-sourcegraph-cli) (or the name of an organization you're a member of)
 `license` | | `string` | The type of license chosen.
 `main` | | `string` | Path to the transpiled JavaScript file for your extension.
-`contributes` | | `object` | An object describing the contributions (features) this extension provides.
+`contributes` | | `object` | An object describing the contributions (features) this extension provides. See "[Extension contribution points](contributions.md)" for a full listing.
 [`activationEvents`](activation.md) | ✔️ | `array` | A list of events that cause this extension to be activated.
 `dependencies` | | `object` | npm dependencies.
 `devDependencies` | | `object` | npm dependencies needed for development.

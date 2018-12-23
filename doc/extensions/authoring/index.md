@@ -11,6 +11,7 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 - [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html)
 - [Set up your development environment](development_environment.md)
 - [Creating an extension](creating.md)
+- [Contribution points (actions, menus, etc.)](contributions.md)
 - [Extension manifest (`package.json`)](manifest.md)
 - [Publishing an extension](publishing.md)
 - [Debugging an extension](debugging.md)
