@@ -8,7 +8,7 @@ $dropdown-link-active-bg: var(--primary);
 $dropdown-link-disabled-color: var(--text-muted);
 $dropdown-header-color: var(--dropdown-header-color);
 $dropdown-item-padding-y: 0.25rem;
-$dropdown-item-padding-x: 0.75rem;
+$dropdown-item-padding-x: 0.5rem;
 $dropdown-padding-y: $dropdown-item-padding-y;
 
 @import 'bootstrap/scss/dropdown';
