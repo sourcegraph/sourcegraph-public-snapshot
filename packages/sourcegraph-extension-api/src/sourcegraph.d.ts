@@ -1118,6 +1118,7 @@ declare module 'sourcegraph' {
 
     /**
      * A search result provider accepts a query and returns a list of results.
+     * Experimental. Subject to change or removal without notice.
      */
     export interface SearchResultProvider {
         /**
@@ -1159,6 +1160,8 @@ declare module 'sourcegraph' {
          */
         export function registerQueryTransformer(provider: QueryTransformer): Unsubscribable
         /**
+         * Experimental. Subject to change or removal without notice.
+         *
          * Registers a search result provider.
          *
          * Multiple providers can be registered. In that case, results will be returned grouped by
