@@ -286,7 +286,7 @@ export class SymbolsDropdownContainer extends React.Component<Props, State> {
     private extractSymbolQueries(text: string): SymbolQuery[] {
         const out: SymbolQuery[] = []
 
-        const symbolAutoCompleteRegexp = /!(\w[^\s]*)/g
+        const symbolAutoCompleteRegexp = /@!(\w[^\s]*)/g
 
         let match = symbolAutoCompleteRegexp.exec(text)
 
