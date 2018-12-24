@@ -194,7 +194,7 @@
     "mdi-react": "^5.1.0",
     "mermaid": "^8.0.0",
     "minimatch": "^3.0.4",
-    "monaco-editor": "^0.14.0",
+    "monaco-editor": "^0.15.6",
     "open-color": "^1.6.3",
     "pretty-bytes": "^5.0.0",
     "react": "^16.7.0",
