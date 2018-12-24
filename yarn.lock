@@ -2442,13 +2442,6 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-visibility-sensor@5.0.0":
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/@types/react-visibility-sensor/-/react-visibility-sensor-5.0.0.tgz#23e3bf4a7e6bc15ad83ad1101bcd6856f7f06607"
-  integrity sha512-ABSiWdpApg0hxyGNkJvb5rBEFBP7xoy+ID9dGoA6TPBJlYpvfoRrtk82YO6IIBgHBJ/QNml+wJjSVsZ1otbATQ==
-  dependencies:
-    "@types/react" "*"
-
 "@types/react@*":
   version "16.7.13"
   resolved "https://registry.npmjs.org/@types/react/-/react-16.7.13.tgz#d2369ae78377356d42fb54275d30218e84f2247a"
