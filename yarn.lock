@@ -5409,13 +5409,13 @@ code-point-at@^1.0.0:
   resolved "https://registry.npmjs.org/code-point-at/-/code-point-at-1.1.0.tgz#0d070b4d043a5bea33a2f1a40e2edb3d9a4ccf77"
   integrity sha1-DQcLTQQ6W+ozovGkDi7bPZpMz3c=
 
-codemirror-graphql@^0.6.11:
-  version "0.6.12"
-  resolved "https://registry.npmjs.org/codemirror-graphql/-/codemirror-graphql-0.6.12.tgz#91a273fe5188857524a30221d06e645b4ca41f00"
-  integrity sha512-7YP956JubbWkmk9QqKy62CZgdGbEulHNJkz2/aUDTpsE1KrQtRrT9WzStJaxAOEX2k4wUOpojUX2ItPxa69kFA==
+codemirror-graphql@^0.7.1:
+  version "0.7.1"
+  resolved "https://registry.npmjs.org/codemirror-graphql/-/codemirror-graphql-0.7.1.tgz#64b995643d511b9aa8f85eeeb2feac7aeb4b94d4"
+  integrity sha512-HtHXMJAn6iGJYpijkzi3IlqWIdGrB6V0RqJ607yffJTCKk/OgaNtdLOb8hZJyEtHfkw7PZDaKybMAVCi6ScWSQ==
   dependencies:
-    graphql-language-service-interface "^1.0.16"
-    graphql-language-service-parser "^0.1.14"
+    graphql-language-service-interface "^1.3.2"
+    graphql-language-service-parser "^1.2.2"
 
 codemirror@^5.26.0:
   version "5.41.0"
@@ -8300,13 +8300,13 @@ graceful-fs@^4.0.0, graceful-fs@^4.1.0, graceful-fs@^4.1.11, graceful-fs@^4.1.2,
   resolved "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.1.15.tgz#ffb703e1066e8a0eeaa4c8b80ba9253eeefbfb00"
   integrity sha512-6uHUhOPEBgQ24HM+r6b/QwWfZq+yiFcipKFrOFiBEnWdy5sdzYoi+pJeQaPI5qOLRFqWmAXUPQNsielzdLoecA==
 
-graphiql@^0.11.11:
-  version "0.11.11"
-  resolved "https://registry.npmjs.org/graphiql/-/graphiql-0.11.11.tgz#eeaf9a38927dbe8c6ecbf81e700735e16ec50e71"
-  integrity sha512-+r8qY2JRRs+uaZcrZOxpNhdlCZoS8yS5KQ6X53Twc8WecZ6VtAn+MVHroLOd4u9HVPxTXZ9RUd9+556EpTc0xA==
+graphiql@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.npmjs.org/graphiql/-/graphiql-0.12.0.tgz#a035c93a6e3c18850c2f450c039747b2ea3eb953"
+  integrity sha512-OM5dpcONLK1B2prez2WVTfohQlQKe4Fwv1YwNQYQhN+fFGEW87D5v5fN2M8ZebzxbZHqP12KkHicO3sv8k30TQ==
   dependencies:
     codemirror "^5.26.0"
-    codemirror-graphql "^0.6.11"
+    codemirror-graphql "^0.7.1"
     markdown-it "^8.4.0"
 
 graphlibrary@^2.2.0:
@@ -8334,7 +8334,7 @@ graphql-import@^0.4.4:
   dependencies:
     lodash "^4.17.4"
 
-graphql-language-service-interface@^1.0.16:
+graphql-language-service-interface@^1.3.2:
   version "1.3.2"
   resolved "https://registry.npmjs.org/graphql-language-service-interface/-/graphql-language-service-interface-1.3.2.tgz#4bd5d49e23766c3d2ab65d110f26f10e321cc000"
   integrity sha512-sOxFV5sBSnYtKIFHtlmAHHVdhok7CRbvCPLcuHvL4Q1RSgKRsPpeHUDKU+yCbmlonOKn/RWEKaYWrUY0Sgv70A==
@@ -8344,13 +8344,6 @@ graphql-language-service-interface@^1.0.16:
     graphql-language-service-types "^1.2.2"
     graphql-language-service-utils "^1.2.2"
 
-graphql-language-service-parser@^0.1.14:
-  version "0.1.14"
-  resolved "https://registry.npmjs.org/graphql-language-service-parser/-/graphql-language-service-parser-0.1.14.tgz#dd25abda5dcff4f2268c9a19e026004271491661"
-  integrity sha512-72M4OksONeqT5slfdfODmlPBFlUQQkcnRhjgmPt9H2n8/DUcf4XzDkGXudBWpzNfjVU35+IADYW6x13wKw/fOg==
-  dependencies:
-    graphql-language-service-types "^0.1.14"
-
 graphql-language-service-parser@^1.2.2:
   version "1.2.2"
   resolved "https://registry.npmjs.org/graphql-language-service-parser/-/graphql-language-service-parser-1.2.2.tgz#010c8a5fdfae4726c8e15714137eee822753d3ea"
@@ -8358,11 +8351,6 @@ graphql-language-service-parser@^1.2.2:
   dependencies:
     graphql-config "2.0.1"
     graphql-language-service-types "^1.2.2"
-
-graphql-language-service-types@^0.1.14:
-  version "0.1.14"
-  resolved "https://registry.npmjs.org/graphql-language-service-types/-/graphql-language-service-types-0.1.14.tgz#e6112785fc23ea8222f59a7f00e61b359f263c88"
-  integrity sha512-77KP83gvK0gWswvGY/+jx/GpsOfKuwWQ1AYnyPT2GDGG3//1QxQTObaZMAEevNTxJtO8T26YXxoUlqkvET7iEg==
 
 graphql-language-service-types@^1.2.2:
   version "1.2.2"
