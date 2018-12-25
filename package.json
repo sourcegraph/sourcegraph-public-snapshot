@@ -79,6 +79,7 @@
     "@types/react-router-dom": "4.3.1",
     "@types/react-stripe-elements": "1.1.9",
     "@types/react-test-renderer": "16.0.3",
+    "@types/react-visibility-sensor": "^5.0.0",
     "@types/reactstrap": "6.4.3",
     "@types/sanitize-html": "1.18.2",
     "@types/semver": "5.5.0",
