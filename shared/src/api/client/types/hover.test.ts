@@ -13,6 +13,12 @@ describe('HoverMerged', () => {
             expect(HoverMerged.from([{ contents: { language: 'l', value: 'x' } }])).toEqual({
                 contents: [{ kind: MarkupKind.PlainText, value: 'x' }],
             }))
+        test('backcompat {language, value}', () =>
+            expect(
+                HoverMerged.from([{ contents: 'z' as any, __backcompatContents: [{ language: 'l', value: 'x' }] }])
+            ).toEqual({
+                contents: [{ kind: MarkupKind.Markdown, value: '```l\nx\n```\n' }],
+            }))
         test('1 MarkupContent', () =>
             expect(HoverMerged.from([{ contents: { kind: MarkupKind.Markdown, value: 'x' } }])).toEqual({
                 contents: [{ kind: MarkupKind.Markdown, value: 'x' }],

@@ -6,11 +6,7 @@ export interface HoverMerged {
     /**
      * @todo Make this type *just* {@link MarkupContent} when all consumers are updated.
      */
-    contents:
-        | MarkupContent
-        | string
-        | { language: string; value: string }
-        | (MarkupContent | string | { language: string; value: string })[]
+    contents: MarkupContent[]
 
     range?: Range
 }
@@ -19,7 +15,7 @@ export namespace HoverMerged {
     /** Create a merged hover from the given individual hovers. */
     export function from(values: (Hover | PlainHover | null | undefined)[]): HoverMerged | null {
         const contents: HoverMerged['contents'] = []
-        let range: HoverMerged['range']
+        let range: Range | undefined
         for (const result of values) {
             if (result) {
                 if (result.contents && result.contents.value) {
@@ -35,15 +31,14 @@ export namespace HoverMerged {
                         : [__backcompatContents]) {
                         if (typeof content === 'string') {
                             if (content) {
-                                contents.push(content)
+                                contents.push({ value: content, kind: 'plaintext' as MarkupKind })
                             }
                         } else if ('language' in content) {
                             if (content.language && content.value) {
-                                contents.push(content)
-                            }
-                        } else if ('value' in content) {
-                            if (content.value) {
-                                contents.push(content.value)
+                                contents.push({
+                                    value: toMarkdownCodeBlock(content.language, content.value),
+                                    kind: 'markdown' as MarkupKind,
+                                })
                             }
                         }
                     }
@@ -55,4 +50,8 @@ export namespace HoverMerged {
         }
         return contents.length === 0 ? null : range ? { contents, range } : { contents }
     }
+}
+
+function toMarkdownCodeBlock(language: string, value: string): string {
+    return '```' + language + '\n' + value + '\n```\n'
 }
