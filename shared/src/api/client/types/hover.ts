@@ -14,10 +14,27 @@ export interface HoverMerged {
 export namespace HoverMerged {
     /** Create a merged hover from the given individual hovers. */
     export function from(values: (Hover | PlainHover | null | undefined)[]): HoverMerged | null {
+        const maxPriority = values.reduce((max: undefined | number, v: Hover | PlainHover | null | undefined) => {
+            const priority = v && 'priority' in v ? v.priority : undefined
+            if (typeof priority === 'number' && (max === undefined || priority > max)) {
+                return priority
+            }
+            return max
+        }, undefined)
+
         const contents: HoverMerged['contents'] = []
         let range: Range | undefined
         for (const result of values) {
             if (result) {
+                if (
+                    typeof result.priority === 'number' &&
+                    typeof maxPriority === 'number' &&
+                    result.priority < 0 &&
+                    result.priority < maxPriority
+                ) {
+                    continue
+                }
+
                 if (result.contents && result.contents.value) {
                     contents.push({
                         value: result.contents.value,

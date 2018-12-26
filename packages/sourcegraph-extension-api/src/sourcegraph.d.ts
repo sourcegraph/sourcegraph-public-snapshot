@@ -855,6 +855,18 @@ declare module 'sourcegraph' {
          * position or the current position itself.
          */
         range?: Range
+
+        /**
+         * The priority for this hover, which determines whether it is shown.
+         *
+         * If undefined, the hover is always shown. If this hover's priority is a negative number
+         * and there is another hover for the same position with a greater priority, this hover is
+         * not shown.
+         *
+         * For example, "fuzzy" or "imprecise" hovers can have negative priorities to ensure they
+         * will not be displayed if there is a more precise hover available.
+         */
+        priority?: number
     }
 
     export interface HoverProvider {

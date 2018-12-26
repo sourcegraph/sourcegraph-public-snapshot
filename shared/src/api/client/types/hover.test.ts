@@ -33,5 +33,38 @@ describe('HoverMerged', () => {
                 contents: [{ kind: MarkupKind.Markdown, value: 'x' }, { kind: MarkupKind.Markdown, value: 'y' }],
                 range: FIXTURE_RANGE,
             }))
+
+        describe('priority', () => {
+            test('nonnegative priority shadows negative priority hover', () =>
+                expect(
+                    HoverMerged.from([
+                        { contents: { kind: MarkupKind.Markdown, value: 'x' }, range: FIXTURE_RANGE, priority: -1 },
+                        { contents: { kind: MarkupKind.Markdown, value: 'y' }, priority: undefined },
+                        { contents: { kind: MarkupKind.Markdown, value: 'z' }, priority: 1 },
+                    ])
+                ).toEqual({
+                    contents: [{ kind: MarkupKind.Markdown, value: 'y' }, { kind: MarkupKind.Markdown, value: 'z' }],
+                }))
+            test('greater negative priority shadows lesser negative priority', () =>
+                expect(
+                    HoverMerged.from([
+                        { contents: { kind: MarkupKind.Markdown, value: 'x' }, range: FIXTURE_RANGE, priority: -2 },
+                        { contents: { kind: MarkupKind.Markdown, value: 'y' }, priority: undefined },
+                        { contents: { kind: MarkupKind.Markdown, value: 'z' }, priority: -1 },
+                    ])
+                ).toEqual({
+                    contents: [{ kind: MarkupKind.Markdown, value: 'y' }, { kind: MarkupKind.Markdown, value: 'z' }],
+                }))
+            test('undefined priority does not shadow negative priority', () =>
+                expect(
+                    HoverMerged.from([
+                        { contents: { kind: MarkupKind.Markdown, value: 'x' }, range: FIXTURE_RANGE, priority: -1 },
+                        { contents: { kind: MarkupKind.Markdown, value: 'y' }, priority: undefined },
+                    ])
+                ).toEqual({
+                    contents: [{ kind: MarkupKind.Markdown, value: 'x' }, { kind: MarkupKind.Markdown, value: 'y' }],
+                    range: FIXTURE_RANGE,
+                }))
+        })
     })
 })
