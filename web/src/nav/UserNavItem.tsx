@@ -3,6 +3,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 
 interface Props {
@@ -112,6 +113,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
     private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     private onThemeChange = () => {
+        eventLogger.log(this.props.isLightTheme ? 'DarkThemeClicked' : 'LightThemeClicked')
         this.setState(prevState => ({ isOpen: !prevState.isOpen }), this.props.onThemeChange)
     }
 }

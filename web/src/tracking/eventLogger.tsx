@@ -2,6 +2,7 @@ import { matchPath } from 'react-router'
 import uuid from 'uuid'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { getPathExtension } from '../../../shared/src/languages'
+import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 import { authenticatedUser } from '../auth'
 import { repoRevRoute } from '../routes'
 import { parseBrowserRepoURL } from '../util/url'
@@ -11,7 +12,7 @@ import { telligent } from './services/telligentWrapper'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
-class EventLogger {
+class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
     private user?: GQL.IUser | null
 

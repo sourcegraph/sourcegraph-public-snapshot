@@ -36,10 +36,7 @@ export class Notifications extends React.PureComponent<Props, State> {
                 .pipe(map(n => ({ ...n, id: uniqueId('n') })))
                 .subscribe(notification => {
                     this.setState(prevState => ({
-                        notifications: [
-                            notification,
-                            ...prevState.notifications.slice(0, Notifications.MAX_RETAIN - 1),
-                        ],
+                        notifications: [...prevState.notifications.slice(-Notifications.MAX_RETAIN), notification],
                     }))
                     if (notification.progress) {
                         // Remove once progress is finished

@@ -6,7 +6,7 @@ import { phabricator, watchPhabricator } from '../client/browser/gulpfile'
 import { graphQLTypes, schema, watchGraphQLTypes, watchSchema } from '../shared/gulpfile'
 import webpackConfig from './webpack.config'
 
-const WEBPACK_STATS_OPTIONS = {
+const WEBPACK_STATS_OPTIONS: Stats.ToStringOptions = {
     all: false,
     timings: true,
     errors: true,
@@ -15,7 +15,7 @@ const WEBPACK_STATS_OPTIONS = {
         // This is intended, so ignore warning
         /node_modules\/monaco-editor\/.*\/editorSimpleWorker.js.*\n.*dependency is an expression/.test(warning),
     colors: true,
-} as Stats.ToStringOptions
+}
 const logWebpackStats = (stats: Stats) => log(stats.toString(WEBPACK_STATS_OPTIONS))
 
 export async function webpack(): Promise<void> {

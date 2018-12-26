@@ -6,4 +6,4 @@ package schema
 //go:generate env GO111MODULE=on go run stringdata.go -i critical.schema.json -name CriticalSchemaJSON -pkg schema -o critical_stringdata.go
 //go:generate env GO111MODULE=on go run stringdata.go -i site.schema.json -name SiteSchemaJSON -pkg schema -o site_stringdata.go
 //go:generate env GO111MODULE=on go run stringdata.go -i settings.schema.json -name SettingsSchemaJSON -pkg schema -o settings_stringdata.go
-//go:generate gofmt -w critical_stringdata.go site_stringdata.go settings_stringdata.go
+//go:generate gofmt -s -w critical_stringdata.go site_stringdata.go settings_stringdata.go

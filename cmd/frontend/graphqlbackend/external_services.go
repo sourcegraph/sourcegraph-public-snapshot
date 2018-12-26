@@ -13,12 +13,12 @@ import (
 )
 
 var externalServiceKinds = map[string]struct{}{
-	"AWSCODECOMMIT":   struct{}{},
-	"BITBUCKETSERVER": struct{}{},
-	"GITHUB":          struct{}{},
-	"GITLAB":          struct{}{},
-	"GITOLITE":        struct{}{},
-	"PHABRICATOR":     struct{}{},
+	"AWSCODECOMMIT":   {},
+	"BITBUCKETSERVER": {},
+	"GITHUB":          {},
+	"GITLAB":          {},
+	"GITOLITE":        {},
+	"PHABRICATOR":     {},
 }
 
 func validateKind(kind string) error {

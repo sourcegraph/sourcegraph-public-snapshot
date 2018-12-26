@@ -41,8 +41,8 @@ func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 		{ID: "u99/private", IsPrivate: true},
 		{ID: "u99/public"},
 	}, map[string][]string{
-		"t0": []string{"u0/private", "u0/public"},
-		"t1": []string{"u1/private", "u1/public"},
+		"t0": {"u0/private", "u0/public"},
+		"t1": {"u1/private", "u1/public"},
 	})
 	github.GetRepositoryByNodeIDMock = githubMock.GetRepositoryByNodeID
 	defer func() { github.GetRepositoryByNodeIDMock = nil }()
@@ -83,12 +83,12 @@ func TestProvider_RepoPerms(t *testing.T) {
 					description: "t0_repos",
 					userAccount: ua("u0", "t0"),
 					repos: map[authz.Repo]struct{}{
-						rp("r0", "u0/private", "https://github.com/"):  struct{}{},
-						rp("r1", "u0/public", "https://github.com/"):   struct{}{},
-						rp("r2", "u1/private", "https://github.com/"):  struct{}{},
-						rp("r3", "u1/public", "https://github.com/"):   struct{}{},
-						rp("r4", "u99/private", "https://github.com/"): struct{}{},
-						rp("r5", "u99/public", "https://github.com/"):  struct{}{},
+						rp("r0", "u0/private", "https://github.com/"):  {},
+						rp("r1", "u0/public", "https://github.com/"):   {},
+						rp("r2", "u1/private", "https://github.com/"):  {},
+						rp("r3", "u1/public", "https://github.com/"):   {},
+						rp("r4", "u99/private", "https://github.com/"): {},
+						rp("r5", "u99/public", "https://github.com/"):  {},
 					},
 					wantPerms: map[api.RepoName]map[authz.Perm]bool{
 						"r0": readPerms,
@@ -103,12 +103,12 @@ func TestProvider_RepoPerms(t *testing.T) {
 					description: "t1_repos",
 					userAccount: ua("u1", "t1"),
 					repos: map[authz.Repo]struct{}{
-						rp("r0", "u0/private", "https://github.com/"):  struct{}{},
-						rp("r1", "u0/public", "https://github.com/"):   struct{}{},
-						rp("r2", "u1/private", "https://github.com/"):  struct{}{},
-						rp("r3", "u1/public", "https://github.com/"):   struct{}{},
-						rp("r4", "u99/private", "https://github.com/"): struct{}{},
-						rp("r5", "u99/public", "https://github.com/"):  struct{}{},
+						rp("r0", "u0/private", "https://github.com/"):  {},
+						rp("r1", "u0/public", "https://github.com/"):   {},
+						rp("r2", "u1/private", "https://github.com/"):  {},
+						rp("r3", "u1/public", "https://github.com/"):   {},
+						rp("r4", "u99/private", "https://github.com/"): {},
+						rp("r5", "u99/public", "https://github.com/"):  {},
 					},
 					wantPerms: map[api.RepoName]map[authz.Perm]bool{
 						"r0": noPerms,
@@ -123,12 +123,12 @@ func TestProvider_RepoPerms(t *testing.T) {
 					description: "repos_with_unknown_token_(only_public_repos)",
 					userAccount: ua("unknown-user", "unknown-token"),
 					repos: map[authz.Repo]struct{}{
-						rp("r0", "u0/private", "https://github.com/"):  struct{}{},
-						rp("r1", "u0/public", "https://github.com/"):   struct{}{},
-						rp("r2", "u1/private", "https://github.com/"):  struct{}{},
-						rp("r3", "u1/public", "https://github.com/"):   struct{}{},
-						rp("r4", "u99/private", "https://github.com/"): struct{}{},
-						rp("r5", "u99/public", "https://github.com/"):  struct{}{},
+						rp("r0", "u0/private", "https://github.com/"):  {},
+						rp("r1", "u0/public", "https://github.com/"):   {},
+						rp("r2", "u1/private", "https://github.com/"):  {},
+						rp("r3", "u1/public", "https://github.com/"):   {},
+						rp("r4", "u99/private", "https://github.com/"): {},
+						rp("r5", "u99/public", "https://github.com/"):  {},
 					},
 					wantPerms: map[api.RepoName]map[authz.Perm]bool{
 						"r0": noPerms,
@@ -143,12 +143,12 @@ func TestProvider_RepoPerms(t *testing.T) {
 					description: "public repos",
 					userAccount: nil,
 					repos: map[authz.Repo]struct{}{
-						rp("r0", "u0/private", "https://github.com/"):  struct{}{},
-						rp("r1", "u0/public", "https://github.com/"):   struct{}{},
-						rp("r2", "u1/private", "https://github.com/"):  struct{}{},
-						rp("r3", "u1/public", "https://github.com/"):   struct{}{},
-						rp("r4", "u99/private", "https://github.com/"): struct{}{},
-						rp("r5", "u99/public", "https://github.com/"):  struct{}{},
+						rp("r0", "u0/private", "https://github.com/"):  {},
+						rp("r1", "u0/public", "https://github.com/"):   {},
+						rp("r2", "u1/private", "https://github.com/"):  {},
+						rp("r3", "u1/public", "https://github.com/"):   {},
+						rp("r4", "u99/private", "https://github.com/"): {},
+						rp("r5", "u99/public", "https://github.com/"):  {},
 					},
 					wantPerms: map[api.RepoName]map[authz.Perm]bool{
 						"r1": readPerms,
@@ -160,7 +160,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 					description: "t0 select",
 					userAccount: ua("u0", "t0"),
 					repos: map[authz.Repo]struct{}{
-						rp("r2", "u1/private", "https://github.com/"): struct{}{},
+						rp("r2", "u1/private", "https://github.com/"): {},
 					},
 					wantPerms: map[api.RepoName]map[authz.Perm]bool{
 						"r2": noPerms,
@@ -170,8 +170,8 @@ func TestProvider_RepoPerms(t *testing.T) {
 					description: "t0 missing",
 					userAccount: ua("u0", "t0"),
 					repos: map[authz.Repo]struct{}{
-						rp("r00", "404", "https://github.com/"):             struct{}{},
-						rp("r11", "u0/public", "https://other.github.com/"): struct{}{},
+						rp("r00", "404", "https://github.com/"):             {},
+						rp("r11", "u0/public", "https://other.github.com/"): {},
 					},
 					wantPerms: map[api.RepoName]map[authz.Perm]bool{
 						"r00": noPerms,

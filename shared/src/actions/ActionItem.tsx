@@ -9,6 +9,7 @@ import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
+import { TelemetryContext } from '../telemetry/telemetryContext'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
 export interface ActionItemProps {
@@ -27,8 +28,8 @@ export interface ActionItemProps {
     variant?: 'actionItem'
     className?: string
 
-    /** Called when the item's action is run (possibly deferred). */
-    onRun?: (actionID: string) => void
+    /** Called after executing the action (for both success and failure). */
+    onDidExecute?: (actionID: string) => void
 
     /**
      * Whether to set the disabled attribute on the element when execution is started and not yet finished.
@@ -76,6 +77,9 @@ interface State {
 export class ActionItem extends React.PureComponent<Props, State> {
     public state: State = { actionOrError: null }
 
+    public static contextType = TelemetryContext
+    public context!: React.ContextType<typeof TelemetryContext>
+
     private commandExecutions = new Subject<ExecuteCommandParams>()
     private subscriptions = new Subscription()
 
@@ -89,8 +93,8 @@ export class ActionItem extends React.PureComponent<Props, State> {
                             catchError(error => [asError(error)]),
                             map(c => ({ actionOrError: c })),
                             tap(() => {
-                                if (this.props.onRun) {
-                                    this.props.onRun(this.props.action.id)
+                                if (this.props.onDidExecute) {
+                                    this.props.onDidExecute(this.props.action.id)
                                 }
                             }),
                             startWith<Pick<State, 'actionOrError'>>({ actionOrError: LOADING })
@@ -192,18 +196,22 @@ export class ActionItem extends React.PureComponent<Props, State> {
 
     public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
         const action = (isAltEvent(e) && this.props.altAction) || this.props.action
+
+        // Record action ID (but not args, which might leak sensitive data).
+        this.context.log(action.id)
+
         if (urlForClientCommandOpen(action, this.props.location)) {
             if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
                 // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
                 // commands; in that case, this only ever opens the (non-alt) action.
-                if (this.props.onRun) {
+                if (this.props.onDidExecute) {
                     // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
                     // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
                     // the URL actually changes underneath us before the URL is opened. There is no harm to
                     // deferring this call; onRun's documentation allows this.
-                    const onRun = this.props.onRun
-                    setTimeout(() => onRun(action.id))
+                    const onDidExecute = this.props.onDidExecute
+                    setTimeout(() => onDidExecute(action.id))
                 }
                 return
             }

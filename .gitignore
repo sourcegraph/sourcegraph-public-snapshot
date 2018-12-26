@@ -110,8 +110,9 @@ sourcegraph-webapp-*.tgz
 /packages/sourcegraph-extension-api/dist
 
 # Management console
-!cmd/management-console/web/package-lock.json
+cmd/management-console/web/package-lock.json
 cmd/management-console/assets/*.go
+!cmd/management-console/web/yarn.lock
 !cmd/management-console/assets/gen.go
 !cmd/management-console/assets/replace_hack.go
 !cmd/management-console/assets/assets.go

@@ -16,6 +16,8 @@ interface State {
     progress?: Required<Progress>
 }
 
+const renderMarkdown = (md: string): string => marked(md, { gfm: true, breaks: true, sanitize: false })
+
 /**
  * A notification message displayed in a {@link module:./Notifications.Notifications} component.
  */
@@ -68,10 +70,6 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         this.subscription.unsubscribe()
     }
     public render(): JSX.Element | null {
-        const message = [this.props.notification.message, this.state.progress && this.state.progress.message]
-            .filter(Boolean)
-            .join('  \n')
-        const markdownHTML = marked(message, { gfm: true, breaks: true, sanitize: true })
         const bootstrapClass = getBootstrapClass(this.props.notification.type)
         return (
             <div
@@ -79,10 +77,20 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     ''}`}
             >
                 <div className="w-100 d-flex align-items-start">
-                    <div
-                        className="sourcegraph-notification-item__content py-2 pl-2 pr-0 flex-grow-1"
-                        dangerouslySetInnerHTML={{ __html: markdownHTML }}
-                    />
+                    <div className="p-2 flex-grow-1 mw-100">
+                        <h4
+                            className="sourcegraph-notification-item__title"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.notification.message || '') }}
+                        />
+                        {this.state.progress && (
+                            <div
+                                className="sourcegraph-notification-item__content"
+                                dangerouslySetInnerHTML={{
+                                    __html: renderMarkdown(this.state.progress.message),
+                                }}
+                            />
+                        )}
+                    </div>
                     {(!this.props.notification.progress || !this.state.progress) && (
                         <button
                             type="button"

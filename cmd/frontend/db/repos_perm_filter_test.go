@@ -87,24 +87,24 @@ func Test_authzFilter(t *testing.T) {
 					serviceID:   "https://gitlab.mine/",
 					serviceType: "gitlab",
 					repos: map[api.RepoName]struct{}{
-						"gitlab.mine/u1/r0":            struct{}{},
-						"gitlab.mine/u2/r0":            struct{}{},
-						"gitlab.mine/sharedPrivate/r0": struct{}{},
-						"gitlab.mine/org/r0":           struct{}{},
+						"gitlab.mine/u1/r0":            {},
+						"gitlab.mine/u2/r0":            {},
+						"gitlab.mine/sharedPrivate/r0": {},
+						"gitlab.mine/org/r0":           {},
 					},
 					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
-						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab.mine/u1/r0":            map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/sharedPrivate/r0": map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/org/r0":           map[authz.Perm]bool{authz.Read: true},
+						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): {
+							"gitlab.mine/u1/r0":            {authz.Read: true},
+							"gitlab.mine/sharedPrivate/r0": {authz.Read: true},
+							"gitlab.mine/org/r0":           {authz.Read: true},
 						},
-						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab.mine/u2/r0":            map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/sharedPrivate/r0": map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/org/r0":           map[authz.Perm]bool{authz.Read: true},
+						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): {
+							"gitlab.mine/u2/r0":            {authz.Read: true},
+							"gitlab.mine/sharedPrivate/r0": {authz.Read: true},
+							"gitlab.mine/org/r0":           {authz.Read: true},
 						},
-						extsvc.ExternalAccount{}: map[api.RepoName]map[authz.Perm]bool{
-							"gitlab.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						{}: {
+							"gitlab.mine/org/r0": {authz.Read: true},
 						},
 					},
 				},
@@ -260,19 +260,19 @@ func Test_authzFilter(t *testing.T) {
 					serviceID:   "https://gitlab0.mine/",
 					serviceType: "gitlab",
 					repos: map[api.RepoName]struct{}{
-						"gitlab0.mine/u1/r0":  struct{}{},
-						"gitlab0.mine/u2/r0":  struct{}{},
-						"gitlab0.mine/org/r0": struct{}{},
+						"gitlab0.mine/u1/r0":  {},
+						"gitlab0.mine/u2/r0":  {},
+						"gitlab0.mine/org/r0": {},
 					},
 					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
-						*acct(1, "gitlab", "https://gitlab0.mine/", "u1"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab0.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab0.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(1, "gitlab", "https://gitlab0.mine/", "u1"): {
+							"gitlab0.mine/u1/r0":  {authz.Read: true},
+							"gitlab0.mine/org/r0": {authz.Read: true},
 						},
-						*acct(2, "gitlab", "https://gitlab0.mine/", "u2"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab0.mine/u1/r0":  map[authz.Perm]bool{},
-							"gitlab0.mine/u2/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab0.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(2, "gitlab", "https://gitlab0.mine/", "u2"): {
+							"gitlab0.mine/u1/r0":  {},
+							"gitlab0.mine/u2/r0":  {authz.Read: true},
+							"gitlab0.mine/org/r0": {authz.Read: true},
 						},
 					},
 				},
@@ -280,18 +280,18 @@ func Test_authzFilter(t *testing.T) {
 					serviceID:   "https://gitlab1.mine/",
 					serviceType: "gitlab",
 					repos: map[api.RepoName]struct{}{
-						"gitlab1.mine/u1/r0":  struct{}{},
-						"gitlab1.mine/u2/r0":  struct{}{},
-						"gitlab1.mine/org/r0": struct{}{},
+						"gitlab1.mine/u1/r0":  {},
+						"gitlab1.mine/u2/r0":  {},
+						"gitlab1.mine/org/r0": {},
 					},
 					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
-						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab1.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab1.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): {
+							"gitlab1.mine/u1/r0":  {authz.Read: true},
+							"gitlab1.mine/org/r0": {authz.Read: true},
 						},
-						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab1.mine/u2/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab1.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): {
+							"gitlab1.mine/u2/r0":  {authz.Read: true},
+							"gitlab1.mine/org/r0": {authz.Read: true},
 						},
 					},
 				},
@@ -358,19 +358,19 @@ func Test_authzFilter(t *testing.T) {
 					serviceID:   "https://gitlab0.mine/",
 					serviceType: "gitlab",
 					repos: map[api.RepoName]struct{}{
-						"gitlab0.mine/u1/r0":  struct{}{},
-						"gitlab0.mine/u2/r0":  struct{}{},
-						"gitlab0.mine/org/r0": struct{}{},
+						"gitlab0.mine/u1/r0":  {},
+						"gitlab0.mine/u2/r0":  {},
+						"gitlab0.mine/org/r0": {},
 					},
 					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
-						*acct(1, "gitlab", "https://gitlab0.mine/", "u1"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab0.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab0.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(1, "gitlab", "https://gitlab0.mine/", "u1"): {
+							"gitlab0.mine/u1/r0":  {authz.Read: true},
+							"gitlab0.mine/org/r0": {authz.Read: true},
 						},
-						*acct(2, "gitlab", "https://gitlab0.mine/", "u2"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab0.mine/u1/r0":  map[authz.Perm]bool{},
-							"gitlab0.mine/u2/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab0.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(2, "gitlab", "https://gitlab0.mine/", "u2"): {
+							"gitlab0.mine/u1/r0":  {},
+							"gitlab0.mine/u2/r0":  {authz.Read: true},
+							"gitlab0.mine/org/r0": {authz.Read: true},
 						},
 					},
 				},
@@ -378,18 +378,18 @@ func Test_authzFilter(t *testing.T) {
 					serviceID:   "https://gitlab1.mine/",
 					serviceType: "gitlab",
 					repos: map[api.RepoName]struct{}{
-						"gitlab1.mine/u1/r0":  struct{}{},
-						"gitlab1.mine/u2/r0":  struct{}{},
-						"gitlab1.mine/org/r0": struct{}{},
+						"gitlab1.mine/u1/r0":  {},
+						"gitlab1.mine/u2/r0":  {},
+						"gitlab1.mine/org/r0": {},
 					},
 					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
-						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab1.mine/u1/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab1.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): {
+							"gitlab1.mine/u1/r0":  {authz.Read: true},
+							"gitlab1.mine/org/r0": {authz.Read: true},
 						},
-						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab1.mine/u2/r0":  map[authz.Perm]bool{authz.Read: true},
-							"gitlab1.mine/org/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): {
+							"gitlab1.mine/u2/r0":  {authz.Read: true},
+							"gitlab1.mine/org/r0": {authz.Read: true},
 						},
 					},
 				},
@@ -429,27 +429,27 @@ func Test_authzFilter(t *testing.T) {
 				&MockAuthzProvider{
 					serviceID:    "https://gitlab.mine/",
 					serviceType:  "gitlab",
-					okServiceIDs: map[string]struct{}{"https://okta.mine/": struct{}{}},
+					okServiceIDs: map[string]struct{}{"https://okta.mine/": {}},
 					repos: map[api.RepoName]struct{}{
-						"gitlab.mine/u1/r0":     struct{}{},
-						"gitlab.mine/u2/r0":     struct{}{},
-						"gitlab.mine/org/r0":    struct{}{},
-						"gitlab.mine/public/r0": struct{}{},
+						"gitlab.mine/u1/r0":     {},
+						"gitlab.mine/u2/r0":     {},
+						"gitlab.mine/org/r0":    {},
+						"gitlab.mine/public/r0": {},
 					},
 					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
-						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab.mine/u1/r0":     map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/org/r0":    map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/public/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): {
+							"gitlab.mine/u1/r0":     {authz.Read: true},
+							"gitlab.mine/org/r0":    {authz.Read: true},
+							"gitlab.mine/public/r0": {authz.Read: true},
 						},
-						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): map[api.RepoName]map[authz.Perm]bool{
-							"gitlab.mine/u2/r0":     map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/org/r0":    map[authz.Perm]bool{authz.Read: true},
-							"gitlab.mine/public/r0": map[authz.Perm]bool{authz.Read: true},
+						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): {
+							"gitlab.mine/u2/r0":     {authz.Read: true},
+							"gitlab.mine/org/r0":    {authz.Read: true},
+							"gitlab.mine/public/r0": {authz.Read: true},
 						},
 						// entry for nil account / anonymous users
-						extsvc.ExternalAccount{}: map[api.RepoName]map[authz.Perm]bool{
-							"gitlab.mine/public/r0": map[authz.Perm]bool{authz.Read: true},
+						{}: {
+							"gitlab.mine/public/r0": {authz.Read: true},
 						},
 					},
 				},
@@ -565,10 +565,10 @@ func Test_authzFilter_createsNewUsers(t *testing.T) {
 		&MockAuthzProvider{
 			serviceID:    "https://gitlab.mine/",
 			serviceType:  "gitlab",
-			okServiceIDs: map[string]struct{}{"https://okta.mine/": struct{}{}},
+			okServiceIDs: map[string]struct{}{"https://okta.mine/": {}},
 			repos:        map[api.RepoName]struct{}{},
 			perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
-				*acct(23, "gitlab", "https://gitlab.mine/", "101"): map[api.RepoName]map[authz.Perm]bool{},
+				*acct(23, "gitlab", "https://gitlab.mine/", "101"): {},
 			},
 		},
 	})
@@ -579,12 +579,12 @@ func Test_authzFilter_createsNewUsers(t *testing.T) {
 		authd23Ctx           = actor.WithActor(unAuthdCtx, &actor.Actor{UID: 23})
 		authd99Ctx           = actor.WithActor(unAuthdCtx, &actor.Actor{UID: 99})
 		account23CreatedOnce = map[int32]map[extsvc.ExternalAccountSpec]int{
-			23: map[extsvc.ExternalAccountSpec]int{
+			23: {
 				expNewAcct: 1,
 			},
 		}
 		account23CreatedTwice = map[int32]map[extsvc.ExternalAccountSpec]int{
-			23: map[extsvc.ExternalAccountSpec]int{
+			23: {
 				expNewAcct: 2,
 			},
 		}

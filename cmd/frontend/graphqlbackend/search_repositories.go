@@ -21,16 +21,16 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 	}
 
 	fieldWhitelist := map[string]struct{}{
-		query.FieldRepo:      struct{}{},
-		query.FieldRepoGroup: struct{}{},
-		query.FieldType:      struct{}{},
-		query.FieldDefault:   struct{}{},
-		query.FieldIndex:     struct{}{},
-		query.FieldCount:     struct{}{},
-		query.FieldMax:       struct{}{},
-		query.FieldTimeout:   struct{}{},
-		query.FieldFork:      struct{}{},
-		query.FieldArchived:  struct{}{},
+		query.FieldRepo:      {},
+		query.FieldRepoGroup: {},
+		query.FieldType:      {},
+		query.FieldDefault:   {},
+		query.FieldIndex:     {},
+		query.FieldCount:     {},
+		query.FieldMax:       {},
+		query.FieldTimeout:   {},
+		query.FieldFork:      {},
+		query.FieldArchived:  {},
 	}
 	// Don't return repo results if the search contains fields that aren't on the whitelist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.

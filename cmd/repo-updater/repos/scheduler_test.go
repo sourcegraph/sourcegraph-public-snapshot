@@ -1304,7 +1304,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: false},
 				},
 			},
@@ -1321,7 +1321,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
@@ -1339,7 +1339,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 		{
 			name: "update disabled repo",
 			initialSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: false},
 				},
 			},
@@ -1352,7 +1352,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 				},
 			},
@@ -1370,7 +1370,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 		{
 			name: "disabled repo removed from schedule and queue",
 			initialSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
@@ -1389,7 +1389,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 				},
 			},
@@ -1397,7 +1397,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 		{
 			name: "missing repo removed from schedule and queue",
 			initialSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
@@ -1414,13 +1414,13 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{},
+				"a": {},
 			},
 		},
 		{
 			name: "disabled repo not removed from queue when updating",
 			initialSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
@@ -1442,7 +1442,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Seq: 1, Updating: true},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 				},
 			},
@@ -1450,7 +1450,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 		{
 			name: "missing repo not removed from queue when updating",
 			initialSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
@@ -1470,13 +1470,13 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				{Repo: &configuredRepo2{Name: "a", URL: "a.com", Enabled: true}, Seq: 1, Updating: true},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{},
+				"a": {},
 			},
 		},
 		{
 			name: "enabled repo updated",
 			initialSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
@@ -1495,7 +1495,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 				},
 			},
@@ -1509,7 +1509,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 		{
 			name: "disabled repo updated",
 			initialSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: false},
 				},
 			},
@@ -1522,7 +1522,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: false},
 				},
 			},
@@ -1530,7 +1530,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 		{
 			name: "update enabled repo while updating",
 			initialSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: true},
 				},
 			},
@@ -1549,7 +1549,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				},
 			},
 			finalSourceRepos: map[string]sourceRepoMap{
-				"a": sourceRepoMap{
+				"a": {
 					api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "aa.com", Enabled: true},
 				},
 			},

@@ -11,6 +11,7 @@ This documentation is for developers contributing to Sourcegraph itself.
 - [Using PostgreSQL](postgresql.md)
 - [Testing](testing.md)
 - [Code style guide](style.md)
+- [Telemetry](telemetry.md)
 
 ## Product
 

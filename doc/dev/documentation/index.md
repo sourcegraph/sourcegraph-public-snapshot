@@ -48,9 +48,7 @@ There is no global index or nav, so all docs should be linked from their parent 
 - Max screenshot size: 100KB
 - We do not support videos (yet)
 
----
-
-**General rules & best practices:**
+#### General rules & best practices
 
 - When creating a new document and it has more than one word in its name,
   use underscores instead of spaces or dashes (`-`). For example,

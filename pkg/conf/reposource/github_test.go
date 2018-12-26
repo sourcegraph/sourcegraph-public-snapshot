@@ -19,6 +19,7 @@ func TestGitHub_cloneURLToRepoName(t *testing.T) {
 			{"git@github.com:/gorilla/mux.git", "github.com/gorilla/mux"},
 			{"git+https://github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 			{"https://github.com/gorilla/mux.git", "github.com/gorilla/mux"},
+			{"https://www.github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 			{"https://oauth2:ACCESS_TOKEN@github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 
 			{"git@asdf.com:gorilla/mux.git", ""},

@@ -9,7 +9,6 @@ import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { toURIWithPath } from '../../../../../shared/src/util/url'
 import { FileInfo } from '../../libs/code_intelligence'
-import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
@@ -19,7 +18,7 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<ExtensionsControllerProps>, FileInfo {
+interface CodeViewToolbarProps extends PlatformContextProps, ExtensionsControllerProps, FileInfo {
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps: ButtonProps
@@ -27,7 +26,6 @@ interface CodeViewToolbarProps extends Partial<PlatformContextProps>, Partial<Ex
         listItemClass?: string
         actionItemClass?: string
     }
-    simpleProviderFns: SimpleProviderFns
     location: H.Location
 }
 
@@ -57,25 +55,22 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}
             >
                 <ul className={`nav ${this.props.platformContext ? 'pr-1' : ''}`}>
-                    {this.props.extensionsController &&
-                        this.props.platformContext && (
-                            <ActionsNavItems
-                                menu={ContributableMenu.EditorTitle}
-                                extensionsController={this.props.extensionsController}
-                                platformContext={this.props.platformContext}
-                                listItemClass="BtnGroup"
-                                actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
-                                location={this.props.location}
-                                scope={{
-                                    type: 'textEditor',
-                                    item: {
-                                        uri: toURIWithPath(this.props),
-                                        languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
-                                    },
-                                    selections: [],
-                                }}
-                            />
-                        )}
+                    <ActionsNavItems
+                        menu={ContributableMenu.EditorTitle}
+                        extensionsController={this.props.extensionsController}
+                        platformContext={this.props.platformContext}
+                        listItemClass="BtnGroup"
+                        actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
+                        location={this.props.location}
+                        scope={{
+                            type: 'textEditor',
+                            item: {
+                                uri: toURIWithPath(this.props),
+                                languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
+                            },
+                            selections: [],
+                        }}
+                    />
                 </ul>
                 {this.props.baseCommitID &&
                     this.props.baseHasFileContents && (

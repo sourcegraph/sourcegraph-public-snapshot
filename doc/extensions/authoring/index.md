@@ -11,6 +11,7 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 - [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html)
 - [Set up your development environment](development_environment.md)
 - [Creating an extension](creating.md)
+- [Contribution points (actions, menus, etc.)](contributions.md)
 - [Extension manifest (`package.json`)](manifest.md)
 - [Publishing an extension](publishing.md)
 - [Debugging an extension](debugging.md)
@@ -21,8 +22,8 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 
 ## Tutorials
 
-- [Hello world](tutorials/hello-world.md)
-- [Buttons and custom commands](tutorials/button-custom-commands.md)
-- [Building a language specific extension](tutorials/lang-specific-extension-tutorial.md)
+- [Hello world](tutorials/hello_world.md)
+- [Buttons and custom commands](tutorials/button_custom_commands.md)
+- [Building a language specific extension](tutorials/lang_specific_extension_tutorial.md)
 
 The [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) is also a helpful source of inspiration and working code samples from existing extensions.
