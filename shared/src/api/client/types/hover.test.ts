@@ -35,6 +35,29 @@ describe('HoverMerged', () => {
             }))
 
         describe('priority', () => {
+            test('higher priority hovers sort first', () =>
+                expect(
+                    HoverMerged.from([
+                        { contents: { kind: MarkupKind.Markdown, value: 'x' }, priority: 1 },
+                        { contents: { kind: MarkupKind.Markdown, value: 'y' }, priority: undefined },
+                        { contents: { kind: MarkupKind.Markdown, value: 'z' }, priority: 2 },
+                    ])
+                ).toEqual({
+                    contents: [
+                        { kind: MarkupKind.Markdown, value: 'z' },
+                        { kind: MarkupKind.Markdown, value: 'x' },
+                        { kind: MarkupKind.Markdown, value: 'y' },
+                    ],
+                }))
+            test('undefined priority hover sorts last', () =>
+                expect(
+                    HoverMerged.from([
+                        { contents: { kind: MarkupKind.Markdown, value: 'y' }, priority: undefined },
+                        { contents: { kind: MarkupKind.Markdown, value: 'x' }, priority: -1 },
+                    ])
+                ).toEqual({
+                    contents: [{ kind: MarkupKind.Markdown, value: 'x' }, { kind: MarkupKind.Markdown, value: 'y' }],
+                }))
             test('nonnegative priority shadows negative priority hover', () =>
                 expect(
                     HoverMerged.from([
@@ -43,7 +66,7 @@ describe('HoverMerged', () => {
                         { contents: { kind: MarkupKind.Markdown, value: 'z' }, priority: 1 },
                     ])
                 ).toEqual({
-                    contents: [{ kind: MarkupKind.Markdown, value: 'y' }, { kind: MarkupKind.Markdown, value: 'z' }],
+                    contents: [{ kind: MarkupKind.Markdown, value: 'z' }, { kind: MarkupKind.Markdown, value: 'y' }],
                 }))
             test('greater negative priority shadows lesser negative priority', () =>
                 expect(
@@ -53,7 +76,7 @@ describe('HoverMerged', () => {
                         { contents: { kind: MarkupKind.Markdown, value: 'z' }, priority: -1 },
                     ])
                 ).toEqual({
-                    contents: [{ kind: MarkupKind.Markdown, value: 'y' }, { kind: MarkupKind.Markdown, value: 'z' }],
+                    contents: [{ kind: MarkupKind.Markdown, value: 'z' }, { kind: MarkupKind.Markdown, value: 'y' }],
                 }))
             test('undefined priority does not shadow negative priority', () =>
                 expect(

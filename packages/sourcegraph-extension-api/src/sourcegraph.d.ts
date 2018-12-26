@@ -857,7 +857,8 @@ declare module 'sourcegraph' {
         range?: Range
 
         /**
-         * The priority for this hover, which determines whether it is shown.
+         * The priority for this hover, which determines whether it is shown and the order in which
+         * it is shown. Hovers with higher priorities are shown first.
          *
          * If undefined, the hover is always shown. If this hover's priority is a negative number
          * and there is another hover for the same position with a greater priority, this hover is
