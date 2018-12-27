@@ -1,4 +1,4 @@
-import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
+import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 import baseConfig from './base.config'
 import { generateBundleUID } from './utils'
@@ -11,8 +11,8 @@ const config: webpack.Configuration = {
     optimization: {
         minimize: true,
         minimizer: [
-            new UglifyJsPlugin({
-                uglifyOptions: {
+            new TerserPlugin({
+                terserOptions: {
                     output: {
                         // Without this, Uglify will change \u0000 to \0 (NULL byte),
                         // which causes Chrome to complain that the bundle is not UTF8

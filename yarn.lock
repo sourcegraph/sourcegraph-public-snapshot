@@ -2466,13 +2466,6 @@
   dependencies:
     source-map "^0.6.1"
 
-"@types/uglifyjs-webpack-plugin@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@types/uglifyjs-webpack-plugin/-/uglifyjs-webpack-plugin-1.1.0.tgz#94647396472e1d3e3586e3e2a5c7d1ab41509d20"
-  integrity sha512-QoCJYq+zNtuvKw4nutaIxQXKBpvc0Hd6U7BUVi2Cest2FrkGTYDBD6YpSq5d9IHjo94SjXk+6KDqQVOcEzFJZA==
-  dependencies:
-    "@types/webpack" "*"
-
 "@types/undertaker-registry@*":
   version "1.0.1"
   resolved "https://registry.npmjs.org/@types/undertaker-registry/-/undertaker-registry-1.0.1.tgz#4306d4a03d7acedb974b66530832b90729e1d1da"
@@ -4577,7 +4570,7 @@ cacache@^10.0.4:
     unique-filename "^1.1.0"
     y18n "^4.0.0"
 
-cacache@^11.0.2, cacache@^11.2.0:
+cacache@^11.0.2:
   version "11.3.1"
   resolved "https://registry.npmjs.org/cacache/-/cacache-11.3.1.tgz#d09d25f6c4aca7a6d305d141ae332613aa1d515f"
   integrity sha512-2PEw4cRRDu+iQvBTTuttQifacYjLPhET+SYO/gEFMy8uhi+jlJREDAjSF5FWSdV/Aw5h18caHA7vMTw2c+wDzA==
@@ -14253,7 +14246,7 @@ term-size@^1.2.0:
   dependencies:
     execa "^0.7.0"
 
-terser-webpack-plugin@^1.1.0:
+terser-webpack-plugin@^1.1.0, terser-webpack-plugin@^1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/terser-webpack-plugin/-/terser-webpack-plugin-1.2.0.tgz#24697213f2128009080f39f081c18cb2221d91ff"
   integrity sha512-QW7RACLS89RalHtLDb0s8+Iqcs/IAEw1rnVrV+mS7Gx1kgPG8o1g33JhAGDgc/CQ84hLsTW5WrAMdVysh692yg==
@@ -14723,7 +14716,7 @@ uglify-es@^3.3.4:
     commander "~2.13.0"
     source-map "~0.6.1"
 
-uglify-js@3.4.x, uglify-js@^3.0.0, uglify-js@^3.1.4:
+uglify-js@3.4.x, uglify-js@^3.1.4:
   version "3.4.9"
   resolved "https://registry.npmjs.org/uglify-js/-/uglify-js-3.4.9.tgz#af02f180c1207d76432e473ed24a28f4a782bae3"
   integrity sha512-8CJsbKOtEbnJsTyv6LE6m6ZKniqMiFWmm9sRbopbkGs3gMPPfd3Fh8iIA4Ykv5MgaTbqHr4BaoGLJLZNhsrW1Q==
@@ -14742,20 +14735,6 @@ uglifyjs-webpack-plugin@^1.2.4:
     serialize-javascript "^1.4.0"
     source-map "^0.6.1"
     uglify-es "^3.3.4"
-    webpack-sources "^1.1.0"
-    worker-farm "^1.5.2"
-
-uglifyjs-webpack-plugin@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.npmjs.org/uglifyjs-webpack-plugin/-/uglifyjs-webpack-plugin-2.1.0.tgz#630bb89b156a751c5e897769e5c39eb604ceaf9c"
-  integrity sha512-xD8HaE8sFvhYsE2Lr4lSQ/Y2K0DBEaZGqIsrIccdxaAWdFdeYcm54CcMoCCPDpixqUlZAukUMq3cmgIqXubjsQ==
-  dependencies:
-    cacache "^11.2.0"
-    find-cache-dir "^2.0.0"
-    schema-utils "^1.0.0"
-    serialize-javascript "^1.4.0"
-    source-map "^0.6.1"
-    uglify-js "^3.0.0"
     webpack-sources "^1.1.0"
     worker-farm "^1.5.2"
 
