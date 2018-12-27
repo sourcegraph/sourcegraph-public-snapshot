@@ -91,6 +91,9 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                 toggle={this.onPopoverVisibilityToggle}
                 target={this.rootRef}
                 className={`popover-button__popover ${this.props.popoverClassName || ''}`}
+                // This popover is manually triggered. Must remove default "click" trigger so that
+                // in link mode (this.props.link), only caret (not link) opens the popover.
+                trigger=""
             >
                 {this.props.popoverElement}
             </Popover>
@@ -124,7 +127,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         )
     }
 
-    private onClickLink = (e: React.MouseEvent<HTMLElement>): void => {
+    private onClickLink = (): void => {
         this.setState({ open: false })
     }
 
