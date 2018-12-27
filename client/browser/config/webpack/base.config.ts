@@ -1,8 +1,8 @@
-import ExtractTextPlugin from 'extract-text-webpack-plugin'
+import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import * as path from 'path'
 import * as webpack from 'webpack'
 
-import { buildStylesLoaders, jsRule, tsRule } from '../shared/webpack'
+import { commonStylesheetLoaders, jsRule, tsRule } from '../shared/webpack'
 
 const buildEntry = (...files: string[]) => files.map(file => path.join(__dirname, file))
 
@@ -27,11 +27,9 @@ const config: webpack.Configuration = {
         filename: '[name].bundle.js',
         chunkFilename: '[id].chunk.js',
     },
+
     plugins: [
-        new ExtractTextPlugin({
-            filename: '../css/[name].bundle.css',
-            allChunks: true,
-        }),
+        new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }) as any, // @types package is incorrect
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
@@ -43,11 +41,13 @@ const config: webpack.Configuration = {
             {
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
-                use: ExtractTextPlugin.extract(
-                    buildStylesLoaders({
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    {
                         loader: 'css-loader',
-                    })
-                ),
+                    },
+                    ...commonStylesheetLoaders,
+                ],
             },
         ],
     },

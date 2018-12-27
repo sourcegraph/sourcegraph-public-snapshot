@@ -1,5 +1,5 @@
 import * as webpack from 'webpack'
-import { buildStylesLoaders, jsRule, tsRule } from '../shared/webpack'
+import { commonStylesheetLoaders, jsRule, tsRule } from '../shared/webpack'
 
 const buildWebpackConfig = (
     baseConfig: webpack.Configuration,
@@ -14,7 +14,7 @@ const buildWebpackConfig = (
     // gets to storybook's style rules.
     config.module!.rules.unshift({
         test: /\.(css|sass|scss)$/,
-        use: buildStylesLoaders('style-loader'),
+        use: ['style-loader', ...commonStylesheetLoaders],
     })
 
     return config

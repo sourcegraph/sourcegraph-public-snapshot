@@ -2050,13 +2050,6 @@
     "@types/express-serve-static-core" "*"
     "@types/serve-static" "*"
 
-"@types/extract-text-webpack-plugin@3.0.3":
-  version "3.0.3"
-  resolved "https://registry.npmjs.org/@types/extract-text-webpack-plugin/-/extract-text-webpack-plugin-3.0.3.tgz#b4ef831c7ea7bc0585ccabc61e8b0d6cd69fccc3"
-  integrity sha512-KvRd5e5k+BVwWBlCm4uZFcV+M2mikKhORahruKxPkriFIDhG6b0fZ8PIYyiok+pk6W5bqFCsQmRk5D86pTmNpA==
-  dependencies:
-    "@types/webpack" "*"
-
 "@types/fancy-log@1.3.0":
   version "1.3.0"
   resolved "https://registry.npmjs.org/@types/fancy-log/-/fancy-log-1.3.0.tgz#a61ab476e5e628cd07a846330df53b85e05c8ce0"
@@ -3232,7 +3225,7 @@ async@^1.5.2:
   resolved "http://registry.npmjs.org/async/-/async-1.5.2.tgz#ec6a61ae56480c0c3cb241c95618e20892f9672a"
   integrity sha1-7GphrlZIDAw8skHJVhjiCJL5Zyo=
 
-async@^2.1.4, async@^2.4.1, async@^2.5.0:
+async@^2.1.4, async@^2.5.0:
   version "2.6.1"
   resolved "https://registry.npmjs.org/async/-/async-2.6.1.tgz#b245a23ca71930044ec53fa46aa00a3e87c6a610"
   integrity sha512-fNEiL2+AZt6AlAw/29Cr0UDe4sRAHCpEHh54WMz+Bb7QfNcFw4h3loofyJpLeQs4Yx7yuqu/2dLgM5hKOs6HlQ==
@@ -6965,16 +6958,6 @@ extglob@^2.0.4:
     regex-not "^1.0.0"
     snapdragon "^0.8.1"
     to-regex "^3.0.1"
-
-extract-text-webpack-plugin@^4.0.0-beta.0:
-  version "4.0.0-beta.0"
-  resolved "https://registry.npmjs.org/extract-text-webpack-plugin/-/extract-text-webpack-plugin-4.0.0-beta.0.tgz#f7361d7ff430b42961f8d1321ba8c1757b5d4c42"
-  integrity sha512-Hypkn9jUTnFr0DpekNam53X47tXn3ucY08BQumv7kdGgeVUBLq3DJHJTi6HNxv4jl9W+Skxjz9+RnK0sJyqqjA==
-  dependencies:
-    async "^2.4.1"
-    loader-utils "^1.1.0"
-    schema-utils "^0.4.5"
-    webpack-sources "^1.1.0"
 
 extract-zip@^1.6.6:
   version "1.6.7"
