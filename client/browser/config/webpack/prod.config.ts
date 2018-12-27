@@ -5,7 +5,7 @@ import { generateBundleUID } from './utils'
 
 const { plugins, ...base } = baseConfig
 
-export default {
+const config: webpack.Configuration = {
     ...base,
     mode: 'production',
     optimization: {
@@ -41,4 +41,5 @@ export default {
             }),
         ]
     ),
-} as webpack.Configuration
+}
+export default config

@@ -12,7 +12,7 @@ const optionsEntry = '../../src/config/options.entry.js'
 const pageEntry = '../../src/config/page.entry.js'
 const extEntry = '../../src/config/extension.entry.js'
 
-export default {
+const config: webpack.Configuration = {
     entry: {
         background: buildEntry(extEntry, backgroundEntry, '../../src/extension/scripts/background.tsx'),
         options: buildEntry(extEntry, optionsEntry, '../../src/extension/scripts/options.tsx'),
@@ -51,4 +51,5 @@ export default {
             },
         ],
     },
-} as webpack.Configuration
+}
+export default config
