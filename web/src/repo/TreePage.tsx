@@ -285,14 +285,9 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 </Form>
                             </section>
                             <TreeEntriesSection
-                                title="Directories"
+                                title="Files and directories"
                                 parentPath={this.props.filePath}
-                                entries={this.state.treeOrError.directories}
-                            />
-                            <TreeEntriesSection
-                                title="Files"
-                                parentPath={this.props.filePath}
-                                entries={this.state.treeOrError.files}
+                                entries={this.state.treeOrError.entries}
                             />
                             {isDiscussionsEnabled(this.props.settingsCascade) && (
                                 <div className="tree-page__section mt-2 tree-page__section--discussions">

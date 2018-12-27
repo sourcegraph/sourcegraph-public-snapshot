@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
 - The `appURL` site configuration option was renamed to `externalURL`.
 - The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled`.
+- The repository and directory pages now show all entries together instead of showing files and (sub)directories separately.
 
 ### Fixed
 
