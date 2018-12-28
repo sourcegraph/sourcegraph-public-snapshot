@@ -44,6 +44,7 @@ import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews, getContentOfCodeView } from './code_views'
 import { applyDecorations, initializeExtensions } from './extensions'
+import { injectViewContextOnSourcegraph } from './external_links'
 
 registerHighlightContributions()
 
@@ -108,12 +109,30 @@ interface OverlayPosition {
  */
 export type MountGetter = () => HTMLElement
 
+export interface CodeHostContext {
+    repoName: string
+    rev?: string
+}
+
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost {
     /**
      * The name of the code host. This will be added as a className to the overlay mount.
      */
     name: string
+
+    /**
+     * Basic contextual information for the current code host.
+     */
+    getContext?: () => CodeHostContext
+    /**
+     * The mount location for the contextual link to Sourcegraph.
+     */
+    getViewContextOnSourcegraphMount?: MountGetter
+    /**
+     * Optional class name for the contextual link to Sourcegraph.
+     */
+    contextButtonClassName?: string
 
     /**
      * Checks to see if the current context the code is running in is within
@@ -388,6 +407,8 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
     const subscriptions = new Subscription()
 
     subscriptions.add(hoverifier)
+
+    injectViewContextOnSourcegraph(sourcegraphUrl, codeHost)
 
     // Keeps track of all documents on the page since calling this function (should be once per page).
     let visibleViewComponents: ViewComponentData[] = []

@@ -21,6 +21,7 @@ import {
 } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
+import { createOpenOnSourcegraphIfNotExists } from './inject'
 import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
 
 const toolbarButtonProps = {
@@ -159,6 +160,9 @@ export const githubCodeHost: CodeHost = {
     name: 'github',
     codeViews: [searchResultCodeView, commentSnippetCodeView],
     codeViewResolver,
+    getContext: parseURL,
+    getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
+    contextButtonClassName: 'btn btn-sm tooltipped tooltipped-s',
     check: checkIsGithub,
     getOverlayMount,
     getCommandPaletteMount,
