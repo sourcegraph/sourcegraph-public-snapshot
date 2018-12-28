@@ -6,7 +6,7 @@ Sourcegraph integrates with GitLab.com, GitLab CE, and GitLab EE.
 
 Sourcegraph supports syncing repositories from GitLab.com, GitLab CE, and GitLab EE (version 10.0 and newer).
 
-- [Add a GitLab external service connection](../../site-admin/external-services/add?kind=gitlab).
+- Add GitLab as an external service (in **Site admin > External services**, or in the site config JSON editor in Sourcegraph 2.x)
 
 - Read the [GitLab configuration documentation](../admin/site_config/all.md#gitlabconnection-object) or press Ctrl+Space or Cmd+Space in the configuration editor.
 

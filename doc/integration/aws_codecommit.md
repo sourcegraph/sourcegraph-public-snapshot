@@ -6,7 +6,7 @@ Sourcegraph integrates with [AWS CodeCommit](https://aws.amazon.com/codecommit/)
 
 Sourcegraph supports syncing repositories from [AWS CodeCommit](https://aws.amazon.com/codecommit/).
 
-- [Add a AWS CodeCommit external service connection](../../site-admin/external-services/add?kind=awscodecommit).
+- Add AWS CodeCommit as an external service (in **Site admin > External services**, or in the site config JSON editor in Sourcegraph 2.x)
 
 - Read the [AWS CodeCommit configuration documentation](../admin/site_config/all.md#awscodecommitconnection-object) or press Ctrl+Space or Cmd+Space in the configuration editor.
 

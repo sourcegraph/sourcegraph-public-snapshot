@@ -6,7 +6,7 @@ Sourcegraph integrates with GitHub and GitHub Enterprise.
 
 Sourcegraph supports syncing repositories from GitHub.com and GitHub Enterprise (version 2.10 and newer).
 
-- [Add a GitHub external service connection](../../site-admin/external-services/add?kind=github).
+- Add GitHub as an external service (in **Site admin > External services**, or in the site config JSON editor in Sourcegraph 2.x)
 
 - Read the [GitHub configuration documentation](../admin/site_config/all.md#githubconnection-object) or press Ctrl+Space or Cmd+Space in the configuration editor.
 

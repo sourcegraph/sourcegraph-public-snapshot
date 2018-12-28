@@ -6,7 +6,7 @@ Sourcegraph integrates with Bitbucket Server and Bitbucket Data Center.
 
 Sourcegraph supports automatically syncing repositories from [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server).
 
-- [Add a Bitbucket Server external service connection](../../site-admin/external-services/add?kind=bitbucketserver).
+- Add Bitbucket Server as an external service (in **Site admin > External services**, or in the site config JSON editor in Sourcegraph 2.x)
 
 - Read the [Bitbucket Server configuration documentation](../admin/site_config/all.md#bitbucketserverconnection-object) or press Ctrl+Space or Cmd+Space in the configuration editor.
 

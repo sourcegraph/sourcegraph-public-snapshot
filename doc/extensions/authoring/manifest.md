@@ -10,7 +10,7 @@ Name | Required | Type | Details
 `title` | ✔️ | `string`| The name displayed in the extension registry. Can be used to indicate a [work-in-progress extension](publishing.md#wip-extensions).
 `description` | ✔️ | `string` | The extension's description, which summarizes the extension's purpose and features.
 `version` | | `string` | [Semantic versioning](https://semver.org/) format.
-`publisher` | ✔️ | `string` | Your [Sourcegraph username](development_environment#sourcegraph-com-account-and-the-sourcegraph-cli) (or the name of an organization you're a member of)
+`publisher` | ✔️ | `string` | Your [Sourcegraph username](development_environment.md#sourcegraph-com-account-and-the-sourcegraph-cli) (or the name of an organization you're a member of)
 `license` | | `string` | The type of license chosen.
 `main` | | `string` | Path to the transpiled JavaScript file for your extension.
 `contributes` | | `object` | An object describing the contributions (features) this extension provides. See "[Extension contribution points](contributions.md)" for a full listing.

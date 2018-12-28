@@ -37,7 +37,7 @@ To enable GitLab permissions:
     }
     ```
 
-    See the [GitLab configuration documentation](../../admin/site_config/all#gitlabconnection-object) for the meaning of specific fields.
+    See the [GitLab configuration documentation](../../admin/site_config/all.md#gitlabconnection-object) for the meaning of specific fields.
 
 1. Add an entry to `auth.providers` in your site configuration.
     ```json
@@ -55,4 +55,4 @@ To enable GitLab permissions:
     Note that the `configID` and `type` fields in the GitLab `authorization.authnProvider` object
     must match the `configID` and `type` of exactly one element of `auth.providers`.
 
-    See the [auth providers configuration documentation](../../admin/site_config/all#auth-providers-array) for the meaning of specific fields.
+    See the [auth providers configuration documentation](../../admin/site_config/all.md#auth-providers-array) for the meaning of specific fields.

@@ -38,7 +38,7 @@ Other reading:
 
 ## Plan
 
-Adopt the planning process documented in [README.md](README.md).
+Adopt the planning process documented in [process.md](process.md).
 
 ### Test plan
 
