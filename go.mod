@@ -119,7 +119,7 @@ require (
 	golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1
 	golang.org/x/oauth2 v0.0.0-20181003184128-c57b0facaced
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
-	golang.org/x/sys v0.0.0-20181011152604-fa43e7bc11ba
+	golang.org/x/sys v0.0.0-20181228150520-9a3f9b0469bb
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	golang.org/x/tools v0.0.0-20181211221832-59cd96f77e7e
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
