@@ -275,13 +275,7 @@ export const fetchTree = memoizeObservable(
                             tree(path: $filePath) {
                                 isRoot
                                 url
-                                directories(first: $first) {
-                                    name
-                                    path
-                                    isDirectory
-                                    url
-                                }
-                                files(first: $first) {
+                                entries(first: $first) {
                                     name
                                     path
                                     isDirectory
