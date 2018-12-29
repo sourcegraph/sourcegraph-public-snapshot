@@ -77,9 +77,15 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     >
                         Use {this.props.isLightTheme ? 'dark' : 'light'} theme
                     </button>
-                    <Link to="/help" className="dropdown-item">
-                        Help
-                    </Link>
+                    {window.context.sourcegraphDotComMode ? (
+                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
+                            Help
+                        </a>
+                    ) : (
+                        <Link to="/help" className="dropdown-item">
+                            Help
+                        </Link>
+                    )}
                     {this.props.authenticatedUser.siteAdmin && (
                         <>
                             <DropdownItem divider={true} />
