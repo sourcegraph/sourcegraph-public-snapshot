@@ -1,10 +1,20 @@
 import React from 'react'
 import { UserAccountAreaRoute } from './UserAccountArea'
-import { UserAccountCreateAccessTokenPage } from './UserAccountCreateAccessTokenPage'
-import { UserAccountEmailsPage } from './UserAccountEmailsPage'
-import { UserAccountPasswordPage } from './UserAccountPasswordPage'
-import { UserAccountProfilePage } from './UserAccountProfilePage'
-import { UserAccountTokensPage } from './UserAccountTokensPage'
+const UserAccountCreateAccessTokenPage = React.lazy(async () => ({
+    default: (await import('./UserAccountCreateAccessTokenPage')).UserAccountCreateAccessTokenPage,
+}))
+const UserAccountEmailsPage = React.lazy(async () => ({
+    default: (await import('./UserAccountEmailsPage')).UserAccountEmailsPage,
+}))
+const UserAccountPasswordPage = React.lazy(async () => ({
+    default: (await import('./UserAccountPasswordPage')).UserAccountPasswordPage,
+}))
+const UserAccountProfilePage = React.lazy(async () => ({
+    default: (await import('./UserAccountProfilePage')).UserAccountProfilePage,
+}))
+const UserAccountTokensPage = React.lazy(async () => ({
+    default: (await import('./UserAccountTokensPage')).UserAccountTokensPage,
+}))
 
 export const userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [
     // Render empty page if no settings page selected

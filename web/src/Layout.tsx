@@ -1,4 +1,5 @@
-import React from 'react'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import React, { Suspense } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
@@ -99,31 +100,33 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary>
-                <Switch>
-                    {props.routes.map((route, i) => {
-                        const isFullWidth = !route.forceNarrowWidth
-                        return (
-                            <Route
-                                {...route}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                component={undefined}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <div
-                                        className={[
-                                            'layout__app-router-container',
-                                            `layout__app-router-container--${
-                                                isFullWidth ? 'full-width' : 'restricted'
-                                            }`,
-                                        ].join(' ')}
-                                    >
-                                        {route.render({ ...props, ...routeComponentProps })}
-                                    </div>
-                                )}
-                            />
-                        )
-                    })}
-                </Switch>
+                <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                    <Switch>
+                        {props.routes.map(route => {
+                            const isFullWidth = !route.forceNarrowWidth
+                            return (
+                                <Route
+                                    {...route}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    component={undefined}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <div
+                                            className={[
+                                                'layout__app-router-container',
+                                                `layout__app-router-container--${
+                                                    isFullWidth ? 'full-width' : 'restricted'
+                                                }`,
+                                            ].join(' ')}
+                                        >
+                                            {route.render({ ...props, ...routeComponentProps })}
+                                        </div>
+                                    )}
+                                />
+                            )
+                        })}
+                    </Switch>
+                </Suspense>
             </ErrorBoundary>
             {parseHash(props.location.hash).viewState && (
                 <ResizablePanel

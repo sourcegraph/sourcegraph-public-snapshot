@@ -1,21 +1,49 @@
 import React from 'react'
 import { eventLogger } from '../tracking/eventLogger'
-import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
-import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
-import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
-import { SiteAdminCreateUserPage } from './SiteAdminCreateUserPage'
-import { SiteAdminExternalServicePage } from './SiteAdminExternalServicePage'
-import { SiteAdminExternalServicesPage } from './SiteAdminExternalServicesPage'
-import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
-import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
-import { SiteAdminPingsPage } from './SiteAdminPingsPage'
-import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
-import { SiteAdminSettingsPage } from './SiteAdminSettingsPage'
-import { SiteAdminSurveyResponsesPage } from './SiteAdminSurveyResponsesPage'
-import { SiteAdminTokensPage } from './SiteAdminTokensPage'
-import { SiteAdminUpdatesPage } from './SiteAdminUpdatesPage'
-import { SiteAdminUsageStatisticsPage } from './SiteAdminUsageStatisticsPage'
+const SiteAdminAddExternalServicePage = React.lazy(async () => ({
+    default: (await import('./SiteAdminAddExternalServicePage')).SiteAdminAddExternalServicePage,
+}))
+const SiteAdminAllUsersPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminAllUsersPage')).SiteAdminAllUsersPage,
+}))
+const SiteAdminConfigurationPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminConfigurationPage')).SiteAdminConfigurationPage,
+}))
+const SiteAdminCreateUserPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminCreateUserPage')).SiteAdminCreateUserPage,
+}))
+const SiteAdminExternalServicePage = React.lazy(async () => ({
+    default: (await import('./SiteAdminExternalServicePage')).SiteAdminExternalServicePage,
+}))
+const SiteAdminExternalServicesPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminExternalServicesPage')).SiteAdminExternalServicesPage,
+}))
+const SiteAdminOrgsPage = React.lazy(async () => ({ default: (await import('./SiteAdminOrgsPage')).SiteAdminOrgsPage }))
+const SiteAdminOverviewPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminOverviewPage')).SiteAdminOverviewPage,
+}))
+const SiteAdminPingsPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminPingsPage')).SiteAdminPingsPage,
+}))
+const SiteAdminRepositoriesPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminRepositoriesPage')).SiteAdminRepositoriesPage,
+}))
+const SiteAdminSettingsPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminSettingsPage')).SiteAdminSettingsPage,
+}))
+const SiteAdminSurveyResponsesPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminSurveyResponsesPage')).SiteAdminSurveyResponsesPage,
+}))
+const SiteAdminTokensPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminTokensPage')).SiteAdminTokensPage,
+}))
+const SiteAdminUpdatesPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminUpdatesPage')).SiteAdminUpdatesPage,
+}))
+const SiteAdminUsageStatisticsPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminUsageStatisticsPage')).SiteAdminUsageStatisticsPage,
+}))
 
 export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     {

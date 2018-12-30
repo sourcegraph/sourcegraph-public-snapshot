@@ -3,12 +3,14 @@ import { Subscription } from 'rxjs'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
+interface Props {}
+
 interface State {}
 
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export class SiteAdminPingsPage extends React.Component<{}, State> {
+export class SiteAdminPingsPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
@@ -57,7 +59,8 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
                         To disable pings (for customers only),{' '}
                         <a href="https://about.sourcegraph.com/contact/" target="_blank">
                             contact support
-                        </a>.
+                        </a>
+                        .
                     </p>
                 )}
             </div>

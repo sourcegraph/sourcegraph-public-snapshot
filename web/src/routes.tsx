@@ -1,29 +1,51 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { APIConsole } from './api/APIConsole'
-import { ResetPasswordPage } from './auth/ResetPasswordPage'
-import { SignInPage } from './auth/SignInPage'
-import { SignUpPage } from './auth/SignUpPage'
-import { DiscussionsPage } from './discussions/DiscussionsPage'
-import { DocSitePage } from './docSite/DocSitePage'
-import { ExploreArea } from './explore/ExploreArea'
-import { ExtensionsArea } from './extensions/ExtensionsArea'
 import { LayoutProps } from './Layout'
-import { SurveyPage } from './marketing/SurveyPage'
-import { OpenPage } from './open/OpenPage'
-import { OrgsArea } from './org/OrgsArea'
-import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
-import { MainPage } from './search/input/MainPage'
-import { ScopePage } from './search/input/ScopePage'
-import { SearchPage } from './search/input/SearchPage'
-import { SearchResults } from './search/results/SearchResults'
-import { SavedQueriesPage } from './search/saved-queries/SavedQueries'
-import { SiteAdminArea } from './site-admin/SiteAdminArea'
-import { SiteInitPage } from './site-admin/SiteInitPage'
-import { RedirectToUserPage } from './user/account/RedirectToUserPage'
-import { RedirectToUserSettings } from './user/account/RedirectToUserSettings'
-import { UserArea } from './user/area/UserArea'
+const MainPage = React.lazy(async () => ({
+    default: (await import('./search/input/MainPage')).MainPage,
+}))
+const SearchPage = React.lazy(async () => ({
+    default: (await import('./search/input/SearchPage')).SearchPage,
+}))
+const SearchResults = React.lazy(async () => ({
+    default: (await import('./search/results/SearchResults')).SearchResults,
+}))
+const SavedQueriesPage = React.lazy(async () => ({
+    default: (await import('./search/saved-queries/SavedQueries')).SavedQueriesPage,
+}))
+const SiteAdminArea = React.lazy(async () => ({
+    default: (await import('./site-admin/SiteAdminArea')).SiteAdminArea,
+}))
+const UserArea = React.lazy(async () => ({
+    default: (await import('./user/area/UserArea')).UserArea,
+}))
+const APIConsole = React.lazy(async () => ({ default: (await import('./api/APIConsole')).APIConsole }))
+const ResetPasswordPage = React.lazy(async () => ({
+    default: (await import('./auth/ResetPasswordPage')).ResetPasswordPage,
+}))
+const SignInPage = React.lazy(async () => ({ default: (await import('./auth/SignInPage')).SignInPage }))
+const SignUpPage = React.lazy(async () => ({ default: (await import('./auth/SignUpPage')).SignUpPage }))
+const DiscussionsPage = React.lazy(async () => ({
+    default: (await import('./discussions/DiscussionsPage')).DiscussionsPage,
+}))
+const DocSitePage = React.lazy(async () => ({ default: (await import('./docSite/DocSitePage')).DocSitePage }))
+const ExploreArea = React.lazy(async () => ({ default: (await import('./explore/ExploreArea')).ExploreArea }))
+const ExtensionsArea = React.lazy(async () => ({
+    default: (await import('./extensions/ExtensionsArea')).ExtensionsArea,
+}))
+const SurveyPage = React.lazy(async () => ({ default: (await import('./marketing/SurveyPage')).SurveyPage }))
+const OpenPage = React.lazy(async () => ({ default: (await import('./open/OpenPage')).OpenPage }))
+const OrgsArea = React.lazy(async () => ({ default: (await import('./org/OrgsArea')).OrgsArea }))
+const RepoContainer = React.lazy(async () => ({ default: (await import('./repo/RepoContainer')).RepoContainer }))
+const ScopePage = React.lazy(async () => ({ default: (await import('./search/input/ScopePage')).ScopePage }))
+const SiteInitPage = React.lazy(async () => ({ default: (await import('./site-admin/SiteInitPage')).SiteInitPage }))
+const RedirectToUserPage = React.lazy(async () => ({
+    default: (await import('./user/account/RedirectToUserPage')).RedirectToUserPage,
+}))
+const RedirectToUserSettings = React.lazy(async () => ({
+    default: (await import('./user/account/RedirectToUserSettings')).RedirectToUserSettings,
+}))
 
 export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
 

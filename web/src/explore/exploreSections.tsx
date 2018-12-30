@@ -1,11 +1,23 @@
 import React from 'react'
 import { isDiscussionsEnabled } from '../discussions'
-import { DiscussionsExploreSection } from '../discussions/explore/DiscussionsExploreSection'
-import { ExtensionViewsExploreSection } from '../extensions/explore/ExtensionViewsExploreSection'
-import { IntegrationsExploreSection } from '../integrations/explore/IntegrationsExploreSection'
-import { RepositoriesExploreSection } from '../repo/explore/RepositoriesExploreSection'
-import { SavedSearchesExploreSection } from '../search/saved-queries/explore/SavedSearchesExploreSection'
-import { SiteUsageExploreSection } from '../usageStatistics/explore/SiteUsageExploreSection'
+const DiscussionsExploreSection = React.lazy(async () => ({
+    default: (await import('../discussions/explore/DiscussionsExploreSection')).DiscussionsExploreSection,
+}))
+const ExtensionViewsExploreSection = React.lazy(async () => ({
+    default: (await import('../extensions/explore/ExtensionViewsExploreSection')).ExtensionViewsExploreSection,
+}))
+const IntegrationsExploreSection = React.lazy(async () => ({
+    default: (await import('../integrations/explore/IntegrationsExploreSection')).IntegrationsExploreSection,
+}))
+const RepositoriesExploreSection = React.lazy(async () => ({
+    default: (await import('../repo/explore/RepositoriesExploreSection')).RepositoriesExploreSection,
+}))
+const SavedSearchesExploreSection = React.lazy(async () => ({
+    default: (await import('../search/saved-queries/explore/SavedSearchesExploreSection')).SavedSearchesExploreSection,
+}))
+const SiteUsageExploreSection = React.lazy(async () => ({
+    default: (await import('../usageStatistics/explore/SiteUsageExploreSection')).SiteUsageExploreSection,
+}))
 import { ExploreSectionDescriptor } from './ExploreArea'
 
 export const exploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
