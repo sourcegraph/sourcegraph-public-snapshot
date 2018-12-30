@@ -1,12 +1,10 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
-import { from as fromPromise, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
+import { Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
@@ -56,14 +54,15 @@ interface State {
      * scratch.
      */
     editingLastID?: number | null
-
-    /** The dynamically imported MonacoSettingsEditor module, error or undefined while loading. */
-    monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
 }
 
 const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
 
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
+
+const MonacoSettingsEditor = React.lazy(async () => ({
+    default: (await import('../settings/MonacoSettingsEditor')).MonacoSettingsEditor,
+}))
 
 export class SettingsFile extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -83,7 +82,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 map(({ settings }) => settings),
                 distinctUntilChanged()
             )
-            .subscribe(settings => {
+            .subscribe(() => {
                 if (this.state.contents !== undefined) {
                     this.setState({ contents: undefined })
                 }
@@ -133,19 +132,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            fromPromise(import('./MonacoSettingsEditor'))
-                .pipe(
-                    catchError(error => {
-                        console.error(error)
-                        return [asError(error)]
-                    })
-                )
-                .subscribe(m => {
-                    this.setState({ monacoSettingsEditorOrError: m })
-                })
-        )
-
         // Prevent navigation when dirty.
         this.subscriptions.add(
             this.props.history.block((location: H.Location, action: H.Action) => {
@@ -177,64 +163,54 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         const contents =
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
-        return this.state.monacoSettingsEditorOrError === undefined ? (
-            <LoadingSpinner className="icon-inline" />
-        ) : isErrorLike(this.state.monacoSettingsEditorOrError) ? (
-            <div className="alert alert-danger">
-                Error loading settings editor: {upperFirst(this.state.monacoSettingsEditorOrError.message)}
-            </div>
-        ) : (
-            (() => {
-                const MonacoSettingsEditor = this.state.monacoSettingsEditorOrError.MonacoSettingsEditor
-                return (
-                    <div className="settings-file d-flex flex-column">
-                        <div className="site-admin-configuration-page__action-groups">
-                            <div className="site-admin-configuration-page__action-groups">
-                                <div className="site-admin-configuration-page__action-group-header">
-                                    Quick configure:
-                                </div>
-                                <div className="site-admin-configuration-page__actions">
-                                    {settingsActions.map(({ id, label }) => (
-                                        <button
-                                            key={id}
-                                            className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                            // tslint:disable-next-line:jsx-no-lambda
-                                            onClick={() => this.runAction(id)}
-                                        >
-                                            {label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+        return (
+            <div className="settings-file d-flex flex-column">
+                <div className="site-admin-configuration-page__action-groups">
+                    <div className="site-admin-configuration-page__action-groups">
+                        <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
+                        <div className="site-admin-configuration-page__actions">
+                            {settingsActions.map(({ id, label }) => (
+                                <button
+                                    key={id}
+                                    className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.runAction(id)}
+                                >
+                                    {label}
+                                </button>
+                            ))}
                         </div>
-                        <SaveToolbar
-                            dirty={dirty}
-                            disabled={this.state.saving || !dirty}
-                            error={this.props.commitError}
-                            saving={this.state.saving}
-                            onSave={this.save}
-                            onDiscard={this.discard}
-                        />
-                        <MonacoSettingsEditor
-                            value={contents}
-                            jsonSchemaId={this.props.jsonSchemaId}
-                            extraSchemas={this.props.extraSchemas}
-                            onChange={this.onEditorChange}
-                            readOnly={this.state.saving}
-                            monacoRef={this.monacoRef}
-                            isLightTheme={this.props.isLightTheme}
-                            onDidSave={this.save}
-                        />
                     </div>
-                )
-            })()
+                </div>
+                <SaveToolbar
+                    dirty={dirty}
+                    disabled={this.state.saving || !dirty}
+                    error={this.props.commitError}
+                    saving={this.state.saving}
+                    onSave={this.save}
+                    onDiscard={this.discard}
+                />
+                <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
+                    <MonacoSettingsEditor
+                        value={contents}
+                        jsonSchemaId={this.props.jsonSchemaId}
+                        extraSchemas={this.props.extraSchemas}
+                        onChange={this.onEditorChange}
+                        readOnly={this.state.saving}
+                        monacoRef={this.monacoRef}
+                        isLightTheme={this.props.isLightTheme}
+                        onDidSave={this.save}
+                    />
+                </React.Suspense>
+            </div>
         )
     }
 
     private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        // This function can only be called if the editor was loaded correctly so casting is correct here.
-        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof _monacoSettingsEditorModule
+        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
+        // so we know its #_result property is set by now.
+        const monacoSettingsEditor = MonacoSettingsEditor._result
         if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(
