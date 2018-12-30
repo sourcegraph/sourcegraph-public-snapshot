@@ -240,22 +240,19 @@ export function isStandaloneCodeEditor(
     return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor
 }
 
-export function toMonacoEdits(
+function toMonacoEdits(
     model: monaco.editor.IModel,
     edits: jsonc.Edit[]
 ): monaco.editor.IIdentifiedSingleEditOperation[] {
-    return edits.map(
-        (edit, i) =>
-            ({
-                identifier: { major: model.getVersionId(), minor: i },
-                range: monaco.Range.fromPositions(
-                    model.getPositionAt(edit.offset),
-                    model.getPositionAt(edit.offset + edit.length)
-                ),
-                forceMoveMarkers: true,
-                text: edit.content,
-            } as monaco.editor.IIdentifiedSingleEditOperation)
-    )
+    return edits.map((edit, i) => ({
+        identifier: { major: model.getVersionId(), minor: i },
+        range: monaco.Range.fromPositions(
+            model.getPositionAt(edit.offset),
+            model.getPositionAt(edit.offset + edit.length)
+        ),
+        forceMoveMarkers: true,
+        text: edit.content,
+    }))
 }
 
 /**
