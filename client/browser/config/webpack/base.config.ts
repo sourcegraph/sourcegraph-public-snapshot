@@ -1,8 +1,8 @@
-import ExtractTextPlugin from 'extract-text-webpack-plugin'
+import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import * as path from 'path'
 import * as webpack from 'webpack'
 
-import { buildStylesLoaders, jsRule, tsRule } from '../shared/webpack'
+import { commonStylesheetLoaders, jsRule, tsRule } from '../shared/webpack'
 
 const buildEntry = (...files: string[]) => files.map(file => path.join(__dirname, file))
 
@@ -12,7 +12,7 @@ const optionsEntry = '../../src/config/options.entry.js'
 const pageEntry = '../../src/config/page.entry.js'
 const extEntry = '../../src/config/extension.entry.js'
 
-export default {
+const config: webpack.Configuration = {
     entry: {
         background: buildEntry(extEntry, backgroundEntry, '../../src/extension/scripts/background.tsx'),
         options: buildEntry(extEntry, optionsEntry, '../../src/extension/scripts/options.tsx'),
@@ -27,11 +27,9 @@ export default {
         filename: '[name].bundle.js',
         chunkFilename: '[id].chunk.js',
     },
+
     plugins: [
-        new ExtractTextPlugin({
-            filename: '../css/[name].bundle.css',
-            allChunks: true,
-        }),
+        new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }) as any, // @types package is incorrect
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
@@ -43,15 +41,15 @@ export default {
             {
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
-                use: ExtractTextPlugin.extract(
-                    buildStylesLoaders({
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    {
                         loader: 'css-loader',
-                        options: {
-                            minimize: process.env.NODE_ENV === 'production',
-                        },
-                    })
-                ),
+                    },
+                    ...commonStylesheetLoaders,
+                ],
             },
         ],
     },
-} as webpack.Configuration
+}
+export default config

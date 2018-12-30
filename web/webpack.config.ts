@@ -1,8 +1,11 @@
+// tslint:disable-next-line:no-reference
+/// <reference path="../shared/src/types/terser-webpack-plugin/index.d.ts" />
+
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import * as path from 'path'
 // @ts-ignore
 import rxPaths from 'rxjs/_esm5/path-mapping'
-import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
+import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
@@ -45,8 +48,8 @@ const config: webpack.Configuration = {
     optimization: {
         minimize: mode === 'production',
         minimizer: [
-            new UglifyJsPlugin({
-                uglifyOptions: {
+            new TerserPlugin({
+                terserOptions: {
                     compress: {
                         // // Don't inline functions, which causes name collisions with uglify-es:
                         // https://github.com/mishoo/UglifyJS2/issues/2842
@@ -132,9 +135,6 @@ const config: webpack.Configuration = {
                     MiniCssExtractPlugin.loader,
                     {
                         loader: 'css-loader',
-                        options: {
-                            minimize: mode === 'production',
-                        },
                     },
                     {
                         loader: 'postcss-loader',

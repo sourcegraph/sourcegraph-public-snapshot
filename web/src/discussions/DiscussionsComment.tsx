@@ -154,7 +154,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         )
     }
 
-    private onShareLinkClick: React.MouseEventHandler<HTMLElement> = event => {
+    private onShareLinkClick: React.MouseEventHandler<HTMLAnchorElement> = event => {
         if (event.metaKey || event.altKey || event.ctrlKey) {
             return
         }

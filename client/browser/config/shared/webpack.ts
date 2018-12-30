@@ -3,8 +3,7 @@ import * as path from 'path'
 import * as webpack from 'webpack'
 import babelConfig from '../../babel.config'
 
-export const buildStylesLoaders = (baseLoader: webpack.Loader): webpack.Loader[] => [
-    baseLoader,
+export const commonStylesheetLoaders: webpack.Loader[] = [
     {
         loader: 'postcss-loader',
         options: {
