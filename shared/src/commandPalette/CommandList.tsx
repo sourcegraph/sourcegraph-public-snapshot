@@ -137,7 +137,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                             type="text"
                             className="form-control px-2 py-1 rounded-0"
                             value={this.state.input}
-                            placeholder="Command..."
+                            placeholder="Run Sourcegraph action..."
                             spellCheck={false}
                             autoCorrect="off"
                             autoComplete="off"
