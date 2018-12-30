@@ -1508,8 +1508,9 @@
     vscode-languageserver-types "^3.8.2"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "1.0.2"
+  dependencies:
+    sourcegraph "*"
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -2336,7 +2337,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-visibility-sensor@^5.0.0":
+"@types/react-visibility-sensor@5.0.0":
   version "5.0.0"
   resolved "https://registry.npmjs.org/@types/react-visibility-sensor/-/react-visibility-sensor-5.0.0.tgz#23e3bf4a7e6bc15ad83ad1101bcd6856f7f06607"
   integrity sha512-ABSiWdpApg0hxyGNkJvb5rBEFBP7xoy+ID9dGoA6TPBJlYpvfoRrtk82YO6IIBgHBJ/QNml+wJjSVsZ1otbATQ==
@@ -13595,8 +13596,7 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "20.0.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
