@@ -11,7 +11,7 @@ if [ ! -d "$DEV_PRIVATE_PATH" ]; then
 fi
 
 echo "Installing enterprise web dependencies..."
-yarn --check-files
+[ -n "${OFFLINE-}" ] || yarn --check-files
 
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
