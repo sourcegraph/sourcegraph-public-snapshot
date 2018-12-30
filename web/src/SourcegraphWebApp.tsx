@@ -1,5 +1,4 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route } from 'react-router'
@@ -18,6 +17,7 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/s
 import { TelemetryContext } from '../../shared/src/telemetry/telemetryContext'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
@@ -173,10 +173,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     public render(): React.ReactFragment | null {
-        if (this.state.error) {
-            return <HeroPage icon={AlertCircleIcon} title={'Something happened'} subtitle={this.state.error.message} />
-        }
-
         if (window.pageError && window.pageError.statusCode !== 404) {
             const statusCode = window.pageError.statusCode
             const statusText = window.pageError.statusText
@@ -209,38 +205,40 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         const { children, ...props } = this.props
 
         return (
-            <ShortcutProvider>
-                <TelemetryContext.Provider value={eventLogger}>
-                    <BrowserRouter key={0}>
-                        <Route
-                            path="/"
-                            // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                            render={routeComponentProps => (
-                                <Layout
-                                    {...props}
-                                    {...routeComponentProps}
-                                    authenticatedUser={authenticatedUser}
-                                    viewerSubject={this.state.viewerSubject}
-                                    settingsCascade={this.state.settingsCascade}
-                                    // Theme
-                                    isLightTheme={this.state.isLightTheme}
-                                    onThemeChange={this.onThemeChange}
-                                    isMainPage={this.state.isMainPage}
-                                    onMainPage={this.onMainPage}
-                                    // Search query
-                                    navbarSearchQuery={this.state.navbarSearchQuery}
-                                    onNavbarQueryChange={this.onNavbarQueryChange}
-                                    // Extensions
-                                    platformContext={this.state.platformContext}
-                                    extensionsController={this.state.extensionsController}
-                                />
-                            )}
-                        />
-                    </BrowserRouter>
-                    <Tooltip key={1} />
-                    <Notifications key={2} extensionsController={this.state.extensionsController} />
-                </TelemetryContext.Provider>
-            </ShortcutProvider>
+            <ErrorBoundary>
+                <ShortcutProvider>
+                    <TelemetryContext.Provider value={eventLogger}>
+                        <BrowserRouter key={0}>
+                            <Route
+                                path="/"
+                                // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                                render={routeComponentProps => (
+                                    <Layout
+                                        {...props}
+                                        {...routeComponentProps}
+                                        authenticatedUser={authenticatedUser}
+                                        viewerSubject={this.state.viewerSubject}
+                                        settingsCascade={this.state.settingsCascade}
+                                        // Theme
+                                        isLightTheme={this.state.isLightTheme}
+                                        onThemeChange={this.onThemeChange}
+                                        isMainPage={this.state.isMainPage}
+                                        onMainPage={this.onMainPage}
+                                        // Search query
+                                        navbarSearchQuery={this.state.navbarSearchQuery}
+                                        onNavbarQueryChange={this.onNavbarQueryChange}
+                                        // Extensions
+                                        platformContext={this.state.platformContext}
+                                        extensionsController={this.state.extensionsController}
+                                    />
+                                )}
+                            />
+                        </BrowserRouter>
+                        <Tooltip key={1} />
+                        <Notifications key={2} extensionsController={this.state.extensionsController} />
+                    </TelemetryContext.Provider>
+                </ShortcutProvider>
+            </ErrorBoundary>
         )
     }
 

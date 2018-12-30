@@ -5,6 +5,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { RouteDescriptor } from '../util/contributions'
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
@@ -64,24 +65,26 @@ export const SiteAdminArea = withAuthenticatedUser(
                 <div className="site-admin-area area">
                     <SiteAdminSidebar className="area__sidebar" groups={this.props.sideBarGroups} />
                     <div className="area__content">
-                        <Switch>
-                            {this.props.routes.map(
-                                ({ render, path, exact, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            key="hardcoded-key"
-                                            path={this.props.match.url + path}
-                                            exact={exact}
-                                            // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
-                                        />
-                                    )
-                            )}
-                            <Route component={NotFoundPage} />
-                        </Switch>
+                        <ErrorBoundary>
+                            <Switch>
+                                {this.props.routes.map(
+                                    ({ render, path, exact, condition = () => true }) =>
+                                        condition(context) && (
+                                            <Route
+                                                // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                key="hardcoded-key"
+                                                path={this.props.match.url + path}
+                                                exact={exact}
+                                                // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                                                render={routeComponentProps =>
+                                                    render({ ...context, ...routeComponentProps })
+                                                }
+                                            />
+                                        )
+                                )}
+                                <Route component={NotFoundPage} />
+                            </Switch>
+                        </ErrorBoundary>
                     </div>
                 </div>
             )
