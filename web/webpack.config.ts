@@ -2,6 +2,7 @@
 /// <reference path="../shared/src/types/terser-webpack-plugin/index.d.ts" />
 
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
+import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 // @ts-ignore
 import rxPaths from 'rxjs/_esm5/path-mapping'
@@ -90,6 +91,7 @@ const config: webpack.Configuration = {
         }),
         new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
         new MiniCssExtractPlugin({ filename: 'styles/[name].bundle.css' }) as any, // @types package is incorrect
+        new OptimizeCssAssetsPlugin(),
         // Don't build the files referenced by dynamic imports for all the basic languages monaco supports.
         // They won't ever be loaded at runtime because we only edit JSON
         new webpack.IgnorePlugin(/^\.\/[^.]+.js$/, /\/node_modules\/monaco-editor\/esm\/vs\/basic-languages\/\w+$/),

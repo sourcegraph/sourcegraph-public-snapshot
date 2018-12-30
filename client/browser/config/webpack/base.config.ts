@@ -1,4 +1,5 @@
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
+import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 import * as webpack from 'webpack'
 
@@ -30,6 +31,7 @@ const config: webpack.Configuration = {
 
     plugins: [
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }) as any, // @types package is incorrect
+        new OptimizeCssAssetsPlugin(),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
