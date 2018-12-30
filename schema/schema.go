@@ -233,6 +233,10 @@ type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
 
+// Notifications description: Notification preferences.
+type Notifications struct {
+}
+
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
 	ClientID           string `json:"clientID"`
@@ -311,6 +315,7 @@ type Sentry struct {
 type Settings struct {
 	Extensions             map[string]bool           `json:"extensions,omitempty"`
 	Motd                   []string                  `json:"motd,omitempty"`
+	Notifications          *Notifications            `json:"notifications,omitempty"`
 	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
 	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`

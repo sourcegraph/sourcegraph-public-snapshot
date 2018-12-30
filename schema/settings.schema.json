@@ -78,6 +78,13 @@
         "type": "boolean",
         "description": "`true` to enable the extension, `false` to disable the extension (if it was previously enabled)"
       }
+    },
+    "notifications": {
+      "description": "Notification preferences.",
+      "type": "object",
+      "properties": {
+
+      }
     }
   },
   "definitions": {
