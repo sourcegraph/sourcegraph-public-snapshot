@@ -6,7 +6,7 @@ import { Range } from './location'
  *
  * @see module:sourcegraph.Hover
  */
-export interface Hover extends Pick<sourcegraph.Hover, 'contents' | '__backcompatContents'> {
+export interface Hover extends Pick<sourcegraph.Hover, 'contents' | 'priority' | '__backcompatContents'> {
     /** The range that the hover applies to. */
     readonly range?: Range
 }
