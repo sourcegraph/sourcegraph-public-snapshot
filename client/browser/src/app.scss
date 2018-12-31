@@ -85,7 +85,6 @@ $theme-colors-light: (
 @import './libs/options/styles.scss';
 @import '@sourcegraph/codeintellify/lib/HoverOverlay.scss';
 @import './libs/code_intelligence/HoverOverlay.scss';
-@import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 @import './shared';
 
 #sourcegraph-options-menu {

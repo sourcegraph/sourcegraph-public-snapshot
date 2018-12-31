@@ -1,4 +1,3 @@
-import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 import * as webpack from 'webpack'
 import babelConfig from '../../babel.config'
@@ -16,10 +15,6 @@ export const commonStylesheetLoaders: webpack.Loader[] = [
         loader: 'sass-loader',
         options: {
             includePaths: [path.resolve(__dirname, '../../../..', 'node_modules')],
-            importer: sassImportOnce,
-            importOnce: {
-                css: true,
-            },
         },
     },
 ]
