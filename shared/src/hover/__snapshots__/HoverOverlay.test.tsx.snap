@@ -1,0 +1,587 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`HoverOverlay actions and hover empty 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  />
+</div>
+`;
+
+exports[`HoverOverlay actions and hover error 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+    >
+      <h4>
+        <AlertCircleOutlineIcon
+          className="icon-inline"
+        />
+         Error:
+      </h4>
+       
+      m2
+    </div>
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay actions and hover loading 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__row hover-overlay__loader-row"
+    >
+      <div
+        className="loading-spinner icon-inline"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay actions and hover present 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
+",
+        }
+      }
+    />
+  </div>
+  <div
+    className="hover-overlay__actions hover-overlay__row"
+  >
+    <ActionItem
+      action={
+        Object {
+          "command": "c",
+          "id": "a",
+        }
+      }
+      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      disabledDuringExecution={true}
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+        }
+      }
+      location={
+        Object {
+          "hash": "",
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        }
+      }
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+        }
+      }
+      showInlineError={true}
+      showLoadingSpinnerDuringExecution={true}
+      variant="actionItem"
+    />
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay actions and hover undefined 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  />
+</div>
+`;
+
+exports[`HoverOverlay actions empty 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  />
+</div>
+`;
+
+exports[`HoverOverlay actions error 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  />
+</div>
+`;
+
+exports[`HoverOverlay actions error, hover present 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
+",
+        }
+      }
+    />
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay actions loading 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  />
+</div>
+`;
+
+exports[`HoverOverlay actions present 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  />
+  <div
+    className="hover-overlay__actions hover-overlay__row"
+  >
+    <ActionItem
+      action={
+        Object {
+          "command": "c",
+          "id": "a",
+        }
+      }
+      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      disabledDuringExecution={true}
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+        }
+      }
+      location={
+        Object {
+          "hash": "",
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        }
+      }
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+        }
+      }
+      showInlineError={true}
+      showLoadingSpinnerDuringExecution={true}
+      variant="actionItem"
+    />
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay actions present, hover loading 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__row hover-overlay__loader-row"
+    >
+      <Unknown
+        className="icon-inline"
+      />
+    </div>
+  </div>
+  <div
+    className="hover-overlay__actions hover-overlay__row"
+  >
+    <ActionItem
+      action={
+        Object {
+          "command": "c",
+          "id": "a",
+        }
+      }
+      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      disabledDuringExecution={true}
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+        }
+      }
+      location={
+        Object {
+          "hash": "",
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        }
+      }
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+        }
+      }
+      showInlineError={true}
+      showLoadingSpinnerDuringExecution={true}
+      variant="actionItem"
+    />
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay hover empty 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  />
+</div>
+`;
+
+exports[`HoverOverlay hover error 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+    >
+      <h4>
+        <AlertCircleOutlineIcon
+          className="icon-inline"
+        />
+         Error:
+      </h4>
+       
+      m
+    </div>
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay hover error, actions present 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+    >
+      <h4>
+        <AlertCircleOutlineIcon
+          className="icon-inline"
+        />
+         Error:
+      </h4>
+       
+      m
+    </div>
+  </div>
+  <div
+    className="hover-overlay__actions hover-overlay__row"
+  >
+    <ActionItem
+      action={
+        Object {
+          "command": "c",
+          "id": "a",
+        }
+      }
+      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      disabledDuringExecution={true}
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+        }
+      }
+      location={
+        Object {
+          "hash": "",
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        }
+      }
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+        }
+      }
+      showInlineError={true}
+      showLoadingSpinnerDuringExecution={true}
+      variant="actionItem"
+    />
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay hover loading 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__row hover-overlay__loader-row"
+    >
+      <div
+        className="loading-spinner icon-inline"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay hover present 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
+",
+        }
+      }
+    />
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay hover present, actions loading 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
+",
+        }
+      }
+    />
+  </div>
+</div>
+`;
+
+exports[`HoverOverlay multiple hovers present 1`] = `
+<div
+  className="hover-overlay card "
+  style={
+    Object {
+      "left": "0px",
+      "opacity": 1,
+      "top": "0px",
+      "visibility": "visible",
+    }
+  }
+>
+  <div
+    className="hover-overlay__contents"
+  >
+    <div
+      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
+",
+        }
+      }
+    />
+    <div
+      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v2</p>
+",
+        }
+      }
+    />
+  </div>
+</div>
+`;

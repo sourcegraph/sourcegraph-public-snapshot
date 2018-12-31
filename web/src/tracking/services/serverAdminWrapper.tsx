@@ -28,10 +28,9 @@ class ServerAdminWrapper {
             if (eventAction === 'SearchSubmitted') {
                 logUserEvent(GQL.UserEvent.SEARCHQUERY)
             } else if (
-                eventAction === 'SymbolHovered' ||
-                eventAction === 'FindRefsClicked' ||
-                eventAction === 'FindImplementationsClicked' ||
-                eventAction === 'GoToDefClicked'
+                eventAction === 'goToDefinition' ||
+                eventAction === 'goToDefinition.preloaded' ||
+                eventAction === 'findReferences'
             ) {
                 logUserEvent(GQL.UserEvent.CODEINTEL)
             }

@@ -165,6 +165,12 @@
               },
               "type": "array"
             },
+            "hover": {
+              "items": {
+                "$ref": "#/properties/contributes/definitions/MenuItemContribution"
+              },
+              "type": "array"
+            },
             "panel/toolbar": {
               "items": {
                 "$ref": "#/properties/contributes/definitions/MenuItemContribution"

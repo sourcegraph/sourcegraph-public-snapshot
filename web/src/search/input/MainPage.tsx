@@ -6,6 +6,7 @@ import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -16,7 +17,7 @@ import { CodeIntellifyBlob } from './CodeIntellifyBlob'
 import { QueryInputForModal } from './QueryInputForModal'
 import { SearchButton } from './SearchButton'
 
-interface Props extends ExtensionsControllerProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History

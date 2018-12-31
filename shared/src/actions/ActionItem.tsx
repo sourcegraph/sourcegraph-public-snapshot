@@ -59,13 +59,15 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-interface Props extends ActionItemProps {
+export interface ActionItemComponentProps {
     extensionsController:
         | ExtensionsControllerProps['extensionsController']
         | { executeCommand: (params: ExecuteCommandParams) => Promise<any> }
     platformContext: PlatformContextProps['platformContext'] | { forceUpdateTooltip: () => void }
     location: H.Location
 }
+
+interface Props extends ActionItemProps, ActionItemComponentProps {}
 
 const LOADING: 'loading' = 'loading'
 

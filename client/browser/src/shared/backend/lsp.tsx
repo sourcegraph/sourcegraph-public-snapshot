@@ -1,4 +1,3 @@
-import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { from, Observable, of, OperatorFunction, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
@@ -13,16 +12,11 @@ import {
     AbsoluteRepoFilePosition,
     FileSpec,
     makeRepoURI,
-    parseRepoURI,
-    PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
-    RevSpec,
-    ViewStateSpec,
 } from '../../../../../shared/src/util/url'
 import { canFetchForURL, DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
-import { toAbsoluteBlobURL } from '../util/url'
 import { normalizeAjaxError, NoSourcegraphURLError } from './errors'
 import { getHeaders } from './headers'
 
@@ -148,7 +142,7 @@ const extractLSPResponse: OperatorFunction<AjaxResponse, any> = source =>
         map(lspResponses => lspResponses[1] && lspResponses[1].result)
     )
 
-const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<HoverMerged | null> => {
+const getHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<HoverMerged | null> => {
     const mode = getModeFromPath(pos.filePath)
     if (!mode || unsupportedModes.has(mode)) {
         return of({ contents: [] })
@@ -215,67 +209,13 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
     return request(url, 'textDocument/definition', body).pipe(extractLSPResponse)
 }, makeRepoURI)
 
-export function fetchJumpURL(
-    fetchDefinition: SimpleProviderFns['fetchDefinition'],
-    pos: AbsoluteRepoFilePosition
-): Observable<string | null> {
-    return fetchDefinition(pos).pipe(
-        map(def => {
-            const defArray = Array.isArray(def) ? def : [def]
-            const firstDef = defArray[0]
-            if (!firstDef) {
-                return null
-            }
-
-            const uri = parseRepoURI(firstDef.uri) as AbsoluteRepoFilePosition
-            if (firstDef.range) {
-                uri.position = { line: firstDef.range.start.line + 1, character: firstDef.range.start.character + 1 }
-            }
-            return toAbsoluteBlobURL(uri)
-        })
-    )
-}
-
-export function createJumpURLFetcher(
-    fetchDefinition: SimpleProviderFns['fetchDefinition'],
-    buildURL: (
-        pos: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
-    ) => string
-): JumpURLFetcher<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec & Partial<ViewStateSpec>> {
-    return ({ line, character, part, repoName, viewState, ...rest }) =>
-        fetchDefinition({ ...rest, repoName, position: { line, character } }).pipe(
-            map(def => {
-                const defArray = Array.isArray(def) ? def : [def]
-                def = defArray[0]
-                if (!def) {
-                    return null
-                }
-
-                const uri = parseRepoURI(def.uri)
-                return buildURL({
-                    repoName: uri.repoName,
-                    rev: uri.rev!,
-                    filePath: uri.filePath!, // There's never going to be a definition without a file.
-                    position: def.range
-                        ? {
-                              line: def.range.start.line + 1,
-                              character: def.range.start.character + 1,
-                          }
-                        : { line: 0, character: 0 },
-                    viewState,
-                    part,
-                })
-            })
-        )
-}
-
-export interface SimpleProviderFns {
-    fetchHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
+interface SimpleProviderFns {
+    getHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
     fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Location | Location[] | null>
 }
 
 export const lspViaAPIXlang: SimpleProviderFns = {
-    fetchHover,
+    getHover,
     fetchDefinition,
 }
 
@@ -294,7 +234,7 @@ const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocume
 export const createLSPFromExtensions = (extensionsController: Controller): SimpleProviderFns => ({
     // Use from() to suppress rxjs type incompatibilities between different minor versions of rxjs in
     // node_modules/.
-    fetchHover: pos =>
+    getHover: pos =>
         from(extensionsController.services.textDocumentHover.getHover(toTextDocumentPositionParams(pos))).pipe(
             map(hover => (hover === null ? HoverMerged.from([]) : hover))
         ),

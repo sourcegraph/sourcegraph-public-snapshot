@@ -14,7 +14,9 @@ const config = {
   // unexpected token import/export", then add it here. See
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
-  transformIgnorePatterns: ['/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner)'],
+  transformIgnorePatterns: [
+    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify)',
+  ],
 
   // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
   // `--coverageReporters text` jest option.
