@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -195,23 +196,25 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
                         <ErrorBoundary>
-                            <Switch>
-                                {this.props.userAreaRoutes.map(
-                                    ({ path, exact, render, condition = () => true }) =>
-                                        condition(context) && (
-                                            <Route
-                                                path={this.props.match.url + path}
-                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                exact={exact}
-                                                // tslint:disable-next-line:jsx-no-lambda
-                                                render={routeComponentProps =>
-                                                    render({ ...context, ...routeComponentProps })
-                                                }
-                                            />
-                                        )
-                                )}
-                                <Route key="hardcoded-key" component={NotFoundPage} />
-                            </Switch>
+                            <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                                <Switch>
+                                    {this.props.userAreaRoutes.map(
+                                        ({ path, exact, render, condition = () => true }) =>
+                                            condition(context) && (
+                                                <Route
+                                                    path={this.props.match.url + path}
+                                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                    exact={exact}
+                                                    // tslint:disable-next-line:jsx-no-lambda
+                                                    render={routeComponentProps =>
+                                                        render({ ...context, ...routeComponentProps })
+                                                    }
+                                                />
+                                            )
+                                    )}
+                                    <Route key="hardcoded-key" component={NotFoundPage} />
+                                </Switch>
+                            </React.Suspense>
                         </ErrorBoundary>
                     </div>
                 </div>

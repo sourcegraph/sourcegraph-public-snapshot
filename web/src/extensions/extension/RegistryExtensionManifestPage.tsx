@@ -15,15 +15,14 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
 }> = ({ extension }) => (
     <div className="alert alert-info">
         This extension is not yet published.
-        {extension.registryExtension &&
-            extension.registryExtension.viewerCanAdminister && (
-                <>
-                    <br />
-                    <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
-                        Publish first release of extension
-                    </Link>
-                </>
-            )}
+        {extension.registryExtension && extension.registryExtension.viewerCanAdminister && (
+            <>
+                <br />
+                <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                    Publish first release of extension
+                </Link>
+            </>
+        )}
     </div>
 )
 
@@ -107,7 +106,8 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             history={this.props.history}
                         />
                     ) : (
-                        <pre className="form-control">
+                        // tslint:disable-next-line:jsx-ban-props
+                        <pre className="form-control" style={{ minHeight: '30rem' }}>
                             <code>{this.props.extension.rawManifest}</code>
                         </pre>
                     )}

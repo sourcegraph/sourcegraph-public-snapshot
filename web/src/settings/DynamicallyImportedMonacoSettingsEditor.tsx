@@ -83,9 +83,6 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     public render(): JSX.Element | null {
         const isDirty = this.isDirty
         const effectiveValue = this.effectiveValue
-
-        console.log('QQ3')
-
         return (
             <>
                 {this.props.actions && (
