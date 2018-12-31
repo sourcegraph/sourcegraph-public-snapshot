@@ -19,6 +19,10 @@ describe('HoverMerged', () => {
             ).toEqual({
                 contents: [{ kind: MarkupKind.Markdown, value: '```l\nx\n```\n' }],
             }))
+        test('backcompat string', () =>
+            expect(HoverMerged.from([{ contents: 'z' as any, __backcompatContents: ['x'] }])).toEqual({
+                contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
+            }))
         test('1 MarkupContent', () =>
             expect(HoverMerged.from([{ contents: { kind: MarkupKind.Markdown, value: 'x' } }])).toEqual({
                 contents: [{ kind: MarkupKind.Markdown, value: 'x' }],

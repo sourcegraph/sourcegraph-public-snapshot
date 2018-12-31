@@ -66,7 +66,7 @@ export namespace HoverMerged {
                         : [__backcompatContents]) {
                         if (typeof content === 'string') {
                             if (content) {
-                                contents.push({ value: content, kind: 'plaintext' as MarkupKind })
+                                contents.push({ value: content, kind: 'markdown' as MarkupKind })
                             }
                         } else if ('language' in content) {
                             if (content.language && content.value) {
