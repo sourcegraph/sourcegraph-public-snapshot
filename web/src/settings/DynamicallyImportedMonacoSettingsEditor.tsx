@@ -1,11 +1,8 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
-import { from as fromPromise, Subscription } from 'rxjs'
-import { catchError } from 'rxjs/operators'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { Subscription } from 'rxjs'
 import { SaveToolbar } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
@@ -17,9 +14,9 @@ const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dis
 
 interface Props
     extends Pick<
-            _monacoSettingsEditorModule.Props,
-            'id' | 'readOnly' | 'height' | 'jsonSchemaId' | 'extraSchemas' | 'isLightTheme'
-        > {
+        _monacoSettingsEditorModule.Props,
+        'id' | 'readOnly' | 'height' | 'jsonSchemaId' | 'extraSchemas' | 'isLightTheme'
+    > {
     value: string
 
     actions?: EditorAction[]
@@ -41,10 +38,11 @@ interface Props
 interface State {
     /** The current contents of the editor, if changed from Props.value. */
     value?: string
-
-    /** The dynamically imported MonacoSettingsEditor module, undefined while loading. */
-    monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
 }
+
+const MonacoSettingsEditor = React.lazy(async () => ({
+    default: (await import('../settings/MonacoSettingsEditor')).MonacoSettingsEditor,
+}))
 
 /** Displays a MonacoSettingsEditor component without loading Monaco in the current Webpack chunk. */
 export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent<Props, State> {
@@ -56,19 +54,6 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     private configEditor?: _monaco.editor.ICodeEditor
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            fromPromise(import('../settings/MonacoSettingsEditor'))
-                .pipe(
-                    catchError(error => {
-                        console.error(error)
-                        return [asError(error)]
-                    })
-                )
-                .subscribe(m => {
-                    this.setState({ monacoSettingsEditorOrError: m })
-                })
-        )
-
         // Prevent navigation when dirty.
         this.subscriptions.add(
             this.props.history.block((location: H.Location, action: H.Action) => {
@@ -96,22 +81,11 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     }
 
     public render(): JSX.Element | null {
-        if (this.state.monacoSettingsEditorOrError === undefined) {
-            return <LoadingSpinner className="icon-inline" />
-        }
-
-        if (isErrorLike(this.state.monacoSettingsEditorOrError)) {
-            return (
-                <div className="alert alert-danger">
-                    Error loading: {upperFirst(this.state.monacoSettingsEditorOrError.message)}
-                </div>
-            )
-        }
-
         const isDirty = this.isDirty
         const effectiveValue = this.effectiveValue
 
-        const MonacoSettingsEditor = this.state.monacoSettingsEditorOrError.MonacoSettingsEditor
+        console.log('QQ3')
+
         return (
             <>
                 {this.props.actions && (
@@ -142,13 +116,15 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                         onDiscard={this.discard}
                     />
                 )}
-                <MonacoSettingsEditor
-                    {...this.props}
-                    onDidSave={this.onSave}
-                    onChange={this.onChange}
-                    value={effectiveValue}
-                    monacoRef={this.monacoRef}
-                />
+                <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
+                    <MonacoSettingsEditor
+                        {...this.props}
+                        onDidSave={this.onSave}
+                        onChange={this.onChange}
+                        value={effectiveValue}
+                        monacoRef={this.monacoRef}
+                    />
+                </React.Suspense>
             </>
         )
     }
@@ -183,8 +159,9 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
 
     private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        // This function can only be called if the editor was loaded so it is okay to cast here
-        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof _monacoSettingsEditorModule
+        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
+        // so we know its #_result property is set by now.
+        const monacoSettingsEditor = MonacoSettingsEditor._result
         if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(

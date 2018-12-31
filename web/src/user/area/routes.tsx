@@ -1,9 +1,18 @@
 import React from 'react'
-import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { UserAccountArea } from '../account/UserAccountArea'
 import { UserAreaRoute } from './UserArea'
-import { UserOverviewPage } from './UserOverviewPage'
+
+const UserOverviewPage = React.lazy(async () => ({
+    default: (await import('./UserOverviewPage')).UserOverviewPage,
+}))
+
+const SettingsArea = React.lazy(async () => ({
+    default: (await import('../../settings/SettingsArea')).SettingsArea,
+}))
+
+const UserAccountArea = React.lazy(async () => ({
+    default: (await import('../account/UserAccountArea')).UserAccountArea,
+}))
 
 export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
     {
@@ -23,12 +32,11 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
                 isLightTheme={props.isLightTheme}
                 extraHeader={
                     <>
-                        {props.authenticatedUser &&
-                            props.user.id !== props.authenticatedUser.id && (
-                                <SiteAdminAlert className="sidebar__alert">
-                                    Viewing settings for <strong>{props.user.username}</strong>
-                                </SiteAdminAlert>
-                            )}
+                        {props.authenticatedUser && props.user.id !== props.authenticatedUser.id && (
+                            <SiteAdminAlert className="sidebar__alert">
+                                Viewing settings for <strong>{props.user.username}</strong>
+                            </SiteAdminAlert>
+                        )}
                         <p>User settings override global and organization settings.</p>
                     </>
                 }
