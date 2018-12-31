@@ -129,6 +129,12 @@ var (
 	ErrGitHubAPITemporarilyUnavailable = errors.New("the GitHub API is temporarily unavailable")
 )
 
+func init() {
+	if v, _ := strconv.ParseBool(os.Getenv("OFFLINE")); v {
+		bypassGitHubAPI = true
+	}
+}
+
 // GetGitHubRepository queries a configured GitHub connection endpoint for information about the
 // specified repository.
 //

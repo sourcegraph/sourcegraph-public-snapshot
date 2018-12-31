@@ -1,6 +1,11 @@
 package conf
 
-import "github.com/sourcegraph/sourcegraph/schema"
+import (
+	"os"
+	"strconv"
+
+	"github.com/sourcegraph/sourcegraph/schema"
+)
 
 // PlatformConfiguration contains site configuration for the Sourcegraph platform.
 type PlatformConfiguration struct {
@@ -34,6 +39,10 @@ func Extensions() *PlatformConfiguration {
 		// Nothing to do.
 	} else {
 		pc.RemoteRegistryURL = DefaultRemoteRegistry
+	}
+
+	if v, _ := strconv.ParseBool(os.Getenv("OFFLINE")); v {
+		pc.RemoteRegistryURL = ""
 	}
 
 	return &pc

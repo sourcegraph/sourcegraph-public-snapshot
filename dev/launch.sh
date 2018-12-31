@@ -109,7 +109,9 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
 # Management console webapp
-pushd ./cmd/management-console/web && yarn --no-progress && popd
+[ -n "${OFFLINE-}" ] || {
+    pushd ./cmd/management-console/web && yarn --offline --no-progress && popd
+}
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE:-dev/Procfile}"
