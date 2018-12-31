@@ -407,6 +407,7 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWif
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d h1:mOqbJXhk6waoL3rWnLee6TDX85TgZyws7vx82MwAqqk=
 github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d/go.mod h1:8m7AP/HZwL7m7f8RibUjr32a3AOxKDbSXMiXrds9WjM=
+github.com/sourcegraph/docsite v0.0.0-20181231171710-11f5f871132b/go.mod h1:KCDBpjuSIL4tk/Yv14ZIthrdijxZo4ajs256qpNsB/s=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d h1:BAP431YeA7rgSoySjmVzBfFjXsLtnD93zZip5JIOWdk=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d/go.mod h1:6DfNy4BLIggAeittTJ8o9z/6d1ly+YujBTSnv03i7Bk=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible h1:EX1bSaIbVia2U/Pt/2Z62y8wJS4Z4iNiK5VCeUKuBx8=
