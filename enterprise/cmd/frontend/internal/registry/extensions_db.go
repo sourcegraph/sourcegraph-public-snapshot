@@ -302,7 +302,7 @@ func (dbExtensions) Update(ctx context.Context, id int32, name *string) error {
 	}
 
 	res, err := dbconn.Global.ExecContext(ctx,
-		"UPDATE registry_extensions SET name=COALESCE($2, name),  updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
+		"UPDATE registry_extensions SET name=COALESCE($2, name), updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
 		id, name,
 	)
 	if err != nil {
