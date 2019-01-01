@@ -2,7 +2,7 @@ module github.com/sourcegraph/sourcegraph
 
 require (
 	github.com/NYTimes/gziphandler v1.0.1
-	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
+	github.com/aws/aws-sdk-go-v2 v0.6.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
 	github.com/certifi/gocertifi v0.0.0-20180118203423-deb3ae2ef261 // indirect
@@ -17,6 +17,7 @@ require (
 	github.com/dghubble/gologin v1.0.2-0.20181013174641-0e442dd5bb73
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/die-net/lrucache v0.0.0-20180825112409-f89ea99a4e43
+	github.com/docker/distribution v2.7.0+incompatible // indirect
 	github.com/emersion/go-imap v1.0.0-beta.1
 	github.com/emersion/go-sasl v0.0.0-20161116183048-7e096a0a6197 // indirect
 	github.com/ericchiang/k8s v1.2.0
@@ -35,13 +36,18 @@ require (
 	github.com/gchaincl/sqlhooks v1.1.0
 	github.com/getsentry/raven-go v0.0.0-20180903072508-084a9de9eb03
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-ini/ini v1.40.0 // indirect
 	github.com/go-redsync/redsync v1.0.1
+	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3
+	github.com/gogo/protobuf v1.2.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.1.0
-	github.com/golang/gddo v0.0.0-20181009135830-6c035858b4d7
+	github.com/golang/gddo v0.0.0-20181116215533-9bd4a3295021
 	github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7
-	github.com/golangci/golangci-lint v1.12.2
+	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
+	github.com/golang/mock v1.2.0 // indirect
+	github.com/golangci/golangci-lint v1.12.5
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
@@ -49,6 +55,7 @@ require (
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.0.0
 	github.com/google/zoekt v0.0.0-20180530125106-8e284ca7e964
+	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.5.1
 	github.com/gorilla/handlers v1.4.0
@@ -56,6 +63,7 @@ require (
 	github.com/gorilla/schema v1.0.2
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
+	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/graph-gophers/graphql-go v0.0.0-20180806175703-94da0f0031f9
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7
 	github.com/hashicorp/go-multierror v1.0.0
@@ -73,6 +81,7 @@ require (
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348
 	github.com/lib/pq v1.0.0
 	github.com/lightstep/lightstep-tracer-go v0.15.4
+	github.com/mattn/go-sqlite3 v1.10.0 // indirect
 	github.com/mattn/goreman v0.2.1-0.20180930133601-738cf1257bd3
 	github.com/microcosm-cc/bluemonday v1.0.1
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
@@ -82,7 +91,8 @@ require (
 	github.com/peterhellberg/link v1.0.0
 	github.com/pkg/errors v0.8.0
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
-	github.com/prometheus/client_golang v0.8.0
+	github.com/prometheus/client_golang v0.9.2
+	github.com/prometheus/common v0.0.0-20181218105931-67670fe90761 // indirect
 	github.com/russellhaering/gosaml2 v0.3.1
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/sergi/go-diff v1.0.0
@@ -116,19 +126,24 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
 	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b
-	golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1
-	golang.org/x/oauth2 v0.0.0-20181003184128-c57b0facaced
-	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
-	golang.org/x/sys v0.0.0-20181011152604-fa43e7bc11ba
+	golang.org/x/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
+	golang.org/x/net v0.0.0-20181220203305-927f97764cc3
+	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
+	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
+	golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
-	golang.org/x/tools v0.0.0-20181211221832-59cd96f77e7e
+	golang.org/x/tools v0.0.0-20181221235234-d00ac6d27372
+	google.golang.org/appengine v1.4.0 // indirect
+	google.golang.org/grpc v1.17.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
+	gopkg.in/ini.v1 v1.40.0 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.7.0
 	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8 // indirect
-	gopkg.in/yaml.v2 v2.2.1
+	gopkg.in/yaml.v2 v2.2.2
+	gotest.tools v2.2.0+incompatible // indirect
 	sourcegraph.com/sourcegraph/go-diff v0.0.0-20171119081133-3f415a150aec
 	sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4 // indirect
 )
