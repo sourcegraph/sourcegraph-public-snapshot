@@ -35,7 +35,7 @@ var registryExtensionNamesForTests = []struct {
 	{"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", false},
 }
 
-func TestRegistryExtensions_validUsernames(t *testing.T) {
+func TestRegistryExtensions_validNames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
