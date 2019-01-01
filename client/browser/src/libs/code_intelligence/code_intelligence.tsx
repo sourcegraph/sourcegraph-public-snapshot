@@ -337,8 +337,8 @@ function initCodeIntelligence(
                       <HoverOverlay
                           {...hoverOverlayProps}
                           hoverRef={nextOverlayElement}
-                          extensionsController={extensionsController!} // TODO!(sqs): fix
-                          platformContext={platformContext!} // TODO!(sqs): fix
+                          extensionsController={extensionsController!}
+                          platformContext={platformContext!}
                           location={H.createLocation(window.location)}
                           onCloseButtonClick={nextCloseButtonClick}
                       />,
@@ -383,10 +383,7 @@ export interface ResolvedCodeView extends CodeViewWithOutSelector {
 }
 
 function handleCodeHost(codeHost: CodeHost): Subscription {
-    const {
-        hoverifier,
-        controllers: { platformContext, extensionsController },
-    } = initCodeIntelligence(codeHost)
+    const { hoverifier, controllers: { platformContext, extensionsController } } = initCodeIntelligence(codeHost)
 
     const subscriptions = new Subscription()
 

@@ -49,7 +49,6 @@ func limitOrDefault(first *int32) int {
 }
 
 func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *string, first *int32) (res []*symbolResolver, err error) {
-	// TODO!(sqs): limit to path
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	defer func() {
