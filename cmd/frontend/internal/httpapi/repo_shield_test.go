@@ -51,7 +51,7 @@ func TestRepoShield(t *testing.T) {
 		}
 		return "aed", nil
 	}
-	backend.MockBackcompatBackendDefsTotalRefs = func(ctx context.Context, source api.RepoName) (int, error) {
+	backend.MockCountGoImporters = func(ctx context.Context, source api.RepoName) (int, error) {
 		if source != "github.com/gorilla/mux" {
 			t.Error("wrong repo source to TotalRefs")
 		}

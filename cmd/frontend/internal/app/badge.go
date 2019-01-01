@@ -18,7 +18,7 @@ import (
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
 func badgeValue(r *http.Request) (int, error) {
-	totalRefs, err := backend.BackcompatBackendDefsTotalRefs(r.Context(), routevar.ToRepo(mux.Vars(r)))
+	totalRefs, err := backend.CountGoImporters(r.Context(), routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}
