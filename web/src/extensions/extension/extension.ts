@@ -1,4 +1,10 @@
+import { uniq } from 'lodash'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import {
+    EXTENSION_CATEGORIES,
+    ExtensionCategory,
+    ExtensionManifest,
+} from '../../../../shared/src/schema/extension.schema'
 import { Settings } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 
@@ -38,4 +44,19 @@ export function toExtensionID(publisher: string | RegistryPublisher, name: strin
 /** Reports whether the given extension is mentioned (enabled or disabled) in the settings. */
 export function isExtensionAdded(settings: Settings | ErrorLike | null, extensionID: string): boolean {
     return !!settings && !isErrorLike(settings) && !!settings.extensions && extensionID in settings.extensions
+}
+
+/**
+ * @param categories The (unvalidated) categories defined on the extension.
+ * @returns An array that is the subset of {@link categories} consisting only of known categories, sorted and with
+ * duplicates removed.
+ */
+export function validCategories(categories: ExtensionManifest['categories']): ExtensionCategory[] | undefined {
+    if (!categories || categories.length === 0) {
+        return undefined
+    }
+    const validCategories = uniq(
+        categories.filter((c): c is ExtensionCategory => EXTENSION_CATEGORIES.includes(c as ExtensionCategory)).sort()
+    )
+    return validCategories.length === 0 ? undefined : validCategories
 }
