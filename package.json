@@ -85,7 +85,7 @@
     "@types/semver": "5.5.0",
     "@types/shelljs": "0.8.1",
     "@types/signale": "1.2.0",
-    "@types/sinon": "7.0.2",
+    "@types/sinon": "7.0.3",
     "@types/socket.io": "2.1.2",
     "@types/socket.io-client": "1.4.32",
     "@types/storybook__addon-actions": "3.4.1",
