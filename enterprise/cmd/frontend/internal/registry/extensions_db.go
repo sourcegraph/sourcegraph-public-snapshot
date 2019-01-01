@@ -182,13 +182,13 @@ func (s dbExtensions) GetByExtensionID(ctx context.Context, extensionID string) 
 // dbExtensionsListOptions contains options for listing registry extensions.
 type dbExtensionsListOptions struct {
 	Publisher              dbPublisher
-	Query                  string // matches the extension ID
+	Query                  string // matches the extension ID and latest release's manifest's title
 	PrioritizeExtensionIDs []string
 	ExcludeWIP             bool // exclude extensions marked as WIP
 	*db.LimitOffset
 }
 
-var extensionIsWIPExpr = sqlf.Sprintf(`COALESCE(rer.manifest IS NULL OR rer.manifest::json->>'title' SIMILAR TO %s, true)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
+var extensionIsWIPExpr = sqlf.Sprintf(`COALESCE(rer.manifest IS NULL OR rer.manifest->>'title' SIMILAR TO %s, true)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query
@@ -199,7 +199,14 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("x.publisher_org_id=%d", o.Publisher.OrgID))
 	}
 	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf(extensionIDExpr+" ILIKE %s", "%"+strings.Replace(strings.ToLower(o.Query), " ", "%", -1)+"%"))
+		likePattern := func(value string) string {
+			return "%" + strings.Replace(strings.ToLower(value), " ", "%", -1) + "%"
+		}
+		queryConds := []*sqlf.Query{
+			sqlf.Sprintf(extensionIDExpr+" ILIKE %s", likePattern(o.Query)),
+			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN rer.manifest->>'title' ILIKE %s ELSE false END`, likePattern(o.Query)),
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(queryConds, ") OR (")))
 	}
 	if o.ExcludeWIP {
 		conds = append(conds, sqlf.Sprintf("NOT (%s)", extensionIsWIPExpr))

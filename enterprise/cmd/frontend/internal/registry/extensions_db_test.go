@@ -304,6 +304,72 @@ func TestRegistryExtensions(t *testing.T) {
 	})
 }
 
+func TestRegistryExtensions_ListCount(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := dbtesting.TestContext(t)
+
+	testList := func(t *testing.T, opt dbExtensionsListOptions, want []*dbExtension) {
+		t.Helper()
+		if ois, err := (dbExtensions{}).List(ctx, opt); err != nil {
+			t.Fatal(err)
+		} else if !reflect.DeepEqual(ois, want) {
+			t.Errorf("got %s, want %s", asJSON(t, ois), asJSON(t, want))
+		}
+	}
+	testListCount := func(t *testing.T, opt dbExtensionsListOptions, want []*dbExtension) {
+		t.Helper()
+		testList(t, opt, want)
+		if n, err := (dbExtensions{}).Count(ctx, opt); err != nil {
+			t.Fatal(err)
+		} else if want := len(want); n != want {
+			t.Errorf("got %d, want %d", n, want)
+		}
+	}
+
+	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createAndGet := func(t *testing.T, name, manifest string) *dbExtension {
+		t.Helper()
+		xID, err := dbExtensions{}.Create(ctx, user.ID, 0, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if manifest != "" {
+			_, err = dbReleases{}.Create(ctx, &dbRelease{
+				RegistryExtensionID: xID,
+				CreatorUserID:       user.ID,
+				ReleaseTag:          "release",
+				Manifest:            manifest,
+				Bundle:              strptr(""),
+				SourceMap:           strptr(""),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		x, err := dbExtensions{}.GetByID(ctx, xID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return x
+	}
+
+	createAndGet(t, "xnomanifest", ``) // create extension without manifest to ensure it is not matched
+	createAndGet(t, "xinvalidmanifest", `123`)
+	createAndGet(t, "xinvalidtitle", `{"title": 123}`)
+	x1 := createAndGet(t, "x", `{"title": "foo", "xyz": 1}`)
+	t.Run("by title", func(t *testing.T) {
+		testListCount(t, dbExtensionsListOptions{Query: "foo"}, []*dbExtension{x1})
+		// Ensure it's not just searching the full JSON manifest.
+		testListCount(t, dbExtensionsListOptions{Query: "xyz"}, nil)
+	})
+}
+
 func asJSON(t *testing.T, v interface{}) string {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
