@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -32,4 +33,39 @@ func TestFilteringExtensionIDs(t *testing.T) {
 			t.Fatalf("got %+v, want %+v", got, want)
 		}
 	})
+}
+
+func TestToDBExtensionsListOptions(t *testing.T) {
+	tests := map[string]struct {
+		args graphqlbackend.RegistryExtensionConnectionArgs
+		want dbExtensionsListOptions
+	}{
+		"empty": {
+			args: graphqlbackend.RegistryExtensionConnectionArgs{},
+			want: dbExtensionsListOptions{ExcludeWIP: true},
+		},
+		"Query simple": {
+			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr("q")},
+			want: dbExtensionsListOptions{Query: "q", ExcludeWIP: true},
+		},
+		"PrioritizeExensionIDs": {
+			args: graphqlbackend.RegistryExtensionConnectionArgs{PrioritizeExtensionIDs: strarrayptr([]string{"a", "b"})},
+			want: dbExtensionsListOptions{PrioritizeExtensionIDs: []string{"a", "b"}, ExcludeWIP: true},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := toDBExtensionsListOptions(test.args)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, test.want) {
+				t.Errorf("got %+v, want %+v", got, test.want)
+			}
+		})
+	}
+}
+
+func strarrayptr(values []string) *[]string {
+	return &values
 }
