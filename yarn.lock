@@ -2102,10 +2102,10 @@
     "@types/glob" "*"
     fast-glob "^2.0.2"
 
-"@types/graphql@14.0.3":
-  version "14.0.3"
-  resolved "https://registry.npmjs.org/@types/graphql/-/graphql-14.0.3.tgz#389e2e5b83ecdb376d9f98fae2094297bc112c1c"
-  integrity sha512-TcFkpEjcQK7w8OcrQcd7iIBPjU0rdyi3ldj6d0iJ4PPSzbWqPBvXj9KSwO14hTOX2dm9RoiH7VuxksJLNYdXUQ==
+"@types/graphql@14.0.4":
+  version "14.0.4"
+  resolved "https://registry.npmjs.org/@types/graphql/-/graphql-14.0.4.tgz#d71a75967cd93c33eaea32b626b362ce0f2b2ae9"
+  integrity sha512-gI98ANelzzpq7lZzuYCUJg8LZDjQc7ekj7cxoWt8RezOKaVaAyK27U6AHa9LEqikP1NUhyi8blQQkHYHVRZ7Tg==
 
 "@types/gulp@4.0.5":
   version "4.0.5"
