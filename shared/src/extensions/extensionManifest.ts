@@ -10,7 +10,15 @@ import { parseJSONCOrError } from '../util/jsonc'
 export interface ExtensionManifest
     extends Pick<
         ExtensionManifestSchema,
-        'title' | 'description' | 'repository' | 'categories' | 'readme' | 'url' | 'activationEvents' | 'contributes'
+        | 'title'
+        | 'description'
+        | 'repository'
+        | 'categories'
+        | 'tags'
+        | 'readme'
+        | 'url'
+        | 'activationEvents'
+        | 'contributes'
     > {}
 
 /**
@@ -46,6 +54,9 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
             (!Array.isArray(value.categories) || !value.categories.every(c => typeof c === 'string'))
         ) {
             problems.push('"categories" property must be an array of strings')
+        }
+        if (value.tags && (!Array.isArray(value.tags) || !value.tags.every(c => typeof c === 'string'))) {
+            problems.push('"tags" property must be an array of strings')
         }
         if (value.description && typeof value.description !== 'string') {
             problems.push('"description" property must be a string')

@@ -21,7 +21,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
     className="col-md-4"
   >
     <div
-      className="mb-2"
+      className="mb-3"
     >
       <h3>
         Categories
@@ -30,7 +30,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         className="list-inline registry-extension-overview-page__categories"
       >
         <li
-          className="list-inline-item mb-1 small"
+          className="list-inline-item mb-2 small"
         >
           <a
             className="rounded border p-1"
@@ -41,7 +41,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           </a>
         </li>
         <li
-          className="list-inline-item mb-1 small"
+          className="list-inline-item mb-2 small"
         >
           <a
             className="rounded border p-1"
@@ -49,6 +49,39 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             onClick={[Function]}
           >
             Programming languages
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div
+      className="mb-3"
+    >
+      <h3>
+        Tags
+      </h3>
+      <ul
+        className="list-inline registry-extension-overview-page__tags"
+      >
+        <li
+          className="list-inline-item mb-2 small"
+        >
+          <a
+            className="rounded border p-1"
+            href="/extensions?query=tag:%22T1%22"
+            onClick={[Function]}
+          >
+            T1
+          </a>
+        </li>
+        <li
+          className="list-inline-item mb-2 small"
+        >
+          <a
+            className="rounded border p-1"
+            href="/extensions?query=tag:%22T2%22"
+            onClick={[Function]}
+          >
+            T2
           </a>
         </li>
       </ul>

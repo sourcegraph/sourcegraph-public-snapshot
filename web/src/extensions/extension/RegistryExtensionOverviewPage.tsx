@@ -1,5 +1,5 @@
 import maxDate from 'date-fns/max'
-import { isObject } from 'lodash'
+import { isObject, truncate } from 'lodash'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -68,6 +68,26 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                             </ul>
                         </div>
                     )}
+                    {this.props.extension.manifest &&
+                        !isErrorLike(this.props.extension.manifest) &&
+                        this.props.extension.manifest.tags &&
+                        this.props.extension.manifest.tags.length > 0 && (
+                            <div className="mb-3">
+                                <h3>Tags</h3>
+                                <ul className="list-inline registry-extension-overview-page__tags">
+                                    {this.props.extension.manifest.tags.map((t, i) => (
+                                        <li key={i} className="list-inline-item mb-2 small">
+                                            <Link
+                                                to={`/extensions?query=tag:${encodeURIComponent(JSON.stringify(t))}`}
+                                                className="rounded border p-1"
+                                            >
+                                                {truncate(t, { length: 24 })}
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     <small className="text-muted">
                         <dl className="border-top pt-2">
                             {this.props.extension.registryExtension &&

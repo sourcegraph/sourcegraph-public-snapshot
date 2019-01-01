@@ -49,6 +49,7 @@ export interface ExtensionManifest {
      */
     categories?: (ExtensionCategory | string)[]
 
+    tags?: string[]
     icon?: string
     activationEvents: string[]
     contributes?: Contributions & { configuration?: { [key: string]: any } }

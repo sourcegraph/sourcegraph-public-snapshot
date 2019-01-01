@@ -362,8 +362,8 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 	createAndGet(t, "xnomanifest", ``) // create extension without manifest to ensure it is not matched
 	createAndGet(t, "xinvalidmanifest", `123`)
 	createAndGet(t, "xinvalidtitle", `{"title": 123}`)
-	createAndGet(t, "xinvalidcategories", `{"title": "invalidcategories", "categories": 123}`) // invalid categories
-	x1 := createAndGet(t, "x", `{"title": "foo", "categories": ["mycategory1", "Mycategory2"], "xyz": 1}`)
+	createAndGet(t, "xinvalidcategoriestags", `{"title": "invalidcategories", "categories": 123, "tags": 123}`)
+	x1 := createAndGet(t, "x", `{"title": "foo", "categories": ["mycategory1", "Mycategory2"], "tags": ["t1", "T2"], "xyz": 1}`)
 	t.Run("by title", func(t *testing.T) {
 		testListCount(t, dbExtensionsListOptions{Query: "foo"}, []*dbExtension{x1})
 		// Ensure it's not just searching the full JSON manifest.
@@ -378,6 +378,13 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 		testListCount(t, dbExtensionsListOptions{Category: "mycategory2"}, nil) // case-sensitive
 		testListCount(t, dbExtensionsListOptions{Category: "mycateg"}, nil)     // no partial matches
 		testListCount(t, dbExtensionsListOptions{Category: "othercategory"}, nil)
+	})
+	t.Run("by tag", func(t *testing.T) {
+		testListCount(t, dbExtensionsListOptions{Tag: "t1"}, []*dbExtension{x1})
+		testListCount(t, dbExtensionsListOptions{Tag: "T2"}, []*dbExtension{x1})
+		testListCount(t, dbExtensionsListOptions{Tag: "t2"}, nil) // case-sensitive
+		testListCount(t, dbExtensionsListOptions{Tag: "t"}, nil)  // no partial matches
+		testListCount(t, dbExtensionsListOptions{Tag: "t3"}, nil)
 	})
 }
 

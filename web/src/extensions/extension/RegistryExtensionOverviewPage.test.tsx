@@ -21,6 +21,7 @@ describe('RegistryExtensionOverviewPage', () => {
                                     url: 'https://example.com',
                                     activationEvents: ['*'],
                                     categories: ['Programming languages', 'Other'],
+                                    tags: ['T1', 'T2'],
                                     readme: '**A**',
                                     repository: {
                                         url: 'https://github.com/foo/bar',

@@ -59,6 +59,11 @@
         ]
       }
     },
+    "tags": {
+      "description": "Arbitrary tags that describe this extension.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "activationEvents": {
       "description":
         "A list of events that cause this extension to be activated. '*' means that it will always be activated.",
