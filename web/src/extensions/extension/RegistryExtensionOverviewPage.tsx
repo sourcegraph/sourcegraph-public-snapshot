@@ -129,7 +129,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                 {repositoryURL && (
                                     <div className="d-flex">
                                         {repositoryURL.hostname === 'github.com' && (
-                                            <GithubCircleIcon className="icon-inline" />
+                                            <GithubCircleIcon className="icon-inline mr-1" />
                                         )}
                                         <a
                                             href={repositoryURL.href}
