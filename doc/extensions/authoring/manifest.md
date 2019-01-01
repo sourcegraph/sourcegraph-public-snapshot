@@ -20,7 +20,7 @@ Name | Required | Type | Details
 `scripts` | ✔️ | `object` | npm's scripts with Sourcegraph specific entries such as `sourcegraph:prepublish`.
 `browserslist` | | `string` | Modern list of browsers for build tools to target when transpiling.
 `repository` | | `object` | npm field for the repository location.
-`categories` | | `string[]` | Categories that describe this extension, from the set `Programming languages`, `Linters`, `Code analysis`, `External services`, `Reports and stats`, `Other`.
+`categories` | | `string[]` | Categories that describe this extension, from the set [`Programming languages`](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22), `Linters`, `Code analysis`, `External services`, `Reports and stats`, `Other`.
 
 See the [npm package.json documentation](https://docs.npmjs.com/creating-a-package-json-file) for other fields.
 

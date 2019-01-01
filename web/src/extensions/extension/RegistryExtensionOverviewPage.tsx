@@ -52,12 +52,17 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                 </div>
                 <div className="col-md-4">
                     {categories && (
-                        <div className="mb-2">
+                        <div className="mb-3">
                             <h3>Categories</h3>
                             <ul className="list-inline registry-extension-overview-page__categories">
                                 {categories.map((c, i) => (
-                                    <li key={i} className="list-inline-item rounded border p-1 mb-1 small">
-                                        {c}
+                                    <li key={i} className="list-inline-item mb-2 small">
+                                        <Link
+                                            to={`/extensions?query=category:${encodeURIComponent('"' + c + '"')}`}
+                                            className="rounded border p-1"
+                                        >
+                                            {c}
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>

@@ -48,6 +48,18 @@ func TestToDBExtensionsListOptions(t *testing.T) {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr("q")},
 			want: dbExtensionsListOptions{Query: "q", ExcludeWIP: true},
 		},
+		"Query category quoted": {
+			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b category:"C🚀" c`)},
+			want: dbExtensionsListOptions{Query: "a b c", Category: "C🚀", ExcludeWIP: true},
+		},
+		"Query category unquoted": {
+			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b category:C c`)},
+			want: dbExtensionsListOptions{Query: "a b c", Category: "C", ExcludeWIP: true},
+		},
+		"Query multiple categories": {
+			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a category:"C🚀" b category:"DD" c`)},
+			want: dbExtensionsListOptions{Query: "a b c", Category: "DD", ExcludeWIP: true},
+		},
 		"PrioritizeExensionIDs": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{PrioritizeExtensionIDs: strarrayptr([]string{"a", "b"})},
 			want: dbExtensionsListOptions{PrioritizeExtensionIDs: []string{"a", "b"}, ExcludeWIP: true},
