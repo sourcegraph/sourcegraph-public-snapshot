@@ -88,7 +88,7 @@ export function createController(context: PlatformContext): Controller {
         tap(([connection, trace, unpackedExtensionURL]) => {
             connection.trace(trace ? new BrowserConsoleTracer('') : null)
             if (unpackedExtensionURL) {
-                services.extensions.unpackedExtension.next(unpackedExtensionURL)
+                services.extensions.unpackedExtensionURL.next(unpackedExtensionURL)
             }
         }),
         map(([connection]) => connection),

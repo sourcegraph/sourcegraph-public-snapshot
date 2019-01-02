@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import { BehaviorSubject, combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { catchError, distinctUntilChanged, flatMap, map, switchMap, tap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
     getScriptURLFromExtensionManifest,
@@ -23,22 +23,24 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
     scriptURL: string
 }
 
-const getConfiguredUnpackedExtension = async (baseUrl: string) => {
-    const { response } = await ajax({
+const getConfiguredUnpackedExtension = (baseUrl: string) =>
+    ajax({
         url: `${baseUrl}/package.json`,
         responseType: 'json',
         crossDomain: true,
-    }).toPromise()
-    const ext: ConfiguredExtension = {
-        id: response.name,
-        manifest: {
-            url: `${baseUrl}/${response.main.replace('dist/', '')}`,
-            ...response,
-        },
-        rawManifest: null,
-    }
-    return ext
-}
+        async: true,
+    }).pipe(
+        map(
+            ({ response }): ConfiguredExtension => ({
+                id: response.name,
+                manifest: {
+                    url: `${baseUrl}/${response.main.replace('dist/', '')}`,
+                    ...response,
+                },
+                rawManifest: null,
+            })
+        )
+    )
 
 /**
  * Manages the set of extensions that are available and activated.
@@ -51,7 +53,10 @@ export class ExtensionsService {
         private platformContext: Pick<PlatformContext, 'queryGraphQL' | 'getScriptURLForExtension'>,
         private model: Subscribable<Pick<Model, 'visibleViewComponents'>>,
         private settingsService: Pick<SettingsService, 'data'>,
-        private extensionActivationFilter = extensionsWithMatchedActivationEvent
+        private extensionActivationFilter = extensionsWithMatchedActivationEvent,
+        private fetchUnpackedExtension: (
+            baseUrl: string
+        ) => Subscribable<ConfiguredExtension | null> = getConfiguredUnpackedExtension
     ) {}
 
     protected configuredExtensions: Subscribable<ConfiguredExtension[]> = viewerConfiguredExtensions({
@@ -70,22 +75,36 @@ export class ExtensionsService {
             from(this.configuredExtensions),
             from(this.unpackedExtension)
         ).pipe(
-            flatMap(async ([settings, configuredExtensions, unpackedExtensionURL]) => {
+            map(([settings, configuredExtensions, unpackedExtension]) => {
                 const enabled = [...configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))]
-                if (unpackedExtensionURL) {
-                    try {
-                        const unpackedExtension = await getConfiguredUnpackedExtension(unpackedExtensionURL)
-                        enabled.push(unpackedExtension)
-                    } catch (err) {
-                        console.error(`Could not load unpacked extension from '${unpackedExtensionURL}': ${err}`)
-                    }
+                if (unpackedExtension) {
+                    enabled.push(unpackedExtension)
                 }
                 return enabled
             })
         )
     }
 
-    public unpackedExtension = new BehaviorSubject<string>('')
+    private get unpackedExtension(): Subscribable<ConfiguredExtension | null> {
+        return from(this.unpackedExtensionURL).pipe(
+            switchMap((url: string) => {
+                if (!url) {
+                    return of(null)
+                }
+                return this.fetchUnpackedExtension(url)
+            }),
+            catchError(err => {
+                console.error(`Error fetching unpacked extension: ${err}`)
+                return of(null)
+            })
+        )
+    }
+
+    /**
+     * URL to a an unpacked, off-registry extension. Typically set through the extensions debug panel
+     * by an extension author to load a locally served extension during development.
+     */
+    public unpackedExtensionURL = new BehaviorSubject<string>('')
 
     /**
      * Returns an observable that emits the set of extensions that should be active, based on the previous and
