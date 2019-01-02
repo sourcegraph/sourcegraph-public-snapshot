@@ -17,7 +17,7 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="container px-2 px-xl-0">
+            <div className="container">
                 <PageTitle title="Extensions" />
                 <div className="py-3">
                     {!this.props.authenticatedUser && (
