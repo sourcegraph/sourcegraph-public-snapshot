@@ -74,7 +74,7 @@ export class ExtensionsService {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs: string[] = []
-        return combineLatest(from(this.model).pipe(), from(this.enabledExtensions).pipe()).pipe(
+        return combineLatest(from(this.model), this.enabledExtensions).pipe(
             tap(([model, enabledExtensions]) => {
                 const activeExtensions = this.extensionActivationFilter(enabledExtensions, model)
                 for (const x of activeExtensions) {
