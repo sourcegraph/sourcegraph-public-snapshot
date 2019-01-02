@@ -123,6 +123,26 @@ Array [
         tabIndex="0"
         type="button"
       >
+        Show enabled extensions
+      </button>
+      <button
+        className="dropdown-item"
+        disabled={false}
+        onClick={[Function]}
+        role="menuitem"
+        tabIndex="0"
+        type="button"
+      >
+        Show disabled extensions
+      </button>
+      <button
+        className="dropdown-item"
+        disabled={false}
+        onClick={[Function]}
+        role="menuitem"
+        tabIndex="0"
+        type="button"
+      >
         Include WIP extensions
       </button>
     </div>
@@ -244,6 +264,26 @@ Array [
       role="menu"
       tabIndex="-1"
     >
+      <button
+        className="dropdown-item"
+        disabled={false}
+        onClick={[Function]}
+        role="menuitem"
+        tabIndex="0"
+        type="button"
+      >
+        Show enabled extensions
+      </button>
+      <button
+        className="dropdown-item"
+        disabled={false}
+        onClick={[Function]}
+        role="menuitem"
+        tabIndex="0"
+        type="button"
+      >
+        Show disabled extensions
+      </button>
       <button
         className="dropdown-item"
         disabled={false}

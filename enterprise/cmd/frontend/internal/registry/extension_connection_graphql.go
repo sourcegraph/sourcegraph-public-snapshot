@@ -102,6 +102,10 @@ func parseExtensionQuery(q string) (text, category, tag string, includeWIP bool)
 			tag = unquoteValue(strings.TrimPrefix(tok, "tag:"))
 		} else if tok == "#wip" {
 			includeWIP = true
+		} else if tok == "#installed" || tok == "#enabled" || tok == "#disabled" {
+			// Ignore so that the client can implement these in post-processing. Add #wip if these
+			// tokens are encountered because that is usually the user's intent.
+			includeWIP = true
 		} else {
 			textTokens = append(textTokens, tok)
 		}

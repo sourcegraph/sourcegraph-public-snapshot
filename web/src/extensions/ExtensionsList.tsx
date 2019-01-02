@@ -3,16 +3,20 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { combineLatest, concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { catchError, debounce, delay, filter, map, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators'
-import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
+import {
+    ConfiguredRegistryExtension,
+    isExtensionEnabled,
+    toConfiguredRegistryExtension,
+} from '../../../shared/src/extensions/extension'
 import { viewerConfiguredExtensions } from '../../../shared/src/extensions/helpers'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
+import { Settings, SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
-import { extensionsQuery } from './extension/extension'
+import { extensionsQuery, isExtensionAdded } from './extension/extension'
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 
@@ -292,8 +296,36 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 )
             ),
             map(({ registryExtensions, error }) => ({
-                extensions: registryExtensions.map(x => toConfiguredRegistryExtension(x)),
+                extensions: applyExtensionsQuery(
+                    args.query || '',
+                    this.props.settingsCascade.final && !isErrorLike(this.props.settingsCascade.final)
+                        ? this.props.settingsCascade.final
+                        : {},
+                    registryExtensions
+                ).map(x => toConfiguredRegistryExtension(x)),
                 error,
             }))
         )
+}
+
+/**
+ * Applies the query's client-side extensions search keywords #installed, #enabled, and #disabled by filtering
+ * {@link registryExtensions}.
+ *
+ * @internal Exported for testing only.
+ */
+export function applyExtensionsQuery<X extends { extensionID: string }>(
+    query: string,
+    settings: Pick<Settings, 'extensions'>,
+    registryExtensions: X[]
+): X[] {
+    const installed = query.includes(extensionsQuery({ installed: true }))
+    const enabled = query.includes(extensionsQuery({ enabled: true }))
+    const disabled = query.includes(extensionsQuery({ disabled: true }))
+    return registryExtensions.filter(
+        x =>
+            (!installed || isExtensionAdded(settings, x.extensionID)) &&
+            (!enabled || isExtensionEnabled(settings, x.extensionID)) &&
+            (!disabled || (isExtensionAdded(settings, x.extensionID) && !isExtensionEnabled(settings, x.extensionID)))
+    )
 }

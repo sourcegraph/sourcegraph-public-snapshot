@@ -55,6 +55,20 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                     <DropdownMenu right={true}>
                         <DropdownItem
                             // tslint:disable-next-line:jsx-no-lambda
+                            onClick={() => this.props.onQueryChange(extensionsQuery({ enabled: true }))}
+                            disabled={this.props.query.includes(extensionsQuery({ enabled: true }))}
+                        >
+                            Show enabled extensions
+                        </DropdownItem>
+                        <DropdownItem
+                            // tslint:disable-next-line:jsx-no-lambda
+                            onClick={() => this.props.onQueryChange(extensionsQuery({ disabled: true }))}
+                            disabled={this.props.query.includes(extensionsQuery({ disabled: true }))}
+                        >
+                            Show disabled extensions
+                        </DropdownItem>
+                        <DropdownItem
+                            // tslint:disable-next-line:jsx-no-lambda
                             onClick={() =>
                                 this.props.onQueryChange(this.props.query + ' ' + extensionsQuery({ wip: true }))
                             }

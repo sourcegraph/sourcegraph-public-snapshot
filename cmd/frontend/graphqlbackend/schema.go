@@ -2984,6 +2984,13 @@ type ExtensionRegistry {
         # - tag:"T" - include only extensions in the given tag.
         # - #wip - include WIP extensions.
         #
+        # The following keywords are ignored by the server (so that the frontend can post-process the result set to
+        # implement the keywords):
+        #
+        # - #installed - include only installed extensions.
+        # - #enabled - include only enabled extensions.
+        # - #disabled - include only disabled extensions.
+        #
         # WIP extensions are excluded by default. Use #wip to include them.
         query: String
         # Include extensions from the local registry.
