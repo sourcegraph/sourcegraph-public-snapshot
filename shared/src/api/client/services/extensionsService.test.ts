@@ -37,8 +37,7 @@ class TestExtensionsService extends ExtensionsService {
     }
 }
 
-/* tslint:disable-next-line */
-describe.only('activeExtensions', () => {
+describe('activeExtensions', () => {
     test('emits an empty set', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
