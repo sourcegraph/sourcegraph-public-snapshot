@@ -32,7 +32,6 @@ storiesOf('Options - OptionsMenu', module)
                 onURLChange={action('Sourcegraph URL changed')}
                 onURLSubmit={action('New Sourcegraph URL submitted')}
                 onSettingsClick={action('Settings clicked')}
-                featureFlags={[{ key: 'useExtensions', value: true }]}
                 isSettingsOpen={true}
                 toggleFeatureFlag={action('Feture flag toggled')}
             />

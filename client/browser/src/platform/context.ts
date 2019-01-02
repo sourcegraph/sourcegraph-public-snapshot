@@ -1,4 +1,4 @@
-import { combineLatest, merge, ReplaySubject, throwError } from 'rxjs'
+import { combineLatest, merge, ReplaySubject } from 'rxjs'
 import { map, mergeMap, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -8,13 +8,14 @@ import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSub
 import { toPrettyBlobURL } from '../../../../shared/src/util/url'
 import * as runtime from '../browser/runtime'
 import storage from '../browser/storage'
+import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
 import { getContext } from '../shared/backend/context'
 import { requestGraphQL } from '../shared/backend/graphql'
-import { sendLSPHTTPRequests } from '../shared/backend/lsp'
-import { canFetchForURL, sourcegraphUrl } from '../shared/util/context'
+import { sourcegraphUrl } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
+import { createBlobURLForBundle } from './worker'
 
 /**
  * Creates the {@link PlatformContext} for the browser extension.
@@ -37,7 +38,9 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
          */
         settings: combineLatest(
             merge(
-                storage.observeSync('sourcegraphURL').pipe(switchMap(() => fetchViewerSettings())),
+                isInPage
+                    ? fetchViewerSettings()
+                    : storage.observeSync('sourcegraphURL').pipe(switchMap(() => fetchViewerSettings())),
                 updatedViewerSettings
             ).pipe(
                 publishReplay(1),
@@ -68,8 +71,18 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
                 updatedViewerSettings.next(await fetchViewerSettings().toPromise())
             }
         },
-        queryGraphQL: (request, variables, requestMightContainPrivateInfo) =>
-            storage.observeSync('sourcegraphURL').pipe(
+        queryGraphQL: (request, variables, requestMightContainPrivateInfo) => {
+            if (isInPage) {
+                return requestGraphQL({
+                    ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+                    request,
+                    variables,
+                    url: window.SOURCEGRAPH_URL,
+                    requestMightContainPrivateInfo,
+                })
+            }
+
+            return storage.observeSync('sourcegraphURL').pipe(
                 take(1),
                 mergeMap(url =>
                     requestGraphQL({
@@ -80,18 +93,17 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
                         requestMightContainPrivateInfo,
                     })
                 )
-            ),
-        backcompatQueryLSP: canFetchForURL(sourcegraphUrl)
-            ? requests => sendLSPHTTPRequests(requests)
-            : () =>
-                  throwError(
-                      'The queryLSP command is unavailable because the current repository does not exist on the Sourcegraph instance.'
-                  ),
+            )
+        },
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
         createExtensionHost,
         getScriptURLForExtension: async bundleURL => {
+            if (isInPage) {
+                return await createBlobURLForBundle(bundleURL)
+            }
+
             // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
             // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
             // with a CSP that allowlists https://* in script-src (see
@@ -106,6 +118,7 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
                     resolve
                 )
             )
+
             return blobURL
         },
         urlToFile: location => {

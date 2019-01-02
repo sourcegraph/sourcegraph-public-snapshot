@@ -9,13 +9,28 @@ import {
     MessageReader,
     MessageWriter,
 } from '../../../../shared/src/api/protocol/jsonrpc2/transport'
+import { createWebWorkerMessageTransports } from '../../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
+import { isInPage } from '../context'
+import { createExtensionHostWorker } from './worker'
 
 /**
  * Spawns an extension and returns a communication channel to it.
  */
 export function createExtensionHost(): Observable<MessageTransports> {
+    if (isInPage) {
+        return createInPageExtensionHost()
+    }
     const channelID = uuid.v4()
     return of(createPortMessageTransports(chrome.runtime.connect({ name: channelID })))
+}
+
+function createInPageExtensionHost(): Observable<MessageTransports> {
+    const worker = createExtensionHostWorker()
+    const messageTransports = createWebWorkerMessageTransports(worker)
+    return new Observable(sub => {
+        sub.next(messageTransports)
+        return () => worker.terminate()
+    })
 }
 
 class PortMessageReader extends AbstractMessageReader implements MessageReader {

@@ -37,6 +37,7 @@ export async function webpackDevServer(): Promise<void> {
         contentBase: './ui/assets',
         stats: WEBPACK_STATS_OPTIONS,
         noInfo: false,
+        disableHostCheck: true,
         proxy: {
             '/': {
                 target: 'http://localhost:3081',

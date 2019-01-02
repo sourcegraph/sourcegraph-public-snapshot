@@ -4,9 +4,7 @@ import '../../config/polyfill'
 
 import { without } from 'lodash'
 import { noop } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
 import DPT from 'webext-domain-permission-toggle'
-import ExtensionHostWorker from 'worker-loader?inline!../../../../../shared/src/api/extension/main.worker.ts'
 import * as browserAction from '../../browser/browserAction'
 import * as omnibox from '../../browser/omnibox'
 import * as permissions from '../../browser/permissions'
@@ -16,6 +14,7 @@ import * as tabs from '../../browser/tabs'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import initializeCli from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
+import { createBlobURLForBundle, createExtensionHostWorker } from '../../platform/worker'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
@@ -208,10 +207,6 @@ storage.setSyncMigration(items => {
 
     newItems.featureFlags.renderMermaidGraphsEnabled = true
 
-    if (typeof process.env.USE_EXTENSIONS !== 'undefined') {
-        newItems.featureFlags.useExtensions = process.env.USE_EXTENSIONS === 'true'
-    }
-
     // TODO: Remove this block after a few releases
     const clientSettings = JSON.parse(items.clientSettings || '{}')
     if (clientSettings['codecov.endpoints'] || typeof clientSettings['codecov.showCoverage'] !== 'undefined') {
@@ -298,15 +293,6 @@ runtime.onMessage((message, _, cb) => {
 
     return
 })
-
-async function createBlobURLForBundle(bundleURL: string): Promise<string> {
-    const req = await ajax({
-        url: bundleURL,
-        crossDomain: true,
-        responseType: 'blob',
-    }).toPromise()
-    return window.URL.createObjectURL(req.response)
-}
 
 function requestPermissionsForEnterpriseUrls(urls: string[], cb: (res?: any) => void): void {
     storage.getSync(items => {
@@ -402,7 +388,7 @@ setDefaultBrowserAction()
 
 // This is the entrypoint for the extension host.
 chrome.runtime.onConnect.addListener(port => {
-    const worker = new ExtensionHostWorker()
+    const worker = createExtensionHostWorker()
     worker.addEventListener('message', m => {
         port.postMessage(m.data)
     })
