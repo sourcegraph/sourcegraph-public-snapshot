@@ -56,13 +56,15 @@ func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionAr
 		opt.Publisher.UserID = p.userID
 		opt.Publisher.OrgID = p.orgID
 	}
+	var includeWIP bool
 	if args.Query != nil {
-		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(*args.Query)
+		opt.Query, opt.Category, opt.Tag, includeWIP = parseExtensionQuery(*args.Query)
+
 	}
 	if args.PrioritizeExtensionIDs != nil {
 		opt.PrioritizeExtensionIDs = *args.PrioritizeExtensionIDs
 	}
-	opt.ExcludeWIP = !args.IncludeWIP
+	opt.ExcludeWIP = !includeWIP
 	return opt, nil
 }
 
@@ -70,7 +72,7 @@ func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionAr
 // `category:"My category"` and `tag:"mytag"`.
 //
 // This is an intentionally simple, unoptimized parser.
-func parseExtensionQuery(q string) (text, category, tag string) {
+func parseExtensionQuery(q string) (text, category, tag string, includeWIP bool) {
 	// Tokenize.
 	var lastQuote rune
 	tokens := strings.FieldsFunc(q, func(c rune) bool {
@@ -88,17 +90,23 @@ func parseExtensionQuery(q string) (text, category, tag string) {
 		}
 	})
 
+	unquoteValue := func(s string) string {
+		return strings.Trim(s, `"'`)
+	}
+
 	var textTokens []string
 	for _, tok := range tokens {
 		if strings.HasPrefix(tok, "category:") {
-			category = strings.Trim(strings.TrimPrefix(tok, "category:"), `"'`)
+			category = unquoteValue(strings.TrimPrefix(tok, "category:"))
 		} else if strings.HasPrefix(tok, "tag:") {
-			tag = strings.Trim(strings.TrimPrefix(tok, "tag:"), `"'`)
+			tag = unquoteValue(strings.TrimPrefix(tok, "tag:"))
+		} else if tok == "#wip" {
+			includeWIP = true
 		} else {
 			textTokens = append(textTokens, tok)
 		}
 	}
-	return strings.Join(textTokens, " "), category, tag
+	return strings.Join(textTokens, " "), category, tag, includeWIP
 }
 
 // filterStripLocalExtensionIDs filters to local extension IDs and strips the

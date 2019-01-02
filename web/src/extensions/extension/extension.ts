@@ -66,13 +66,16 @@ export function validCategories(categories: ExtensionManifest['categories']): Ex
  * Constructs the extensions query given the options (for use in the query input field in the extension registry
  * list page).
  */
-export function extensionsQuery({ category, tag }: { category?: string; tag?: string }): string {
+export function extensionsQuery({ category, tag, wip }: { category?: string; tag?: string; wip?: boolean }): string {
     const parts: string[] = []
     if (category) {
         parts.push(`category:${quoteIfNeeded(category)}`)
     }
     if (tag) {
         parts.push(`tag:${quoteIfNeeded(tag)}`)
+    }
+    if (wip) {
+        parts.push('#wip')
     }
     return parts.join(' ')
 }

@@ -11,21 +11,27 @@ interface Props {
     onQueryChange: (query: string) => void
 }
 
+type DropdownMenuID = 'categories' | 'options'
+
 interface State {
-    /** Whether the categories dropdown is open. */
-    isOpen: boolean
+    /** Which dropdown is open (if any). */
+    open?: DropdownMenuID
 }
 
 /**
  * Displays buttons to be rendered alongside the extension registry list query input field.
  */
 export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, State> {
-    public state: State = { isOpen: false }
+    public state: State = {}
 
     public render(): JSX.Element | null {
         return (
             <>
-                <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen}>
+                <ButtonDropdown
+                    isOpen={this.state.open === 'categories'}
+                    // tslint:disable-next-line:jsx-no-lambda
+                    toggle={() => this.toggleIsOpen('categories')}
+                >
                     <DropdownToggle caret={true}>Category</DropdownToggle>
                     <DropdownMenu right={true}>
                         {EXTENSION_CATEGORIES.map((c, i) => (
@@ -39,10 +45,29 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                             </DropdownItem>
                         ))}
                     </DropdownMenu>
+                </ButtonDropdown>{' '}
+                <ButtonDropdown
+                    isOpen={this.state.open === 'options'}
+                    // tslint:disable-next-line:jsx-no-lambda
+                    toggle={() => this.toggleIsOpen('options')}
+                >
+                    <DropdownToggle caret={true}>Options</DropdownToggle>
+                    <DropdownMenu right={true}>
+                        <DropdownItem
+                            // tslint:disable-next-line:jsx-no-lambda
+                            onClick={() =>
+                                this.props.onQueryChange(this.props.query + ' ' + extensionsQuery({ wip: true }))
+                            }
+                            disabled={this.props.query.includes(extensionsQuery({ wip: true }))}
+                        >
+                            Include WIP extensions
+                        </DropdownItem>
+                    </DropdownMenu>
                 </ButtonDropdown>
             </>
         )
     }
 
-    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (menu: DropdownMenuID) =>
+        this.setState(prevState => ({ open: prevState.open === menu ? undefined : menu }))
 }

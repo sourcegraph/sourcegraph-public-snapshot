@@ -64,6 +64,10 @@ func TestToDBExtensionsListOptions(t *testing.T) {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b tag:"T🚀" c`)},
 			want: dbExtensionsListOptions{Query: "a b c", Tag: "T🚀", ExcludeWIP: true},
 		},
+		"Query include WIP": {
+			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b #wip c`)},
+			want: dbExtensionsListOptions{Query: "a b c", ExcludeWIP: false},
+		},
 		"PrioritizeExensionIDs": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{PrioritizeExtensionIDs: strarrayptr([]string{"a", "b"})},
 			want: dbExtensionsListOptions{PrioritizeExtensionIDs: []string{"a", "b"}, ExcludeWIP: true},

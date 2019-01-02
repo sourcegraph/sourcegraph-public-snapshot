@@ -19,6 +19,7 @@ describe('extensionsQuery', () => {
     test('category (quoted)', () => expect(extensionsQuery({ category: 'c c' })).toBe('category:"c c"'))
     test('tag (unquoted)', () => expect(extensionsQuery({ tag: 't' })).toBe('tag:t'))
     test('tag (quoted)', () => expect(extensionsQuery({ tag: 't t' })).toBe('tag:"t t"'))
+    test('wip', () => expect(extensionsQuery({ wip: true })).toBe('#wip'))
     test('none', () => expect(extensionsQuery({})).toBe(''))
 })
 

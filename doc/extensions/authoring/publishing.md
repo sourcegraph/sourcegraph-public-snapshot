@@ -27,6 +27,7 @@ Your extension will need to be published to Sourcegraph.com or an Enterprise ins
 
 An extension with no published releases, or whose `package.json` extension manifest has a `"wip": true` property, is considered a work-in-progress (WIP) extension. WIP extensions:
 
+- are not shown when searching for extensions unless the "Include WIP extensions" option is selected;
 - are sorted last on the list of extensions (unless the user has previously enabled the WIP extension);
 - have a red "WIP" badge on the extension card in the list; and
 - have a red "WIP" badge on the extension's page.

@@ -12,6 +12,7 @@ import { SettingsCascadeProps, SettingsSubject } from '../../../shared/src/setti
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
+import { extensionsQuery } from './extension/extension'
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 
@@ -208,9 +209,17 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         )}
                         {this.state.data.resultOrError.extensions.length === 0 ? (
                             this.state.data.query ? (
-                                <span className="text-muted">
-                                    No extensions matching <strong>{this.state.data.query}</strong>
-                                </span>
+                                <div className="text-muted">
+                                    <p>
+                                        No extensions match <strong>{this.state.data.query}</strong>.
+                                    </p>
+                                    {!this.state.data.query.includes(extensionsQuery({ wip: true })) && (
+                                        <p className="small">
+                                            Looking for a WIP extension? Select{' '}
+                                            <strong>Options &gt; Include WIP extensions</strong>.
+                                        </p>
+                                    )}
+                                </div>
                             ) : (
                                 this.props.emptyElement || <span className="text-muted">No extensions found</span>
                             )
@@ -255,11 +264,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         gql`
                             query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
                                 extensionRegistry {
-                                    extensions(
-                                        query: $query
-                                        prioritizeExtensionIDs: $prioritizeExtensionIDs
-                                        includeWIP: true
-                                    ) {
+                                    extensions(query: $query, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
                                         nodes {
                                             ...RegistryExtensionFields
                                         }

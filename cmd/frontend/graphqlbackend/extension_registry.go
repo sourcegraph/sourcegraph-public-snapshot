@@ -45,7 +45,6 @@ type RegistryExtensionConnectionArgs struct {
 	Publisher              *graphql.ID
 	Local                  bool
 	Remote                 bool
-	IncludeWIP             bool
 	PrioritizeExtensionIDs *[]string
 }
 

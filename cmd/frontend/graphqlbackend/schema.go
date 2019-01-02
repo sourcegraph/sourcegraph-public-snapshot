@@ -2977,6 +2977,14 @@ type ExtensionRegistry {
         # Returns only extensions from this publisher.
         publisher: ID
         # Returns only extensions matching the query.
+        #
+        # The following keywords are supported:
+        #
+        # - category:"C" - include only extensions in the given category.
+        # - tag:"T" - include only extensions in the given tag.
+        # - #wip - include WIP extensions.
+        #
+        # WIP extensions are excluded by default. Use #wip to include them.
         query: String
         # Include extensions from the local registry.
         local: Boolean = true
@@ -2987,8 +2995,6 @@ type ExtensionRegistry {
         # Typically, the client passes the list of added and enabled extension IDs in this parameter so that the
         # results include those extensions first (which is typically what the user prefers).
         prioritizeExtensionIDs: [String!]
-        # Include WIP (work-in-progress) extensions.
-        includeWIP: Boolean = true
     ): RegistryExtensionConnection!
     # A list of publishers with at least 1 extension in the registry.
     publishers(
