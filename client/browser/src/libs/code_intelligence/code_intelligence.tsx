@@ -13,7 +13,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
 import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
-import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
+import { catchError, filter, map, mergeMap, observeOn, tap, withLatestFrom } from 'rxjs/operators'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
 import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
@@ -35,8 +35,12 @@ import {
     toURIWithPath,
     ViewStateSpec,
 } from '../../../../../shared/src/util/url'
+import { sendMessage } from '../../browser/runtime'
+import { isInPage } from '../../context'
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
+import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
@@ -109,10 +113,10 @@ interface OverlayPosition {
  */
 export type MountGetter = () => HTMLElement
 
-export interface CodeHostContext {
-    repoName: string
-    rev?: string
-}
+/**
+ * The context the code host is in on the current page.
+ */
+export type CodeHostContext = RepoSpec & Partial<RevSpec>
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost {
@@ -402,13 +406,35 @@ export interface ResolvedCodeView extends CodeViewWithOutSelector {
 }
 
 function handleCodeHost(codeHost: CodeHost): Subscription {
-    const { hoverifier, controllers: { platformContext, extensionsController } } = initCodeIntelligence(codeHost)
+    const {
+        hoverifier,
+        controllers: { platformContext, extensionsController },
+    } = initCodeIntelligence(codeHost)
 
     const subscriptions = new Subscription()
 
     subscriptions.add(hoverifier)
 
-    injectViewContextOnSourcegraph(sourcegraphUrl, codeHost)
+    const ensureRepoExists = (context: CodeHostContext) =>
+        resolveRev(context).pipe(
+            retryWhenCloneInProgressError(),
+            map(rev => !!rev),
+            catchError(error => {
+                if ((error as Error).name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                    return [false]
+                }
+
+                return [true]
+            })
+        )
+
+    const openOptionsMenu = () => {
+        sendMessage({
+            type: 'openOptionsPage',
+        })
+    }
+
+    injectViewContextOnSourcegraph(sourcegraphUrl, codeHost, ensureRepoExists, isInPage ? undefined : openOptionsMenu)
 
     // Keeps track of all documents on the page since calling this function (should be once per page).
     let visibleViewComponents: ViewComponentData[] = []

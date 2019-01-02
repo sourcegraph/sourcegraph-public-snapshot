@@ -93,6 +93,7 @@ export class NoSourcegraphURLError extends Error {
 export const ERPRIVATEREPOPUBLICSOURCEGRAPHCOM = 'ERPRIVATEREPOPUBLICSOURCEGRAPHCOM'
 export class PrivateRepoPublicSourcegraphComError extends Error {
     public readonly code = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
+    public readonly name = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
     constructor(graphQLName: string) {
         super(
             `A ${graphQLName} GraphQL request to the public Sourcegraph.com was blocked because the current repository is private.`
