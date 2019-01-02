@@ -13,7 +13,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
 import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map, mergeMap, observeOn, tap, withLatestFrom } from 'rxjs/operators'
+import { catchError, filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
 import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
