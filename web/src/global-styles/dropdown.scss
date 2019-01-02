@@ -26,24 +26,24 @@ $dropdown-padding-y: $dropdown-item-padding-y;
 
 .#{$-dropdown-form-container-class} {
     position: relative;
+    margin-bottom: 2rem;
 }
 
 .#{$-dropdown-class} {
-    transition: all 250ms ease;
+    transition: all 150ms ease;
 
-    font-size: 14px;
+    font-size: .875rem;
     line-height: 20px;
     font-weight: 400;
     box-sizing: border-box;
     display: block;
-    padding: 6px 12px;
+    padding: .375rem .75rem;
     width: 100%;
     border-radius: 2px;
-    margin-bottom: 14px;
     color: $dropdown-link-color;
     background: $dropdown-bg;
     border: 1px solid $dropdown-border-color;
-    min-height: 34px;
+    min-height: calc(2rem + 2px);
     appearance: none;
 
     &:focus {
