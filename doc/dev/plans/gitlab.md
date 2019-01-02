@@ -5,7 +5,7 @@ intelligence and extensibility.
 
 ## Background
 
-We want Sourcegraph to be built into GitLab so that everyone who uses
+We want Sourcegraph build Sourcegraph extension support directly into GitLab so that everyone who uses
 the code host will have it automatically without needing to install the
 browser extension. [There is an issue open on GitLab for
 this.](https://gitlab.com/gitlab-org/gitlab-ce/issues/41925)
@@ -20,9 +20,10 @@ The browser extension supports different code hosts. It does this by
 implementing the Sourcegraph specific logic in an abstract way. It consumes
 implementations of a [`CodeHost`
 interface](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/browser/src/libs/code_intelligence/code_intelligence.tsx#L112:8)
-which each supported code host(e.g. GitHub, GitLab, etc) is required to
+which each supported code host (e.g. GitHub, GitLab, etc) is required to
 implement. This interface tells the abstracted logic how to look at the DOM
-within the context that its running in. This allows us to implement support for
+within the context that its running in to get the information needed (e.g. Repo name,
+revision, file name, etc). This allows us to implement support for
 new features once and, as long as the code host provides what we need to know,
 the new feature works for all code hosts.
 
