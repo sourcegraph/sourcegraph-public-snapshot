@@ -103,7 +103,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                         <LoadingSpinner className="icon-inline" /> Loading extensions...
                     </span>
                 )}
-                <div className="card-body border-top d-flex justify-content-end align-items-center">
+                <div className="card-body border-top d-flex justify-content-start align-items-center">
                     <label htmlFor="extension-status__trace" className="mr-2 mb-0">
                         Log to devtools console{' '}
                     </label>
@@ -115,14 +115,14 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     />
                 </div>
                 <div className="card-body border-top">
-                    <label htmlFor="extension-status__unpackedurl" className="mr-2 mb-0">
-                        Load unpacked extension
-                    </label>
-                    <div>
+                    <div className="form-group">
+                        <label htmlFor="extension-status__unpackedurl">Load unpacked extension</label>
                         <input
                             type="text"
                             id="extension-status__unpackedurl"
+                            className="form-control"
                             onChange={this.onUnpackedURLChange}
+                            placeholder="URL"
                             value={this.state.unpackedExtensionURL || ''}
                         />
                     </div>
