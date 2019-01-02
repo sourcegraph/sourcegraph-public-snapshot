@@ -43,6 +43,27 @@
         }
       }
     },
+    "categories": {
+      "description": "The categories that describe this extension, to help users browsing the extension registry to discover this extension.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Programming languages",
+          "Linters",
+          "Code analysis",
+          "External services",
+          "Reports and stats",
+          "Other",
+          "Demos"
+        ]
+      }
+    },
+    "tags": {
+      "description": "Arbitrary tags that describe this extension.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "activationEvents": {
       "description":
         "A list of events that cause this extension to be activated. '*' means that it will always be activated.",

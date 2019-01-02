@@ -9,9 +9,17 @@ import { parseJSONCOrError } from '../util/jsonc'
  */
 export interface ExtensionManifest
     extends Pick<
-            ExtensionManifestSchema,
-            'title' | 'description' | 'repository' | 'readme' | 'url' | 'activationEvents' | 'contributes'
-        > {}
+        ExtensionManifestSchema,
+        | 'title'
+        | 'description'
+        | 'repository'
+        | 'categories'
+        | 'tags'
+        | 'readme'
+        | 'url'
+        | 'activationEvents'
+        | 'contributes'
+    > {}
 
 /**
  * Parses and validates the extension manifest. If parsing or validation fails, an error value is returned (not
@@ -40,6 +48,15 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
                     problems.push('"repository" property "url" must be a string')
                 }
             }
+        }
+        if (
+            value.categories &&
+            (!Array.isArray(value.categories) || !value.categories.every(c => typeof c === 'string'))
+        ) {
+            problems.push('"categories" property must be an array of strings')
+        }
+        if (value.tags && (!Array.isArray(value.tags) || !value.tags.every(c => typeof c === 'string'))) {
+            problems.push('"tags" property must be an array of strings')
         }
         if (value.description && typeof value.description !== 'string') {
             problems.push('"description" property must be a string')

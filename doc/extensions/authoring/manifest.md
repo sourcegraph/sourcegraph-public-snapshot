@@ -20,6 +20,8 @@ Name | Required | Type | Details
 `scripts` | ✔️ | `object` | npm's scripts with Sourcegraph specific entries such as `sourcegraph:prepublish`.
 `browserslist` | | `string` | Modern list of browsers for build tools to target when transpiling.
 `repository` | | `object` | npm field for the repository location.
+`categories` | | `string[]` | Categories that describe this extension, from the predefined set [`Programming languages`](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22), `Linters`, `Code analysis`, `External services`, `Reports and stats`, `Other`.
+`tags` | | `string[]` | Arbitrary tags that describe this extension.
 
 See the [npm package.json documentation](https://docs.npmjs.com/creating-a-package-json-file) for other fields.
 
@@ -42,6 +44,12 @@ Here is an example `package.json` created by the [Sourcegraph extension creator]
   "title": "WIP: My extension",
   "description": "An awesome Sourcegraph extension",
   "publisher": "your-sourcegraph-username",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/repo"
+  },
+  "categories": ["Programming languages"],
+  "tags": ["awesome"],
   "activationEvents": [
     "*"
   ],

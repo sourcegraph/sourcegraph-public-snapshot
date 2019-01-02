@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"strings"
+	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
@@ -56,13 +57,48 @@ func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionAr
 		opt.Publisher.OrgID = p.orgID
 	}
 	if args.Query != nil {
-		opt.Query = *args.Query
+		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(*args.Query)
 	}
 	if args.PrioritizeExtensionIDs != nil {
 		opt.PrioritizeExtensionIDs = *args.PrioritizeExtensionIDs
 	}
 	opt.ExcludeWIP = !args.IncludeWIP
 	return opt, nil
+}
+
+// parseExtensionQuery parses an extension registry query consisting of terms and the operators
+// `category:"My category"` and `tag:"mytag"`.
+//
+// This is an intentionally simple, unoptimized parser.
+func parseExtensionQuery(q string) (text, category, tag string) {
+	// Tokenize.
+	var lastQuote rune
+	tokens := strings.FieldsFunc(q, func(c rune) bool {
+		switch {
+		case c == lastQuote:
+			lastQuote = rune(0)
+			return false
+		case lastQuote != rune(0):
+			return false
+		case c == '"' || c == '\'':
+			lastQuote = c
+			return false
+		default:
+			return unicode.IsSpace(c)
+		}
+	})
+
+	var textTokens []string
+	for _, tok := range tokens {
+		if strings.HasPrefix(tok, "category:") {
+			category = strings.Trim(strings.TrimPrefix(tok, "category:"), `"'`)
+		} else if strings.HasPrefix(tok, "tag:") {
+			tag = strings.Trim(strings.TrimPrefix(tok, "tag:"), `"'`)
+		} else {
+			textTokens = append(textTokens, tok)
+		}
+	}
+	return strings.Join(textTokens, " "), category, tag
 }
 
 // filterStripLocalExtensionIDs filters to local extension IDs and strips the

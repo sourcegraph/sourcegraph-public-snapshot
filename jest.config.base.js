@@ -4,7 +4,7 @@
 const config = {
   collectCoverage: true,
   coverageDirectory: '<rootDir>/coverage',
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   preset: 'ts-jest/presets/js-with-ts',
   roots: ['<rootDir>/src'],
   transform: { '^.+\\.[jt]sx?$': 'ts-jest' },

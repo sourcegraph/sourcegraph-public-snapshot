@@ -1,26 +1,21 @@
 import maxDate from 'date-fns/max'
-import { isObject } from 'lodash'
+import { isObject, truncate } from 'lodash'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
+import { ExtensionCategory } from '../../../../shared/src/schema/extension.schema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { eventLogger } from '../../tracking/eventLogger'
-import { extensionIDPrefix } from './extension'
+import { extensionIDPrefix, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionREADME } from './RegistryExtensionREADME'
 
-interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {}
+interface Props extends Pick<ExtensionAreaRouteContext, 'extension'> {}
 
 /** A page that displays overview information about a registry extension. */
 export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('RegistryExtensionOverview')
-    }
-
     public render(): JSX.Element | null {
         let repositoryURL: URL | undefined
         try {
@@ -37,6 +32,18 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
             // noop
         }
 
+        let categories: ExtensionCategory[] | undefined
+        if (
+            this.props.extension.manifest &&
+            !isErrorLike(this.props.extension.manifest) &&
+            this.props.extension.manifest.categories
+        ) {
+            const cs = validCategories(this.props.extension.manifest.categories)
+            if (cs && cs.length > 0) {
+                categories = cs
+            }
+        }
+
         return (
             <div className="registry-extension-overview-page row">
                 <PageTitle title={this.props.extension.id} />
@@ -44,6 +51,43 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                     <ExtensionREADME extension={this.props.extension} />
                 </div>
                 <div className="col-md-4">
+                    {categories && (
+                        <div className="mb-3">
+                            <h3>Categories</h3>
+                            <ul className="list-inline registry-extension-overview-page__categories">
+                                {categories.map((c, i) => (
+                                    <li key={i} className="list-inline-item mb-2 small">
+                                        <Link
+                                            to={`/extensions?query=category:${encodeURIComponent('"' + c + '"')}`}
+                                            className="rounded border p-1"
+                                        >
+                                            {c}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    {this.props.extension.manifest &&
+                        !isErrorLike(this.props.extension.manifest) &&
+                        this.props.extension.manifest.tags &&
+                        this.props.extension.manifest.tags.length > 0 && (
+                            <div className="mb-3">
+                                <h3>Tags</h3>
+                                <ul className="list-inline registry-extension-overview-page__tags">
+                                    {this.props.extension.manifest.tags.map((t, i) => (
+                                        <li key={i} className="list-inline-item mb-2 small">
+                                            <Link
+                                                to={`/extensions?query=tag:${encodeURIComponent(JSON.stringify(t))}`}
+                                                className="rounded border p-1"
+                                            >
+                                                {truncate(t, { length: 24 })}
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     <small className="text-muted">
                         <dl className="border-top pt-2">
                             {this.props.extension.registryExtension &&
@@ -108,12 +152,14 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                 )}
                             <dt className="border-top pt-2">Resources</dt>
                             <dd className="border-bottom pb-2">
-                                <Link
-                                    to={`${this.props.extension.registryExtension!.url}/-/manifest`}
-                                    className="d-block"
-                                >
-                                    Manifest (package.json)
-                                </Link>
+                                {this.props.extension.registryExtension && (
+                                    <Link
+                                        to={`${this.props.extension.registryExtension.url}/-/manifest`}
+                                        className="d-block"
+                                    >
+                                        Manifest (package.json)
+                                    </Link>
+                                )}
                                 {this.props.extension.manifest &&
                                     !isErrorLike(this.props.extension.manifest) &&
                                     this.props.extension.manifest.url && (
@@ -129,7 +175,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                 {repositoryURL && (
                                     <div className="d-flex">
                                         {repositoryURL.hostname === 'github.com' && (
-                                            <GithubCircleIcon className="icon-inline" />
+                                            <GithubCircleIcon className="icon-inline mr-1" />
                                         )}
                                         <a
                                             href={repositoryURL.href}

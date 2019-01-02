@@ -10,6 +10,29 @@ import { Contributions } from '../api/protocol/contribution'
  * manually duplicate it for now.
  */
 
+ /**
+  * The set of known categories in the extension registry.
+  *
+  * Keep this in sync with <extension.schema.json>'s #/categories/items/enum set.
+  *
+  * This uses a typed array instead of a TypeScript enum to avoid needing to define redundant identifiers for each
+  * string constant (e.g., `ProgrammingLanguages = 'Programming languages'`).
+  */
+export const EXTENSION_CATEGORIES = array([
+  'Programming languages',
+  'Linters',
+  'Code analysis',
+  'External services',
+  'Reports and stats',
+  'Other',
+  'Demos',
+])
+
+/**
+ * The set of known categories in the extension registry.
+ */
+export type ExtensionCategory = typeof EXTENSION_CATEGORIES[number]
+
 export interface ExtensionManifest {
     title?: string
     description?: string
@@ -19,7 +42,20 @@ export interface ExtensionManifest {
         type?: string
         url: string
     }
+
+    /**
+     * The element type includes `string` because this value has not been validated. Use {@link knownCategories} to
+     * filter to only known {@link ExtensionCategory} values.
+     */
+    categories?: (ExtensionCategory | string)[]
+
+    tags?: string[]
     icon?: string
     activationEvents: string[]
     contributes?: Contributions & { configuration?: { [key: string]: any } }
+}
+
+/** TypeScript helper for making an array type with constant string union elements, not just string[]. */
+function array<T extends string>(a: T[]): T[] {
+    return a;
 }

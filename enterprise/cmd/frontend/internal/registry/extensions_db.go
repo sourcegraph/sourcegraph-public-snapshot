@@ -182,13 +182,15 @@ func (s dbExtensions) GetByExtensionID(ctx context.Context, extensionID string) 
 // dbExtensionsListOptions contains options for listing registry extensions.
 type dbExtensionsListOptions struct {
 	Publisher              dbPublisher
-	Query                  string // matches the extension ID
+	Query                  string // matches the extension ID and latest release's manifest's title
+	Category               string // matches the latest release's manifest's categories array
+	Tag                    string // matches the latest release's manifest's tags array
 	PrioritizeExtensionIDs []string
 	ExcludeWIP             bool // exclude extensions marked as WIP
 	*db.LimitOffset
 }
 
-var extensionIsWIPExpr = sqlf.Sprintf(`COALESCE(rer.manifest IS NULL OR rer.manifest::json->>'title' SIMILAR TO %s, true)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
+var extensionIsWIPExpr = sqlf.Sprintf(`COALESCE(rer.manifest IS NULL OR rer.manifest->>'title' SIMILAR TO %s, true)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query
@@ -199,7 +201,20 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("x.publisher_org_id=%d", o.Publisher.OrgID))
 	}
 	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf(extensionIDExpr+" ILIKE %s", "%"+strings.Replace(strings.ToLower(o.Query), " ", "%", -1)+"%"))
+		likePattern := func(value string) string {
+			return "%" + strings.Replace(strings.ToLower(value), " ", "%", -1) + "%"
+		}
+		queryConds := []*sqlf.Query{
+			sqlf.Sprintf(extensionIDExpr+" ILIKE %s", likePattern(o.Query)),
+			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN rer.manifest->>'title' ILIKE %s ELSE false END`, likePattern(o.Query)),
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(queryConds, ") OR (")))
+	}
+	if o.Category != "" {
+		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Category))
+	}
+	if o.Tag != "" {
+		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'tags')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Tag))
 	}
 	if o.ExcludeWIP {
 		conds = append(conds, sqlf.Sprintf("NOT (%s)", extensionIsWIPExpr))
@@ -302,7 +317,7 @@ func (dbExtensions) Update(ctx context.Context, id int32, name *string) error {
 	}
 
 	res, err := dbconn.Global.ExecContext(ctx,
-		"UPDATE registry_extensions SET name=COALESCE($2, name),  updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
+		"UPDATE registry_extensions SET name=COALESCE($2, name), updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
 		id, name,
 	)
 	if err != nil {

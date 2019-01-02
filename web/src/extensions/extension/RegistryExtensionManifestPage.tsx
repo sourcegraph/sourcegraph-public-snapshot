@@ -7,7 +7,6 @@ import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/e
 import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
@@ -56,10 +55,6 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
     }
 
     public state: State = { viewMode: RegistryExtensionManifestPage.getViewMode() }
-
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('RegistryExtensionManifest')
-    }
 
     public render(): JSX.Element | null {
         return (
