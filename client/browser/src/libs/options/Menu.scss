@@ -13,4 +13,10 @@
     &__no-border {
         border-top: none;
     }
+
+    &--full {
+        max-width: 400px;
+        margin: 8rem auto;
+        box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.15);
+    }
 }

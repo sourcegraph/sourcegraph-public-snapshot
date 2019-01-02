@@ -23,6 +23,9 @@ const withSentry = (flags: OptionsMenuProps['featureFlags']) => flags.filter(({ 
 const withOutSentry = (flags: OptionsMenuProps['featureFlags']) =>
     flags.filter(({ key }) => key !== 'allowErrorReporting')
 
+const isFullPage = (): boolean =>
+    !new URLSearchParams(window.location.search).get('popup')
+
 export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
     onURLChange,
@@ -32,7 +35,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     featureFlags,
     ...props
 }) => (
-    <div className="options-menu">
+    <div className={`options-menu ${isFullPage() ? 'options-menu--full' : ''}`}>
         <OptionsHeader {...props} className="options-menu__section options-menu__no-border" />
         <ServerURLForm
             {...props}
