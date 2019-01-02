@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ExtensionToggle extension disabled in settings 1`] = `
+<button
+  className="toggle "
+  onClick={[Function]}
+  title="Click to enable"
+  value={0}
+>
+  <span
+    className="toggle__bar  "
+  />
+  <span
+    className="toggle__knob  "
+  />
+</button>
+`;
+
+exports[`ExtensionToggle extension enabled in settings 1`] = `
+<button
+  className="toggle "
+  onClick={[Function]}
+  title="Click to enable"
+  value={1}
+>
+  <span
+    className="toggle__bar toggle__bar--active "
+  />
+  <span
+    className="toggle__knob toggle__knob--active "
+  />
+</button>
+`;

@@ -83,7 +83,6 @@ export interface ExtensionAreaRouteContext extends SettingsCascadeProps, Platfor
     /** The extension that is the subject of the page. */
     extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
 
-    /** Called when the component updates the extension and it should be refreshed here. */
     onDidUpdateExtension: () => void
 
     /** The currently authenticated user. */

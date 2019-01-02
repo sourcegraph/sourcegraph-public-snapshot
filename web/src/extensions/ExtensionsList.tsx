@@ -96,8 +96,6 @@ interface State {
 export class ExtensionsList extends React.PureComponent<Props, State> {
     private static URL_QUERY_PARAM = 'query'
 
-    private updates = new Subject<void>()
-
     private componentUpdates = new Subject<Props>()
     private queryChanges = new Subject<string>()
     private subscriptions = new Subscription()
@@ -229,7 +227,6 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                         key={i}
                                         subject={this.props.subject}
                                         node={e}
-                                        onDidUpdate={this.onDidUpdateExtension}
                                         settingsCascade={this.props.settingsCascade}
                                         platformContext={this.props.platformContext}
                                     />
@@ -294,6 +291,4 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 error,
             }))
         )
-
-    private onDidUpdateExtension = () => this.updates.next()
 }

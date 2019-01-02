@@ -11,18 +11,13 @@ import { isExtensionAdded } from './extension/extension'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps {
     /** The extension that this element is for. */
-    extension: ConfiguredRegistryExtension
-
-    disabled?: boolean
+    extension: Pick<ConfiguredRegistryExtension, 'id' | 'manifest'>
 
     /** Class name applied to this element. */
     className?: string
 
     /** Class name applied to this element when it is an "Add" button. */
     addClassName?: string
-
-    /** Called when the component performs an update that requires the parent component to refresh data. */
-    onUpdate: () => void
 }
 
 /**

@@ -62,22 +62,22 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                             {(manifest && manifest.title) || props.extension.id}
                                         </h2>
                                     </div>
-                                    {manifest &&
-                                        manifest.title && <div className="text-muted">{props.extension.id}</div>}
-                                    {manifest &&
-                                        (manifest.description || isWorkInProgress) && (
-                                            <p className="mt-1 mb-0">
-                                                {isWorkInProgress && (
-                                                    <WorkInProgressBadge
-                                                        viewerCanAdminister={
-                                                            !!props.extension.registryExtension &&
-                                                            props.extension.registryExtension.viewerCanAdminister
-                                                        }
-                                                    />
-                                                )}
-                                                {manifest.description}
-                                            </p>
-                                        )}
+                                    {manifest && manifest.title && (
+                                        <div className="text-muted">{props.extension.id}</div>
+                                    )}
+                                    {manifest && (manifest.description || isWorkInProgress) && (
+                                        <p className="mt-1 mb-0">
+                                            {isWorkInProgress && (
+                                                <WorkInProgressBadge
+                                                    viewerCanAdminister={
+                                                        !!props.extension.registryExtension &&
+                                                        props.extension.registryExtension.viewerCanAdminister
+                                                    }
+                                                />
+                                            )}
+                                            {manifest.description}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -87,7 +87,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     <ExtensionToggle
                                         extension={props.extension}
                                         settingsCascade={props.settingsCascade}
-                                        onUpdate={props.onDidUpdateExtension}
                                         addClassName="btn-primary"
                                         platformContext={props.platformContext}
                                     />
