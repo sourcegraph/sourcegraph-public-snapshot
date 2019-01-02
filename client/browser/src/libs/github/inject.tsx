@@ -181,7 +181,7 @@ function injectInlineSearch(): void {
 
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
-export function createOpenOnSourcegraphIfNotExists(): HTMLElement {
+export function createOpenOnSourcegraphIfNotExists(): HTMLElement | null {
     let container = document.getElementById(OPEN_ON_SOURCEGRAPH_ID)
     if (container) {
         container.remove()
@@ -191,8 +191,9 @@ export function createOpenOnSourcegraphIfNotExists(): HTMLElement {
     container.id = OPEN_ON_SOURCEGRAPH_ID
 
     const pageheadActions = document.querySelector('.pagehead-actions')
+    // If ran on page that isn't under a repository namespace.
     if (!pageheadActions || !pageheadActions.children.length) {
-        throw new Error('Unable to find page actions (GitHub)')
+        return null
     }
 
     pageheadActions.insertAdjacentElement('afterbegin', container)

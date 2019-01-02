@@ -132,7 +132,7 @@ export interface CodeHost {
     /**
      * The mount location for the contextual link to Sourcegraph.
      */
-    getViewContextOnSourcegraphMount?: MountGetter
+    getViewContextOnSourcegraphMount?: () => HTMLElement | null
     /**
      * Optional class name for the contextual link to Sourcegraph.
      */

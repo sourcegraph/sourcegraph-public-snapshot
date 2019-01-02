@@ -107,6 +107,9 @@ export function injectViewContextOnSourcegraph(
     }
 
     const mount = getViewContextOnSourcegraphMount()
+    if (!mount) {
+        return
+    }
 
     render(
         <ViewOnSourcegraphButton
