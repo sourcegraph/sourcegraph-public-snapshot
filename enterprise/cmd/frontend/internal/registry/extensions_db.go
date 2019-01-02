@@ -190,7 +190,10 @@ type dbExtensionsListOptions struct {
 	*db.LimitOffset
 }
 
-var extensionIsWIPExpr = sqlf.Sprintf(`COALESCE(rer.manifest IS NULL OR rer.manifest->>'title' SIMILAR TO %s, true)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
+// extensionIsWIPExpr is the SQL expression for whether the extension is a WIP extension.
+//
+// BACKCOMPAT: It still reads the title property even though extensions no longer have titles.
+var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR COALESCE((rer.manifest->>'wip')::jsonb = 'true'::jsonb, rer.manifest->>'title' SIMILAR TO %s, false)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query
@@ -206,7 +209,8 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 		}
 		queryConds := []*sqlf.Query{
 			sqlf.Sprintf(extensionIDExpr+" ILIKE %s", likePattern(o.Query)),
-			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN rer.manifest->>'title' ILIKE %s ELSE false END`, likePattern(o.Query)),
+			// BACKCOMPAT: This still reads the title property even though extensions no longer have titles.
+			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'description' ILIKE %s OR rer.manifest->>'title' ILIKE %s) ELSE false END`, likePattern(o.Query), likePattern(o.Query)),
 		}
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(queryConds, ") OR (")))
 	}

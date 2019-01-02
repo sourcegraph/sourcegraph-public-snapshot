@@ -18,20 +18,34 @@ exports[`ExtensionCard renders 1`] = `
           className="extension-card__icon mr-2"
           src="data:image/png,abcd"
         />
-        <div>
-          <h4
-            className="card-title extension-card__body-title mb-0"
-          >
-            t
-          </h4>
+        <div
+          className="text-truncate"
+        >
           <div
-            className="extension-card__body-text d-inline-block mt-1"
+            className="d-flex align-items-center"
           >
-            <span
-              className="text-muted"
+            <h4
+              className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal"
+            >
+              <span
+                className="text-muted"
+              >
+                x
+                /
+              </span>
+              <strong>
+                y
+              </strong>
+            </h4>
+          </div>
+          <div
+            className="mt-1"
+          >
+            <div
+              className="text-muted text-truncate"
             >
               d
-            </span>
+            </div>
           </div>
         </div>
       </div>

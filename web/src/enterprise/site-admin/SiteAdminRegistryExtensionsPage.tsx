@@ -76,10 +76,6 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                         <Link className="font-weight-bold" to={this.props.node.url}>
                             {this.props.node.extensionID}
                         </Link>{' '}
-                        {this.props.node.manifest &&
-                            this.props.node.manifest.title && (
-                                <span className="text-muted">({this.props.node.manifest.title})</span>
-                            )}
                         <div className="text-muted small">
                             <RegistryExtensionSourceBadge extension={this.props.node} showText={true} />
                             {this.props.node.updatedAt && (
@@ -99,17 +95,15 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                                 Manage
                             </Link>
                         )}
-                        {!this.props.node.isLocal &&
-                            this.props.node.remoteURL &&
-                            this.props.node.registryName && (
-                                <a
-                                    href={this.props.node.remoteURL}
-                                    className="btn btn-link text-info btn-sm ml-1"
-                                    title={`View extension on ${this.props.node.registryName}`}
-                                >
-                                    Visit
-                                </a>
-                            )}
+                        {!this.props.node.isLocal && this.props.node.remoteURL && this.props.node.registryName && (
+                            <a
+                                href={this.props.node.remoteURL}
+                                className="btn btn-link text-info btn-sm ml-1"
+                                title={`View extension on ${this.props.node.registryName}`}
+                            >
+                                Visit
+                            </a>
+                        )}
                         {this.props.node.viewerCanAdminister && (
                             <button
                                 className="btn btn-outline-danger btn-sm ml-1"

@@ -3140,8 +3140,6 @@ type RegistryExtension implements Node {
 type ExtensionManifest {
     # The raw JSON contents of the manifest.
     raw: String!
-    # The title specified in the manifest, if any.
-    title: String
     # The description specified in the manifest, if any.
     description: String
     # The URL to the bundled JavaScript source code for the extension, if any.

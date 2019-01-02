@@ -111,7 +111,6 @@ type RegistryExtension interface {
 // ExtensionManifest is the interface for the GraphQL type ExtensionManifest.
 type ExtensionManifest interface {
 	Raw() string
-	Title() (*string, error)
 	Description() (*string, error)
 	BundleURL() (*string, error)
 }

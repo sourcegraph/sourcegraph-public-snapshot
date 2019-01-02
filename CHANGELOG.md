@@ -18,7 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The repository settings mirroring page now shows when a repo is next scheduled for an update (requires experiment `"updateScheduler2": "enabled"`).
 - Configured repositories are periodically scheduled for updates using a new algorithm. You can disable the new algorithm with the following site configuration: `"experimentalFeatures": { "updateScheduler2": "disabled" }`. If you do so, please file a public issue to describe why you needed to disable it.
 - When using HTTP header authentication, [`stripUsernameHeaderPrefix`](https://docs.sourcegraph.com/admin/auth/#username-header-prefixes) field lets an admin specify a prefix to strip from the HTTP auth header when converting the header value to a username.
-- Sourcegraph extensions whose title begins with `WIP:` or `[WIP]` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/creating_and_publishing#work-in-progress-wip-extensions) and are indicated as such to avoid users accidentally using them.
+- Sourcegraph extensions whose package.json contains `"wip": true` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/publishing#wip-extensions) and are indicated as such to avoid users accidentally using them.
 - Information about user survey submissions and a chart showing weekly active users is now displayed on the site admin Overview page.
 - A new GraphQL API field `UserEmail.isPrimary` was added that indicates whether an email is the user's primary email.
 - The filters bar in the search results page can now display filters from extensions.
@@ -36,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `appURL` site configuration option was renamed to `externalURL`.
 - The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled`.
 - The repository and directory pages now show all entries together instead of showing files and (sub)directories separately.
+- Extensions no longer can specify titles (in the `title` property in the `package.json` extension manifest). Their extension ID (such as `alice/myextension`) is used.
 
 ### Fixed
 

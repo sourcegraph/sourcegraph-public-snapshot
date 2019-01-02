@@ -10,13 +10,13 @@ import { parseJSONCOrError } from '../util/jsonc'
 export interface ExtensionManifest
     extends Pick<
         ExtensionManifestSchema,
-        | 'title'
         | 'description'
         | 'repository'
         | 'categories'
         | 'tags'
         | 'readme'
         | 'url'
+        | 'icon'
         | 'activationEvents'
         | 'contributes'
     > {}
@@ -34,9 +34,6 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
             return new Error('invalid extension manifest: must be a JSON object')
         }
         const problems: string[] = []
-        if (value.title && typeof value.title !== 'string') {
-            problems.push('"title" property must be a string')
-        }
         if (value.repository) {
             if (!isPlainObject(value.repository)) {
                 problems.push('"repository" property must be an object')
@@ -80,6 +77,9 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
             if (!isPlainObject(value.contributes)) {
                 problems.push('"contributes" property must be an object')
             }
+        }
+        if (value.icon && typeof value.icon !== 'string') {
+            problems.push('"icon" property must be a string')
         }
         if (problems.length > 0) {
             return new Error(`invalid extension manifest: ${problems.join(', ')}`)

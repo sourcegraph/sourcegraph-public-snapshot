@@ -13,9 +13,8 @@ describe('ExtensionToggle', () => {
         // tslint:disable-next-line:no-object-literal-type-assertion
         subject: { __typename: 'User', id: 'u', viewerCanAdminister: true } as SettingsSubject,
     }
-    const EXTENSION: Pick<ConfiguredRegistryExtension, 'id' | 'manifest'> = {
+    const EXTENSION: Pick<ConfiguredRegistryExtension, 'id'> = {
         id: 'x/y',
-        manifest: { activationEvents: ['*'], title: 't', url: 'https://example.com' },
     }
 
     test('extension not present in settings', () => {

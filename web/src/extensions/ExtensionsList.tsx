@@ -47,7 +47,6 @@ export const registryExtensionFragment = gql`
         name
         manifest {
             raw
-            title
             description
         }
         createdAt
