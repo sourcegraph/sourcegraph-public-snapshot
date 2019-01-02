@@ -1,3 +1,7 @@
+$-dropdown-form-container-class: "dropdown-element";
+$-dropdown-class: "form-dropdown";
+$-dropdown-icon-class: "icon-dropdown-chevron";
+
 $dropdown-bg: var(--dropdown-bg);
 $dropdown-border-color: var(--dropdown-border-color);
 $dropdown-divider-bg: var(--border-color);
@@ -13,6 +17,63 @@ $dropdown-item-padding-x: 0.5rem;
 $dropdown-padding-y: $dropdown-item-padding-y;
 
 @import 'bootstrap/scss/dropdown';
+
+.#{$-dropdown-form-container-class} {
+	position: relative;
+}
+
+.#{$-dropdown-class} {
+	transition: all 250ms ease;
+
+    font-size: 14px;
+	line-height: 20px;
+    font-weight: 400;
+    box-sizing: border-box;
+    display: block;
+	padding: 6px 12px;
+    width: 100%;
+	border-radius: 2px;
+	margin-bottom: 14px;
+    color: $dropdown-link-color;
+	background: $dropdown-bg;
+	border: 1px solid #E4E9F1;
+    min-height: 34px;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+
+	&:focus {
+		color: var(--input-color);
+		background-color: var(--input-bg);
+		border-color: #1c7ed6;
+		outline: 0;
+		box-shadow: 0 0 0 2px rgba(28,126,214,.25);
+	}
+	&:disabled {
+		opacity: .5;
+		& ~ .#{$-dropdown-icon-class} {
+			opacity: .5;
+		}
+	}
+    & ~ .#{$-dropdown-icon-class} {
+        display: block;
+        pointer-events: none;
+        color: #2B3750;
+        right: 15px;
+        top: 4px;
+		width: 24px;
+		height: 26px;
+		padding: 0;
+    }
+}
+
+.#{$-dropdown-icon-class} {
+    display: none;
+    position: absolute;
+    top: 3px;
+    right: 16px;
+}
+
 
 .dropdown-divider {
     margin: 0.25rem 0;

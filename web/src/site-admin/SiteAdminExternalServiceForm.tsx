@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
+import DropdownIcon from 'mdi-react/ChevronDownIcon'
 import * as React from 'react'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -43,26 +44,24 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         disabled={this.props.loading}
                     />
                 </div>
-
-                <div className="form-group">
-                    <label htmlFor="external-service-page-form-kind">Kind</label>
-
-                    <select
-                        className="form-control"
+				<label htmlFor="external-service-page-form-kind">Kind</label>
+				<div className="dropdown-element">
+					<select
+                        className="form-dropdown"
                         id="external-service-page-form-kind"
                         onChange={this.onKindChange}
                         required={true}
                         disabled={this.props.loading || this.props.mode === 'edit'}
                         value={this.props.input.kind}
                     >
-                        {ALL_EXTERNAL_SERVICES.map(s => (
-                            <option key={s.kind} value={s.kind}>
-                                {s.displayName}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
+					{ALL_EXTERNAL_SERVICES.map(s => (
+						<option key={s.kind} value={s.kind}>
+							{s.displayName}
+						</option>
+					))}
+					</select>
+					<DropdownIcon className="icon-dropdown-chevron" />
+				  </div>
                 <div>
                     <DynamicallyImportedMonacoSettingsEditor
                         value={this.props.input.config}
