@@ -11,12 +11,26 @@ describe('ExtensionToggle', () => {
         lastID: null,
         settings: {},
         // tslint:disable-next-line:no-object-literal-type-assertion
-        subject: { id: 'u', viewerCanAdminister: true } as SettingsSubject,
+        subject: { __typename: 'User', id: 'u', viewerCanAdminister: true } as SettingsSubject,
     }
     const EXTENSION: Pick<ConfiguredRegistryExtension, 'id' | 'manifest'> = {
         id: 'x/y',
         manifest: { activationEvents: ['*'], title: 't', url: 'https://example.com' },
     }
+
+    test('extension not present in settings', () => {
+        expect(
+            renderer
+                .create(
+                    <ExtensionToggle
+                        extension={EXTENSION}
+                        settingsCascade={{ final: { extensions: {} }, subjects: [SUBJECT] }}
+                        platformContext={NOOP_PLATFORM_CONTEXT}
+                    />
+                )
+                .toJSON()
+        ).toMatchSnapshot()
+    })
 
     test('extension enabled in settings', () => {
         expect(

@@ -12,12 +12,6 @@ import { isExtensionAdded } from './extension/extension'
 interface Props extends SettingsCascadeProps, PlatformContextProps {
     /** The extension that this element is for. */
     extension: Pick<ConfiguredRegistryExtension, 'id' | 'manifest'>
-
-    /** Class name applied to this element. */
-    className?: string
-
-    /** Class name applied to this element when it is an "Add" button. */
-    addClassName?: string
 }
 
 /**
@@ -71,28 +65,33 @@ export class ExtensionToggle extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         const cascade = extractErrors(this.props.settingsCascade)
-        const subject = isErrorLike(cascade)
+        const highestPrecedenceSubjectWithExtensionAdded = isErrorLike(cascade)
             ? undefined
             : last(cascade.subjects.filter(subject => isExtensionAdded(subject.settings, this.props.extension.id)))
-        const state = subject && {
-            state:
-                subject.settings && subject.settings.extensions
-                    ? subject.settings.extensions[this.props.extension.id]
-                    : false,
-            name: subject.subject.__typename,
-        }
 
-        const onToggle = (enabled: boolean) => {
-            this.toggles.next(enabled)
+        let title: string
+        if (highestPrecedenceSubjectWithExtensionAdded) {
+            // Describe highest-precedence subject where this extension is enabled.
+            title = `${
+                isExtensionEnabled(highestPrecedenceSubjectWithExtensionAdded.settings, this.props.extension.id)
+                    ? 'Enabled'
+                    : 'Disabled'
+            } in ${highestPrecedenceSubjectWithExtensionAdded.subject.__typename.toLowerCase()} settings`
+        } else {
+            title = 'Click to enable'
         }
 
         return (
             <Toggle
                 value={isExtensionEnabled(this.props.settingsCascade.final, this.props.extension.id)}
-                onToggle={onToggle}
-                title={state ? `${state.state ? 'Enabled' : 'Disabled'} in ${state.name} settings` : 'Click to enable'}
+                onToggle={this.onToggle}
+                title={title}
             />
         )
+    }
+
+    private onToggle = (enabled: boolean) => {
+        this.toggles.next(enabled)
     }
 }
 

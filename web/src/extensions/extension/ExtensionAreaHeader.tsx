@@ -87,7 +87,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     <ExtensionToggle
                                         extension={props.extension}
                                         settingsCascade={props.settingsCascade}
-                                        addClassName="btn-primary"
                                         platformContext={props.platformContext}
                                     />
                                 </div>

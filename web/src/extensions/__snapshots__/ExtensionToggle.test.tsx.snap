@@ -31,3 +31,19 @@ exports[`ExtensionToggle extension enabled in settings 1`] = `
   />
 </button>
 `;
+
+exports[`ExtensionToggle extension not present in settings 1`] = `
+<button
+  className="toggle "
+  onClick={[Function]}
+  title="Click to enable"
+  value={0}
+>
+  <span
+    className="toggle__bar  "
+  />
+  <span
+    className="toggle__knob  "
+  />
+</button>
+`;

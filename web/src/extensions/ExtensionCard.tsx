@@ -98,7 +98,6 @@ export class ExtensionCard extends React.PureComponent<Props> {
                                     <ExtensionToggle
                                         extension={node}
                                         settingsCascade={this.props.settingsCascade}
-                                        className="btn-sm btn-secondary"
                                         platformContext={this.props.platformContext}
                                     />
                                 ) : (
