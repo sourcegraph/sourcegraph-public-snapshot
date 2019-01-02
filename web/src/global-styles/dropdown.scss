@@ -1,9 +1,15 @@
+// TODO: @francisschmaltz move all form elements into one scss package outside of bootstrap
+// stylelint-disable scss/dollar-variable-pattern
+// stylelint-disable declaration-property-unit-whitelist
+
+
+
 $-dropdown-form-container-class: 'dropdown-element';
 $-dropdown-class: 'form-dropdown';
 $-dropdown-icon-class: 'icon-dropdown-chevron';
 
 $dropdown-bg: var(--dropdown-bg);
-$dropdown-border-color: var(--dropdown-border-color);
+$dropdown-border-color: var(--input-border-color);
 $dropdown-divider-bg: var(--border-color);
 $dropdown-link-color: var(--body-color);
 $dropdown-link-hover-color: var(--body-color);
@@ -36,7 +42,7 @@ $dropdown-padding-y: $dropdown-item-padding-y;
     margin-bottom: 14px;
     color: $dropdown-link-color;
     background: $dropdown-bg;
-    border: 1px solid #e4e9f1;
+    border: 1px solid $dropdown-border-color;
     min-height: 34px;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -51,14 +57,14 @@ $dropdown-padding-y: $dropdown-item-padding-y;
     }
     &:disabled {
         opacity: 0.5;
-        & ~ .#{$-dropdown-icon-class} {
+        ~ .#{$-dropdown-icon-class} {
             opacity: 0.5;
         }
     }
-    & ~ .#{$-dropdown-icon-class} {
+    ~ .#{$-dropdown-icon-class} {
         display: block;
         pointer-events: none;
-        color: #2b3750;
+        color: $dropdown-link-color;
         right: 15px;
         top: 4px;
         width: 24px;
