@@ -44,8 +44,6 @@ $dropdown-padding-y: $dropdown-item-padding-y;
     background: $dropdown-bg;
     border: 1px solid $dropdown-border-color;
     min-height: 34px;
-    -webkit-appearance: none;
-    -moz-appearance: none;
     appearance: none;
 
     &:focus {
