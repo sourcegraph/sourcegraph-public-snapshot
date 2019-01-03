@@ -76,12 +76,12 @@ seeing.
 
 ## Checklist
 
-- [ ] 1/3/19 Implement DOM observer.
+- [ ] 1/17/19 Implement DOM observer.
   - This uses a `MutationObserver` to listen to the DOM for changes
         and will emit when a selector matches an element in a DOM
         change.
-- [ ] 1/3/19 Write unit tests for this library.
-- [ ] 1/3/19 Replace usages of `document.querySelector` and the like in the
+- [ ] 1/17/19 Write unit tests for this library.
+- [ ] 1/17/19 Replace usages of `document.querySelector` and the like in the
     browser extension. This will require a change to the
     [MountGetter](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/browser/src/libs/code_intelligence/code_intelligence.tsx#L109:8)
     type. We will remove this type and only accept an object with the selector
