@@ -57,7 +57,6 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
                 )
             )
         ),
-
         updateSettings: async (subject, edit) => {
             await updateSettings(
                 context,
