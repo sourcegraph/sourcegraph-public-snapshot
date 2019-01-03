@@ -122,7 +122,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                             id="extension-status__unpackedurl"
                             className="form-control"
                             onChange={this.onUnpackedURLChange}
-                            placeholder="URL"
+                            placeholder="URL to extension's package.json"
                             value={this.state.unpackedExtensionURL || ''}
                         />
                     </div>
