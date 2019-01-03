@@ -1224,7 +1224,7 @@ declare module 'sourcegraph' {
      * The extension context is passed to the extension's activate function and contains utilities for the
      * extension lifecycle.
      *
-     * @since Sourcegraph 3.0-preview. Use `export function activate(ctx?: ExtensionContext) { ... }` for prior
+     * @since Sourcegraph 3.0. Use `export function activate(ctx?: ExtensionContext) { ... }` for prior
      * versions (to ensure your code handles the pre-3.0-preview case when `ctx` is undefined).
      */
     export interface ExtensionContext {
