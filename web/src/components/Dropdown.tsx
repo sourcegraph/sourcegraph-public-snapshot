@@ -3,12 +3,13 @@ import * as React from 'react'
 
 interface Props {
     id: string
-    onChange: ()=> void
+    onChange: any
     required: boolean
     disabled: boolean
     value: string
 	children: any
 }
+
 export const Dropdown: React.FunctionComponent<Props> = (props: Props) => (
 	<div className="dropdown-element">
 		<select
