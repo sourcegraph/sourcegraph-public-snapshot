@@ -1,5 +1,7 @@
 # Sourcegraph extensions
 
+> Building an extension? See [**extension authoring documentation**](authoring/index.md).
+
 Sourcegraph extensions enhance your code host, code reviews, and Sourcegraph itself by adding features such as:
 
 - Code intelligence (go-to-definition, find references, hovers, etc.)
@@ -66,12 +68,13 @@ To enable/disable an extension for all organization members, add it to the `exte
 }
 ```
 
-## Authoring
+## [Authoring](authoring/index.md)
 
 Ready to create your own extension? See the [extension authoring documentation](authoring/index.md).
 
 For inspiration:
-- Check out the source code for existing extensions on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (on their detail page, click **Repository** in their sidebar)
+
+- Check out the source code for existing extensions on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions). (The extension's repository is linked from most extensions' pages.)
 - [Issues labeled `extension-request`](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request)
 
 ## Administration
