@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash'
-import { BehaviorSubject, combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
+import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
@@ -23,7 +23,7 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
     scriptURL: string
 }
 
-const getConfiguredUnpackedExtension = (baseUrl: string) =>
+const getConfiguredSideloadedExtension = (baseUrl: string) =>
     ajax({
         url: `${baseUrl}/package.json`,
         responseType: 'json',
@@ -42,6 +42,10 @@ const getConfiguredUnpackedExtension = (baseUrl: string) =>
         )
     )
 
+interface PartialContext extends Pick<PlatformContext, 'queryGraphQL' | 'getScriptURLForExtension'> {
+    sideloadedExtensionURL: Subscribable<string | null>
+}
+
 /**
  * Manages the set of extensions that are available and activated.
  *
@@ -50,13 +54,13 @@ const getConfiguredUnpackedExtension = (baseUrl: string) =>
  */
 export class ExtensionsService {
     public constructor(
-        private platformContext: Pick<PlatformContext, 'queryGraphQL' | 'getScriptURLForExtension'>,
+        private platformContext: PartialContext,
         private model: Subscribable<Pick<Model, 'visibleViewComponents'>>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
-        private fetchUnpackedExtension: (
+        private fetchSideloadedExtension: (
             baseUrl: string
-        ) => Subscribable<ConfiguredExtension | null> = getConfiguredUnpackedExtension
+        ) => Subscribable<ConfiguredExtension | null> = getConfiguredSideloadedExtension
     ) {}
 
     protected configuredExtensions: Subscribable<ConfiguredExtension[]> = viewerConfiguredExtensions({
@@ -73,38 +77,27 @@ export class ExtensionsService {
         return combineLatest(
             from(this.settingsService.data),
             from(this.configuredExtensions),
-            from(this.unpackedExtension)
+            this.sideloadedExtension
         ).pipe(
-            map(([settings, configuredExtensions, unpackedExtension]) => {
+            map(([settings, configuredExtensions, sideloadedExtension]) => {
                 const enabled = [...configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))]
-                if (unpackedExtension) {
-                    enabled.push(unpackedExtension)
+                if (sideloadedExtension) {
+                    enabled.push(sideloadedExtension)
                 }
                 return enabled
             })
         )
     }
 
-    private get unpackedExtension(): Subscribable<ConfiguredExtension | null> {
-        return from(this.unpackedExtensionURL).pipe(
-            switchMap((url: string) => {
-                if (!url) {
-                    return of(null)
-                }
-                return this.fetchUnpackedExtension(url)
-            }),
+    private get sideloadedExtension(): Subscribable<ConfiguredExtension | null> {
+        return from(this.platformContext.sideloadedExtensionURL).pipe(
+            switchMap(url => (url ? this.fetchSideloadedExtension(url) : of(null))),
             catchError(err => {
-                console.error(`Error fetching unpacked extension: ${err}`)
+                console.error(`Error sideloading extension: ${err}`)
                 return of(null)
             })
         )
     }
-
-    /**
-     * URL to a an unpacked, off-registry extension. Typically set through the extensions debug panel
-     * by an extension author to load a locally served extension during development.
-     */
-    public unpackedExtensionURL = new BehaviorSubject<string>('')
 
     /**
      * Returns an observable that emits the set of extensions that should be active, based on the previous and

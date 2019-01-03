@@ -1,4 +1,4 @@
-import { NEVER, NextObserver, of, Subscribable, throwError } from 'rxjs'
+import { BehaviorSubject, NEVER, NextObserver, of, Subscribable, throwError } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { PlatformContext } from '../../platform/context'
@@ -32,9 +32,14 @@ interface TestContext {
 
 interface Mocks
     extends Pick<
-            PlatformContext,
-            'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension' | 'clientApplication'
-        > {}
+        PlatformContext,
+        | 'settings'
+        | 'updateSettings'
+        | 'queryGraphQL'
+        | 'getScriptURLForExtension'
+        | 'clientApplication'
+        | 'sideloadedExtensionURL'
+    > {}
 
 const NOOP_MOCKS: Mocks = {
     settings: NEVER,
@@ -42,6 +47,7 @@ const NOOP_MOCKS: Mocks = {
     queryGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
     getScriptURLForExtension: scriptURL => scriptURL,
     clientApplication: 'sourcegraph',
+    sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
 }
 
 /**

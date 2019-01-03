@@ -82,14 +82,10 @@ export function createController(context: PlatformContext): Controller {
             }),
             share()
         ),
-        context.traceExtensionHostCommunication,
-        context.unpackedExtensionURL
+        context.traceExtensionHostCommunication
     ).pipe(
-        tap(([connection, trace, unpackedExtensionURL]) => {
+        tap(([connection, trace]) => {
             connection.trace(trace ? new BrowserConsoleTracer('') : null)
-            if (unpackedExtensionURL) {
-                services.extensions.unpackedExtensionURL.next(unpackedExtensionURL)
-            }
         }),
         map(([connection]) => connection),
         distinctUntilChanged()

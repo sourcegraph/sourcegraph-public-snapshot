@@ -132,7 +132,7 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
         sourcegraphURL: sourcegraphUrl,
         clientApplication: 'other',
         traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
-        unpackedExtensionURL: new ExtensionStorageSubject('unpackedExtensionURL', ''),
+        sideloadedExtensionURL: new ExtensionStorageSubject('sideloadedExtensionURL', null),
     }
     return context
 }

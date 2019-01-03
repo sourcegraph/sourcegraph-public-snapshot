@@ -121,7 +121,11 @@ export interface PlatformContext {
      */
     traceExtensionHostCommunication: Subscribable<boolean> & NextObserver<boolean>
 
-    unpackedExtensionURL: Subscribable<string> & NextObserver<string>
+    /**
+     * The URL to the Parcel dev server for a single extension.
+     * Used for extension development purposes, to run an extension that isn't on the registry.
+     */
+    sideloadedExtensionURL: Subscribable<string | null> & NextObserver<string | null>
 }
 
 /**

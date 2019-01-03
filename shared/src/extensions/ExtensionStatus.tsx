@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExecutableExtension } from '../api/client/services/extensionsService'
+import { Link } from '../components/Link'
 import { PopoverButton } from '../components/PopoverButton'
 import { Toggle } from '../components/Toggle'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -20,7 +21,7 @@ interface State {
 
     /** Whether to log traces of communication with extensions. */
     traceExtensionHostCommunication?: boolean
-    unpackedExtensionURL?: string
+    sideloadedExtensionURL?: string | null
 }
 
 export class ExtensionStatus extends React.PureComponent<Props, State> {
@@ -59,11 +60,8 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
 
         this.subscriptions.add(
             platformContext
-                .pipe(
-                    switchMap(({ unpackedExtensionURL }) => unpackedExtensionURL),
-                    map(unpackedExtensionURL => ({ unpackedExtensionURL }))
-                )
-                .subscribe(unpackedExtensionURL => this.setState({ ...this.state, ...unpackedExtensionURL }))
+                .pipe(switchMap(({ sideloadedExtensionURL: sideloadedExtensionURL }) => sideloadedExtensionURL))
+                .subscribe(sideloadedExtensionURL => this.setState({ ...this.state, sideloadedExtensionURL }))
         )
 
         this.componentUpdates.next(this.props)
@@ -115,17 +113,37 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     />
                 </div>
                 <div className="card-body border-top">
-                    <div className="form-group">
-                        <label htmlFor="extension-status__unpackedurl">Load unpacked extension</label>
-                        <input
-                            type="text"
-                            id="extension-status__unpackedurl"
-                            className="form-control"
-                            onChange={this.onUnpackedURLChange}
-                            placeholder="URL to extension's package.json"
-                            value={this.state.unpackedExtensionURL || ''}
-                        />
-                    </div>
+                    <strong>Sideload Extension</strong>
+                    {this.state.sideloadedExtensionURL ? (
+                        <div>
+                            <p>
+                                <span>Load from: </span>
+                                <Link to={this.state.sideloadedExtensionURL}>{this.state.sideloadedExtensionURL}</Link>
+                            </p>
+                            <div>
+                                <button
+                                    className="btn btn-sm btn-primary mr-1"
+                                    onClick={this.setSideloadedExtensionURL}
+                                >
+                                    Change
+                                </button>
+                                <button className="btn btn-sm btn-danger" onClick={this.clearSideloadedExtensionURL}>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <p>
+                                <span>No sideloaded extension</span>
+                            </p>
+                            <div>
+                                <button className="btn btn-sm btn-primary" onClick={this.setSideloadedExtensionURL}>
+                                    Load extension
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         )
@@ -135,8 +153,13 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
         this.props.platformContext.traceExtensionHostCommunication.next(!this.state.traceExtensionHostCommunication)
     }
 
-    private onUnpackedURLChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.props.platformContext.unpackedExtensionURL.next(e.target.value || '')
+    private setSideloadedExtensionURL = () => {
+        const url = window.prompt('Parcel dev server URL:', this.state.sideloadedExtensionURL || '')
+        this.props.platformContext.sideloadedExtensionURL.next(url)
+    }
+
+    private clearSideloadedExtensionURL = () => {
+        this.props.platformContext.sideloadedExtensionURL.next(null)
     }
 }
 

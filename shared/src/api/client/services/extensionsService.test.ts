@@ -17,8 +17,8 @@ class TestExtensionsService extends ExtensionsService {
             enabledExtensions: ConfiguredExtension[],
             model: Pick<Model, 'visibleViewComponents'>
         ) => ConfiguredExtension[],
-        unpackedExtensionUrl: Subscribable<string>,
-        fetchUnpackedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
+        sideloadedExtensionURL: Subscribable<string | null>,
+        fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
     ) {
         super(
             {
@@ -26,14 +26,14 @@ class TestExtensionsService extends ExtensionsService {
                     throw new Error('not implemented')
                 },
                 getScriptURLForExtension: scriptURL => scriptURL,
+                sideloadedExtensionURL,
             },
             model,
             settingsService,
             extensionActivationFilter,
-            fetchUnpackedExtension
+            fetchSideloadedExtension
         )
         this.configuredExtensions = of(mockConfiguredExtensions)
-        this.unpackedExtensionURL = unpackedExtensionUrl as any
     }
 }
 
@@ -107,7 +107,7 @@ describe('activeExtensions', () => {
             } as Record<string, ExecutableExtension[]>)
         ))
 
-    test('fetches an unpacked extension and adds it to the set of registry extensions', () => {
+    test('fetches a sideloaded extension and adds it to the set of registry extensions', () => {
         scheduler().run(({ cold, expectObservable }) => {
             expectObservable(
                 from(
@@ -150,7 +150,7 @@ describe('activeExtensions', () => {
         })
     })
 
-    test('still returns registry extensions even if fetching an unpacked extension fails', () => {
+    test('still returns registry extensions even if fetching a sideloaded extension fails', () => {
         scheduler().run(({ cold, expectObservable }) => {
             expectObservable(
                 from(
