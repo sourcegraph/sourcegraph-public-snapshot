@@ -74,10 +74,6 @@ export function queryConfiguredRegistryExtensions(
             {
                 first: extensionIDs.length,
                 prioritizeExtensionIDs: extensionIDs,
-
-                // Include WIP extensions because some of the extensionIDs might be WIP, and we want them all to be
-                // returned.
-                query: '#wip',
             } as GQL.IExtensionsOnExtensionRegistryArguments,
             false
         )

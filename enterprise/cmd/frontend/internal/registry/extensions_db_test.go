@@ -263,7 +263,7 @@ func TestRegistryExtensions(t *testing.T) {
 		}
 	})
 
-	t.Run("List ExcludeWIP and sort non-WIP first", func(t *testing.T) {
+	t.Run("List sort non-WIP first", func(t *testing.T) {
 		// xwip1 is a WIP extension because its title begins with "WIP:".
 		xwip1 := createAndGet(t, user.ID, 0, "wiptest1")
 		_, err := dbReleases{}.Create(ctx, &dbRelease{
@@ -326,10 +326,7 @@ func TestRegistryExtensions(t *testing.T) {
 		xnonwip2.NonCanonicalIsWorkInProgress = false
 
 		// The non-WIP extension should be sorted first.
-		testList(t, dbExtensionsListOptions{ExcludeWIP: false, Query: "wiptest", LimitOffset: &db.LimitOffset{Limit: 5}}, []*dbExtension{xnonwip1, xnonwip2, xwip1, xwip2, xwip3})
-
-		// The WIP extension should be excluded.
-		testList(t, dbExtensionsListOptions{ExcludeWIP: true, Query: "wiptest", LimitOffset: &db.LimitOffset{Limit: 3}}, []*dbExtension{xnonwip1, xnonwip2})
+		testList(t, dbExtensionsListOptions{Query: "wiptest", LimitOffset: &db.LimitOffset{Limit: 5}}, []*dbExtension{xnonwip1, xnonwip2, xwip1, xwip2, xwip3})
 	})
 }
 

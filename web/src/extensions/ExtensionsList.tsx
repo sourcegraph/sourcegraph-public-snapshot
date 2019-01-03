@@ -214,15 +214,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         {this.state.data.resultOrError.extensions.length === 0 ? (
                             this.state.data.query ? (
                                 <div className="text-muted">
-                                    <p>
-                                        No extensions match <strong>{this.state.data.query}</strong>.
-                                    </p>
-                                    {!this.state.data.query.includes(extensionsQuery({ wip: true })) && (
-                                        <p className="small">
-                                            Looking for a WIP extension? Select{' '}
-                                            <strong>Options &gt; Include WIP extensions</strong>.
-                                        </p>
-                                    )}
+                                    No extensions match <strong>{this.state.data.query}</strong>.
                                 </div>
                             ) : (
                                 this.props.emptyElement || <span className="text-muted">No extensions found</span>

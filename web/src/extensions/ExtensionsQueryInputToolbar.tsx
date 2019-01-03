@@ -67,15 +67,6 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                         >
                             Show disabled extensions
                         </DropdownItem>
-                        <DropdownItem
-                            // tslint:disable-next-line:jsx-no-lambda
-                            onClick={() =>
-                                this.props.onQueryChange(this.props.query + ' ' + extensionsQuery({ wip: true }))
-                            }
-                            disabled={this.props.query.includes(extensionsQuery({ wip: true }))}
-                        >
-                            Include WIP extensions
-                        </DropdownItem>
                     </DropdownMenu>
                 </ButtonDropdown>
             </>

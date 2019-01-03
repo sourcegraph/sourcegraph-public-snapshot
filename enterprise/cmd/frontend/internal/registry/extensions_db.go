@@ -186,7 +186,6 @@ type dbExtensionsListOptions struct {
 	Category               string // matches the latest release's manifest's categories array
 	Tag                    string // matches the latest release's manifest's tags array
 	PrioritizeExtensionIDs []string
-	ExcludeWIP             bool // exclude extensions marked as WIP
 	*db.LimitOffset
 }
 
@@ -219,9 +218,6 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.Tag != "" {
 		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'tags')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Tag))
-	}
-	if o.ExcludeWIP {
-		conds = append(conds, sqlf.Sprintf("NOT (%s)", extensionIsWIPExpr))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))

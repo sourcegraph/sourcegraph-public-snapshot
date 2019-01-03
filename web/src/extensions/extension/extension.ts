@@ -69,14 +69,12 @@ export function validCategories(categories: ExtensionManifest['categories']): Ex
 export function extensionsQuery({
     category,
     tag,
-    wip,
     installed,
     enabled,
     disabled,
 }: {
     category?: string
     tag?: string
-    wip?: boolean
     installed?: boolean
     enabled?: boolean
     disabled?: boolean
@@ -87,9 +85,6 @@ export function extensionsQuery({
     }
     if (tag) {
         parts.push(`tag:${quoteIfNeeded(tag)}`)
-    }
-    if (wip) {
-        parts.push('#wip')
     }
     if (installed) {
         parts.push('#installed')

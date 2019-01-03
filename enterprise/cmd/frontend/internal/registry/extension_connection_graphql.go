@@ -56,23 +56,21 @@ func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionAr
 		opt.Publisher.UserID = p.userID
 		opt.Publisher.OrgID = p.orgID
 	}
-	var includeWIP bool
 	if args.Query != nil {
-		opt.Query, opt.Category, opt.Tag, includeWIP = parseExtensionQuery(*args.Query)
+		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(*args.Query)
 
 	}
 	if args.PrioritizeExtensionIDs != nil {
 		opt.PrioritizeExtensionIDs = *args.PrioritizeExtensionIDs
 	}
-	opt.ExcludeWIP = !includeWIP
 	return opt, nil
 }
 
 // parseExtensionQuery parses an extension registry query consisting of terms and the operators
-// `category:"My category"` and `tag:"mytag"`.
+// `category:"My category"`, `tag:"mytag"`, #installed, #enabled, and #disabled.
 //
 // This is an intentionally simple, unoptimized parser.
-func parseExtensionQuery(q string) (text, category, tag string, includeWIP bool) {
+func parseExtensionQuery(q string) (text, category, tag string) {
 	// Tokenize.
 	var lastQuote rune
 	tokens := strings.FieldsFunc(q, func(c rune) bool {
@@ -100,17 +98,13 @@ func parseExtensionQuery(q string) (text, category, tag string, includeWIP bool)
 			category = unquoteValue(strings.TrimPrefix(tok, "category:"))
 		} else if strings.HasPrefix(tok, "tag:") {
 			tag = unquoteValue(strings.TrimPrefix(tok, "tag:"))
-		} else if tok == "#wip" {
-			includeWIP = true
 		} else if tok == "#installed" || tok == "#enabled" || tok == "#disabled" {
-			// Ignore so that the client can implement these in post-processing. Add #wip if these
-			// tokens are encountered because that is usually the user's intent.
-			includeWIP = true
+			// Ignore so that the client can implement these in post-processing.
 		} else {
 			textTokens = append(textTokens, tok)
 		}
 	}
-	return strings.Join(textTokens, " "), category, tag, includeWIP
+	return strings.Join(textTokens, " "), category, tag
 }
 
 // filterStripLocalExtensionIDs filters to local extension IDs and strips the
