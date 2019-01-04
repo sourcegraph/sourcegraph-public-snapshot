@@ -227,8 +227,8 @@ export class ActionItem extends React.PureComponent<Props, State> {
         e.currentTarget.blur()
 
         this.commandExecutions.next({
-            command: this.props.action.command,
-            arguments: this.props.action.commandArguments,
+            command: action.command,
+            arguments: action.commandArguments,
         })
     }
 }
