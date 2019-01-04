@@ -1,6 +1,7 @@
 module github.com/sourcegraph/sourcegraph
 
 require (
+	cloud.google.com/go v0.30.0
 	github.com/NYTimes/gziphandler v1.0.1
 	github.com/aws/aws-sdk-go-v2 v0.6.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
@@ -134,8 +135,8 @@ require (
 	golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	golang.org/x/tools v0.0.0-20181221235234-d00ac6d27372
+	google.golang.org/api v0.1.0 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
-	google.golang.org/grpc v1.17.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
 	gopkg.in/ini.v1 v1.40.0 // indirect
