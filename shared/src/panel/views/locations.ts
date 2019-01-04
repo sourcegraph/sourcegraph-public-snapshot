@@ -1,4 +1,5 @@
 import { Location } from '@sourcegraph/extension-api-types'
+import { isEqual, uniqWith } from 'lodash'
 
 /**
  * Grouped locations returned by {@link groupLocations}.
@@ -36,6 +37,8 @@ export function groupLocations<L = Location, G = string>(
     groupKeys: ((location: L) => G | undefined)[],
     locationForDefaultSelection: L
 ): GroupedLocations<L, G> {
+    locations = uniqWith<L>(locations, (a, b) => isEqual(a, b))
+
     const groups: GroupedLocations<L, G>['groups'] = []
 
     if (!selectedGroups) {
