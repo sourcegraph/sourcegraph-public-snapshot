@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
-import { ExtensionsEmptyState } from './ExtensionsEmptyState'
 import { ExtensionsList } from './ExtensionsList'
 
 interface Props extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {}
@@ -30,7 +29,6 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
                     )}
                     <ExtensionsList
                         {...this.props}
-                        emptyElement={<ExtensionsEmptyState />}
                         subject={this.props.subject}
                         settingsCascade={this.props.settingsCascade}
                     />

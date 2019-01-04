@@ -58,7 +58,6 @@ export const registryExtensionFragment = gql`
 
 interface Props extends SettingsCascadeProps, PlatformContextProps, RouteComponentProps<{}> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
-    emptyElement?: React.ReactFragment
 }
 
 const LOADING: 'loading' = 'loading'
@@ -217,7 +216,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                     No extensions match <strong>{this.state.data.query}</strong>.
                                 </div>
                             ) : (
-                                this.props.emptyElement || <span className="text-muted">No extensions found</span>
+                                <span className="text-muted">No extensions found</span>
                             )
                         ) : (
                             <div className="row mt-1">
