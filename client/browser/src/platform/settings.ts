@@ -1,6 +1,6 @@
 import { applyEdits, parse as parseJSONC } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { Observable, of } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { SettingsEdit } from '../../../../shared/src/api/client/services/settings'
 import { gql, graphQLContent } from '../../../../shared/src/graphql/graphql'
@@ -12,36 +12,47 @@ import {
     SettingsSubject,
 } from '../../../../shared/src/settings/settings'
 import { createAggregateError, isErrorLike } from '../../../../shared/src/util/errors'
+import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import storage, { StorageItems } from '../browser/storage'
 import { isInPage } from '../context'
 import { getContext } from '../shared/backend/context'
 import { queryGraphQL } from '../shared/backend/graphql'
 import { sourcegraphUrl } from '../shared/util/context'
 
+const inPageClientSettingsKey = 'sourcegraphClientSettings'
+
+const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
+    const storageSubject = isInPage
+        ? new LocalStorageSubject<string>(inPageClientSettingsKey, '{}')
+        : storage.observeSync('clientSettings')
+
+    const subject: SettingsSubject = {
+        id: 'Client',
+        settingsURL: 'N/A',
+        viewerCanAdminister: true,
+        __typename: 'Client',
+        displayName: 'Client',
+    }
+
+    return storageSubject.pipe(
+        map(clientSettingsString => parseJSONC(clientSettingsString || '')),
+        map(clientSettings => ({
+            subjects: [
+                {
+                    subject,
+                    settings: clientSettings,
+                    lastID: null,
+                },
+            ],
+            final: clientSettings || {},
+        }))
+    )
+}
+
 /**
  * The settings cascade consisting solely of client settings.
  */
-export const storageSettingsCascade: Observable<SettingsCascade> = isInPage
-    ? of({ subjects: [], final: {} })
-    : storage.observeSync('clientSettings').pipe(
-          map(clientSettingsString => parseJSONC(clientSettingsString || '')),
-          map(clientSettings => ({
-              subjects: [
-                  {
-                      subject: {
-                          id: 'Client',
-                          settingsURL: 'N/A',
-                          viewerCanAdminister: true,
-                          __typename: 'Client',
-                          displayName: 'Client',
-                      } as SettingsSubject,
-                      settings: clientSettings,
-                      lastID: null,
-                  },
-              ],
-              final: clientSettings || {},
-          }))
-      )
+export const storageSettingsCascade = createStorageSettingsCascade()
 
 /**
  * Merge two settings cascades (used to merge viewer settings and client settings).
@@ -147,22 +158,33 @@ export function fetchViewerSettings(): Observable<Pick<GQL.ISettingsCascade, 'su
  * Applies an edit and persists the result to client settings.
  */
 export function editClientSettings(edit: SettingsEdit | string): Promise<void> {
+    const getNext = (prev: string) =>
+        typeof edit === 'string'
+            ? edit
+            : applyEdits(
+                  prev,
+                  // TODO(chris): remove `.slice()` (which guards against mutation) once
+                  // https://github.com/Microsoft/node-jsonc-parser/pull/12 is merged in.
+                  setProperty(prev, edit.path.slice(), edit.value, {
+                      tabSize: 2,
+                      insertSpaces: true,
+                      eol: '\n',
+                  })
+              )
+    if (isInPage) {
+        const prev = localStorage.getItem(inPageClientSettingsKey) || ''
+        const next = getNext(prev)
+
+        localStorage.setItem(inPageClientSettingsKey, next)
+
+        return Promise.resolve()
+    }
+
     return new Promise<StorageItems>(resolve => storage.getSync(storageItems => resolve(storageItems))).then(
         storageItems => {
             const prev = storageItems.clientSettings
-            const next =
-                typeof edit === 'string'
-                    ? edit
-                    : applyEdits(
-                          prev,
-                          // TODO(chris): remove `.slice()` (which guards against mutation) once
-                          // https://github.com/Microsoft/node-jsonc-parser/pull/12 is merged in.
-                          setProperty(prev, edit.path.slice(), edit.value, {
-                              tabSize: 2,
-                              insertSpaces: true,
-                              eol: '\n',
-                          })
-                      )
+            const next = getNext(prev)
+
             return new Promise<undefined>(resolve =>
                 storage.setSync({ clientSettings: next }, () => {
                     resolve(undefined)

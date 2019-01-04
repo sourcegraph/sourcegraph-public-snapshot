@@ -25,12 +25,11 @@ Your extension will need to be published to Sourcegraph.com or an Enterprise ins
 
 ### WIP extensions
 
-An extension with no published releases, or whose title begins with `WIP:` or `[WIP]`, is considered a work-in-progress (WIP) extension. WIP extensions:
+An extension with no published releases, or whose `package.json` extension manifest has a `"wip": true` property, is considered a work-in-progress (WIP) extension. WIP extensions:
 
-- Are not shown in the initial list of extensions on the extension registry. (They are only shown when the user has typed in a query).
-- Are sorted last on the list of extensions when there is a query (unless the user has already added the WIP extension).
-- Have a red "Work in progress" badge on the extension card in the list.
-- Have a red "Work in progress" badge on the extension's page.
+- are sorted last on the list of extensions (unless the user has previously enabled the WIP extension);
+- have a red "WIP" badge on the extension card in the list; and
+- have a red "WIP" badge on the extension's page.
 
 You can use WIP extensions for testing in-development extensions, as well as new versions of an existing extension.
 
@@ -40,7 +39,7 @@ When iterating on your extension, each code change requires republishing. You ca
 
 To set this up:
 
-1. If the extension is in use, add a `wip-` prefix to the current name and a `WIP:` or `[WIP]` to the title.
+1. If the extension is in use, add a `wip-` prefix to the current name (so that you don't publish your work-in-progress changes to users that rely on the extension) and set `"wip": true"` in the extension manifest.
 
 1. In a terminal window, run `npm run serve` in your extension's directory to run the Parcel dev server. Wait until it reports that it's listening on http://localhost:1234 (or another port number).
 

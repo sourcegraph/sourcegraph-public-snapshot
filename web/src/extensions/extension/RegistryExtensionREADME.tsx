@@ -14,15 +14,14 @@ const PublishNewManifestAlert: React.FunctionComponent<{
 }> = ({ extension, text, buttonLabel, alertClass }) => (
     <div className={`alert ${alertClass}`}>
         {text}
-        {extension.registryExtension &&
-            extension.registryExtension.viewerCanAdminister && (
-                <>
-                    <br />
-                    <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
-                        {buttonLabel}
-                    </Link>
-                </>
-            )}
+        {extension.registryExtension && extension.registryExtension.viewerCanAdminister && (
+            <>
+                <br />
+                <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                    {buttonLabel}
+                </Link>
+            </>
+        )}
     </div>
 )
 
@@ -49,15 +48,12 @@ export const ExtensionREADME: React.FunctionComponent<{
 
     if (!manifest || !manifest.readme) {
         return (
-            <>
-                {manifest && manifest.title && <h2>{manifest.title}</h2>}
-                <PublishNewManifestAlert
-                    extension={extension}
-                    alertClass="alert-info"
-                    text={`This extension has no README.`}
-                    buttonLabel="Add README and publish new release"
-                />
-            </>
+            <PublishNewManifestAlert
+                extension={extension}
+                alertClass="alert-info"
+                text={`This extension has no README.`}
+                buttonLabel="Add README and publish new release"
+            />
         )
     }
 

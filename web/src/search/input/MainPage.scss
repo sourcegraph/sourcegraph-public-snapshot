@@ -549,8 +549,7 @@ body.main-page {
             font-size: 20px;
             font-weight: 400;
             letter-spacing: 0.05rem;
-            .search-button {
-                margin-left: 3rem;
+            .search-button > .search-button__btn {
                 padding-left: 2rem;
                 padding-right: 2rem;
                 margin-right: 0;

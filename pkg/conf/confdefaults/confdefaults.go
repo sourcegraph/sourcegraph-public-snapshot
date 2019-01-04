@@ -80,5 +80,5 @@ var Cluster = conftypes.RawUnified{
 // not strictly one of the declared defaults in this package but rather may be
 // defaults from a user's old configuration.
 //
-// TODO(slimsag): Remove legacy warning above after 3.0 (not 3.0-preview).
+// TODO(slimsag): Remove legacy warning above after 3.0.
 var Default conftypes.RawUnified

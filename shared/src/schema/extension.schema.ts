@@ -34,7 +34,6 @@ export const EXTENSION_CATEGORIES = array([
 export type ExtensionCategory = typeof EXTENSION_CATEGORIES[number]
 
 export interface ExtensionManifest {
-    title?: string
     description?: string
     readme?: string
     url: string

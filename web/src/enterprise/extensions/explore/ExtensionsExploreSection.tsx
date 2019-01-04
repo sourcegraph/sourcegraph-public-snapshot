@@ -3,6 +3,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
+import { Path } from '../../../../../shared/src/components/Path'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -59,8 +60,8 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
             this.state.extensionsOrError === LOADING
                 ? Array(ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).fill(LOADING)
                 : isErrorLike(this.state.extensionsOrError)
-                    ? this.state.extensionsOrError
-                    : this.state.extensionsOrError.nodes
+                ? this.state.extensionsOrError
+                : this.state.extensionsOrError.nodes
 
         return (
             <div className="extensions-explore-section">
@@ -79,7 +80,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                                 <div key={i} className="col-md-6 col-lg-3 mb-2">
                                     {extension === LOADING ? (
                                         <ExtensionsExploreSectionExtensionCard
-                                            title="⋯"
+                                            extensionID="⋯"
                                             // Spacer to reduce loading jitter.
                                             description={
                                                 <>
@@ -90,10 +91,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                                         />
                                     ) : (
                                         <ExtensionsExploreSectionExtensionCard
-                                            title={
-                                                (extension.manifest && extension.manifest.title) ||
-                                                extension.extensionIDWithoutRegistry
-                                            }
+                                            extensionID={<Path path={extension.extensionIDWithoutRegistry} />}
                                             description={
                                                 (extension.manifest && extension.manifest.description) || undefined
                                             }
@@ -105,7 +103,8 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                         </div>
                         <div className="text-right mt-1">
                             <Link to="/extensions">
-                                View all extensions<ChevronRightIcon className="icon-inline" />
+                                View all extensions
+                                <ChevronRightIcon className="icon-inline" />
                             </Link>
                         </div>
                     </>
@@ -127,7 +126,6 @@ function queryExtensions(
                             extensionIDWithoutRegistry
                             url
                             manifest {
-                                title
                                 description
                             }
                         }
