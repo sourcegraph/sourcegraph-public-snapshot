@@ -115,7 +115,7 @@ require (
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
-	github.com/stvp/tempredis v0.0.0-20160122230306-83f7aae7ea49 // indirect
+	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea
 	github.com/uber-go/atomic v1.3.2 // indirect
 	github.com/uber/jaeger-client-go v2.14.0+incompatible
