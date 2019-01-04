@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -123,11 +122,6 @@ func derefInt64(i *int64) int64 {
 func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oauth2.Token) (verifiedEmails []string) {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL())
 
-	if apiURL.String() != defaultAPI {
-		// Append /v3 to GHE API
-		var appURLV3 = apiURL.String() + "/v3"
-		apiURL, _ = url.Parse(appURLV3)
-	}
 	ghClient := githubsvc.NewClient(apiURL, "", nil)
 	emails, err := ghClient.GetAuthenticatedUserEmails(ctx, token.AccessToken)
 	if err != nil {
@@ -137,11 +131,11 @@ func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oaut
 
 	for _, email := range emails {
 
-		// GitHub Enterprise does not authorize emails. Continue anyways.
-		if email.Primary && apiURL.String() != defaultAPI {
-			verifiedEmails = append([]string{email.Email}, verifiedEmails...)
-			continue
-		}
+		// // GitHub Enterprise does not authorize emails. Continue anyways.
+		// if email.Primary && apiURL.String() != defaultAPI {
+		// 	verifiedEmails = append([]string{email.Email}, verifiedEmails...)
+		// 	continue
+		// }
 		if !email.Verified {
 			continue
 		}
