@@ -5,11 +5,9 @@ import {
     DefinitionProvider,
     DocumentSelector,
     HoverProvider,
-    ImplementationProvider,
     Location,
     LocationProvider,
     ReferenceProvider,
-    TypeDefinitionProvider,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
@@ -44,41 +42,6 @@ export class ExtLanguageFeatures {
             )
         )
         return syncSubscription(this.proxy.$registerDefinitionProvider(selector, providerFunction))
-    }
-
-    public registerTypeDefinitionProvider(
-        selector: DocumentSelector,
-        provider: TypeDefinitionProvider
-    ): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientLanguageFeaturesAPI['$registerTypeDefinitionProvider']>[1]
-        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
-            toProxyableSubscribable(
-                provider.provideTypeDefinition(await this.documents.getSync(textDocument.uri), toPosition(position)),
-                toLocations
-            )
-        )
-        return syncSubscription(this.proxy.$registerTypeDefinitionProvider(selector, providerFunction))
-    }
-
-    public registerImplementationProvider(
-        selector: DocumentSelector,
-        provider: ImplementationProvider
-    ): Unsubscribable {
-        return syncSubscription(
-            this.proxy.$registerImplementationProvider(
-                selector,
-                proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
-                    toProxyableSubscribable(
-                        provider.provideImplementation(
-                            await this.documents.getSync(textDocument.uri),
-                            toPosition(position)
-                        ),
-                        toLocations
-                    )
-                )
-            )
-        )
     }
 
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {

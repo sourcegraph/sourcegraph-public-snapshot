@@ -153,7 +153,14 @@ function createExtensionAPI(
     }
 
     // Expose the extension API to extensions
-    const extensionAPI: typeof sourcegraph = {
+    const extensionAPI: typeof sourcegraph & {
+        // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
+        // noops with a log message), to avoid completely breaking extensions that use them.
+        languages: {
+            registerTypeDefinitionProvider: any
+            registerImplementationProvider: any
+        }
+    } = {
         URI: URL,
         Position,
         Range,
@@ -208,15 +215,20 @@ function createExtensionAPI(
                 provider: sourcegraph.DefinitionProvider
             ) => languageFeatures.registerDefinitionProvider(selector, provider),
 
-            registerTypeDefinitionProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.TypeDefinitionProvider
-            ) => languageFeatures.registerTypeDefinitionProvider(selector, provider),
-
-            registerImplementationProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.ImplementationProvider
-            ) => languageFeatures.registerImplementationProvider(selector, provider),
+            // These were removed, but keep them here so that calls from old extensions do not throw
+            // an exception and completely break.
+            registerTypeDefinitionProvider: () => {
+                console.warn(
+                    'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
+                )
+                return { unsubscribe: () => void 0 }
+            },
+            registerImplementationProvider: () => {
+                console.warn(
+                    'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
+                )
+                return { unsubscribe: () => void 0 }
+            },
 
             registerReferenceProvider: (
                 selector: sourcegraph.DocumentSelector,
