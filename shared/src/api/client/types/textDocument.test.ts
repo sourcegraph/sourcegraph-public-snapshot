@@ -41,5 +41,6 @@ describe('score', () => {
         expect(score([{ language: 'x' }], 'file:///f.txt', 'l')).toBe(0)
         expect(score([{ language: 'l' }], 'file:///f.txt', 'l')).toBe(10)
         expect(score([{ language: '*' }], 'file:///f.txt', 'l')).toBe(5)
+        expect(score([{}], 'file:///f.txt', 'l')).toBe(5)
     })
 })

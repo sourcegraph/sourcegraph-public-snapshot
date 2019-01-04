@@ -345,40 +345,24 @@ declare module 'sourcegraph' {
      * [language](#TextDocument.languageId), the scheme of its resource, or a glob-pattern that is
      * applied to the [path](#TextDocument.fileName).
      * A document filter matches if all the provided properties (those of `language`, `scheme` and `pattern` that are not `undefined`) match.
+     * If all properties are `undefined`, the document filter matches all documents.
      *
      * @sample A language filter that applies to typescript files on disk: `{ language: 'typescript', scheme: 'file' }`
      * @sample A language filter that applies to all package.json paths: `{ language: 'json', pattern: '**package.json' }`
      */
-    export type DocumentFilter =
-        | {
-              /** A language id, such as `typescript` or `*`. */
-              language: string
-              /** A URI scheme, such as `file` or `untitled`. */
-              scheme?: string
-              /** A glob pattern, such as `*.{ts,js}`. */
-              pattern?: string
-          }
-        | {
-              /** A language id, such as `typescript` or `*`. */
-              language?: string
-              /** A URI scheme, such as `file` or `untitled`. */
-              scheme: string
-              /** A glob pattern, such as `*.{ts,js}`. */
-              pattern?: string
-          }
-        | {
-              /** A language id, such as `typescript` or `*`. */
-              language?: string
-              /** A URI scheme, such as `file` or `untitled`. */
-              scheme?: string
-              /** A glob pattern, such as `*.{ts,js}`. */
-              pattern: string
-          }
+    export interface DocumentFilter {
+        /** A language id, such as `typescript` or `*`. */
+        language?: string
+        /** A URI scheme, such as `file` or `untitled`. */
+        scheme?: string
+        /** A glob pattern, such as `*.{ts,js}`. */
+        pattern?: string
+    }
 
     /**
      * A document selector is the combination of one or many document filters.
      * A document matches the selector if any of the given filters matches.
-     * A plain string is a shorthand for `{ language: '...' }`.
+     * If the filter is a string and not a {@link DocumentFilter}, it will be treated as a language id.
      *
      * @example let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }];
      */
