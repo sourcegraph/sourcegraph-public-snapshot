@@ -304,12 +304,12 @@ declare module 'sourcegraph' {
         /**
          * The resource identifier of this location.
          */
-        uri: URI
+        readonly uri: URI
 
         /**
          * The document range of this location.
          */
-        range?: Range
+        readonly range?: Range
 
         /**
          * Creates a new location object.
