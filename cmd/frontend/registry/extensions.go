@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 )
 
@@ -244,28 +246,31 @@ func (t sleepIfUncachedTransport) RoundTrip(req *http.Request) (*http.Response, 
 }
 
 // IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is
-// marked as a work-in-progress extension (by having a title that begins with "WIP:" or "[WIP]").
+// marked as a work-in-progress extension (by having a "wip": true property, or (for backcompat) a
+// title that begins with "WIP:" or "[WIP]").
+//
+// BACKCOMPAT: This still supports titles even though extensions no longer have titles. In Feb 2019
+// it will probably be safe to remove the title handling.
 //
 // NOTE: Keep this pattern in sync with WorkInProgressExtensionTitlePostgreSQLPattern.
 func IsWorkInProgressExtension(manifest *string) bool {
-	parsed := NewExtensionManifest(manifest)
-	if parsed == nil {
+	if manifest == nil {
 		// Extensions with no manifest (== no releases published yet) are considered
 		// work-in-progress.
 		return true
 	}
-	title, err := parsed.Title()
-	if err != nil {
+
+	var result struct {
+		schema.SourcegraphExtensionManifest
+		Title string
+	}
+	if err := jsonc.Unmarshal(*manifest, &result); err != nil {
 		// An extension whose manifest fails to parse is problematic for other reasons (and an error
 		// will be displayed), but it isn't helpful to also consider it work-in-progress.
 		return false
 	}
-	if title == nil {
-		// An extension with no title just uses the extension ID as a title. This is not very useful
-		// to users, but it isn't helpful to consider it work-in-progress.
-		return false
-	}
-	return strings.HasPrefix(*title, "WIP:") || strings.HasPrefix(*title, "[WIP]")
+
+	return result.Wip || strings.HasPrefix(result.Title, "WIP:") || strings.HasPrefix(result.Title, "[WIP]")
 }
 
 // WorkInProgressExtensionTitlePostgreSQLPattern is the PostgreSQL "SIMILAR TO" pattern that matches

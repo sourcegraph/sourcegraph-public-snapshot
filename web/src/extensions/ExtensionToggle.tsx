@@ -11,7 +11,7 @@ import { isExtensionAdded } from './extension/extension'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps {
     /** The extension that this element is for. */
-    extension: Pick<ConfiguredRegistryExtension, 'id' | 'manifest'>
+    extension: Pick<ConfiguredRegistryExtension, 'id'>
 }
 
 /**
@@ -42,7 +42,7 @@ export class ExtensionToggle extends React.PureComponent<Props> {
 
                         if (
                             !isExtensionAdded(this.props.settingsCascade.final, this.props.extension.id) &&
-                            !confirmAddExtension(this.props.extension.id, this.props.extension.manifest)
+                            !confirmAddExtension(this.props.extension.id)
                         ) {
                             return EMPTY
                         }
@@ -98,21 +98,9 @@ export class ExtensionToggle extends React.PureComponent<Props> {
 /**
  * Shows a modal confirmation prompt to the user confirming whether to add an extension.
  */
-function confirmAddExtension(
-    extensionID: string,
-    extensionManifest?: ConfiguredRegistryExtension['manifest']
-): boolean {
-    // Either `"title" (id)` (if there is a title in the manifest) or else just `id`. It is
-    // important to show the ID because it indicates who the publisher is and allows
-    // disambiguation from other similarly titled extensions.
-    let displayName: string
-    if (extensionManifest && !isErrorLike(extensionManifest) && extensionManifest.title) {
-        displayName = `${JSON.stringify(extensionManifest.title)} (${extensionID})`
-    } else {
-        displayName = extensionID
-    }
+function confirmAddExtension(extensionID: string): boolean {
     return confirm(
-        `Add Sourcegraph extension ${displayName}?\n\nIt can:\n- Read repositories and files you view using Sourcegraph\n- Read and change your Sourcegraph settings`
+        `Add Sourcegraph extension ${extensionID}?\n\nIt can:\n- Read repositories and files you view using Sourcegraph\n- Read and change your Sourcegraph settings`
     )
 }
 

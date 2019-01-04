@@ -8,7 +8,7 @@ import { ExtensionCategory } from '../../../../shared/src/schema/extension.schem
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { extensionIDPrefix, validCategories } from './extension'
+import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionREADME } from './RegistryExtensionREADME'
 
@@ -58,7 +58,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                 {categories.map((c, i) => (
                                     <li key={i} className="list-inline-item mb-2 small">
                                         <Link
-                                            to={`/extensions?query=category:${encodeURIComponent('"' + c + '"')}`}
+                                            to={urlToExtensionsQuery(extensionsQuery({ category: c }))}
                                             className="rounded border p-1"
                                         >
                                             {c}
@@ -78,7 +78,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                     {this.props.extension.manifest.tags.map((t, i) => (
                                         <li key={i} className="list-inline-item mb-2 small">
                                             <Link
-                                                to={`/extensions?query=tag:${encodeURIComponent(JSON.stringify(t))}`}
+                                                to={urlToExtensionsQuery(extensionsQuery({ tag: t }))}
                                                 className="rounded border p-1"
                                             >
                                                 {truncate(t, { length: 24 })}

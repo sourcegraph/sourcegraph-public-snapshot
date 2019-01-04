@@ -186,11 +186,13 @@ type dbExtensionsListOptions struct {
 	Category               string // matches the latest release's manifest's categories array
 	Tag                    string // matches the latest release's manifest's tags array
 	PrioritizeExtensionIDs []string
-	ExcludeWIP             bool // exclude extensions marked as WIP
 	*db.LimitOffset
 }
 
-var extensionIsWIPExpr = sqlf.Sprintf(`COALESCE(rer.manifest IS NULL OR rer.manifest->>'title' SIMILAR TO %s, true)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
+// extensionIsWIPExpr is the SQL expression for whether the extension is a WIP extension.
+//
+// BACKCOMPAT: It still reads the title property even though extensions no longer have titles.
+var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR COALESCE((rer.manifest->>'wip')::jsonb = 'true'::jsonb, rer.manifest->>'title' SIMILAR TO %s, false)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query
@@ -206,18 +208,26 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 		}
 		queryConds := []*sqlf.Query{
 			sqlf.Sprintf(extensionIDExpr+" ILIKE %s", likePattern(o.Query)),
-			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN rer.manifest->>'title' ILIKE %s ELSE false END`, likePattern(o.Query)),
+			// BACKCOMPAT: This still reads the title property even though extensions no longer have titles.
+			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'description' ILIKE %s OR rer.manifest->>'title' ILIKE %s) ELSE false END`, likePattern(o.Query), likePattern(o.Query)),
 		}
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(queryConds, ") OR (")))
 	}
 	if o.Category != "" {
-		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Category))
+		categoryConds := []*sqlf.Query{
+			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Category),
+		}
+		if o.Category == "Other" {
+			// Special-case the "Other" category: it matches extensions explicitly categorized as
+			// "Other" or extensions with a manifest with no category. (Extensions with no manifest
+			// are omitted.) HACK: This ideally would be implemented at a different layer, but it is
+			// so much simpler to just special-case it here.
+			categoryConds = append(categoryConds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb IS NULL ELSE false END`))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(categoryConds, ") OR (")))
 	}
 	if o.Tag != "" {
 		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'tags')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Tag))
-	}
-	if o.ExcludeWIP {
-		conds = append(conds, sqlf.Sprintf("NOT (%s)", extensionIsWIPExpr))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))

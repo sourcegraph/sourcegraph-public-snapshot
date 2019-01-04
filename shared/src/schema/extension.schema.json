@@ -7,10 +7,6 @@
   "additionalProperties": true,
   "required": ["activationEvents", "publisher"],
   "properties": {
-    "title": {
-      "description": "The title of the extension. If not specified, the extension ID is used.",
-      "type": "string"
-    },
     "description": {
       "description":
         "The extension's description, which summarizes the extension's purpose and features. It should not exceed a few sentences.",
