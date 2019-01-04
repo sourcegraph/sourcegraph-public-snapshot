@@ -1,13 +1,12 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "typeRoots": ["../../node_modules/@types", "src/types"],
+    "typeRoots": ["../../shared/src/types", "../../node_modules/@types", "src/types"],
     "jsx": "react",
     "noImplicitAny": false,
     "noImplicitReturns": false,
     "strictPropertyInitialization": false,
     "resolveJsonModule": true,
-    "allowJs": true,
     "checkJs": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "config/**/*.js", "config/**/*.ts", "scripts/**/*.ts", "*.ts"],

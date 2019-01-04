@@ -2,25 +2,35 @@
 // prettier-ignore
 import '../../config/polyfill'
 
+import H from 'history'
+import React from 'react'
+import { setLinkComponent } from '../../../../../shared/src/components/Link'
 import { getURL } from '../../browser/extension'
 import * as runtime from '../../browser/runtime'
 import storage from '../../browser/storage'
 import { StorageItems } from '../../browser/types'
+import { injectCodeIntelligence } from '../../libs/code_intelligence'
+import { injectGitHubApplication } from '../../libs/github/inject'
+import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
+import { initSentry } from '../../libs/sentry'
+import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
 import {
     setInlineSymbolSearchEnabled,
     setRenderMermaidGraphsEnabled,
     setSourcegraphUrl,
-    setUseExtensions,
 } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
-
-import { injectCodeIntelligence } from '../../libs/code_intelligence'
-import { injectGitHubApplication } from '../../libs/github/inject'
-import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
-import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('CONTENT')
+
+initSentry('content')
+
+setLinkComponent(({ to, children, ...props }) => (
+    <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
+        {children}
+    </a>
+))
 
 /**
  * Main entry point into browser extension.
@@ -109,8 +119,6 @@ function injectApplication(): void {
                 window.addEventListener('unload', () => subscriptions.unsubscribe())
             }
         }
-
-        setUseExtensions(items.featureFlags.useExtensions === undefined ? false : items.featureFlags.useExtensions)
     }
 
     storage.getSync(handleGetStorage)

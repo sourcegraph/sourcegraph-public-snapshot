@@ -14,8 +14,6 @@ export let renderMermaidGraphsEnabled = false
 
 export let inlineSymbolSearchEnabled = false
 
-export let useExtensions = false
-
 interface UrlCache {
     [key: string]: string
 }
@@ -27,7 +25,6 @@ if (window.SG_ENV === 'EXTENSION') {
         sourcegraphUrl = items.sourcegraphURL
         renderMermaidGraphsEnabled = items.featureFlags.renderMermaidGraphsEnabled
         inlineSymbolSearchEnabled = items.featureFlags.inlineSymbolSearchEnabled
-        useExtensions = items.featureFlags.useExtensions
     })
 }
 
@@ -49,10 +46,6 @@ export function setRenderMermaidGraphsEnabled(enabled: boolean): void {
 
 export function setInlineSymbolSearchEnabled(enabled: boolean): void {
     inlineSymbolSearchEnabled = enabled
-}
-
-export function setUseExtensions(value: boolean): void {
-    useExtensions = value
 }
 
 export function getPlatformName():

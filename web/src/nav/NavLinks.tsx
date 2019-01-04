@@ -54,6 +54,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 <ActionsNavItems
                     menu={ContributableMenu.GlobalNav}
+                    actionItemClass="nav-link"
                     extensionsController={this.props.extensionsController}
                     platformContext={this.props.platformContext}
                     location={this.props.location}
@@ -96,6 +97,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     extensionsController={this.props.extensionsController}
                     platformContext={this.props.platformContext}
                     toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
+                    autoFocus={true}
                     location={this.props.location}
                 />
                 {this.props.authenticatedUser && (

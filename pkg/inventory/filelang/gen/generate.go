@@ -113,7 +113,7 @@ func printHeader(w io.Writer) {
 
 // omitLanguages contains the name of languages to omit because they are extremely rare and/or have file extensions that conflict with more popular languages.
 var omitLanguages = map[string]struct{}{
-	"GCC Machine Description": struct{}{}, // has file extension .md that conflicts with Markdown
+	"GCC Machine Description": {}, // has file extension .md that conflicts with Markdown
 }
 
 func removeOmittedLanguages(langs filelang.Languages) filelang.Languages {

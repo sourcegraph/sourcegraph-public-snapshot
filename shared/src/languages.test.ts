@@ -1,22 +1,21 @@
-import * as assert from 'assert'
 import { getPathExtension } from './languages'
 
 describe('util/index', () => {
     describe('getPathExtension', () => {
-        it('returns extension if normal path', () => {
-            assert.strictEqual(getPathExtension('/foo/baz/bar.go'), 'go')
+        test('returns extension if normal path', () => {
+            expect(getPathExtension('/foo/baz/bar.go')).toBe('go')
         })
 
-        it('returns empty string if no extension', () => {
-            assert.strictEqual(getPathExtension('README'), '')
+        test('returns empty string if no extension', () => {
+            expect(getPathExtension('README')).toBe('')
         })
 
-        it('returns empty string if hidden file with no extension', () => {
-            assert.strictEqual(getPathExtension('.gitignore'), '')
+        test('returns empty string if hidden file with no extension', () => {
+            expect(getPathExtension('.gitignore')).toBe('')
         })
 
-        it('returns extension for path with multiple dot separators', () => {
-            assert.strictEqual(getPathExtension('.baz.bar.go'), 'go')
+        test('returns extension for path with multiple dot separators', () => {
+            expect(getPathExtension('.baz.bar.go')).toBe('go')
         })
     })
 })

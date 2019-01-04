@@ -4,10 +4,7 @@ import '../../config/polyfill'
 
 import { without } from 'lodash'
 import { noop } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
 import DPT from 'webext-domain-permission-toggle'
-import ExtensionHostWorker from 'worker-loader?inline!./extensionHost.worker'
-import { InitData } from '../../../../../shared/src/api/extension/extensionHost'
 import * as browserAction from '../../browser/browserAction'
 import * as omnibox from '../../browser/omnibox'
 import * as permissions from '../../browser/permissions'
@@ -16,12 +13,15 @@ import storage, { defaultStorageItems } from '../../browser/storage'
 import * as tabs from '../../browser/tabs'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import initializeCli from '../../libs/cli'
-import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
+import { initSentry } from '../../libs/sentry'
+import { createBlobURLForBundle, createExtensionHostWorker } from '../../platform/worker'
 import { resolveClientConfiguration } from '../../shared/backend/server'
-import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl, sourcegraphUrl } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
+
+initSentry('background')
 
 let customServerOrigins: string[] = []
 
@@ -205,8 +205,16 @@ storage.setSyncMigration(items => {
 
     newItems.featureFlags = featureFlags
 
-    if (typeof process.env.USE_EXTENSIONS !== 'undefined') {
-        newItems.featureFlags.useExtensions = process.env.USE_EXTENSIONS === 'true'
+    newItems.featureFlags.renderMermaidGraphsEnabled = true
+
+    // TODO: Remove this block after a few releases
+    const clientSettings = JSON.parse(items.clientSettings || '{}')
+    if (clientSettings['codecov.endpoints'] || typeof clientSettings['codecov.showCoverage'] !== 'undefined') {
+        if (typeof clientSettings.extensions === 'undefined') {
+            clientSettings.extensions = clientSettings.extensions || {}
+        }
+        clientSettings.extensions['souercegraph/codecov'] = true
+        newItems.clientSettings = JSON.stringify(clientSettings, null, 4)
     }
 
     return { newItems, keysToRemove }
@@ -269,6 +277,17 @@ runtime.onMessage((message, _, cb) => {
             return
         case 'openOptionsPage':
             runtime.openOptionsPage()
+            return true
+        case 'createBlobURL':
+            createBlobURLForBundle(message.payload! as string)
+                .then(url => {
+                    if (cb) {
+                        cb(url)
+                    }
+                })
+                .catch(err => {
+                    throw new Error(`Unable to create blob url for bundle ${message.payload} error: ${err}`)
+                })
             return true
     }
 
@@ -367,48 +386,9 @@ function setDefaultBrowserAction(): void {
 browserAction.onClicked(noop)
 setDefaultBrowserAction()
 
-/**
- * Fetches JavaScript from a URL and runs it in a web worker.
- */
-function spawnWebWorkerFromURL({
-    jsBundleURL,
-    settingsCascade,
-}: Pick<ExtensionConnectionInfo, 'jsBundleURL' | 'settingsCascade'>): Promise<Worker> {
-    return ajax({
-        url: jsBundleURL,
-        crossDomain: true,
-        responseType: 'blob',
-    })
-        .toPromise()
-        .then(response => {
-            // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
-            // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
-            // with a CSP that allowlists https://* in script-src (see
-            // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
-            // add-ons have an even stricter restriction.)
-            const blobURL = window.URL.createObjectURL(response.response)
-            try {
-                const worker = new ExtensionHostWorker()
-                const initData: InitData = {
-                    bundleURL: blobURL,
-                    sourcegraphURL: sourcegraphUrl,
-                    clientApplication: 'other',
-                    settingsCascade,
-                }
-                worker.postMessage(initData)
-                return worker
-            } catch (err) {
-                console.error(err)
-            }
-            throw new Error('failed to initialize extension host')
-        })
-}
-
-/**
- * Connects a port and worker by forwarding messages from one to the other and
- * vice versa.
- */
-const connectPortAndWorker = (port: chrome.runtime.Port, worker: Worker) => {
+// This is the entrypoint for the extension host.
+chrome.runtime.onConnect.addListener(port => {
+    const worker = createExtensionHostWorker()
     worker.addEventListener('message', m => {
         port.postMessage(m.data)
     })
@@ -416,48 +396,6 @@ const connectPortAndWorker = (port: chrome.runtime.Port, worker: Worker) => {
         worker.postMessage(m)
     })
     port.onDisconnect.addListener(() => worker.terminate())
-}
-
-/**
- * Either creates a web worker or connects to a WebSocket based on the given
- * platform, then connects the given port to it.
- */
-const spawnAndConnect = ({
-    connectionInfo,
-    port,
-}: {
-    connectionInfo: ExtensionConnectionInfo
-    port: chrome.runtime.Port
-}): Promise<void> =>
-    spawnWebWorkerFromURL(connectionInfo).then(worker => {
-        connectPortAndWorker(port, worker)
-    })
-
-// This is the bridge between content scripts (that want to connect to Sourcegraph extensions) and the background
-// script (that spawns JS bundles or connects to WebSocket endpoints).:
-chrome.runtime.onConnect.addListener(port => {
-    // When a content script wants to create a connection to a Sourcegraph extension, it first connects to the
-    // background script on a random port and sends a message containing the platform information for that
-    // Sourcegraph extension (e.g. a JS bundle at localhost:1234/index.js).
-    onFirstMessage(port, (connectionInfo: ExtensionConnectionInfo) => {
-        // The background script receives the message and attempts to spawn the
-        // extension:
-        spawnAndConnect({ connectionInfo, port }).then(
-            // If spawning succeeds, the background script sends {} (so the content script knows it succeeded) and
-            // the port communicates using the internal Sourcegraph extension RPC API after that.
-            () => {
-                // Success is represented by the absence of an error
-                port.postMessage({})
-            },
-            // If spawning fails, the background script sends { error } (so the content script knows it failed) and
-            // the port is immediately disconnected. There is always a 1-1 correspondence between ports and content
-            // scripts, so this won't disrupt any other connections.
-            error => {
-                port.postMessage({ error })
-                port.disconnect()
-            }
-        )
-    })
 })
 
 // Add "Enable Sourcegraph on this domain" context menu item

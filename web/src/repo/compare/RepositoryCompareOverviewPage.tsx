@@ -5,14 +5,16 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
@@ -75,14 +77,13 @@ interface Props
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        ExtensionsControllerProps {
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    base: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
-    hoverifier: Hoverifier
+    head: { repoName: string; repoID: GQL.ID; rev?: string | null }
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
 }
 
 interface State {
@@ -154,19 +155,18 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                         <RepositoryCompareDiffPage
                             {...this.props}
                             base={{
-                                repoPath: this.props.base.repoPath,
+                                repoName: this.props.base.repoName,
                                 repoID: this.props.base.repoID,
                                 rev: this.props.base.rev || null,
                                 commitID: this.state.rangeOrError.baseRevSpec.object!.oid,
                             }}
                             head={{
-                                repoPath: this.props.head.repoPath,
+                                repoName: this.props.head.repoName,
                                 repoID: this.props.head.repoID,
                                 rev: this.props.head.rev || null,
                                 commitID: this.state.rangeOrError.headRevSpec.object!.oid,
                             }}
                             extensionsController={this.props.extensionsController}
-                            extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                         />
                     </>
                 )}

@@ -1,28 +1,24 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import H from 'history'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
-import { combineLatest, concat, from, Observable, of, Subject, Subscription } from 'rxjs'
+import { combineLatest, concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
+import { catchError, debounce, delay, filter, map, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators'
 import {
-    catchError,
-    debounceTime,
-    delay,
-    filter,
-    map,
-    switchMap,
-    take,
-    takeUntil,
-    withLatestFrom,
-} from 'rxjs/operators'
-import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
+    ConfiguredRegistryExtension,
+    isExtensionEnabled,
+    toConfiguredRegistryExtension,
+} from '../../../shared/src/extensions/extension'
 import { viewerConfiguredExtensions } from '../../../shared/src/extensions/helpers'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
+import { Settings, SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { Form } from '../components/Form'
+import { extensionsQuery, isExtensionAdded } from './extension/extension'
 import { ExtensionCard } from './ExtensionCard'
+import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -47,7 +43,6 @@ export const registryExtensionFragment = gql`
         name
         manifest {
             raw
-            title
             description
         }
         createdAt
@@ -61,9 +56,10 @@ export const registryExtensionFragment = gql`
     }
 `
 
-interface Props extends SettingsCascadeProps, PlatformContextProps, RouteComponentProps<{}> {
+interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'queryGraphQL'> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
-    emptyElement?: React.ReactFragment
+    location: H.Location
+    history: H.History
 }
 
 const LOADING: 'loading' = 'loading'
@@ -91,15 +87,13 @@ interface State {
 }
 
 /**
- * Displays a list of all extensions used by a settings subject.
+ * Displays a list of extensions.
  */
 export class ExtensionsList extends React.PureComponent<Props, State> {
     private static URL_QUERY_PARAM = 'query'
 
-    private updates = new Subject<void>()
-
     private componentUpdates = new Subject<Props>()
-    private queryChanges = new Subject<string>()
+    private queryChanges = new Subject<{ query: string; immediate?: boolean }>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -117,16 +111,16 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.queryChanges.subscribe(query => {
+            this.queryChanges.subscribe(({ query }) => {
                 this.setState({ query })
             })
         )
 
-        const debouncedQueryChanges = this.queryChanges.pipe(debounceTime(50))
+        const debouncedQueryChanges = this.queryChanges.pipe(debounce(({ immediate }) => timer(immediate ? 0 : 50)))
 
         // Update URL when query field changes.
         this.subscriptions.add(
-            debouncedQueryChanges.subscribe(query => {
+            debouncedQueryChanges.subscribe(({ query }) => {
                 let search: string
                 if (query) {
                     const searchParams = new URLSearchParams()
@@ -149,7 +143,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                     filter(({ history }) => history.action !== 'REPLACE'),
                     map(({ location }) => this.getQueryFromProps({ location })),
                     withLatestFrom(debouncedQueryChanges),
-                    filter(([urlQuery, debouncedStateQuery]) => urlQuery !== debouncedStateQuery)
+                    filter(([urlQuery, { query: debouncedStateQuery }]) => urlQuery !== debouncedStateQuery)
                 )
                 .subscribe(([urlQuery]) => this.setState({ query: urlQuery }))
         )
@@ -157,13 +151,13 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             combineLatest(debouncedQueryChanges)
                 .pipe(
-                    switchMap(([query]) => {
+                    switchMap(([{ query, immediate }]) => {
                         const resultOrError = this.queryRegistryExtensions({ query }).pipe(
                             catchError(err => [asError(err)])
                         )
                         return concat(
                             of(LOADING).pipe(
-                                delay(250),
+                                delay(immediate ? 0 : 250),
                                 takeUntil(resultOrError)
                             ),
                             resultOrError
@@ -174,7 +168,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
         )
 
         this.componentUpdates.next(this.props)
-        this.queryChanges.next(this.state.query)
+        this.queryChanges.next({ query: this.state.query, immediate: true })
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -188,20 +182,24 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="configured-extensions-list">
-                <Form onSubmit={this.onSubmit}>
-                    <div className="form-group">
-                        <input
-                            className="form-control"
-                            type="search"
-                            placeholder="Search extensions..."
-                            name="query"
-                            value={this.state.query}
-                            onChange={this.onQueryChange}
-                            autoFocus={true}
-                            autoComplete="off"
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            spellCheck={false}
+                <Form onSubmit={this.onSubmit} className="form-inline d-flex">
+                    <input
+                        className="form-control flex-grow-1 mr-1 mb-2"
+                        type="search"
+                        placeholder="Search extensions..."
+                        name="query"
+                        value={this.state.query}
+                        onChange={this.onQueryChangeEvent}
+                        autoFocus={true}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                    />
+                    <div className="mb-2">
+                        <ExtensionsQueryInputToolbar
+                            query={this.state.query}
+                            onQueryChange={this.onQueryChangeImmediate}
                         />
                     </div>
                 </Form>
@@ -212,24 +210,23 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 ) : (
                     <>
                         {this.state.data.resultOrError.error && (
-                            <div className="alert alert-danger my-2">{this.state.data.resultOrError.error}</div>
+                            <div className="alert alert-danger mb-2">{this.state.data.resultOrError.error}</div>
                         )}
                         {this.state.data.resultOrError.extensions.length === 0 ? (
                             this.state.data.query ? (
-                                <span className="text-muted">
-                                    No extensions matching <strong>{this.state.data.query}</strong>
-                                </span>
+                                <div className="text-muted">
+                                    No extensions match <strong>{this.state.data.query}</strong>.
+                                </div>
                             ) : (
-                                this.props.emptyElement || <span className="text-muted">No extensions found</span>
+                                <span className="text-muted">No extensions found</span>
                             )
                         ) : (
-                            <div className="row mt-3">
+                            <div className="row mt-1">
                                 {this.state.data.resultOrError.extensions.map((e, i) => (
                                     <ExtensionCard
                                         key={i}
                                         subject={this.props.subject}
                                         node={e}
-                                        onDidUpdate={this.onDidUpdateExtension}
                                         settingsCascade={this.props.settingsCascade}
                                         platformContext={this.props.platformContext}
                                     />
@@ -244,7 +241,13 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
 
     private onSubmit: React.FormEventHandler = e => e.preventDefault()
 
-    private onQueryChange: React.FormEventHandler<HTMLInputElement> = e => this.queryChanges.next(e.currentTarget.value)
+    private onQueryChangeEvent: React.FormEventHandler<HTMLInputElement> = e =>
+        this.onQueryChange({ query: e.currentTarget.value })
+
+    private onQueryChangeImmediate = (query: string) => this.queryChanges.next({ query, immediate: true })
+
+    private onQueryChange = ({ query, immediate }: { query: string; immediate?: boolean }) =>
+        this.queryChanges.next({ query, immediate })
 
     private queryRegistryExtensions = (args: { query?: string }): Observable<ExtensionsResult> =>
         viewerConfiguredExtensions(this.props.platformContext).pipe(
@@ -258,11 +261,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         gql`
                             query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
                                 extensionRegistry {
-                                    extensions(
-                                        query: $query
-                                        prioritizeExtensionIDs: $prioritizeExtensionIDs
-                                        includeWIP: true
-                                    ) {
+                                    extensions(query: $query, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
                                         nodes {
                                             ...RegistryExtensionFields
                                         }
@@ -279,7 +278,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                     )
                 ).pipe(
                     map(({ data, errors }) => {
-                        if (!data || !data.extensionRegistry || !data.extensionRegistry.extensions || errors) {
+                        if (!data || !data.extensionRegistry || !data.extensionRegistry.extensions) {
                             throw createAggregateError(errors)
                         }
                         return {
@@ -290,10 +289,36 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 )
             ),
             map(({ registryExtensions, error }) => ({
-                extensions: registryExtensions.map(x => toConfiguredRegistryExtension(x)),
+                extensions: applyExtensionsQuery(
+                    args.query || '',
+                    this.props.settingsCascade.final && !isErrorLike(this.props.settingsCascade.final)
+                        ? this.props.settingsCascade.final
+                        : {},
+                    registryExtensions
+                ).map(x => toConfiguredRegistryExtension(x)),
                 error,
             }))
         )
+}
 
-    private onDidUpdateExtension = () => this.updates.next()
+/**
+ * Applies the query's client-side extensions search keywords #installed, #enabled, and #disabled by filtering
+ * {@link registryExtensions}.
+ *
+ * @internal Exported for testing only.
+ */
+export function applyExtensionsQuery<X extends { extensionID: string }>(
+    query: string,
+    settings: Pick<Settings, 'extensions'>,
+    registryExtensions: X[]
+): X[] {
+    const installed = query.includes(extensionsQuery({ installed: true }))
+    const enabled = query.includes(extensionsQuery({ enabled: true }))
+    const disabled = query.includes(extensionsQuery({ disabled: true }))
+    return registryExtensions.filter(
+        x =>
+            (!installed || isExtensionAdded(settings, x.extensionID)) &&
+            (!enabled || isExtensionEnabled(settings, x.extensionID)) &&
+            (!disabled || (isExtensionAdded(settings, x.extensionID) && !isExtensionEnabled(settings, x.extensionID)))
+    )
 }

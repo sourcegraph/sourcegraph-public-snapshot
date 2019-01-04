@@ -2,14 +2,31 @@ package graphqlbackend
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"fmt"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
+
+var externalServiceKinds = map[string]struct{}{
+	"AWSCODECOMMIT":   {},
+	"BITBUCKETSERVER": {},
+	"GITHUB":          {},
+	"GITLAB":          {},
+	"GITOLITE":        {},
+	"PHABRICATOR":     {},
+}
+
+func validateKind(kind string) error {
+	if _, ok := externalServiceKinds[kind]; !ok {
+		return fmt.Errorf("invalid external service kind: %s", kind)
+	}
+	return nil
+}
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	Input *struct {
@@ -22,6 +39,11 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
+
+	if err := validateKind(args.Input.Kind); err != nil {
+		return nil, err
+	}
+
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
@@ -61,6 +83,25 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &externalServiceResolver{externalService: externalService}, nil
+}
+
+func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
+	ExternalService graphql.ID
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can delete external services.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalExternalServiceID(args.ExternalService)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.ExternalServices.Delete(ctx, id); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {

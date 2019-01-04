@@ -27,7 +27,7 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 	oauth2Cfg := oauth2.Config{
 		ClientID:     p.ClientID,
 		ClientSecret: p.ClientSecret,
-		Scopes:       []string{"repo"},
+		Scopes:       []string{"repo", "user:email"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  codeHost.BaseURL().ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
 			TokenURL: codeHost.BaseURL().ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
@@ -44,8 +44,9 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 		Callback: github.CallbackHandler(
 			&oauth2Cfg,
 			oauth.SessionIssuer(&sessionIssuerHelper{
-				CodeHost: codeHost,
-				clientID: p.ClientID,
+				CodeHost:    codeHost,
+				clientID:    p.ClientID,
+				allowSignup: p.AllowSignup,
 			}, sessionKey),
 			nil,
 		),

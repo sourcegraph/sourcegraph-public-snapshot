@@ -2,9 +2,9 @@
 
 ## Linking and syncing Phabricator repositories
 
-If you mirror your source repositories on Phabricator, Sourcegraph can provide users with links to various Phabricator pages.
+If you mirror your source repositories on Phabricator, Sourcegraph can provide users with links to various Phabricator pages if you add Phabricator as an external service (in **Site admin > External services**, or in the site config JSON editor in Sourcegraph 2.x).
 
-The `phabricator` configuration option takes in an array of Phabricator configurations. A Phabricator configuration consists of the following fields:
+A Phabricator external service configuration consists of the following fields:
 
 - `url` field that maps to the url of the Phabricator host
 - `token` an optional Conduit API token, which you may generate from the Phabricator web interface. The token is used to fetch the list of repos available on the Phabricator installation

@@ -1,32 +1,37 @@
-import {
-    createHoverifier,
-    findPositionsFromEvents,
-    HoveredToken,
-    HoveredTokenContext,
-    HoverOverlay,
-    HoverState,
-} from '@sourcegraph/codeintellify'
+import { createHoverifier, findPositionsFromEvents, HoveredToken, HoverState } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
-import { Link, LinkProps } from 'react-router-dom'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { AbsoluteRepoFile, RenderMode } from '..'
+import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
-import { TextDocumentDecoration } from '../../../../shared/src/api/protocol/plainTypes'
+import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import { getHoverActions } from '../../../../shared/src/hover/actions'
+import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
-import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
+import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import {
+    AbsoluteRepoFile,
+    FileSpec,
+    LineOrPositionOrRange,
+    ModeSpec,
+    parseHash,
+    PositionSpec,
+    RenderMode,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toPositionOrRangeHash,
+} from '../../../../shared/src/util/url'
+import { getHover } from '../../backend/features'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { eventLogger } from '../../tracking/eventLogger'
-import { isDefined, propertyIsDefined } from '../../util/types'
-import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
+import { lprToSelectionsZeroIndexed } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
@@ -40,7 +45,6 @@ interface BlobProps
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     /** The raw content of the blob. */
     content: string
@@ -56,7 +60,7 @@ interface BlobProps
     isLightTheme: boolean
 }
 
-interface BlobState extends HoverState {
+interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
     /** The desired position of the discussions gutter overlay */
     discussionsGutterOverlayPosition?: { left: number; top: number }
 
@@ -70,9 +74,6 @@ interface BlobState extends HoverState {
     /** The decorations to display in the blob. */
     decorationsOrError?: TextDocumentDecoration[] | null | ErrorLike
 }
-
-const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
-const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 const domFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
@@ -127,10 +128,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
     private hoverOverlayElements = new Subject<HTMLElement | null>()
     private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
 
-    /** Emits when the go to definition button was clicked */
-    private goToDefinitionClicks = new Subject<MouseEvent>()
-    private nextGoToDefinitionClick = (event: MouseEvent) => this.goToDefinitionClicks.next(event)
-
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
@@ -151,9 +148,12 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        const hoverifier = createHoverifier({
+        const hoverifier = createHoverifier<
+            RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+            HoverMerged,
+            ActionItemProps
+        >({
             closeButtonClicks: this.closeButtonClicks,
-            goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.blobElements),
@@ -162,15 +162,13 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            pushHistory: path => this.props.history.push(path),
-            logTelemetryEvent,
-            fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
-            fetchJumpURL: position => getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props),
+            getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
+            getActions: context => getHoverActions(this.props, context),
         })
         this.subscriptions.add(hoverifier)
 
         const resolveContext = () => ({
-            repoPath: this.props.repoPath,
+            repoName: this.props.repoName,
             rev: this.props.rev,
             commitID: this.props.commitID,
             filePath: this.props.filePath,
@@ -280,28 +278,36 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
         const modelChanges: Observable<
-            AbsoluteRepoFile & LSPSelector & Pick<BlobProps, 'content'>
+            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content'>
         > = this.componentUpdates.pipe(
-            map(props => pick(props, 'repoPath', 'rev', 'commitID', 'filePath', 'mode', 'content')),
+            map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
         )
 
-        // Update the Sourcegraph extensions environment to reflect the current file.
+        // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
-                this.props.extensionsOnVisibleTextDocumentsChange([
-                    {
-                        uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
-                        languageId: model.mode,
-                        text: model.content,
-                    },
-                ])
+                this.props.extensionsController.services.model.model.next({
+                    ...this.props.extensionsController.services.model.model.value,
+                    visibleViewComponents: [
+                        {
+                            type: 'textEditor' as 'textEditor',
+                            item: {
+                                uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
+                                languageId: model.mode,
+                                text: model.content,
+                            },
+                            selections: lprToSelectionsZeroIndexed(pos),
+                            isActive: true,
+                        },
+                    ],
+                })
             })
         )
 
         /** Decorations */
-        let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
+        let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
         const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(modelChanges).pipe(
             switchMap(([model]) => {
                 const modelChanged = !isEqual(model, lastModel)
@@ -309,7 +315,12 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
                 // Only clear decorations if the model changed. If only the extensions changed, keep
                 // the old decorations until the new ones are available, to avoid UI jitter.
-                return merge(modelChanged ? [null] : [], getDecorations(model, this.props))
+                return merge(
+                    modelChanged ? [null] : [],
+                    this.props.extensionsController.services.textDocumentDecoration.getDecorations({
+                        uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
+                    })
+                )
             }),
             share()
         )
@@ -384,10 +395,10 @@ export class Blob extends React.Component<BlobProps, BlobState> {
     }
 
     private getLSPTextDocumentPositionParams(
-        position: HoveredToken & HoveredTokenContext
-    ): LSPTextDocumentPositionParams {
+        position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
-            repoPath: position.repoPath,
+            repoName: position.repoName,
             filePath: position.filePath,
             commitID: position.commitID,
             rev: position.rev,
@@ -450,11 +461,11 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
-                        logTelemetryEvent={logTelemetryEvent}
-                        linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
-                        onGoToDefinitionClick={this.nextGoToDefinitionClick}
                         onCloseButtonClick={this.nextCloseButtonClick}
+                        extensionsController={this.props.extensionsController}
+                        platformContext={this.props.platformContext}
+                        location={this.props.location}
                     />
                 )}
                 {this.state.decorationsOrError &&

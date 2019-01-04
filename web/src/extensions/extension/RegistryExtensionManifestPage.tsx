@@ -7,7 +7,6 @@ import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/e
 import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
@@ -15,15 +14,14 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
 }> = ({ extension }) => (
     <div className="alert alert-info">
         This extension is not yet published.
-        {extension.registryExtension &&
-            extension.registryExtension.viewerCanAdminister && (
-                <>
-                    <br />
-                    <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
-                        Publish first release of extension
-                    </Link>
-                </>
-            )}
+        {extension.registryExtension && extension.registryExtension.viewerCanAdminister && (
+            <>
+                <br />
+                <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                    Publish first release of extension
+                </Link>
+            </>
+        )}
     </div>
 )
 
@@ -40,6 +38,8 @@ enum ViewMode {
     Plain = 'plain',
 }
 
+const EXTRA_SCHEMAS = [extensionSchemaJSON]
+
 /** A page that displays an extension's manifest. */
 export class RegistryExtensionManifestPage extends React.PureComponent<Props, State> {
     private static STORAGE_KEY = 'RegistryExtensionManifestPage.viewMode'
@@ -55,10 +55,6 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
     }
 
     public state: State = { viewMode: RegistryExtensionManifestPage.getViewMode() }
-
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('RegistryExtensionManifest')
-    }
 
     public render(): JSX.Element | null {
         return (
@@ -98,13 +94,15 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             id="registry-extension-edit-page__data"
                             value={this.props.extension.rawManifest}
                             height={500}
-                            jsonSchema={extensionSchemaJSON}
+                            jsonSchemaId="extension.schema.json#"
+                            extraSchemas={EXTRA_SCHEMAS}
                             readOnly={true}
                             isLightTheme={this.props.isLightTheme}
                             history={this.props.history}
                         />
                     ) : (
-                        <pre className="form-control">
+                        // tslint:disable-next-line:jsx-ban-props
+                        <pre className="form-control" style={{ minHeight: '30rem' }}>
                             <code>{this.props.extension.rawManifest}</code>
                         </pre>
                     )}

@@ -15,7 +15,7 @@ import {
 } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { AbsoluteRepo } from '../repo'
+import { AbsoluteRepo } from '../../../shared/src/util/url'
 import { fetchTreeEntries } from '../repo/backend'
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeNode } from './Tree'
@@ -75,7 +75,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                 .pipe(
                     distinctUntilChanged(
                         (x, y) =>
-                            x.repoPath === y.repoPath &&
+                            x.repoName === y.repoName &&
                             x.rev === y.rev &&
                             x.commitID === y.commitID &&
                             x.parentPath === y.parentPath &&
@@ -85,7 +85,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     filter(props => props.isExpanded),
                     switchMap(props => {
                         const treeFetch = fetchTreeEntries({
-                            repoPath: props.repoPath,
+                            repoName: props.repoName,
                             rev: props.rev,
                             commitID: props.commitID,
                             filePath: props.parentPath || '',
@@ -115,7 +115,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     debounceTime(100),
                     mergeMap(path =>
                         fetchTreeEntries({
-                            repoPath: this.props.repoPath,
+                            repoName: this.props.repoName,
                             rev: this.props.rev,
                             commitID: this.props.commitID,
                             filePath: path,

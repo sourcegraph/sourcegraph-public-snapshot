@@ -3,12 +3,15 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { parseSearchURLQuery, SearchOptions } from '..'
+import { parseSearchURLQuery } from '..'
+import { SearchFiltersContainer } from '../../../../shared/src/actions/SearchFiltersContainer'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
+import { fetchHighlightedFileLines } from '../../repo/backend'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from '../backend'
@@ -20,7 +23,7 @@ import { SearchResultsListOld } from './SearchResultsListOld'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps {
+interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -71,18 +74,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     map(props => parseSearchURLQuery(props.location.search)),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    filter((searchOptions): searchOptions is SearchOptions => !!searchOptions),
-                    tap(searchOptions => {
+                    filter((query): query is string => !!query),
+                    tap(query => {
                         eventLogger.log('SearchResultsQueried', {
-                            code_search: { query_data: queryTelemetryData(searchOptions) },
+                            code_search: { query_data: queryTelemetryData(query) },
                         })
                     }),
-                    switchMap(searchOptions =>
+                    switchMap(query =>
                         concat(
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
-                            search(searchOptions, this.props).pipe(
+                            search(query, this.props).pipe(
                                 // Log telemetry
                                 tap(
                                     results =>
@@ -138,30 +141,52 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     public render(): JSX.Element | null {
-        const searchOptions = parseSearchURLQuery(this.props.location.search)
+        const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
+        const extensionFilters = (
+            <SearchFiltersContainer
+                // tslint:disable-next-line:jsx-no-lambda
+                render={items => (
+                    <>
+                        {items
+                            .filter(item => item.name && item.value)
+                            .map((item, i) => (
+                                <FilterChip
+                                    query={this.props.navbarSearchQuery}
+                                    onFilterChosen={this.onDynamicFilterClicked}
+                                    key={item.name + item.value}
+                                    value={item.value}
+                                    name={item.name}
+                                />
+                            ))}
+                    </>
+                )}
+                empty={null}
+                extensionsController={this.props.extensionsController}
+            />
+        )
         return (
             <div className="search-results">
-                <PageTitle key="page-title" title={searchOptions && searchOptions.query} />
-                {isSearchResults(this.state.resultsOrError) &&
-                    filters.length > 0 && (
-                        <div className="search-results__filters-bar">
-                            Filters:
-                            <div className="search-results__filters">
-                                {filters
-                                    .filter(filter => filter.value !== '')
-                                    .map((filter, i) => (
-                                        <FilterChip
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.onDynamicFilterClicked}
-                                            key={filter.value}
-                                            value={filter.value}
-                                            name={filter.name}
-                                        />
-                                    ))}
-                            </div>
+                <PageTitle key="page-title" title={query} />
+                {((isSearchResults(this.state.resultsOrError) && filters.length > 0) || extensionFilters) && (
+                    <div className="search-results__filters-bar">
+                        Filters:
+                        <div className="search-results__filters">
+                            {extensionFilters}
+                            {filters
+                                .filter(filter => filter.value !== '')
+                                .map((filter, i) => (
+                                    <FilterChip
+                                        query={this.props.navbarSearchQuery}
+                                        onFilterChosen={this.onDynamicFilterClicked}
+                                        key={filter.name + filter.value}
+                                        value={filter.value}
+                                        name={filter.name}
+                                    />
+                                ))}
                         </div>
-                    )}
+                    </div>
+                )}
                 {newRepoFilters &&
                     isSearchResults(this.state.resultsOrError) &&
                     this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
@@ -211,6 +236,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         authenticatedUser={this.props.authenticatedUser}
                         settingsCascade={this.props.settingsCascade}
                         isLightTheme={this.props.isLightTheme}
+                        fetchHighlightedFileLines={fetchHighlightedFileLines}
                     />
                 ) : (
                     <SearchResultsListOld
@@ -228,6 +254,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         isLightTheme={this.props.isLightTheme}
                         settingsCascade={this.props.settingsCascade}
                         uiLimit={this.state.uiLimit}
+                        fetchHighlightedFileLines={fetchHighlightedFileLines}
                     />
                 )}
             </div>
@@ -314,6 +341,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         eventLogger.log('DynamicFilterClicked', {
             search_filter: { value },
         })
-        submitSearch(this.props.history, { query: toggleSearchFilter(this.props.navbarSearchQuery, value) }, 'filter')
+        submitSearch(this.props.history, toggleSearchFilter(this.props.navbarSearchQuery, value), 'filter')
     }
 }

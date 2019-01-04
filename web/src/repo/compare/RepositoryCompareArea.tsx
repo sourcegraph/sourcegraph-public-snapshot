@@ -1,30 +1,31 @@
-import {
-    createHoverifier,
-    HoveredToken,
-    HoveredTokenContext,
-    Hoverifier,
-    HoverOverlay,
-    HoverState,
-} from '@sourcegraph/codeintellify'
+import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
+import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { getHoverActions } from '../../../../shared/src/hover/actions'
+import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { getHover, getJumpURL } from '../../backend/features'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
+import { propertyIsDefined } from '../../../../shared/src/util/types'
+import {
+    escapeRevspecForURL,
+    FileSpec,
+    ModeSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+} from '../../../../shared/src/util/url'
+import { getHover } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { eventLogger } from '../../tracking/eventLogger'
-import { propertyIsDefined } from '../../util/types'
-import { escapeRevspecForURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -43,12 +44,11 @@ interface Props
     extends RouteComponentProps<{ spec: string }>,
         RepoHeaderContributionsLifecycleProps,
         PlatformContextProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        ExtensionsControllerProps {
     repo: GQL.IRepository
 }
 
-interface State extends HoverState {
+interface State extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
     error?: string
 }
 
@@ -60,17 +60,14 @@ export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     repo: GQL.IRepository
 
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    base: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    head: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
     /** The URL route prefix for the comparison. */
     routePrefix: string
 }
-
-const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
-const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 /**
  * Renders pages related to a repository comparison.
@@ -87,22 +84,21 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
     private nextRepositoryCompareAreaElement = (element: HTMLElement | null) =>
         this.repositoryCompareAreaElements.next(element)
 
-    /** Emits when the go to definition button was clicked */
-    private goToDefinitionClicks = new Subject<MouseEvent>()
-    private nextGoToDefinitionClick = (event: MouseEvent) => this.goToDefinitionClicks.next(event)
-
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier
+    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
 
     constructor(props: Props) {
         super(props)
-        this.hoverifier = createHoverifier({
+        this.hoverifier = createHoverifier<
+            RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+            HoverMerged,
+            ActionItemProps
+        >({
             closeButtonClicks: this.closeButtonClicks,
-            goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.repositoryCompareAreaElements),
@@ -114,10 +110,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            pushHistory: path => this.props.history.push(path),
-            logTelemetryEvent,
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
-            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getActions: context => getHoverActions(this.props, context),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -125,10 +119,10 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
     }
 
     private getLSPTextDocumentPositionParams(
-        hoveredToken: HoveredToken & HoveredTokenContext
-    ): LSPTextDocumentPositionParams {
+        hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
-            repoPath: hoveredToken.repoPath,
+            repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,
             filePath: hoveredToken.filePath,
             commitID: hoveredToken.commitID,
@@ -165,8 +159,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
         const commonProps: RepositoryCompareAreaPageProps = {
             repo: this.props.repo,
-            base: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.base },
-            head: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.head },
+            base: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec && spec.base },
+            head: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec && spec.head },
             routePrefix: this.props.match.url,
             platformContext: this.props.platformContext,
         }
@@ -200,10 +194,6 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                                             {...commonProps}
                                             hoverifier={this.hoverifier}
                                             extensionsController={this.props.extensionsController}
-                                            extensionsOnVisibleTextDocumentsChange={
-                                                this.props.extensionsOnVisibleTextDocumentsChange
-                                            }
-                                            extensionsOnRootsChange={this.props.extensionsOnRootsChange}
                                         />
                                     )}
                                 />
@@ -215,10 +205,10 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
-                        logTelemetryEvent={logTelemetryEvent}
-                        linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
-                        onGoToDefinitionClick={this.nextGoToDefinitionClick}
+                        extensionsController={this.props.extensionsController}
+                        platformContext={this.props.platformContext}
+                        location={this.props.location}
                         onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}

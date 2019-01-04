@@ -71,14 +71,8 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			}
 		}
 
-		var remote []*registry.Extension
-
-		// BACKCOMPAT: Include synthesized extensions for known language servers.
-		if r.args.Local {
-			remote = append(remote, listSynthesizedRegistryExtensions(ctx, query)...)
-		}
-
 		// Query remote registry extensions, if filters would match any.
+		var remote []*registry.Extension
 		if args2.Publisher == nil && r.args.Remote {
 			xs, err := listRemoteRegistryExtensions(ctx, query)
 			if err != nil {
@@ -87,16 +81,6 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 				r.err = err
 			}
 			remote = append(remote, xs...)
-		}
-		// Filter out WIP extensions from the remote extensions list if WIP extensions are excluded.
-		if !r.args.IncludeWIP {
-			keep := remote[:0]
-			for _, x := range remote {
-				if !IsWorkInProgressExtension(x.Manifest) {
-					keep = append(keep, x)
-				}
-			}
-			remote = keep
 		}
 
 		r.registryExtensions = make([]graphqlbackend.RegistryExtension, len(local)+len(remote))

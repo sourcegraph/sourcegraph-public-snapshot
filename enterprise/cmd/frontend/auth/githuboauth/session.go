@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/pkg/errors"
@@ -15,17 +16,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"golang.org/x/oauth2"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type sessionIssuerHelper struct {
 	*githubsvc.CodeHost
-	clientID string
+	clientID    string
+	allowSignup bool
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
-	if err != nil {
-		return nil, "Could not read GitHub user from callback request.", errors.Wrap(err, "could not read user from context")
+	if ghUser == nil {
+		if err != nil {
+			err = errors.Wrap(err, "could not read user from context")
+		} else {
+			err = errors.New("could not read user from context")
+		}
+		return nil, "Could not read GitHub user from callback request.", err
 	}
 
 	login, err := auth.NormalizeUsername(deref(ghUser.Login))
@@ -33,26 +41,47 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
+	// 🚨 SECURITY: Ensure that the user email is verified
+	verifiedEmails := s.getVerifiedEmails(ctx, token)
+	if len(verifiedEmails) == 0 {
+		return nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
+	}
+
+	// Try every verified email in succession until the first that succeeds
 	var data extsvc.ExternalAccountData
 	data.SetAccountData(ghUser)
 	data.SetAuthData(token)
-	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		Username:        login,
-		Email:           deref(ghUser.Email),
-		EmailIsVerified: deref(ghUser.Email) != "",
-		DisplayName:     deref(ghUser.Name),
-		AvatarURL:       deref(ghUser.AvatarURL),
-	}, extsvc.ExternalAccountSpec{
-		ServiceType: s.ServiceType(),
-		ServiceID:   s.ServiceID(),
-		ClientID:    s.clientID,
-		AccountID:   strconv.FormatInt(derefInt64(ghUser.ID), 10),
-	}, data)
-	if err != nil {
-		return nil, safeErrMsg, err
+	var (
+		firstSafeErrMsg string
+		firstErr        error
+	)
+	for i, verifiedEmail := range verifiedEmails {
+		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
+			UserProps: db.NewUser{
+				Username:        login,
+				Email:           verifiedEmail,
+				EmailIsVerified: true,
+				DisplayName:     deref(ghUser.Name),
+				AvatarURL:       deref(ghUser.AvatarURL),
+			},
+			ExternalAccount: extsvc.ExternalAccountSpec{
+				ServiceType: s.ServiceType(),
+				ServiceID:   s.ServiceID(),
+				ClientID:    s.clientID,
+				AccountID:   strconv.FormatInt(derefInt64(ghUser.ID), 10),
+			},
+			ExternalAccountData: data,
+			CreateIfNotExist:    s.allowSignup,
+		})
+		if err == nil {
+			return actor.FromUser(userID), "", nil // success
+		}
+		if i == 0 {
+			firstSafeErrMsg, firstErr = safeErrMsg, err
+		}
 	}
-	return actor.FromUser(userID), "", nil
-
+	// On failure, return the first error
+	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
@@ -85,4 +114,28 @@ func derefInt64(i *int64) int64 {
 		return 0
 	}
 	return *i
+}
+
+// getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,
+// it will be the first email in the returned list. It only checks the first 100 user emails.
+func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oauth2.Token) (verifiedEmails []string) {
+	apiURL, _ := githubsvc.APIRoot(s.BaseURL())
+	ghClient := githubsvc.NewClient(apiURL, "", nil)
+	emails, err := ghClient.GetAuthenticatedUserEmails(ctx, token.AccessToken)
+	if err != nil {
+		log15.Warn("Could not get GitHub authenticated user emails", "error", err)
+		return nil
+	}
+
+	for _, email := range emails {
+		if !email.Verified {
+			continue
+		}
+		if email.Primary {
+			verifiedEmails = append([]string{email.Email}, verifiedEmails...)
+			continue
+		}
+		verifiedEmails = append(verifiedEmails, email.Email)
+	}
+	return verifiedEmails
 }

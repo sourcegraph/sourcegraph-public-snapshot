@@ -1,6 +1,5 @@
 import { from, Observable } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
-import { map, switchMap } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import storage from '../../browser/storage'
 import { isExtension } from '../../context'
 import { getContext } from '../../shared/backend/context'
@@ -8,7 +7,7 @@ import { mutateGraphQL } from '../../shared/backend/graphql'
 import { resolveRepo } from '../../shared/repo/backend'
 import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../../shared/util/context'
 import { memoizeObservable } from '../../shared/util/memoize'
-import { normalizeRepoPath } from './util'
+import { normalizeRepoName } from './util'
 
 interface PhabEntity {
     id: string // e.g. "48"
@@ -16,7 +15,7 @@ interface PhabEntity {
     phid: string // e.g. "PHID-RHURI-..."
 }
 
-export interface ConduitURI extends PhabEntity {
+interface ConduitURI extends PhabEntity {
     fields: {
         uri: {
             raw: string // e.g. https://secure.phabricator.com/source/phabricator.git",
@@ -27,7 +26,7 @@ export interface ConduitURI extends PhabEntity {
     }
 }
 
-export interface ConduitRepo extends PhabEntity {
+interface ConduitRepo extends PhabEntity {
     fields: {
         name: string
         vcs: string // e.g. 'git'
@@ -63,7 +62,7 @@ interface SourcegraphConduitConfiguration {
     error_info?: string
 }
 
-export interface ConduitRef {
+interface ConduitRef {
     ref: string
     type: 'base' | 'diff'
     commit: string // a SHA
@@ -72,12 +71,12 @@ export interface ConduitRef {
     }
 }
 
-export interface ConduitDiffChange {
+interface ConduitDiffChange {
     oldPath: string
     currentPath: string
 }
 
-export interface ConduitDiffDetails {
+interface ConduitDiffDetails {
     branch: string
     sourceControlBaseRevision: string // the merge base commit
     description: string // e.g. 'rNZAP9bee3bc2cd3068dd97dfa87068c4431c5d6093ef'
@@ -130,7 +129,7 @@ export function getPhabricatorCSS(): Promise<string> {
     })
 }
 
-export function getDiffDetailsFromConduit(diffID: number, differentialID: number): Promise<ConduitDiffDetails> {
+function getDiffDetailsFromConduit(diffID: number, differentialID: number): Promise<ConduitDiffDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[ids]', `[${diffID}]`)
@@ -159,7 +158,7 @@ interface ConduitRawDiffResponse {
     result: string
 }
 
-export function getRawDiffFromConduit(diffID: number): Promise<string> {
+function getRawDiffFromConduit(diffID: number): Promise<string> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[diffID]', diffID.toString())
@@ -195,7 +194,7 @@ interface ConduitDiffusionCommitQueryResponse {
     }
 }
 
-export function searchForCommitID(props: any): Promise<string> {
+function searchForCommitID(props: any): Promise<string> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[constraints]', `{"ids":[${props.diffID}]}`)
@@ -229,7 +228,7 @@ interface ConduitDifferentialQueryResponse {
     }
 }
 
-export function getRepoPHIDForDifferentialID(differentialID: number): Promise<string> {
+function getRepoPHIDForDifferentialID(differentialID: number): Promise<string> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[ids]', `[${differentialID}]`)
@@ -253,22 +252,23 @@ export function getRepoPHIDForDifferentialID(differentialID: number): Promise<st
 
 interface CreatePhabricatorRepoOptions {
     callsign: string
-    repoPath: string
+    repoName: string
     phabricatorURL: string
 }
 
-export const createPhabricatorRepo = memoizeObservable(
+const createPhabricatorRepo = memoizeObservable(
     (options: CreatePhabricatorRepoOptions): Observable<void> =>
         mutateGraphQL({
-            ctx: getContext({ repoKey: options.repoPath, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
+            ctx: getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
             request: `mutation addPhabricatorRepo(
             $callsign: String!,
-            $repoPath: String!
+            $repoName: String!
             $phabricatorURL: String!
         ) {
-            addPhabricatorRepo(callsign: $callsign, uri: $repoPath, url: $phabricatorURL) { alwaysNil }
+            addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) { alwaysNil }
         }`,
             variables: options,
+            retry: false,
         }).pipe(
             map(({ data, errors }) => {
                 if (!data || (errors && errors.length > 0)) {
@@ -279,9 +279,9 @@ export const createPhabricatorRepo = memoizeObservable(
     ({ callsign }) => callsign
 )
 
-export interface PhabricatorRepoDetails {
+interface PhabricatorRepoDetails {
     callsign: string
-    repoPath: string
+    repoName: string
 }
 
 export function getRepoDetailsFromCallsign(callsign: string): Promise<PhabricatorRepoDetails> {
@@ -312,7 +312,7 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
                     if (details) {
                         return createPhabricatorRepo({
                             callsign,
-                            repoPath: details.repoPath,
+                            repoName: details.repoName,
                             phabricatorURL: window.location.origin,
                         }).subscribe(() => resolve(details))
                     } else {
@@ -322,43 +322,6 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
             })
             .catch(reject)
     })
-}
-
-export function getRepoDetailsFromCallsignObservable(callsign: string): Observable<PhabricatorRepoDetails> {
-    const form = createConduitRequestForm()
-    form.set('params[constraints]', JSON.stringify({ callsigns: [callsign] }))
-    form.set('params[attachments]', '{ "uris": true }')
-
-    return ajax({
-        url: window.location.origin + '/api/diffusion.repository.search',
-        withCredentials: true,
-        headers: new Headers({ Accept: 'application/json' }),
-        body: form,
-    }).pipe(
-        map(({ response }) => response as ConduitReposResponse),
-        map(res => {
-            if (res.error_code) {
-                throw new Error(`error ${res.error_code}: ${res.error_info}`)
-            }
-
-            return res.result.data[0]
-        }),
-        switchMap(repo => convertConduitRepoToRepoDetailsObservable(repo)),
-        map(details => {
-            if (!details) {
-                throw new Error('could not parse repo details')
-            }
-
-            return details
-        }),
-        switchMap(details =>
-            createPhabricatorRepo({
-                callsign,
-                repoPath: details.repoPath,
-                phabricatorURL: window.location.origin,
-            }).pipe(map(() => details))
-        )
-    )
 }
 
 /**
@@ -394,7 +357,7 @@ export function getSourcegraphURLFromConduit(): Promise<string> {
     })
 }
 
-export function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetails> {
+function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[constraints]', JSON.stringify({ phids: [phid] }))
@@ -423,7 +386,7 @@ export function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRep
                     if (details) {
                         return createPhabricatorRepo({
                             callsign: repo.fields.callsign,
-                            repoPath: details.repoPath,
+                            repoName: details.repoName,
                             phabricatorURL: window.location.origin,
                         })
                             .pipe(map(() => details))
@@ -452,7 +415,7 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
                         if (mapping.callsign === repo.fields.callsign) {
                             return resolve({
                                 callsign: repo.fields.callsign,
-                                repoPath: mapping.path,
+                                repoName: mapping.path,
                             })
                         }
                     }
@@ -475,56 +438,12 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
                     if (mapping.callsign === repo.fields.callsign) {
                         return resolve({
                             callsign: repo.fields.callsign,
-                            repoPath: mapping.path,
+                            repoName: mapping.path,
                         })
                     }
                 }
             }
             return resolve(details)
-        }
-    })
-}
-
-function convertConduitRepoToRepoDetailsObservable(repo: ConduitRepo): Observable<PhabricatorRepoDetails | null> {
-    return new Observable(observer => {
-        if (isExtension) {
-            return storage.getSync(items => {
-                if (items.phabricatorMappings) {
-                    for (const mapping of items.phabricatorMappings) {
-                        if (mapping.callsign === repo.fields.callsign) {
-                            return observer.next({
-                                callsign: repo.fields.callsign,
-                                repoPath: mapping.path,
-                            })
-                        }
-                    }
-                }
-                return observer.next(convertToDetails(repo))
-            })
-        } else {
-            // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
-            // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
-            // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
-            // in the browser extension options menu.
-            const callsignMappings =
-                window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS') || window.PHABRICATOR_CALLSIGN_MAPPINGS
-            const details = convertToDetails(repo)
-            if (callsignMappings) {
-                const mappings =
-                    typeof callsignMappings === 'string'
-                        ? (JSON.parse(callsignMappings) as { path: string; callsign: string }[])
-                        : callsignMappings
-
-                for (const mapping of mappings) {
-                    if (mapping.callsign === repo.fields.callsign) {
-                        return observer.next({
-                            callsign: repo.fields.callsign,
-                            repoPath: mapping.path,
-                        })
-                    }
-                }
-            }
-            return observer.next(details)
         }
     })
 }
@@ -543,8 +462,8 @@ function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
         return null
     }
     const rawURI = uri.fields.uri.raw
-    const repoPath = normalizeRepoPath(rawURI)
-    return { callsign: repo.fields.callsign, repoPath }
+    const repoName = normalizeRepoName(rawURI)
+    return { callsign: repo.fields.callsign, repoName }
 }
 
 interface ResolveStagingOptions {
@@ -558,7 +477,7 @@ interface ResolveStagingOptions {
     description?: string
 }
 
-export const resolveStagingRev = memoizeObservable(
+const resolveStagingRev = memoizeObservable(
     (options: ResolveStagingOptions): Observable<string | null> =>
         mutateGraphQL({
             ctx: getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
@@ -608,7 +527,7 @@ function hasThisFileChanged(filePath: string, changes: ConduitDiffChange[]): boo
 }
 
 interface ResolveDiffOpt {
-    repoPath: string
+    repoName: string
     filePath: string
     differentialID: number
     diffID: number
@@ -620,7 +539,7 @@ interface ResolveDiffOpt {
 
 interface PropsWithInfo {
     info: ConduitDiffDetails
-    repoPath: string
+    repoName: string
     filePath: string
     differentialID: number
     diffID: number
@@ -669,7 +588,7 @@ function getPropsWithInfo(props: ResolveDiffOpt): Promise<PropsWithInfo> {
 
 function getStagingDetails(
     propsWithInfo: PropsWithInfo
-): { repoPath: string; ref: ConduitRef; unconfigured: boolean } | undefined {
+): { repoName: string; ref: ConduitRef; unconfigured: boolean } | undefined {
     const stagingInfo = propsWithInfo.info.properties['arc.staging']
     if (!stagingInfo) {
         return undefined
@@ -687,7 +606,7 @@ function getStagingDetails(
             const remote = ref.remote.uri
             if (remote) {
                 return {
-                    repoPath: normalizeRepoPath(remote),
+                    repoName: normalizeRepoName(remote),
                     ref,
                     unconfigured: stagingInfo.status === 'repository.unconfigured',
                 }
@@ -697,9 +616,9 @@ function getStagingDetails(
     return undefined
 }
 
-export interface ResolvedDiff {
+interface ResolvedDiff {
     commitID: string
-    stagingRepoPath?: string
+    stagingRepoName?: string
 }
 
 export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> {
@@ -710,7 +629,7 @@ export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> 
                 .then(propsWithInfo => {
                     const stagingDetails = getStagingDetails(propsWithInfo)
                     const conduitProps = {
-                        repoName: propsWithInfo.repoPath,
+                        repoName: propsWithInfo.repoName,
                         diffID: propsWithInfo.diffID,
                         baseRev: propsWithInfo.info.sourceControlBaseRevision,
                         date: propsWithInfo.info.dateCreated,
@@ -738,11 +657,11 @@ export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> 
 
                     if (!stagingDetails.unconfigured) {
                         // Ensure the staging repo exists before resolving. Otherwise create the patch.
-                        resolveRepo({ repoPath: stagingDetails.repoPath }).subscribe(
+                        resolveRepo({ repoName: stagingDetails.repoName }).subscribe(
                             () =>
                                 resolve({
                                     commitID: stagingDetails.ref.commit,
-                                    stagingRepoPath: stagingDetails.repoPath,
+                                    stagingRepoName: stagingDetails.repoName,
                                 }),
                             error => {
                                 getRawDiffFromConduit(propsWithInfo.diffID)

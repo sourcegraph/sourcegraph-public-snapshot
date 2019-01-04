@@ -1,3 +1,4 @@
 # Repositories
 
-See [documentation on adding repositories](add.md).
+- [Adding Git repositories](add.md)
+- [Repository webhooks](webhooks.md)

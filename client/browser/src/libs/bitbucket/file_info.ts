@@ -2,8 +2,9 @@ import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { Observable, of } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 
-import { fetchBlobContentLines, resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
+import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
+import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { getBaseCommit, getCommitsForPR } from './api'
 import { getFileInfoFromCodeView, getPRInfoFromCodeView } from './scrape'
 
@@ -14,25 +15,20 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
         map(getFileInfoFromCodeView),
         filter(propertyIsDefined('filePath')),
-        switchMap(({ repoPath, rev, ...rest }) =>
-            resolveRev({ repoPath, rev }).pipe(
-                retryWhenCloneInProgressError(),
-                map(commitID => ({ ...rest, repoPath, commitID, rev: rev || commitID }))
-            )
-        )
+        ensureRevisionsAreCloned
     )
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
         map(getPRInfoFromCodeView),
-        switchMap(({ commitID, project, repoName, prID, ...rest }) => {
+        switchMap(({ commitID, project, repoSlug, prID, ...rest }) => {
             if (commitID) {
-                return getBaseCommit({ commitID, project, repoName }).pipe(
+                return getBaseCommit({ commitID, project, repoSlug }).pipe(
                     map(baseCommitID => ({ baseCommitID, headCommitID: commitID, ...rest }))
                 )
             }
 
-            return getCommitsForPR({ project, repoName, prID: prID! }).pipe(map(commits => ({ ...rest, ...commits })))
+            return getCommitsForPR({ project, repoSlug, prID: prID! }).pipe(map(commits => ({ ...rest, ...commits })))
         }),
         map(({ headCommitID, ...rest }) => ({ ...rest, commitID: headCommitID })),
         switchMap(info =>
@@ -44,14 +40,14 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                 }))
             )
         ),
-        switchMap(({ repoPath, filePath, baseCommitID, ...rest }) =>
+        switchMap(({ repoName, filePath, baseCommitID, ...rest }) =>
             fetchBlobContentLines({
-                repoPath,
+                repoName,
                 filePath,
                 commitID: baseCommitID,
             }).pipe(
                 map(lines => ({
-                    repoPath,
+                    repoName,
                     filePath,
                     baseCommitID,
                     baseContent: lines.join('\n'),

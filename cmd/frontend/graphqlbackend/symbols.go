@@ -49,7 +49,6 @@ func limitOrDefault(first *int32) int {
 }
 
 func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *string, first *int32) (res []*symbolResolver, err error) {
-	// TODO!(sqs): limit to path
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	defer func() {
@@ -141,14 +140,6 @@ func (r *symbolResolver) Language() string { return r.language }
 
 func (r *symbolResolver) Location() *locationResolver { return r.location }
 
-func (r *symbolResolver) URL() string { return r.urlPath(r.location.URL()) }
+func (r *symbolResolver) URL(ctx context.Context) string { return r.location.URL(ctx) }
 
-func (r *symbolResolver) CanonicalURL() string { return r.urlPath(r.location.CanonicalURL()) }
-
-func (r *symbolResolver) urlPath(prefix string) string {
-	url := prefix
-	if backend.IsLanguageSupported(r.language) {
-		url += "$references"
-	}
-	return url
-}
+func (r *symbolResolver) CanonicalURL() string { return r.location.CanonicalURL() }

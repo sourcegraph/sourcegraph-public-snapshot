@@ -10,19 +10,18 @@ type MockStores struct {
 	DiscussionComments        MockDiscussionComments
 	DiscussionMailReplyTokens MockDiscussionMailReplyTokens
 
-	GlobalDeps  MockGlobalDeps
-	Pkgs        MockPkgs
-	Repos       MockRepos
-	Orgs        MockOrgs
-	OrgMembers  MockOrgMembers
-	Settings    MockSettings
-	GlobalState MockGlobalState
-	Users       MockUsers
-	UserEmails  MockUserEmails
+	Repos      MockRepos
+	Orgs       MockOrgs
+	OrgMembers MockOrgMembers
+	Settings   MockSettings
+	Users      MockUsers
+	UserEmails MockUserEmails
 
 	Phabricator MockPhabricator
 
 	ExternalAccounts MockExternalAccounts
 
 	OrgInvitations MockOrgInvitations
+
+	ExternalServices MockExternalServices
 }

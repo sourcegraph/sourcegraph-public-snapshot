@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { evaluate, evaluateTemplate } from './evaluator'
 
 const FIXTURE_CONTEXT = new Map<string, any>(
@@ -7,6 +6,7 @@ const FIXTURE_CONTEXT = new Map<string, any>(
         b: 1,
         c: 2,
         x: 'y',
+        o: { k: 'v' },
     })
 )
 
@@ -25,6 +25,12 @@ describe('evaluate', () => {
         'a || b': 1,
         '(a + b) * 2': 4,
         'x == "y"': true,
+        'json(o)': '{"k":"v"}',
+        // TODO: Support operator precedence. See ./parser.test.ts for a commented-out precedence test case.
+        //
+        // 'x == "y" || x == "z"': true,
+        'x == "y" && x == "z"': false,
+        'x == "y" && x != "z"': true,
         '`a`': 'a',
         '`${x}`': 'y',
         '`a${x}b`': 'ayb',
@@ -34,9 +40,9 @@ describe('evaluate', () => {
     }
     // tslint:enable:no-invalid-template-strings
     for (const [expr, want] of Object.entries(TESTS)) {
-        it(expr, () => {
+        test(expr, () => {
             const value = evaluate(expr, FIXTURE_CONTEXT)
-            assert.strictEqual(value, want)
+            expect(value).toBe(want)
         })
     }
 })
@@ -52,9 +58,9 @@ describe('evaluateTemplate', () => {
     }
     // tslint:enable:no-invalid-template-strings
     for (const [template, want] of Object.entries(TESTS)) {
-        it(template, () => {
+        test(template, () => {
             const value = evaluateTemplate(template, FIXTURE_CONTEXT)
-            assert.strictEqual(value, want)
+            expect(value).toBe(want)
         })
     }
 })

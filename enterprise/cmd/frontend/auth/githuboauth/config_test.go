@@ -8,6 +8,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	githubcodehost "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
@@ -19,7 +20,7 @@ func Test_parseConfig(t *testing.T) {
 	spew.Config.SpewKeys = true
 
 	type args struct {
-		cfg *schema.SiteConfiguration
+		cfg *conf.Unified
 	}
 	tests := []struct {
 		name          string
@@ -29,12 +30,12 @@ func Test_parseConfig(t *testing.T) {
 	}{
 		{
 			name:          "No configs",
-			args:          args{cfg: &schema.SiteConfiguration{}},
+			args:          args{cfg: &conf.Unified{}},
 			wantProviders: map[schema.GitHubAuthProvider]auth.Provider{},
 		},
 		{
 			name: "1 GitHub.com config",
-			args: args{cfg: &schema.SiteConfiguration{
+			args: args{cfg: &conf.Unified{Critical: schema.CriticalConfiguration{
 				AuthProviders: []schema.AuthProviders{{
 					Github: &schema.GitHubAuthProvider{
 						ClientID:     "my-client-id",
@@ -44,9 +45,9 @@ func Test_parseConfig(t *testing.T) {
 						Url:          "https://github.com",
 					},
 				}},
-			}},
+			}}},
 			wantProviders: map[schema.GitHubAuthProvider]auth.Provider{
-				schema.GitHubAuthProvider{
+				{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitHub",
@@ -59,13 +60,13 @@ func Test_parseConfig(t *testing.T) {
 						AuthURL:  "https://github.com/login/oauth/authorize",
 						TokenURL: "https://github.com/login/oauth/access_token",
 					},
-					Scopes: []string{"repo"},
+					Scopes: []string{"repo", "user:email"},
 				}),
 			},
 		},
 		{
 			name: "2 GitHub configs",
-			args: args{cfg: &schema.SiteConfiguration{
+			args: args{cfg: &conf.Unified{Critical: schema.CriticalConfiguration{
 				AuthProviders: []schema.AuthProviders{{
 					Github: &schema.GitHubAuthProvider{
 						ClientID:     "my-client-id",
@@ -83,9 +84,9 @@ func Test_parseConfig(t *testing.T) {
 						Url:          "https://mycompany.com",
 					},
 				}},
-			}},
+			}}},
 			wantProviders: map[schema.GitHubAuthProvider]auth.Provider{
-				schema.GitHubAuthProvider{
+				{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitHub",
@@ -98,9 +99,9 @@ func Test_parseConfig(t *testing.T) {
 						AuthURL:  "https://github.com/login/oauth/authorize",
 						TokenURL: "https://github.com/login/oauth/access_token",
 					},
-					Scopes: []string{"repo"},
+					Scopes: []string{"repo", "user:email"},
 				}),
-				schema.GitHubAuthProvider{
+				{
 					ClientID:     "my-client-id-2",
 					ClientSecret: "my-client-secret-2",
 					DisplayName:  "GitHub Enterprise",
@@ -113,7 +114,7 @@ func Test_parseConfig(t *testing.T) {
 						AuthURL:  "https://mycompany.com/login/oauth/authorize",
 						TokenURL: "https://mycompany.com/login/oauth/access_token",
 					},
-					Scopes: []string{"repo"},
+					Scopes: []string{"repo", "user:email"},
 				}),
 			},
 		},

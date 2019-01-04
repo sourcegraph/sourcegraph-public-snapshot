@@ -4,6 +4,12 @@
     flex: 1 1 auto;
     position: relative;
 
+    &__input {
+        // Right side is flush with SearchButton.
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
     &__suggestions {
         position: absolute;
         width: 100%;

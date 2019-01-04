@@ -1,29 +1,30 @@
-import * as assert from 'assert'
 import { TextDocument } from 'sourcegraph'
-import { collectSubscribableValues, integrationTestContext } from './helpers.test'
+import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {
-        it('lists text documents', async () => {
-            const { extensionHost, ready } = await integrationTestContext()
-
-            await ready
-            assert.deepStrictEqual(extensionHost.workspace.textDocuments, [
+        test('lists text documents', async () => {
+            const { extensionHost } = await integrationTestContext()
+            expect(extensionHost.workspace.textDocuments).toEqual([
                 { uri: 'file:///f', languageId: 'l', text: 't' },
             ] as TextDocument[])
         })
 
-        it('adds new text documents', async () => {
-            const { clientController, extensionHost, getEnvironment, ready } = await integrationTestContext()
-
-            const prevEnvironment = getEnvironment()
-            clientController.setEnvironment({
-                ...prevEnvironment,
-                visibleTextDocuments: [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }],
+        test('adds new text documents', async () => {
+            const { model, extensionHost } = await integrationTestContext()
+            model.next({
+                ...model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
             })
-
-            await ready
-            assert.deepStrictEqual(extensionHost.workspace.textDocuments, [
+            await extensionHost.internal.sync()
+            expect(extensionHost.workspace.textDocuments).toEqual([
                 { uri: 'file:///f', languageId: 'l', text: 't' },
                 { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             ] as TextDocument[])
@@ -31,21 +32,26 @@ describe('Documents (integration)', () => {
     })
 
     describe('workspace.onDidOpenTextDocument', () => {
-        it('fires when a text document is opened', async () => {
-            const { clientController, extensionHost, getEnvironment, ready } = await integrationTestContext()
+        test('fires when a text document is opened', async () => {
+            const { model, extensionHost } = await integrationTestContext()
 
-            await ready
             const values = collectSubscribableValues(extensionHost.workspace.onDidOpenTextDocument)
-            assert.deepStrictEqual(values, [] as TextDocument[])
+            expect(values).toEqual([] as TextDocument[])
 
-            const prevEnvironment = getEnvironment()
-            clientController.setEnvironment({
-                ...prevEnvironment,
-                visibleTextDocuments: [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }],
+            model.next({
+                ...model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
             })
             await extensionHost.internal.sync()
 
-            assert.deepStrictEqual(values, [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
+            expect(values).toEqual([{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
         })
     })
 })

@@ -1,8 +1,16 @@
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
-import { JumpURLLocation } from '../../shared/backend/lsp'
+import {
+    FileSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    ViewStateSpec,
+} from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
+import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
 import {
     diffDomFunctions,
@@ -13,6 +21,7 @@ import {
 } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
+import { createOpenOnSourcegraphIfNotExists } from './inject'
 import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
 
 const toolbarButtonProps = {
@@ -29,6 +38,11 @@ const diffCodeView: CodeViewWithOutSelector = {
     isDiff: true,
 }
 
+const diffConversationCodeView: CodeViewWithOutSelector = {
+    ...diffCodeView,
+    getToolbarMount: undefined,
+}
+
 const singleFileCodeView: CodeViewWithOutSelector = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createCodeViewToolbarMount,
@@ -42,7 +56,11 @@ const singleFileCodeView: CodeViewWithOutSelector = {
  * Some code snippets get leading white space trimmed. This adjusts based on
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
-const adjustPositionForSnippet: PositionAdjuster = ({ direction, codeView, position }) =>
+const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+    direction,
+    codeView,
+    position,
+}) =>
     fetchBlobContentLines(position).pipe(
         map(lines => {
             const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
@@ -90,12 +108,25 @@ const commentSnippetCodeView: CodeView = {
     isDiff: false,
 }
 
-const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector => {
+const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
+    if (elem.querySelector('article.markdown-body')) {
+        // This code view is rendered markdown, we shouldn't add code intelligence
+        return null
+    }
+
     const files = document.getElementsByClassName('file')
     const { filePath } = parseURL()
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
-    return isSingleCodeFile ? singleFileCodeView : diffCodeView
+    if (isSingleCodeFile) {
+        return singleFileCodeView
+    }
+
+    if (elem.closest('.discussion-item-body')) {
+        return diffConversationCodeView
+    }
+
+    return diffCodeView
 }
 
 const codeViewResolver: CodeViewResolver = {
@@ -113,38 +144,63 @@ function checkIsGithub(): boolean {
     return isGithub || isGitHubEnterprise
 }
 
+const getOverlayMount = () => {
+    const container = document.querySelector('#js-repo-pjax-container')
+    if (!container) {
+        throw new Error('unable to find repo pjax container')
+    }
+
+    const mount = document.createElement('div')
+    container.appendChild(mount)
+
+    return mount
+}
+
 export const githubCodeHost: CodeHost = {
     name: 'github',
     codeViews: [searchResultCodeView, commentSnippetCodeView],
     codeViewResolver,
+    getContext: parseURL,
+    getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
+    contextButtonClassName: 'btn btn-sm tooltipped tooltipped-s',
     check: checkIsGithub,
+    getOverlayMount,
     getCommandPaletteMount,
     getGlobalDebugMount,
-    buildJumpURLLocation: (def: JumpURLLocation) => {
-        const rev = def.rev
-        // If we're provided options, we can make the j2d URL more specific.
-        const { repoPath } = parseURL()
+    urlToFile: (
+        location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
+    ) => {
+        if (location.viewState) {
+            // A view state means that a panel must be shown, and panels are currently only supported on
+            // Sourcegraph (not code hosts).
+            return toAbsoluteBlobURL(location)
+        }
 
-        const sameRepo = repoPath === def.repoPath
+        const rev = location.rev || 'HEAD'
+        // If we're provided options, we can make the j2d URL more specific.
+        const { repoName } = parseURL()
+
+        const sameRepo = repoName === location.repoName
         // Stay on same page in PR if possible.
-        if (sameRepo && def.part) {
+        if (sameRepo && location.part) {
             const containers = getFileContainers()
             for (const container of containers) {
                 const header = container.querySelector('.file-header') as HTMLElement
                 const anchorPath = header.dataset.path
-                if (anchorPath === def.filePath) {
+                if (anchorPath === location.filePath) {
                     const anchorUrl = header.dataset.anchor
                     const url = `${window.location.origin}${window.location.pathname}#${anchorUrl}${
-                        def.part === 'base' ? 'L' : 'R'
-                    }${def.position.line}`
+                        location.part === 'base' ? 'L' : 'R'
+                    }${location.position ? location.position.line : ''}`
 
                     return url
                 }
             }
         }
 
-        return `https://${def.repoPath}/blob/${rev}/${def.filePath}#L${def.position.line}${
-            def.position.character ? ':' + def.position.character : ''
-        }`
+        const fragment = location.position
+            ? `#L${location.position.line}${location.position.character ? ':' + location.position.character : ''}`
+            : ''
+        return `https://${location.repoName}/blob/${rev}/${location.filePath}${fragment}`
     },
 }

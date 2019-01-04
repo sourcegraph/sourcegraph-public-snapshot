@@ -37,6 +37,21 @@ Indexes:
 
 ```
 
+# Table "public.critical_and_site_config"
+```
+   Column   |           Type           |                               Modifiers                               
+------------+--------------------------+-----------------------------------------------------------------------
+ id         | integer                  | not null default nextval('critical_and_site_config_id_seq'::regclass)
+ type       | critical_or_site         | not null
+ contents   | text                     | not null
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
+    "critical_and_site_config_unique" UNIQUE, btree (id, type)
+
+```
+
 # Table "public.discussion_comments"
 ```
      Column     |           Type           |                            Modifiers                             
@@ -168,10 +183,12 @@ Foreign-key constraints:
 
 # Table "public.global_state"
 ```
-   Column    |  Type   |       Modifiers        
--------------+---------+------------------------
- site_id     | uuid    | not null
- initialized | boolean | not null default false
+         Column          |  Type   |         Modifiers         
+-------------------------+---------+---------------------------
+ site_id                 | uuid    | not null
+ initialized             | boolean | not null default false
+ mgmt_password_plaintext | text    | not null default ''::text
+ mgmt_password_bcrypt    | text    | not null default ''::text
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
 

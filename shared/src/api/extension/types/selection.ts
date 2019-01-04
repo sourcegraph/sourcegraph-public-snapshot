@@ -1,3 +1,4 @@
+import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
 import { Position } from './position'
 import { Range } from './range'
@@ -75,5 +76,20 @@ export class Selection extends Range implements sourcegraph.Selection {
             active: this.active,
             anchor: this.anchor,
         }
+    }
+
+    public toPlain(): clientType.Selection {
+        return {
+            ...super.toPlain(),
+            anchor: this.anchor.toJSON(),
+            active: this.active.toJSON(),
+            isReversed: this.isReversed,
+        }
+    }
+
+    public static fromPlain(data: clientType.Selection): Selection {
+        return data.isReversed
+            ? new Selection(data.end.line, data.end.character, data.start.line, data.start.character)
+            : new Selection(data.start.line, data.start.character, data.end.line, data.end.character)
     }
 }

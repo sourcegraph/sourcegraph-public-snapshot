@@ -4,10 +4,14 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
+import { Markdown } from '../../../../../shared/src/components/Markdown'
+import {
+    Spacer,
+    TabBorderClassName,
+    TabsWithLocalStorageViewStatePersistence,
+} from '../../../../../shared/src/components/Tabs'
 import { asError } from '../../../../../shared/src/util/errors'
 import { Form } from '../../../components/Form'
-import { Markdown } from '../../../components/Markdown'
-import { Spacer, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../../../components/Tabs'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
@@ -132,7 +136,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     mergeMap(([, { textAreaValue }]) =>
                         concat(
                             of<Update>(state => ({ ...state, previewHTML: undefined, previewLoading: true })),
-                            renderMarkdown(this.trimImplicitTitle(textAreaValue)).pipe(
+                            renderMarkdown({ markdown: this.trimImplicitTitle(textAreaValue) }).pipe(
                                 map(
                                     (previewHTML): Update => state => ({
                                         ...state,

@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -48,5 +49,22 @@ func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ..
 		if c == 0 {
 			t.Fatalf("map never returned %v", e)
 		}
+	}
+}
+
+func TestEndpoints(t *testing.T) {
+	eps := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
+	want := map[string]struct{}{}
+	for _, addr := range eps {
+		want[addr] = struct{}{}
+	}
+
+	m := New(strings.Join(eps, " "))
+	got, err := m.Endpoints()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
 	}
 }

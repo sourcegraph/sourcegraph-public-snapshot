@@ -120,13 +120,13 @@ func GitServerFetchArchive(ctx context.Context, opts ArchiveOpts) (archive *os.F
 }
 
 var gitserverFetchTotal = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "xlang",
+	Namespace: "vfsutil",
 	Subsystem: "vfs",
 	Name:      "gitserver_fetch_total",
 	Help:      "Total number of fetches to GitServer.",
 })
 var gitserverFetchFailedTotal = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "xlang",
+	Namespace: "vfsutil",
 	Subsystem: "vfs",
 	Name:      "gitserver_fetch_failed_total",
 	Help:      "Total number of fetches to GitServer that failed.",

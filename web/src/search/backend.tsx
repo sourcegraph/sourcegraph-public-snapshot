@@ -1,20 +1,20 @@
 import { Observable } from 'rxjs'
 import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
-import { SearchOptions } from '.'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export function search(
-    options: SearchOptions,
+    query: string,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
-    return extensionsController.services.queryTransformer.transformQuery(options.query).pipe(
+    return extensionsController.services.queryTransformer.transformQuery(query).pipe(
         switchMap(query =>
             queryGraphQL(
                 gql`
@@ -48,6 +48,25 @@ export function search(
                                         id
                                         name
                                         url
+                                        label {
+                                            html
+                                        }
+                                        icon
+                                        detail {
+                                            html
+                                        }
+                                        matches {
+                                            url
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
                                     }
                                     ... on FileMatch {
                                         __typename
@@ -77,57 +96,24 @@ export function search(
                                     }
                                     ... on CommitSearchResult {
                                         __typename
-                                        refs {
-                                            name
-                                            displayName
-                                            prefix
-                                            repository {
-                                                name
-                                            }
+                                        label {
+                                            html
                                         }
-                                        sourceRefs {
-                                            name
-                                            displayName
-                                            prefix
-                                            repository {
-                                                name
-                                            }
+                                        url
+                                        icon
+                                        detail {
+                                            html
                                         }
-                                        messagePreview {
-                                            value
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        diffPreview {
-                                            value
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        commit {
-                                            id
-                                            repository {
-                                                name
-                                                url
-                                            }
-                                            oid
-                                            abbreviatedOID
-                                            author {
-                                                person {
-                                                    displayName
-                                                    avatarURL
-                                                }
-                                                date
-                                            }
-                                            message
+                                        matches {
                                             url
-                                            tree(path: "") {
-                                                canonicalURL
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
                                             }
                                         }
                                     }
@@ -159,7 +145,7 @@ export function search(
     )
 }
 
-export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.ISearchResultsStats> {
+export function fetchSearchResultStats(query: string): Observable<GQL.ISearchResultsStats> {
     return queryGraphQL(
         gql`
             query SearchResultsStats($query: String!) {
@@ -171,7 +157,7 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
                 }
             }
         `,
-        { query: options.query }
+        { query }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.stats) {
@@ -182,7 +168,7 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
     )
 }
 
-export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchSuggestion> {
+export function fetchSuggestions(query: string): Observable<GQL.SearchSuggestion> {
     return queryGraphQL(
         gql`
             query SearchSuggestions($query: String!) {
@@ -219,7 +205,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                 }
             }
         `,
-        { query: options.query }
+        { query }
     ).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.search || !data.search.suggestions) {
@@ -439,3 +425,38 @@ export function deleteSavedQuery(
         })
     )
 }
+
+export const highlightCode = memoizeObservable(
+    (ctx: {
+        code: string
+        fuzzyLanguage: string
+        disableTimeout: boolean
+        isLightTheme: boolean
+    }): Observable<string> =>
+        queryGraphQL(
+            gql`
+                query highlightCode(
+                    $code: String!
+                    $fuzzyLanguage: String!
+                    $disableTimeout: Boolean!
+                    $isLightTheme: Boolean!
+                ) {
+                    highlightCode(
+                        code: $code
+                        fuzzyLanguage: $fuzzyLanguage
+                        disableTimeout: $disableTimeout
+                        isLightTheme: $isLightTheme
+                    )
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.highlightCode) {
+                    throw createAggregateError(errors)
+                }
+                return data.highlightCode
+            })
+        ),
+    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${ctx.disableTimeout}:${ctx.isLightTheme}`
+)

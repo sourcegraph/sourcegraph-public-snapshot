@@ -1,5 +1,6 @@
 import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
 import { diffDOMFunctions, getLineRanges, singleFileDOMFunctions } from './dom_functions'
 import { resolveDiffFileInfo, resolveFileInfo } from './file_info'
@@ -31,7 +32,9 @@ const createToolbarMount = (codeView: HTMLElement) => {
  * Sometimes tabs are converted to spaces so we need to adjust. Luckily, there
  * is an attribute `cm-text` that contains the real text.
  */
-const createPositionAdjuster = (dom: DOMFunctions): PositionAdjuster => ({ direction, codeView, position }) => {
+const createPositionAdjuster = (
+    dom: DOMFunctions
+): PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> => ({ direction, codeView, position }) => {
     const codeElement = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
     if (!codeElement) {
         throw new Error('(adjustPosition) could not find code element for line provided')
@@ -97,7 +100,7 @@ const codeViewResolver: CodeViewResolver = {
 function getCommandPaletteMount(): HTMLElement {
     const headerElem = document.querySelector('.aui-header-primary .aui-nav')
     if (!headerElem) {
-        throw new Error('Unable to find command pallete mount')
+        throw new Error('Unable to find command palette mount')
     }
 
     const commandListClass = 'command-palette-button command-palette-button__bitbucket-server'

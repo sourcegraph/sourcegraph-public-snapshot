@@ -9,35 +9,61 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Repositories can now be queried by a git clone URL through the GraphQL API.
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
-- Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`.
+- Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`. By default, GitHub identities must be linked to an existing Sourcegraph user account. To enable new account creation via GitHub, use the `allowSignup` option in the `GitHubConnection` config.
 - Authentication via GitLab is now supported. To enable, add an item to the `auth.providers` list with `type: "gitlab"`.
 - GitHub repository permissions are supported if authentication via GitHub is enabled. See the
   documentation for the `authorization` field of the `GitHubConnection` configuration.
 - The repository settings mirroring page now shows when a repo is next scheduled for an update (requires experiment `"updateScheduler2": "enabled"`).
 - Configured repositories are periodically scheduled for updates using a new algorithm. You can disable the new algorithm with the following site configuration: `"experimentalFeatures": { "updateScheduler2": "disabled" }`. If you do so, please file a public issue to describe why you needed to disable it.
 - When using HTTP header authentication, [`stripUsernameHeaderPrefix`](https://docs.sourcegraph.com/admin/auth/#username-header-prefixes) field lets an admin specify a prefix to strip from the HTTP auth header when converting the header value to a username.
-- Sourcegraph extensions whose title begins with `WIP:` or `[WIP]` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/creating_and_publishing#work-in-progress-wip-extensions) and are indicated as such to avoid users accidentally using them.
+- Sourcegraph extensions whose package.json contains `"wip": true` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/publishing#wip-extensions) and are indicated as such to avoid users accidentally using them.
 - Information about user survey submissions and a chart showing weekly active users is now displayed on the site admin Overview page.
 - A new GraphQL API field `UserEmail.isPrimary` was added that indicates whether an email is the user's primary email.
+- The filters bar in the search results page can now display filters from extensions.
+- Extensions' `activate` functions now receive a `sourcegraph.ExtensionContext` parameter (i.e., `export function activate(ctx: sourcegraph.ExtensionContext): void { ... }`) to support deactivation and running multiple extensions in the same process.
+- Users can now request an Enterprise trial license from the site init page.
+- When searching, a filter button `case:yes` will now appear when relevant. This helps discovery and makes it easier to use our case-sensitive search syntax.
+- Extensions can now report progress in the UI through the `withProgress()` extension API.
+- When calling `editor.setDecorations()`, extensions must now provide an instance of `TextDocumentDecorationType` as first argument. This helps gracefully displaying decorations from several extensions.
 
 ### Changed
 
+- Code host configuration has moved out of the site config JSON into the "External services" area of the site admin web UI. Sourcegraph instances will automatically perform a one time migration of existing data in the site config JSON. After the migration these keys can be safely deleted from the site config JSON: `awsCodeCommit`, `bitbucketServer`, `github`, `gitlab`, `gitolite`, and `phabricator`.
 - Site and user usage statistics are now visible to all users. Previously only site admins (and users, for their own usage statistics) could view this information. The information consists of aggregate counts of actions such as searches, page views, etc.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
 - The `appURL` site configuration option was renamed to `externalURL`.
 - The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled`.
+- The repository and directory pages now show all entries together instead of showing files and (sub)directories separately.
+- Extensions no longer can specify titles (in the `title` property in the `package.json` extension manifest). Their extension ID (such as `alice/myextension`) is used.
 
 ### Fixed
 
 - Fixed an issue where the site admin License page showed a count of current users, rather than the max number of users over the life of the license.
 - Fixed number formatting issues on site admin Overview and Survey Response pages.
+- Fixed resolving of git clone URLs with `git+` prefix through the GraphQL API
+- Fixed an issue where the graphql Repositories endpoint would order by a field which was not indexed. Times on Sourcegraph.com went from 10s to 200ms.
 
 ### Removed
 
 - The `siteID` site configuration option was removed because it is no longer needed. If you previously specified this in site configuration, a new, random site ID will be generated upon server startup. You can safely remove the existing `siteID` value from your site configuration after upgrading.
+- The **Info** panel was removed. The information it presented can be viewed in the hover.
+- The top-level `repos.list` site configuration was removed in favour of each code-host's equivalent options,
+  now configured via the new _External Services UI_ available at `/site-admin/external-services`. Equivalent options in code hosts configuration:
+  - Github via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
+  - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
+  - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
+  - [Other code hosts](https://github.com/sourcegraph/sourcegraph/issues/1324)
 
-### Removed
+## 2.13.6
+
+### Added
+
+- The `/-/editor` endpoint now accepts a `hostname_patterns` URL parameter, which specifies a JSON
+  object mapping from hostname to repository name pattern. This serves as a hint to Sourcegraph when
+  resolving git clone URLs to repository names. The name pattern is the same style as is used in
+  code host configurations. The default value is `{hostname}/{path}`.
 
 ## 2.13.5
 
@@ -472,7 +498,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added 14 new experimental language servers on the code intelligence admin page.
 - Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header. It defaults to `max-age=31536000` (one year).
 - Added `nameIDFormat` in the `saml` auth provider to set the SAML NameID format. The default changed from transient to persistent.
-- Experimental env var expansion in site config JSON: set `SOURCEGRAPH_EXPAND_CONFIG_VARS=1` to replace `${var}` or `$var` (based on environment variables) in any string value in site config JSON (except for JSON object property names).
+- (This feature has been removed.) Experimental env var expansion in site config JSON: set `SOURCEGRAPH_EXPAND_CONFIG_VARS=1` to replace `${var}` or `$var` (based on environment variables) in any string value in site config JSON (except for JSON object property names).
 - The new (optional) SAML `serviceProviderIssuer` site config property (in an `auth.providers` array entry with `{"type":"saml", ...}`) allows customizing the SAML Service Provider issuer name.
 - The site admin area now has an "Auth" section that shows the enabled authentication provider(s) and users' external accounts.
 

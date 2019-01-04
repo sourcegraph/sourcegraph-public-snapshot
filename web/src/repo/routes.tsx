@@ -1,15 +1,19 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
-import { ResizablePanel } from '../panel/Panel'
-import { formatHash, isLegacyFragment, parseHash } from '../util/url'
-import { BlobPage } from './blob/BlobPage'
-import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
-import { FilePathBreadcrumb } from './FilePathBreadcrumb'
+import { isLegacyFragment, parseHash } from '../../../shared/src/util/url'
+import { formatHash } from '../util/url'
+const BlobPage = React.lazy(async () => ({ default: (await import('./blob/BlobPage')).BlobPage }))
+const RepositoryCommitsPage = React.lazy(async () => ({
+    default: (await import('./commits/RepositoryCommitsPage')).RepositoryCommitsPage,
+}))
+const FilePathBreadcrumb = React.lazy(async () => ({
+    default: (await import('./FilePathBreadcrumb')).FilePathBreadcrumb,
+}))
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainerContext, RepoRevContainerRoute } from './RepoRevContainer'
-import { RepoRevSidebar } from './RepoRevSidebar'
-import { TreePage } from './TreePage'
+const RepoRevSidebar = React.lazy(async () => ({ default: (await import('./RepoRevSidebar')).RepoRevSidebar }))
+const TreePage = React.lazy(async () => ({ default: (await import('./TreePage')).TreePage }))
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
@@ -50,7 +54,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                 element={
                                     <FilePathBreadcrumb
                                         key="path"
-                                        repoPath={context.repo.name}
+                                        repoName={context.repo.name}
                                         rev={context.rev}
                                         filePath={filePath}
                                         isDir={objectType === 'tree'}
@@ -63,7 +67,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                     <RepoRevSidebar
                         className="repo-rev-container__sidebar"
                         repoID={context.repo.id}
-                        repoPath={context.repo.name}
+                        repoName={context.repo.name}
                         rev={context.rev}
                         commitID={context.resolvedRev.commitID}
                         filePath={context.match.params.filePath || '' || ''}
@@ -77,7 +81,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                         <div className="repo-rev-container__content">
                             {objectType === 'blob' ? (
                                 <BlobPage
-                                    repoPath={context.repo.name}
+                                    repoName={context.repo.name}
                                     repoID={context.repo.id}
                                     commitID={context.resolvedRev.commitID}
                                     rev={context.rev}
@@ -88,10 +92,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     }
                                     settingsCascade={context.settingsCascade}
                                     platformContext={context.platformContext}
-                                    extensionsOnRootsChange={context.extensionsOnRootsChange}
-                                    extensionsOnVisibleTextDocumentsChange={
-                                        context.extensionsOnVisibleTextDocumentsChange
-                                    }
                                     extensionsController={context.extensionsController}
                                     location={context.location}
                                     history={context.history}
@@ -100,7 +100,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                 />
                             ) : (
                                 <TreePage
-                                    repoPath={context.repo.name}
+                                    repoName={context.repo.name}
                                     repoID={context.repo.id}
                                     repoDescription={context.repo.description}
                                     commitID={context.resolvedRev.commitID}
@@ -114,7 +114,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     isLightTheme={context.isLightTheme}
                                 />
                             )}
-                            <ResizablePanel {...context} />
                         </div>
                     )}
                 </>

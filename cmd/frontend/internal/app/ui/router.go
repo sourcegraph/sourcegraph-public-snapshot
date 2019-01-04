@@ -158,7 +158,7 @@ func newRouter() *mux.Router {
 	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
 
 	// raw
-	repoRev.Path("/raw{Path:.*}").Methods("GET").Name(routeRaw)
+	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw)
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)

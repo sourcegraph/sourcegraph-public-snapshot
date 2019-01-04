@@ -5,15 +5,15 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
+import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { RepoLink } from '../../repo/RepoLink'
 import { SearchScope, Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
-import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { fetchReposByQuery } from '../backend'
 import { submitSearch } from '../helpers'
 import { queryUpdates } from './QueryInput'
@@ -192,7 +192,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                                     <div key={i} className="scope-page__row">
                                                         <Link to={repo.url} className="scope-page__link">
                                                             <RepositoryIcon className="icon-inline scope-page__link-icon" />
-                                                            <RepoLink repoPath={repo.name} to={null} />
+                                                            <RepoLink repoName={repo.name} to={null} />
                                                         </Link>
                                                     </div>
                                                 ))}
@@ -236,7 +236,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, { query: `${this.state.value} ${this.state.query}` }, 'home')
+        submitSearch(this.props.history, `${this.state.value} ${this.state.query}`, 'home')
     }
 
     private onShowMore = (event: React.MouseEvent<HTMLButtonElement>): void => {

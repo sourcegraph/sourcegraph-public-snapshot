@@ -1,9 +1,9 @@
 import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'
-import { AbsoluteRepoFile } from '..'
 import { decorationAttachmentStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
+import { AbsoluteRepoFile } from '../../../../shared/src/util/url'
 
 interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
     line: number
@@ -22,7 +22,7 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
 
     public componentWillReceiveProps(nextProps: Readonly<LineDecorationAttachmentProps>): void {
         if (
-            nextProps.repoPath !== this.props.repoPath ||
+            nextProps.repoName !== this.props.repoName ||
             nextProps.rev !== this.props.rev ||
             nextProps.filePath !== this.props.filePath ||
             nextProps.line !== this.props.line ||

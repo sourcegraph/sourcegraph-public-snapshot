@@ -304,6 +304,10 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 	}
 }
 
+func (s *Store) String() string {
+	return "Store(" + s.Path + ")"
+}
+
 // watchAndEvict is a loop which periodically checks the size of the cache and
 // evicts/deletes items if the store gets too large.
 func (s *Store) watchAndEvict() {

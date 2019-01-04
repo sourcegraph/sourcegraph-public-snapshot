@@ -38,7 +38,7 @@ func TestAWS_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoName, err := AWS{&test.conn}.cloneURLToRepoName(u.cloneURL)
+			repoName, err := AWS{&test.conn}.CloneURLToRepoName(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

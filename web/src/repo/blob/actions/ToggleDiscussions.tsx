@@ -2,11 +2,12 @@ import * as H from 'history'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { ActionItem } from '../../../components/ActionItem'
+import { ChatIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
+import { parseHash, toPositionOrRangeHash, toViewStateHashComponent } from '../../../../../shared/src/util/url'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { ChatIcon } from '../../../util/icons' // TODO: Switch to mdi icon
-import { lprToRange, parseHash, toPositionOrRangeHash, toViewStateHashComponent } from '../../../util/url'
+import { lprToRange } from '../../../util/url'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 /**
  * A repository header action that toggles the visibility of the discussions panel.
@@ -67,9 +68,12 @@ export class ToggleDiscussionsPanel extends React.PureComponent<{
     public render(): JSX.Element | null {
         const visible = ToggleDiscussionsPanel.isVisible(this.props.location)
         return (
-            <ActionItem onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} discussions (Alt+D/Opt+D)`}>
+            <LinkOrButton
+                onSelect={this.onClick}
+                data-tooltip={`${visible ? 'Hide' : 'Show'} discussions (Alt+D/Opt+D)`}
+            >
                 <ChatIcon className="icon-inline" />
-            </ActionItem>
+            </LinkOrButton>
         )
     }
 

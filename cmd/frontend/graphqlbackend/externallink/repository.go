@@ -44,7 +44,11 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		branchName, _, _, err := git.ExecSafe(ctx, backend.CachedGitRepo(repo), []string{"symbolic-ref", "--short", "HEAD"})
+		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
+		if err != nil {
+			return nil, err
+		}
+		branchName, _, _, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "--short", "HEAD"})
 		branchName = bytes.TrimSpace(branchName)
 		if err == nil && string(branchName) != "" {
 			links = append(links, &Resolver{
@@ -112,8 +116,7 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 		span.SetTag("phabErr", err.Error())
 	}
 
-	// Look up repo links in the repo-updater. This supplies links from code host APIs as well as
-	// explicitly configured links for repos.list repos.
+	// Look up repo links in the repo-updater. This supplies links from code host APIs.
 	info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
 		Repo:         repo.Name,
 		ExternalRepo: repo.ExternalRepo,

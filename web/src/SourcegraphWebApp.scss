@@ -23,8 +23,13 @@ $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
 $grid-gutter-width: 1.5rem;
+
+// No max width except for xl.
 $container-max-widths: (
-    xl: 74rem,
+    sm: null,
+    md: null,
+    lg: null,
+    xl: 1140px,
 );
 
 // Tell Bootstrap to use colors from OpenColor
@@ -250,10 +255,8 @@ hr {
 @import './components/CopyableText';
 @import './components/FilteredConnection';
 @import './components/SaveToolbar';
-@import './components/CodeExcerpt';
 @import './components/DecoratedTextLines';
 @import './components/HeroPage';
-@import './components/Markdown';
 @import './components/ModalPage';
 @import './components/MonacoEditor';
 @import './components/PopoverButton';
@@ -270,5 +273,8 @@ hr {
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';
+@import './repo/blob/discussions/DiscussionsTree';
+@import './components/SearchResult';
+@import './components/SearchResultMatch';
 
 @import './extensions/shared';

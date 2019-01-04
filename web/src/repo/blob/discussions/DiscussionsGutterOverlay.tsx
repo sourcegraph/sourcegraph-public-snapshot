@@ -1,10 +1,9 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { RepoFile } from '../..'
+import { ChatIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { LineOrPositionOrRange, RepoFile } from '../../../../../shared/src/util/url'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { ChatIcon } from '../../../util/icons' // TODO: Switch to mdi icon
-import { LineOrPositionOrRange } from '../../../util/url'
 
 interface DiscussionsGutterOverlayProps extends RepoFile {
     location: H.Location

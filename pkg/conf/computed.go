@@ -1,14 +1,20 @@
 package conf
 
 import (
+	"context"
+	"encoding/json"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/pkg/legacyconf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -17,13 +23,81 @@ func init() {
 	if !IsValidDeployType(deployType) {
 		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployCluster, DeployDocker, DeployDev, deployType)
 	}
+
+	defaultConfig := defaultConfigForDeployment()
+
+	// If a legacy configuration file is available (specified via
+	// SOURCEGRAPH_CONFIG_FILE), use it as the default for the critical and
+	// site configs.
+	//
+	// This relies on the fact that the old v2.13.6 site config schema has
+	// most fields align directly with the v3.0+ critical and site config
+	// schemas.
+	//
+	// This code can be removed in the next significant version after 3.0 (NOT
+	// preview), after which critical/site config schemas no longer need to
+	// align generally.
+	//
+	// TODO(slimsag): Remove after 3.0 (NOT preview).
+	{
+		legacyConf := jsonc.Normalize(legacyconf.Raw())
+
+		var criticalDecoded schema.CriticalConfiguration
+		_ = json.Unmarshal(legacyConf, &criticalDecoded)
+
+		// Backwards compatability for deprecated environment variables
+		// that we previously considered deprecated but are actually
+		// widespread in use in user's deployments and/or are suggested for
+		// use in our public documentation (i.e., even though these were
+		// long deprecated, our docs were not up to date).
+		criticalBackcompatVars := map[string]func(value string){
+			"TLS_CERT":               func(v string) { criticalDecoded.TlsCert = v },
+			"TLS_KEY":                func(v string) { criticalDecoded.TlsKey = v },
+			"LIGHTSTEP_PROJECT":      func(v string) { criticalDecoded.LightstepProject = v },
+			"LIGHTSTEP_ACCESS_TOKEN": func(v string) { criticalDecoded.LightstepAccessToken = v },
+		}
+		for envVar, setter := range criticalBackcompatVars {
+			val := os.Getenv(envVar)
+			if val != "" {
+				setter(val)
+			}
+		}
+
+		critical, err := json.MarshalIndent(criticalDecoded, "", "  ")
+		if string(critical) != "{}" && err == nil {
+			defaultConfig.Critical = string(critical)
+		}
+
+		var siteDecoded schema.SiteConfiguration
+		_ = json.Unmarshal(legacyConf, &siteDecoded)
+		site, err := json.MarshalIndent(siteDecoded, "", "  ")
+		if string(site) != "{}" && err == nil {
+			defaultConfig.Site = string(site)
+		}
+	}
+
+	confdefaults.Default = defaultConfig
+}
+
+func defaultConfigForDeployment() conftypes.RawUnified {
+	deployType := DeployType()
+	switch {
+	case IsDev(deployType):
+		return confdefaults.DevAndTesting
+	case IsDeployTypeDockerContainer(deployType):
+		return confdefaults.DockerContainer
+	case IsDeployTypeCluster(deployType):
+		return confdefaults.Cluster
+	default:
+		panic("deploy type did not register default configuration")
+	}
 }
 
 const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
 
 // HTTPStrictTransportSecurity returns the value of the Strict-Transport-Security HTTP header to set.
 func HTTPStrictTransportSecurity() string {
-	switch v := Get().HttpStrictTransportSecurity.(type) {
+	switch v := Get().Critical.HttpStrictTransportSecurity.(type) {
 	case string:
 		return v
 	case bool:
@@ -36,18 +110,59 @@ func HTTPStrictTransportSecurity() string {
 	}
 }
 
-// JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
-func JumpToDefOSSIndexEnabled() bool {
-	p := Get().ExperimentalFeatures.JumpToDefOSSIndex
-	// default is disabled
-	return p == "enabled"
-}
-
 // UpdateScheduler2Enabled returns true if UpdateScheduler2 experiment is enabled.
 func UpdateScheduler2Enabled() bool {
 	p := Get().ExperimentalFeatures.UpdateScheduler2
 	// default is enabled
 	return p != "disabled"
+}
+
+func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
+	var config []*schema.AWSCodeCommitConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
+	var config []*schema.BitbucketServerConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
+	var config []*schema.GitHubConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITHUB", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
+	var config []*schema.GitLabConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITLAB", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
+	var config []*schema.GitoliteConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
+	var config []*schema.PhabricatorConnection
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
 }
 
 type AccessTokAllow string
@@ -103,51 +218,6 @@ func CanReadEmail() bool {
 	return Get().EmailImap != nil
 }
 
-// HasGitHubDotComToken reports whether there are any personal access tokens configured for
-// github.com.
-func HasGitHubDotComToken() bool {
-	for _, c := range Get().Github {
-		u, err := url.Parse(c.Url)
-		if err != nil {
-			continue
-		}
-		hostname := strings.ToLower(u.Hostname())
-		if (hostname == "github.com" || hostname == "api.github.com") && c.Token != "" {
-			return true
-		}
-	}
-	return false
-}
-
-// HasGitLabDotComToken reports whether there are any personal access tokens configured for
-// github.com.
-func HasGitLabDotComToken() bool {
-	for _, c := range Get().Gitlab {
-		u, err := url.Parse(c.Url)
-		if err != nil {
-			continue
-		}
-		hostname := strings.ToLower(u.Hostname())
-		if hostname == "gitlab.com" && c.Token != "" {
-			return true
-		}
-	}
-	return false
-}
-
-// EnabledLangservers returns the langservers that are not disabled.
-func EnabledLangservers() []*schema.Langservers {
-	all := Get().Langservers
-	results := make([]*schema.Langservers, 0, len(all))
-	for _, langserver := range all {
-		if langserver.Disabled {
-			continue
-		}
-		results = append(results, langserver)
-	}
-	return results
-}
-
 const (
 	DeployCluster = "cluster"
 	DeployDocker  = "docker-container"
@@ -193,7 +263,7 @@ func IsValidDeployType(deployType string) bool {
 
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
-	channel := GetTODO().UpdateChannel
+	channel := Get().Critical.UpdateChannel
 	if channel == "" {
 		return "release"
 	}

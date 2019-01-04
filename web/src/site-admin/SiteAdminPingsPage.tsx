@@ -1,37 +1,22 @@
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchSite } from './backend'
-import { getUpdateChannel } from './configHelpers'
 
-interface State {
-    channel?: string | null
-    error?: string
-}
+interface Props {}
+
+interface State {}
 
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export class SiteAdminPingsPage extends React.Component<{}, State> {
+export class SiteAdminPingsPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminPings')
-
-        this.subscriptions.add(
-            fetchSite().subscribe(
-                site =>
-                    this.setState({
-                        channel: getUpdateChannel(site.configuration.effectiveContents),
-                        error: undefined,
-                    }),
-                error => this.setState({ error: error.message })
-            )
-        )
     }
 
     public componentWillUnmount(): void {
@@ -39,13 +24,12 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
     }
 
     public render(): JSX.Element | null {
-        const pingsEnabled = this.state.channel === 'release'
+        const pingsEnabled = window.context.critical['update.channel'] === 'release'
 
         return (
             <div className="site-admin-pings-page">
                 <PageTitle title="Pings - Admin" />
                 <h2>Pings</h2>
-                {this.state.error && <p className="alert alert-danger">Error: {upperFirst(this.state.error)}</p>}
                 <p>
                     Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It
                     sends only the high-level data below. It never sends code, repository names, usernames, or any other
@@ -75,7 +59,8 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
                         To disable pings (for customers only),{' '}
                         <a href="https://about.sourcegraph.com/contact/" target="_blank">
                             contact support
-                        </a>.
+                        </a>
+                        .
                     </p>
                 )}
             </div>

@@ -1,32 +1,27 @@
-import {
-    createHoverifier,
-    HoveredToken,
-    HoveredTokenContext,
-    Hoverifier,
-    HoverOverlay,
-    HoverState,
-} from '@sourcegraph/codeintellify'
+import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link, LinkProps } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { getHoverActions } from '../../../../shared/src/hover/actions'
+import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { getHover, getJumpURL } from '../../backend/features'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { FileSpec, ModeSpec, PositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
-import { memoizeObservable } from '../../util/memoize'
-import { propertyIsDefined } from '../../util/types'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffConnection } from '../compare/FileDiffConnection'
@@ -65,23 +60,16 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props
-    extends RouteComponentProps<{ revspec: string }>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+interface Props extends RouteComponentProps<{ revspec: string }>, PlatformContextProps, ExtensionsControllerProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
 }
 
-interface State extends HoverState {
+interface State extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
     /** The commit, undefined while loading, or an error. */
     commitOrError?: GQL.IGitCommit | ErrorLike
 }
-
-const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
-const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 /** Displays a commit. */
 export class RepositoryCommitPage extends React.Component<Props, State> {
@@ -96,22 +84,21 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     private nextRepositoryCommitPageElement = (element: HTMLElement | null) =>
         this.repositoryCommitPageElements.next(element)
 
-    /** Emits when the go to definition button was clicked */
-    private goToDefinitionClicks = new Subject<MouseEvent>()
-    private nextGoToDefinitionClick = (event: MouseEvent) => this.goToDefinitionClicks.next(event)
-
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier
+    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
 
     constructor(props: Props) {
         super(props)
-        this.hoverifier = createHoverifier({
+        this.hoverifier = createHoverifier<
+            RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+            HoverMerged,
+            ActionItemProps
+        >({
             closeButtonClicks: this.closeButtonClicks,
-            goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.repositoryCommitPageElements),
@@ -123,10 +110,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            pushHistory: path => this.props.history.push(path),
-            logTelemetryEvent,
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
-            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getActions: context => getHoverActions(this.props, context),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -138,10 +123,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     }
 
     private getLSPTextDocumentPositionParams(
-        hoveredToken: HoveredToken & HoveredTokenContext
-    ): LSPTextDocumentPositionParams {
+        hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
-            repoPath: hoveredToken.repoPath,
+            repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,
             filePath: hoveredToken.filePath,
             commitID: hoveredToken.commitID,
@@ -232,13 +217,13 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 nodeComponent={FileDiffNode}
                                 nodeComponentProps={{
                                     base: {
-                                        repoPath: this.props.repo.name,
+                                        repoName: this.props.repo.name,
                                         repoID: this.props.repo.id,
                                         rev: commitParentOrEmpty(this.state.commitOrError),
                                         commitID: commitParentOrEmpty(this.state.commitOrError),
                                     },
                                     head: {
-                                        repoPath: this.props.repo.name,
+                                        repoName: this.props.repo.name,
                                         repoID: this.props.repo.id,
                                         rev: this.state.commitOrError.oid,
                                         commitID: this.state.commitOrError.oid,
@@ -256,10 +241,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 noSummaryIfAllNodesVisible={true}
                                 history={this.props.history}
                                 location={this.props.location}
-                                extensionsOnVisibleTextDocumentsChange={
-                                    this.props.extensionsOnVisibleTextDocumentsChange
-                                }
-                                extensionsOnRootsChange={this.props.extensionsOnRootsChange}
+                                extensionsController={this.props.extensionsController}
                             />
                         </>
                     )}
@@ -267,10 +249,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
-                        logTelemetryEvent={logTelemetryEvent}
-                        linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
-                        onGoToDefinitionClick={this.nextGoToDefinitionClick}
+                        extensionsController={this.props.extensionsController}
+                        platformContext={this.props.platformContext}
+                        location={this.props.location}
                         onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}

@@ -2,13 +2,17 @@ package ui
 
 import (
 	"fmt"
+	"html"
 	"io"
 	"mime"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
@@ -82,6 +86,16 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		requestedPath = "/" + requestedPath
 	}
 
+	if requestedPath == "/" && r.Method == "HEAD" {
+		_, err = gitserver.DefaultClient.RepoInfo(r.Context(), common.Repo.Name)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return err
+		}
+		w.WriteHeader(http.StatusOK)
+		return nil
+	}
+
 	const (
 		textPlain       = "text/plain"
 		applicationZip  = "application/zip"
@@ -122,6 +136,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		if relativePath == "" {
 			relativePath = "."
 		}
+
 		f, _, err := vfsutil.GitServerFetchArchive(r.Context(), vfsutil.ArchiveOpts{
 			Repo:         common.Repo.Name,
 			Commit:       common.CommitID,
@@ -181,6 +196,10 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		defer archiveFS.Close()
 		fi, err := archiveFS.Lstat(r.Context(), requestedPath)
 		if err != nil {
+			if os.IsNotExist(err) {
+				http.Error(w, html.EscapeString(err.Error()), http.StatusNotFound)
+				return nil // request handled
+			}
 			return err
 		}
 		if fi.IsDir() {

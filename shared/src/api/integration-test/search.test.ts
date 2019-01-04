@@ -1,46 +1,42 @@
-import * as assert from 'assert'
 import { take } from 'rxjs/operators'
-import { integrationTestContext } from './helpers.test'
+import { integrationTestContext } from './testHelpers'
 
 describe('search (integration)', () => {
-    it('registers a query transformer', async () => {
-        const { clientController, extensionHost, ready } = await integrationTestContext()
+    test('registers a query transformer', async () => {
+        const { services, extensionHost } = await integrationTestContext()
 
         // Register the provider and call it
         const unsubscribe = extensionHost.search.registerQueryTransformer({ transformQuery: () => 'bar' })
-        await ready
-        assert.deepStrictEqual(
-            await clientController.services.queryTransformer
+        await extensionHost.internal.sync()
+        expect(
+            await services.queryTransformer
                 .transformQuery('foo')
                 .pipe(take(1))
-                .toPromise(),
-            'bar'
-        )
+                .toPromise()
+        ).toEqual('bar')
 
         // Unregister the provider and ensure it's removed.
         unsubscribe.unsubscribe()
-        assert.deepStrictEqual(
-            await clientController.services.queryTransformer
+        expect(
+            await services.queryTransformer
                 .transformQuery('foo')
                 .pipe(take(1))
-                .toPromise(),
-            'foo'
-        )
+                .toPromise()
+        ).toEqual('foo')
     })
 
-    it('supports multiple query transformers', async () => {
-        const { clientController, extensionHost, ready } = await integrationTestContext()
+    test('supports multiple query transformers', async () => {
+        const { services, extensionHost } = await integrationTestContext()
 
         // Register the provider and call it
-        extensionHost.search.registerQueryTransformer({ transformQuery: q => `${q} bar` })
-        extensionHost.search.registerQueryTransformer({ transformQuery: q => `${q} qux` })
-        await ready
-        assert.deepStrictEqual(
-            await clientController.services.queryTransformer
+        extensionHost.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} bar` })
+        extensionHost.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} qux` })
+        await extensionHost.internal.sync()
+        expect(
+            await services.queryTransformer
                 .transformQuery('foo')
                 .pipe(take(1))
-                .toPromise(),
-            'foo bar qux'
-        )
+                .toPromise()
+        ).toEqual('foo bar qux')
     })
 })

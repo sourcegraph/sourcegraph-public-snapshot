@@ -5,15 +5,15 @@ import { throwError } from 'rxjs'
 import { catchError, map, tap } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError } from '../../../../../shared/src/util/errors'
+import { parseHash } from '../../../../../shared/src/util/url'
 import { createThread } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { parseHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
 
 interface Props {
     repoID: GQL.ID
-    repoPath: string
+    repoName: string
     commitID: string
     rev: string | undefined
     filePath: string
@@ -63,8 +63,8 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
 
         const lpr = parseHash(window.location.hash)
 
-        // lpr is one-based, discussions is zero-based (like LSP).
-        // lpr endings are inclusive, discussions is exclusive (like LSP).
+        // lpr is one-based, discussions is zero-based.
+        // lpr endings are inclusive, discussions is exclusive.
         const startLine = lpr.line ? lpr.line - 1 : 0
         const startCharacter = lpr.character ? lpr.character - 1 : 0
         const endLine = lpr.endLine ? lpr.endLine : startLine + 1

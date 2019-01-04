@@ -54,16 +54,16 @@ export const normalizeAjaxError = (err: any): void => {
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
 export class CloneInProgressError extends Error {
     public readonly code = ECLONEINPROGESS
-    constructor(repoPath: string) {
-        super(`${repoPath} is clone in progress`)
+    constructor(repoName: string) {
+        super(`${repoName} is clone in progress`)
     }
 }
 
 export const EREPONOTFOUND = 'EREPONOTFOUND'
 export class RepoNotFoundError extends Error {
     public readonly code = EREPONOTFOUND
-    constructor(repoPath: string) {
-        super(`repo ${repoPath} not found`)
+    constructor(repoName: string) {
+        super(`repo ${repoName} not found`)
     }
 }
 
@@ -93,6 +93,7 @@ export class NoSourcegraphURLError extends Error {
 export const ERPRIVATEREPOPUBLICSOURCEGRAPHCOM = 'ERPRIVATEREPOPUBLICSOURCEGRAPHCOM'
 export class PrivateRepoPublicSourcegraphComError extends Error {
     public readonly code = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
+    public readonly name = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
     constructor(graphQLName: string) {
         super(
             `A ${graphQLName} GraphQL request to the public Sourcegraph.com was blocked because the current repository is private.`

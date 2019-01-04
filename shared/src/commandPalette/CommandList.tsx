@@ -1,6 +1,6 @@
 import { ShortcutProps } from '@slimsag/react-shortcuts'
 import H from 'history'
-import { isArray, sortBy, uniq } from 'lodash-es'
+import { isArray, sortBy, uniq } from 'lodash'
 import MenuIcon from 'mdi-react/MenuIcon'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
@@ -21,6 +21,16 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     /** Called when the user has selected an item in the list. */
     onSelect?: () => void
 
+    /**
+     * Whether the text input should have autofocus.
+     *
+     * When used in the browser extension, this sometimes results in the page being scrolled to the bottom in the
+     * web browser because it attempts to autofocus (and scroll to reveal) before the element is attached to the
+     * correct position. Therefore this should be set to true only in the Sourcegraph web app (or unless you're
+     * confident that it works otherwise and have tested it, in which case you should update this comment).
+     */
+    autoFocus: boolean
+
     location: H.Location
 }
 
@@ -33,6 +43,8 @@ interface State {
 
     /** Recently invoked actions, which should be sorted first in the list. */
     recentActions: string[] | null
+
+    autoFocus?: boolean
 }
 
 /** Displays a list of commands contributed by extensions for a specific menu. */
@@ -82,6 +94,10 @@ export class CommandList extends React.PureComponent<Props, State> {
                 .getContributions()
                 .subscribe(contributions => this.setState({ contributions }))
         )
+
+        setTimeout(() => {
+            this.setState({ autoFocus: true })
+        })
     }
 
     public componentDidUpdate(_prevProps: Props, prevState: State): void {
@@ -121,11 +137,11 @@ export class CommandList extends React.PureComponent<Props, State> {
                             type="text"
                             className="form-control px-2 py-1 rounded-0"
                             value={this.state.input}
-                            placeholder="Command..."
+                            placeholder="Run Sourcegraph action..."
                             spellCheck={false}
                             autoCorrect="off"
                             autoComplete="off"
-                            autoFocus={true}
+                            autoFocus={this.props.autoFocus || this.state.autoFocus}
                             onChange={this.onInputChange}
                             onKeyDown={this.onInputKeyDown}
                         />
@@ -147,7 +163,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                                     pattern={query}
                                 />
                             }
-                            onRun={this.onActionRun}
+                            onDidExecute={this.onActionDidExecute}
                             extensionsController={this.props.extensionsController}
                             platformContext={this.props.platformContext}
                             location={this.props.location}
@@ -191,7 +207,7 @@ export class CommandList extends React.PureComponent<Props, State> {
         this.setState(prevState => ({ selectedIndex: prevState.selectedIndex + delta }))
     }
 
-    private onActionRun = (actionID: string) => {
+    private onActionDidExecute = (actionID: string) => {
         const KEEP_RECENT_ACTIONS = 10
         this.setState(prevState => {
             const { recentActions } = prevState

@@ -126,12 +126,7 @@ func extensionRegistryPublishExtension(ctx context.Context, args *graphqlbackend
 	}
 
 	// Get or create the extension to publish.
-	localExtension, remoteExtension, err := frontendregistry.GetExtensionByExtensionID(ctx, args.ExtensionID)
-	// Check that the extension doesn't refer to an existing remote extension. This can be true even
-	// with the !isLocal check above in the case of synthesized BACKCOMPAT extensions.
-	if remoteExtension != nil {
-		return nil, fmt.Errorf("unable to publish extension %q because it conflicts with an existing non-local extension", args.ExtensionID)
-	}
+	localExtension, _, err := frontendregistry.GetExtensionByExtensionID(ctx, args.ExtensionID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}

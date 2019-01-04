@@ -4,22 +4,20 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import { AbsoluteRepoFile, makeRepoURI, ParsedRepoURI } from '..'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { ModeSpec } from '../../backend/features'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+import { AbsoluteRepoFile, makeRepoURI, ModeSpec, ParsedRepoURI, parseHash } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
-import { memoizeObservable } from '../../util/memoize'
-import { lprToRange, parseHash } from '../../util/url'
+import { lprToRange } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleDiscussionsPanel } from './actions/ToggleDiscussions'
@@ -36,7 +34,7 @@ export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolea
 
 export const fetchBlob = memoizeObservable(
     (args: {
-        repoPath: string
+        repoName: string
         commitID: string
         filePath: string
         isLightTheme: boolean
@@ -45,13 +43,13 @@ export const fetchBlob = memoizeObservable(
         queryGraphQL(
             gql`
                 query Blob(
-                    $repoPath: String!
+                    $repoName: String!
                     $commitID: String!
                     $filePath: String!
                     $isLightTheme: Boolean!
                     $disableTimeout: Boolean!
                 ) {
-                    repository(name: $repoPath) {
+                    repository(name: $repoName) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 content
@@ -89,7 +87,6 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     location: H.Location
     history: H.History
@@ -132,7 +129,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             combineLatest(
                 this.propsUpdates.pipe(
-                    map(props => pick(props, 'repoPath', 'commitID', 'filePath', 'isLightTheme')),
+                    map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
                 this.extendHighlightingTimeoutClicks.pipe(
@@ -142,9 +139,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
             )
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),
-                    switchMap(([{ repoPath, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
+                    switchMap(([{ repoName, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
                         fetchBlob({
-                            repoPath,
+                            repoName,
                             commitID,
                             filePath,
                             isLightTheme,
@@ -160,8 +157,13 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 .subscribe(blobOrError => this.setState({ blobOrError }), err => console.error(err))
         )
 
-        // Clear the Sourcegraph extensions environment's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.extensionsOnVisibleTextDocumentsChange(null))
+        // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
+        this.subscriptions.add(() =>
+            this.props.extensionsController.services.model.model.next({
+                ...this.props.extensionsController.services.model.model.value,
+                visibleViewComponents: null,
+            })
+        )
 
         this.propsUpdates.next(this.props)
     }
@@ -169,7 +171,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
     public componentWillReceiveProps(newProps: Props): void {
         this.propsUpdates.next(newProps)
         if (
-            newProps.repoPath !== this.props.repoPath ||
+            newProps.repoName !== this.props.repoName ||
             newProps.commitID !== this.props.commitID ||
             newProps.filePath !== this.props.filePath ||
             ToggleRenderedFileMode.getModeFromURL(newProps.location) !==
@@ -275,7 +277,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     !this.state.blobOrError.highlight.aborted && (
                         <Blob
                             className="blob-page__blob"
-                            repoPath={this.props.repoPath}
+                            repoName={this.props.repoName}
                             commitID={this.props.commitID}
                             filePath={this.props.filePath}
                             content={this.state.blobOrError.content}
@@ -285,8 +287,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             settingsCascade={this.props.settingsCascade}
                             platformContext={this.props.platformContext}
                             extensionsController={this.props.extensionsController}
-                            extensionsOnRootsChange={this.props.extensionsOnRootsChange}
-                            extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                             wrapCode={this.state.wrapCode}
                             renderMode={renderMode}
                             location={this.props.location}
@@ -311,7 +311,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 <BlobPanel
                     {...this.props}
                     repoID={this.props.repoID}
-                    repoPath={this.props.repoPath}
+                    repoName={this.props.repoName}
                     commitID={this.props.commitID}
                     platformContext={this.props.platformContext}
                     extensionsController={this.props.extensionsController}
@@ -331,8 +331,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
     private onExtendHighlightingTimeoutClick = () => this.extendHighlightingTimeoutClicks.next()
 
     private getPageTitle(): string {
-        const repoPathSplit = this.props.repoPath.split('/')
-        const repoStr = repoPathSplit.length > 2 ? repoPathSplit.slice(1).join('/') : this.props.repoPath
+        const repoNameSplit = this.props.repoName.split('/')
+        const repoStr = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : this.props.repoName
         if (this.props.filePath) {
             const fileOrDir = this.props.filePath.split('/').pop()
             return `${fileOrDir} - ${repoStr}`

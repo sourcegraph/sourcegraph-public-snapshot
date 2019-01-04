@@ -42,7 +42,7 @@ func TestGitLab_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoName, err := GitLab{&test.conn}.cloneURLToRepoName(u.cloneURL)
+			repoName, err := GitLab{&test.conn}.CloneURLToRepoName(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

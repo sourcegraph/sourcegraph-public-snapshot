@@ -99,7 +99,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                     action.title && action.description ? ': ' : ''
                 }${action.description || ''}`
                 actionsGroup.rows.push([
-                    <code>{action.command}</code>,
+                    <code>{action.id}</code>,
                     // tslint:disable-next-line:no-invalid-template-strings
                     description.includes('${') ? (
                         <>

@@ -1,4 +1,4 @@
 # Installing Sourcegraph
 
-- [Install Sourcegraph with Docker](docker.md)
+- [Install Sourcegraph with Docker](docker.md) **(recommended, easiest)**
 - [Install Sourcegraph on a cluster](cluster.md)

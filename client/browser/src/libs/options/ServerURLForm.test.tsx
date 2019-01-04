@@ -1,5 +1,3 @@
-import { assert, expect } from 'chai'
-import { describe, it } from 'mocha'
 import * as React from 'react'
 import { cleanup, fireEvent, render } from 'react-testing-library'
 import { EMPTY, merge, noop, of, Subject } from 'rxjs'
@@ -10,9 +8,9 @@ import sinon from 'sinon'
 import { ServerURLForm, ServerURLFormProps } from './ServerURLForm'
 
 describe('ServerURLForm', () => {
-    after(cleanup)
+    afterAll(cleanup)
 
-    it('fires the onChange prop handler', () => {
+    test('fires the onChange prop handler', () => {
         const onChange = sinon.spy()
         const onSubmit = sinon.spy()
 
@@ -29,13 +27,13 @@ describe('ServerURLForm', () => {
 
         fireEvent.change(urlInput, { target: { value: 'https://different.com' } })
 
-        assert.isTrue(onChange.calledOnce)
-        assert.isTrue(onChange.calledWith('https://different.com'))
+        expect(onChange.calledOnce).toBe(true)
+        expect(onChange.calledWith('https://different.com')).toBe(true)
 
-        assert.isTrue(onSubmit.notCalled)
+        expect(onSubmit.notCalled).toBe(true)
     })
 
-    it('updates the input value when the url changes', () => {
+    test('updates the input value when the url changes', () => {
         const props: ServerURLFormProps = {
             value: 'https://sourcegraph.com',
             status: 'connected',
@@ -51,10 +49,10 @@ describe('ServerURLForm', () => {
 
         const newValue = urlInput.value
 
-        expect(newValue).to.equal('https://different.com')
+        expect(newValue).toEqual('https://different.com')
     })
 
-    it('fires the onSubmit prop handler when the form is submitted', () => {
+    test('fires the onSubmit prop handler when the form is submitted', () => {
         const onSubmit = sinon.spy()
 
         const { container } = render(
@@ -65,11 +63,11 @@ describe('ServerURLForm', () => {
 
         fireEvent.submit(form)
 
-        assert.isTrue(onSubmit.calledOnce)
+        expect(onSubmit.calledOnce).toBe(true)
     })
 
-    it('fires the onSubmit prop handler after 5s on inactivity after a change', () => {
-        const scheduler = new TestScheduler((a, b) => assert.deepEqual(a, b))
+    test('fires the onSubmit prop handler after 5s on inactivity after a change', () => {
+        const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
         scheduler.run(({ cold, expectObservable }) => {
             const submits = new Subject<void>()
@@ -107,8 +105,8 @@ describe('ServerURLForm', () => {
         })
     })
 
-    it("doesn't submit after 5 seconds if the form was submitted manually", () => {
-        const scheduler = new TestScheduler((a, b) => assert.deepEqual(a, b))
+    test("doesn't submit after 5 seconds if the form was submitted manually", () => {
+        const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
         scheduler.run(({ cold, expectObservable }) => {
             const changes = new Subject<string>()

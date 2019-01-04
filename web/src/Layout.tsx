@@ -1,11 +1,15 @@
-import React from 'react'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import React, { Suspense } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
+import { ResizablePanel } from '../../shared/src/panel/Panel'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
+import { parseHash } from '../../shared/src/util/url'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { GlobalContributions } from './contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
-import { ExtensionsDocumentsProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -15,6 +19,7 @@ import { GlobalDebug } from './global/GlobalDebug'
 import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -25,14 +30,13 @@ import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
-        ExtensionsDocumentsProps,
         KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
@@ -90,34 +94,58 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
                 settingsCascade={props.settingsCascade}
             />
-            {!needsSiteInit &&
-                !isSiteInit &&
-                !!props.authenticatedUser && <IntegrationsToast history={props.history} />}
+            {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
+                <IntegrationsToast history={props.history} />
+            )}
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
-            <Switch>
-                {props.routes.map((route, i) => {
-                    const isFullWidth = !route.forceNarrowWidth
-                    return (
-                        <Route
-                            {...route}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            component={undefined}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <div
-                                    className={[
-                                        'layout__app-router-container',
-                                        `layout__app-router-container--${isFullWidth ? 'full-width' : 'restricted'}`,
-                                    ].join(' ')}
-                                >
-                                    {route.render({ ...props, ...routeComponentProps })}
-                                </div>
-                            )}
-                        />
-                    )
-                })}
-            </Switch>
+            <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                    <Switch>
+                        {props.routes.map(route => {
+                            const isFullWidth = !route.forceNarrowWidth
+                            return (
+                                <Route
+                                    {...route}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    component={undefined}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <div
+                                            className={[
+                                                'layout__app-router-container',
+                                                `layout__app-router-container--${
+                                                    isFullWidth ? 'full-width' : 'restricted'
+                                                }`,
+                                            ].join(' ')}
+                                        >
+                                            {route.render({ ...props, ...routeComponentProps })}
+                                        </div>
+                                    )}
+                                />
+                            )
+                        })}
+                    </Switch>
+                </Suspense>
+            </ErrorBoundary>
+            {parseHash(props.location.hash).viewState && (
+                <ResizablePanel
+                    repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                    history={props.history}
+                    location={props.location}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    settingsCascade={props.settingsCascade}
+                    isLightTheme={props.isLightTheme}
+                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                />
+            )}
+            <GlobalContributions
+                key={3}
+                extensionsController={props.extensionsController}
+                platformContext={props.platformContext}
+                history={props.history}
+            />
             <GlobalDebug {...props} />
         </div>
     )

@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { Subject } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
-import { AbsoluteRepo } from '../repo'
+import { AbsoluteRepo } from '../../../shared/src/util/url'
 import { dirname } from '../util/path'
 import { TreeRoot } from './TreeRoot'
 import { getDomElement, scrollIntoView } from './util'
@@ -231,7 +231,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     depth={0}
                     history={this.props.history}
                     location={this.props.location}
-                    repoPath={this.props.repoPath}
+                    repoName={this.props.repoName}
                     rev={this.props.rev}
                     commitID={this.props.commitID}
                     index={0}

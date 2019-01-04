@@ -15,13 +15,14 @@ func TestIsFeatureEnabled(t *testing.T) {
 		}
 	}
 
-	t.Run(string(FeatureExternalAuthProvider), func(t *testing.T) {
-		check(t, FeatureExternalAuthProvider, EnterpriseStarterTags, true)
-		check(t, FeatureExternalAuthProvider, EnterpriseTags, true)
+	t.Run(string(FeatureACLs), func(t *testing.T) {
+		check(t, FeatureACLs, EnterpriseStarterTags, false)
+		check(t, FeatureACLs, EnterpriseTags, true)
 	})
 
 	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
 		check(t, FeatureExtensionRegistry, EnterpriseStarterTags, false)
 		check(t, FeatureExtensionRegistry, EnterpriseTags, true)
+		check(t, FeatureExtensionRegistry, []string{string(FeatureExtensionRegistry)}, true)
 	})
 }

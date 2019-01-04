@@ -11,7 +11,6 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -61,10 +61,10 @@ type JSContext struct {
 	ShowOnboarding bool   `json:"showOnboarding"`
 	EmailEnabled   bool   `json:"emailEnabled"`
 
-	Site                schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
-	NeedServerRestart   bool                     `json:"needServerRestart"`
-	IsClusterDeployment bool                     `json:"isClusterDeployment"`
+	Critical            schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
+	LikelyDockerOnMac   bool                         `json:"likelyDockerOnMac"`
+	NeedServerRestart   bool                         `json:"needServerRestart"`
+	IsClusterDeployment bool                         `json:"isClusterDeployment"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
@@ -110,7 +110,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	globalState, err := db.GlobalState.Get(req.Context())
+	globalState, err := globalstatedb.Get(req.Context())
 	showOnboarding := err == nil && !globalState.Initialized
 
 	// Auth providers
@@ -147,7 +147,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ShowOnboarding:      showOnboarding,
 		EmailEnabled:        conf.CanSendEmail(),
-		Site:                publicSiteConfiguration(),
+		Critical:            publicCriticalConfiguration(),
 		LikelyDockerOnMac:   likelyDockerOnMac(),
 		NeedServerRestart:   globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		IsClusterDeployment: conf.IsDeployTypeCluster(conf.DeployType()),
@@ -170,12 +170,17 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 }
 
-// publicSiteConfiguration is the subset of the site.schema.json site configuration
-// that is necessary for the web app and is not sensitive/secret.
-func publicSiteConfiguration() schema.SiteConfiguration {
+// publicCriticalConfiguration is the subset of the critical.schema.json critical
+// configuration that is necessary for the web app and is not sensitive/secret.
+func publicCriticalConfiguration() schema.CriticalConfiguration {
 	c := conf.Get()
-	return schema.SiteConfiguration{
-		AuthPublic: c.AuthPublic,
+	updateChannel := c.Critical.UpdateChannel
+	if updateChannel == "" {
+		updateChannel = "release"
+	}
+	return schema.CriticalConfiguration{
+		AuthPublic:    c.Critical.AuthPublic,
+		UpdateChannel: updateChannel,
 	}
 }
 

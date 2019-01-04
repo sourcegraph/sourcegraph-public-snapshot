@@ -1,10 +1,8 @@
-import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 import * as webpack from 'webpack'
 import babelConfig from '../../babel.config'
 
-export const buildStylesLoaders = (baseLoader: webpack.Loader): webpack.Loader[] => [
-    baseLoader,
+export const commonStylesheetLoaders: webpack.Loader[] = [
     {
         loader: 'postcss-loader',
         options: {
@@ -17,10 +15,6 @@ export const buildStylesLoaders = (baseLoader: webpack.Loader): webpack.Loader[]
         loader: 'sass-loader',
         options: {
             includePaths: [path.resolve(__dirname, '../../../..', 'node_modules')],
-            importer: sassImportOnce,
-            importOnce: {
-                css: true,
-            },
         },
     },
 ]
@@ -46,6 +40,8 @@ export const tsRule: webpack.RuleSetRule = {
                     module: 'esnext',
                     noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
                 },
+                experimentalWatchApi: true,
+                happyPackMode: true, // Typechecking is done by a separate tsc process, disable here for performance
                 transpileOnly: process.env.DISABLE_TYPECHECKING === 'true',
             },
         },

@@ -2,15 +2,13 @@
 
 Sourcegraph integrates with Bitbucket Server and Bitbucket Data Center.
 
-> NOTE: Support for [Bitbucket Cloud](https://bitbucket.org) is coming soon. In the meantime, you can add Bitbucket Cloud repositories using [`repos.list`](../admin/repo/add_from_git_repository.md).
-
 ## Syncing Bitbucket Server repositories
 
-Sourcegraph supports automatically syncing repositories from [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server). To add repositories associated with a Bitbucket Server user:
+Sourcegraph supports automatically syncing repositories from [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server).
 
-1.  Go to the [site configuration editor](../admin/site_config/index.md).
-2.  Press **Add Bitbucket Server projects**.
-3.  Fill in the fields in the generated `bitbucketServer` configuration option.
+- Add Bitbucket Server as an external service (in **Site admin > External services**, or in the site config JSON editor in Sourcegraph 2.x)
+
+- Read the [Bitbucket Server configuration documentation](../admin/site_config/all.md#bitbucketserverconnection-object) or press Ctrl+Space or Cmd+Space in the configuration editor.
 
 Note: Bitbucket Server versions older than v5.5 will require specifying a less secure username+password combination, as those versions of Bitbucket Server do not support [personal access tokens](https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html).
 

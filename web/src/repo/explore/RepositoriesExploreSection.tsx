@@ -3,12 +3,12 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
+import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
-import { buildSearchURLQuery } from '../../search'
-import { RepoLink } from '../RepoLink'
 
 interface Props {}
 
@@ -94,7 +94,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                                             to={repo.url}
                                         >
                                             <h3 className="mb-0 text-truncate">
-                                                <RepoLink to={null} repoPath={repo.name} />
+                                                <RepoLink to={null} repoName={repo.name} />
                                             </h3>
                                             <span className="text-truncate">{repo.description || <>&nbsp;</>}</span>
                                         </Link>
@@ -102,7 +102,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                             )}
                         </div>
                         <div className="text-right mt-3">
-                            <Link to={`/search?${buildSearchURLQuery({ query: 'repo:' })}`}>
+                            <Link to={`/search?${buildSearchURLQuery('repo:')}`}>
                                 View all repositories<ChevronRightIcon className="icon-inline" />
                             </Link>
                         </div>

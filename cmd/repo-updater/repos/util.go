@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gregjones/httpcache"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -16,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+const configWatchInterval = 5 * time.Second
 
 // NormalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant
 // differences (such as in presence of a trailing slash, or hostname case) eliminated. Its return value should be

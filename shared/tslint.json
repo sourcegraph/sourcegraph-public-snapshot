@@ -1,4 +1,13 @@
 {
-  "extends": "@sourcegraph/tslint-config",
-  "linterOptions": { "exclude": ["node_modules/**"] }
+  "extends": ["../tslint.json"],
+  "linterOptions": { "exclude": ["node_modules/**", "coverage/**"] },
+  "rulesDirectory": "dev/tslint",
+  "rules": {
+    "import-blacklist": [true, "highlight.js"],
+    "ban-imports": [
+      true,
+      "^react-router(-dom)?",
+      "Use the src/shared/components/Link component instead of react-router-dom's Link. Reason: Shared code runs on platforms that don't use react-router (such as in the browser extension)."
+    ]
+  }
 }

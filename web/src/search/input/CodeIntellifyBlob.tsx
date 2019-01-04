@@ -1,30 +1,27 @@
-import {
-    createHoverifier,
-    findPositionsFromEvents,
-    HoveredToken,
-    HoveredTokenContext,
-    HoverOverlay,
-    HoverState,
-} from '@sourcegraph/codeintellify'
+import { createHoverifier, findPositionsFromEvents, HoveredToken, HoverState } from '@sourcegraph/codeintellify'
 import { getTokenAtPosition } from '@sourcegraph/codeintellify/lib/token_position'
+import { Position } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
-import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
-import { Position } from '../../../../shared/src/api/protocol/plainTypes'
+import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { getHoverActions } from '../../../../shared/src/hover/actions'
+import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { getHover, getJumpURL } from '../../backend/features'
-import { LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
+import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import { FileSpec, ModeSpec, PositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { getHover } from '../../backend/features'
 import { fetchBlob } from '../../repo/blob/BlobPage'
-import { isDefined, propertyIsDefined } from '../../util/types'
 
-interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     history: H.History
+    location: H.Location
     className: string
     startLine: number
     endLine: number
@@ -35,7 +32,7 @@ interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
     defaultHoverPosition: Position
 }
 
-interface State extends HoverState {
+interface State extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
     /**
      * The blob data or error that happened.
      * undefined while loading.
@@ -43,8 +40,6 @@ interface State extends HoverState {
     blobOrError?: GQL.IGitBlob | ErrorLike
     target?: EventTarget
 }
-
-const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 const domFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
@@ -84,7 +79,7 @@ const domFunctions = {
     },
 }
 
-const REPO_PATH = 'github.com/gorilla/mux'
+const REPO_NAME = 'github.com/gorilla/mux'
 const COMMIT_ID = '9e1f5955c0d22b55d9e20d6faa28589f83b2faca'
 const REV = undefined
 const FILE_PATH = 'mux.go'
@@ -103,10 +98,6 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     private nextCodeIntellifyBlobElements = (element: HTMLElement | null) =>
         this.codeIntellifyBlobElements.next(element)
 
-    /** Emits when the go to definition button was clicked */
-    private goToDefinitionClicks = new Subject<MouseEvent>()
-    private nextGoToDefinitionClick = (event: MouseEvent) => this.goToDefinitionClicks.next(event)
-
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
@@ -121,11 +112,13 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         super(props)
         this.state = {}
 
-        const hoverifier = createHoverifier({
+        const hoverifier = createHoverifier<
+            RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+            HoverMerged,
+            ActionItemProps
+        >({
             closeButtonClicks: this.closeButtonClicks,
-            goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
-            pushHistory: path => this.props.history.push(path),
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.codeIntellifyBlobElements),
                 map(([, hoverOverlayElement, codeIntellifyBlobElement]) => ({
@@ -141,8 +134,8 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                 filter(propertyIsDefined('relativeElement')),
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
-            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getActions: context => getHoverActions(this.props, context),
         })
 
         this.subscriptions.add(hoverifier)
@@ -159,7 +152,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
             hoverifier.hoverify({
                 positionEvents,
                 resolveContext: () => ({
-                    repoPath: REPO_PATH,
+                    repoName: REPO_NAME,
                     commitID: COMMIT_ID,
                     rev: REV || '',
                     filePath: FILE_PATH,
@@ -191,7 +184,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     public componentDidMount(): void {
         // Fetch repository revision.
         fetchBlob({
-            repoPath: REPO_PATH,
+            repoName: REPO_NAME,
             commitID: COMMIT_ID,
             filePath: FILE_PATH,
             isLightTheme: false,
@@ -208,13 +201,21 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         this.componentUpdates.next()
 
         this.subscriptions.add(
-            this.props.extensionsOnVisibleTextDocumentsChange([
-                {
-                    uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
-                    languageId: 'go',
-                    text: '',
-                },
-            ])
+            this.props.extensionsController.services.model.model.next({
+                ...this.props.extensionsController.services.model.model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: {
+                            uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
+                            languageId: 'go',
+                            text: '',
+                        },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
+            })
         )
     }
 
@@ -223,10 +224,10 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     }
 
     private getLSPTextDocumentPositionParams(
-        position: HoveredToken & HoveredTokenContext
-    ): LSPTextDocumentPositionParams {
+        position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
         return {
-            repoPath: position.repoPath,
+            repoName: position.repoName,
             filePath: position.filePath,
             commitID: position.commitID,
             rev: position.rev,
@@ -267,9 +268,10 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...hoverOverlayProps}
-                        linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
-                        onGoToDefinitionClick={this.nextGoToDefinitionClick}
+                        extensionsController={this.props.extensionsController}
+                        platformContext={this.props.platformContext}
+                        location={this.props.location}
                         onCloseButtonClick={this.nextCloseButtonClick}
                         showCloseButton={false}
                         className={this.props.tooltipClass}
@@ -284,7 +286,9 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
      * so that it aligns the right side of the hover overlay with the right side of the target element.
      *
      */
-    private adjustHoverOverlayPosition(target: EventTarget | null): HoverState['hoverOverlayProps'] {
+    private adjustHoverOverlayPosition(
+        target: EventTarget | null
+    ): HoverState<HoverContext, HoverMerged, ActionItemProps>['hoverOverlayProps'] {
         const viewPortEdge = window.innerWidth
         if (!this.state.hoverOverlayProps) {
             return undefined

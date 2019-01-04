@@ -225,9 +225,9 @@ func main() {
 			verbose: true,
 			version: "Unreleased Changes",
 			subSets: []*changeSubset{
-				&changeSubset{heading: "Changed"},
-				&changeSubset{heading: "Added"},
-				&changeSubset{heading: "Fixed"},
+				{heading: "Changed"},
+				{heading: "Added"},
+				{heading: "Fixed"},
 			},
 		}
 		cl.changeSets = append([]*changeSet{&newSet}, cl.changeSets...)

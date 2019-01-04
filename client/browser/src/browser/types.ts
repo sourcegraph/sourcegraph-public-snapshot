@@ -25,25 +25,25 @@ export interface FeatureFlags {
      */
     newInject: boolean
     /**
-     * Enable the use of Sourcegraph extensions.
-     *
-     * @duration temporary - to be removed by @chris when extensions are stable and out of
-     * beta.
-     */
-    useExtensions: boolean
-    /**
      * Enable inline symbol search by typing `!symbolQueryText` inside of GitHub PR comments (requires reload after toggling).
      *
      * @duration temporary - needs feedback from users.
      */
     inlineSymbolSearchEnabled: boolean
+
+    /**
+     * Allow error reporting.
+     *
+     * @duration permanent
+     */
+    allowErrorReporting: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
     newInject: false,
-    renderMermaidGraphsEnabled: false,
-    useExtensions: false,
+    renderMermaidGraphsEnabled: true,
     inlineSymbolSearchEnabled: true,
+    allowErrorReporting: false,
 }
 
 export interface AccessToken {

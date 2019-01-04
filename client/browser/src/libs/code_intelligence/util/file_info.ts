@@ -7,18 +7,30 @@ import { FileInfo } from '../code_intelligence'
 
 export const ensureRevisionsAreCloned = (files: Observable<FileInfo>): Observable<FileInfo> =>
     files.pipe(
-        switchMap(({ repoPath, rev, baseRev, ...rest }) => {
+        switchMap(({ repoName, commitID, baseCommitID, ...rest }) => {
             // Although we get the commit SHA's from elesewhere, we still need to
             // use `resolveRev` otherwise we can't guarantee Sourcegraph has the
             // revision cloned.
-            const resolvingHeadRev = resolveRev({ repoPath, rev }).pipe(retryWhenCloneInProgressError())
-            const resolvingBaseRev = resolveRev({ repoPath, rev: baseRev }).pipe(retryWhenCloneInProgressError())
 
-            return zip(resolvingHeadRev, resolvingBaseRev).pipe(
-                map(() => ({ repoPath, rev, baseRev, ...rest })),
+            // Head
+            const resolvingHeadRev = resolveRev({ repoName, rev: commitID }).pipe(retryWhenCloneInProgressError())
+
+            const requests = [resolvingHeadRev]
+
+            // If theres a base, resolve it as well.
+            if (baseCommitID) {
+                const resolvingBaseRev = resolveRev({ repoName, rev: baseCommitID }).pipe(
+                    retryWhenCloneInProgressError()
+                )
+
+                requests.push(resolvingBaseRev)
+            }
+
+            return zip(...requests).pipe(
+                map(() => ({ repoName, commitID, baseCommitID, ...rest })),
                 catchError(err => {
                     if (err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
-                        return [{ repoPath, rev, baseRev, ...rest }]
+                        return [{ repoName, commitID, baseCommitID, ...rest }]
                     } else {
                         throw err
                     }

@@ -1,0 +1,25 @@
+.action-item {
+    &__content {
+        display: flex;
+        align-items: center;
+    }
+    &--variant-action-item &__content {
+        justify-content: center;
+    }
+
+    // Show loader on top of the action's content. This avoids changing the element's width when loading, which
+    // looks bad.
+    &--loading {
+        position: relative;
+    }
+    &--loading &__content {
+        opacity: 0.3;
+    }
+    &__loader {
+        // Center horizontally.
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+    }
+}

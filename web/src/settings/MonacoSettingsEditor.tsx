@@ -2,10 +2,9 @@ import * as jsonc from '@sqs/jsonc-parser'
 import * as monaco from 'monaco-editor'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../schema/settings.schema.json'
-import contributionSchema from '../../../shared/src/api/protocol/contribution.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -19,9 +18,14 @@ export interface Props {
     height?: number
 
     /**
-     * The JSON Schema that describes the document.
+     * The id of the JSON schema for the document.
      */
-    jsonSchema: { $id: string }
+    jsonSchemaId: string
+
+    /**
+     * Extra schemas that are transitively referenced by jsonSchemaId.
+     */
+    extraSchemas?: { $id: string }[]
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -62,6 +66,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     }
                 })
         )
+
         this.subscriptions.add(
             componentUpdates
                 .pipe(
@@ -74,6 +79,14 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                         this.monaco.editor.setTheme(monacoTheme)
                     }
                 })
+        )
+
+        this.subscriptions.add(
+            componentUpdates.pipe(distinctUntilKeyChanged('jsonSchemaId')).subscribe(props => {
+                if (this.monaco) {
+                    setDiagnosticsOptions(this.monaco, props)
+                }
+            })
         )
     }
 
@@ -139,38 +152,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         }
 
-        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
-            validate: true,
-            allowComments: true,
-            schemas: [
-                {
-                    uri: this.props.jsonSchema.$id,
-                    schema: this.props.jsonSchema,
-                    fileMatch: ['*'],
-                },
-
-                // Include these schemas because they are referenced by other schemas.
-                {
-                    uri: 'http://json-schema.org/draft-07/schema',
-                    schema: jsonSchemaMetaSchema,
-                },
-                {
-                    uri: 'settings.schema.json#',
-                    schema: settingsSchema,
-                },
-                {
-                    // This is the literal relative URI used in extension.schema.json to refer to the contributions
-                    // JSON Schema.
-                    uri: './contribution.schema.json',
-                    schema: contributionSchema,
-                },
-                {
-                    // This is the absolute URI of the contributions JSON Schema used in extension.schema.json.
-                    uri: 'https://sourcegraph.com/v1/contribution.schema.json#',
-                    schema: contributionSchema,
-                },
-            ],
-        })
+        setDiagnosticsOptions(monaco, this.props)
 
         monaco.editor.defineTheme('sourcegraph-dark', {
             base: 'vs-dark',
@@ -196,7 +178,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         // Necessary to wrap in setTimeout or else _standaloneKeyBindingService won't be ready and the editor will
         // refuse to add the command because it's missing the keybinding service.
         setTimeout(() => {
-            if (isStandaloneCodeEditor(editor)) {
+            if (MonacoSettingsEditor.isStandaloneCodeEditor(editor)) {
                 editor.addCommand(
                     monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S,
                     () => {
@@ -219,30 +201,105 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         )
     }
+
+    public static isStandaloneCodeEditor(
+        editor: monaco.editor.ICodeEditor
+    ): editor is monaco.editor.IStandaloneCodeEditor {
+        return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor
+    }
+
+    public static addEditorAction(
+        inputEditor: monaco.editor.IStandaloneCodeEditor,
+        model: monaco.editor.IModel,
+        label: string,
+        id: string,
+        run: ConfigInsertionFunction
+    ): void {
+        inputEditor.addAction({
+            label,
+            id,
+            run: editor => {
+                eventLogger.log('SiteConfigurationActionExecuted', { id })
+                editor.focus()
+                editor.pushUndoStop()
+                const { edits, selectText, cursorOffset } = run(editor.getValue())
+                const monacoEdits = toMonacoEdits(model, edits)
+                let selection: monaco.Selection | undefined
+                if (typeof selectText === 'string') {
+                    const afterText = jsonc.applyEdits(editor.getValue(), edits)
+                    let offset = afterText.slice(edits[0].offset).indexOf(selectText)
+                    if (offset !== -1) {
+                        offset += edits[0].offset
+                        if (typeof cursorOffset === 'number') {
+                            selection = monaco.Selection.fromPositions(
+                                getPositionAt(afterText, offset + cursorOffset),
+                                getPositionAt(afterText, offset + cursorOffset)
+                            )
+                        } else {
+                            selection = monaco.Selection.fromPositions(
+                                getPositionAt(afterText, offset),
+                                getPositionAt(afterText, offset + selectText.length)
+                            )
+                        }
+                    }
+                }
+                if (!selection) {
+                    selection = monaco.Selection.fromPositions(
+                        monacoEdits[0].range.getStartPosition(),
+                        monacoEdits[monacoEdits.length - 1].range.getEndPosition()
+                    )
+                }
+                editor.executeEdits(id, monacoEdits, [selection])
+                editor.revealPositionInCenter(selection.getStartPosition())
+            },
+        })
+    }
 }
 
-export function isStandaloneCodeEditor(
-    editor: monaco.editor.ICodeEditor
-): editor is monaco.editor.IStandaloneCodeEditor {
-    return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor
+function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
+    const extraSchemas = (props.extraSchemas || []).map(schema => ({
+        uri: schema.$id,
+        schema,
+    }))
+
+    m.languages.json.jsonDefaults.setDiagnosticsOptions({
+        validate: true,
+        allowComments: true,
+        schemas: [
+            {
+                uri: 'root#', // doesn't matter as long as it doesn't collide
+                schema: {
+                    $ref: props.jsonSchemaId,
+                },
+                fileMatch: ['*'],
+            },
+
+            // Include these schemas because they are referenced by other schemas.
+            {
+                uri: 'http://json-schema.org/draft-07/schema',
+                schema: jsonSchemaMetaSchema,
+            },
+            {
+                uri: 'settings.schema.json#',
+                schema: settingsSchema,
+            },
+        ].concat(extraSchemas),
+    })
 }
 
-export function toMonacoEdits(
+function toMonacoEdits(
     model: monaco.editor.IModel,
     edits: jsonc.Edit[]
 ): monaco.editor.IIdentifiedSingleEditOperation[] {
-    return edits.map(
-        (edit, i) =>
-            ({
-                identifier: { major: model.getVersionId(), minor: i },
-                range: monaco.Range.fromPositions(
-                    model.getPositionAt(edit.offset),
-                    model.getPositionAt(edit.offset + edit.length)
-                ),
-                forceMoveMarkers: true,
-                text: edit.content,
-            } as monaco.editor.IIdentifiedSingleEditOperation)
-    )
+    return edits.map((edit, i) => ({
+        identifier: { major: model.getVersionId(), minor: i },
+        range: monaco.Range.fromPositions(
+            model.getPositionAt(edit.offset),
+            model.getPositionAt(edit.offset + edit.length)
+        ),
+        forceMoveMarkers: true,
+        text: edit.content,
+    }))
 }
 
 /**
@@ -264,53 +321,6 @@ export type ConfigInsertionFunction = (
      * "|" positioned as "fo|o".
      */
     cursorOffset?: number
-}
-
-export function addEditorAction(
-    inputEditor: monaco.editor.IStandaloneCodeEditor,
-    model: monaco.editor.IModel,
-    label: string,
-    id: string,
-    run: ConfigInsertionFunction
-): void {
-    inputEditor.addAction({
-        label,
-        id,
-        run: editor => {
-            eventLogger.log('SiteConfigurationActionExecuted', { id })
-            editor.focus()
-            editor.pushUndoStop()
-            const { edits, selectText, cursorOffset } = run(editor.getValue())
-            const monacoEdits = toMonacoEdits(model, edits)
-            let selection: monaco.Selection | undefined
-            if (typeof selectText === 'string') {
-                const afterText = jsonc.applyEdits(editor.getValue(), edits)
-                let offset = afterText.slice(edits[0].offset).indexOf(selectText)
-                if (offset !== -1) {
-                    offset += edits[0].offset
-                    if (typeof cursorOffset === 'number') {
-                        selection = monaco.Selection.fromPositions(
-                            getPositionAt(afterText, offset + cursorOffset),
-                            getPositionAt(afterText, offset + cursorOffset)
-                        )
-                    } else {
-                        selection = monaco.Selection.fromPositions(
-                            getPositionAt(afterText, offset),
-                            getPositionAt(afterText, offset + selectText.length)
-                        )
-                    }
-                }
-            }
-            if (!selection) {
-                selection = monaco.Selection.fromPositions(
-                    monacoEdits[0].range.getStartPosition(),
-                    monacoEdits[monacoEdits.length - 1].range.getEndPosition()
-                )
-            }
-            editor.executeEdits(id, monacoEdits, [selection])
-            editor.revealPositionInCenter(selection.getStartPosition())
-        },
-    })
 }
 
 function getPositionAt(text: string, offset: number): monaco.IPosition {

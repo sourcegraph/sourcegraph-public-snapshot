@@ -5,39 +5,52 @@ import {
     DOMFunctions,
     findPositionsFromEvents,
     Hoverifier,
-    HoverOverlay,
     HoverState,
-    LinkComponent,
     PositionAdjuster,
 } from '@sourcegraph/codeintellify'
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
-import { toPrettyBlobURL } from '@sourcegraph/codeintellify/lib/url'
 import * as H from 'history'
 import * as React from 'react'
-import { render } from 'react-dom'
-import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
+import { createPortal, render } from 'react-dom'
+import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
+import { catchError, filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
+import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
-import { Environment } from '../../../../../shared/src/api/client/environment'
-import { TextDocumentItem } from '../../../../../shared/src/api/client/types/textDocument'
+import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
+import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
+import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
+import { HoverContext, HoverOverlay } from '../../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../../shared/src/languages'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
 import {
-    createJumpURLFetcher,
-    createLSPFromExtensions,
-    JumpURLLocation,
-    lspViaAPIXlang,
-    toTextDocumentIdentifier,
-} from '../../shared/backend/lsp'
+    FileSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+    toRootURI,
+    toURIWithPath,
+    ViewStateSpec,
+} from '../../../../../shared/src/util/url'
+import { sendMessage } from '../../browser/runtime'
+import { isInPage } from '../../context'
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
+import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { AbsoluteRepo, AbsoluteRepoFile } from '../../shared/repo'
-import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
+import { eventLogger, sourcegraphUrl } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews, getContentOfCodeView } from './code_views'
-import { applyDecoration, Controllers, initializeExtensions } from './extensions'
+import { applyDecorations, initializeExtensions } from './extensions'
+import { injectViewContextOnSourcegraph } from './external_links'
+
+registerHighlightContributions()
 
 /**
  * Defines a type of code view a given code host can have. It tells us how to
@@ -65,7 +78,7 @@ export interface CodeView {
      * and coming out of codeintellify. For example, Phabricator converts tabs
      * to spaces in it's DOM.
      */
-    adjustPosition?: PositionAdjuster
+    adjustPosition?: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
     /** Props for styling the buttons in the `CodeViewToolbar`. */
     toolbarButtonProps?: ButtonProps
 
@@ -100,6 +113,11 @@ interface OverlayPosition {
  */
 export type MountGetter = () => HTMLElement
 
+/**
+ * The context the code host is in on the current page.
+ */
+export type CodeHostContext = RepoSpec & Partial<RevSpec>
+
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost {
     /**
@@ -108,10 +126,31 @@ export interface CodeHost {
     name: string
 
     /**
+     * Basic contextual information for the current code host.
+     */
+    getContext?: () => CodeHostContext
+    /**
+     * The mount location for the contextual link to Sourcegraph.
+     */
+    getViewContextOnSourcegraphMount?: () => HTMLElement | null
+    /**
+     * Optional class name for the contextual link to Sourcegraph.
+     */
+    contextButtonClassName?: string
+
+    /**
      * Checks to see if the current context the code is running in is within
      * the given code host.
      */
     check: () => Promise<boolean> | boolean
+
+    /**
+     * Gets the mount location for the hover overlay. Defaults to a created `<div>`
+     * that is appended to `document.body`. Use this control to remove the
+     * tooltip when the portion of the page containing the code views is removed
+     * (e.g. from a soft page reload).
+     */
+    getOverlayMount?: () => HTMLElement | null
 
     /**
      * The list of types of code views to try to annotate.
@@ -143,16 +182,18 @@ export interface CodeHost {
      */
     getGlobalDebugMount?: MountGetter
 
-    /** Build the J2D url from the location. */
-    buildJumpURLLocation?: (def: JumpURLLocation) => string
+    /** Construct the URL to the specified file. */
+    urlToFile?: (
+        location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
+    ) => string
 }
 
 export interface FileInfo {
     /**
-     * The path for the repo the file belongs to. If a `baseRepoPath` is provided, this value
-     * is treated as the head repo path.
+     * The path for the repo the file belongs to. If a `baseRepoName` is provided, this value
+     * is treated as the head repo name.
      */
-    repoPath: string
+    repoName: string
     /**
      * The path for the file path for a given `codeView`. If a `baseFilePath` is provided, this value
      * is treated as the head file path.
@@ -168,10 +209,10 @@ export interface FileInfo {
      */
     rev?: string
     /**
-     * The repo bath for the BASE side of a diff. This is useful for Phabricator
+     * The repo name for the BASE side of a diff. This is useful for Phabricator
      * staging areas since they are separate repos.
      */
-    baseRepoPath?: string
+    baseRepoName?: string
     /**
      * The base file path.
      */
@@ -199,21 +240,17 @@ export interface FileInfo {
  * @param codeHost
  */
 function initCodeIntelligence(
-    codeHost: CodeHost,
-    environment: BehaviorSubject<Pick<Environment, 'roots' | 'visibleTextDocuments'>>
+    codeHost: CodeHost
 ): {
-    hoverifier: Hoverifier
-    controllers: Partial<Controllers>
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
+    controllers: ExtensionsControllerProps & PlatformContextProps
 } {
-    const { platformContext, extensionsController }: Partial<Controllers> =
-        useExtensions && codeHost.getCommandPaletteMount
-            ? initializeExtensions(codeHost.getCommandPaletteMount, environment)
-            : {}
-    const simpleProviderFns = extensionsController ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
+    const {
+        platformContext,
+        extensionsController,
+    }: PlatformContextProps & ExtensionsControllerProps = initializeExtensions(codeHost)
 
-    /** Emits when the go to definition button was clicked */
-    const goToDefinitionClicks = new Subject<MouseEvent>()
-    const nextGoToDefinitionClick = (event: MouseEvent) => goToDefinitionClicks.next(event)
+    const { getHover } = createLSPFromExtensions(extensionsController)
 
     /** Emits when the close button was clicked */
     const closeButtonClicks = new Subject<MouseEvent>()
@@ -223,82 +260,115 @@ function initCodeIntelligence(
     const hoverOverlayElements = new Subject<HTMLElement | null>()
     const nextOverlayElement = (element: HTMLElement | null) => hoverOverlayElements.next(element)
 
-    const classNames = ['hover-overlay-mount', `hover-overlay-mount__${codeHost.name}`]
-
-    const createMount = () => {
-        const overlayMount = document.createElement('div')
-        overlayMount.style.height = '0px'
-        for (const className of classNames) {
-            overlayMount.classList.add(className)
-        }
-        document.body.appendChild(overlayMount)
-        return overlayMount
-    }
-
-    const overlayMount = document.querySelector(`.${classNames.join('.')}`) || createMount()
-
     const relativeElement = document.body
-
-    const fetchJumpURL = createJumpURLFetcher(
-        simpleProviderFns.fetchDefinition,
-        codeHost.buildJumpURLLocation || toPrettyBlobURL
-    )
 
     const containerComponentUpdates = new Subject<void>()
 
-    const hoverifier = createHoverifier({
+    registerHoverContributions({ extensionsController, platformContext, history: H.createBrowserHistory() })
+
+    const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>({
         closeButtonClicks,
-        goToDefinitionClicks,
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
             map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
             filter(propertyIsDefined('hoverOverlayElement'))
         ),
-        pushHistory: path => {
-            location.href = path
-        },
-        fetchHover: ({ line, character, part, ...rest }) =>
-            simpleProviderFns
-                .fetchHover({ ...rest, position: { line, character } })
-                .pipe(map(hover => (hover ? (hover as HoverMerged) : hover))),
-        fetchJumpURL,
-        logTelemetryEvent: () => eventLogger.logCodeIntelligenceEvent(),
+        getHover: ({ line, character, part, ...rest }) =>
+            getHover({ ...rest, position: { line, character } }).pipe(
+                map(hover => (hover ? (hover as HoverMerged) : hover))
+            ),
+        getActions: context => getHoverActions({ extensionsController, platformContext }, context),
     })
 
-    const Link: LinkComponent = ({ to, children, ...rest }) => (
-        <a href={new URL(to, sourcegraphUrl).href} {...rest}>
-            {children}
-        </a>
-    )
+    const classNames = ['hover-overlay-mount', `hover-overlay-mount__${codeHost.name}`]
 
-    class HoverOverlayContainer extends React.Component<{}, HoverState> {
+    const createOverlayContainerMount = () => {
+        const overlayMount = document.createElement('div')
+        overlayMount.style.height = '0px'
+        overlayMount.classList.add('overlay-mount-container')
+        document.body.appendChild(overlayMount)
+        return overlayMount
+    }
+
+    const overlayContainerMount = document.querySelector('.overlay-mount-container') || createOverlayContainerMount()
+
+    const getOverlayMount = (): HTMLElement => {
+        let mount: HTMLElement | null = document.querySelector('.sg-overlay-mount')
+        if (mount) {
+            mount.parentElement!.removeChild(mount)
+        }
+
+        if (codeHost.getOverlayMount) {
+            mount = codeHost.getOverlayMount()
+        }
+
+        if (!mount) {
+            mount = document.createElement('div')
+            overlayContainerMount.appendChild(mount)
+        }
+
+        mount.classList.add('sg-overlay-mount')
+        for (const className of classNames) {
+            mount.classList.add(className)
+        }
+
+        return mount
+    }
+
+    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemProps>> {
+        private portal: HTMLElement | null = null
+
+        private observer: MutationObserver
+
         constructor(props: {}) {
             super(props)
             this.state = hoverifier.hoverState
             hoverifier.hoverStateUpdates.subscribe(update => this.setState(update))
+
+            this.observer = new MutationObserver(mutations => {
+                for (const mutation of mutations) {
+                    if (mutation.type === 'childList') {
+                        for (const removedNode of mutation.removedNodes) {
+                            if (removedNode.contains(removedNode)) {
+                                nextCloseButtonClick(new MouseEvent('click'))
+                            }
+                        }
+                    }
+                }
+            })
         }
         public componentDidMount(): void {
             containerComponentUpdates.next()
+            if (this.portal) {
+                this.observer.observe(this.portal.parentElement!, { childList: true })
+            }
         }
         public componentDidUpdate(): void {
+            if (!this.portal || !document.body.contains(this.portal)) {
+                this.portal = getOverlayMount()
+                this.observer.observe(this.portal.parentElement!, { childList: true })
+            }
+
             containerComponentUpdates.next()
         }
         public render(): JSX.Element | null {
             const hoverOverlayProps = this.getHoverOverlayProps()
-            return hoverOverlayProps ? (
-                <HoverOverlay
-                    {...hoverOverlayProps}
-                    linkComponent={Link}
-                    logTelemetryEvent={this.log}
-                    hoverRef={nextOverlayElement}
-                    onGoToDefinitionClick={nextGoToDefinitionClick}
-                    onCloseButtonClick={nextCloseButtonClick}
-                />
-            ) : null
+            return hoverOverlayProps && this.portal
+                ? createPortal(
+                      <HoverOverlay
+                          {...hoverOverlayProps}
+                          hoverRef={nextOverlayElement}
+                          extensionsController={extensionsController!}
+                          platformContext={platformContext!}
+                          location={H.createLocation(window.location)}
+                          onCloseButtonClick={nextCloseButtonClick}
+                      />,
+                      this.portal
+                  )
+                : null
         }
-        private log = () => eventLogger.logCodeIntelligenceEvent()
-        private getHoverOverlayProps(): HoverState['hoverOverlayProps'] {
+        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemProps>['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined
             }
@@ -315,7 +385,12 @@ function initCodeIntelligence(
         }
     }
 
-    render(<HoverOverlayContainer />, overlayMount)
+    render(
+        <TelemetryContext.Provider value={eventLogger}>
+            <HoverOverlayContainer />
+        </TelemetryContext.Provider>,
+        overlayContainerMount
+    )
 
     return { hoverifier, controllers: { platformContext, extensionsController } }
 }
@@ -330,21 +405,38 @@ export interface ResolvedCodeView extends CodeViewWithOutSelector {
 }
 
 function handleCodeHost(codeHost: CodeHost): Subscription {
-    const environmentSubject = new BehaviorSubject<Pick<Environment, 'roots' | 'visibleTextDocuments'>>({
-        roots: null,
-        visibleTextDocuments: null,
-    })
     const {
         hoverifier,
         controllers: { platformContext, extensionsController },
-    } = initCodeIntelligence(codeHost, environmentSubject)
+    } = initCodeIntelligence(codeHost)
 
     const subscriptions = new Subscription()
 
     subscriptions.add(hoverifier)
 
+    const ensureRepoExists = (context: CodeHostContext) =>
+        resolveRev(context).pipe(
+            retryWhenCloneInProgressError(),
+            map(rev => !!rev),
+            catchError(error => {
+                if ((error as Error).name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                    return [false]
+                }
+
+                return [true]
+            })
+        )
+
+    const openOptionsMenu = () => {
+        sendMessage({
+            type: 'openOptionsPage',
+        })
+    }
+
+    injectViewContextOnSourcegraph(sourcegraphUrl, codeHost, ensureRepoExists, isInPage ? undefined : openOptionsMenu)
+
     // Keeps track of all documents on the page since calling this function (should be once per page).
-    let visibleTextDocuments: TextDocumentItem[] = []
+    let visibleViewComponents: ViewComponentData[] = []
 
     subscriptions.add(
         of(document.body)
@@ -366,10 +458,6 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     getToolbarMount,
                     toolbarButtonProps,
                 }) => {
-                    const toRootURI = (ctx: AbsoluteRepo) => `git://${ctx.repoPath}?${ctx.commitID}`
-                    const toURIWithPath = (ctx: AbsoluteRepoFile) =>
-                        `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
-
                     const originalDOM = dom
                     dom = {
                         ...dom,
@@ -383,82 +471,82 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                                 ? null
                                 : originalDOM.getCodeElementFromTarget(target),
                     }
-                    if (extensionsController) {
-                        let content = info.content
-                        let baseContent = info.baseContent
 
-                        if (!content) {
-                            if (!getLineRanges) {
-                                throw new Error('Must either provide a line range getter or provide file contents')
-                            }
+                    let content = info.content
+                    let baseContent = info.baseContent
 
-                            const contents = getContentOfCodeView(codeView, { isDiff, getLineRanges, dom })
-
-                            content = contents.content
-                            baseContent = contents.baseContent
+                    if (!content) {
+                        if (!getLineRanges) {
+                            throw new Error('Must either provide a line range getter or provide file contents')
                         }
 
-                        visibleTextDocuments = [
-                            // All the currently open documents
-                            ...visibleTextDocuments,
-                            // Either a normal file, or HEAD when codeView is a diff
-                            {
+                        const contents = getContentOfCodeView(codeView, { isDiff, getLineRanges, dom })
+
+                        content = contents.content
+                        baseContent = contents.baseContent
+                    }
+
+                    visibleViewComponents = [
+                        // Either a normal file, or HEAD when codeView is a diff
+                        {
+                            type: 'textEditor',
+                            item: {
                                 uri: toURIWithPath(info),
                                 languageId: getModeFromPath(info.filePath) || 'could not determine mode',
                                 text: content!,
                             },
-                        ]
-                        const roots: Environment['roots'] = [{ uri: toRootURI(info) }]
+                            selections: [],
+                            isActive: true,
+                        },
+                        // All the currently open documents, which are all now considered inactive.
+                        ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
+                    ]
+                    const roots: Model['roots'] = [{ uri: toRootURI(info), inputRevision: info.rev || '' }]
 
-                        // When codeView is a diff, add BASE too.
-                        if (baseContent! && info.baseRepoPath && info.baseCommitID && info.baseFilePath) {
-                            visibleTextDocuments.push({
+                    // When codeView is a diff, add BASE too.
+                    if (baseContent! && info.baseRepoName && info.baseCommitID && info.baseFilePath) {
+                        visibleViewComponents.push({
+                            type: 'textEditor',
+                            item: {
                                 uri: toURIWithPath({
-                                    repoPath: info.baseRepoPath,
+                                    repoName: info.baseRepoName,
                                     commitID: info.baseCommitID,
                                     filePath: info.baseFilePath,
                                 }),
                                 languageId: getModeFromPath(info.filePath) || 'could not determine mode',
                                 text: baseContent!,
-                            })
-                            roots.push({
-                                uri: toRootURI({
-                                    repoPath: info.baseRepoPath,
-                                    commitID: info.baseCommitID,
-                                }),
-                            })
-                        }
-
-                        if (extensionsController && !info.baseCommitID) {
-                            let oldDecorations: Unsubscribable[] = []
-
-                            extensionsController.services.textDocumentDecoration
-                                .getDecorations(toTextDocumentIdentifier(info))
-                                .subscribe(decorations => {
-                                    for (const old of oldDecorations) {
-                                        old.unsubscribe()
-                                    }
-                                    oldDecorations = []
-                                    for (const decoration of decorations || []) {
-                                        try {
-                                            oldDecorations.push(
-                                                applyDecoration(dom, {
-                                                    codeView,
-                                                    decoration,
-                                                })
-                                            )
-                                        } catch (e) {
-                                            console.warn(e)
-                                        }
-                                    }
-                                })
-                        }
-
-                        environmentSubject.next({ roots, visibleTextDocuments })
+                            },
+                            // There is no notion of a selection on code hosts yet, so this is empty.
+                            //
+                            // TODO: Support interpreting GitHub #L1-2, etc., URL fragments as selections (and
+                            // similar on other code hosts), or find some other way to get this info.
+                            selections: [],
+                            isActive: false,
+                        })
+                        roots.push({
+                            uri: toRootURI({
+                                repoName: info.baseRepoName,
+                                commitID: info.baseCommitID,
+                            }),
+                            inputRevision: info.baseRev || '',
+                        })
                     }
 
-                    const resolveContext: ContextResolver = ({ part }) => ({
-                        repoPath: part === 'base' ? info.baseRepoPath || info.repoPath : info.repoPath,
+                    let decoratedLines: number[] = []
+                    if (!info.baseCommitID) {
+                        extensionsController.services.textDocumentDecoration
+                            .getDecorations(toTextDocumentIdentifier(info))
+                            .subscribe(decorations => {
+                                decoratedLines = applyDecorations(dom, codeView, decorations || [], decoratedLines)
+                            })
+                    }
+
+                    extensionsController.services.model.model.next({ roots, visibleViewComponents })
+
+                    const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+                        part,
+                    }) => ({
+                        repoName: part === 'base' ? info.baseRepoName || info.repoName : info.repoName,
                         commitID: part === 'base' ? info.baseCommitID! : info.commitID,
                         filePath: part === 'base' ? info.baseFilePath || info.filePath : info.filePath,
                         rev: part === 'base' ? info.baseRev || info.baseCommitID! : info.rev || info.commitID,
@@ -482,21 +570,20 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     const mount = getToolbarMount(codeView)
 
                     render(
-                        <CodeViewToolbar
-                            {...info}
-                            platformContext={platformContext}
-                            extensionsController={extensionsController}
-                            buttonProps={
-                                toolbarButtonProps || {
-                                    className: '',
-                                    style: {},
+                        <TelemetryContext.Provider value={eventLogger}>
+                            <CodeViewToolbar
+                                {...info}
+                                platformContext={platformContext}
+                                extensionsController={extensionsController}
+                                buttonProps={
+                                    toolbarButtonProps || {
+                                        className: '',
+                                        style: {},
+                                    }
                                 }
-                            }
-                            simpleProviderFns={
-                                extensionsController ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
-                            }
-                            location={H.createLocation(window.location)}
-                        />,
+                                location={H.createLocation(window.location)}
+                            />
+                        </TelemetryContext.Provider>,
                         mount
                     )
                 }

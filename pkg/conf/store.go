@@ -1,23 +1,23 @@
 package conf
 
 import (
+	"runtime/debug"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
 // Store manages the in-memory storage, access,
 // and updating of the site configuration in a threadsafe manner.
 type Store struct {
 	configMu  sync.RWMutex
-	lastValid *schema.SiteConfiguration
-	mock      *schema.SiteConfiguration
+	lastValid *Unified
+	mock      *Unified
 
 	rawMu sync.RWMutex
-	raw   string
+	raw   conftypes.RawUnified
 
 	ready chan struct{}
 	once  sync.Once
@@ -32,7 +32,7 @@ func NewStore() *Store {
 
 // LastValid returns the last valid site configuration that this
 // store was updated with.
-func (s *Store) LastValid() *schema.SiteConfiguration {
+func (s *Store) LastValid() *Unified {
 	s.WaitUntilInitialized()
 
 	s.configMu.RLock()
@@ -45,8 +45,8 @@ func (s *Store) LastValid() *schema.SiteConfiguration {
 	return s.lastValid
 }
 
-// Raw returns the last raw JSON string that this store was updated with.
-func (s *Store) Raw() string {
+// Raw returns the last raw configuration that this store was updated with.
+func (s *Store) Raw() conftypes.RawUnified {
 	s.WaitUntilInitialized()
 
 	s.rawMu.RLock()
@@ -56,7 +56,7 @@ func (s *Store) Raw() string {
 
 // Mock sets up mock data for the site configuration. It uses the configuration
 // mutex, to avoid possible races between test code and possible config watchers.
-func (s *Store) Mock(mockery *schema.SiteConfiguration) {
+func (s *Store) Mock(mockery *Unified) {
 	s.configMu.Lock()
 	defer s.configMu.Unlock()
 
@@ -66,8 +66,8 @@ func (s *Store) Mock(mockery *schema.SiteConfiguration) {
 
 type UpdateResult struct {
 	Changed bool
-	Old     *schema.SiteConfiguration
-	New     *schema.SiteConfiguration
+	Old     *Unified
+	New     *Unified
 }
 
 // MaybeUpdate attempts to update the store with the supplied rawConfig.
@@ -76,9 +76,9 @@ type UpdateResult struct {
 // won't be updating and a parsing error will be returned
 // from the previous time that this function was called.
 //
-// configChange is defined iff the cache was actually udpated.
+// configChange is defined iff the cache was actually updated.
 // TODO@ggilmore: write a less-vague description
-func (s *Store) MaybeUpdate(rawConfig string) (UpdateResult, error) {
+func (s *Store) MaybeUpdate(rawConfig conftypes.RawUnified) (UpdateResult, error) {
 	s.rawMu.Lock()
 	defer s.rawMu.Unlock()
 
@@ -91,13 +91,19 @@ func (s *Store) MaybeUpdate(rawConfig string) (UpdateResult, error) {
 		New:     s.lastValid,
 	}
 
-	if s.raw == rawConfig {
+	if rawConfig.Critical == "" {
+		return result, errors.New("invalid critical configuration (empty string)")
+	}
+	if rawConfig.Site == "" {
+		return result, errors.New("invalid site configuration (empty string)")
+	}
+	if s.raw.Equal(rawConfig) {
 		return result, nil
 	}
 
 	s.raw = rawConfig
 
-	newConfig, err := parse.ParseConfigEnvironment(rawConfig)
+	newConfig, err := ParseConfig(rawConfig)
 	if err != nil {
 		return result, errors.Wrap(err, "when parsing rawConfig during update")
 	}
@@ -122,6 +128,9 @@ func (s *Store) WaitUntilInitialized() {
 		// We assume that we're in an unrecoverable deadlock if frontend hasn't
 		// started its configuration server after 30 seconds.
 		case <-time.After(30 * time.Second):
+			// The running goroutine is not necessarily the cause of the
+			// deadlock, so ask Go to dump all goroutine stack traces.
+			debug.SetTraceback("all")
 			panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use a goroutine)")
 		}
 	}

@@ -1,9 +1,11 @@
 package graphqlbackend
 
+import "context"
+
 // DocSitePageResolver is the resolver for the GraphQL field Query.docSitePage.
 //
 // It is set at init time.
-var DocSitePageResolver func(DocSitePageArgs) (DocSitePage, error)
+var DocSitePageResolver func(context.Context, DocSitePageArgs) (DocSitePage, error)
 
 type DocSitePageArgs struct {
 	Path string
@@ -17,6 +19,6 @@ type DocSitePage interface {
 	FilePath() string
 }
 
-func (*schemaResolver) DocSitePage(args *DocSitePageArgs) (DocSitePage, error) {
-	return DocSitePageResolver(*args)
+func (*schemaResolver) DocSitePage(ctx context.Context, args *DocSitePageArgs) (DocSitePage, error) {
+	return DocSitePageResolver(ctx, *args)
 }

@@ -14,17 +14,19 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
-import { displayRepoPath } from '../components/RepoFileLink'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
 import { searchQueryForRepoRev } from '../search'
@@ -32,8 +34,6 @@ import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger } from '../tracking/eventLogger'
-import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
-import { memoizeObservable } from '../util/memoize'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
@@ -53,6 +53,28 @@ const TreeEntry: React.FunctionComponent<{
         </Link>
     )
 }
+
+/**
+ * Use a multi-column layout for tree entries when there are at least this many. See TreePage.scss
+ * for more information.
+ */
+const MIN_ENTRIES_FOR_COLUMN_LAYOUT = 6
+
+const TreeEntriesSection: React.FunctionComponent<{
+    title: string
+    parentPath: string
+    entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
+}> = ({ title, parentPath, entries }) =>
+    entries.length > 0 ? (
+        <section className="tree-page__section">
+            <h3 className="tree-page__section-header">{title}</h3>
+            <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
+                {entries.map((e, i) => (
+                    <TreeEntry key={i} isDir={e.isDirectory} name={e.name} parentPath={parentPath} url={e.url} />
+                ))}
+            </div>
+        </section>
+    ) : null
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -98,7 +120,7 @@ const fetchTreeCommits = memoizeObservable(
 )
 
 interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps {
-    repoPath: string
+    repoName: string
     repoID: GQL.ID
     repoDescription: string
     // filePath is the tree's path in TreePage. We call it filePath for consistency elsewhere.
@@ -141,7 +163,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                 .pipe(
                     distinctUntilChanged(
                         (x, y) =>
-                            x.repoPath === y.repoPath &&
+                            x.repoName === y.repoName &&
                             x.rev === y.rev &&
                             x.commitID === y.commitID &&
                             x.filePath === y.filePath
@@ -149,7 +171,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                     tap(props => this.logViewEvent(props)),
                     switchMap(props =>
                         fetchTree({
-                            repoPath: props.repoPath,
+                            repoName: props.repoName,
                             commitID: props.commitID,
                             rev: props.rev,
                             filePath: props.filePath,
@@ -176,7 +198,7 @@ export class TreePage extends React.PureComponent<Props, State> {
     }
 
     private getQueryPrefix(): string {
-        let queryPrefix = searchQueryForRepoRev(this.props.repoPath, this.props.rev)
+        let queryPrefix = searchQueryForRepoRev(this.props.repoName, this.props.rev)
         if (this.props.filePath) {
             queryPrefix += `file:^${escapeRegExp(this.props.filePath)}/ `
         }
@@ -202,7 +224,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 <header>
                                     <h2 className="tree-page__title">
                                         <RepositoryIcon className="icon-inline" />{' '}
-                                        {displayRepoPath(this.props.repoPath)}
+                                        {displayRepoName(this.props.repoName)}
                                     </h2>
                                     {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
                                     <div className="btn-group mb-3">
@@ -212,27 +234,27 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         >
                                             <SourceCommitIcon className="icon-inline" /> Commits
                                         </Link>
-                                        <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/branches`}>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/branches`}>
                                             <SourceBranchIcon className="icon-inline" /> Branches
                                         </Link>
-                                        <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/tags`}>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/tags`}>
                                             <TagIcon className="icon-inline" /> Tags
                                         </Link>
                                         <Link
                                             className="btn btn-secondary"
                                             to={
                                                 this.props.rev
-                                                    ? `/${this.props.repoPath}/-/compare/...${encodeURIComponent(
+                                                    ? `/${this.props.repoName}/-/compare/...${encodeURIComponent(
                                                           this.props.rev
                                                       )}`
-                                                    : `/${this.props.repoPath}/-/compare`
+                                                    : `/${this.props.repoName}/-/compare`
                                             }
                                         >
                                             <HistoryIcon className="icon-inline" /> Compare
                                         </Link>
                                         <Link
                                             className={`btn btn-secondary`}
-                                            to={`/${this.props.repoPath}/-/stats/contributors`}
+                                            to={`/${this.props.repoName}/-/stats/contributors`}
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
                                         </Link>
@@ -262,38 +284,11 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     <SearchButton />
                                 </Form>
                             </section>
-                            {this.state.treeOrError.directories.length > 0 && (
-                                <section className="tree-page__section">
-                                    <h3 className="tree-page__section-header">Directories</h3>
-                                    <div className="tree-page__entries tree-page__entries-directories">
-                                        {this.state.treeOrError.directories.map((e, i) => (
-                                            <TreeEntry
-                                                key={i}
-                                                isDir={true}
-                                                name={e.name}
-                                                parentPath={this.props.filePath}
-                                                url={e.url}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-                            {this.state.treeOrError.files.length > 0 && (
-                                <section className="tree-page__section">
-                                    <h3 className="tree-page__section-header">Files</h3>
-                                    <div className="tree-page__entries tree-page__entries-files">
-                                        {this.state.treeOrError.files.map((e, i) => (
-                                            <TreeEntry
-                                                key={i}
-                                                isDir={false}
-                                                name={e.name}
-                                                parentPath={this.props.filePath}
-                                                url={e.url}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
+                            <TreeEntriesSection
+                                title="Files and directories"
+                                parentPath={this.props.filePath}
+                                entries={this.state.treeOrError.entries}
+                            />
                             {isDiscussionsEnabled(this.props.settingsCascade) && (
                                 <div className="tree-page__section mt-2 tree-page__section--discussions">
                                     <h3 className="tree-page__section-header">Discussions</h3>
@@ -346,11 +341,11 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     queryConnection={this.queryCommits}
                                     nodeComponent={GitCommitNode}
                                     nodeComponentProps={{
-                                        repoName: this.props.repoPath,
+                                        repoName: this.props.repoName,
                                         className: 'list-group-item',
                                         compact: true,
                                     }}
-                                    updateOnChange={`${this.props.repoPath}:${this.props.rev}:${this.props.filePath}`}
+                                    updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}`}
                                     defaultFirst={7}
                                     history={this.props.history}
                                     shouldUpdateURLQuery={false}
@@ -370,13 +365,13 @@ export class TreePage extends React.PureComponent<Props, State> {
         event.preventDefault()
         submitSearch(
             this.props.history,
-            { query: this.getQueryPrefix() + this.state.query },
+            this.getQueryPrefix() + this.state.query,
             this.props.filePath ? 'tree' : 'repo'
         )
     }
 
     private getPageTitle(): string {
-        const repoStr = displayRepoPath(this.props.repoPath)
+        const repoStr = displayRepoName(this.props.repoName)
         if (this.props.filePath) {
             return `${basename(this.props.filePath)} - ${repoStr}`
         }

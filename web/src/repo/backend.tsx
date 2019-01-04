@@ -1,11 +1,12 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '.'
+import { FetchFileCtx } from '../../../shared/src/components/CodeExcerpt'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
-import { memoizeObservable } from '../util/memoize'
 
 // We don't subclass Error because Error is not subclassable in ES5.
 // Use the internal factory functions and check for the error code on callsites.
@@ -15,15 +16,15 @@ export interface CloneInProgressError extends Error {
     code: typeof ECLONEINPROGESS
     progress?: string
 }
-const createCloneInProgressError = (repoPath: string, progress: string | undefined): CloneInProgressError =>
-    Object.assign(new Error(`Repository ${repoPath} is clone in progress`), {
+const createCloneInProgressError = (repoName: string, progress: string | undefined): CloneInProgressError =>
+    Object.assign(new Error(`Repository ${repoName} is clone in progress`), {
         code: ECLONEINPROGESS as typeof ECLONEINPROGESS,
         progress,
     })
 
 export const EREPONOTFOUND = 'EREPONOTFOUND'
-const createRepoNotFoundError = (repoPath: string): Error =>
-    Object.assign(new Error(`Repository ${repoPath} not found`), { code: EREPONOTFOUND })
+const createRepoNotFoundError = (repoName: string): Error =>
+    Object.assign(new Error(`Repository ${repoName} not found`), { code: EREPONOTFOUND })
 
 export const EREVNOTFOUND = 'EREVNOTFOUND'
 const createRevNotFoundError = (rev?: string): Error =>
@@ -44,11 +45,11 @@ const createRepoSeeOtherError = (redirectURL: string): RepoSeeOtherError =>
  * Fetch the repository.
  */
 export const fetchRepository = memoizeObservable(
-    (args: { repoPath: string }): Observable<GQL.IRepository> =>
+    (args: { repoName: string }): Observable<GQL.IRepository> =>
         queryGraphQL(
             gql`
-                query Repository($repoPath: String!) {
-                    repository(name: $repoPath) {
+                query Repository($repoName: String!) {
+                    repository(name: $repoName) {
                         id
                         name
                         url
@@ -76,7 +77,7 @@ export const fetchRepository = memoizeObservable(
                     throw createRepoSeeOtherError(data.repository.redirectURL)
                 }
                 if (!data.repository) {
-                    throw createRepoNotFoundError(args.repoPath)
+                    throw createRepoNotFoundError(args.repoName)
                 }
                 return data.repository
             })
@@ -98,11 +99,11 @@ export interface ResolvedRev {
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
-    (ctx: { repoPath: string; rev?: string }): Observable<ResolvedRev> =>
+    (ctx: { repoName: string; rev?: string }): Observable<ResolvedRev> =>
         queryGraphQL(
             gql`
-                query ResolveRev($repoPath: String!, $rev: String!) {
-                    repository(name: $repoPath) {
+                query ResolveRev($repoName: String!, $rev: String!) {
+                    repository(name: $repoName) {
                         mirrorInfo {
                             cloneInProgress
                             cloneProgress
@@ -130,11 +131,11 @@ export const resolveRev = memoizeObservable(
                     throw createRepoSeeOtherError(data.repository.redirectURL)
                 }
                 if (!data.repository) {
-                    throw createRepoNotFoundError(ctx.repoPath)
+                    throw createRepoNotFoundError(ctx.repoName)
                 }
                 if (data.repository.mirrorInfo.cloneInProgress) {
                     throw createCloneInProgressError(
-                        ctx.repoPath,
+                        ctx.repoName,
                         data.repository.mirrorInfo.cloneProgress || undefined
                     )
                 }
@@ -154,14 +155,6 @@ export const resolveRev = memoizeObservable(
     makeRepoURI
 )
 
-interface FetchFileCtx {
-    repoPath: string
-    commitID: string
-    filePath: string
-    disableTimeout?: boolean
-    isLightTheme: boolean
-}
-
 interface HighlightedFileResult {
     isDirectory: boolean
     richHTML: string
@@ -173,13 +166,13 @@ const fetchHighlightedFile = memoizeObservable(
         queryGraphQL(
             gql`
                 query HighlightedFile(
-                    $repoPath: String!
+                    $repoName: String!
                     $commitID: String!
                     $filePath: String!
                     $disableTimeout: Boolean!
                     $isLightTheme: Boolean!
                 ) {
-                    repository(name: $repoPath) {
+                    repository(name: $repoName) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 isDirectory
@@ -241,8 +234,8 @@ export const fetchFileExternalLinks = memoizeObservable(
     (ctx: RepoRev & { filePath: string }): Observable<GQL.IExternalLink[]> =>
         queryGraphQL(
             gql`
-                query FileExternalLinks($repoPath: String!, $rev: String!, $filePath: String!) {
-                    repository(name: $repoPath) {
+                query FileExternalLinks($repoName: String!, $rev: String!, $filePath: String!) {
+                    repository(name: $repoName) {
                         commit(rev: $rev) {
                             file(path: $filePath) {
                                 externalURLs {
@@ -276,19 +269,13 @@ export const fetchTree = memoizeObservable(
     (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
-                query Tree($repoPath: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
-                    repository(name: $repoPath) {
+                query Tree($repoName: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
+                    repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 isRoot
                                 url
-                                directories(first: $first) {
-                                    name
-                                    path
-                                    isDirectory
-                                    url
-                                }
-                                files(first: $first) {
+                                entries(first: $first) {
                                     name
                                     path
                                     isDirectory
@@ -315,8 +302,8 @@ export const fetchTreeEntries = memoizeObservable(
     (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
-                query Tree($repoPath: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
-                    repository(name: $repoPath) {
+                query Tree($repoName: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
+                    repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 entries(first: $first, recursiveSingleChild: true) {

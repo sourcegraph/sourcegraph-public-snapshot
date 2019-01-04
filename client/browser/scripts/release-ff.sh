@@ -7,7 +7,7 @@ rm -rf build/web-ext
 mkdir -p build/web-ext
 
 # Sign the bundle
-yarn web-ext sign -s build/firefox -a build/web-ext --api-key $FIREFOX_AMO_ISSUER --api-secret $FIREFOX_AMO_SECRET
+web-ext sign -s build/firefox -a build/web-ext --api-key $FIREFOX_AMO_ISSUER --api-secret $FIREFOX_AMO_SECRET
 
 # Upload to gcp and make it public
 for filename in $(ls build/web-ext); do

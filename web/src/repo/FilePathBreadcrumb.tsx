@@ -1,7 +1,8 @@
 import * as React from 'react'
-import { RepoRev } from '.'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { toPrettyBlobURL, toTreeURL } from '../util/url'
+import { toPrettyBlobURL } from '../../../shared/src/util/url'
+import { RepoRev } from '../../../shared/src/util/url'
+import { toTreeURL } from '../util/url'
 
 interface Props {
     path: string
@@ -51,7 +52,7 @@ export const FilePathBreadcrumb: React.FunctionComponent<
         filePath: string
         isDir: boolean
     }
-> = ({ repoPath, rev, filePath, isDir }) => {
+> = ({ repoName, rev, filePath, isDir }) => {
     const parts = filePath.split('/')
     // tslint:disable-next-line:jsx-no-lambda
     return (
@@ -61,9 +62,9 @@ export const FilePathBreadcrumb: React.FunctionComponent<
             partToUrl={i => {
                 const partPath = parts.slice(0, i + 1).join('/')
                 if (isDir || i < parts.length - 1) {
-                    return toTreeURL({ repoPath, rev, filePath: partPath })
+                    return toTreeURL({ repoName, rev, filePath: partPath })
                 }
-                return toPrettyBlobURL({ repoPath, rev, filePath: partPath })
+                return toPrettyBlobURL({ repoName, rev, filePath: partPath })
             }}
             // tslint:disable-next-line:jsx-no-lambda
             partToClassName={i => (i === parts.length - 1 ? 'part-last' : 'part-directory')}

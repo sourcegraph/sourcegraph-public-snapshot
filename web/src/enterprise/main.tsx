@@ -5,8 +5,6 @@
 
 import '../polyfills'
 
-import '../highlight'
-
 import React from 'react'
 import { render } from 'react-dom'
 import { keybindings } from '../keybindings'

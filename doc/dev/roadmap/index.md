@@ -10,48 +10,69 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ## Future releases
 
-### 3.0-preview (2018-12-03)
+### 3.0 (week of 2019-01-14)
 
-- [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
-- [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
-- [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
-- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
-- [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
-- [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
-- [GitHub user authentication](https://github.com/sourcegraph/sourcegraph/issues/964)
+Code intelligence:
+
 - [Go language support via extension](https://github.com/sourcegraph/sourcegraph/issues/958)
 - [JavaScript/TypeScript language support via extension](https://github.com/sourcegraph/sourcegraph/issues/960)
 - [Python language support via extension](https://github.com/sourcegraph/sourcegraph/issues/959)
-- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
+- [Basic code intel](https://github.com/sourcegraph/sourcegraph/pull/1313)
+- [Datadog metrics extension](https://github.com/sourcegraph/sourcegraph/issues/655)
 
-<small>[Draft announcement](https://github.com/sourcegraph/about/pull/49) --- [All 3.0-preview issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%223.0-preview%22)</small>
+Configuration and deployment:
+
+- [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
+- [External services UI](https://github.com/sourcegraph/sourcegraph/pull/1103)
+- [GitHub user authentication](https://github.com/sourcegraph/sourcegraph/issues/964)
+- [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
+- [Use nginx as HTTP proxy](https://github.com/sourcegraph/sourcegraph/pull/929)
+- [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
+- [Upgrade to PostgreSQL 11](https://github.com/sourcegraph/sourcegraph/issues/1404)
+
+<small>[Draft announcement](https://github.com/sourcegraph/about/pull/68) --- [All 3.0 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%223.0%22)</small>
 
 ---
 
-### 3.0 (2019-01-07)
+### 3.1 (week of 2019-02-04)
 
-- [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
-- [Swift language support](https://github.com/sourcegraph/sourcegraph/issues/979)
+- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
+- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
+- Migration paths from 2.x to 3.x
+- [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
+- [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
-- [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
-- [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981)
-- Codecov extension
+- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
+- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
+
+---
+
+### Future
+
+Code intelligence
+
+- [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
+- [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
+- [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981) (followup from 3.0)
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
+- PHP language support via extension
 
----
+Sourcegraph extensions
 
-### 3.1 (2019-02-04)
+- [Support and documentation for testing Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/733)
+- [Improved Sourcegraph extension documentation](https://github.com/sourcegraph/sourcegraph/issues/1151)
+- [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
+- Codecov extension
+- 3rd-party extensions: LightStep, Sentry, FOSSA, SonarQube, Datadog, LaunchDarkly, Figma
+- Configuration data search extension
+- Improved code host support for Sourcegraph extensions
+- [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
 
-<!-- TODO: Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@francisschmaltz][francisschmaltz] [@ijsnow][ijsnow]
-Ruby language support | | Code intelligence, sourcegraph-ruby | T.B.D.
-Browser authorization flow for clients
-- [LDAP and Active Directory user authentication](https://github.com/sourcegraph/sourcegraph/issues/963)
-Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
-Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow] -->
+Other
 
----
-
-### 3.2 (2019-03-04)
+- Enhanced notification preferences
+- [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)
+- API access logging
 
 ---
 
@@ -92,7 +113,6 @@ See [previous Sourcegraph releases](previous_releases.md).
 [felixfbecker]: https://github.com/felixfbecker
 [slimsag]: https://github.com/slimsag
 [kattmingming]: https://github.com/kattmingming
-
 
 <!--
 

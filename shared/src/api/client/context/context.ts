@@ -1,5 +1,6 @@
 import { basename, dirname, extname } from 'path'
-import { Environment } from '../environment'
+import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
+import { Model, ViewComponentData } from '../model'
 import { TextDocumentItem } from '../types/textDocument'
 
 /**
@@ -19,39 +20,54 @@ export function applyContextUpdate(base: Context, update: Context): Context {
 }
 
 /**
- * Context is an arbitrary, immutable set of key-value pairs.
+ * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
+ *
+ * @template T If you have a value with a property of type T that is not one of the primitive types listed below
+ * (or Context), you can use Context<T> to hold that value. T must be a value that can be represented by a JSON
+ * object.
  */
-export interface Context {
-    [key: string]: string | number | boolean | Context | null
-}
+export interface Context<T = never>
+    extends Record<
+            string,
+            string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
+        > {}
 
-/** A context that has no properties. */
-export const EMPTY_CONTEXT: Context = {}
+export type ContributionScope =
+    | (Pick<ViewComponentData, 'type' | 'selections'> & {
+          item: Pick<TextDocumentItem, 'uri' | 'languageId'>
+      })
+    | { type: 'panelView'; id: string }
 
 /**
- * Looks up a key in the computed context, which consists of special context properties (with higher precedence)
- * and the environment's context properties (with lower precedence).
+ * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
+ * and the context entries (with lower precedence).
  *
- * @param key the context property key to look up
+ * @param expr the context expr to evaluate
  * @param scope the user interface component in whose scope this computation should occur
  */
-export function getComputedContextProperty(environment: Environment, key: string, scope?: TextDocumentItem): any {
+export function getComputedContextProperty(
+    model: Model,
+    settings: SettingsCascadeOrError,
+    context: Context<any>,
+    key: string,
+    scope?: ContributionScope
+): any {
     if (key.startsWith('config.')) {
         const prop = key.slice('config.'.length)
-        const value = environment.configuration.final[prop]
+        const value = isSettingsValid(settings) ? settings.final[prop] : undefined
         // Map undefined to null because an undefined value is treated as "does not exist in
         // context" and an error is thrown, which is undesirable for config values (for
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const textDocument: TextDocumentItem | null =
-        scope || (environment.visibleTextDocuments && environment.visibleTextDocuments[0])
+    const component: ContributionScope | null =
+        scope || (model.visibleViewComponents && model.visibleViewComponents.find(({ isActive }) => isActive)) || null
     if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
-        return !!textDocument
+        return !!component
     }
     if (key.startsWith('resource.')) {
-        if (!textDocument) {
-            return undefined
+        if (!component || component.type !== 'textEditor') {
+            return null
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
         // path relative to the repository's root? If it's a file on disk, then "path" could also mean the
@@ -59,33 +75,57 @@ export function getComputedContextProperty(environment: Environment, key: string
         const prop = key.slice('resource.'.length)
         switch (prop) {
             case 'uri':
-                return textDocument.uri
+                return component.item.uri
             case 'basename':
-                return basename(textDocument.uri)
+                return basename(component.item.uri)
             case 'dirname':
-                return dirname(textDocument.uri)
+                return dirname(component.item.uri)
             case 'extname':
-                return extname(textDocument.uri)
+                return extname(component.item.uri)
             case 'language':
-                return textDocument.languageId
-            case 'textContent':
-                return textDocument.text
+                return component.item.languageId
             case 'type':
                 return 'textDocument'
         }
     }
     if (key.startsWith('component.')) {
-        if (!textDocument) {
-            return undefined
+        if (!component || component.type !== 'textEditor') {
+            return null
         }
         const prop = key.slice('component.'.length)
         switch (prop) {
             case 'type':
                 return 'textEditor'
+            case 'selections':
+                return component.selections
+            case 'selection':
+                return component.selections[0] || null
+            case 'selection.start':
+                return component.selections[0] ? component.selections[0].start : null
+            case 'selection.end':
+                return component.selections[0] ? component.selections[0].end : null
+            case 'selection.start.line':
+                return component.selections[0] ? component.selections[0].start.line : null
+            case 'selection.start.character':
+                return component.selections[0] ? component.selections[0].start.character : null
+            case 'selection.end.line':
+                return component.selections[0] ? component.selections[0].end.line : null
+            case 'selection.end.character':
+                return component.selections[0] ? component.selections[0].end.character : null
+        }
+    }
+    if (key.startsWith('panel.activeView.')) {
+        if (!component || component.type !== 'panelView') {
+            return null
+        }
+        const prop = key.slice('panel.activeView.'.length)
+        switch (prop) {
+            case 'id':
+                return component.id
         }
     }
     if (key === 'context') {
-        return environment.context
+        return context
     }
-    return environment.context[key]
+    return context[key]
 }

@@ -236,9 +236,7 @@ export class SymbolsDropdownContainer extends React.Component<Props, State> {
 
         const { repoKey } = getContext()
 
-        const symbolResults = fetchSymbols({
-            query: `repo:^${repoKey}\$ type:symbol ${queryText}`,
-        }).pipe(
+        const symbolResults = fetchSymbols(`repo:^${repoKey}\$ type:symbol ${queryText}`).pipe(
             catchError(err => {
                 console.error(err)
                 return [asError(err)]
@@ -288,7 +286,7 @@ export class SymbolsDropdownContainer extends React.Component<Props, State> {
     private extractSymbolQueries(text: string): SymbolQuery[] {
         const out: SymbolQuery[] = []
 
-        const symbolAutoCompleteRegexp = /!(\w[^\s]*)/g
+        const symbolAutoCompleteRegexp = /@!(\w[^\s]*)/g
 
         let match = symbolAutoCompleteRegexp.exec(text)
 

@@ -55,8 +55,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [gitMaxConcurrentClones](all.md#gitmaxconcurrentclones-integer)
 
-- [repos.list](all.md#repos-list-array)
-
 - [reviewBoard](all.md#reviewboard-array)
 
 - [lightstepAccessToken](all.md#lightstepaccesstoken-string)
@@ -64,10 +62,6 @@ For more information, see ["Configuration overview"](index.md).
 - [lightstepProject](all.md#lightstepproject-string)
 
 - [useJaeger](all.md#usejaeger-boolean)
-
-- [noGoGetDomains](all.md#nogogetdomains-string)
-
-- [blacklistGoGet](all.md#blacklistgoget-array)
 
 - [repoListUpdateInterval](all.md#repolistupdateinterval-integer)
 
@@ -84,16 +78,6 @@ For more information, see ["Configuration overview"](index.md).
 - [licenseKey](all.md#licensekey-string)
 
 - [maxReposToSearch](all.md#maxrepostosearch-integer)
-
-- [executeGradleOriginalRootPaths](all.md#executegradleoriginalrootpaths-string)
-
-- [privateArtifactRepoID](all.md#privateartifactrepoid-string)
-
-- [privateArtifactRepoURL](all.md#privateartifactrepourl-string)
-
-- [privateArtifactRepoUsername](all.md#privateartifactrepousername-string)
-
-- [privateArtifactRepoPassword](all.md#privateartifactrepopassword-string)
 
 - [parentSourcegraph](all.md#parentsourcegraph-object)
 
@@ -114,8 +98,6 @@ For more information, see ["Configuration overview"](index.md).
 - [email.address](all.md#email-address-string)
 
 - [update.channel](all.md#updatechannel-string-enum)
-
-- [langservers](all.md#langservers-array)
 
 - [extensions](all.md#extensions-object)
 
@@ -217,17 +199,6 @@ Whether built-in searches should be hidden on the Searches page.
 Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 
 Properties of the `experimentalFeatures` object:
-
-### jumpToDefOSSIndex (string, enum)
-
-Enables or disables consulting the OSS package index on Sourcegraph.com for cross repository jump to definition. When enabled Sourcegraph.com will receive Code Intelligence requests when they fail to resolve locally. NOTE: disablePublicRepoRedirects must not be set, or should be set to false.
-
-This property must be one of the following enum values:
-
-- `enabled`
-- `disabled`
-
-Default: `"disabled"`
 
 ### canonicalURLRedirect (string, enum)
 
@@ -439,14 +410,6 @@ Default: `5`
 
 <br/>
 
-## repos.list (array)
-
-JSON array of configuration for external repositories.
-
-The object is an array with all elements of the type [`Repository`](all.md#repository-object).
-
-<br/>
-
 ## reviewBoard (array)
 
 JSON array of configuration for Review Board.
@@ -487,24 +450,6 @@ following:
 1.  `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh`
 1.  `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`
 1.  Go to http://localhost:16686 to view the Jaeger dashboard.
-
-<br/>
-
-## noGoGetDomains (string)
-
-List of domains in import paths to NOT perform `go get` on, but instead treat as standard Git repositories. Separated by ','.
-
-For example, if your code imports non-go-gettable packages like `"mygitolite.aws.me.org/mux.git/subpkg"` you may set this option to `"mygitolite.aws.me.org"` and Sourcegraph will effectively run `git clone mygitolite.aws.me.org/mux.git` instead of performing the usual `go get` dependency resolution behavior.
-
-<br/>
-
-## blacklistGoGet (array)
-
-List of domains to blacklist dependency fetching from. Separated by ','.
-
-Unlike `noGoGetDomains` (which tries to use a hueristic to determine where to clone the dependencies from), this option outright prevents fetching of dependencies with the given domain name. This will prevent code intelligence from working on these dependencies, so most users should not use this option.
-
-The object is an array with all elements of the type `string`.
 
 <br/>
 
@@ -555,37 +500,6 @@ The license key associated with a Sourcegraph product subscription, which is nec
 The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.
 
 Default: `500`
-
-<br/>
-
-## executeGradleOriginalRootPaths (string)
-
-Java: A comma-delimited list of patterns that selects repository revisions for which to execute Gradle scripts, rather than extracting Gradle metadata statically. **Security note:** these should be restricted to repositories within your own organization. A percent sign ('%') can be used to prefix-match. For example, `git://my.internal.host/org1/%,git://my.internal.host/org2/repoA?%` would select all revisions of all repositories in org1 and all revisions of repoA in org2.
-Note: this field is misnamed, as it matches against the originalRootURI LSP initialize parameter, rather than the no-longer-used originalRootPath parameter.
-
-<br/>
-
-## privateArtifactRepoID (string)
-
-Java: Private artifact repository ID in your build files. If you do not explicitly include the private artifact repository, then set this to some unique string (e.g,. "my-repository").
-
-<br/>
-
-## privateArtifactRepoURL (string)
-
-Java: The URL that corresponds to privateArtifactRepoID (e.g., http://my.artifactory.local/artifactory/root).
-
-<br/>
-
-## privateArtifactRepoUsername (string)
-
-Java: The username to authenticate to the private Artifactory.
-
-<br/>
-
-## privateArtifactRepoPassword (string)
-
-Java: The password to authenticate to the private Artifactory.
 
 <br/>
 
@@ -707,44 +621,6 @@ Default: `"release"`
 
 <br/>
 
-## langservers (array)
-
-Language server configuration.
-
-The object is an array with all elements of the type `object`.
-
-The array object has the following properties:
-
-- `language` (string, required)
-  Name of the language mode for the language server (e.g. go, java)
-
-- `address` (string)
-  TCP address of the language server. Required (except for Sourcegraph cluster deployments).
-  Additional restrictions:
-
-  - Regex pattern: `^tcp://`
-
-- `initializationOptions` (object)
-  LSP initialization options. This object will be set as the `initializationOptions` field in LSP initialize requests (https://microsoft.github.io/language-server-protocol/specification#initialize).
-
-- `disabled` (boolean)
-  Whether or not this language server is disabled.
-  Default: `false`
-
-- `metadata` (object)
-  Language server metadata. Used to populate various UI elements.
-  Properties of the `metadata` object:
-  #### `experimental` (boolean)
-  Whether or not this language server should be considered experimental. Has no effect on behavior, only effects how the language server is presented e.g. in the UI.
-  #### `homepageURL` (string)
-  URL to the language server's homepage, if available.
-  #### `issuesURL` (string)
-  URL to the language server's open/known issues, if available.
-  #### `docsURL` (string)
-  URL to the language server's documentation, if available.
-
-<br/>
-
 ## extensions (object)
 
 Configures Sourcegraph extensions.
@@ -843,7 +719,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Gi
 
 If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 
-If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication)..
+If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/auth.md#repositories-that-need-https-or-ssh-authentication)..
 
 This property must be one of the following enum values:
 
@@ -946,7 +822,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Gi
 
 If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).
 
-If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/auth.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 
@@ -1037,7 +913,7 @@ The type of Git URLs to use for cloning and fetching Git repositories on this Bi
 
 If "http", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).
 
-If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the [documentation for how to provide SSH private keys and known_hosts](../repo/auth.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 

@@ -94,6 +94,11 @@ func (r *nodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToExternalService() (*externalServiceResolver, bool) {
+	n, ok := r.node.(*externalServiceResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
 	n, ok := r.node.(*gitRefResolver)
 	return n, ok
@@ -164,6 +169,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return nil, errors.New("not implemented")
 	case "ExternalAccount":
 		return externalAccountByID(ctx, id)
+	case externalServiceIDKind:
+		return externalServiceByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
 	case "Repository":
@@ -188,19 +195,34 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {
-	Name *string
+	Name     *string
+	CloneURL *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
 }) (*repositoryResolver, error) {
-	if args.Name != nil {
-		args.URI = args.Name
+	var name api.RepoName
+	if args.URI != nil {
+		// Deprecated query by "URI"
+		name = api.RepoName(*args.URI)
+	} else if args.Name != nil {
+		// Query by name
+		name = api.RepoName(*args.Name)
+	} else if args.CloneURL != nil {
+		// Query by git clone URL
+		var err error
+		name, err = reposourceCloneURLToRepoName(ctx, *args.CloneURL)
+		if err != nil {
+			return nil, err
+		}
+		if name == "" {
+			// Clone URL could not be mapped to a code host
+			return nil, nil
+		}
+	} else {
+		return nil, errors.New("Neither name nor cloneURL given")
 	}
 
-	if args.URI == nil {
-		return nil, nil
-	}
-
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
@@ -208,10 +230,6 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
-		return nil, err
-	}
-
-	if err := refreshRepo(ctx, repo); err != nil {
 		return nil, err
 	}
 
@@ -232,15 +250,6 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &phabricatorRepoResolver{repo}, nil
-}
-
-var skipRefresh = false // set by tests
-
-func refreshRepo(ctx context.Context, repo *types.Repo) error {
-	if skipRefresh {
-		return nil
-	}
-	return backend.Repos.RefreshIndex(ctx, repo)
 }
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {

@@ -4,13 +4,13 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
+import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { ActionItem } from '../components/ActionItem'
 import { PopoverButton } from '../components/PopoverButton'
-import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
@@ -181,7 +181,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         const leftActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'left')
         const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
 
-        const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.name))
+        const [repoDir, repoBase] = splitPath(displayRepoName(this.props.repo.name))
         const context: RepoHeaderContext = {
             repoName: this.props.repo.name,
             encodedRev: this.props.rev,
@@ -239,6 +239,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <ul className="navbar-nav">
                     <ActionsNavItems
                         menu={ContributableMenu.EditorTitle}
+                        actionItemClass="nav-link"
                         extensionsController={this.props.extensionsController}
                         platformContext={this.props.platformContext}
                         location={this.props.location}
@@ -247,10 +248,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
                             condition(context) && (
                                 <li className="nav-item" key={label}>
-                                    <ActionItem to={to(context)} data-tooltip={tooltip}>
+                                    <LinkOrButton to={to(context)} data-tooltip={tooltip}>
                                         {Icon && <Icon className="icon-inline" />}{' '}
                                         <span className="d-none d-lg-inline">{label}</span>
-                                    </ActionItem>
+                                    </LinkOrButton>
                                 </li>
                             )
                     )}
@@ -261,10 +262,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     ))}
                     {this.props.repo.viewerCanAdminister && (
                         <li className="nav-item">
-                            <ActionItem to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
+                            <LinkOrButton to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
                                 <SettingsIcon className="icon-inline" />{' '}
                                 <span className="d-none d-lg-inline">Settings</span>
-                            </ActionItem>
+                            </LinkOrButton>
                         </li>
                     )}
                 </ul>

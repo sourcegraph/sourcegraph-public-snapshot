@@ -17,7 +17,9 @@ func TestGitHub_cloneURLToRepoName(t *testing.T) {
 		urls: []urlToRepoName{
 			{"git@github.com:gorilla/mux.git", "github.com/gorilla/mux"},
 			{"git@github.com:/gorilla/mux.git", "github.com/gorilla/mux"},
+			{"git+https://github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 			{"https://github.com/gorilla/mux.git", "github.com/gorilla/mux"},
+			{"https://www.github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 			{"https://oauth2:ACCESS_TOKEN@github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 
 			{"git@asdf.com:gorilla/mux.git", ""},
@@ -42,7 +44,7 @@ func TestGitHub_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoName, err := GitHub{&test.conn}.cloneURLToRepoName(u.cloneURL)
+			repoName, err := GitHub{&test.conn}.CloneURLToRepoName(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

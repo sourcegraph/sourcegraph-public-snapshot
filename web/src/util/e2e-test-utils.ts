@@ -7,5 +7,5 @@ import { OperationOptions } from 'retry'
  * @param fn The async assertion function to retry
  * @param options Option overrides passed to pRetry
  */
-export const retry = (fn: (attempt: number) => Promise<void>, options: OperationOptions = {}) =>
+export const retry = (fn: (attempt: number) => Promise<any>, options: OperationOptions = {}) =>
     pRetry(fn, { factor: 1, ...options })

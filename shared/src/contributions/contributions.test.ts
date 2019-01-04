@@ -1,11 +1,10 @@
-import assert from 'assert'
 import { ActionItemProps } from '../actions/ActionItem'
 import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from './contributions'
 
 describe('getContributedActionItems', () => {
-    it('gets action items', () =>
-        assert.deepStrictEqual(
+    test('gets action items', () =>
+        expect(
             getContributedActionItems(
                 {
                     actions: [
@@ -19,13 +18,12 @@ describe('getContributedActionItems', () => {
                     },
                 },
                 ContributableMenu.CommandPalette
-            ),
-            [
-                {
-                    action: { id: 'b', command: 'b', title: 'tb', description: 'db' },
-                    altAction: { id: 'c', command: 'c', title: 'tc', description: 'dc' },
-                },
-                { action: { id: 'a', command: 'a', title: 'ta', description: 'da' }, altAction: undefined },
-            ] as ActionItemProps[]
-        ))
+            )
+        ).toEqual([
+            {
+                action: { id: 'b', command: 'b', title: 'tb', description: 'db' },
+                altAction: { id: 'c', command: 'c', title: 'tc', description: 'dc' },
+            },
+            { action: { id: 'a', command: 'a', title: 'ta', description: 'da' }, altAction: undefined },
+        ] as ActionItemProps[]))
 })

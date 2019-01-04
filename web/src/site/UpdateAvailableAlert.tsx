@@ -28,7 +28,7 @@ export const UpdateAvailableAlert: React.FunctionComponent<{
         </a>&nbsp;-&nbsp;
         <a
             className="site-alert__link"
-            href="https://about.sourcegraph.com/changelog"
+            href="https://about.sourcegraph.com/changelog" // this is the old URL, but it redirects
             target="_blank"
             onClick={onClickChangelog}
         >

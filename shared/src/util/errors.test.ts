@@ -1,27 +1,26 @@
-import assert from 'assert'
 import { asError, isErrorLike } from './errors'
 
 describe('isErrorLike', () => {
-    it('reports true for Error values', () => assert.ok(isErrorLike(new Error('m'))))
-    it('reports true for error-like values', () => assert.ok(isErrorLike({ message: 'm' })))
-    it('reports false for non-error-like values', () => assert.ok(!isErrorLike('m')))
+    test('reports true for Error values', () => expect(isErrorLike(new Error('m'))).toBeTruthy())
+    test('reports true for error-like values', () => expect(isErrorLike({ message: 'm' })).toBeTruthy())
+    test('reports false for non-error-like values', () => expect(!isErrorLike('m')).toBeTruthy())
 })
 
 describe('asError', () => {
-    it('preserves Error values', () => {
+    test('preserves Error values', () => {
         const err = new Error('m')
-        assert.strictEqual(asError(err), err)
+        expect(asError(err)).toBe(err)
     })
 
-    it('creates Error values from error-like values', () => {
+    test('creates Error values from error-like values', () => {
         const err = asError({ message: 'm' })
-        assert.ok(isErrorLike(err))
-        assert.strictEqual(err.message, 'm')
+        expect(isErrorLike(err)).toBeTruthy()
+        expect(err.message).toBe('m')
     })
 
-    it('creates Error values from strings', () => {
+    test('creates Error values from strings', () => {
         const err = asError('m')
-        assert.ok(isErrorLike(err))
-        assert.strictEqual(err.message, 'm')
+        expect(isErrorLike(err)).toBeTruthy()
+        expect(err.message).toBe('m')
     })
 })

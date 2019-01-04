@@ -12,7 +12,6 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
-import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
@@ -29,7 +28,6 @@ export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        ExtensionsDocumentsProps,
         PlatformContextProps {
     repo: GQL.IRepository
     rev: string
@@ -46,7 +44,6 @@ interface RepoRevContainerProps
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     routes: ReadonlyArray<RepoRevContainerRoute>
     repo: GQL.IRepository
@@ -83,8 +80,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
 
     public componentDidMount(): void {
         const repoRevChanges = this.propsUpdates.pipe(
-            // Pick repoPath and rev out of the props
-            map(props => ({ repoPath: props.repo.name, rev: props.rev })),
+            // Pick repoName and rev out of the props
+            map(props => ({ repoName: props.repo.name, rev: props.rev })),
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
 
@@ -94,8 +91,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 .pipe(
                     // Reset resolved rev / error state
                     tap(() => this.props.onResolvedRevOrError(undefined)),
-                    switchMap(({ repoPath, rev }) =>
-                        defer(() => resolveRev({ repoPath, rev })).pipe(
+                    switchMap(({ repoName, rev }) =>
+                        defer(() => resolveRev({ repoName, rev })).pipe(
                             // On a CloneInProgress error, retry after 1s
                             retryWhen(errors =>
                                 errors.pipe(
@@ -193,8 +190,6 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         const context: RepoRevContainerContext = {
             platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
-            extensionsOnRootsChange: this.props.extensionsOnRootsChange,
-            extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             isLightTheme: this.props.isLightTheme,
             repo: this.props.repo,
             repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,
@@ -220,7 +215,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             popoverElement={
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
-                                    repoPath={this.props.repo.name}
+                                    repoName={this.props.repo.name}
                                     defaultBranch={this.props.resolvedRevOrError.defaultBranch}
                                     currentRev={this.props.rev}
                                     currentCommitID={this.props.resolvedRevOrError.commitID}

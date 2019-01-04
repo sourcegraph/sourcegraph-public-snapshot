@@ -3,6 +3,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 
 interface Props {
@@ -76,9 +77,15 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     >
                         Use {this.props.isLightTheme ? 'dark' : 'light'} theme
                     </button>
-                    <Link to="/help" className="dropdown-item">
-                        Help
-                    </Link>
+                    {window.context.sourcegraphDotComMode ? (
+                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
+                            Help
+                        </a>
+                    ) : (
+                        <Link to="/help" className="dropdown-item">
+                            Help
+                        </Link>
+                    )}
                     {this.props.authenticatedUser.siteAdmin && (
                         <>
                             <DropdownItem divider={true} />
@@ -112,6 +119,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
     private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     private onThemeChange = () => {
+        eventLogger.log(this.props.isLightTheme ? 'DarkThemeClicked' : 'LightThemeClicked')
         this.setState(prevState => ({ isOpen: !prevState.isOpen }), this.props.onThemeChange)
     }
 }

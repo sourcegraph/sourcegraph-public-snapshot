@@ -30,6 +30,8 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
+const EXTRA_SCHEMAS = [siteSchemaJSON]
+
 /**
  * A page displaying the site configuration.
  */
@@ -64,15 +66,18 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.remoteUpdates
                 .pipe(
                     tap(() => this.setState({ saving: true, error: undefined })),
-                    concatMap(event =>
-                        updateSiteConfiguration(event).pipe(
+                    concatMap(newContents => {
+                        const lastConfiguration = this.state.site && this.state.site.configuration
+                        const lastConfigurationID = (lastConfiguration && lastConfiguration.id) || 0
+
+                        return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ saving: false, error })
                                 return []
                             })
                         )
-                    ),
+                    }),
                     tap(restartToApply => {
                         if (restartToApply) {
                             window.context.needServerRestart = restartToApply
@@ -260,7 +265,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             <DynamicallyImportedMonacoSettingsEditor
                                 value={contents || ''}
                                 actions={siteConfigActions}
-                                jsonSchema={siteSchemaJSON}
+                                jsonSchemaId="site.schema.json#"
+                                extraSchemas={EXTRA_SCHEMAS}
                                 onDirtyChange={this.onDirtyChange}
                                 canEdit={this.state.site.configuration.canUpdate}
                                 saving={this.state.saving}

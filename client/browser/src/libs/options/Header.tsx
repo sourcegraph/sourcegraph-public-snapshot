@@ -1,4 +1,4 @@
-import { SettingsOutlineIcon } from 'mdi-react'
+import SettingsOutlineIcon from 'mdi-react/SettingsOutlineIcon'
 import * as React from 'react'
 
 export interface OptionsHeaderProps {

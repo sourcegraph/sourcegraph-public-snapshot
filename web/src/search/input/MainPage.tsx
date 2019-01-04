@@ -6,10 +6,10 @@ import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
@@ -17,7 +17,7 @@ import { CodeIntellifyBlob } from './CodeIntellifyBlob'
 import { QueryInputForModal } from './QueryInputForModal'
 import { SearchButton } from './SearchButton'
 
-interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -233,10 +233,10 @@ export class MainPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        const searchOptions = parseSearchURLQuery(props.location.search)
+        const query = parseSearchURLQuery(props.location.search)
 
         this.state = {
-            userQuery: (searchOptions && searchOptions.query) || '',
+            userQuery: query || '',
             modalSearchOpen: false,
             modalSearchClosing: false,
             modalIntelligenceOpen: false,
@@ -388,8 +388,8 @@ export class MainPage extends React.Component<Props, State> {
                                     <p>
                                         Solve problems before they exist, commit by commit. Code intelligence makes
                                         browsing code easier, with IDE-like hovers, go-to-definition, and
-                                        find-references on your code, powered by language servers based on the
-                                        open-source Language Server Protocol.
+                                        find-references on your code, powered by Sourcegraph extensions and language
+                                        servers based on the open-source Language Server Protocol.
                                     </p>
                                     <p>
                                         It even works in code review diffs on GitHub and GitLab with our browser
@@ -669,7 +669,7 @@ export class MainPage extends React.Component<Props, State> {
                                         autoFocus={'cursor-at-end'}
                                         hasGlobalQueryBehavior={true}
                                     />
-                                    <SearchButton />
+                                    <SearchButton noHelp={true} noLabel={true} />
                                 </div>
                             </Form>
                         </div>
@@ -1017,12 +1017,12 @@ export class MainPage extends React.Component<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, { query: this.state.userQuery }, 'home')
+        submitSearch(this.props.history, this.state.userQuery, 'home')
     }
 
     private getPageTitle(): string | undefined {
-        const options = parseSearchURLQuery(this.props.location.search)
-        if (options && options.query) {
+        const query = parseSearchURLQuery(this.props.location.search)
+        if (query) {
             return `${limitString(this.state.userQuery, 25, true)}`
         }
         return undefined

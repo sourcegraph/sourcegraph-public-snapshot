@@ -105,6 +105,10 @@ function score1(selector: DocumentSelector[0], candidateUri: string, candidateLa
     }
 
     const { language, scheme, pattern } = selector
+    if (!language && !scheme && !pattern) {
+        // `{}` was passed as a document filter, treat it like a wildcard
+        return 5
+    }
     let ret = 0
     if (scheme) {
         if (candidateUri.startsWith(scheme + ':')) {

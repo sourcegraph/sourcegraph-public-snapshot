@@ -5,10 +5,9 @@
   "description": "The Sourcegraph web app",
   "license": "MIT",
   "scripts": {
-    "test": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require src/util/long-stack-traces.ts --timeout 10000 'src/**/*.test.ts?(x)'",
-    "cover": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register mocha --timeout 10000 './src/**/*.test.ts?(x)'",
-    "test-e2e": "cross-env OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require ./src/util/long-stack-traces.ts --timeout 60000 --slow 5000 --exit './src/**/*.test.e2e.ts?(x)'",
-    "test-e2e-sgdev": "env SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require ./src/util/long-stack-traces.ts --timeout 60000 --slow 5000 --exit './src/**/*.test.e2e.ts?(x)'",
+    "test": "jest --testPathIgnorePatterns e2e",
+    "test-e2e": "cross-env OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ jest --coverage=false e2e",
+    "test-e2e-sgdev": "env SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} jest --coverage=false e2e",
     "build": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp build",
     "watch": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watch",
     "watch-webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watchWebpack",
@@ -27,17 +26,5 @@
     {
       "path": "../ui/assets/scripts/app.bundle.js"
     }
-  ],
-  "nyc": {
-    "include": [
-      "src/**/*.ts?(x)"
-    ],
-    "exclude": [
-      "**/*.test.ts?(x)"
-    ],
-    "extension": [
-      ".tsx",
-      ".ts"
-    ]
-  }
+  ]
 }

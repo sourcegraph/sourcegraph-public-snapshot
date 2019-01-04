@@ -16,15 +16,11 @@ import (
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	createSearchResolver := func(t *testing.T, query string) *searchResolver {
+	getResults := func(t *testing.T, query string) []string {
 		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
-		return r
-	}
-	getResults := func(t *testing.T, query string) []string {
-		r := createSearchResolver(t, query)
 		results, err := r.Results(context.Background())
 		if err != nil {
 			t.Fatal("Results:", err)
@@ -274,42 +270,52 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 	tests := []testCase{
 
-		testCase{
+		{
 			descr: "single repo match",
 			searchResults: []*searchResultResolver{
-				&searchResultResolver{
+				{
 					repo: repoMatch,
 				},
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
-				`repo:^testRepo$`: struct{}{},
+				`repo:^testRepo$`: {},
+				`case:yes`:        {},
 			},
 		},
 
-		testCase{
+		{
 			descr: "single file match without revision in query",
 			searchResults: []*searchResultResolver{
-				&searchResultResolver{
+				{
 					fileMatch: fileMatch,
 				},
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
-				`repo:^testRepo$`: struct{}{},
-				`file:\.md$`:      struct{}{},
+				`repo:^testRepo$`: {},
+				`file:\.md$`:      {},
+				`case:yes`:        {},
 			},
 		},
 
-		testCase{
+		{
 			descr: "single file match with specified revision",
 			searchResults: []*searchResultResolver{
-				&searchResultResolver{
+				{
 					fileMatch: fileMatchRev,
 				},
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
-				`repo:^testRepo$@develop`: struct{}{},
-				`file:\.md$`:              struct{}{},
+				`repo:^testRepo$@develop`: {},
+				`file:\.md$`:              {},
+				`case:yes`:                {},
 			},
+		},
+
+		// If there are no search results, no filters should be displayed.
+		{
+			descr:                     "no results",
+			searchResults:             []*searchResultResolver{},
+			expectedDynamicFilterStrs: map[string]struct{}{},
 		},
 	}
 
@@ -346,7 +352,7 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 
 	tests := []testCase{
-		testCase{
+		{
 			descr:    "simple match",
 			specs:    []string{"foo"},
 			repo:     "foo",
@@ -354,7 +360,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: ""}},
 			clashing: nil,
 		},
-		testCase{
+		{
 			descr:    "single revspec",
 			specs:    []string{".*o@123456"},
 			repo:     "foo",
@@ -362,7 +368,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
-		testCase{
+		{
 			descr:    "revspec plus unspecified rev",
 			specs:    []string{".*o@123456", "foo"},
 			repo:     "foo",
@@ -370,7 +376,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
-		testCase{
+		{
 			descr:    "revspec plus unspecified rev, but backwards",
 			specs:    []string{".*o", "foo@123456"},
 			repo:     "foo",
@@ -378,7 +384,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
-		testCase{
+		{
 			descr:    "conflicting revspecs",
 			specs:    []string{".*o@123456", "foo@234567"},
 			repo:     "foo",
@@ -386,7 +392,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  nil,
 			clashing: []search.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
 		},
-		testCase{
+		{
 			descr:    "overlapping revspecs",
 			specs:    []string{".*o@a:b", "foo@b:c"},
 			repo:     "foo",
@@ -394,7 +400,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "b"}},
 			clashing: nil,
 		},
-		testCase{
+		{
 			descr:    "multiple overlapping revspecs",
 			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
 			repo:     "foo",
@@ -402,7 +408,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
-		testCase{
+		{
 			descr:    "invalid regexp",
 			specs:    []string{"*o@a:b"},
 			repo:     "foo",
@@ -447,7 +453,7 @@ func TestCompareSearchResults(t *testing.T) {
 
 	tests := []testCase{
 		// Different repo matches
-		testCase{
+		{
 			a: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
@@ -465,7 +471,7 @@ func TestCompareSearchResults(t *testing.T) {
 			aIsLess: true,
 		},
 		// Repo match vs file match in same repo
-		testCase{
+		{
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
@@ -484,7 +490,7 @@ func TestCompareSearchResults(t *testing.T) {
 			aIsLess: false,
 		},
 		// Same repo, different files
-		testCase{
+		{
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
@@ -504,7 +510,7 @@ func TestCompareSearchResults(t *testing.T) {
 			aIsLess: true,
 		},
 		// different repo, same file name
-		testCase{
+		{
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{

@@ -7,16 +7,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
+	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
 func badgeValue(r *http.Request) (int, error) {
-	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
-	if err != nil {
-		return 0, errors.Wrap(err, "GetRepoAndRev")
-	}
-	totalRefs, err := backend.Defs.TotalRefs(r.Context(), repo.Name)
+	totalRefs, err := backend.CountGoImporters(r.Context(), routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}

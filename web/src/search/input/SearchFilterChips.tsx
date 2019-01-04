@@ -120,8 +120,8 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                 switch (match.path) {
                     case '/:repoRev+': {
                         // Repo page
-                        const [repoPath] = match.params.repoRev!.split('@')
-                        scopes.push(scopeForRepo(repoPath))
+                        const [repoName] = match.params.repoRev!.split('@')
+                        scopes.push(scopeForRepo(repoName))
                         break
                     }
                     case '/:repoRev+/-/tree/:filePath+':
@@ -129,17 +129,17 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                         // Blob/tree page
                         const isTree = match.path === '/:repoRev+/-/tree/:filePath+'
 
-                        const [repoPath] = match.params.repoRev!.split('@')
+                        const [repoName] = match.params.repoRev!.split('@')
 
                         scopes.push({
-                            value: `repo:^${escapeRegExp(repoPath)}$`,
+                            value: `repo:^${escapeRegExp(repoName)}$`,
                         })
 
                         if (match.params.filePath) {
                             const dirname = isTree ? match.params.filePath : path.dirname(match.params.filePath)
                             if (dirname !== '.') {
                                 scopes.push({
-                                    value: `repo:^${escapeRegExp(repoPath)}$ file:^${escapeRegExp(dirname)}/`,
+                                    value: `repo:^${escapeRegExp(repoName)}$ file:^${escapeRegExp(dirname)}/`,
                                 })
                             }
                         }
@@ -159,12 +159,12 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                 value,
             },
         })
-        submitSearch(this.props.history, { query: toggleSearchFilter(this.props.query, value) }, 'filter')
+        submitSearch(this.props.history, toggleSearchFilter(this.props.query, value), 'filter')
     }
 }
 
-function scopeForRepo(repoPath: string): ISearchScope {
+function scopeForRepo(repoName: string): ISearchScope {
     return {
-        value: `repo:^${escapeRegExp(repoPath)}$`,
+        value: `repo:^${escapeRegExp(repoName)}$`,
     }
 }
