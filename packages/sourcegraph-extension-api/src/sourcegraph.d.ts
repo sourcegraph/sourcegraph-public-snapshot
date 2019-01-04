@@ -432,7 +432,7 @@ declare module 'sourcegraph' {
     /**
      * A window in the client application that is running the extension.
      */
-    export interface Window {
+    export interface Window extends Subscribable<Window> {
         /**
          * The user interface view components that are visible in the window.
          */
@@ -442,6 +442,13 @@ declare module 'sourcegraph' {
          * The currently active view component in the window.
          */
         activeViewComponent: ViewComponent | undefined
+
+        /**
+         * An event that is fired when a different view component becomes active. (At most one view
+         * component may be active at any given time.)
+         */
+        // TODO!(sqs)
+        // onDidChangeActiveViewComponent: Subscribable<ViewComponent | undefined>
 
         /**
          * Show a notification message to the user that does not require interaction or steal focus.

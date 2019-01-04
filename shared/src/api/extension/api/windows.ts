@@ -1,4 +1,4 @@
-import { Observer } from 'rxjs'
+import { BehaviorSubject, Observer } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
@@ -17,14 +17,26 @@ export interface WindowData {
  * @internal
  */
 class ExtWindow implements sourcegraph.Window {
-    constructor(private windowsProxy: ClientWindowsAPI, private readonly textEditors: ExtCodeEditor[]) {}
+    // Compose instead of inherit from this BehaviorSubject for simplicity. Inheritance makes
+    // debugging harder because it pollutes the prototype (which extension authors will see).
+    private textEditors: BehaviorSubject<ExtCodeEditor[]>
+
+    constructor(private windowsProxy: ClientWindowsAPI, textEditors: ExtCodeEditor[]) {
+        this.textEditors = new BehaviorSubject<ExtCodeEditor[]>(textEditors)
+    }
+
+    public subscribe = (...args: any[]) => this.textEditors.subscribe(...args)
+
+    public next(textEditors: ExtCodeEditor[]): void {
+        this.textEditors.next(textEditors)
+    }
 
     public get visibleViewComponents(): sourcegraph.ViewComponent[] {
-        return this.textEditors
+        return this.textEditors.value
     }
 
     public get activeViewComponent(): sourcegraph.ViewComponent | undefined {
-        return this.textEditors.find(({ isActive }) => isActive)
+        return this.textEditors.value.find(({ isActive }) => isActive)
     }
 
     public showNotification(message: string): void {
@@ -86,7 +98,7 @@ export interface ExtWindowsAPI {
 
 /** @internal */
 export class ExtWindows implements ExtWindowsAPI {
-    private data: WindowData[] = []
+    private windows: ExtWindow[] = []
 
     /** @internal */
     constructor(
@@ -106,26 +118,11 @@ export class ExtWindows implements ExtWindowsAPI {
      * @internal
      */
     public getAll(): sourcegraph.Window[] {
-        return this.data.map(
-            window =>
-                new ExtWindow(
-                    this.windowsProxy,
-                    window.visibleViewComponents.map(
-                        c =>
-                            new ExtCodeEditor(
-                                c.item.uri,
-                                c.selections,
-                                c.isActive,
-                                this.codeEditorProxy,
-                                this.documents
-                            )
-                    )
-                )
-        )
+        return this.windows
     }
 
     /** @internal */
     public $acceptWindowData(allWindows: WindowData[]): void {
-        this.data = allWindows
+        if (allWindows) this.data = allWindows
     }
 }

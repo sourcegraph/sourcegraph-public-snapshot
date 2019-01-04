@@ -1,6 +1,8 @@
 import { map } from 'rxjs/operators'
 import { ViewComponent, Window } from 'sourcegraph'
 import { MessageType } from '../client/services/notifications'
+import { Position } from '../extension/types/position'
+import { Selection } from '../extension/types/selection'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
@@ -122,6 +124,69 @@ describe('Windows (integration)', () => {
                 type: 'CodeEditor' as 'CodeEditor',
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             } as ViewComponent)
+        })
+
+        test('Window#subscribe', async () => {
+            const { model, extensionHost } = await integrationTestContext()
+
+            const values: Window[] = []
+            extensionHost.app.windows[0].subscribe(win => values.push(win))
+
+            model.next({
+                ...model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: {
+                            uri: 'file:///x',
+                            languageId: '',
+                            text: '',
+                        },
+                        selections: [new Selection(new Position(1, 2), new Position(3, 4))],
+                        isActive: true,
+                    },
+                    ...(model.value.visibleViewComponents || []),
+                ],
+            })
+            await extensionHost.internal.sync()
+
+            model.next({
+                ...model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: {
+                            uri: 'file:///x',
+                            languageId: 'l',
+                            text: 't',
+                        },
+                        selections: [],
+                        isActive: true,
+                    },
+                    ...(model.value.visibleViewComponents || []),
+                ],
+            })
+            await extensionHost.internal.sync()
+
+            const want: {
+                activeViewComponent: Pick<ViewComponent, 'type' | 'document' | 'selections'> | undefined
+            }[] = [
+                {
+                    activeViewComponent: {
+                        type: 'CodeEditor' as 'CodeEditor',
+                        document: { uri: 'file:///f', languageId: 'l', text: 't' },
+                        selections: [],
+                    },
+                },
+                {
+                    activeViewComponent: {
+                        type: 'CodeEditor' as 'CodeEditor',
+                        document: { uri: 'file:///f', languageId: 'l', text: 't' },
+                        selections: [new Selection(new Position(1, 2), new Position(3, 4))],
+                    },
+                },
+            ]
+            assertToJSON(values, want)
         })
 
         test('Window#showNotification', async () => {
