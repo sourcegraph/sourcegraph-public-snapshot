@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import H from 'history'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import { combineLatest, concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { catchError, debounce, delay, filter, map, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators'
 import {
@@ -56,9 +56,10 @@ export const registryExtensionFragment = gql`
     }
 `
 
-interface Props extends SettingsCascadeProps, PlatformContextProps, RouteComponentProps<{}> {
+interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'queryGraphQL'> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
-    emptyElement?: React.ReactFragment
+    location: H.Location
+    history: H.History
 }
 
 const LOADING: 'loading' = 'loading'
@@ -217,7 +218,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                     No extensions match <strong>{this.state.data.query}</strong>.
                                 </div>
                             ) : (
-                                this.props.emptyElement || <span className="text-muted">No extensions found</span>
+                                <span className="text-muted">No extensions found</span>
                             )
                         ) : (
                             <div className="row mt-1">

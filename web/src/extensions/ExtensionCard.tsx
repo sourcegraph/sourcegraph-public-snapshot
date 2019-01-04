@@ -15,7 +15,7 @@ import { ExtensionConfigurationState } from './extension/ExtensionConfigurationS
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionToggle } from './ExtensionToggle'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps {
+interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     node: Pick<
         ConfiguredRegistryExtension<
             Pick<

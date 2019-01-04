@@ -9,7 +9,7 @@ import { SettingsCascade, SettingsCascadeOrError, SettingsCascadeProps } from '.
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { isExtensionAdded } from './extension/extension'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps {
+interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     /** The extension that this element is for. */
     extension: Pick<ConfiguredRegistryExtension, 'id'>
 }
