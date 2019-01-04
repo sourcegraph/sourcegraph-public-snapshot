@@ -576,10 +576,12 @@ declare module 'sourcegraph' {
     /**
      * Represents a handle to a set of decorations.
      *
-     * To get an instance of {@link TextDocumentDecorationType}, use {@link createDecorationType}
+     * To get an instance of {@link TextDocumentDecorationType}, use
+     * {@link sourcegraph.app.createDecorationType}
      */
     export interface TextDocumentDecorationType {
-        key: string
+        /** An opaque identifier. */
+        readonly key: string
     }
 
     /**
@@ -613,9 +615,10 @@ declare module 'sourcegraph' {
 
         /**
          * Add a set of decorations to this editor. If a set of decorations already exists with the given
-         * {@link DecorationType}, they will be replaced.
+         * {@link TextDocumentDecorationType}, they will be replaced.
          *
          * @see {@link TextDocumentDecorationType}
+         * @see {@link sourcegraph.app.createDecorationType}
          *
          */
         setDecorations(decorationType: TextDocumentDecorationType, decorations: TextDocumentDecoration[]): void
