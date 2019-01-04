@@ -1,3 +1,4 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
 import { Model, ViewComponentData } from '../model'
@@ -28,15 +29,16 @@ export function applyContextUpdate(base: Context, update: Context): Context {
  */
 export interface Context<T = never>
     extends Record<
-            string,
-            string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
-        > {}
+        string,
+        string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
+    > {}
 
 export type ContributionScope =
     | (Pick<ViewComponentData, 'type' | 'selections'> & {
           item: Pick<TextDocumentItem, 'uri' | 'languageId'>
       })
     | { type: 'panelView'; id: string }
+    | { type: 'location'; location: Location }
 
 /**
  * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
@@ -124,6 +126,22 @@ export function getComputedContextProperty(
                 return component.id
         }
     }
+
+    // Location scope's context shadows outer context.
+    if (component && component.type === 'location' && component.location.context && key in component.location.context) {
+        return component.location.context[key]
+    }
+    if (key.startsWith('location.')) {
+        if (!component || component.type !== 'location') {
+            return null
+        }
+        const prop = key.slice('location.'.length)
+        switch (prop) {
+            case 'uri':
+                return component.location.uri
+        }
+    }
+
     if (key === 'context') {
         return context
     }

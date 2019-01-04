@@ -57,6 +57,11 @@ interface Props {
      */
     showAllMatches: boolean
 
+    /**
+     * An extra React fragment to render in the header.
+     */
+    extraHeader?: React.ReactFragment
+
     isLightTheme: boolean
 
     allExpanded?: boolean
@@ -91,12 +96,17 @@ export class FileMatch extends React.PureComponent<Props> {
         }))
 
         const title = (
-            <RepoFileLink
-                repoName={result.repository.name}
-                repoURL={result.repository.url}
-                filePath={result.file.path}
-                fileURL={result.file.url}
-            />
+            <div className="d-flex align-items-center justify-content-between">
+                <div>
+                    <RepoFileLink
+                        repoName={result.repository.name}
+                        repoURL={result.repository.url}
+                        filePath={result.file.path}
+                        fileURL={result.file.url}
+                    />
+                </div>
+                {this.props.extraHeader ? <div>{this.props.extraHeader}</div> : null}
+            </div>
         )
 
         let containerProps: ResultContainerProps

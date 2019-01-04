@@ -218,6 +218,27 @@ describe('getComputedContextProperty', () => {
             ))
     })
 
+    describe('location', () => {
+        test('scoped context shadows outer context', () =>
+            expect(
+                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, { a: 1 }, 'a', {
+                    type: 'location',
+                    location: { uri: 'x', context: { a: 2 } },
+                })
+            ).toBe(2))
+
+        test('provides location.uri', () =>
+            expect(
+                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'location.uri', {
+                    type: 'location',
+                    location: { uri: 'x' },
+                })
+            ).toBe('x'))
+
+        test('returns null for location.uri when there is no location', () =>
+            expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'location.uri')).toBe(null))
+    })
+
     test('falls back to the context entries', () => {
         expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, { x: 1 }, 'x')).toBe(1)
         expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'y')).toBe(undefined)

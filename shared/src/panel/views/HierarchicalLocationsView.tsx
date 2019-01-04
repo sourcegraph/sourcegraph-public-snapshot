@@ -1,5 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as H from 'history'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -8,6 +9,7 @@ import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi i
 import { RepoLink } from '../../components/RepoLink'
 import { Resizable } from '../../components/Resizable'
 import { ExtensionsControllerProps } from '../../extensions/controller'
+import { PlatformContextProps } from '../../platform/context'
 import { SettingsCascadeProps } from '../../settings/settings'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { asError } from '../../util/errors'
@@ -16,7 +18,7 @@ import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps, SettingsCascadeProps {
     /**
      * The observable that emits the locations.
      */
@@ -36,6 +38,8 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
     onSelectLocation?: () => void
 
     className?: string
+
+    location: H.Location
 
     isLightTheme: boolean
 
@@ -240,6 +244,9 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                     icon={RepositoryIcon}
                     isLightTheme={this.props.isLightTheme}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                    location={this.props.location}
+                    extensionsController={this.props.extensionsController}
+                    platformContext={this.props.platformContext}
                 />
             </div>
         )

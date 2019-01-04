@@ -312,12 +312,23 @@ declare module 'sourcegraph' {
         range?: Range
 
         /**
+         * Additional data associated with this location. The context data is available to actions
+         * contributed to the `location` menu. It allows extensions to contribute custom actions to
+         * locations shown in (e.g.) the references panel, such as an indicator that the location is
+         * an imprecise match or is on another branch.
+         */
+        readonly context?: Readonly<ContextValues>
+
+        /**
          * Creates a new location object.
+         *
+         * The argument values must not be mutated after the constructor is called.
          *
          * @param uri The resource identifier.
          * @param rangeOrPosition The range or position. Positions will be converted to an empty range.
+         * @param context Optional context data associated with this location.
          */
-        constructor(uri: URI, rangeOrPosition?: Range | Position)
+        constructor(uri: URI, rangeOrPosition?: Range | Position, context?: ContextValues)
     }
 
     /**

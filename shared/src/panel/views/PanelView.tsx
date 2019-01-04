@@ -6,12 +6,13 @@ import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../a
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { Markdown } from '../../components/Markdown'
 import { ExtensionsControllerProps } from '../../extensions/controller'
+import { PlatformContextProps } from '../../platform/context'
 import { SettingsCascadeProps } from '../../settings/settings'
 import { createLinkClickHandler } from '../../util/linkClickHandler'
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps, SettingsCascadeProps {
     panelView: PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>
     repoName?: string
     history: H.History
@@ -38,17 +39,18 @@ export class PanelView extends React.PureComponent<Props, State> {
                     </div>
                 )}
                 {this.props.panelView.reactElement}
-                {this.props.panelView.locationProvider &&
-                    this.props.repoName && (
-                        <HierarchicalLocationsView
-                            locations={this.props.panelView.locationProvider}
-                            defaultGroup={this.props.repoName}
-                            isLightTheme={this.props.isLightTheme}
-                            fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                            extensionsController={this.props.extensionsController}
-                            settingsCascade={this.props.settingsCascade}
-                        />
-                    )}
+                {this.props.panelView.locationProvider && this.props.repoName && (
+                    <HierarchicalLocationsView
+                        locations={this.props.panelView.locationProvider}
+                        defaultGroup={this.props.repoName}
+                        isLightTheme={this.props.isLightTheme}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        location={this.props.location}
+                        extensionsController={this.props.extensionsController}
+                        platformContext={this.props.platformContext}
+                        settingsCascade={this.props.settingsCascade}
+                    />
+                )}
                 {!this.props.panelView.content &&
                     !this.props.panelView.reactElement &&
                     !this.props.panelView.locationProvider && <EmptyPanelView className="mt-3" />}

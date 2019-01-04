@@ -1,16 +1,21 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { ActionsNavItems } from '../../actions/ActionsNavItems'
+import { ContributableMenu } from '../../api/protocol'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
 import { VirtualList } from '../../components/VirtualList'
-import { asError } from '../../util/errors'
+import { ExtensionsControllerProps } from '../../extensions/controller'
+import { PlatformContextProps } from '../../platform/context'
 import { ErrorLike, isErrorLike } from '../../util/errors'
+import { asError } from '../../util/errors'
 import { propertyIsDefined } from '../../util/types'
 import { parseRepoURI, toPrettyBlobURL } from '../../util/url'
 
@@ -26,7 +31,9 @@ export const FileLocationsNotFound: React.FunctionComponent = () => (
     </div>
 )
 
-interface Props {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
+    location: H.Location
+
     /**
      * The observable that emits the locations.
      */
@@ -135,6 +142,31 @@ export class FileLocations extends React.PureComponent<Props, State> {
                             key={i}
                             expanded={true}
                             result={refsToFileMatch(uri, locationsByURI.get(uri)!)}
+                            extraHeader={
+                                <ActionsNavItems
+                                    listClass="align-items-center justify-content-end"
+                                    actionItemClass="badge badge-secondary"
+                                    menu={ContributableMenu.LocationTitle}
+                                    extensionsController={this.props.extensionsController}
+                                    platformContext={this.props.platformContext}
+                                    location={this.props.location}
+                                    scope={{
+                                        type: 'location',
+                                        // KNOWN ISSUE: If multiple matches are found in a file, it
+                                        // only shows the contributed actions for the first
+                                        // location. (E.g., if the first match in a file is fuzzy
+                                        // and all the rest aren't, and you're using the
+                                        // basic-code-intel extension, then the "Fuzzy" badge
+                                        // appears in the file header and appears to apply to all
+                                        // matches in the file, not just the first.) To fix this, we
+                                        // would need to rethink how matches are displayed (VS
+                                        // Code's way of displaying matches would make it possible
+                                        // for us to avoid this problem).
+                                        location: locationsByURI.get(uri)![0],
+                                    }}
+                                    wrapInList={true}
+                                />
+                            }
                             icon={this.props.icon}
                             onSelect={this.onSelect}
                             showAllMatches={true}

@@ -207,6 +207,11 @@ export enum ContributableMenu {
     /** The panel toolbar. */
     PanelToolbar = 'panel/toolbar',
 
+    /**
+     * The title bar of a location result, such as a reference or definition location in the panel.
+     */
+    LocationTitle = 'location/title',
+
     /** The help menu in the application. */
     Help = 'help',
 }

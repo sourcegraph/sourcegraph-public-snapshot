@@ -63,4 +63,12 @@ export interface Location {
 
     /** An optional range within the document. */
     readonly range?: Range
+
+    /**
+     * Additional data associated with this location. The context data is available to actions
+     * contributed to the `location` menu. It allows extensions to contribute custom actions to
+     * locations shown in (e.g.) the references panel, such as an indicator that the location is
+     * an imprecise match or is on another branch.
+     */
+    readonly context?: ContextValues
 }

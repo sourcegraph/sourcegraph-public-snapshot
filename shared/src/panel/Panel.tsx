@@ -83,6 +83,7 @@ export class Panel extends React.PureComponent<Props, State> {
                                       location={this.props.location}
                                       isLightTheme={this.props.isLightTheme}
                                       extensionsController={this.props.extensionsController}
+                                      platformContext={this.props.platformContext}
                                       settingsCascade={this.props.settingsCascade}
                                       fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                                   />

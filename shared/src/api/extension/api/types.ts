@@ -21,6 +21,7 @@ export function fromLocation(location: sourcegraph.Location): clientType.Locatio
     return {
         uri: location.uri.toString(),
         range: fromRange(location.range),
+        context: location.context,
     }
 }
 
