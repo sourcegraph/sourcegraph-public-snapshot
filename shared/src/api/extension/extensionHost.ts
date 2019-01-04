@@ -199,6 +199,7 @@ function createExtensionAPI(
             get textDocuments(): sourcegraph.TextDocument[] {
                 return documents.getAll()
             },
+            activeTextDocument: documents.activeTextDocument,
             onDidOpenTextDocument: documents.onDidOpenTextDocument,
             get roots(): ReadonlyArray<sourcegraph.WorkspaceRoot> {
                 return roots.getAll()

@@ -1,10 +1,11 @@
-import { Observable, Subject } from 'rxjs'
+import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
+import { ViewComponentData } from '../../client/model'
 import { TextDocumentItem } from '../../client/types/textDocument'
 
 /** @internal */
 export interface ExtDocumentsAPI {
-    $acceptDocumentData(doc: TextDocumentItem[]): void
+    $acceptEditorData(editors: ViewComponentData[]): void
 }
 
 /** @internal */
@@ -52,18 +53,29 @@ export class ExtDocuments implements ExtDocumentsAPI {
     }
 
     private textDocumentAdds = new Subject<TextDocument>()
-    public readonly onDidOpenTextDocument: Observable<TextDocument> = this.textDocumentAdds
+    public readonly onDidOpenTextDocument: Observable<TextDocument> = Observable.create(
+        (observer: (doc: TextDocument) => void) => {
+            console.warn(
+                'workspace.onDidOpenTextDocument is deprecated and will soon be removed. Use workspace.activeTextDocument instead'
+            )
+            return this.textDocumentAdds.subscribe(observer)
+        }
+    )
+    public readonly activeTextDocument = new BehaviorSubject<TextDocument | null>(null)
 
-    public $acceptDocumentData(docs: TextDocumentItem[] | null): void {
-        if (!docs) {
-            // We don't ever (yet) communicate to the extension when docs are closed.
+    public $acceptEditorData(editors: ViewComponentData[] | null): void {
+        if (!editors || !editors.length) {
+            this.activeTextDocument.next(null)
             return
         }
-        for (const doc of docs) {
-            const isNew = !this.documents.has(doc.uri)
-            this.documents.set(doc.uri, doc)
+        for (const { item, isActive } of editors) {
+            const isNew = !this.documents.has(item.uri)
+            this.documents.set(item.uri, item)
             if (isNew) {
-                this.textDocumentAdds.next(doc)
+                this.textDocumentAdds.next(item)
+            }
+            if (isActive) {
+                this.activeTextDocument.next(item)
             }
         }
     }

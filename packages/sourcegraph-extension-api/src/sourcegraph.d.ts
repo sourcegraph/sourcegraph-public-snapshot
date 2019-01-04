@@ -720,8 +720,20 @@ declare module 'sourcegraph' {
 
         /**
          * An event that is fired when a new text document is opened.
+         *
+         * @deprecated this is deprecated and will be removed soon, use {@link activeTextDocument} instead.
          */
         export const onDidOpenTextDocument: Subscribable<TextDocument>
+
+        /**
+         * An event fired when the active text document changes.
+         * The active text document is the text document open in the
+         * {@link activeViewComponent} of the {@link activeWindow}, if any.
+         *
+         * This event fires on subscription with the currently active text document,
+         * or `null` if there is none.
+         */
+        export const activeTextDocument: Subcribable<TextDocument | null>
 
         /**
          * The root directories of the workspace, if any.

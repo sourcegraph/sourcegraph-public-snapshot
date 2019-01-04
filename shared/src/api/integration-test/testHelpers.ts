@@ -32,9 +32,9 @@ interface TestContext {
 
 interface Mocks
     extends Pick<
-            PlatformContext,
-            'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension' | 'clientApplication'
-        > {}
+        PlatformContext,
+        'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension' | 'clientApplication'
+    > {}
 
 const NOOP_MOCKS: Mocks = {
     settings: NEVER,
@@ -50,7 +50,8 @@ const NOOP_MOCKS: Mocks = {
  * @internal
  */
 export async function integrationTestContext(
-    partialMocks: Partial<Mocks> = NOOP_MOCKS
+    partialMocks: Partial<Mocks> = NOOP_MOCKS,
+    initialModel: Model = FIXTURE_MODEL
 ): Promise<
     TestContext & {
         model: Subscribable<Model> & { value: Model } & NextObserver<Model>
@@ -81,7 +82,7 @@ export async function integrationTestContext(
         )
     )
 
-    services.model.model.next(FIXTURE_MODEL)
+    services.model.model.next(initialModel)
 
     await (await extensionHost.__testAPI).internal.sync()
     return {

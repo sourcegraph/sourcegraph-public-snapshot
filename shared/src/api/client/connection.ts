@@ -94,10 +94,7 @@ export function createExtensionHostClientConnection(
         new ClientDocuments(
             connection,
             from(services.model.model).pipe(
-                map(
-                    ({ visibleViewComponents }) =>
-                        visibleViewComponents && visibleViewComponents.map(({ item }) => item)
-                ),
+                map(({ visibleViewComponents }) => visibleViewComponents),
                 distinctUntilChanged()
             )
         )
