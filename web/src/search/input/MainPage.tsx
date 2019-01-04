@@ -648,7 +648,7 @@ export class MainPage extends React.Component<Props, State> {
                                         autoFocus={'cursor-at-end'}
                                         hasGlobalQueryBehavior={true}
                                     />
-                                    <SearchButton />
+                                    <SearchButton noHelp={true} noLabel={true} />
                                 </div>
                             </Form>
                         </div>
