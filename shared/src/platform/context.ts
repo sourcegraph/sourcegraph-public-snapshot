@@ -125,6 +125,6 @@ export interface PlatformContext {
 /**
  * React partial props for components needing the {@link PlatformContext}.
  */
-export interface PlatformContextProps {
-    platformContext: PlatformContext
+export interface PlatformContextProps<K extends keyof PlatformContext = keyof PlatformContext> {
+    platformContext: Pick<PlatformContext, K>
 }
