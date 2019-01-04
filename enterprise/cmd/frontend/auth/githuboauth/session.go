@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -24,7 +25,9 @@ type sessionIssuerHelper struct {
 	clientID    string
 	allowSignup bool
 }
-
+const (
+	defaultAPI = "https://api.github.com" // Default GitHub API URL
+)
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
 	if ghUser == nil {
@@ -120,6 +123,11 @@ func derefInt64(i *int64) int64 {
 // it will be the first email in the returned list. It only checks the first 100 user emails.
 func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oauth2.Token) (verifiedEmails []string) {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL())
+
+	// Hack to get GHE working.
+	var appURLV3 = apiURL.String() + "/v3"
+	apiURL, _ = url.Parse(appURLV3)
+
 	ghClient := githubsvc.NewClient(apiURL, "", nil)
 	emails, err := ghClient.GetAuthenticatedUserEmails(ctx, token.AccessToken)
 	if err != nil {
@@ -128,6 +136,14 @@ func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oaut
 	}
 
 	for _, email := range emails {
+
+		// GitHub Enterprise does not authorize emails. Continue anyways.
+		if email.Primary && apiURL.String() != defaultAPI {
+			log15.Warn("apiURL = ", "error", apiURL)
+			log15.Warn("defaultAPI = ", "error", defaultAPI)
+			verifiedEmails = append([]string{email.Email}, verifiedEmails...)
+			continue
+		}
 		if !email.Verified {
 			continue
 		}
