@@ -344,13 +344,14 @@ declare module 'sourcegraph' {
      * A document filter denotes a document by different properties like the
      * [language](#TextDocument.languageId), the scheme of its resource, or a glob-pattern that is
      * applied to the [path](#TextDocument.fileName).
+     * A document filter matches if all the provided properties (those of `language`, `scheme` and `pattern` that are not `undefined`) match.
      *
      * @sample A language filter that applies to typescript files on disk: `{ language: 'typescript', scheme: 'file' }`
      * @sample A language filter that applies to all package.json paths: `{ language: 'json', pattern: '**package.json' }`
      */
     export type DocumentFilter =
         | {
-              /** A language id, such as `typescript`. */
+              /** A language id, such as `typescript` or `*`. */
               language: string
               /** A URI scheme, such as `file` or `untitled`. */
               scheme?: string
@@ -358,7 +359,7 @@ declare module 'sourcegraph' {
               pattern?: string
           }
         | {
-              /** A language id, such as `typescript`. */
+              /** A language id, such as `typescript` or `*`. */
               language?: string
               /** A URI scheme, such as `file` or `untitled`. */
               scheme: string
@@ -366,7 +367,7 @@ declare module 'sourcegraph' {
               pattern?: string
           }
         | {
-              /** A language id, such as `typescript`. */
+              /** A language id, such as `typescript` or `*`. */
               language?: string
               /** A URI scheme, such as `file` or `untitled`. */
               scheme?: string
@@ -376,8 +377,10 @@ declare module 'sourcegraph' {
 
     /**
      * A document selector is the combination of one or many document filters.
+     * A document matches the selector if any of the given filters matches.
+     * A plain string is a shorthand for `{ language: '...' }`.
      *
-     * @sample `let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }]`;
+     * @example let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }];
      */
     export type DocumentSelector = (string | DocumentFilter)[]
 
