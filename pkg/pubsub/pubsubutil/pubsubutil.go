@@ -25,7 +25,7 @@ func Enabled() bool {
 }
 
 func init() {
-	if PubSubProjectID == "" {
+	if !Enabled() {
 		return
 	}
 	ctx := context.Background()
