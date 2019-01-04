@@ -214,7 +214,17 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(queryConds, ") OR (")))
 	}
 	if o.Category != "" {
-		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Category))
+		categoryConds := []*sqlf.Query{
+			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Category),
+		}
+		if o.Category == "Other" {
+			// Special-case the "Other" category: it matches extensions explicitly categorized as
+			// "Other" or extensions with a manifest with no category. (Extensions with no manifest
+			// are omitted.) HACK: This ideally would be implemented at a different layer, but it is
+			// so much simpler to just special-case it here.
+			categoryConds = append(categoryConds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb IS NULL ELSE false END`))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(categoryConds, ") OR (")))
 	}
 	if o.Tag != "" {
 		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'tags')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Tag))
