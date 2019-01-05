@@ -333,6 +333,27 @@ export class MainPage extends React.Component<Props, State> {
                     </div>
                 </section>
                 <div className="about-section-container">
+                    <section className="company-logos">
+                        <div className="container">
+                            <div className="row">
+                                <div className="col-12">
+                                    <h2>Powering developers at</h2>
+                                </div>
+                                <div className="col-3 logo">
+                                    <figure className="logo-image logo1" />
+                                </div>
+                                <div className="col-3 logo">
+                                    <figure className="logo-image logo2" />
+                                </div>
+                                <div className="col-3 logo">
+                                    <figure className="logo-image logo3" />
+                                </div>
+                                <div className="col-3 logo">
+                                    <figure className="logo-image logo4" />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                     <section className="about-section code-search">
                         <div className="container">
                             <div className="row">
