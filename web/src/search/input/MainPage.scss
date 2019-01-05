@@ -382,7 +382,7 @@ body.main-page {
         position: -webkit-sticky;
         z-index: 2;
         box-shadow: rgba(0, 0, 0, 0.35) 0 4rem 8rem 12rem;
-        // stylelint-disable-next-line declaration-block-no-duplicate-properties no-duplicate-selectors
+        // stylelint-disable-next-line no-duplicate-selectors
         &:nth-of-type(2) {
             box-shadow: none;
         }
