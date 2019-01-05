@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.6.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
-	github.com/certifi/gocertifi v0.0.0-20180118203423-deb3ae2ef261 // indirect
+	github.com/certifi/gocertifi v0.0.0-20190105021324-abcd57078448 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
 	github.com/coreos/go-semver v0.2.0
