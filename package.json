@@ -107,6 +107,7 @@
     "autoprefixer": "^9.4.3",
     "babel-loader": "^8.0.0",
     "babel-plugin-lodash": "^3.3.4",
+    "babel-plugin-require-context-hook": "^1.0.0",
     "browserslist": "^4.3.6",
     "bundlesize": "^0.17.0",
     "chai": "^4.1.2",
