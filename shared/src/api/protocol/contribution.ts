@@ -34,22 +34,26 @@ export interface ActionContribution {
     id: string
 
     /**
-     * The command that this action invokes. It can refer to a command registered by the same extension or any
-     * other extension, or to a builtin command.
+     * The command that this action invokes. It can refer to a command registered by the same
+     * extension or any other extension, or to a builtin command. If it is undefined, the action is
+     * a noop.
      *
      * See "[Builtin commands](../../../../doc/extensions/authoring/builtin_commands.md)" (online at
-     * https://docs.sourcegraph.com/extensions/authoring/builtin_commands) for documentation on builtin client
-     * commands.
+     * https://docs.sourcegraph.com/extensions/authoring/builtin_commands) for documentation on
+     * builtin client commands.
      *
-     * Extensions: The command must be registered (unless it is a builtin command). Extensions can register
-     * commands using {@link sourcegraph.commands.registerCommand}.
+     * Extensions: The command must be registered (unless it is a builtin command). Extensions can
+     * register commands using {@link sourcegraph.commands.registerCommand}.
      *
-     * Clients: All clients must implement the builtin commands as specified in the documentation above.
+     * Clients: All clients must implement the builtin commands as specified in the documentation
+     * above. If the command is undefined (which means the action is a noop), the action should be
+     * displayed in such a way that avoids suggesting it can be clicked/activated (e.g., there
+     * should not be any hover or active state on the button).
      *
      * @see ActionContributionClientCommandOpen
      * @see ActionContributionClientCommandUpdateConfiguration
      */
-    command: string
+    command?: string
 
     /**
      * Optional arguments to pass to the extension when the action is invoked.
