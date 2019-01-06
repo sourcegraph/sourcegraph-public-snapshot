@@ -18,6 +18,8 @@ const config = {
     '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify)',
   ],
 
+  moduleNameMapper: { '\\.s?css$': 'identity-obj-proxy' },
+
   // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
   // `--coverageReporters text` jest option.
   coverageReporters: ['json', 'lcov', 'text-summary'],

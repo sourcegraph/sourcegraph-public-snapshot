@@ -1,3 +1,4 @@
 import initStoryshots from '@storybook/addon-storyshots'
+import path from 'path'
 
-initStoryshots({ configPath: '../.storybook' })
+initStoryshots({ framework: 'react', configPath: path.resolve(__dirname, '../.storybook/config.js') })

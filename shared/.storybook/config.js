@@ -3,15 +3,18 @@
 import { configure, addDecorator } from '@storybook/react'
 import { withInfo } from '@storybook/addon-info'
 import { withOptions } from '@storybook/addon-options'
+// @ts-ignore
 import { themes } from '@storybook/components'
 import { configureActions } from '@storybook/addon-actions'
 import '@storybook/addon-console'
+// @ts-ignore
 import { withConsole } from '@storybook/addon-console'
 import { withNotes } from '@storybook/addon-notes'
 import '../../web/src/SourcegraphWebApp.scss'
 
 addDecorator(withNotes())
 addDecorator((storyFn, context) => withConsole()(storyFn)(context))
+// @ts-ignore
 addDecorator(withOptions({ theme: themes.dark }))
 addDecorator(withInfo({ header: false, propTables: false }))
 

@@ -125,6 +125,7 @@
     "graphql": "^14.0.2",
     "graphql-schema-linter": "^0.1.6",
     "gulp": "^4.0.0",
+    "identity-obj-proxy": "^3.0.0",
     "jest": "^23.6.0",
     "json-schema-ref-parser": "^6.0.2",
     "json-schema-to-typescript": "^6.1.0",
