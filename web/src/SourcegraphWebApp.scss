@@ -276,5 +276,6 @@ hr {
 @import './repo/blob/discussions/DiscussionsTree';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
+@import '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner';
 
 @import './extensions/shared';
