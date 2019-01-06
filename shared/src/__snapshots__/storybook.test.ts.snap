@@ -1,0 +1,84 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Storyshots Toggle disabled/off 1`] = `
+<button
+  className="toggle toggle__disabled "
+  onClick={[Function]}
+  value={0}
+>
+  <span
+    className="toggle__bar  toggle__bar--disabled"
+  />
+  <span
+    className="toggle__knob  toggle__knob--disabled"
+  />
+</button>
+`;
+
+exports[`Storyshots Toggle disabled/on 1`] = `
+<button
+  className="toggle toggle__disabled "
+  onClick={[Function]}
+  value={1}
+>
+  <span
+    className="toggle__bar toggle__bar--active toggle__bar--disabled"
+  />
+  <span
+    className="toggle__knob toggle__knob--active toggle__knob--disabled"
+  />
+</button>
+`;
+
+exports[`Storyshots Toggle interactive 1`] = `
+<div
+  className="d-flex align-items-center"
+>
+  <button
+    className="toggle  mr-2"
+    onClick={[Function]}
+    title="Hello"
+    value={0}
+  >
+    <span
+      className="toggle__bar  "
+    />
+    <span
+      className="toggle__knob  "
+    />
+  </button>
+   Value is
+   
+  undefined
+</div>
+`;
+
+exports[`Storyshots Toggle off 1`] = `
+<button
+  className="toggle  "
+  onClick={[Function]}
+  value={0}
+>
+  <span
+    className="toggle__bar  "
+  />
+  <span
+    className="toggle__knob  "
+  />
+</button>
+`;
+
+exports[`Storyshots Toggle on 1`] = `
+<button
+  className="toggle  "
+  onClick={[Function]}
+  value={1}
+>
+  <span
+    className="toggle__bar toggle__bar--active "
+  />
+  <span
+    className="toggle__knob toggle__knob--active "
+  />
+</button>
+`;

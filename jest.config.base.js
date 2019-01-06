@@ -1,10 +1,5 @@
 // @ts-check
 
-// Necessary to use require.context (which usually only works in Webpack) when running jest.
-// @ts-ignore
-const registerRequireContextHook = require('babel-plugin-require-context-hook/register')
-registerRequireContextHook()
-
 /** @type {jest.InitialOptions} */
 const config = {
   collectCoverage: true,

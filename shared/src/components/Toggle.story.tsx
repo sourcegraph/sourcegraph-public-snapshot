@@ -3,6 +3,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Toggle } from './Toggle'
 
+export const x = { a: 123 }
+
 const onToggle = action('onToggle')
 
 const { add } = storiesOf('Toggle', module)
@@ -11,8 +13,10 @@ add('interactive', () => {
     interface State {
         value?: boolean
     }
+
     class ToggleInteractive extends React.Component<{}, State> {
         public state: State = {}
+
         public render(): JSX.Element | null {
             return (
                 <div className="d-flex align-items-center">
@@ -21,8 +25,10 @@ add('interactive', () => {
                 </div>
             )
         }
+
         private onToggle = (value: boolean) => this.setState({ value }, () => onToggle(value))
     }
+
     return <ToggleInteractive />
 })
 
