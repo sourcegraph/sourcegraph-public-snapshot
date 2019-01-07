@@ -1,6 +1,9 @@
 ---
 name: Question
 about: Ask a question about Sourcegraph
+title: ''
+labels: ''
+assignees: ''
 
 ---
 

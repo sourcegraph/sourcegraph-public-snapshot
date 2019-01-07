@@ -1,6 +1,9 @@
 ---
 name: Security vulnerability
 about: Do NOT file security issues here. See hackerone.com/sourcegraph instead.
+title: ''
+labels: ''
+assignees: ''
 
 ---
 
