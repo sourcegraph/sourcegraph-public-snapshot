@@ -66,7 +66,7 @@ require (
 	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/graph-gophers/graphql-go v0.0.0-20190104202721-0079757a4d96
-	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7
+	github.com/gregjones/httpcache v0.0.0-20190107165158-c63ab54fda8f
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/honeycombio/libhoney-go v1.7.0
 	github.com/joho/godotenv v1.3.0
