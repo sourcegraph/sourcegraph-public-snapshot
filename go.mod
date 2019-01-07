@@ -35,7 +35,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.0
 	github.com/garyburd/redigo v1.6.0
 	github.com/gchaincl/sqlhooks v1.1.0
-	github.com/getsentry/raven-go v0.0.0-20180903072508-084a9de9eb03
+	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.40.0 // indirect
 	github.com/go-redsync/redsync v1.0.1
