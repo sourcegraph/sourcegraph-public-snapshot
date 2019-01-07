@@ -45,7 +45,7 @@ require (
 	github.com/gogo/protobuf v1.2.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.1.0
 	github.com/golang/gddo v0.0.0-20181116215533-9bd4a3295021
-	github.com/golang/groupcache v0.0.0-20190104202712-c65c006176ff
+	github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7
 	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	github.com/golang/mock v1.2.0 // indirect
 	github.com/golangci/golangci-lint v1.12.5
@@ -129,7 +129,7 @@ require (
 	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
 	golang.org/x/crypto v0.0.0-20190104202753-ff983b9c42bc
 	golang.org/x/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
-	golang.org/x/net v0.0.0-20181220203305-927f97764cc3
+	golang.org/x/net v0.0.0-20190107163308-1a61f4433d85
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb
