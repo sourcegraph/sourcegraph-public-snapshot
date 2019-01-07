@@ -1,5 +1,6 @@
 import { toPromise } from 'abortable-rx'
 import { from, isObservable, Observable, Observer, Subject, Unsubscribable } from 'rxjs'
+import { takeUntil } from 'rxjs/operators'
 import { isPromise } from '../../util'
 import { Emitter, Event } from './events'
 import { LinkedMap } from './linkedMap'
@@ -361,6 +362,13 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
         if (requestHandler || starRequestHandler) {
             const abortController = new AbortController()
             const signalKey = String(requestMessage.id)
+            const aborted = from(
+                new Promise<void>(resolve => {
+                    abortController.signal.onabort = () => {
+                        resolve()
+                    }
+                })
+            )
             requestAbortControllers[signalKey] = abortController
             try {
                 const params = requestMessage.params !== undefined ? requestMessage.params : null
@@ -375,34 +383,36 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                     const onComplete = () => {
                         delete requestAbortControllers[signalKey]
                     }
-                    from(handlerResult).subscribe(
-                        value => reply(value, false),
-                        error => {
-                            onComplete()
-                            if (error instanceof ResponseError) {
-                                replyError(error as ResponseError<any>)
-                            } else if (error && typeof error.message === 'string') {
-                                replyError(
-                                    new ResponseError<any>(ErrorCodes.InternalError, error.message, {
-                                        stack: error.stack,
-                                    })
-                                )
-                            } else {
-                                replyError(
-                                    new ResponseError<void>(
-                                        ErrorCodes.InternalError,
-                                        `Request ${
-                                            requestMessage.method
-                                        } failed unexpectedly without providing any details.`
+                    from(handlerResult)
+                        .pipe(takeUntil(aborted))
+                        .subscribe(
+                            value => reply(value, false),
+                            error => {
+                                onComplete()
+                                if (error instanceof ResponseError) {
+                                    replyError(error as ResponseError<any>)
+                                } else if (error && typeof error.message === 'string') {
+                                    replyError(
+                                        new ResponseError<any>(ErrorCodes.InternalError, error.message, {
+                                            stack: error.stack,
+                                        })
                                     )
-                                )
+                                } else {
+                                    replyError(
+                                        new ResponseError<void>(
+                                            ErrorCodes.InternalError,
+                                            `Request ${
+                                                requestMessage.method
+                                            } failed unexpectedly without providing any details.`
+                                        )
+                                    )
+                                }
+                            },
+                            () => {
+                                onComplete()
+                                replyComplete()
                             }
-                        },
-                        () => {
-                            onComplete()
-                            replyComplete()
-                        }
-                    )
+                        )
                 } else {
                     delete requestAbortControllers[signalKey]
                     reply(handlerResult, true)
