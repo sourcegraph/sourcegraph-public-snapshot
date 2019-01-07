@@ -127,7 +127,7 @@ require (
 	github.com/zenazn/goji v0.9.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
-	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b
+	golang.org/x/crypto v0.0.0-20190104202753-ff983b9c42bc
 	golang.org/x/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	golang.org/x/net v0.0.0-20181220203305-927f97764cc3
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
