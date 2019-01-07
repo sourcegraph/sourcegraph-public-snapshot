@@ -132,7 +132,7 @@ require (
 	golang.org/x/net v0.0.0-20190107163308-1a61f4433d85
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
-	golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb
+	golang.org/x/sys v0.0.0-20190107174137-20be8e55dc7b
 	golang.org/x/time v0.0.0-20190104202802-85acf8d2951c
 	golang.org/x/tools v0.0.0-20181221235234-d00ac6d27372
 	google.golang.org/api v0.1.0 // indirect
