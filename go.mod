@@ -68,7 +68,7 @@ require (
 	github.com/graph-gophers/graphql-go v0.0.0-20190104202721-0079757a4d96
 	github.com/gregjones/httpcache v0.0.0-20190107165158-c63ab54fda8f
 	github.com/hashicorp/go-multierror v1.0.0
-	github.com/honeycombio/libhoney-go v1.7.0
+	github.com/honeycombio/libhoney-go v1.8.1
 	github.com/joho/godotenv v1.3.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
