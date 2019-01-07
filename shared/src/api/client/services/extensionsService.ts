@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
+import { ajax } from 'rxjs/ajax'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
@@ -22,6 +23,29 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
     scriptURL: string
 }
 
+const getConfiguredSideloadedExtension = (baseUrl: string) =>
+    ajax({
+        url: `${baseUrl}/package.json`,
+        responseType: 'json',
+        crossDomain: true,
+        async: true,
+    }).pipe(
+        map(
+            ({ response }): ConfiguredExtension => ({
+                id: response.name,
+                manifest: {
+                    url: `${baseUrl}/${response.main.replace('dist/', '')}`,
+                    ...response,
+                },
+                rawManifest: null,
+            })
+        )
+    )
+
+interface PartialContext extends Pick<PlatformContext, 'queryGraphQL' | 'getScriptURLForExtension'> {
+    sideloadedExtensionURL: Subscribable<string | null>
+}
+
 /**
  * Manages the set of extensions that are available and activated.
  *
@@ -30,10 +54,13 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
  */
 export class ExtensionsService {
     public constructor(
-        private platformContext: Pick<PlatformContext, 'queryGraphQL' | 'getScriptURLForExtension'>,
+        private platformContext: PartialContext,
         private model: Subscribable<Pick<Model, 'visibleViewComponents'>>,
         private settingsService: Pick<SettingsService, 'data'>,
-        private extensionActivationFilter = extensionsWithMatchedActivationEvent
+        private extensionActivationFilter = extensionsWithMatchedActivationEvent,
+        private fetchSideloadedExtension: (
+            baseUrl: string
+        ) => Subscribable<ConfiguredExtension | null> = getConfiguredSideloadedExtension
     ) {}
 
     protected configuredExtensions: Subscribable<ConfiguredExtension[]> = viewerConfiguredExtensions({
@@ -47,10 +74,28 @@ export class ExtensionsService {
      * Most callers should use {@link ExtensionsService#activeExtensions}.
      */
     private get enabledExtensions(): Subscribable<ConfiguredExtension[]> {
-        return combineLatest(from(this.settingsService.data), from(this.configuredExtensions)).pipe(
-            map(([settings, configuredExtensions]) =>
-                configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))
-            )
+        return combineLatest(
+            from(this.settingsService.data),
+            from(this.configuredExtensions),
+            this.sideloadedExtension
+        ).pipe(
+            map(([settings, configuredExtensions, sideloadedExtension]) => {
+                const enabled = [...configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))]
+                if (sideloadedExtension) {
+                    enabled.push(sideloadedExtension)
+                }
+                return enabled
+            })
+        )
+    }
+
+    private get sideloadedExtension(): Subscribable<ConfiguredExtension | null> {
+        return from(this.platformContext.sideloadedExtensionURL).pipe(
+            switchMap(url => (url ? this.fetchSideloadedExtension(url) : of(null))),
+            catchError(err => {
+                console.error(`Error sideloading extension: ${err}`)
+                return of(null)
+            })
         )
     }
 
@@ -89,15 +134,14 @@ export class ExtensionsService {
                 combineLatestOrDefault(
                     extensions.map(x =>
                         this.memoizedGetScriptURLForExtension(getScriptURLFromExtensionManifest(x)).pipe(
-                            map(
-                                scriptURL =>
-                                    scriptURL === null
-                                        ? null
-                                        : {
-                                              id: x.id,
-                                              manifest: x.manifest,
-                                              scriptURL,
-                                          }
+                            map(scriptURL =>
+                                scriptURL === null
+                                    ? null
+                                    : {
+                                          id: x.id,
+                                          manifest: x.manifest,
+                                          scriptURL,
+                                      }
                             )
                         )
                     )

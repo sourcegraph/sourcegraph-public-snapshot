@@ -84,7 +84,9 @@ export function createController(context: PlatformContext): Controller {
         ),
         context.traceExtensionHostCommunication
     ).pipe(
-        tap(([connection, trace]) => connection.trace(trace ? new BrowserConsoleTracer('') : null)),
+        tap(([connection, trace]) => {
+            connection.trace(trace ? new BrowserConsoleTracer('') : null)
+        }),
         map(([connection]) => connection),
         distinctUntilChanged()
     )

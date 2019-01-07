@@ -23,7 +23,12 @@ export class Services {
     constructor(
         private platformContext: Pick<
             PlatformContext,
-            'settings' | 'updateSettings' | 'queryGraphQL' | 'getScriptURLForExtension' | 'clientApplication'
+            | 'settings'
+            | 'updateSettings'
+            | 'queryGraphQL'
+            | 'getScriptURLForExtension'
+            | 'clientApplication'
+            | 'sideloadedExtensionURL'
         >
     ) {}
 

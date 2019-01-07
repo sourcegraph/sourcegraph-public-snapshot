@@ -120,6 +120,12 @@ export interface PlatformContext {
      * Whether to log all messages sent between the client and the extension host.
      */
     traceExtensionHostCommunication: Subscribable<boolean> & NextObserver<boolean>
+
+    /**
+     * The URL to the Parcel dev server for a single extension.
+     * Used for extension development purposes, to run an extension that isn't on the registry.
+     */
+    sideloadedExtensionURL: Subscribable<string | null> & NextObserver<string | null>
 }
 
 /**

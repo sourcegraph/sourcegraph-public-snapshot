@@ -1,4 +1,4 @@
-import { from, of, Subscribable } from 'rxjs'
+import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
@@ -16,7 +16,9 @@ class TestExtensionsService extends ExtensionsService {
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
             model: Pick<Model, 'visibleViewComponents'>
-        ) => ConfiguredExtension[]
+        ) => ConfiguredExtension[],
+        sideloadedExtensionURL: Subscribable<string | null>,
+        fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
     ) {
         super(
             {
@@ -24,10 +26,12 @@ class TestExtensionsService extends ExtensionsService {
                     throw new Error('not implemented')
                 },
                 getScriptURLForExtension: scriptURL => scriptURL,
+                sideloadedExtensionURL,
             },
             model,
             settingsService,
-            extensionActivationFilter
+            extensionActivationFilter,
+            fetchSideloadedExtension
         )
         this.configuredExtensions = of(mockConfiguredExtensions)
     }
@@ -44,7 +48,9 @@ describe('activeExtensions', () => {
                             a: { visibleViewComponents: [] },
                         }),
                         { data: cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }) },
-                        enabledExtensions => enabledExtensions
+                        enabledExtensions => enabledExtensions,
+                        cold('-a-|', { a: '' }),
+                        () => of(null)
                     ).activeExtensions
                 )
             ).toBe('-a-|', {
@@ -90,7 +96,9 @@ describe('activeExtensions', () => {
                         (enabledExtensions, { visibleViewComponents }) =>
                             enabledExtensions.filter(x =>
                                 (visibleViewComponents || []).some(({ item: { languageId } }) => x.id === languageId)
-                            )
+                            ),
+                        cold('-a--|', { a: '' }),
+                        () => of(null)
                     ).activeExtensions
                 )
             ).toBe('-a-b-|', {
@@ -98,4 +106,79 @@ describe('activeExtensions', () => {
                 b: [{ id: 'x', manifest, scriptURL: 'u' }, { id: 'y', manifest, scriptURL: 'u' }],
             } as Record<string, ExecutableExtension[]>)
         ))
+
+    test('fetches a sideloaded extension and adds it to the set of registry extensions', () => {
+        scheduler().run(({ cold, expectObservable }) => {
+            expectObservable(
+                from(
+                    new TestExtensionsService(
+                        [{ id: 'foo', manifest, rawManifest: null }],
+                        cold<Pick<Model, 'visibleViewComponents'>>('a-|', {
+                            a: { visibleViewComponents: [] },
+                        }),
+                        {
+                            data: cold<SettingsCascadeOrError>('a-|', {
+                                a: {
+                                    final: {
+                                        extensions: {
+                                            foo: true,
+                                        },
+                                    },
+                                    subjects: [],
+                                },
+                            }),
+                        },
+                        enabledExtensions => enabledExtensions,
+                        cold('a-|', { a: 'bar' }),
+                        baseUrl =>
+                            of({
+                                id: baseUrl,
+                                manifest: {
+                                    url: 'bar.js',
+                                    activationEvents: [],
+                                },
+                                rawManifest: null,
+                            })
+                    ).activeExtensions
+                )
+            ).toBe('a-|', {
+                a: [
+                    { id: 'foo', manifest, scriptURL: 'u' },
+                    { id: 'bar', manifest: { url: 'bar.js', activationEvents: [] }, scriptURL: 'bar.js' },
+                ],
+            })
+        })
+    })
+
+    test('still returns registry extensions even if fetching a sideloaded extension fails', () => {
+        scheduler().run(({ cold, expectObservable }) => {
+            expectObservable(
+                from(
+                    new TestExtensionsService(
+                        [{ id: 'foo', manifest, rawManifest: null }],
+                        cold<Pick<Model, 'visibleViewComponents'>>('a-|', {
+                            a: { visibleViewComponents: [] },
+                        }),
+                        {
+                            data: cold<SettingsCascadeOrError>('a-|', {
+                                a: {
+                                    final: {
+                                        extensions: {
+                                            foo: true,
+                                        },
+                                    },
+                                    subjects: [],
+                                },
+                            }),
+                        },
+                        enabledExtensions => enabledExtensions,
+                        cold('a-|', { a: 'bar' }),
+                        () => throwError('baz')
+                    ).activeExtensions
+                )
+            ).toBe('a-|', {
+                a: [{ id: 'foo', manifest, scriptURL: 'u' }],
+            })
+        })
+    })
 })
