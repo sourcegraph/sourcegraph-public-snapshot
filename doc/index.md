@@ -38,6 +38,7 @@ Continue at http://localhost:7080, and see [administrator documentation](admin/i
 - [Query syntax reference](user/search/queries.md)
 - [Building a Sourcegraph extension](extensions/authoring/index.md) to add features and integrations to Sourcegraph
 - [Code search](user/search/index.md)
+- [Code intelligence](extensions/language_servers/index.md)
 - [Other integrations](integration/index.md)
 - [GraphQL API](api/graphql.md)
 
