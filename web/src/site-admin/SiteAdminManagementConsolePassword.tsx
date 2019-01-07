@@ -78,7 +78,8 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
             <>
                 <div className="card">
                     <div className="card-header alert-warning">
-                        <KeyVariantIcon /> Core configuration has moved to the mangement console.
+                        <KeyVariantIcon /> Core configuration has moved to the{' '}
+	                    <a href="https://docs.sourcegraph.com/admin/management_console ">management console</a>.
                     </div>
                     <div className="card-body">
                         Your management console password has been automatically generated for you. <br />
