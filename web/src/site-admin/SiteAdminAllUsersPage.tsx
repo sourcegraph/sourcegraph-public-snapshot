@@ -314,10 +314,6 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                     <Link to="/site-admin/users/new" className="btn btn-primary">
                         <AddIcon className="icon-inline" /> Create user account
                     </Link>
-                    &nbsp;
-                    <Link to="/site-admin/configuration" className="btn btn-secondary">
-                        <SettingsIcon className="icon-inline" /> Configure SSO
-                    </Link>
                 </div>
                 <FilteredUserConnection
                     className="mt-3"

@@ -69,11 +69,5 @@ export const settingsActions: EditorAction[] = [
 ]
 
 export const siteConfigActions: EditorAction[] = [
-    {
-        id: 'sourcegraph.site.addGSuiteOIDCAuthProvider',
-        label: 'Add G Suite user auth',
-        run: addGSuiteOIDCAuthProvider,
-    },
-    { id: 'sourcegraph.site.addSAMLAUthProvider', label: 'Add SAML user auth', run: addSAMLAuthProvider },
-    { id: 'sourcegraph.site.addLicenseKey', label: 'Add license key', run: addLicenseKey },
+
 ]

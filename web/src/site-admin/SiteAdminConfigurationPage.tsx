@@ -257,6 +257,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/site_config">documentation</Link> for more information.
                 </p>
+				<div className="alert alert-primary mb-2">
+					Core configuration has moved. <Link to="/help/admin/site_config">Learn more</Link> about the management console.
+				</div>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.site &&
@@ -264,7 +267,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         <div>
                             <DynamicallyImportedMonacoSettingsEditor
                                 value={contents || ''}
-                                actions={siteConfigActions}
                                 jsonSchemaId="site.schema.json#"
                                 extraSchemas={EXTRA_SCHEMAS}
                                 onDirtyChange={this.onDirtyChange}
