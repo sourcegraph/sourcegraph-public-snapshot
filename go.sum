@@ -23,6 +23,7 @@ github.com/aws/aws-sdk-go-v2 v0.5.0 h1:EYMvJVajBzaGlPb8z761lkejQKsz0FM6+78lfQ/Ue
 github.com/aws/aws-sdk-go-v2 v0.5.0/go.mod h1:5/URWM5KZOrZ0sp9aiPT0FrXgFJFPJ143F6SGgnTfXY=
 github.com/aws/aws-sdk-go-v2 v0.6.0 h1:vIMDY9xzK+3lNyIQeS++URcvmDFI6reOalHhyjEb7W8=
 github.com/aws/aws-sdk-go-v2 v0.6.0/go.mod h1:Vb00pBiW2/e1Vi9eSv8ybD7uGD/S9+lLPMlpNoIFLgs=
+github.com/aws/aws-sdk-go-v2 v0.7.0/go.mod h1:17MaCZ9g0q5BIMxwzRQeiv8M3c8+W7iuBnlWAEprcxE=
 github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible h1:9qh7ItVskIwDsCiQnqISqy8icJS4cc2yenagOUvXbd4=
 github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible/go.mod h1:5DmdJpM48aUShwAgzBfZDXP+O5nH9IYDqzpovC7q9Y4=
 github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11 h1:C2jA9xWe9gk/WFMzvR6q0tT/TNNnIJUyeowUO1Y2/VQ=
