@@ -1,8 +1,38 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Toggle className 1`] = `
+<button
+  className="toggle  c"
+  onClick={[Function]}
+  value={0}
+>
+  <span
+    className="toggle__bar  "
+  />
+  <span
+    className="toggle__knob  "
+  />
+</button>
+`;
+
 exports[`Toggle disabled 1`] = `
 <button
-  className="toggle toggle__disabled"
+  className="toggle toggle__disabled "
+  onClick={[Function]}
+  value={0}
+>
+  <span
+    className="toggle__bar  toggle__bar--disabled"
+  />
+  <span
+    className="toggle__knob  toggle__knob--disabled"
+  />
+</button>
+`;
+
+exports[`Toggle disabled 2`] = `
+<button
+  className="toggle toggle__disabled "
   onClick={[Function]}
   value={0}
 >
@@ -17,7 +47,7 @@ exports[`Toggle disabled 1`] = `
 
 exports[`Toggle value is false 1`] = `
 <button
-  className="toggle "
+  className="toggle  "
   onClick={[Function]}
   value={0}
 >
@@ -32,7 +62,7 @@ exports[`Toggle value is false 1`] = `
 
 exports[`Toggle value is true 1`] = `
 <button
-  className="toggle "
+  className="toggle  "
   onClick={[Function]}
   value={1}
 >
