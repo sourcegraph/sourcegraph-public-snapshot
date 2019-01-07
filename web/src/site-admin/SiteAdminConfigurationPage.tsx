@@ -11,7 +11,6 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../settings/Dynamically
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { siteConfigActions } from './configHelpers'
 import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 
 interface Props extends RouteComponentProps<any> {
