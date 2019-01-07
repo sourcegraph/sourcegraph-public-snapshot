@@ -12,6 +12,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { siteConfigActions } from './configHelpers'
+import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 
 interface Props extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -257,9 +258,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/site_config">documentation</Link> for more information.
                 </p>
-				<div className="alert alert-primary mb-2">
-					Core configuration has moved. <Link to="/help/admin/site_config">Learn more</Link> about the management console.
-				</div>
+				<div className="mb-3">
+                    <SiteAdminManagementConsolePassword />
+                </div>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.site &&
