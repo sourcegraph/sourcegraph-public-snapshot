@@ -509,6 +509,7 @@ github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e h1:Td8imVpXVet0O6
 github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e/go.mod h1:A1dQZmO/QypXmsL0T8axYZkSN/uA/T/A64pfKdBAMiY=
 github.com/stvp/tempredis v0.0.0-20160122230306-83f7aae7ea49 h1:aBiMfOQ47GCfoTbNcnVyph/dnUuTWN0rSqEKFq3T58Y=
 github.com/stvp/tempredis v0.0.0-20160122230306-83f7aae7ea49/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
+github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
 github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea h1:uTsERZ8h4VnqCoMip8dLd+uvk1R1xR2AviWn+pfoUa0=
 github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea/go.mod h1:1g9HBNqEaZuLUJPl/V1bnFaplEBI8J/ZSRTtakhF9cM=
 github.com/uber-go/atomic v1.3.2 h1:Azu9lPBWRNKzYXSIwRfgRuDuS0YKsK4NFhiQv98gkxo=
