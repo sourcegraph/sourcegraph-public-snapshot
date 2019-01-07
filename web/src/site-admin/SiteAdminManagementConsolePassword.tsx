@@ -78,7 +78,7 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
             <>
                 <div className="card">
                     <div className="card-header alert-warning">
-                        <KeyVariantIcon /> Critical configuration has moved to the{' '}
+                        <KeyVariantIcon /> Critical configuration is set in the{' '}
 	                    <a href="https://docs.sourcegraph.com/admin/management_console ">management console</a>.
                     </div>
                     <div className="card-body">
