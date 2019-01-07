@@ -7,6 +7,13 @@ Code intelligence provides advanced code navigation and cross-references for you
 - Find references
 - Symbol search
 
+## Language support
+
+- [Go](https://sourcegraph.com/extensions/sourcegraph/lang-go)
+- [TypeScript](https://sourcegraph.com/extensions/sourcegraph/lang-typescript)
+- [Python](https://sourcegraph.com/extensions/sourcegraph/python)
+- Check the [extension registry](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) for more
+
 Code intelligence is provided by [Sourcegraph extensions](../index.md) and language servers that run securely in your self-hosted Sourcegraph instance. The extensions (and associated language servers) perform advanced, scalable code analysis and are derived from our popular open-source language servers in use by hundreds of thousands of developers in editors and on Sourcegraph.com.
 
 By spinning up Sourcegraph, you can get code intelligence:
@@ -41,15 +48,6 @@ By spinning up Sourcegraph, you can get code intelligence:
 <img src="img/SymbolSidebar.png" width="500"/>
 
 ---
-
-## Languages
-
-Sourcegraph's code intelligence supports code written in the following programming languages:
-
-- [Go](https://sourcegraph.com/extensions/sourcegraph/lang-go)
-- [TypeScript](https://sourcegraph.com/extensions/sourcegraph/lang-typescript)
-- [Python](https://sourcegraph.com/extensions/sourcegraph/python)
-- Check the [extension registry for more](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
 
 ### Open standards
 
