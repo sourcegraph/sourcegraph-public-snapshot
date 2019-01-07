@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -105,24 +104,6 @@ func doValidate(inputStr, schema string) (problems []string, err error) {
 }
 
 func validate(schema, input []byte) (*gojsonschema.Result, error) {
-	if len(input) > 0 {
-		// HACK: Remove the "settings" field from site config because
-		// github.com/xeipuuv/gojsonschema has a bug where $ref'd schemas do not always get
-		// loaded. When https://github.com/xeipuuv/gojsonschema/pull/196 is merged, it will probably
-		// be fixed. This means that the backend config validation will not validate settings, but
-		// that is OK because specifying settings here is discouraged anyway.
-		var v map[string]interface{}
-		if err := json.Unmarshal(input, &v); err != nil {
-			return nil, err
-		}
-		delete(v, "settings")
-		var err error
-		input, err = json.Marshal(v)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	s, err := gojsonschema.NewSchema(jsonLoader{gojsonschema.NewBytesLoader(schema)})
 	if err != nil {
 		return nil, err
