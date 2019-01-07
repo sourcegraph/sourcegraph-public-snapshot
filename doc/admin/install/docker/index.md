@@ -30,7 +30,7 @@ Click **Add GitHub.com repositories** to add all repositories associated with yo
 ## Next steps
 
 - [Configure your Sourcegraph instance](../../site_config/index.md)
-- [Configure code intelligence](../../../extensions/language_servers/index.md)
+- [Configure code intelligence](../../../user/code_intelligence/index.md)
 - [Deploy Sourcegraph on AWS](../../install/docker/aws.md)
 - [Deploy Sourcegraph on Google Cloud Platform](../../install/docker/google_cloud.md)
 - [Deploy Sourcegraph on Digital Ocean](../../install/docker/digitalocean.md)

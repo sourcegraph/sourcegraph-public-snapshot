@@ -4,7 +4,7 @@
 
 Sourcegraph extensions enhance your code host, code reviews, and Sourcegraph itself by adding features such as:
 
-- Code intelligence (go-to-definition, find references, hovers, etc.)
+- [Code intelligence](../user/code_intelligence/index.md) (go-to-definition, find references, hovers, etc.)
 - Test coverage overlays
 - Links to live traces, log output, and performance data for a line of code
 - Git blame
