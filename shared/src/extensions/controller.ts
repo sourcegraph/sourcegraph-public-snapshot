@@ -50,11 +50,11 @@ export interface Controller extends Unsubscribable {
  * React props or state containing the client. There should be only a single client for the whole
  * application.
  */
-export interface ExtensionsControllerProps {
+export interface ExtensionsControllerProps<K extends keyof Controller = keyof Controller> {
     /**
      * The client, which is used to communicate with and manage extensions.
      */
-    extensionsController: Controller
+    extensionsController: Pick<Controller, K>
 }
 
 /**
