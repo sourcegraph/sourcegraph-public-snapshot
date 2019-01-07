@@ -46,7 +46,10 @@ By spinning up Sourcegraph, you can get code intelligence:
 
 Sourcegraph's code intelligence supports code written in the following programming languages:
 
-<!-- TODO!(sqs): add links to extension registry query that shows all language extensions -->
+- [Go](https://sourcegraph.com/extensions/sourcegraph/lang-go)
+- [TypeScript](https://sourcegraph.com/extensions/sourcegraph/lang-typescript)
+- [Python](https://sourcegraph.com/extensions/sourcegraph/python)
+- Check the [extension registry for more](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
 
 ### Open standards
 
