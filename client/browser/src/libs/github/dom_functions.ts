@@ -101,20 +101,42 @@ export const diffDomFunctions: DOMFunctions = {
     getLineNumberFromCodeElement,
     getDiffCodePart,
     isFirstCharacterDiffIndicator: codeElement => {
-        // Look for standard GitHub pseudo elements with diff indicators
+        // Old versions of GitHub write a +, -, or space character directly into
+        // the HTML text of the diff:
+        //
+        // <span class="blob-code-inner">+	fmt.<span class="pl-c1">Println</span>...
+        //                               ^
+        //
+        // New versions of GitHub do not, and Refined GitHub strips these
+        // characters.
+        //
+        // Since a +, -, or space character in the first column could be either
+        //
+        // - a diff indicator on an old version of GitHub, or
+        // - simply part of the code being diffed on either a new version of
+        //   GitHub or Refined GitHub,
+        //
+        // we check for the presence of other diff indicators that we know are
+        // mutually exclusive with the first character diff indicator.
+
+        // Some versions of GitHub have blob-code-marker-* classes instead of the first character diff indicator.
         const blobCodeInner = codeElement.closest('.blob-code-inner')
-        if (!blobCodeInner) {
-            throw new Error('Could not find .blob-code-inner element for codeElement')
-        }
-        if (
+        const hasBlobCodeMarker =
+            blobCodeInner &&
             ['deletion', 'context', 'addition'].some(name =>
                 blobCodeInner.classList.contains('blob-code-marker-' + name)
             )
-        ) {
-            return false
-        }
-        // Old GitHub Enterprise, check for Refined GitHub
-        return !codeElement.closest('.refined-github-diff-signs')
+
+        // Some versions of GitHub have data-code-marker attributes instead of the first character diff indicator.
+        const tr = codeElement.closest('tr')
+        const hasDataCodeMarker = tr && tr.querySelector('td[data-code-marker]')
+
+        // Refined GitHub strips the first character diff indicator.
+        const hasRefinedGitHub = codeElement.closest('.refined-github-diff-signs')
+
+        // When no other diff indicator is found, we assume the first character
+        // is a diff indicator.
+        return !hasBlobCodeMarker && !hasDataCodeMarker && !hasRefinedGitHub
     },
 }
 
