@@ -17,7 +17,14 @@ describe('Toggle', () => {
 
     test('disabled', () => {
         const component = renderer.create(<Toggle disabled={true} />)
-        const tree = component.toJSON()
+        let tree = component.toJSON()
+        expect(tree).toMatchSnapshot()
+
+        // Clicking while disabled is a noop.
+        tree!.props.onClick({ preventDefault: () => void 0, currentTarget: { blur: () => void 0 } })
+        tree = component.toJSON()
         expect(tree).toMatchSnapshot()
     })
+
+    test('className', () => expect(renderer.create(<Toggle className="c" />).toJSON()).toMatchSnapshot())
 })
