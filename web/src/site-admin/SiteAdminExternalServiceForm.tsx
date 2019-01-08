@@ -65,6 +65,10 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
 
                 <div>
                     <DynamicallyImportedMonacoSettingsEditor
+                        // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
+                        // if it thinks the config is dirty. We want to always replace the config if the kind changes
+                        // so the editor is keyed on the kind.
+                        key={this.props.input.kind}
                         value={this.props.input.config}
                         jsonSchemaId={`site.schema.json#definitions/${getKindDefinitionId(this.props.input.kind)}`}
                         extraSchemas={EXTRA_SCHEMAS}
