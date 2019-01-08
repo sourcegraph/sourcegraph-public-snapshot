@@ -238,11 +238,22 @@ func (c *externalServices) listConfigs(ctx context.Context, kind string, result 
 	if err != nil {
 		return err
 	}
-	var configs []json.RawMessage
+
+	// Decode the jsonc configs into Go objects.
+	var cfgs []interface{}
 	for _, service := range services {
-		configs = append(configs, json.RawMessage(service.Config))
+		var cfg interface{}
+		if err := jsonc.Unmarshal(service.Config, &cfg); err != nil {
+			return err
+		}
+		cfgs = append(cfgs, cfg)
 	}
-	buf, err := json.Marshal(configs)
+
+	// Now move our untyped config list into the typed list (result). We could
+	// do this using reflection, but JSON marshaling and unmarshaling is easier
+	// and fast enough for our purposes. Note that service.Config is jsonc, not
+	// plain JSON so we could not simply treat it as json.RawMessage.
+	buf, err := json.Marshal(cfgs)
 	if err != nil {
 		return err
 	}
