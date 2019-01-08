@@ -152,9 +152,6 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                         <Link to="/site-admin/users/new" className="btn btn-primary btn-sm">
                                             <AddIcon className="icon-inline" /> Create user account
                                         </Link>
-                                        <Link to="/site-admin/configuration" className="btn btn-secondary btn-sm">
-                                            <SettingsIcon className="icon-inline" /> Configure SSO
-                                        </Link>
                                         <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
                                             <OpenInNewIcon className="icon-inline" /> View all
                                         </Link>

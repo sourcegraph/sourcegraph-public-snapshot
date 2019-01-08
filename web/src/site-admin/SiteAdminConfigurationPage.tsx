@@ -11,7 +11,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../settings/Dynamically
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { siteConfigActions } from './configHelpers'
+import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 
 interface Props extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -257,6 +257,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/site_config">documentation</Link> for more information.
                 </p>
+				<div className="mb-3">
+                    <SiteAdminManagementConsolePassword />
+                </div>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.site &&
@@ -264,7 +267,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         <div>
                             <DynamicallyImportedMonacoSettingsEditor
                                 value={contents || ''}
-                                actions={siteConfigActions}
                                 jsonSchemaId="site.schema.json#"
                                 extraSchemas={EXTRA_SCHEMAS}
                                 onDirtyChange={this.onDirtyChange}
