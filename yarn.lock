@@ -2515,19 +2515,19 @@
   dependencies:
     "@types/node" "*"
 
-"@types/storybook__addon-actions@^3.4.1":
+"@types/storybook__addon-actions@3.4.1":
   version "3.4.1"
   resolved "https://registry.npmjs.org/@types/storybook__addon-actions/-/storybook__addon-actions-3.4.1.tgz#8f90d76b023b58ee794170f2fe774a3fddda2c1d"
   integrity sha512-An8pNb1/7QhkdOT8Ht5WjJsSxAh2mWti/J4eILwUHpXVZ1j3xlVaOzwTbg8twN4DjgOAggjEDOj6Bx8YOWh9Pg==
 
-"@types/storybook__addon-info@^3.4.2":
+"@types/storybook__addon-info@3.4.2":
   version "3.4.2"
   resolved "https://registry.npmjs.org/@types/storybook__addon-info/-/storybook__addon-info-3.4.2.tgz#31a27e66867f02e593579cc58f54d22e726b0925"
   integrity sha512-1af9u42JAMbi54MOkfzZt2+RTbUnpVJCN6vkkcAEtlyML4tXpmW482d3TZNiYPk3ePHKkielNZUtfpijT/XJ+A==
   dependencies:
     "@types/react" "*"
 
-"@types/storybook__addon-notes@^4.0.0":
+"@types/storybook__addon-notes@4.0.0":
   version "4.0.0"
   resolved "https://registry.npmjs.org/@types/storybook__addon-notes/-/storybook__addon-notes-4.0.0.tgz#1d3354d995445c7b128c13c1cd76a6991fbe131c"
   integrity sha512-jh4dqUo4iflX2lK2CmbCnwKFMFDp6d48d6fo9FrHzzqcWXoeaSmWIqdLDytBpvdr2VbG8/Zo3Z4inOzw99p2Xg==
@@ -2536,14 +2536,14 @@
     "@types/react" "*"
     "@types/storybook__react" "*"
 
-"@types/storybook__addon-options@^4.0.0":
+"@types/storybook__addon-options@4.0.0":
   version "4.0.0"
   resolved "https://registry.npmjs.org/@types/storybook__addon-options/-/storybook__addon-options-4.0.0.tgz#80beff796c892f9bccbd221cbfc792dbe2d9764f"
   integrity sha512-toMfmqTdbh65jafemsy2+dVWjt3wjgHxbJF6V0jhfsyeZckc/1VYtjMqQZdR4vlFT+nBcOKQYt7+kw2nqYF91Q==
   dependencies:
     "@types/storybook__react" "*"
 
-"@types/storybook__addon-storyshots@^3.4.4":
+"@types/storybook__addon-storyshots@3.4.4":
   version "3.4.4"
   resolved "https://registry.npmjs.org/@types/storybook__addon-storyshots/-/storybook__addon-storyshots-3.4.4.tgz#bc34d425b8ca2f1e73e3c1ecb6afc178b9fa9ace"
   integrity sha512-Zwu+fk/zqCNAnRnLlOvLRMPi2KrUuXMW/HWZ4RMOHfu2OGqp9bkNF59whI4XwLM/aZUN27nne8bGaHIDL0rRTg==
@@ -2552,7 +2552,7 @@
     "@types/react" "*"
     "@types/storybook__react" "*"
 
-"@types/storybook__react@*", "@types/storybook__react@^4.0.0":
+"@types/storybook__react@*", "@types/storybook__react@4.0.0":
   version "4.0.0"
   resolved "https://registry.npmjs.org/@types/storybook__react/-/storybook__react-4.0.0.tgz#52cc452fbab599568d595075a90142ef4a1233f6"
   integrity sha512-Iq3RX953fqZRwWN3jywm8pUx1/Atev+x/9tF7/2CNA+Ii55sGSJJRWMRthUKQXTa3zOexcvfksfVYdUaIZY91w==
