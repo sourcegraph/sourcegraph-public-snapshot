@@ -20,7 +20,7 @@ Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli#ins
 
 Bring your extension's features for code viewed on GitHub, GitLab and other code hosts by [installing the Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
 
-## Next Steps
+## Next steps
 
-[Creating a Sourcegraph Extension](creating.md)
-[Local Development](local_development.md)
+[Creating a Sourcegraph extension](creating.md)
+[Local development](local_development.md)

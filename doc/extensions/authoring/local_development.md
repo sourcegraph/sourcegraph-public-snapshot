@@ -4,10 +4,10 @@ When developing an extension, you can sideload it from your local development ma
 
 To set this up:
 
-1. In your extension's directory, run `npm run serve` to run the Parcel dev server. Wait until it reports that it's listening
-2. Reveal the **Ext ▲** debug menu by running the following JavaScript code in your browser's devtools console on a Sourcegraph page: `localStorage.debug=true;location.reload()`
-3. In the **Ext ▲** debug menu, click **Sideload Extension -> Load Extension**
-3. Enter the URL the Parcel dev server is listening on
+1. In your extension's directory, run `npm run serve` to run the Parcel dev server. Wait until it reports that it's listening.
+2. Reveal the **Ext ▲** debug menu by running the following JavaScript code in your browser's devtools console on a Sourcegraph page: `localStorage.debug=true;location.reload()`.
+3. In the **Ext ▲** debug menu, click **Sideload Extension -> Load Extension**.
+3. Enter the URL the Parcel dev server is listening on.
 4. Your extension should appear in the debug menu's "active extensions" list. If it doesn't, there may have been an error when activating your extension - check the debug console for error messages.
 
 After doing this, the development cycle is as follows:
@@ -17,20 +17,20 @@ After doing this, the development cycle is as follows:
 
 When you're done, clear the sideload URL from the extensions debug menu.
 
-*NOTE:* this workflow assumes that, when running the Parcel dev server, a symlink exists in the `dist/` directory pointing to your `package.json`. If you [created your extension the easy way](creating.md#creating-an-extension-the-easy-way), this is already setup for you. Otherwise:
-1. add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`)
-1. add the following npm script to your `package.json`:
+*NOTE:* this workflow assumes that, when running the Parcel dev server, a symlink exists in the `dist/` directory pointing to your `package.json`. If you [created your extension the easy way](creating.md#creating-an-extension-the-easy-way), this is already set up for you. Otherwise:
+1. Add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`).
+1. Add the following npm script to your `package.json`:
 
     ```
     "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json"
     ```
-2. edit the `serve` npm script to run `symlink-package`:
+2. Edit the `serve` npm script to run `symlink-package`:
 
     ```
     "serve": "npm run symlink package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
     ```
 
-## Next Steps
+## Next steps
 
 - [Publishing an extension](publishing.md)
 - [Extension activation](activation.md)
