@@ -125,7 +125,7 @@ body.main-page {
             padding-left: 0.75rem;
             margin-right: auto;
             margin-left: auto;
-			// stylelint-disable-next-line declaration-property-unit-whitelist
+            // stylelint-disable-next-line declaration-property-unit-whitelist
             padding-top: 15vh;
             padding-bottom: 10rem;
             min-height: calc(70vh - 8rem);
@@ -196,7 +196,7 @@ body.main-page {
             }
         }
     }
-    .company-logos {
+    .customer-logos {
         background-color: #151c28;
         position: sticky;
         position: -webkit-sticky;
@@ -229,16 +229,35 @@ body.main-page {
             padding-top: 2rem;
             padding-bottom: 0;
         }
-
+        .quote {
+            font-weight: 0;
+            padding-bottom: 1rem;
+        }
+        .quote-emphasis {
+            font-style: italic;
+            font-size: 36px;
+            padding-bottom: 1rem;
+        }
+        .quote-body {
+            font-size: 20px;
+            padding-left: 3rem;
+        }
+        .quote-byline {
+            font-size: 20px;
+            text-align: right;
+        }
+        .customers-page-link {
+            text-align: right;
+        }
         .logo {
-            padding: 2rem 0;
+            padding: 2rem 0 0 0;
 
             &-image {
                 width: 100%;
                 background-position: center;
                 background-repeat: no-repeat;
                 background-size: contain;
-				// stylelint-disable-next-line declaration-property-unit-whitelist
+                // stylelint-disable-next-line declaration-property-unit-whitelist
                 height: 115px;
             }
         }

@@ -333,7 +333,7 @@ export class MainPage extends React.Component<Props, State> {
                     </div>
                 </section>
                 <div className="about-section-container">
-                    <section className="company-logos">
+                    <section className="customer-logos">
                         <div className="container">
                             <div className="row">
                                 <div className="col-12">
@@ -350,6 +350,27 @@ export class MainPage extends React.Component<Props, State> {
                                 </div>
                                 <div className="col-3 logo">
                                     <figure className="logo-image logo4" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="container pb-4">
+                            <div className="row">
+                                <div className="col-12">
+                                    <div className="quote">
+                                        <div className="quote-emphasis">
+                                            "Seriously, this is the best tool we’ve invested in.
+                                        </div>{' '}
+                                        <div className="quote-body">
+                                            It’s made me insanely more productive and efficient at writing code here.
+                                            I’m able to understand and deeply dive through all of our microservices and
+                                            get my work done really fast. This is absolutely incredible and I can’t
+                                            thank this team enough on bringing this to our DevX infrastructure."
+                                        </div>
+                                    </div>
+                                    <div className="quote-byline">Senior Engineer using Sourcegraph Enterprise</div>
+                                </div>
+                                <div className="col-12 pt-2 customers-page-link">
+                                    <a href="https://about.sourcegraph.com/customers">More from our customers</a>
                                 </div>
                             </div>
                         </div>
