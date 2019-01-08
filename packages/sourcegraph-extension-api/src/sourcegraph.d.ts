@@ -1165,7 +1165,7 @@ declare module 'sourcegraph' {
          * Registers a search result provider.
          *
          * Multiple providers can be registered. In that case, results will be returned grouped by
-         * provider. The order in which results from providers are returned is not defined.
+         * provider. The order in which results from providers are merged is not defined.
          *
          * @param provider A search result provider.
          */
