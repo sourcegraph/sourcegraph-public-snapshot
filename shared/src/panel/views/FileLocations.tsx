@@ -7,8 +7,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { ActionsNavItems } from '../../actions/ActionsNavItems'
-import { ContributableMenu } from '../../api/protocol'
+import { ActionContribution } from '../../api/protocol'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
 import { VirtualList } from '../../components/VirtualList'
@@ -137,36 +136,11 @@ export class FileLocations extends React.PureComponent<Props, State> {
                 <VirtualList
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
-                    items={orderedURIs.map(({ uri, repo }, i) => (
+                    items={orderedURIs.map(({ uri }, i) => (
                         <FileMatch
                             key={i}
                             expanded={true}
-                            result={refsToFileMatch(uri, locationsByURI.get(uri)!)}
-                            extraHeader={
-                                <ActionsNavItems
-                                    listClass="align-items-center justify-content-end"
-                                    actionItemClass="badge badge-secondary"
-                                    menu={ContributableMenu.LocationTitle}
-                                    extensionsController={this.props.extensionsController}
-                                    platformContext={this.props.platformContext}
-                                    location={this.props.location}
-                                    scope={{
-                                        type: 'location',
-                                        // KNOWN ISSUE: If multiple matches are found in a file, it
-                                        // only shows the contributed actions for the first
-                                        // location. (E.g., if the first match in a file is fuzzy
-                                        // and all the rest aren't, and you're using the
-                                        // basic-code-intel extension, then the "Fuzzy" badge
-                                        // appears in the file header and appears to apply to all
-                                        // matches in the file, not just the first.) To fix this, we
-                                        // would need to rethink how matches are displayed (VS
-                                        // Code's way of displaying matches would make it possible
-                                        // for us to avoid this problem).
-                                        location: locationsByURI.get(uri)![0],
-                                    }}
-                                    wrapInList={true}
-                                />
-                            }
+                            result={refsToFileMatch(this.props, uri, locationsByURI.get(uri)!)}
                             icon={this.props.icon}
                             onSelect={this.onSelect}
                             showAllMatches={true}
@@ -190,7 +164,11 @@ export class FileLocations extends React.PureComponent<Props, State> {
     }
 }
 
-function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
+function refsToFileMatch(
+    { extensionsController }: ExtensionsControllerProps,
+    uri: string,
+    locations: Location[]
+): IFileMatch {
     const p = parseRepoURI(uri)
     return {
         file: {
@@ -210,13 +188,32 @@ function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
             url: toRepoURL(p.repoName),
         },
         limitHit: false,
-        lineMatches: refs.filter(propertyIsDefined('range')).map(
-            (ref): ILineMatch => ({
-                preview: '',
-                limitHit: false,
-                lineNumber: ref.range.start.line,
-                offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
-            })
+        lineMatches: locations.filter(propertyIsDefined('range')).map(
+            (location): ILineMatch => {
+                // TODO: These are fetched once and not updated continuously as the context changes. It also
+                // assumes they are synchronously available (which was true when this was implemented). These
+                // assumptions/limitations are OK for this use case, but it is not correct in general. The reason
+                // for these is to simplify the initial implementation.
+                let actions: ActionContribution[] | undefined
+                extensionsController.services.contribution
+                    .getContributions({
+                        type: 'location',
+                        location,
+                    })
+                    .subscribe(value => {
+                        actions = value.actions
+                    })
+                    .unsubscribe()
+                return {
+                    preview: '',
+                    limitHit: false,
+                    lineNumber: location.range.start.line,
+                    offsetAndLengths: [
+                        [location.range.start.character, location.range.end.character - location.range.start.character],
+                    ],
+                    actions,
+                }
+            }
         ),
     }
 }

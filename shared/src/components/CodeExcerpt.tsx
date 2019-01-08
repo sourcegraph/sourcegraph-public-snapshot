@@ -3,6 +3,7 @@ import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
+import { ActionContribution } from '../api/protocol'
 import { highlightNode } from '../util/dom'
 import { Repo } from '../util/url'
 
@@ -20,12 +21,16 @@ interface Props extends Repo {
     // How many extra lines to show in the excerpt before/after the ref.
     context?: number
     highlightRanges: HighlightRange[]
+
+    /** The actions (if any) for each line. */
+    actions?: { line: number; actions: ActionContribution }[]
+
     className?: string
     isLightTheme: boolean
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
-interface HighlightRange {
+export interface HighlightRange {
     /**
      * The 0-based line number that this highlight appears in
      */

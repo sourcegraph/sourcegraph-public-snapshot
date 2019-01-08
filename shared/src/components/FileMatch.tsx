@@ -2,10 +2,11 @@ import { flatMap } from 'lodash'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { pluralize } from '../../../shared/src/util/strings'
+import { ActionContribution } from '../api/protocol'
 import * as GQL from '../graphql/schema'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash } from '../util/url'
-import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
+import { CodeExcerpt, FetchFileCtx, HighlightRange } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
@@ -20,7 +21,13 @@ export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'symbols' | 'limitHit'>> &
     lineMatches: ILineMatch[]
 }
 
-export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'>
+export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
+    /**
+     * The actions (if any) that correspond to a match. The `actions[i]` actions are associated with the match at
+     * `offsetAndLengths[i]`.
+     */
+    actions?: ActionContribution[]
+}
 
 interface IMatchItem {
     highlightRanges: {
@@ -29,6 +36,9 @@ interface IMatchItem {
     }[]
     preview: string
     line: number
+
+    /** The actions (if any) for the line. */
+    actions?: ActionContribution[]
 }
 
 interface Props {
@@ -56,11 +66,6 @@ interface Props {
      * Whether or not to show all matches for this file, or only a subset.
      */
     showAllMatches: boolean
-
-    /**
-     * An extra React fragment to render in the header.
-     */
-    extraHeader?: React.ReactFragment
 
     isLightTheme: boolean
 
@@ -96,17 +101,12 @@ export class FileMatch extends React.PureComponent<Props> {
         }))
 
         const title = (
-            <div className="d-flex align-items-center justify-content-between">
-                <div>
-                    <RepoFileLink
-                        repoName={result.repository.name}
-                        repoURL={result.repository.url}
-                        filePath={result.file.path}
-                        fileURL={result.file.url}
-                    />
-                </div>
-                {this.props.extraHeader ? <div>{this.props.extraHeader}</div> : null}
-            </div>
+            <RepoFileLink
+                repoName={result.repository.name}
+                repoURL={result.repository.url}
+                filePath={result.file.path}
+                fileURL={result.file.url}
+            />
         )
 
         let containerProps: ResultContainerProps
@@ -168,7 +168,7 @@ export class FileMatch extends React.PureComponent<Props> {
         // The number of lines of context to show before and after each match.
         const context = 1
 
-        const groupsOfItems = mergeContext(
+        const groupsOfItems: HighlightRange[][] = mergeContext(
             context,
             flatMap(showItems, item =>
                 item.highlightRanges.map(range => ({
@@ -211,6 +211,7 @@ export class FileMatch extends React.PureComponent<Props> {
                                 filePath={result.file.path}
                                 context={context}
                                 highlightRanges={items}
+                                actions={item}
                                 className="file-match__item-code-excerpt"
                                 isLightTheme={this.props.isLightTheme}
                                 fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
