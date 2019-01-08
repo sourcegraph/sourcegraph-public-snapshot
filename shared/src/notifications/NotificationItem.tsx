@@ -78,7 +78,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
             >
                 <div className="w-100 d-flex align-items-start">
                     <div className="p-2 flex-grow-1 mw-100">
-                        <h4
+                        <div
                             className="sourcegraph-notification-item__title"
                             dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.notification.message || '') }}
                         />
