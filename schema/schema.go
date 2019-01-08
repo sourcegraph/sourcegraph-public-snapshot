@@ -236,6 +236,12 @@ type OpenIDConnectAuthProvider struct {
 	Type               string `json:"type"`
 }
 
+// OtherExternalServiceConnection description: Connection to Git repositories for which an external service integration isn't yet available.
+type OtherExternalServiceConnection struct {
+	Repos []string `json:"repos"`
+	Url   string   `json:"url,omitempty"`
+}
+
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
