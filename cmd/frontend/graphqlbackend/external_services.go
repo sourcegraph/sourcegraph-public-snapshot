@@ -19,6 +19,7 @@ var externalServiceKinds = map[string]struct{}{
 	"GITLAB":          {},
 	"GITOLITE":        {},
 	"PHABRICATOR":     {},
+	"OTHER":           {},
 }
 
 func validateKind(kind string) error {
