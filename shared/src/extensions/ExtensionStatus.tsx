@@ -113,7 +113,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     />
                 </div>
                 <div className="card-body border-top">
-                    <strong>Sideload Extension</strong>
+                    <h6>Sideload Extension</h6>
                     {this.state.sideloadedExtensionURL ? (
                         <div>
                             <p>
@@ -154,7 +154,10 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
     }
 
     private setSideloadedExtensionURL = () => {
-        const url = window.prompt('Parcel dev server URL:', this.state.sideloadedExtensionURL || '')
+        const url = window.prompt(
+            'Parcel dev server URL:',
+            this.state.sideloadedExtensionURL || 'http://localhost:1234'
+        )
         this.props.platformContext.sideloadedExtensionURL.next(url)
     }
 
