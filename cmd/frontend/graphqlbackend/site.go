@@ -176,10 +176,6 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	return conf.ValidateSite(contents)
 }
 
-func (r *siteConfigurationResolver) Source() string {
-	return "database" // TODO(slimsag): future: remove this field now that it is useless
-}
-
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string

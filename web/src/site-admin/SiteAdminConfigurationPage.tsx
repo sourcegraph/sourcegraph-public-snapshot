@@ -259,9 +259,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             history={this.props.history}
                         />
                         <p className="form-text text-muted">
-                            <small>Source: {formatEnvVar(this.state.site.configuration.source)}</small>
-                        </p>
-                        <p className="form-text text-muted">
                             <small>
                                 Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
                                 more information, see the <Link to="/help/admin/site_config/all">documentation</Link>.
@@ -284,13 +281,4 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         eventLogger.log('SiteReloaded')
         this.siteReloads.next()
     }
-}
-
-function formatEnvVar(text: string): React.ReactChild[] | string {
-    const S = 'SOURCEGRAPH_CONFIG'
-    const idx = text.indexOf(S)
-    if (idx === -1) {
-        return text
-    }
-    return [text.slice(0, idx), <code key={S}>{S}</code>, text.slice(idx + S.length)]
 }
