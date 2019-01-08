@@ -72,26 +72,21 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                     <p>No extensions are available.</p>
                 ) : (
                     <>
-                        <div className="row">
+                        <div className="extensions-explore-section--row">
                             {extensionsOrError.slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).map((
                                 extension /* or loading */,
                                 i
                             ) => (
-                                <div key={i} className="col-md-6 col-lg-3 mb-2">
+                                <div key={i} className="extensions-explore-section--card">
                                     {extension === LOADING ? (
                                         <ExtensionsExploreSectionExtensionCard
-                                            extensionID="⋯"
+                                            extensionID=""
                                             // Spacer to reduce loading jitter.
-                                            description={
-                                                <>
-                                                    <br />
-                                                    <br />
-                                                </>
-                                            }
+                                            description=""
                                         />
                                     ) : (
                                         <ExtensionsExploreSectionExtensionCard
-                                            extensionID={<Path path={extension.extensionIDWithoutRegistry} />}
+                                            extensionID={extension.extensionIDWithoutRegistry}
                                             description={
                                                 (extension.manifest && extension.manifest.description) || undefined
                                             }
