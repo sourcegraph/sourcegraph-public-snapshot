@@ -19,6 +19,8 @@ docker run \
 
 Continue at http://localhost:7080, and see [administrator documentation](admin/index.md) for next steps.
 
+Add code intelligence (hover tooltips, jump-to-definition, find-references) for languages like [Go](https://sourcegraph.com/extensions/sourcegraph/lang-go), [TypeScript](https://sourcegraph.com/extensions/sourcegraph/lang-typescript), [Python](https://sourcegraph.com/extensions/sourcegraph/python), and [others](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) by enabling the corresponding [Sourcegraph extension](extensions/index.md) on the [Sourcegraph extension registry](https://sourcegraph.com/extensions).
+
 ## Overview
 
 ### Core documentation
