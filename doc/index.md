@@ -21,6 +21,8 @@ Continue at http://localhost:7080, and see [administrator documentation](admin/i
 
 ## Overview
 
+### Core documentation
+
 - [**User documentation**](user/index.md)
 - [**Administrator documentation**](admin/index.md)
 - [Install Sourcegraph](admin/install/index.md)
@@ -30,7 +32,7 @@ Continue at http://localhost:7080, and see [administrator documentation](admin/i
 - [Sourcegraph Enterprise](admin/subscriptions/index.md)
 - [Sourcegraph roadmap](dev/roadmap.md)
 
-### Popular documentation
+### Features and tutorials
 
 - [Overview](user/index.md): What is Sourcegraph?
 - [Tour](user/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
