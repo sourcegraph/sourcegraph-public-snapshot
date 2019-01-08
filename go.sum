@@ -663,6 +663,7 @@ gopkg.in/ini.v1 v1.39.0 h1:Jf2sFGT+sAd7i+4ftUN1Jz90uw8XNH8NXbbOY16taA8=
 gopkg.in/ini.v1 v1.39.0/go.mod h1:pNLf8WUiyNEtQjuu5G5vTm06TEv9tsIgeAvK8hOrP4k=
 gopkg.in/ini.v1 v1.40.0 h1:JOoHKRa3vZxx47SL6sOY0gj0hfmA24l+BkQ4CftFizc=
 gopkg.in/ini.v1 v1.40.0/go.mod h1:pNLf8WUiyNEtQjuu5G5vTm06TEv9tsIgeAvK8hOrP4k=
+gopkg.in/ini.v1 v1.41.0/go.mod h1:pNLf8WUiyNEtQjuu5G5vTm06TEv9tsIgeAvK8hOrP4k=
 gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c h1:Un0HKXHsvpUSZPX77tzIBx2Qdrd0bst8wE0Jh00hovk=
 gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c/go.mod h1:iRaweuAoSID0UldismzLiA9DUs9ky+Px5W3Bgmh3CIU=
 gopkg.in/square/go-jose.v2 v2.1.9 h1:YCFbL5T2gbmC2sMG12s1x2PAlTK5TZNte3hjZEIcCAg=

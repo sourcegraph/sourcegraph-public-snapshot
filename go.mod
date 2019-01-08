@@ -139,7 +139,7 @@ require (
 	google.golang.org/appengine v1.4.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
-	gopkg.in/ini.v1 v1.40.0 // indirect
+	gopkg.in/ini.v1 v1.41.0 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.7.0
