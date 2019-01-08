@@ -124,12 +124,18 @@ $table-border-color: #2b3750;
 $table-hover-bg-light: #f2f4f8;
 $table-border-color-light: #e4e9f1;
 
+// Progress
+$progress-border-radius: 0;
+$progress-bg: transparent;
+$progress-height: auto;
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
 @import './global-styles/badge';
 @import './global-styles/breadcrumb';
