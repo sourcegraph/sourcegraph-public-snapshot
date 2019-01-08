@@ -8,7 +8,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - Management, deployment, and configuration:
   - [Adding Git repositories](repo/add.md) (from a code host or clone URL)
   - [Repository webhooks](repo/webhooks.md)
-  - [Management console](mgt_console.md)
+  - [Management console](management_console.md)
   - [Site configuration](site_config/index.md)
   - [User authentication](auth.md)
   - [Updating to a new version of Sourcegraph](updates.md)
