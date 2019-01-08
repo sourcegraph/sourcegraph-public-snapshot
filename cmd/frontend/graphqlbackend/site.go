@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -175,16 +174,6 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 		return nil, err
 	}
 	return conf.ValidateSite(contents)
-}
-
-func (r *siteConfigurationResolver) CanUpdate() bool {
-	// We assume the is-admin check has already been performed before constructing
-	// our receiver.
-	return processrestart.CanRestart()
-}
-
-func (r *siteConfigurationResolver) Source() string {
-	return "database" // TODO(slimsag): future: remove this field now that it is useless
 }
 
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
