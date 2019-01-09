@@ -24,7 +24,7 @@ acme: authorization error for example.com: 403 urn:acme:error:unauthorized:
 Cannot negotiate ALPN protocol "acme-tls/1" for tls-alpn-01 challenge;
 challenge "http-01" failed with error: acme: authorization error for example.com:
 403 urn:acme:error:unauthorized: Invalid response from
-http://example.com/.well-known/acme-challenge/gHyMI48MrfLg: ... 
+http://example.com/.well-known/acme-challenge/gHyMI48MrfLg: ...
 
 ...
 
@@ -52,7 +52,7 @@ For single-server Docker image deployments, add the following lines to your site
   // ...
   "tlsCert": "-----BEGIN CERTIFICATE-----\nMIIFdTCCBF2gAWiB...",
   "tlsKey": "-----BEGIN RSA PRIVATE KEY-----\nMII...",
-  "externalURL": "https://example.com:3443" 
+  "externalURL": "https://example.com:3443"
   // Must begin with "https"; replace with the public IP or hostname of your machine
   // ...
 }
@@ -65,7 +65,6 @@ docker run \
   --publish 443:7443 --rm \
   --volume ~/.sourcegraph/config:/etc/sourcegraph \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
-  --volume /var/run/docker.sock:/var/run/docker.sock \
   sourcegraph/server:2.13.5
 ```
 

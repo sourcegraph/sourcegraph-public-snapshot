@@ -37,6 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled`.
 - The repository and directory pages now show all entries together instead of showing files and (sub)directories separately.
 - Extensions no longer can specify titles (in the `title` property in the `package.json` extension manifest). Their extension ID (such as `alice/myextension`) is used.
+- Sourcegraph no longer requires access to `/var/run/docker.sock`.
 
 ### Fixed
 
