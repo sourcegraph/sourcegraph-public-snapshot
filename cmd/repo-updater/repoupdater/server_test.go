@@ -18,7 +18,7 @@ import (
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{}
+	s := &Server{OtherReposSyncer: repos.NewOtherReposSyncer()}
 	h := s.Handler()
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
@@ -113,8 +113,10 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestRepoLookup(t *testing.T) {
+	s := Server{OtherReposSyncer: repos.NewOtherReposSyncer()}
+
 	t.Run("no args", func(t *testing.T) {
-		if _, err := repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
+		if _, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
 			t.Error()
 		}
 	})
@@ -127,7 +129,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
-			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "example.com/a/b"})
+			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "example.com/a/b"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -143,7 +145,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
-			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
+			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -161,7 +163,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
-			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
+			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
 			if err != wantErr {
 				t.Fatal(err)
 			}
@@ -199,7 +201,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
-			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
+			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
 			if err != nil {
 				t.Fatal(err)
 			}
