@@ -1,4 +1,5 @@
 import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
+import { without } from 'lodash'
 // tslint:disable-next-line:import-blacklist this is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
 import marked from 'marked'
 import sanitize from 'sanitize-html'
@@ -48,11 +49,14 @@ export const renderMarkdown = (markdown: string): string => {
         highlight: (code, language) => highlightCodeSafe(code, language),
     })
     return sanitize(rendered, {
+        // Defaults: https://sourcegraph.com/github.com/punkave/sanitize-html@90aac2665011be6fa21a8864d21c604ee984294f/-/blob/src/index.js#L571-589
+
         // Allow highligh.js styles, e.g.
         // <span class="hljs-keyword">
         // <code class="language-javascript">
-        allowedTags: [...sanitize.defaults.allowedTags, 'span'],
+        allowedTags: [...without(sanitize.defaults.allowedTags, 'iframe'), 'span', 'img'],
         allowedAttributes: {
+            ...sanitize.defaults.allowedAttributes,
             span: ['class'],
             code: ['class'],
         },
