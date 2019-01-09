@@ -28,14 +28,17 @@ The goal of the planning process is to produce plans that accurately reflect wha
 
 1. Product or engineering identifies a problem that engineering needs to solve.
 2. The problem is discussed with relevant teammates to determine if the problem is a priority to solve and to identify an owner.
-3. If the problem is a priority and an owner is identified, the owner opens a PR to add a new document to this directory that follows the [template](0000-00-00-template.md). The file name has the following components:
-    - The date that the plan was first authored (YYYY-MM-DD).
-    - The dash (`-`) separated title.
-    - The markdown (`.md`) suffix.
-4. The owner requests a review from relevant stakeholders, including the owner's manager.
-    - Reviewers are expected to respond to new and updated proposals within 2 business days.
-    - If a proposal is not approved within 5 business days, the owner's manager will make a final judgement call whether a project is approved as written or rejected.
-5. If a proposal is approved, the owner copies the implementation checklist into a new issue that links to the proposal's PR and links to this issue from the proposal. Further changes to the checklist are reflected in the issue and not the proposal.
-6. The owner merges the proposal.
+3. The owner opens a work-in-progress PR (e.g. "wip: " prefix) to add a new document to this directory that follows the [template](0000-00-00-template.md).
+    - The file name has the following components:
+        - The date that the plan was first authored (YYYY-MM-DD).
+        - The dash (`-`) separated title.
+        - The markdown (`.md`) suffix.
+    - It is ok if the first draft of the plan isn't complete. It can be used as a starting point for discussion.
+4. The owner does whatever work is necessary to flesh out the details of the plan (e.g. discussions with teammates, experimental coding, etc.).
+    - The goal is to complete this step in no longer than a week. If this step takes more than a week, it might be a signal that the project is too big or there is too much uncertainty. The owner should consider descoping the project in this case.
+5. When planning document is done, the owner removes the "wip: " prefix and requests approval from relevant stakeholders, including the owner's manager.
+5. Once a plan is approved, the owner copies the implementation checklist from the plan into a new issue.
+6. The owner updates the plan to include a link to the new issue and then merges the plan.
 7. The owner completes the checklist in the issue, updating it as necessary throughout the project.
-8. After the project is done, the owner fills out the retrospective portion of the plan.
+8. After the project is done, the owner schedules a retrospective with the everyone involved in the project, including the owner's manager, and fills out the retrospective portion of the plan.
+    - [How Atlassian does retrospectives](https://www.atlassian.com/team-playbook/plays/retrospective).
