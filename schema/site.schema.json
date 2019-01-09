@@ -50,16 +50,6 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
-        },
-        "githubAuth": {
-          "description":
-            "Enables GitHub instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitHub instance to the `auth.providers` field in the management console.",
-          "type": "boolean"
-        },
-        "gitlabAuth": {
-          "description":
-            "Enables GitLab instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitLab instance to the `auth.providers` field in the management console.",
-          "type": "boolean"
         }
       }
     },

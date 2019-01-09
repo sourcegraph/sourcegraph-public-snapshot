@@ -25,11 +25,6 @@ func init() {
 	const pkgName = "githuboauth"
 	go func() {
 		conf.Watch(func() {
-			if !conf.Get().ExperimentalFeatures.GithubAuth {
-				auth.UpdateProviders(pkgName, nil)
-				return
-			}
-
 			newProviders, _ := parseConfig(conf.Get())
 			if len(newProviders) == 0 {
 				auth.UpdateProviders(pkgName, nil)
