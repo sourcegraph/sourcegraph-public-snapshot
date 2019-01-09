@@ -10,7 +10,9 @@ Sourcegraph supports syncing repositories from GitHub.com and GitHub Enterprise 
 
 - Read the [GitHub configuration documentation](../admin/site_config/all.md#githubconnection-object) or press Ctrl+Space or Cmd+Space in the configuration editor.
 
-By default, it adds all repositories that are affiliated with the user whose token you provide. 
+By default, it adds all repositories that are affiliated with the user whose token you provide.
+
+If you want to synchronize public repositories from GitHub.com, the repositories need to be explicitly enumerated in the [repos](https://docs.sourcegraph.com/admin/site_config/all#repos-array) field of the GitHub external service configuration.
 
 If you don't want to use an access token from your personal GitHub user account, generate a token for a [machine user](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users) affiliated with the organizations whose repositories you wish to make available.
 

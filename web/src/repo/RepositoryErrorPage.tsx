@@ -189,12 +189,17 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                             isErrorLike(this.state.canAddOrError)) && (
                                             <>
                                                 <p>
-                                                    The repository can't be added because it is not accessible from any
-                                                    code hosts configured on this site.
+                                                    If this is a private repository, check that this site is configured
+                                                    with a token that has access to this repository.
                                                 </p>
+
                                                 <p>
-                                                    Check that this site is configured with a token that has access to
-                                                    this repository.
+                                                    If this is a public repository, check that this repository is
+                                                    explicitly listed in an{' '}
+                                                    <a href="/site-admin/external-services">
+                                                        external service configuration
+                                                    </a>
+                                                    .
                                                 </p>
                                             </>
                                         )}
@@ -204,7 +209,8 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                                 users to search and view it by{' '}
                                                 <a href="/site-admin/external-services">
                                                     connecting an external service
-                                                </a>.
+                                                </a>
+                                                .
                                             </>
                                         )}
                                     </div>
@@ -240,8 +246,9 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                 )}
                             </div>
                         )}
-                        {!this.state.showAdd &&
-                            !this.state.showEnable && <p>To access this repository, contact the Sourcegraph admin.</p>}
+                        {!this.state.showAdd && !this.state.showEnable && (
+                            <p>To access this repository, contact the Sourcegraph admin.</p>
+                        )}
                     </div>
                 }
             />
