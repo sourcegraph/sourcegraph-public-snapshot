@@ -70,7 +70,7 @@ Second, bcrypt your password on any machine:
 PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'], bcrypt.gensalt(15)))"
 ```
 
-Finally, open a `psql` prompt on your Sourcegraph instance (see ["How do I access my Sourcegraph database?"](https://docs.sourcegraph.com/admin/faq#how-do-i-access-the-sourcegraph-database)) and run:
+Finally, open a `psql` prompt on your Sourcegraph instance (see ["How do I access my Sourcegraph database?"](faq.md#how-do-i-access-the-sourcegraph-database)) and run:
 
 ```sql
 UPDATE global_state SET mgmt_password_bcrypt='my-encrypted-password';
