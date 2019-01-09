@@ -10,8 +10,9 @@ import { HoverMerged } from '../api/client/types/hover'
 import { TelemetryContext } from '../telemetry/telemetryContext'
 import { TelemetryService } from '../telemetry/telemetryService'
 import { isErrorLike } from '../util/errors'
+import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
-import { highlightCodeSafe, renderMarkdown, toNativeEvent } from './helpers'
+import { toNativeEvent } from './helpers'
 
 const LOADING: 'loading' = 'loading'
 

@@ -1,9 +1,9 @@
-import marked from 'marked'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
 import { Progress } from 'sourcegraph'
 import { MessageType } from '../api/client/services/notifications'
+import { renderMarkdown } from '../util/markdown'
 import { Notification } from './notification'
 
 interface Props {
@@ -15,8 +15,6 @@ interface Props {
 interface State {
     progress?: Required<Progress>
 }
-
-const renderMarkdown = (md: string): string => marked(md, { gfm: true, breaks: true, sanitize: false })
 
 /**
  * A notification message displayed in a {@link module:./Notifications.Notifications} component.

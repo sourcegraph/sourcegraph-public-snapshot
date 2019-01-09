@@ -21,7 +21,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
+    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
     "docs": "typedoc",
     "prepublishOnly": "yarn run tslint && yarn run docs"
   }

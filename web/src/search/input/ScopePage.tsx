@@ -1,4 +1,3 @@
-import marked from 'marked'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -9,6 +8,7 @@ import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO
 import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -76,18 +76,11 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                         this.setState({ searchScopes })
                         const matchedScope = searchScopes.find(o => o.id === props.match.params.id)
                         if (matchedScope) {
-                            const markdownDescription = marked(matchedScope.description || '', {
-                                gfm: true,
-                                breaks: true,
-                                sanitize: true,
-                            })
+                            const markdownDescription = renderMarkdown(matchedScope.description || '')
                             queryUpdates.next(matchedScope.value)
                             if (matchedScope.value.includes('repo:') || matchedScope.value.includes('repogroup:')) {
                                 return concat(
-                                    of({
-                                        ...matchedScope,
-                                        markdownDescription,
-                                    }),
+                                    of({ ...matchedScope, markdownDescription }),
                                     fetchReposByQuery(matchedScope.value).pipe(
                                         map(repositories => ({ repositories, errorMessage: undefined })),
                                         catchError(err => {

@@ -17,7 +17,7 @@
   },
   "scripts": {
     "tslint:build-rules": "tsc --skipLibCheck --lib es6 --module commonjs dev/tslint/*.ts",
-    "tslint": "yarn -s run tslint:build-rules && tslint -c tslint.json -p tsconfig.json",
+    "tslint": "yarn -s run tslint:build-rules && tslint -t stylish -c tslint.json -p tsconfig.json",
     "test": "jest",
     "graphql": "gulp graphQLTypes",
     "schema": "gulp schema",

@@ -3,7 +3,7 @@
   "linterOptions": { "exclude": ["node_modules/**"] },
   "rules": {
     "await-promise": false,
-    "import-blacklist": [true, "highlight.js"],
+    "import-blacklist": [true, "highlight.js", "marked"],
     "ban": [
       true,
       { "name": ["assert", "strictEqual"], "message": "Use jest matchers instead." },
