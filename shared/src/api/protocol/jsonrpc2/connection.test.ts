@@ -1,6 +1,6 @@
 import { AbortController } from 'abort-controller'
 import { Observable, of } from 'rxjs'
-import { bufferCount, delay } from 'rxjs/operators'
+import { bufferCount, delay, take } from 'rxjs/operators'
 import { createBarrier } from '../../integration-test/testHelpers'
 import { createConnection } from './connection'
 import { ErrorCodes } from './messages'
@@ -140,6 +140,38 @@ describe('Connection', () => {
                 .pipe(bufferCount(4))
                 .toPromise()
         ).resolves.toEqual([2, 3, 4, 5])
+    })
+
+    test('abort request with observable emission', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+        const server = createConnection(serverTransports)
+        const { wait, done } = createBarrier()
+        server.onRequest(
+            'm',
+            (params: number[]) =>
+                new Observable<number>(observer => {
+                    let complete = false
+                    const emit = () => {
+                        if (!complete) {
+                            observer.next()
+                            setTimeout(emit, 0)
+                        }
+                    }
+                    emit()
+                    return () => {
+                        complete = true
+                        done()
+                    }
+                })
+        )
+        server.listen()
+        const client = createConnection(clientTransports)
+        client.listen()
+        await client
+            .observeRequest('m')
+            .pipe(take(4))
+            .toPromise()
+        await wait
     })
 
     test('handle multiple requests', async () => {
