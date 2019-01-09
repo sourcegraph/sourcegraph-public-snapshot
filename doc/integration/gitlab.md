@@ -15,7 +15,7 @@ By default, it adds every GitLab project where the token's user is a member. If 
 ### Authentication
 
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
-[authentication documentation](../admin/auth#gitlab).
+[authentication documentation](../admin/auth.md#gitlab).
 
 
 ### Debugging

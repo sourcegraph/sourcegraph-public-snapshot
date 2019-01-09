@@ -23,7 +23,7 @@ You should always include a token in a configuration for a GitHub.com URL to avo
 ## Authentication
 
 To configure GitHub as an authentication provider (which will enable sign-in via GitHub), see the
-[authentication documentation](../admin/auth#github).
+[authentication documentation](../admin/auth.md#github).
 
 ## Browser extension
 
