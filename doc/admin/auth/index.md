@@ -64,16 +64,6 @@ The top-level [`auth.public`](../site_config/all.md#authpublic-boolean) (default
 
 ## GitHub
 
-> NOTE: GitHub authentication is currently experimental. To enable it, add the following to your site configuration:
-```json
-{
-  // ...
-  "experimentalFeatures": {
-    "githubAuth": true
-  }
-}
-```
-
 [Create a GitHub OAuth
 application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) (if using
 GitHub Enterprise, create one on your instance, not GitHub.com). Set the following values, replacing
@@ -111,16 +101,6 @@ GitHub only if an account with the same verified email already exists. If none e
 must create one explicitly.
 
 ## GitLab
-
-> NOTE: GitLab authentication is currently experimental. To enable it, add the following to your site configuration:
-```json
-{
-  // ...
-  "experimentalFeatures": {
-    "gitlabAuth": true
-  }
-}
-```
 
 [Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
 the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
