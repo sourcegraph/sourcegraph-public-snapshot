@@ -9,6 +9,7 @@ import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { ALL_EXTERNAL_SERVICES, ExternalServiceMetadata, GITHUB_EXTERNAL_SERVICE } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { refreshSiteFlags } from '../site/backend'
 
 interface Props {
     history: H.History
@@ -78,6 +79,10 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     switchMap(input =>
                         addExternalService(input, this.props.eventLogger).pipe(
                             map(() => {
+                                // Refresh site flags so that global site alerts
+                                // reflect the latest configuration.
+                                refreshSiteFlags().subscribe(undefined, err => console.error(err))
+
                                 this.setState({ loading: false })
                                 this.props.history.push(`/site-admin/external-services`)
                             }),

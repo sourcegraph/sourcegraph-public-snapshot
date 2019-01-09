@@ -13,6 +13,7 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { refreshSiteFlags } from '../site/backend'
 
 interface ExternalServiceNodeProps {
     node: GQL.IExternalService
@@ -73,6 +74,10 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
             .toPromise()
             .then(
                 () => {
+                    // Refresh site flags so that global site alerts
+                    // reflect the latest configuration.
+                    refreshSiteFlags().subscribe(undefined, err => console.error(err))
+
                     this.setState({ loading: false })
                     if (this.props.onDidUpdate) {
                         this.props.onDidUpdate()

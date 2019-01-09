@@ -464,7 +464,7 @@ func (c *externalServices) list(ctx context.Context, conds []*sqlf.Query, limitO
 	return results, nil
 }
 
-// Count counts all access tokens that satisfy the options (ignoring limit and offset).
+// Count counts all external services that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
