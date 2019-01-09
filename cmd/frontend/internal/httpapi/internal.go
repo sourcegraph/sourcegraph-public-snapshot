@@ -139,6 +139,23 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(configs)
 }
 
+// serveExternalServicesList serves a JSON response that is an array of all external services
+// of the given kind
+func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
+	var req api.ExternalServicesListRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		return err
+	}
+	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
+		Kinds: []string{req.Kind},
+	})
+	if err != nil {
+		return err
+	}
+	return json.NewEncoder(w).Encode(services)
+}
+
 func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 	var req api.ReposGetInventoryUncachedRequest
 	err := json.NewDecoder(r.Body).Decode(&req)

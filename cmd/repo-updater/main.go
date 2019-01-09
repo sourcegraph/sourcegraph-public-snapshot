@@ -53,8 +53,11 @@ func main() {
 		}),
 	})
 
+	// Other external services syncing thread
+	syncer := repos.NewOtherReposSyncer()
+
 	// Start up handler that frontend relies on
-	var repoupdater repoupdater.Server
+	repoupdater := repoupdater.Server{OtherReposSyncer: syncer}
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	host := ""
 	if env.InsecureDev {
@@ -91,6 +94,9 @@ func main() {
 
 	// Bitbucket Server syncing thread
 	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
+
+	// Start other repos syncer syncing thread
+	go func() { _ = syncer.Run(ctx, repos.GetUpdateInterval()) }()
 
 	select {}
 }

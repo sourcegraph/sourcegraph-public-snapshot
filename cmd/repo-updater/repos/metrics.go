@@ -46,6 +46,13 @@ var (
 		Help:      "The last time a comprehensive Gitolite sync finished",
 	})
 
+	otherExternalServicesUpdateTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "time_last_other_external_services_sync",
+		Help:      "The last time a comprehensive sync of OTHER external services finished",
+	}, []string{"id"})
+
 	repoListUpdateTime = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",

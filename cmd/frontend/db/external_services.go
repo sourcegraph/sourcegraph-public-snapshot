@@ -370,6 +370,17 @@ func (c *externalServices) ListPhabricatorConnections(ctx context.Context) ([]*s
 	return connections, nil
 }
 
+// ListOtherExternalServicesConnections returns a list of OtherExternalServiceConnection configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListOtherExternalServicesConnections(ctx context.Context) ([]*schema.OtherExternalServiceConnection, error) {
+	var connections []*schema.OtherExternalServiceConnection
+	if err := c.listConfigs(ctx, "OTHER", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
 // migrateOnce ensures that the migration is only attempted
 // once per frontend instance (to avoid unnecessary queries).
 var migrateOnce sync.Once

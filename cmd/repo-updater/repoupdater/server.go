@@ -21,6 +21,7 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
+	*repos.OtherReposSyncer
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -58,7 +59,7 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := time.Now()
-	result, err := repoLookup(r.Context(), args)
+	result, err := s.repoLookup(r.Context(), args)
 	if err != nil {
 		if err == context.Canceled {
 			http.Error(w, "request canceled", http.StatusGatewayTimeout)
@@ -93,7 +94,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
-func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 	if args.Repo == "" && args.ExternalRepo == nil {
 		return nil, errors.New("at least one of Repo and ExternalRepo must be set (both are empty)")
 	}
@@ -102,10 +103,17 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 		return mockRepoLookup(args)
 	}
 
-	var result protocol.RepoLookupResult
+	var (
+		result        protocol.RepoLookupResult
+		repo          *protocol.RepoInfo
+		authoritative bool
+		err           error
+	)
 
 	// Try all GetXyzRepository funcs until one returns authoritatively.
-	repo, authoritative, err := repos.GetGitHubRepository(ctx, args)
+	if repo = s.OtherReposSyncer.GetRepoInfoByName(ctx, string(args.Repo)); repo == nil {
+		repo, authoritative, err = repos.GetGitHubRepository(ctx, args)
+	}
 	if !authoritative {
 		repo, authoritative, err = repos.GetGitLabRepository(ctx, args)
 	}
