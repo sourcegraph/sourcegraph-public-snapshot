@@ -1,7 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
