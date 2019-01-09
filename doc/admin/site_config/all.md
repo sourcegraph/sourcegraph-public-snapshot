@@ -789,6 +789,19 @@ Default: `"{host}/{nameWithOwner}"`
 
 Defines whether repositories from this GitHub instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitHub repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitHub); site admins can still disable them explicitly, and they'll remain disabled.
 
+### authorization (object)
+
+If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
+
+The authorization object has the following properties:
+
+- `ttl` (string): The TTL of how long to cache permissions data. This is 3 hours by default.
+  Decreasing the TTL will increase the load on the code host API. If you have X repos on your
+  instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y
+  users, you will incur X*Y/100 API requests per cache refresh period.  If set to zero, Sourcegraph
+  will sync a user's entire accessible repository list on every request (NOT recommended). Default:
+  `"3h"`
+
 <hr />
 
 ## GitLabConnection (object)
@@ -866,6 +879,25 @@ Default: `"{host}/{pathWithNamespace}"`
 ### initialRepositoryEnablement (boolean)
 
 Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.
+
+### authorization (object)
+
+If non-null, enforces GitLab repository permissions. This requires that the value of `token` be an
+access token with "sudo" and "api" scopes.
+
+The authorization object has the following properties:
+
+- `authnProvider` (object, required)
+  Specifies the authentication provider that corresponds to the authenticator used to sign into GitLab. The `authnProvider` object has the following properties:
+  - `configID`: The value of the `configID` field of the targeted authentication provider.
+  - `type`: The `type` field of the targeted authentication provider.
+  - `gitlabProvider`: The provider name that identifies the authentication provider to GitLab. This is the name passed to the `?provider=` query parameter in calls to the GitLab Users API.
+- `ttl` (string): The TTL of how long to cache permissions data. This is 3 hours by default.
+  Decreasing the TTL will increase the load on the code host API. If you have X repos on your
+  instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y
+  users, you will incur X*Y/100 API requests per cache refresh period.  If set to zero, Sourcegraph
+  will sync a user's entire accessible repository list on every request (NOT recommended). Default:
+  `"3h"`
 
 <hr />
 
