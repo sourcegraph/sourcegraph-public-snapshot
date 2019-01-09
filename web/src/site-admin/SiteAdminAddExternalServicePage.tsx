@@ -78,7 +78,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
                         addExternalService(input, this.props.eventLogger).pipe(
-                            map(() => {
+                            switchMap(() => {
                                 console.log('refresh site flags')
                                 return refreshSiteFlags()
                             }),
