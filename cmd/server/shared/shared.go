@@ -76,7 +76,7 @@ func Main() {
 		// Load the legacy config file if it exists.
 		//
 		// TODO(slimsag): Remove this code in the next significant version of
-		// Sourcegraph after 3.0 (NOT after 3.0-preview).
+		// Sourcegraph after 3.0.
 		configPath := os.Getenv("SOURCEGRAPH_CONFIG_FILE")
 		if configPath == "" {
 			configPath = filepath.Join(configDir, "sourcegraph-config.json")

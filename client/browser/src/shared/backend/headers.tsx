@@ -20,7 +20,9 @@ export function getHeaders(
     useToken = true
 ): Observable<{ [name: string]: string } | undefined> {
     if (isPhabricator && isInPage) {
-        return of(undefined)
+        return of({
+            'X-Requested-With': `Sourcegraph - ${getPlatformName()} v${getExtensionVersionSync()}`,
+        })
     }
 
     return of(url).pipe(

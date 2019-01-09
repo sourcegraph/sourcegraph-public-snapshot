@@ -15,4 +15,12 @@ describe('parseExtensionManifestOrError', () => {
         const value = parseExtensionManifestOrError('{"url":"a"}')
         expect(isErrorLike(value)).toBeTruthy()
     })
+    test('invalid categories', () => {
+        const value = parseExtensionManifestOrError('{"categories":[1]}')
+        expect(isErrorLike(value)).toBeTruthy()
+    })
+    test('invalid tags', () => {
+        const value = parseExtensionManifestOrError('{"tags":[1]}')
+        expect(isErrorLike(value)).toBeTruthy()
+    })
 })

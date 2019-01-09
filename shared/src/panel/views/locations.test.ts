@@ -1,3 +1,4 @@
+import { Location } from '@sourcegraph/extension-api-types'
 import { GroupedLocations, groupLocations } from './locations'
 
 type TestLocation = string
@@ -52,4 +53,28 @@ describe('groupLocations', () => {
             selectedGroups: ['a', 'a'],
             visibleLocations: ['a/a/0', 'a/a/1'],
         } as GroupedLocations<TestLocation, TestGroup>))
+
+    test('dedupes locations', () =>
+        expect(
+            groupLocations<Location, TestGroup>(
+                [
+                    { uri: 'a/a' },
+                    { uri: 'a/a', range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } },
+                    { uri: 'a/a', range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } },
+                    { uri: 'a/a', range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } },
+                    { uri: 'a/a', range: { start: { line: 11, character: 22 }, end: { line: 33, character: 44 } } },
+                ],
+                null,
+                [() => 'a'],
+                { uri: 'a/a' }
+            )
+        ).toEqual({
+            groups: [[{ key: 'a', count: 3 }]],
+            selectedGroups: ['a'],
+            visibleLocations: [
+                { uri: 'a/a' },
+                { uri: 'a/a', range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } },
+                { uri: 'a/a', range: { start: { line: 11, character: 22 }, end: { line: 33, character: 44 } } },
+            ],
+        } as GroupedLocations<Location, TestGroup>))
 })

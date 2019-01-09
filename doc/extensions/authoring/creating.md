@@ -64,6 +64,7 @@ These are configuration files for linting and TypeScript compilation and will be
 
 ## Next steps
 
+- [Local development](local_development.md)
 - [Publishing an extension](publishing.md)
 - [Extension activation](activation.md)
 - [Extension manifest (configuration)](manifest.md)

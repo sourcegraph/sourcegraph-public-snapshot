@@ -268,6 +268,7 @@ const createPhabricatorRepo = memoizeObservable(
             addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) { alwaysNil }
         }`,
             variables: options,
+            retry: false,
         }).pipe(
             map(({ data, errors }) => {
                 if (!data || (errors && errors.length > 0)) {

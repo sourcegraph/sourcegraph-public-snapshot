@@ -138,8 +138,6 @@ type Discussions struct {
 type ExperimentalFeatures struct {
 	Discussions      string `json:"discussions,omitempty"`
 	ExternalServices string `json:"externalServices,omitempty"`
-	GithubAuth       bool   `json:"githubAuth,omitempty"`
-	GitlabAuth       bool   `json:"gitlabAuth,omitempty"`
 	UpdateScheduler2 string `json:"updateScheduler2,omitempty"`
 }
 

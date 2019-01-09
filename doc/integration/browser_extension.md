@@ -54,7 +54,7 @@ To use the browser extension with a different Sourcegraph instance:
 {
   // ...
   "corsOrigin":
-    "https://github.example.com https://gitlab.example.com https://bitbucket.example.org https://phabricator.example.com"
+    "https://github.example.com https://gitlab.example.com"
   // ...
 }
 ```

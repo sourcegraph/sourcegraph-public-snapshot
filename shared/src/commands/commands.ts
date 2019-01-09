@@ -14,7 +14,7 @@ import { PlatformContext } from '../platform/context'
  */
 export function registerBuiltinClientCommands(
     { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
-    context: Pick<PlatformContext, 'queryGraphQL' | 'backcompatQueryLSP'>
+    context: Pick<PlatformContext, 'queryGraphQL'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -88,17 +88,6 @@ export function registerBuiltinClientCommands(
                 // extension) to check that parameter and prevent the request
                 // from being sent to Sourcegraph.com.
                 from(context.queryGraphQL(query, variables, true)).toPromise(),
-        })
-    )
-
-    /**
-     * Sends a batched LSP request to the Sourcegraph LSP gateway API and returns the result. The request is
-     * performed with the privileges of the current user.
-     */
-    subscription.add(
-        commandRegistry.registerCommand({
-            command: 'queryLSP',
-            run: requests => from(context.backcompatQueryLSP(requests)).toPromise(),
         })
     )
 

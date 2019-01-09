@@ -13,7 +13,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
 import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
-import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
+import { catchError, filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
 import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
@@ -35,15 +35,20 @@ import {
     toURIWithPath,
     ViewStateSpec,
 } from '../../../../../shared/src/util/url'
-import { createLSPFromExtensions, lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/lsp'
+import { sendMessage } from '../../browser/runtime'
+import { isInPage } from '../../context'
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
+import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
-import { eventLogger, sourcegraphUrl, useExtensions } from '../../shared/util/context'
+import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
+import { eventLogger, sourcegraphUrl } from '../../shared/util/context'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews, getContentOfCodeView } from './code_views'
 import { applyDecorations, initializeExtensions } from './extensions'
+import { injectViewContextOnSourcegraph } from './external_links'
 
 registerHighlightContributions()
 
@@ -108,12 +113,30 @@ interface OverlayPosition {
  */
 export type MountGetter = () => HTMLElement
 
+/**
+ * The context the code host is in on the current page.
+ */
+export type CodeHostContext = RepoSpec & Partial<RevSpec>
+
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost {
     /**
      * The name of the code host. This will be added as a className to the overlay mount.
      */
     name: string
+
+    /**
+     * Basic contextual information for the current code host.
+     */
+    getContext?: () => CodeHostContext
+    /**
+     * The mount location for the contextual link to Sourcegraph.
+     */
+    getViewContextOnSourcegraphMount?: () => HTMLElement | null
+    /**
+     * Optional class name for the contextual link to Sourcegraph.
+     */
+    contextButtonClassName?: string
 
     /**
      * Checks to see if the current context the code is running in is within
@@ -227,8 +250,7 @@ function initCodeIntelligence(
         extensionsController,
     }: PlatformContextProps & ExtensionsControllerProps = initializeExtensions(codeHost)
 
-    const shouldUseExtensions = useExtensions || sourcegraphUrl === 'https://sourcegraph.com'
-    const { getHover } = shouldUseExtensions ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
+    const { getHover } = createLSPFromExtensions(extensionsController)
 
     /** Emits when the close button was clicked */
     const closeButtonClicks = new Subject<MouseEvent>()
@@ -337,8 +359,8 @@ function initCodeIntelligence(
                       <HoverOverlay
                           {...hoverOverlayProps}
                           hoverRef={nextOverlayElement}
-                          extensionsController={extensionsController!} // TODO!(sqs): fix
-                          platformContext={platformContext!} // TODO!(sqs): fix
+                          extensionsController={extensionsController!}
+                          platformContext={platformContext!}
                           location={H.createLocation(window.location)}
                           onCloseButtonClick={nextCloseButtonClick}
                       />,
@@ -391,6 +413,27 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
     const subscriptions = new Subscription()
 
     subscriptions.add(hoverifier)
+
+    const ensureRepoExists = (context: CodeHostContext) =>
+        resolveRev(context).pipe(
+            retryWhenCloneInProgressError(),
+            map(rev => !!rev),
+            catchError(error => {
+                if ((error as Error).name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                    return [false]
+                }
+
+                return [true]
+            })
+        )
+
+    const openOptionsMenu = () => {
+        sendMessage({
+            type: 'openOptionsPage',
+        })
+    }
+
+    injectViewContextOnSourcegraph(sourcegraphUrl, codeHost, ensureRepoExists, isInPage ? undefined : openOptionsMenu)
 
     // Keeps track of all documents on the page since calling this function (should be once per page).
     let visibleViewComponents: ViewComponentData[] = []

@@ -168,11 +168,15 @@ export class SettingsArea extends React.Component<Props, State> {
             this.props.platformContext,
             extensionIDsFromSettings(gqlToCascade(cascade))
         ).pipe(
+            catchError(error => {
+                console.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
+                return [null]
+            }),
             map(configuredExtensions => ({
                 $id: 'settings.schema.json',
                 allOf: [
                     settingsSchemaJSON,
-                    ...configuredExtensions
+                    ...(configuredExtensions || [])
                         .map(ce => {
                             if (
                                 ce.manifest &&

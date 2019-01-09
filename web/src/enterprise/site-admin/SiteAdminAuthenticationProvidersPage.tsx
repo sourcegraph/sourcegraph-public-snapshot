@@ -1,7 +1,5 @@
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
@@ -82,13 +80,9 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
                 <p>
                     Authentication providers allow users to sign into Sourcegraph. See{' '}
                     <a href="https://docs.sourcegraph.com/admin/auth">authentication documentation</a> about configuring
-                    single-sign-on (SSO) via SAML and OpenID Connect.
+                    single-sign-on (SSO) via SAML and OpenID Connect. Configure authentication providers in the{' '}
+                    <a href="https://docs.sourcegraph.com/admin/management_console ">management console</a>.
                 </p>
-                <div>
-                    <Link to="/site-admin/configuration" className="btn btn-secondary">
-                        <SettingsIcon className="icon-inline" /> Configure auth providers
-                    </Link>
-                </div>
                 <FilteredAuthProviderConnection
                     className="mt-3"
                     listClassName="list-group list-group-flush"

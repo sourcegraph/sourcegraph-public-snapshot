@@ -12,8 +12,10 @@ type PlatformConfiguration struct {
 	RemoteRegistryURL string
 }
 
-// DefaultRemoteRegistry is the default value for the site configuration field
-// "remoteRegistry" when unspecified.
+// DefaultRemoteRegistry is the default value for the site configuration property
+// "extensions"."remoteRegistry".
+//
+// It is intentionally not set in the OSS build.
 var DefaultRemoteRegistry string
 
 // Extensions returns the configuration for the Sourcegraph platform, or nil if it is disabled.
@@ -22,6 +24,12 @@ func Extensions() *PlatformConfiguration {
 
 	x := cfg.Extensions
 	if x == nil {
+		if DefaultRemoteRegistry == "" {
+			// There is no reasonable default behavior for extensions given that there is no remote
+			// registry, so consider them disabled.
+			return nil
+		}
+
 		x = &schema.Extensions{}
 	}
 

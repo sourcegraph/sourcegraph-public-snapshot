@@ -375,7 +375,7 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 	}
 	// GitHub Enterprise
 	if baseURL.Path == "" || baseURL.Path == "/" {
-		return baseURL.ResolveReference(&url.URL{Path: "/api"}), false
+		return baseURL.ResolveReference(&url.URL{Path: "/api/v3"}), false
 	}
 	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
 }

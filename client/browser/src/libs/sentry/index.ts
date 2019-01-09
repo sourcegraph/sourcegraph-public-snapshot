@@ -35,7 +35,6 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
         Sentry.configureScope(async scope => {
             scope.setTag('script', script)
             scope.setTag('extension_version', getExtensionVersionSync())
-            scope.setTag('extensions', flags.useExtensions ? 'enabled' : 'disabled')
 
             const codeHosts: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
             for (const { check, name } of codeHosts) {

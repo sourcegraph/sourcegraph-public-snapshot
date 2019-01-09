@@ -19,7 +19,7 @@ assertEnv('OPTIONS')
 
 initSentry('options')
 
-type State = Pick<FeatureFlags, 'useExtensions' | 'allowErrorReporting'> & { sourcegraphURL: string | null }
+type State = Pick<FeatureFlags, 'allowErrorReporting'> & { sourcegraphURL: string | null }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(k => key === k)
@@ -34,14 +34,14 @@ const toggleFeatureFlag = (key: string) => {
 }
 
 class Options extends React.Component<{}, State> {
-    public state: State = { sourcegraphURL: null, useExtensions: false, allowErrorReporting: false }
+    public state: State = { sourcegraphURL: null, allowErrorReporting: false }
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            storage.observeSync('featureFlags').subscribe(({ allowErrorReporting, useExtensions }) => {
-                this.setState({ allowErrorReporting, useExtensions })
+            storage.observeSync('featureFlags').subscribe(({ allowErrorReporting }) => {
+                this.setState({ allowErrorReporting })
             })
         )
 
@@ -77,10 +77,7 @@ class Options extends React.Component<{}, State> {
             fetchAccessTokenIDs,
 
             toggleFeatureFlag,
-            featureFlags: [
-                { key: 'useExtensions', value: this.state.useExtensions },
-                { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
-            ],
+            featureFlags: [{ key: 'allowErrorReporting', value: this.state.allowErrorReporting }],
         }
 
         return <OptionsContainer {...props} />
