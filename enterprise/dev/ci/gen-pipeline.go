@@ -326,10 +326,10 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 
 	case strings.HasPrefix(branch, "docker-images/"):
-		addDockerImageStep(branch[14:], true)
-		pipeline.AddWait()
 		// Only deploy images that aren't auto deployed from master.
 		if branch != "docker-images/server" && branch != "docker-images/frontend" {
+			addDockerImageStep(branch[14:], true)
+			pipeline.AddWait()
 			addDeploySteps()
 		}
 	}
