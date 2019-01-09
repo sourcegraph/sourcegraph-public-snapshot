@@ -77,9 +77,9 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
                         addExternalService(input, this.props.eventLogger).pipe(
-                            map(externalService => {
+                            map(() => {
                                 this.setState({ loading: false })
-                                this.props.history.push(`/site-admin/external-services/${externalService.id}`)
+                                this.props.history.push(`/site-admin/external-services`)
                             }),
                             catchError(error => {
                                 console.error(error)
