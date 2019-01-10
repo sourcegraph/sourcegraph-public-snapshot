@@ -31,8 +31,8 @@ var defaultEnv = map[string]string{
 	"QUERY_RUNNER_URL":      "http://127.0.0.1:3183",
 	"SRC_SYNTECT_SERVER":    "http://127.0.0.1:9238",
 	"SYMBOLS_URL":           "http://127.0.0.1:3184",
-	"SRC_HTTP_ADDR":         ":7080",
-	"SRC_HTTPS_ADDR":        ":7443",
+	"SRC_HTTP_ADDR":         ":8080",
+	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 	"ZOEKT_HOST":            zoektHost,
@@ -125,6 +125,11 @@ func Main() {
 
 	// TODO validate known_hosts contains all code hosts in config.
 
+	nginx, err := nginxProcFile()
+	if err != nil {
+		log.Fatal("Failed to setup nginx:", err)
+	}
+
 	zoektIndexDir := filepath.Join(DataDir, "zoekt/index")
 	debugFlag := ""
 	if verbose {
@@ -132,13 +137,14 @@ func Main() {
 	}
 
 	procfile := []string{
+		nginx,
+		`frontend: env CONFIGURATION_MODE=server frontend`,
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
-		`frontend: env CONFIGURATION_MODE=server frontend`,
 		`repo-updater: repo-updater`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
 		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 %s", FrontendInternalHost, zoektIndexDir, debugFlag),

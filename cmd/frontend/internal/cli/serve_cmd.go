@@ -40,6 +40,8 @@ var (
 	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
+	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
+
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
@@ -47,12 +49,16 @@ var (
 )
 
 func configureExternalURL() (*url.URL, error) {
+	addr := nginxAddr
+	if addr == "" {
+		addr = httpAddr
+	}
 	var hostPort string
-	if strings.HasPrefix(httpAddr, ":") {
+	if strings.HasPrefix(addr, ":") {
 		// Prepend localhost if HTTP listen addr is just a port.
-		hostPort = "127.0.0.1" + httpAddr
+		hostPort = "127.0.0.1" + addr
 	} else {
-		hostPort = httpAddr
+		hostPort = addr
 	}
 	externalURL := conf.Get().Critical.ExternalURL
 	if externalURL == "" {
