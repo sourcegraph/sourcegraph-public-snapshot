@@ -54,7 +54,7 @@ func (s *OtherReposSyncer) GetRepoInfoByName(ctx context.Context, name string) *
 // Run periodically synchronizes the configured repos in "OTHER" external service
 // connections with the stored repos in Sourcegraph. Termination is done through the passed context.
 func (s *OtherReposSyncer) Run(ctx context.Context, interval time.Duration) error {
-	ticks := time.NewTimer(interval)
+	ticks := time.NewTicker(interval)
 	defer ticks.Stop()
 
 	for {
