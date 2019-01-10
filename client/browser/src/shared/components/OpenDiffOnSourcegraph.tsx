@@ -21,7 +21,7 @@ export interface State {
     fileDiff: IFileDiffConnection | undefined
 }
 
-export class OpenDiffOnSourcegraph extends React.Component<Props, {}> {
+export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
     private subscriptions = new Subscription()
     private componentUpdates = new Subject<Props>()
 
@@ -59,29 +59,13 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, {}> {
     private getOpenInSourcegraphUrl(props: OpenInSourcegraphProps): string {
         const baseUrl = repoUrlCache[props.repoName] || sourcegraphUrl
         // Build URL for Web
-        let url = `${baseUrl}/${props.repoName}`
-        if (props.commit) {
-            return `${url}/-/compare/${props.commit.baseRev}...${props.commit.headRev}?utm_source=${getPlatformName()}`
+        const url = `${baseUrl}/${props.repoName}`
+        if (this.state.fileDiff) {
+            return `${url}/-/commit/${props.commit!.headRev}#diff-${
+                this.state.fileDiff!.nodes[0].internalID
+            }?utm_source=${getPlatformName()}`
         }
-        if (props.rev) {
-            url = `${url}@${props.rev}`
-        }
-        if (props.filePath) {
-            url = `${url}/-/blob/${props.filePath}`
-        }
-        if (props.query) {
-            if (props.query.diff) {
-                url = `${url}?diff=${props.query.diff.rev}&utm_source=${getPlatformName()}`
-            } else if (props.query.search) {
-                url = `${url}?q=${props.query.search}&utm_source=${getPlatformName()}`
-            }
-        }
-        if (props.coords) {
-            url = `${url}#L${props.coords.line}:${props.coords.char}`
-        }
-        if (props.fragment) {
-            url = `${url}$${props.fragment}`
-        }
+
         return url
     }
 }
