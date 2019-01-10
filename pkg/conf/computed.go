@@ -51,8 +51,6 @@ func init() {
 		// use in our public documentation (i.e., even though these were
 		// long deprecated, our docs were not up to date).
 		criticalBackcompatVars := map[string]func(value string){
-			"TLS_CERT":               func(v string) { criticalDecoded.TlsCert = v },
-			"TLS_KEY":                func(v string) { criticalDecoded.TlsKey = v },
 			"LIGHTSTEP_PROJECT":      func(v string) { criticalDecoded.LightstepProject = v },
 			"LIGHTSTEP_ACCESS_TOKEN": func(v string) { criticalDecoded.LightstepAccessToken = v },
 		}
@@ -90,23 +88,6 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.Cluster
 	default:
 		panic("deploy type did not register default configuration")
-	}
-}
-
-const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
-
-// HTTPStrictTransportSecurity returns the value of the Strict-Transport-Security HTTP header to set.
-func HTTPStrictTransportSecurity() string {
-	switch v := Get().Critical.HttpStrictTransportSecurity.(type) {
-	case string:
-		return v
-	case bool:
-		if !v {
-			return ""
-		}
-		return defaultHTTPStrictTransportSecurity
-	default:
-		return defaultHTTPStrictTransportSecurity
 	}
 }
 
@@ -301,4 +282,8 @@ func readSrcGitServers() []string {
 		}
 	}
 	return strings.Fields(v)
+}
+
+func IsExternalURLSecure() bool {
+	return strings.HasPrefix(Get().Critical.ExternalURL, "https:")
 }

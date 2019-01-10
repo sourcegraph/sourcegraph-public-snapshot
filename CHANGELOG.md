@@ -34,7 +34,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Site and user usage statistics are now visible to all users. Previously only site admins (and users, for their own usage statistics) could view this information. The information consists of aggregate counts of actions such as searches, page views, etc.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
 - The `appURL` site configuration option was renamed to `externalURL`.
-- The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled`.
 - The repository and directory pages now show all entries together instead of showing files and (sub)directories separately.
 - Extensions no longer can specify titles (in the `title` property in the `package.json` extension manifest). Their extension ID (such as `alice/myextension`) is used.
 
@@ -55,6 +54,10 @@ All notable changes to Sourcegraph are documented in this file.
   - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
   - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
   - [Other code hosts](https://github.com/sourcegraph/sourcegraph/issues/1324)
+- Removed the `httpStrictTransportSecurity` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `tls.cert` and `tls.key` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `httpToHttpsRedirect` and `experimentalFeatures.canonicalURLRedireect` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for these instead.
 
 ## 2.13.6
 
