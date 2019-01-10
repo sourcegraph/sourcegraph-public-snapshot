@@ -53,6 +53,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0
+	github.com/google/pprof v0.0.0-20190109223431-e84dfd68c163 // indirect
 	github.com/google/uuid v1.1.0
 	github.com/google/zoekt v0.0.0-20180530125106-8e284ca7e964
 	github.com/gorilla/context v1.1.1
@@ -67,6 +68,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190107165158-c63ab54fda8f
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/honeycombio/libhoney-go v1.8.1
+	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
