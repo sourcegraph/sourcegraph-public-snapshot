@@ -30,6 +30,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
+	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	return mux
 }
 
@@ -90,6 +91,26 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	}
 
 	repos.UpdateOnce(r.Context(), req.Repo, req.URL)
+}
+
+func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
+	var req protocol.ExternalServiceSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	switch req.ExternalService.Kind {
+	case "OTHER":
+		if err := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService); err != nil {
+			log15.Error("server.external-service-sync: ", "err", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	case "":
+		http.Error(w, "empty external service kind", http.StatusBadRequest)
+	default:
+		log15.Warn("server.external-service-sync: not implemented for: ", "kind", req.ExternalService.Kind)
+	}
 }
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)

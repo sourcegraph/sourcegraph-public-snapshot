@@ -19,14 +19,16 @@ import (
 // OtherReposSyncer periodically synchronizes the configured repos in "OTHER" external service
 // connections with the stored repos in Sourcegraph.
 type OtherReposSyncer struct {
-	mu    sync.RWMutex
-	repos map[string]*protocol.RepoInfo
+	mu      sync.RWMutex
+	repos   map[string]*protocol.RepoInfo
+	updates chan<- *protocol.RepoInfo
 }
 
-// NewOtherReposSyncer returns a new OtherReposSyncer.
-func NewOtherReposSyncer() *OtherReposSyncer {
+// NewOtherReposSyncer returns a new OtherReposSyncer. Updated repos will be sent on the given channel.
+func NewOtherReposSyncer(updates chan<- *protocol.RepoInfo) *OtherReposSyncer {
 	return &OtherReposSyncer{
-		repos: map[string]*protocol.RepoInfo{},
+		repos:   map[string]*protocol.RepoInfo{},
+		updates: updates,
 	}
 }
 
@@ -48,17 +50,44 @@ func (s *OtherReposSyncer) Run(ctx context.Context, interval time.Duration) erro
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticks.C:
-			if err := s.sync(ctx); err != nil {
+			log15.Info("syncing all OTHER external services")
+			if err := s.syncAll(ctx); err != nil {
 				log15.Error("error syncing other external services repos", "error", err)
 			}
 		}
 	}
 }
 
-func (s *OtherReposSyncer) sync(ctx context.Context) error {
+// syncAll syncrhonizes all "OTHER" external services.
+func (s *OtherReposSyncer) syncAll(ctx context.Context) error {
 	svcs, err := api.InternalClient.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kind: "OTHER"})
 	if err != nil {
 		return err
+	}
+	return s.Sync(ctx, svcs...)
+}
+
+// SyncError is an aggregate error type returned by the Sync method, containing detailed
+// information about which external services failed to sync and why.
+type SyncError struct {
+	Errors map[*api.ExternalService]error
+}
+
+// Error implements the error interface.
+func (e SyncError) Error() string {
+	var sb strings.Builder
+	for svc, err := range e.Errors {
+		if err != nil {
+			_, _ = fmt.Fprintf(&sb, "external_service[id]=%d: %s; ", svc.ID, err)
+		}
+	}
+	return sb.String()
+}
+
+// Sync syncs the given external services.
+func (s *OtherReposSyncer) Sync(ctx context.Context, svcs ...*api.ExternalService) error {
+	if len(svcs) == 0 {
+		return nil
 	}
 
 	type syncOp struct {
@@ -67,33 +96,33 @@ func (s *OtherReposSyncer) sync(ctx context.Context) error {
 	}
 
 	ch := make(chan syncOp, len(svcs))
-	for i := range svcs {
+	for _, svc := range svcs {
 		go func(op syncOp) {
-			op.err = s.syncExternalService(ctx, op.svc)
+			op.err = s.sync(ctx, op.svc)
 			ch <- op
-		}(syncOp{svc: &svcs[i]})
+		}(syncOp{svc: svc})
 	}
 
+	ids := make([]string, 0, len(svcs))
+	errs := SyncError{Errors: make(map[*api.ExternalService]error, cap(ch))}
 	for i := 0; i < cap(ch); i++ {
 		if op := <-ch; op.err != nil {
-			log15.Error(
-				"failed to sync external service",
-				"id", op.svc.ID,
-				"displayName", op.svc.DisplayName,
-				"kind", op.svc.Kind,
-				"config", op.svc.Config,
-				"err", op.err,
-			)
+			errs.Errors[op.svc] = op.err
 		} else {
 			id := strconv.FormatInt(op.svc.ID, 10)
+			ids = append(ids, id)
 			otherExternalServicesUpdateTime.WithLabelValues(id).Set(float64(time.Now().Unix()))
 		}
+	}
+
+	if len(errs.Errors) > 0 {
+		return &errs
 	}
 
 	return nil
 }
 
-func (s *OtherReposSyncer) syncExternalService(ctx context.Context, svc *api.ExternalService) error {
+func (s *OtherReposSyncer) sync(ctx context.Context, svc *api.ExternalService) error {
 	osvc, err := newOtherExternalService(svc)
 	if err != nil {
 		return err
@@ -104,10 +133,7 @@ func (s *OtherReposSyncer) syncExternalService(ctx context.Context, svc *api.Ext
 		return err
 	}
 
-	ch := make(chan repoCreateOrUpdateRequest)
-	defer close(ch)
-
-	go createEnableUpdateRepos(ctx, fmt.Sprintf("other:%d", osvc.ID), ch)
+	repos := make([]*protocol.RepoInfo, 0, len(cloneURLs))
 
 	for _, u := range cloneURLs {
 		repoURL := u.String()
@@ -115,23 +141,93 @@ func (s *OtherReposSyncer) syncExternalService(ctx context.Context, svc *api.Ext
 		u.Path, u.RawQuery = "", ""
 		serviceID := u.String()
 
-		ch <- repoCreateOrUpdateRequest{
-			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoName: repoName,
-				ExternalRepo: &api.ExternalRepoSpec{
-					ID:          string(repoName),
-					ServiceType: "other",
-					ServiceID:   serviceID,
-				},
-				Enabled: true,
+		repos = append(repos, &protocol.RepoInfo{
+			Name:    repoName,
+			Enabled: true,
+			VCS:     protocol.VCSInfo{URL: repoURL},
+			ExternalRepo: &api.ExternalRepoSpec{
+				ID:          string(repoName),
+				ServiceType: "other",
+				ServiceID:   serviceID,
 			},
-			URL: repoURL,
-		}
+		})
+	}
 
-		s.cacheRepo(repoName)
+	return s.store(ctx, repos...)
+}
+
+// StoreError is an aggregate error type returned by the upsert method, containing detailed
+// information about which repos of an external service failed to be stored and why.
+type StoreError struct {
+	Errors map[*protocol.RepoInfo]error
+}
+
+// Error implements the error interface.
+func (e StoreError) Error() string {
+	var sb strings.Builder
+	for r, err := range e.Errors {
+		if err != nil {
+			_, _ = fmt.Fprintf(&sb, "repo[name]=%s: %s; ", r.Name, err)
+		}
+	}
+	return sb.String()
+}
+
+func (s *OtherReposSyncer) store(ctx context.Context, repos ...*protocol.RepoInfo) error {
+	if len(repos) == 0 {
+		return nil
+	}
+
+	type storeOp struct {
+		repo *protocol.RepoInfo
+		err  error
+	}
+
+	ch := make(chan storeOp, len(repos))
+	for _, repo := range repos {
+		go func(op storeOp) {
+			op.err = s.upsert(ctx, op.repo)
+			ch <- op
+		}(storeOp{repo: repo})
+	}
+
+	errs := StoreError{Errors: make(map[*protocol.RepoInfo]error, cap(ch))}
+	for i := 0; i < cap(ch); i++ {
+		if op := <-ch; op.err != nil {
+			errs.Errors[op.repo] = op.err
+		} else {
+			s.update(op.repo)
+		}
+	}
+
+	if len(errs.Errors) > 0 {
+		return &errs
 	}
 
 	return nil
+}
+
+func (s *OtherReposSyncer) upsert(ctx context.Context, repo *protocol.RepoInfo) error {
+	_, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{
+		RepoName:     repo.Name,
+		Enabled:      repo.Enabled,
+		Fork:         repo.Fork,
+		Archived:     repo.Archived,
+		Description:  repo.Description,
+		ExternalRepo: repo.ExternalRepo,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return api.InternalClient.ReposUpdateMetadata(
+		ctx,
+		repo.Name,
+		repo.Description,
+		repo.Fork,
+		repo.Archived,
+	)
 }
 
 var otherRepoNameReplacer = strings.NewReplacer(":", "-", "@", "-", "//", "")
@@ -155,10 +251,11 @@ func otherRepoName(cloneURL *url.URL) api.RepoName {
 	return api.RepoName(otherRepoNameReplacer.Replace(u.String()))
 }
 
-func (s *OtherReposSyncer) cacheRepo(name api.RepoName) {
+func (s *OtherReposSyncer) update(repo *protocol.RepoInfo) {
 	s.mu.Lock()
-	s.repos[string(name)] = &protocol.RepoInfo{Name: name}
+	s.repos[string(repo.Name)] = repo
 	s.mu.Unlock()
+	s.updates <- repo
 }
 
 type otherExternalService struct {

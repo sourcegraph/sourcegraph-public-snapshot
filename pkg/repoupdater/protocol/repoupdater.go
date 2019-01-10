@@ -81,6 +81,7 @@ type RepoInfo struct {
 	Name api.RepoName
 
 	Description string // repository description (from the external service)
+	Enabled     bool   // whether this repository is enabled
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
 	Archived    bool   // whether this repository is archived (from the external service)
 
@@ -119,4 +120,13 @@ type RepoUpdateRequest struct {
 
 	// URL is the repository's Git remote URL (from which to clone or update).
 	URL string `json:"url"`
+}
+
+// ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
+//
+// The FrontendAPI is one of the issuers of this request. It does so when creating or
+// updating an external service so that admins don't have to wait until the next sync
+// run to see their repos being synced.
+type ExternalServiceSyncRequest struct {
+	ExternalService api.ExternalService
 }

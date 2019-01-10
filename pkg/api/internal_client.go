@@ -331,8 +331,8 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 }
 
 // ExternalServicesList returns all external services of the given kind.
-func (c *internalClient) ExternalServicesList(ctx context.Context, opts ExternalServicesListRequest) ([]ExternalService, error) {
-	var extsvcs []ExternalService
+func (c *internalClient) ExternalServicesList(ctx context.Context, opts ExternalServicesListRequest) ([]*ExternalService, error) {
+	var extsvcs []*ExternalService
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 

@@ -17,6 +17,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -53,8 +54,10 @@ func main() {
 		}),
 	})
 
-	// Other external services syncing thread
-	syncer := repos.NewOtherReposSyncer()
+	updates := make(chan *protocol.RepoInfo)
+
+	// Other external services syncing thread. Repo updates will be sent on the given channel.
+	syncer := repos.NewOtherReposSyncer(updates)
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{OtherReposSyncer: syncer}
@@ -97,6 +100,18 @@ func main() {
 
 	// Start other repos syncer syncing thread
 	go func() { _ = syncer.Run(ctx, repos.GetUpdateInterval()) }()
+
+	// Start other repos updates scheduler relay thread.
+	go func() {
+		newScheduler := conf.UpdateScheduler2Enabled()
+		for repo := range updates {
+			if newScheduler {
+				repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
+			} else {
+				repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
+			}
+		}
+	}()
 
 	select {}
 }

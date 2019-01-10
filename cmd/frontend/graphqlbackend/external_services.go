@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -50,8 +53,16 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	err := db.ExternalServices.Create(ctx, externalService)
-	return &externalServiceResolver{externalService: externalService}, err
+
+	if err := db.ExternalServices.Create(ctx, externalService); err != nil {
+		return nil, err
+	}
+
+	if err := syncExternalService(ctx, externalService); err != nil {
+		return nil, err
+	}
+
+	return &externalServiceResolver{externalService: externalService}, nil
 }
 
 func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
@@ -83,7 +94,25 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+
+	if err = syncExternalService(ctx, externalService); err != nil {
+		return nil, err
+	}
+
 	return &externalServiceResolver{externalService: externalService}, nil
+}
+
+// Eagerly trigger a repo-updater sync.
+func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
+	return repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
+		ID:          svc.ID,
+		Kind:        svc.Kind,
+		DisplayName: svc.DisplayName,
+		Config:      svc.Config,
+		CreatedAt:   svc.CreatedAt,
+		UpdatedAt:   svc.UpdatedAt,
+		DeletedAt:   svc.DeletedAt,
+	})
 }
 
 func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
