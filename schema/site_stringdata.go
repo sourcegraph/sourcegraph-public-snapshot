@@ -55,16 +55,6 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
-        },
-        "githubAuth": {
-          "description":
-            "Enables GitHub instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitHub instance to the ` + "`" + `auth.providers` + "`" + ` field in the management console.",
-          "type": "boolean"
-        },
-        "gitlabAuth": {
-          "description":
-            "Enables GitLab instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitLab instance to the ` + "`" + `auth.providers` + "`" + ` field in the management console.",
-          "type": "boolean"
         }
       }
     },
@@ -230,7 +220,8 @@ const SiteSchemaJSON = `{
       "properties": {
         "url": {
           "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
-          "type": "string"
+          "type": "string",
+          "examples": ["https://phabricator.example.com"]
         },
         "token": {
           "description": "API token for the Phabricator instance.",
@@ -266,7 +257,6 @@ const SiteSchemaJSON = `{
           "description":
             "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
           "type": "string",
-          "default": "https://github.com",
           "not": {
             "type": "string",
             "pattern": "example\\.com"
@@ -340,7 +330,6 @@ const SiteSchemaJSON = `{
           "description":
             "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.",
           "type": "string",
-          "default": "https://gitlab.com",
           "pattern": "^https?://",
           "not": {
             "type": "string",
@@ -546,11 +535,13 @@ const SiteSchemaJSON = `{
         "prefix": {
           "description":
             "Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., \"gitolite.example.com/\".\n\nIt is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
-          "type": "string"
+          "type": "string",
+          "examples": ["gitolite.example.com/"]
         },
         "host": {
           "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com).",
-          "type": "string"
+          "type": "string",
+          "examples": ["git@gitolite.example.com"]
         },
         "blacklist": {
           "description":

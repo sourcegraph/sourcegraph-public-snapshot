@@ -19,7 +19,11 @@ docker run \
 
 Continue at http://localhost:7080, and see [administrator documentation](admin/index.md) for next steps.
 
+Add code intelligence (hover tooltips, jump-to-definition, find-references) for languages like [Go](https://sourcegraph.com/extensions/sourcegraph/lang-go), [TypeScript](https://sourcegraph.com/extensions/sourcegraph/lang-typescript), [Python](https://sourcegraph.com/extensions/sourcegraph/python), and [others](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) by enabling the corresponding [Sourcegraph extension](extensions/index.md) on the [Sourcegraph extension registry](https://sourcegraph.com/extensions).
+
 ## Overview
+
+### Core documentation
 
 - [**User documentation**](user/index.md)
 - [**Administrator documentation**](admin/index.md)
@@ -30,7 +34,7 @@ Continue at http://localhost:7080, and see [administrator documentation](admin/i
 - [Sourcegraph Enterprise](admin/subscriptions/index.md)
 - [Sourcegraph roadmap](dev/roadmap.md)
 
-### Popular documentation
+### Features and tutorials
 
 - [Overview](user/index.md): What is Sourcegraph?
 - [Tour](user/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
@@ -38,6 +42,7 @@ Continue at http://localhost:7080, and see [administrator documentation](admin/i
 - [Query syntax reference](user/search/queries.md)
 - [Building a Sourcegraph extension](extensions/authoring/index.md) to add features and integrations to Sourcegraph
 - [Code search](user/search/index.md)
+- [Code intelligence](user/code_intelligence/index.md)
 - [Other integrations](integration/index.md)
 - [GraphQL API](api/graphql.md)
 

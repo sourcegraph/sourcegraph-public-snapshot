@@ -12,6 +12,12 @@ Sourcegraph supports syncing repositories from GitLab.com, GitLab CE, and GitLab
 
 By default, it adds every GitLab project where the token's user is a member. If you wish to limit the set of repositories that is indexed by Sourcegraph, the recommended way is to create a Sourcegraph "bot" user, which is just a normal user account with the desired access scope. For instance, if you wanted to add all internal GitLab projects to Sourcegraph, you could create a user "sourcegraph-bot" and give it no explicit access to any GitLab repositories.
 
+### Authentication
+
+To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
+[authentication documentation](../admin/auth#gitlab).
+
+
 ### Debugging
 
 You can test your access token's permissions by running a cURL command against the GitLab API. This is the same API and the same project list used by Sourcegraph. 

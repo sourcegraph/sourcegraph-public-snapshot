@@ -34,7 +34,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         >
           <a
             className="rounded border p-1"
-            href="/extensions?query=category:%22Other%22"
+            href="/extensions?query=category%3AOther"
             onClick={[Function]}
           >
             Other
@@ -45,7 +45,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         >
           <a
             className="rounded border p-1"
-            href="/extensions?query=category:%22Programming%20languages%22"
+            href="/extensions?query=category%3A%22Programming+languages%22"
             onClick={[Function]}
           >
             Programming languages
@@ -67,7 +67,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         >
           <a
             className="rounded border p-1"
-            href="/extensions?query=tag:%22T1%22"
+            href="/extensions?query=tag%3AT1"
             onClick={[Function]}
           >
             T1
@@ -78,7 +78,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         >
           <a
             className="rounded border p-1"
-            href="/extensions?query=tag:%22T2%22"
+            href="/extensions?query=tag%3AT2"
             onClick={[Function]}
           >
             T2

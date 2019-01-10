@@ -369,8 +369,6 @@ export function fetchSite(): Observable<GQL.ISite> {
                     id
                     effectiveContents
                     validationMessages
-                    canUpdate
-                    source
                 }
             }
         }

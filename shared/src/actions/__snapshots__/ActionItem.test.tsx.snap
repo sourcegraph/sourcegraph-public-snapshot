@@ -48,6 +48,21 @@ exports[`ActionItem non-actionItem variant 1`] = `
 </a>
 `;
 
+exports[`ActionItem noop command 1`] = `
+<span
+  className="action-item  "
+  data-tooltip="d"
+>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
+</span>
+`;
+
 exports[`ActionItem render as link for "open" command 1`] = `
 <a
   className="action-item    "

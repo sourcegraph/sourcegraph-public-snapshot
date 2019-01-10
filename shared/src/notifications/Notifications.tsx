@@ -87,7 +87,7 @@ export class Notifications extends React.PureComponent<Props, State> {
                             key={notification.id}
                             notification={notification}
                             onDismiss={this.onDismiss}
-                            className="sourcegraph-notifications__notification rounded-0 m-2"
+                            className="sourcegraph-notifications__notification m-2"
                         />
                     ))}
             </div>

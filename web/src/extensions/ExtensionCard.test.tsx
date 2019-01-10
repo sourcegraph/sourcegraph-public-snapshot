@@ -20,14 +20,14 @@ describe('ExtensionCard', () => {
                             node={{
                                 id: 'x/y',
                                 manifest: {
-                                    title: 't',
                                     activationEvents: ['*'],
                                     description: 'd',
                                     url: 'https://example.com',
                                     icon: 'data:image/png,abcd',
                                 },
                                 registryExtension: {
-                                    id: 'x/y',
+                                    id: 'abcd1234',
+                                    extensionIDWithoutRegistry: 'x/y',
                                     url: 'extensions/x/y',
                                     isWorkInProgress: false,
                                     viewerCanAdminister: false,

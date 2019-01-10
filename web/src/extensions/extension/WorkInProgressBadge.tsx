@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * Shows a "Work in progress" badge for extensions.
+ * Shows a "WIP" badge for extensions.
  */
 export const WorkInProgressBadge: React.FunctionComponent<{ viewerCanAdminister: boolean }> = ({
     viewerCanAdminister,
@@ -11,9 +11,9 @@ export const WorkInProgressBadge: React.FunctionComponent<{ viewerCanAdminister:
         data-tooltip={
             viewerCanAdminister
                 ? 'Remove "WIP" from the title when this extension is ready for use.'
-                : 'This extension is still under development and is not ready for use.'
+                : 'Work in progress (not ready for use)'
         }
     >
-        Work in progress
+        WIP
     </span>
 )

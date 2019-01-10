@@ -18,6 +18,11 @@ If you don't want to use an access token from your personal GitHub user account,
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [repo scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
 
+## Authentication
+
+To configure GitHub as an authentication provider (which will enable sign-in via GitHub), see the
+[authentication documentation](../admin/auth#github).
+
 ## Browser extension
 
 The [Sourcegraph browser extension](browser_extension.md) supports GitHub. When installed in your web browser, it adds hover tooltips, go-to-definition, find-references, and code search to files and pull requests viewed on GitHub and GitHub Enterprise.

@@ -65,6 +65,7 @@ export function createPlatformContext(): PlatformContext {
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
+        sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
     }
     return context
 }

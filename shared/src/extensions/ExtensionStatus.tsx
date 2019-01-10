@@ -2,23 +2,26 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExecutableExtension } from '../api/client/services/extensionsService'
+import { Link } from '../components/Link'
 import { PopoverButton } from '../components/PopoverButton'
 import { Toggle } from '../components/Toggle'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     link: React.ComponentType<{ id: string }>
 }
 
 interface State {
-    /** The extension IDs of extensions that are active, or undefined while loading. */
-    extensions?: Pick<ExecutableExtension, 'id'>[]
+    /** The extension IDs of extensions that are active, an error, or undefined while loading. */
+    extensionsOrError?: Pick<ExecutableExtension, 'id'>[] | ErrorLike
 
     /** Whether to log traces of communication with extensions. */
     traceExtensionHostCommunication?: boolean
+    sideloadedExtensionURL?: string | null
 }
 
 export class ExtensionStatus extends React.PureComponent<Props, State> {
@@ -36,7 +39,8 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
             extensionsController
                 .pipe(
                     switchMap(extensionsController => extensionsController.services.extensions.activeExtensions),
-                    map(extensions => ({ extensions }))
+                    catchError(err => [asError(err)]),
+                    map(extensionsOrError => ({ extensionsOrError }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
@@ -51,7 +55,13 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     switchMap(({ traceExtensionHostCommunication }) => traceExtensionHostCommunication),
                     map(traceExtensionHostCommunication => ({ traceExtensionHostCommunication }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => this.setState({ ...this.state, ...stateUpdate }))
+        )
+
+        this.subscriptions.add(
+            platformContext
+                .pipe(switchMap(({ sideloadedExtensionURL: sideloadedExtensionURL }) => sideloadedExtensionURL))
+                .subscribe(sideloadedExtensionURL => this.setState({ ...this.state, sideloadedExtensionURL }))
         )
 
         this.componentUpdates.next(this.props)
@@ -69,10 +79,12 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
         return (
             <div className="extension-status card border-0">
                 <div className="card-header">Active extensions (DEBUG)</div>
-                {this.state.extensions ? (
-                    this.state.extensions.length > 0 ? (
+                {this.state.extensionsOrError ? (
+                    isErrorLike(this.state.extensionsOrError) ? (
+                        <div className="alert alert-danger mb-0 rounded-0">{this.state.extensionsOrError.message}</div>
+                    ) : this.state.extensionsOrError.length > 0 ? (
                         <div className="list-group list-group-flush">
-                            {this.state.extensions.map(({ id }, i) => (
+                            {this.state.extensionsOrError.map(({ id }, i) => (
                                 <div
                                     key={i}
                                     className="list-group-item py-2 d-flex align-items-center justify-content-between"
@@ -89,7 +101,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                         <LoadingSpinner className="icon-inline" /> Loading extensions...
                     </span>
                 )}
-                <div className="card-body border-top d-flex justify-content-end align-items-center">
+                <div className="card-body border-top d-flex justify-content-start align-items-center">
                     <label htmlFor="extension-status__trace" className="mr-2 mb-0">
                         Log to devtools console{' '}
                     </label>
@@ -100,12 +112,57 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                         title="Toggle extension trace logging to devtools console"
                     />
                 </div>
+                <div className="card-body border-top">
+                    <h6>Sideload Extension</h6>
+                    {this.state.sideloadedExtensionURL ? (
+                        <div>
+                            <p>
+                                <span>Load from: </span>
+                                <Link to={this.state.sideloadedExtensionURL}>{this.state.sideloadedExtensionURL}</Link>
+                            </p>
+                            <div>
+                                <button
+                                    className="btn btn-sm btn-primary mr-1"
+                                    onClick={this.setSideloadedExtensionURL}
+                                >
+                                    Change
+                                </button>
+                                <button className="btn btn-sm btn-danger" onClick={this.clearSideloadedExtensionURL}>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <p>
+                                <span>No sideloaded extension</span>
+                            </p>
+                            <div>
+                                <button className="btn btn-sm btn-primary" onClick={this.setSideloadedExtensionURL}>
+                                    Load extension
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         )
     }
 
     private onToggleTrace = () => {
         this.props.platformContext.traceExtensionHostCommunication.next(!this.state.traceExtensionHostCommunication)
+    }
+
+    private setSideloadedExtensionURL = () => {
+        const url = window.prompt(
+            'Parcel dev server URL:',
+            this.state.sideloadedExtensionURL || 'http://localhost:1234'
+        )
+        this.props.platformContext.sideloadedExtensionURL.next(url)
+    }
+
+    private clearSideloadedExtensionURL = () => {
+        this.props.platformContext.sideloadedExtensionURL.next(null)
     }
 }
 
