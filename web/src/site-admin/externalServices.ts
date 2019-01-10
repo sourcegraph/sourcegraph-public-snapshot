@@ -100,7 +100,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   // You can define the base "url" and set "repos" as paths only (e.g. my/repo), or
   // leave "url" unset and define each repo in "repos" with an absolute URL.
   // Supported URL schemes are: http, https, git and ssh
-  "url": "https://my-other-githost.example.com/?access_token=token",
+  "url": "https://ACCESSTOKEN@my-other-githost.example.com",
   "repos": []
 }`,
     },
