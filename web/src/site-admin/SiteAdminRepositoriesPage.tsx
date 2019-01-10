@@ -219,11 +219,13 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
         return (
             <div className="site-admin-repositories-page">
                 <PageTitle title="Repositories - Admin" />
-                <h2>Repositories</h2>
-                <div>
-                    Repositories are mirrored from connected{' '}
-                    <Link to="/site-admin/external-services">external services</Link>.
-                </div>
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+					<h2 className="mb-0">Repositories</h2>
+				</div>
+				<p>
+				Repositories are mirrored from connected{' '}
+				<Link to="/site-admin/external-services">external services</Link>.
+                </p>
                 <FilteredRepositoryConnection
                     className="list-group list-group-flush mt-3"
                     noun="repository"

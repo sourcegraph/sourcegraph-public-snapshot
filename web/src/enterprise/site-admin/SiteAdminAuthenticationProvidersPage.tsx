@@ -78,20 +78,19 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
         return (
             <div className="site-admin-authentication-page">
                 <PageTitle title="Authentication providers - Admin" />
-                <h2>Authentication providers</h2>
-                <p>
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+					<h2 className="mb-0">Authentication providers</h2>
+					<Link to="/site-admin/configuration" className="btn btn-secondary">
+                        <SettingsIcon className="icon-inline" /> Configure auth providers
+                    </Link>
+				</div>
+				<p>
                     Authentication providers allow users to sign into Sourcegraph. See{' '}
                     <a href="https://docs.sourcegraph.com/admin/auth">authentication documentation</a> about configuring
                     single-sign-on (SSO) via SAML and OpenID Connect.
                 </p>
-                <div>
-                    <Link to="/site-admin/configuration" className="btn btn-secondary">
-                        <SettingsIcon className="icon-inline" /> Configure auth providers
-                    </Link>
-                </div>
                 <FilteredAuthProviderConnection
-                    className="mt-3"
-                    listClassName="list-group list-group-flush"
+                    className="list-group list-group-flush mt-3"
                     noun="authentication provider"
                     pluralNoun="authentication providers"
                     queryConnection={this.queryAuthProviders}
