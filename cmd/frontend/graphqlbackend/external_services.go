@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
 var externalServiceKinds = map[string]struct{}{
@@ -59,7 +59,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	}
 
 	if err := syncExternalService(ctx, externalService); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "external service created, but sync request failed")
 	}
 
 	return &externalServiceResolver{externalService: externalService}, nil
@@ -96,7 +96,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	}
 
 	if err = syncExternalService(ctx, externalService); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "external service updated, but sync request failed")
 	}
 
 	return &externalServiceResolver{externalService: externalService}, nil
