@@ -131,7 +131,7 @@ func validateOtherExternalServiceConfig(config string) error {
 
 		cloneURL, err := parseRepo(repo)
 		if err != nil {
-			return fmt.Errorf(`failed to parse repos[%d]=%q with url=%q`, i, repo, cfg.Url)
+			return fmt.Errorf(`failed to parse repos[%d]=%q with url=%q: %s`, i, repo, cfg.Url, err)
 		}
 
 		switch cloneURL.Scheme {
