@@ -102,9 +102,10 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	switch req.ExternalService.Kind {
 	case "OTHER":
-		if err := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService); err != nil {
-			log15.Error("server.external-service-sync: ", "err", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		res := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService)
+		if len(res.Errors) > 0 {
+			log15.Error("server.external-service-sync", res.Errors)
+			http.Error(w, res.Errors.Error(), http.StatusInternalServerError)
 		}
 	case "":
 		http.Error(w, "empty external service kind", http.StatusBadRequest)
