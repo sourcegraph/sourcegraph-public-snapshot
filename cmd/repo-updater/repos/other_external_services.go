@@ -139,18 +139,12 @@ func (s *OtherReposSyncer) Sync(ctx context.Context, svcs ...*api.ExternalServic
 }
 
 func (s *OtherReposSyncer) sync(ctx context.Context, svc *api.ExternalService) error {
-	osvc, err := newOtherExternalService(svc)
-	if err != nil {
-		return err
-	}
-
-	cloneURLs, err := osvc.CloneURLs()
+	cloneURLs, err := otherExternalServiceCloneURLs(svc)
 	if err != nil {
 		return err
 	}
 
 	repos := make([]*protocol.RepoInfo, 0, len(cloneURLs))
-
 	for _, u := range cloneURLs {
 		repoURL := u.String()
 		repoName := otherRepoName(u)
@@ -276,41 +270,31 @@ func otherRepoName(cloneURL *url.URL) api.RepoName {
 	return api.RepoName(otherRepoNameReplacer.Replace(u.String()))
 }
 
-type otherExternalService struct {
-	*api.ExternalService
-	*schema.OtherExternalServiceConnection
-}
-
-func newOtherExternalService(s *api.ExternalService) (*otherExternalService, error) {
-	var conn schema.OtherExternalServiceConnection
-	if err := jsonc.Unmarshal(s.Config, &conn); err != nil {
+// otherExternalServiceCloneURLs returns all cloneURLs of the given "OTHER" external service.
+func otherExternalServiceCloneURLs(s *api.ExternalService) ([]*url.URL, error) {
+	var c schema.OtherExternalServiceConnection
+	if err := jsonc.Unmarshal(s.Config, &c); err != nil {
 		return nil, err
 	}
-	return &otherExternalService{
-		ExternalService:                s,
-		OtherExternalServiceConnection: &conn,
-	}, nil
-}
 
-func (s otherExternalService) CloneURLs() ([]*url.URL, error) {
-	if len(s.Repos) == 0 {
+	if len(c.Repos) == 0 {
 		return nil, nil
 	}
 
 	parseRepo := url.Parse
-	if s.Url != "" {
-		baseURL, err := url.Parse(s.Url)
+	if c.Url != "" {
+		baseURL, err := url.Parse(c.Url)
 		if err != nil {
 			return nil, err
 		}
 		parseRepo = baseURL.Parse
 	}
 
-	cloneURLs := make([]*url.URL, 0, len(s.Repos))
-	for _, repo := range s.Repos {
+	cloneURLs := make([]*url.URL, 0, len(c.Repos))
+	for _, repo := range c.Repos {
 		cloneURL, err := parseRepo(repo)
 		if err != nil {
-			log15.Error("skipping invalid repo clone URL", "repo", repo, "url", s.Url, "error", err)
+			log15.Error("skipping invalid repo clone URL", "repo", repo, "url", c.Url, "error", err)
 			continue
 		}
 		cloneURLs = append(cloneURLs, cloneURL)
