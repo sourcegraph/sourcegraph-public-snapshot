@@ -272,20 +272,10 @@ var otherRepoNameReplacer = strings.NewReplacer(":", "-", "@", "-", "//", "")
 
 func otherRepoName(cloneURL *url.URL) api.RepoName {
 	u := *cloneURL
-	if u.User != nil {
-		user := u.User.Username()
-		pass, ok := u.User.Password()
-		if !ok {
-			u.User = url.User(user)
-		} else {
-			u.User = url.UserPassword(user, pass)
-		}
-	}
-
+	u.User = nil
 	u.Scheme = ""
 	u.RawQuery = ""
 	u.Fragment = ""
-
 	return api.RepoName(otherRepoNameReplacer.Replace(u.String()))
 }
 
