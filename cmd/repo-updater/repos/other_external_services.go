@@ -62,7 +62,7 @@ func (s *OtherReposSyncer) Run(ctx context.Context, interval time.Duration) erro
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticks.C:
-			log15.Info("syncing all OTHER external services")
+			log15.Debug("syncing all OTHER external services")
 
 			results, err := s.syncAll(ctx)
 			if err != nil {
