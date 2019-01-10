@@ -20,12 +20,12 @@ https://sourcegraph.example.com/user/account/tokens
 
 Then run this query to echo your username back:
 
-```shell
-curl \
-  -H 'Authorization: token YOUR_TOKEN' \
-  -d '{"query": "query { currentUser { username } }"}' \
- https://sourcegraph.example.com/.api/graphql
-```
+<!--
+  DO NOT CHANGE THIS TO A CODEBLOCK.
+  We want line breaks for readability, but backslashes to escape them do not work cross-platform.
+  This uses line breaks that are rendered but not copy-pasted to the clipboard.
+-->
+<pre class="pre-wrap"><code>curl<span class="virtual-br"></span> -H 'Authorization: token YOUR_TOKEN'<span class="virtual-br"></span> -d '{"query": "query { currentUser { username } }"}'<span class="virtual-br"></span>https://sourcegraph.example.com/.api/graphql</code></pre>
 
 You should see a response like this:
 
@@ -51,12 +51,12 @@ Sourcegraph's GraphQL API documentation is available directly in the API console
 
 Site admins may create access tokens with the special `site-admin:sudo` scope, which allows the holder to perform any action as any other user.
 
-```shell
-curl \
-  -H 'Authorization: token-sudo user="SUDO_TO_USERNAME",token="YOUR_TOKEN"' \
-  -d '{"query": "query { currentUser { username } }"}' \
- https://sourcegraph.example.com/.api/graphql
-```
+<!--
+  DO NOT CHANGE THIS TO A CODEBLOCK.
+  We want line breaks for readability, but backslashes to escape them do not work cross-platform.
+  This uses line breaks that are rendered but not copy-pasted to the clipboard.
+-->
+<pre class="pre-wrap"><code>curl<span class="virtual-br"></span> -H 'Authorization: token-sudo user="SUDO_TO_USERNAME",token="YOUR_TOKEN"'<span class="virtual-br"></span> -d '{"query": "query { currentUser { username } }"}'<span class="virtual-br"></span> https://sourcegraph.example.com/.api/graphql</code></pre>
 
 This scope is useful when building Sourcegraph integrations with external services where the service needs to communicate with Sourcegraph and does not want to force each user to individually authenticate to Sourcegraph.
 
@@ -75,12 +75,12 @@ To learn more, see [github.com/sourcegraph/src-cli](https://github.com/sourcegra
 
 The entire API can be used via `curl` (or any HTTP library), just the same as any other GraphQL API. For example:
 
-```shell
-curl \
-  -H 'Authorization: token YOUR_TOKEN' \
-  -d '{"query":"query($query: String!) { search(query: $query) { results { resultCount } } }","variables":{"query":"Router"}}' \
-  https://sourcegraph.com/.api/graphql
-```
+<!--
+  DO NOT CHANGE THIS TO A CODEBLOCK.
+  We want line breaks for readability, but backslashes to escape them do not work cross-platform.
+  This uses line breaks that are rendered but not copy-pasted to the clipboard.
+-->
+<pre class="pre-wrap"><code>curl<span class="virtual-br"></span> -H 'Authorization: token YOUR_TOKEN'<span class="virtual-br"></span> -d '{"query":"query($query: String!) { search(query: $query) { results { resultCount } } }","variables":{"query":"Router"}}'<span class="virtual-br"></span> https://sourcegraph.com/.api/graphql</code></pre>
 
 i.e. you just need to send the `Authorization` header and a JSON object like `{"query": "my query string", "variables": {"var1": "val1"}}`.
 
