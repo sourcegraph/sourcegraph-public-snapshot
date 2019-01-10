@@ -109,7 +109,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	case "":
 		http.Error(w, "empty external service kind", http.StatusBadRequest)
 	default:
-		log15.Warn("server.external-service-sync: not implemented for: ", "kind", req.ExternalService.Kind)
+		// TODO(tsenart): Handle other external service kinds.
 	}
 }
 
