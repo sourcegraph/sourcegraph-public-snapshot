@@ -103,17 +103,20 @@ func (s *OtherReposSyncer) Sync(ctx context.Context, svcs ...*api.ExternalServic
 		}(syncOp{svc: svc})
 	}
 
-	ids := make([]string, 0, len(svcs))
+	ids := map[string][]string{}
 	errs := SyncError{Errors: make(map[*api.ExternalService]error, cap(ch))}
 	for i := 0; i < cap(ch); i++ {
-		if op := <-ch; op.err != nil {
+		op := <-ch
+		if id := strconv.FormatInt(op.svc.ID, 10); op.err != nil {
 			errs.Errors[op.svc] = op.err
+			ids["err"] = append(ids["err"], id)
 		} else {
-			id := strconv.FormatInt(op.svc.ID, 10)
-			ids = append(ids, id)
+			ids["ok"] = append(ids["ok"], id)
 			otherExternalServicesUpdateTime.WithLabelValues(id).Set(float64(time.Now().Unix()))
 		}
 	}
+
+	log15.Info("synced OTHER external services", "ok", ids["ok"], "err", ids["err"])
 
 	if len(errs.Errors) > 0 {
 		return &errs
