@@ -145,9 +145,8 @@ func (s *OtherReposSyncer) sync(ctx context.Context, svc *api.ExternalService) e
 		serviceID := u.String()
 
 		repos = append(repos, &protocol.RepoInfo{
-			Name:    repoName,
-			Enabled: true,
-			VCS:     protocol.VCSInfo{URL: repoURL},
+			Name: repoName,
+			VCS:  protocol.VCSInfo{URL: repoURL},
 			ExternalRepo: &api.ExternalRepoSpec{
 				ID:          string(repoName),
 				ServiceType: "other",
@@ -213,7 +212,7 @@ func (s *OtherReposSyncer) store(ctx context.Context, repos ...*protocol.RepoInf
 func (s *OtherReposSyncer) upsert(ctx context.Context, repo *protocol.RepoInfo) error {
 	_, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{
 		RepoName:     repo.Name,
-		Enabled:      repo.Enabled,
+		Enabled:      true,
 		Fork:         repo.Fork,
 		Archived:     repo.Archived,
 		Description:  repo.Description,
@@ -258,7 +257,10 @@ func (s *OtherReposSyncer) update(repo *protocol.RepoInfo) {
 	s.mu.Lock()
 	s.repos[string(repo.Name)] = repo
 	s.mu.Unlock()
-	s.updates <- repo
+
+	if s.updates != nil {
+		s.updates <- repo
+	}
 }
 
 type otherExternalService struct {

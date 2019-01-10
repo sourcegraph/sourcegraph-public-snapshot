@@ -81,7 +81,6 @@ type RepoInfo struct {
 	Name api.RepoName
 
 	Description string // repository description (from the external service)
-	Enabled     bool   // whether this repository is enabled
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
 	Archived    bool   // whether this repository is archived (from the external service)
 
