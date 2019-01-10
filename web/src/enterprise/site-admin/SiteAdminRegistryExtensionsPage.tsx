@@ -167,9 +167,9 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
         return (
             <div className="registry-extensions-page">
                 <PageTitle title="Registry extensions" />
-                <div className="d-flex justify-content-between align-items-center">
-                    <h2 className="mr-sm-2 mb-0">Registry extensions</h2>
-                    <div>
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+					<h2 className="mb-0">Registry extensions</h2>
+					<div>
                         <Link className="btn btn-outline-link mr-sm-2" to="/extensions">
                             View extensions
                         </Link>
@@ -177,15 +177,14 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                             <AddIcon className="icon-inline" /> Publish new extension
                         </Link>
                     </div>
-                </div>
-                <p className="mt-2">
-                    Extensions add features to Sourcegraph and other connected tools (such as editors, code hosts, and
-                    code review tools).
+				</div>
+				<p>
+				Extensions add features to Sourcegraph and other connected tools (such as editors, code hosts, and
+				code review tools).
                 </p>
                 <FilteredConnection<GQL.IRegistryExtension, Pick<RegistryExtensionNodeSiteAdminProps, 'onDidUpdate'>>
-                    className="registry-extensions-list"
+                    className="list-group list-group-flush registry-extensions-list"
                     listComponent="ul"
-                    listClassName="list-group"
                     noun="extension"
                     pluralNoun="extensions"
                     queryConnection={this.queryRegistryExtensions}

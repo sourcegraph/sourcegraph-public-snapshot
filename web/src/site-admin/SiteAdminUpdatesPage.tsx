@@ -58,7 +58,9 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />
-                <h2>Updates</h2>
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+					<h2 className="mb-0">Updates</h2>
+				</div>
                 {this.state.error && (
                     <p className="site-admin-updates-page__error">Error: {upperFirst(this.state.error)}</p>
                 )}
@@ -117,7 +119,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                 </p>
                 <p>
                     <a href="https://about.sourcegraph.com/changelog" target="_blank">
-                        Changelog
+                        Sourcegraph changelog
                     </a>
                 </p>
             </div>

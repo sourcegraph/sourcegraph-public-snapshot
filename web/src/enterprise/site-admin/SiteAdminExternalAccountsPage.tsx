@@ -54,16 +54,16 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
         return (
             <div className="user-settings-external-accounts-page">
                 <PageTitle title="External accounts" />
-                <h2>External user accounts</h2>
-                <p>
-                    An external account (on an <Link to="/site-admin/auth/providers">authentication provider</Link>) is
-                    linked to a Sourcegraph user when it's used to sign into Sourcegraph.
-                </p>
-                <div>
-                    <Link to="/site-admin/auth/providers" className="btn btn-secondary">
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+					<h2 className="mb-0">External user accounts</h2>
+					<Link to="/site-admin/auth/providers" className="btn btn-secondary">
                         View auth providers
                     </Link>
-                </div>
+				</div>
+				<p>
+				An external account (on an <Link to="/site-admin/auth/providers">authentication provider</Link>) is
+				linked to a Sourcegraph user when it's used to sign into Sourcegraph.
+                </p>
                 <FilteredExternalAccountConnection
                     className="list-group list-group-flush mt-3"
                     noun="external user account"

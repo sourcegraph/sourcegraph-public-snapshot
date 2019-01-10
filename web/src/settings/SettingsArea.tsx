@@ -144,7 +144,7 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         return (
-            <>
+            <div className="mt-3">
                 <h2>{term} settings</h2>
                 {this.props.extraHeader}
                 <Switch>
@@ -157,7 +157,7 @@ export class SettingsArea extends React.Component<Props, State> {
                     />
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
-            </>
+            </div>
         )
     }
 
