@@ -17,11 +17,11 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
@@ -54,10 +54,11 @@ func main() {
 		}),
 	})
 
-	updates := make(chan *protocol.RepoInfo)
+	// Synced repos will be sent here.
+	synced := make(chan *protocol.RepoInfo)
 
 	// Other external services syncing thread. Repo updates will be sent on the given channel.
-	syncer := repos.NewOtherReposSyncer(updates)
+	syncer := repos.NewOtherReposSyncer(api.InternalClient, synced)
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{OtherReposSyncer: syncer}
@@ -99,12 +100,12 @@ func main() {
 	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
 
 	// Start other repos syncer syncing thread
-	go func() { _ = syncer.Run(ctx, repos.GetUpdateInterval()) }()
+	go log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval()))
 
 	// Start other repos updates scheduler relay thread.
 	go func() {
 		newScheduler := conf.UpdateScheduler2Enabled()
-		for repo := range updates {
+		for repo := range synced {
 			if newScheduler {
 				repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
 			} else {

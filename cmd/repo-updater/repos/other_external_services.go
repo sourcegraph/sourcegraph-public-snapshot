@@ -19,16 +19,29 @@ import (
 // OtherReposSyncer periodically synchronizes the configured repos in "OTHER" external service
 // connections with the stored repos in Sourcegraph.
 type OtherReposSyncer struct {
-	mu      sync.RWMutex
-	repos   map[string]*protocol.RepoInfo
-	updates chan<- *protocol.RepoInfo
+	// InternalAPI client used to fetch all external servicess and upsert repos.
+	api InternalAPI
+	// RWMutex synchronizing access to repos below
+	mu sync.RWMutex
+	// Latest synced repos cache used by GetRepoInfoByName.
+	repos map[string]*protocol.RepoInfo
+	// Channel passed in NewOtherReposSyncer where synced repos are sent to after being cached.
+	synced chan<- *protocol.RepoInfo
 }
 
-// NewOtherReposSyncer returns a new OtherReposSyncer. Updated repos will be sent on the given channel.
-func NewOtherReposSyncer(updates chan<- *protocol.RepoInfo) *OtherReposSyncer {
+// InternalAPI captures the internal API methods needed for syncing external services' repos.
+type InternalAPI interface {
+	ExternalServicesList(context.Context, api.ExternalServicesListRequest) ([]*api.ExternalService, error)
+	ReposCreateIfNotExists(context.Context, api.RepoCreateOrUpdateRequest) (*api.Repo, error)
+	ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error
+}
+
+// NewOtherReposSyncer returns a new OtherReposSyncer. Synced repos will be sent on the given channel.
+func NewOtherReposSyncer(api InternalAPI, synced chan<- *protocol.RepoInfo) *OtherReposSyncer {
 	return &OtherReposSyncer{
-		repos:   map[string]*protocol.RepoInfo{},
-		updates: updates,
+		api:    api,
+		repos:  map[string]*protocol.RepoInfo{},
+		synced: synced,
 	}
 }
 
@@ -60,7 +73,7 @@ func (s *OtherReposSyncer) Run(ctx context.Context, interval time.Duration) erro
 
 // syncAll syncrhonizes all "OTHER" external services.
 func (s *OtherReposSyncer) syncAll(ctx context.Context) error {
-	svcs, err := api.InternalClient.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kind: "OTHER"})
+	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kind: "OTHER"})
 	if err != nil {
 		return err
 	}
@@ -198,7 +211,7 @@ func (s *OtherReposSyncer) store(ctx context.Context, repos ...*protocol.RepoInf
 		if op := <-ch; op.err != nil {
 			errs.Errors[op.repo] = op.err
 		} else {
-			s.update(op.repo)
+			s.cache(op.repo)
 		}
 	}
 
@@ -209,8 +222,18 @@ func (s *OtherReposSyncer) store(ctx context.Context, repos ...*protocol.RepoInf
 	return nil
 }
 
+func (s *OtherReposSyncer) cache(repo *protocol.RepoInfo) {
+	s.mu.Lock()
+	s.repos[string(repo.Name)] = repo
+	s.mu.Unlock()
+
+	if s.synced != nil {
+		s.synced <- repo
+	}
+}
+
 func (s *OtherReposSyncer) upsert(ctx context.Context, repo *protocol.RepoInfo) error {
-	_, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{
+	_, err := s.api.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{
 		RepoName:     repo.Name,
 		Enabled:      true,
 		Fork:         repo.Fork,
@@ -223,7 +246,7 @@ func (s *OtherReposSyncer) upsert(ctx context.Context, repo *protocol.RepoInfo) 
 		return err
 	}
 
-	return api.InternalClient.ReposUpdateMetadata(
+	return s.api.ReposUpdateMetadata(
 		ctx,
 		repo.Name,
 		repo.Description,
@@ -251,16 +274,6 @@ func otherRepoName(cloneURL *url.URL) api.RepoName {
 	u.Fragment = ""
 
 	return api.RepoName(otherRepoNameReplacer.Replace(u.String()))
-}
-
-func (s *OtherReposSyncer) update(repo *protocol.RepoInfo) {
-	s.mu.Lock()
-	s.repos[string(repo.Name)] = repo
-	s.mu.Unlock()
-
-	if s.updates != nil {
-		s.updates <- repo
-	}
 }
 
 type otherExternalService struct {
