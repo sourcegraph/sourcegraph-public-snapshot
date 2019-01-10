@@ -565,29 +565,11 @@
           "type": "array",
           "items": {
             "type": "string",
-            "format": "uri",
-            "pattern": "^(git|ssh|https?)://",
+            "format": "uri-reference",
             "examples": [
-              "https://github.com/my/repo?access_token=secret",
-              "ssh://user@host.xz:2333/my/repo.git/",
-              "git://host.xz:2333/my/repo.git/"
+              "path/to/my/repo",
+              "path/to/my/repo.git/"
             ]
-          }
-        }
-      },
-      "dependencies": {
-        "url": {
-          "repos": {
-            "title": "List of repository paths to be merged with the provided Git clone base URL.",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uri-reference",
-              "examples": [
-                "path/to/my/repo",
-                "path/to/my/repo.git/"
-              ]
-            }
           }
         }
       }

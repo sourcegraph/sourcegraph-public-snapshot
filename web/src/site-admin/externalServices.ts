@@ -97,10 +97,10 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
         kind: GQL.ExternalServiceKind.OTHER,
         displayName: 'Other',
         defaultConfig: `{
-  // You can define the base "url" and set "repos" as paths only (e.g. my/repo), or
-  // leave "url" unset and define each repo in "repos" with an absolute URL.
   // Supported URL schemes are: http, https, git and ssh
-  "url": "https://ACCESSTOKEN@my-other-githost.example.com",
+  "url": "https://my-other-githost.example.com",
+
+  // Repository clone paths may be relative to the url (preferred) or absolute.
   "repos": []
 }`,
     },
