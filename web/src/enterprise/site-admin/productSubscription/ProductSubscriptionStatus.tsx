@@ -117,13 +117,6 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                             : ''}
                                     </div>
                                     <div className="text-nowrap flex-wrap-reverse">
-                                        <Link
-                                            to="/site-admin/configuration"
-                                            className="mr-2"
-                                            data-tooltip="Set the license key in the licenseKey site configuration property"
-                                        >
-                                            Add
-                                        </Link>
                                         <a
                                             href="http://sourcegraph.com/user/subscriptions"
                                             className="btn btn-primary btn-sm"
