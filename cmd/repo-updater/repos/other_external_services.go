@@ -32,7 +32,7 @@ func NewOtherReposSyncer(updates chan<- *protocol.RepoInfo) *OtherReposSyncer {
 	}
 }
 
-// GetRepoInfoByName returns dummy repo info of the repository with the given name.
+// GetRepoInfoByName returns repo info of the repository with the given name.
 func (s *OtherReposSyncer) GetRepoInfoByName(ctx context.Context, name string) *protocol.RepoInfo {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
