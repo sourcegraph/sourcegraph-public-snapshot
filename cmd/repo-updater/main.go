@@ -100,7 +100,7 @@ func main() {
 	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
 
 	// Start other repos syncer syncing thread
-	go log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval()))
+	go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval()))}()
 
 	// Start other repos updates scheduler relay thread.
 	go func() {
