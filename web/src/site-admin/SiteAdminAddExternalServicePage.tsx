@@ -7,9 +7,9 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
+import { refreshSiteFlags } from '../site/backend'
 import { ALL_EXTERNAL_SERVICES, ExternalServiceMetadata, GITHUB_EXTERNAL_SERVICE } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
-import { refreshSiteFlags } from '../site/backend'
 
 interface Props {
     history: H.History

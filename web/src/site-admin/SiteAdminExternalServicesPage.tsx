@@ -12,8 +12,8 @@ import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
 import { refreshSiteFlags } from '../site/backend'
+import { eventLogger } from '../tracking/eventLogger'
 
 interface ExternalServiceNodeProps {
     node: GQL.IExternalService
