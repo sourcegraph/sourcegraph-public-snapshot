@@ -1,6 +1,6 @@
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import React from 'react'
-import { asError, ErrorLike } from '../../../shared/src/util/errors'
+import { asError } from '../../../shared/src/util/errors'
 import { HeroPage } from './HeroPage'
 
 interface State {
