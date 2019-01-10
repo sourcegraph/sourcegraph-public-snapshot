@@ -1,9 +1,9 @@
-import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
 import { isErrorLike } from '../../../../shared/src/util/errors'
+import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
 const PublishNewManifestAlert: React.FunctionComponent<{
@@ -14,14 +14,15 @@ const PublishNewManifestAlert: React.FunctionComponent<{
 }> = ({ extension, text, buttonLabel, alertClass }) => (
     <div className={`alert ${alertClass}`}>
         {text}
-        {extension.registryExtension && extension.registryExtension.viewerCanAdminister && (
-            <>
-                <br />
-                <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
-                    {buttonLabel}
-                </Link>
-            </>
-        )}
+        {extension.registryExtension &&
+            extension.registryExtension.viewerCanAdminister && (
+                <>
+                    <br />
+                    <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                        {buttonLabel}
+                    </Link>
+                </>
+            )}
     </div>
 )
 
@@ -58,7 +59,7 @@ export const ExtensionREADME: React.FunctionComponent<{
     }
 
     try {
-        const html = marked(manifest.readme, { gfm: true, breaks: true, sanitize: true })
+        const html = renderMarkdown(manifest.readme)
         return <Markdown dangerousInnerHTML={html} />
     } catch (err) {
         return (

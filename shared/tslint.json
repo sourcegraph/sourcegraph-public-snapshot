@@ -3,7 +3,6 @@
   "linterOptions": { "exclude": ["node_modules/**", "coverage/**"] },
   "rulesDirectory": "dev/tslint",
   "rules": {
-    "import-blacklist": [true, "highlight.js"],
     "ban-imports": [
       true,
       "^react-router(-dom)?",

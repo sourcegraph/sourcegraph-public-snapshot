@@ -3,7 +3,6 @@
   "linterOptions": { "exclude": ["node_modules/**", "coverage/**"] },
   "rules": {
     "await-promise": false,
-    "import-blacklist": [true, "highlight.js"],
     "jsx-ban-elements": [
       true,
       [

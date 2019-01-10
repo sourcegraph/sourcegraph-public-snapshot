@@ -3,7 +3,7 @@
 > NOTE: Single sign-on integrations are a [paid upgrade](https://about.sourcegraph.com/pricing).
 
 > NOTE: User authentication is part of the **critical site configuration**, which means it must be
-> edited from the [management console](../management_console).
+> edited from the [management console](../management_console.md).
 
 Sourcegraph supports the following ways for users to sign in:
 

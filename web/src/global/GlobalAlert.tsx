@@ -1,10 +1,10 @@
-import marked from 'marked'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 
 /**
@@ -18,7 +18,7 @@ export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className
     const content = (
         <>
             <Icon className="icon-inline mr-2 flex-shrink-0" />
-            <Markdown dangerousInnerHTML={marked(alert.message, { gfm: true, breaks: true, sanitize: true })} />
+            <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
         </>
     )
     const className = `${commonClassName} alert alert-${alertClassForType(alert.type)} d-flex`

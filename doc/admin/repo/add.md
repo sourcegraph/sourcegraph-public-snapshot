@@ -4,6 +4,7 @@
 - [Add repositories from GitLab](../../integration/gitlab.md)
 - [Add repositories from Bitbucket Server](../../integration/bitbucket_server.md)
 - [Add repositories from AWS CodeCommit](../../integration/aws_codecommit.md)
+- [Add repositories from Phabricator](../../integration/phabricator.md)
 - [Add repositories from the local disk](add_from_local_disk.md)
 
 ## Troubleshooting
@@ -17,41 +18,3 @@ If your repositories are not showing up:
 If your repositories are showing up but are not cloning or updating from the original Git repository:
 
 - Go to the repository's **Mirroring** settings page and inspect the **Check connection** logs.
-
----
-
-## Example configuration
-
-Here is an example configuration of a Sourcegraph that is integrated with GitHub Enterprise, GitHub.com and a Gitolite server.
-
-```json
-# Replace 🔒 with a personal access token generated at https://GITHUB_URL/settings/tokens
-
-{
-    // ...
-    "github": [
-        {
-            "url": "GITHUB_ENTERPRISE_URL",
-            "token": "🔒"
-        },
-        {
-            "url": "https://github.com",
-            "token": "🔒",
-            "repos": ["facebook/react","golang/go"],
-        }
-    ],
-    "gitlab": [
-        {
-            "url": "GITLAB_URL",
-            "token": "🔒"
-        },
-    ],
-    "gitolite": [
-        {
-            "prefix": "gitolite.example.com/",
-            "host": "git@gitolite.example.com"
-        }
-    ]
-    // ...
-}
-```

@@ -1,8 +1,8 @@
-import marked from 'marked'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { isSettingsValid, SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Settings } from '../schema/settings.schema'
 import { SiteFlags } from '../site'
@@ -80,7 +80,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             partialStorageKey={`motd.${m}`}
                             className="alert alert-info global-alerts__alert"
                         >
-                            <Markdown dangerousInnerHTML={marked(m, { gfm: true, breaks: true, sanitize: true })} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(m)} />
                         </DismissibleAlert>
                     ))}
             </div>
