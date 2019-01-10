@@ -18,7 +18,7 @@ import (
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{OtherReposSyncer: repos.NewOtherReposSyncer(nil)}
+	s := &Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
 	h := s.Handler()
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
@@ -113,7 +113,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestRepoLookup(t *testing.T) {
-	s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(nil)}
+	s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
 
 	t.Run("no args", func(t *testing.T) {
 		if _, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {

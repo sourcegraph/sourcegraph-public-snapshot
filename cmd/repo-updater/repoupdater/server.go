@@ -131,22 +131,30 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		err           error
 	)
 
-	// Try all GetXyzRepository funcs until one returns authoritatively.
-	if repo = s.OtherReposSyncer.GetRepoInfoByName(ctx, string(args.Repo)); repo == nil {
-		repo, authoritative, err = repos.GetGitHubRepository(ctx, args)
+	type getfn func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
+
+	// Find the authoritative source of the repository being looked up.
+	for _, get := range []getfn{
+		// We begin by searching the "OTHER" external service kind repos because lookups
+		// are fast in-memory only operations, as opposed to the other external service kinds which
+		// don't *always* have enough metadata cached to answer this request without performing network
+		// requests to their respective code host APIs
+		func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
+			r := s.OtherReposSyncer.GetRepoInfoByName(ctx, string(args.Repo))
+			return r, r != nil, nil
+		},
+		// Slower, *potentially* I/O bound lookups, unless there's an HTTP client cache hit.
+		repos.GetGitHubRepository,
+		repos.GetGitLabRepository,
+		repos.GetBitbucketServerRepository,
+		repos.GetAWSCodeCommitRepository,
+		repos.GetGitoliteRepository,
+	} {
+		if repo, authoritative, err = get(ctx, args); authoritative {
+			break
+		}
 	}
-	if !authoritative {
-		repo, authoritative, err = repos.GetGitLabRepository(ctx, args)
-	}
-	if !authoritative {
-		repo, authoritative, err = repos.GetBitbucketServerRepository(ctx, args)
-	}
-	if !authoritative {
-		repo, authoritative, err = repos.GetAWSCodeCommitRepository(ctx, args)
-	}
-	if !authoritative {
-		repo, authoritative, err = repos.GetGitoliteRepository(ctx, args)
-	}
+
 	if authoritative {
 		if isNotFound(err) {
 			result.ErrorNotFound = true
