@@ -6,4 +6,4 @@ Simply go to `https://YOUR-INSTANCE/site-admin/external-services/add?kind=other`
 
 ## Browser extension
 
-The [Sourcegraph browser extension](browser_extension.md) will work only with some of the external services for which it has a first class integration. If you're connecting your Git repositories here, it likely won't.
+The [Sourcegraph browser extension](../../integration/browser_extension.md) will work only with some of the external services for which it has a first class integration. If you're connecting your Git repositories here, it likely won't.
