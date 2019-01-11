@@ -75,8 +75,8 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 </ul>
                 {this.props.baseCommitID && this.props.baseHasFileContents && (
                     <OpenDiffOnSourcegraph
-                        label={'View file (base/head)'}
-                        ariaLabel="View file on Sourcegraph"
+                        label={'View file diff'}
+                        ariaLabel="View file diff on Sourcegraph"
                         openProps={{
                             repoName: this.props.baseRepoName || this.props.repoName,
                             filePath: this.props.baseFilePath || this.props.filePath,
