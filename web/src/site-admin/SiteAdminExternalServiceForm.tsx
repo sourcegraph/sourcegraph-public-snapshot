@@ -6,6 +6,7 @@ import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
+import { Select } from '../components/Select'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { ALL_EXTERNAL_SERVICES } from './externalServices'
 
@@ -42,12 +43,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         disabled={this.props.loading}
                     />
                 </div>
-
                 <div className="form-group">
                     <label htmlFor="external-service-page-form-kind">Kind</label>
-
-                    <select
-                        className="form-control"
+                    <Select
                         id="external-service-page-form-kind"
                         onChange={this.onKindChange}
                         required={true}
@@ -59,10 +57,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                                 {s.displayName}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
-
-                <div>
+                <div className="form-group">
                     <DynamicallyImportedMonacoSettingsEditor
                         // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
                         // if it thinks the config is dirty. We want to always replace the config if the kind changes
