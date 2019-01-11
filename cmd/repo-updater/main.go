@@ -5,21 +5,21 @@
 package main
 
 import (
-	"time"
 	"context"
 	"encoding/json"
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -60,7 +60,7 @@ func main() {
 
 	// Other external services syncing thread. Repo updates will be sent on the given channel.
 	syncer := repos.NewOtherReposSyncer(
-		repos.NewInternalAPI(10 * time.Second),
+		repos.NewInternalAPI(10*time.Second),
 		synced,
 	)
 
