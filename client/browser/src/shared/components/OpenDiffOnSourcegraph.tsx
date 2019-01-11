@@ -1,14 +1,14 @@
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { IFileDiffConnection } from '../../../../../shared/src/graphql/schema'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffInternalIDs'
-import { OpenInSourcegraphProps } from '../repo'
+import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { Button } from './Button'
 
 export interface Props {
-    openProps: OpenInSourcegraphProps
+    openProps: OpenDiffInSourcegraphProps
     style?: React.CSSProperties
     iconStyle?: React.CSSProperties
     className?: string
@@ -31,41 +31,46 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        console.log('PROPS', this.props)
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
                     switchMap(props =>
                         queryRepositoryComparisonFileDiffs({
                             repo: this.props.openProps.repoName,
-                            base: this.props.openProps.commit!.baseRev,
-                            head: this.props.openProps.commit!.headRev,
+                            base: this.props.openProps.commit.baseRev,
+                            head: this.props.openProps.commit.headRev,
                         })
-                    )
+                    ),
+                    map(fileDiff => ({
+                        ...fileDiff,
+                        nodes: fileDiff.nodes.filter(node => node.oldPath === this.props.openProps.filePath),
+                    }))
                 )
                 .subscribe(result => {
-                    console.log('setting state!')
                     this.setState({ fileDiff: result })
                 })
         )
         this.componentUpdates.next(this.props)
     }
     public render(): JSX.Element {
-        console.log('STATE', this.state)
         const url = this.getOpenInSourcegraphUrl(this.props.openProps)
         return <Button {...this.props} className={`open-on-sourcegraph ${this.props.className}`} url={url} />
     }
 
-    private getOpenInSourcegraphUrl(props: OpenInSourcegraphProps): string {
+    private getOpenInSourcegraphUrl(props: OpenDiffInSourcegraphProps): string {
         const baseUrl = repoUrlCache[props.repoName] || sourcegraphUrl
-        // Build URL for Web
         const url = `${baseUrl}/${props.repoName}`
+        const urlToCommit = `${url}/-/compare/${props.commit.baseRev}...${
+            props.commit.headRev
+        }?utm_source=${getPlatformName()}`
+
         if (this.state.fileDiff) {
-            return `${url}/-/commit/${props.commit!.headRev}#diff-${
-                this.state.fileDiff!.nodes[0].internalID
-            }?utm_source=${getPlatformName()}`
+            if (this.state.fileDiff.nodes.length > 0) {
+                // Go to the specfic file in the commit diff.
+                return `${urlToCommit}#diff-${this.state.fileDiff.nodes[0].internalID}`
+            }
         }
 
-        return url
+        return urlToCommit
     }
 }

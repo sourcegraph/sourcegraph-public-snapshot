@@ -75,7 +75,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 </ul>
                 {this.props.baseCommitID && this.props.baseHasFileContents && (
                     <OpenDiffOnSourcegraph
-                        label={'View File (base)'}
+                        label={'View file (base/head)'}
                         ariaLabel="View file on Sourcegraph"
                         openProps={{
                             repoName: this.props.baseRepoName || this.props.repoName,
@@ -101,9 +101,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                   Use a ternary here because prettier insists on changing parens resulting in this button only being rendered
                   if the condition after the || is satisfied.
                  */}
-                {!this.props.baseCommitID || (this.props.baseCommitID && this.props.headHasFileContents) ? (
+                {!this.props.baseCommitID && (
                     <OpenOnSourcegraph
-                        label={`View File${this.props.baseCommitID ? ' (head)' : ''}`}
+                        label={`View file`}
                         ariaLabel="View file on Sourcegraph"
                         openProps={{
                             repoName: this.props.repoName,
@@ -121,7 +121,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         style={this.props.buttonProps.style}
                         iconStyle={this.props.buttonProps.iconStyle}
                     />
-                ) : null}
+                )}
             </div>
         )
     }
