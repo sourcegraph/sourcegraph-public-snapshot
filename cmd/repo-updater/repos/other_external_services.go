@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -175,20 +176,7 @@ func (s *OtherReposSyncer) Sync(ctx context.Context, svc *api.ExternalService) *
 
 	repos := make([]*protocol.RepoInfo, 0, len(cloneURLs))
 	for _, u := range cloneURLs {
-		repoURL := u.String()
-		repoName := otherRepoName(u)
-		u.Path, u.RawQuery = "", ""
-		serviceID := u.String()
-
-		repos = append(repos, &protocol.RepoInfo{
-			Name: repoName,
-			VCS:  protocol.VCSInfo{URL: repoURL},
-			ExternalRepo: &api.ExternalRepoSpec{
-				ID:          string(repoName),
-				ServiceType: "other",
-				ServiceID:   serviceID,
-			},
-		})
+		repos = append(repos, repoFromCloneURL(u))
 	}
 
 	res := s.store(ctx, svc, repos...)
@@ -197,6 +185,23 @@ func (s *OtherReposSyncer) Sync(ctx context.Context, svc *api.ExternalService) *
 	}
 
 	return res
+}
+
+func repoFromCloneURL(u *url.URL) *protocol.RepoInfo {
+	repoURL := u.String()
+	repoName := otherRepoName(u)
+	u.Path, u.RawQuery = "", ""
+	serviceID := u.String()
+
+	return &protocol.RepoInfo{
+		Name: repoName,
+		VCS:  protocol.VCSInfo{URL: repoURL},
+		ExternalRepo: &api.ExternalRepoSpec{
+			ID:          string(repoName),
+			ServiceType: "other",
+			ServiceID:   serviceID,
+		},
+	}
 }
 
 // store upserts the given repos through the FrontendAPI, returning which succeeded
@@ -283,7 +288,7 @@ func otherRepoName(cloneURL *url.URL) api.RepoName {
 func otherExternalServiceCloneURLs(s *api.ExternalService) ([]*url.URL, error) {
 	var c schema.OtherExternalServiceConnection
 	if err := jsonc.Unmarshal(s.Config, &c); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("config error: %s", err)
 	}
 
 	if len(c.Repos) == 0 {
@@ -310,4 +315,117 @@ func otherExternalServiceCloneURLs(s *api.ExternalService) ([]*url.URL, error) {
 	}
 
 	return cloneURLs, nil
+}
+
+//
+// Test utilities
+//
+
+// FakeInternalAPI implements the InternalAPI interface with the given in memory data.
+// It's safe for concurrent use.
+type FakeInternalAPI struct {
+	mu     sync.RWMutex
+	svcs   map[string][]*api.ExternalService
+	repos  map[api.RepoName]*api.Repo
+	repoID api.RepoID
+}
+
+// NewFakeInternalAPI returns a new FakeInternalAPI initialised with the given data.
+func NewFakeInternalAPI(svcs []*api.ExternalService, repos []*api.Repo) *FakeInternalAPI {
+	fa := FakeInternalAPI{
+		svcs:  map[string][]*api.ExternalService{},
+		repos: map[api.RepoName]*api.Repo{},
+	}
+
+	for _, svc := range svcs {
+		fa.svcs[svc.Kind] = append(fa.svcs[svc.Kind], svc)
+	}
+
+	for _, repo := range repos {
+		fa.repos[repo.Name] = repo
+	}
+
+	return &fa
+}
+
+// ExternalServicesList lists external services of the given Kind. A non-existent kind
+// will result in an error being returned.
+func (a *FakeInternalAPI) ExternalServicesList(
+	_ context.Context,
+	req api.ExternalServicesListRequest,
+) ([]*api.ExternalService, error) {
+
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	svcs, ok := a.svcs[req.Kind]
+	if !ok {
+		return nil, fmt.Errorf("no external services of kind %q", req.Kind)
+	}
+
+	return svcs, nil
+}
+
+// ReposList returns the list of all repos in the API.
+func (a *FakeInternalAPI) ReposList() []*api.Repo {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	repos := make([]*api.Repo, 0, len(a.repos))
+	for _, repo := range a.repos {
+		repos = append(repos, repo)
+	}
+
+	return repos
+}
+
+// RepoCreateIfNotExists creates the given repo if it doesn't exist. Repos with
+// with an empty name are invalid and will result in an error to be returned.
+func (a *FakeInternalAPI) ReposCreateIfNotExists(
+	ctx context.Context,
+	req api.RepoCreateOrUpdateRequest,
+) (*api.Repo, error) {
+
+	if req.RepoName == "" {
+		return nil, errors.New("invalid empty repo name")
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	repo, ok := a.repos[req.RepoName]
+	if !ok {
+		a.repoID++
+		repo = &api.Repo{
+			ID:           a.repoID,
+			Name:         req.RepoName,
+			Enabled:      req.Enabled,
+			ExternalRepo: req.ExternalRepo,
+		}
+		a.repos[req.RepoName] = repo
+	}
+
+	return repo, nil
+}
+
+// ReposUpdateMetdata updates the metadata of repo with the given name.
+// Non-existent repos return an error.
+func (a *FakeInternalAPI) ReposUpdateMetadata(
+	ctx context.Context,
+	repoName api.RepoName,
+	description string,
+	fork, archived bool,
+) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	_, ok := a.repos[repoName]
+	if !ok {
+		return fmt.Errorf("repo %q not found", repoName)
+	}
+
+	// Fake success, no updates needed because the returned types (api.Repo)
+	// don't include these fields.
+
+	return nil
 }
