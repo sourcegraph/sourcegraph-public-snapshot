@@ -211,7 +211,7 @@ func configureConnectionPool(db *sql.DB) {
 
 func NewMigrate(db *sql.DB) *migrate.Migrate {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
+	if err != nil && !isMigrationTableAlreadyExistsErr(err) {
 		log.Fatal(err)
 	}
 
@@ -227,6 +227,28 @@ func NewMigrate(db *sql.DB) *migrate.Migrate {
 	}
 
 	return m
+}
+
+// isMigrationTableAlreadyExistsErr returns true if the given error matches the error
+// returned by `postgres.WithInstance` when ran concurrently by more than one process.
+//
+// Although Postgres advisory locks are used when running migrations, as of 2019-01-11 the
+// creation of the `schema_migrations` table isn't protected by them, nor any other concurrency control
+// mechanism.
+//
+// However, it's safe to ignore this error since it indicates that a unique contraint `pg_type_typname_nsp_index`
+// has not been violated. This is a constraint that Postgres has for table names in a given database schema.
+// Only one process succeeds in creating the table.
+//
+// NOTE(tsenart): I tried to change the migration library to wrap this operation in a serializable transaction,
+// but that didn't yield any different results unfortunately.
+//
+// See: https://github.com/golang-migrate/migrate/issues/55 and https://github.com/sourcegraph/sourcegraph/issues/1491
+func isMigrationTableAlreadyExistsErr(err error) bool {
+	const tableAlreadyExistsError = `pq: duplicate key value violates unique constraint "pg_type_typname_nsp_index" in line 0:` +
+		` CREATE TABLE "schema_migrations" (version bigint not null primary key, dirty boolean not null)`
+
+	return err.Error() == tableAlreadyExistsError
 }
 
 func DoMigrate(m *migrate.Migrate) (err error) {
