@@ -10,7 +10,7 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceMetadata = {
     kind: GQL.ExternalServiceKind.GITHUB,
     displayName: 'GitHub',
     defaultConfig: `{
-  // Hover over fields for documentation and Ctrl+Space for auto-completion.
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
   // https://docs.sourcegraph.com/admin/site_config/all#githubconnection-object
 
@@ -34,7 +34,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
         kind: GQL.ExternalServiceKind.AWSCODECOMMIT,
         displayName: 'AWS CodeCommit',
         defaultConfig: `{
-  // Hover over fields for documentation and Ctrl+Space for auto-completion.
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
   // https://docs.sourcegraph.com/admin/site_config/all#awscodecommitconnection-object
 
@@ -47,7 +47,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
         kind: GQL.ExternalServiceKind.BITBUCKETSERVER,
         displayName: 'Bitbucket Server',
         defaultConfig: `{
-  // Hover over fields for documentation and Ctrl+Space for auto-completion.
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
   // https://docs.sourcegraph.com/admin/site_config/all#bitbucketserverconnection-object
 
@@ -60,7 +60,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
         kind: GQL.ExternalServiceKind.GITLAB,
         displayName: 'GitLab',
         defaultConfig: `{
-  // Hover over fields for documentation and Ctrl+Space for auto-completion.
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
   // https://docs.sourcegraph.com/admin/site_config/all#gitlabconnection-object
 
@@ -72,7 +72,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
         kind: GQL.ExternalServiceKind.GITOLITE,
         displayName: 'Gitolite',
         defaultConfig: `{
-  // Hover over fields for documentation and Ctrl+Space for auto-completion.
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
   // https://docs.sourcegraph.com/admin/site_config/all#gitoliteconnection-object
 
@@ -84,7 +84,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
         kind: GQL.ExternalServiceKind.PHABRICATOR,
         displayName: 'Phabricator',
         defaultConfig: `{
-  // Hover over fields for documentation and Ctrl+Space for auto-completion.
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
   // https://docs.sourcegraph.com/admin/site_config/all#phabricatorconnection-object
 
