@@ -62,7 +62,7 @@ func main() {
 	}
 
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier all:tslint all:stylelint all:typecheck graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
 
 	pipeline.AddStep(":ie:",
 		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
