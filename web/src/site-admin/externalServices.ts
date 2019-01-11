@@ -99,7 +99,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#phabricatorconnection-object
+  // https://docs.sourcegraph.com/admin/site_config/all#otherexternalserviceconnection-object
 
   // Supported URL schemes are: http, https, git and ssh
   "url": "https://my-other-githost.example.com",
