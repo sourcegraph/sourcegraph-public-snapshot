@@ -58,6 +58,18 @@ This password is automatically generated for you to ensure it is very long and s
 
 Resetting the management console password can be done manually via the database.
 
+#### (Option 1): If you have access to Sourcegraph still
+
+Open a `psql` prompt on your Sourcegraph instance (see ["How do I access my Sourcegraph database?"](faq.md#how-do-i-access-the-sourcegraph-database)) and run:
+
+```sql
+UPDATE global_state SET mgmt_password_plaintext='', mgmt_password_bcrypt='';
+```
+
+When you next visit sourcegraph.example.com/site-admin, a new password will be generated and presented to you.
+
+#### (Option 2) If you _don't_ have access Sourcegraph
+
 First, determine what your new password will be. If your management console is exposed to the public internet, it is important that this be a **very** long and random password (e.g. 128 characters in length). For this example, we will use `abc123`.
 
 Second, bcrypt your password on any machine:
