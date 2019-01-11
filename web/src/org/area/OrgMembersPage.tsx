@@ -99,16 +99,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         )}
                     </div>
                     <div className="site-admin-detail-list__actions">
-                        {this.props.authenticatedUser &&
-                            this.props.org.viewerCanAdminister && (
-                                <button
-                                    className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                                    onClick={this.remove}
-                                    disabled={loading}
-                                >
-                                    {this.isSelf ? 'Leave organization' : 'Remove from organization'}
-                                </button>
-                            )}
+                        {this.props.authenticatedUser && this.props.org.viewerCanAdminister && (
+                            <button
+                                className="btn btn-secondary btn-sm site-admin-detail-list__action"
+                                onClick={this.remove}
+                                disabled={loading}
+                            >
+                                {this.isSelf ? 'Leave organization' : 'Remove from organization'}
+                            </button>
+                        )}
                     </div>
                 </div>
                 {isErrorLike(this.state.removalOrError) && (

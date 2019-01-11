@@ -161,96 +161,92 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                 {this.state.error && (
                     <p className="alert alert-danger">Error: {upperFirst(this.state.error.message)}</p>
                 )}
-                {this.state.userOrError &&
-                    !isErrorLike(this.state.userOrError) && (
-                        <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="user-settings-profile-page__form-username">Username</label>
-                                <UsernameInput
-                                    id="user-settings-profile-page__form-username"
-                                    value={
-                                        this.state.username === undefined
-                                            ? this.state.userOrError.username
-                                            : this.state.username
-                                    }
-                                    onChange={this.onUsernameFieldChange}
-                                    required={true}
-                                    disabled={this.state.loading}
-                                    aria-describedby="user-settings-profile-page__form-username-help"
-                                />
-                                <small
-                                    id="user-settings-profile-page__form-username-help"
-                                    className="form-text text-muted"
-                                >
-                                    A username consists of letters, numbers, hyphens (-) and may not begin or end with a
-                                    hyphen
-                                </small>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="user-settings-profile-page__form-display-name">Display name</label>
+                {this.state.userOrError && !isErrorLike(this.state.userOrError) && (
+                    <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="user-settings-profile-page__form-username">Username</label>
+                            <UsernameInput
+                                id="user-settings-profile-page__form-username"
+                                value={
+                                    this.state.username === undefined
+                                        ? this.state.userOrError.username
+                                        : this.state.username
+                                }
+                                onChange={this.onUsernameFieldChange}
+                                required={true}
+                                disabled={this.state.loading}
+                                aria-describedby="user-settings-profile-page__form-username-help"
+                            />
+                            <small id="user-settings-profile-page__form-username-help" className="form-text text-muted">
+                                A username consists of letters, numbers, hyphens (-) and may not begin or end with a
+                                hyphen
+                            </small>
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="user-settings-profile-page__form-display-name">Display name</label>
+                            <input
+                                id="user-settings-profile-page__form-display-name"
+                                type="text"
+                                className="form-control"
+                                value={
+                                    this.state.displayName === undefined
+                                        ? this.state.userOrError.displayName || ''
+                                        : this.state.displayName
+                                }
+                                onChange={this.onDisplayNameFieldChange}
+                                disabled={this.state.loading}
+                                spellCheck={false}
+                                placeholder="Display name"
+                                maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
+                            />
+                        </div>
+                        <div className="user-settings-profile-page__avatar-row">
+                            <div className="form-group user-settings-profile-page__field-column">
+                                <label htmlFor="user-settings-profile-page__form-avatar-url">Avatar URL</label>
                                 <input
-                                    id="user-settings-profile-page__form-display-name"
-                                    type="text"
+                                    id="user-settings-profile-page__form-avatar-url"
+                                    type="url"
                                     className="form-control"
                                     value={
-                                        this.state.displayName === undefined
-                                            ? this.state.userOrError.displayName || ''
-                                            : this.state.displayName
+                                        this.state.avatarURL === undefined
+                                            ? this.state.userOrError.avatarURL || ''
+                                            : this.state.avatarURL
                                     }
-                                    onChange={this.onDisplayNameFieldChange}
+                                    onChange={this.onAvatarURLFieldChange}
                                     disabled={this.state.loading}
                                     spellCheck={false}
-                                    placeholder="Display name"
-                                    maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
+                                    placeholder="URL to avatar photo"
                                 />
                             </div>
-                            <div className="user-settings-profile-page__avatar-row">
-                                <div className="form-group user-settings-profile-page__field-column">
-                                    <label htmlFor="user-settings-profile-page__form-avatar-url">Avatar URL</label>
-                                    <input
-                                        id="user-settings-profile-page__form-avatar-url"
-                                        type="url"
-                                        className="form-control"
-                                        value={
-                                            this.state.avatarURL === undefined
-                                                ? this.state.userOrError.avatarURL || ''
-                                                : this.state.avatarURL
-                                        }
-                                        onChange={this.onAvatarURLFieldChange}
-                                        disabled={this.state.loading}
-                                        spellCheck={false}
-                                        placeholder="URL to avatar photo"
-                                    />
+                            {this.state.userOrError.avatarURL && (
+                                <div className="user-settings-profile-page__avatar-column">
+                                    <UserAvatar user={this.state.userOrError} />
                                 </div>
-                                {this.state.userOrError.avatarURL && (
-                                    <div className="user-settings-profile-page__avatar-column">
-                                        <UserAvatar user={this.state.userOrError} />
-                                    </div>
-                                )}
+                            )}
+                        </div>
+                        <button
+                            className="btn btn-primary user-settings-profile-page__button"
+                            type="submit"
+                            disabled={this.state.loading}
+                        >
+                            Update profile
+                        </button>
+                        {this.state.loading && (
+                            <div>
+                                <LoadingSpinner className="icon-inline" />
                             </div>
-                            <button
-                                className="btn btn-primary user-settings-profile-page__button"
-                                type="submit"
-                                disabled={this.state.loading}
-                            >
-                                Update profile
-                            </button>
-                            {this.state.loading && (
-                                <div>
-                                    <LoadingSpinner className="icon-inline" />
-                                </div>
-                            )}
-                            {this.state.saved && (
-                                <p className="alert alert-success user-settings-profile-page__alert">Profile saved!</p>
-                            )}
-                            {window.context.sourcegraphDotComMode && (
-                                <p className="mt-4">
-                                    <a href="https://about.sourcegraph.com/contact">Contact support</a> to delete your
-                                    account.
-                                </p>
-                            )}
-                        </Form>
-                    )}
+                        )}
+                        {this.state.saved && (
+                            <p className="alert alert-success user-settings-profile-page__alert">Profile saved!</p>
+                        )}
+                        {window.context.sourcegraphDotComMode && (
+                            <p className="mt-4">
+                                <a href="https://about.sourcegraph.com/contact">Contact support</a> to delete your
+                                account.
+                            </p>
+                        )}
+                    </Form>
+                )}
             </div>
         )
     }

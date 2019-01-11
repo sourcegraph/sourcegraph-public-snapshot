@@ -77,17 +77,16 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                                 <small>{this.props.buttonSubtitle}</small>
                             </div>
                         )}
-                        {!this.props.buttonSubtitle &&
-                            this.props.flashText && (
-                                <div
-                                    className={
-                                        'action-container__flash' +
-                                        (this.state.flash ? ' action-container__flash--visible' : '')
-                                    }
-                                >
-                                    <small>{this.props.flashText}</small>
-                                </div>
-                            )}
+                        {!this.props.buttonSubtitle && this.props.flashText && (
+                            <div
+                                className={
+                                    'action-container__flash' +
+                                    (this.state.flash ? ' action-container__flash--visible' : '')
+                                }
+                            >
+                                <small>{this.props.flashText}</small>
+                            </div>
+                        )}
                     </>
                 }
                 details={

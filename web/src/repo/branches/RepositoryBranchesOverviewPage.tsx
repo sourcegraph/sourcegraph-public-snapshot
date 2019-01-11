@@ -140,7 +140,8 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             className="list-group-item list-group-item-action py-2 d-flex"
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
-                                            View more branches<ChevronRightIcon className="icon-inline" />
+                                            View more branches
+                                            <ChevronRightIcon className="icon-inline" />
                                         </Link>
                                     )}
                                 </div>

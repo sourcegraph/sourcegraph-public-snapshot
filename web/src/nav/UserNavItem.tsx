@@ -94,15 +94,14 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             </Link>
                         </>
                     )}
-                    {this.props.authenticatedUser.session &&
-                        this.props.authenticatedUser.session.canSignOut && (
-                            <>
-                                <DropdownItem divider={true} />
-                                <a href="/-/sign-out" className="dropdown-item">
-                                    Sign out
-                                </a>
-                            </>
-                        )}
+                    {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
+                        <>
+                            <DropdownItem divider={true} />
+                            <a href="/-/sign-out" className="dropdown-item">
+                                Sign out
+                            </a>
+                        </>
+                    )}
                     {this.props.showAbout && (
                         <>
                             <DropdownItem divider={true} />

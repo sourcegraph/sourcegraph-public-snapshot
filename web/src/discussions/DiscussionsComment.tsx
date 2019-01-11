@@ -100,16 +100,15 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                             </Link>
                         )}
 
-                        {comment.canReport &&
-                            onReport && (
-                                <button
-                                    className="btn btn-link btn-sm discussions-comment__report"
-                                    data-tooltip="Report this comment"
-                                    onClick={this.onReportClick}
-                                >
-                                    <FlagVariantIcon className="icon-inline" />
-                                </button>
-                            )}
+                        {comment.canReport && onReport && (
+                            <button
+                                className="btn btn-link btn-sm discussions-comment__report"
+                                data-tooltip="Report this comment"
+                                onClick={this.onReportClick}
+                            >
+                                <FlagVariantIcon className="icon-inline" />
+                            </button>
+                        )}
                         {isSiteAdmin && (
                             <span className="discussions-comment__admin">
                                 <SecurityLockIcon className="icon-inline icon-sm" data-tooltip="Admin area" />
@@ -121,28 +120,26 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                         >
                                             {comment.reports.length} reports
                                         </span>
-                                        {comment.canClearReports &&
-                                            onClearReports && (
-                                                <button
-                                                    className="btn btn-link btn-sm discussions-comment__toolbar-btn"
-                                                    data-tooltip="Clear reports / mark as good message"
-                                                    onClick={this.onClearReportsClick}
-                                                >
-                                                    <CommentCheckIcon className="icon-inline" />
-                                                </button>
-                                            )}
+                                        {comment.canClearReports && onClearReports && (
+                                            <button
+                                                className="btn btn-link btn-sm discussions-comment__toolbar-btn"
+                                                data-tooltip="Clear reports / mark as good message"
+                                                onClick={this.onClearReportsClick}
+                                            >
+                                                <CommentCheckIcon className="icon-inline" />
+                                            </button>
+                                        )}
                                     </>
                                 )}
-                                {comment.canDelete &&
-                                    onDelete && (
-                                        <button
-                                            className="btn btn-link btn-sm discussions-comment__toolbar-btn"
-                                            data-tooltip="Delete comment forever"
-                                            onClick={this.onDeleteClick}
-                                        >
-                                            <CommentRemoveIcon className="icon-inline" />
-                                        </button>
-                                    )}
+                                {comment.canDelete && onDelete && (
+                                    <button
+                                        className="btn btn-link btn-sm discussions-comment__toolbar-btn"
+                                        data-tooltip="Delete comment forever"
+                                        onClick={this.onDeleteClick}
+                                    >
+                                        <CommentRemoveIcon className="icon-inline" />
+                                    </button>
+                                )}
                             </span>
                         )}
                     </span>
@@ -173,23 +170,20 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         if (!reason) {
             return
         }
-        this.props.onReport!(this.props.comment, reason).subscribe(
-            undefined,
-            error => (error ? alert('Error reporting comment: ' + asError(error).message) : undefined)
+        this.props.onReport!(this.props.comment, reason).subscribe(undefined, error =>
+            error ? alert('Error reporting comment: ' + asError(error).message) : undefined
         )
     }
 
     private onClearReportsClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.props.onClearReports!(this.props.comment).subscribe(
-            undefined,
-            error => (error ? alert('Error clearing comment reports: ' + asError(error).message) : undefined)
+        this.props.onClearReports!(this.props.comment).subscribe(undefined, error =>
+            error ? alert('Error clearing comment reports: ' + asError(error).message) : undefined
         )
     }
 
     private onDeleteClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.props.onDelete!(this.props.comment).subscribe(
-            undefined,
-            error => (error ? alert('Error deleting comment: ' + asError(error).message) : undefined)
+        this.props.onDelete!(this.props.comment).subscribe(undefined, error =>
+            error ? alert('Error deleting comment: ' + asError(error).message) : undefined
         )
     }
 

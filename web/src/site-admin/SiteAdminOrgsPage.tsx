@@ -143,16 +143,16 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-orgs-page">
                 <PageTitle title="Organizations - Admin" />
-				<div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-					<h2 className="mb-0">Organizations</h2>
-					<Link to="/organizations/new" className="btn btn-primary">
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                    <h2 className="mb-0">Organizations</h2>
+                    <Link to="/organizations/new" className="btn btn-primary">
                         <AddIcon className="icon-inline" /> Create organization
                     </Link>
-				</div>
-				<p>
-				An organization is a set of users with associated configuration. See{' '}
-				<Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about
-				configuring organizations.
+                </div>
+                <p>
+                    An organization is a set of users with associated configuration. See{' '}
+                    <Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about
+                    configuring organizations.
                 </p>
                 <FilteredOrgConnection
                     className="list-group list-group-flush mt-3"

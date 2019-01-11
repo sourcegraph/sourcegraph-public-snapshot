@@ -106,11 +106,10 @@ export class ContributionRegistry {
             entries.pipe(
                 switchMap(entries =>
                     combineLatestOrDefault(
-                        entries.map(
-                            entry =>
-                                isObservable<Contributions | Contributions[]>(entry.contributions)
-                                    ? entry.contributions
-                                    : of<Contributions>(entry.contributions)
+                        entries.map(entry =>
+                            isObservable<Contributions | Contributions[]>(entry.contributions)
+                                ? entry.contributions
+                                : of<Contributions>(entry.contributions)
                         ),
                         []
                     )

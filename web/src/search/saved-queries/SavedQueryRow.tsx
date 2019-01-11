@@ -92,20 +92,19 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
                             {this.props.actions}
                         </div>
                         <div className="saved-query-row__results-container">
-                            {!this.state.loading &&
-                                this.state.sparkline && (
-                                    <div
-                                        data-tooltip="Results found in the last 30 days"
-                                        className="saved-query-row__sparkline"
-                                    >
-                                        <Sparkline
-                                            data={this.state.sparkline}
-                                            width={100}
-                                            height={40}
-                                            isLightTheme={this.props.isLightTheme}
-                                        />
-                                    </div>
-                                )}
+                            {!this.state.loading && this.state.sparkline && (
+                                <div
+                                    data-tooltip="Results found in the last 30 days"
+                                    className="saved-query-row__sparkline"
+                                >
+                                    <Sparkline
+                                        data={this.state.sparkline}
+                                        width={100}
+                                        height={40}
+                                        isLightTheme={this.props.isLightTheme}
+                                    />
+                                </div>
+                            )}
                             {this.state.loading ? (
                                 <div className="saved-query-row__results-items">
                                     <LoadingSpinner className="icon-inline" />

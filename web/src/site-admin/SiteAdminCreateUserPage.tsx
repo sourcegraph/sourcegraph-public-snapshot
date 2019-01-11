@@ -89,7 +89,8 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                 <PageTitle title="Create user - Admin" />
                 <h2>Create user account</h2>
                 <p>
-                    Create a new user account{window.context.resetPasswordEnabled
+                    Create a new user account
+                    {window.context.resetPasswordEnabled
                         ? ' and generate a password reset link. You must manually send the link to the new user.'
                         : '. New users must authenticate using a configured authentication provider.'}
                 </p>

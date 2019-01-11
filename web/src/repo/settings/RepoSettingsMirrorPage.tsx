@@ -80,13 +80,12 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                             {updateSchedule.index + 1} out of {updateSchedule.total} in the schedule)
                         </div>
                     )}
-                    {this.props.repo.mirrorInfo.updateQueue &&
-                        !this.props.repo.mirrorInfo.updateQueue.updating && (
-                            <div>
-                                Queued for update (position {this.props.repo.mirrorInfo.updateQueue.index + 1} out of{' '}
-                                {this.props.repo.mirrorInfo.updateQueue.total} in the queue)
-                            </div>
-                        )}
+                    {this.props.repo.mirrorInfo.updateQueue && !this.props.repo.mirrorInfo.updateQueue.updating && (
+                        <div>
+                            Queued for update (position {this.props.repo.mirrorInfo.updateQueue.index + 1} out of{' '}
+                            {this.props.repo.mirrorInfo.updateQueue.total} in the queue)
+                        </div>
+                    )}
                 </>
             )
             if (window.context.updateScheduler2Enabled && !updateSchedule) {
@@ -317,37 +316,35 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                     repo={this.state.repo}
                     onDidUpdateReachability={this.onDidUpdateReachability}
                 />
-                {typeof this.state.reachable === 'boolean' &&
-                    !this.state.reachable && (
-                        <div className="alert alert-info repo-settings-mirror-page__troubleshooting">
-                            Problems cloning or updating this repository?
-                            <ul className="repo-settings-mirror-page__steps">
-                                <li className="repo-settings-mirror-page__step">
-                                    Inspect the <strong>Check connection</strong> error log output to see why the remote
-                                    repository is not reachable.
-                                </li>
-                                <li className="repo-settings-mirror-page__step">
-                                    <code>
-                                        <strong>No ECDSA host key is known ... Host key verification failed?</strong>
-                                    </code>{' '}
-                                    See{' '}
-                                    <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
-                                        SSH repository authentication documentation
-                                    </Link>{' '}
-                                    for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
-                                    host key.
-                                </li>
-                                <li className="repo-settings-mirror-page__step">
-                                    Consult{' '}
-                                    <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link> for
-                                    resolving other authentication issues (such as HTTPS certificates and SSH keys).
-                                </li>
-                                <li className="repo-settings-mirror-page__step">
-                                    <FeedbackText headerText="Questions?" />
-                                </li>
-                            </ul>
-                        </div>
-                    )}
+                {typeof this.state.reachable === 'boolean' && !this.state.reachable && (
+                    <div className="alert alert-info repo-settings-mirror-page__troubleshooting">
+                        Problems cloning or updating this repository?
+                        <ul className="repo-settings-mirror-page__steps">
+                            <li className="repo-settings-mirror-page__step">
+                                Inspect the <strong>Check connection</strong> error log output to see why the remote
+                                repository is not reachable.
+                            </li>
+                            <li className="repo-settings-mirror-page__step">
+                                <code>
+                                    <strong>No ECDSA host key is known ... Host key verification failed?</strong>
+                                </code>{' '}
+                                See{' '}
+                                <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
+                                    SSH repository authentication documentation
+                                </Link>{' '}
+                                for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH host
+                                key.
+                            </li>
+                            <li className="repo-settings-mirror-page__step">
+                                Consult <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link>{' '}
+                                for resolving other authentication issues (such as HTTPS certificates and SSH keys).
+                            </li>
+                            <li className="repo-settings-mirror-page__step">
+                                <FeedbackText headerText="Questions?" />
+                            </li>
+                        </ul>
+                    </div>
+                )}
             </div>
         )
     }

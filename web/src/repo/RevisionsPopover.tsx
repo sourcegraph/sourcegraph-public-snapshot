@@ -192,59 +192,56 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                     storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
                     className="revisions-popover__tabs"
                 >
-                    {RevisionsPopover.TABS.map(
-                        (tab, i) =>
-                            tab.type ? (
-                                <FilteredGitRefConnection
-                                    key={tab.id}
-                                    className="connection-popover__content"
-                                    showMoreClassName="connection-popover__show-more"
-                                    compact={true}
-                                    noun={tab.noun}
-                                    pluralNoun={tab.pluralNoun}
-                                    queryConnection={
-                                        tab.type === GQL.GitRefType.GIT_BRANCH
-                                            ? this.queryGitBranches
-                                            : this.queryGitTags
-                                    }
-                                    nodeComponent={GitRefPopoverNode}
-                                    nodeComponentProps={
-                                        {
-                                            defaultBranch: this.props.defaultBranch,
-                                            currentRev: this.props.currentRev,
-                                            location: this.props.location,
-                                        } as Pick<GitRefPopoverNodeProps, 'defaultBranch' | 'currentRev' | 'location'>
-                                    }
-                                    defaultFirst={50}
-                                    autoFocus={true}
-                                    noSummaryIfAllNodesVisible={true}
-                                    shouldUpdateURLQuery={false}
-                                    history={this.props.history}
-                                    location={this.props.location}
-                                />
-                            ) : (
-                                <FilteredGitCommitConnection
-                                    key={tab.id}
-                                    className="connection-popover__content"
-                                    compact={true}
-                                    noun={tab.noun}
-                                    pluralNoun={tab.pluralNoun}
-                                    queryConnection={this.queryRepositoryCommits}
-                                    nodeComponent={GitCommitNode}
-                                    nodeComponentProps={
-                                        {
-                                            currentCommitID: this.props.currentCommitID,
-                                            location: this.props.location,
-                                        } as Pick<GitCommitNodeProps, 'currentCommitID' | 'location'>
-                                    }
-                                    defaultFirst={15}
-                                    autoFocus={true}
-                                    history={this.props.history}
-                                    location={this.props.location}
-                                    noSummaryIfAllNodesVisible={true}
-                                    shouldUpdateURLQuery={false}
-                                />
-                            )
+                    {RevisionsPopover.TABS.map((tab, i) =>
+                        tab.type ? (
+                            <FilteredGitRefConnection
+                                key={tab.id}
+                                className="connection-popover__content"
+                                showMoreClassName="connection-popover__show-more"
+                                compact={true}
+                                noun={tab.noun}
+                                pluralNoun={tab.pluralNoun}
+                                queryConnection={
+                                    tab.type === GQL.GitRefType.GIT_BRANCH ? this.queryGitBranches : this.queryGitTags
+                                }
+                                nodeComponent={GitRefPopoverNode}
+                                nodeComponentProps={
+                                    {
+                                        defaultBranch: this.props.defaultBranch,
+                                        currentRev: this.props.currentRev,
+                                        location: this.props.location,
+                                    } as Pick<GitRefPopoverNodeProps, 'defaultBranch' | 'currentRev' | 'location'>
+                                }
+                                defaultFirst={50}
+                                autoFocus={true}
+                                noSummaryIfAllNodesVisible={true}
+                                shouldUpdateURLQuery={false}
+                                history={this.props.history}
+                                location={this.props.location}
+                            />
+                        ) : (
+                            <FilteredGitCommitConnection
+                                key={tab.id}
+                                className="connection-popover__content"
+                                compact={true}
+                                noun={tab.noun}
+                                pluralNoun={tab.pluralNoun}
+                                queryConnection={this.queryRepositoryCommits}
+                                nodeComponent={GitCommitNode}
+                                nodeComponentProps={
+                                    {
+                                        currentCommitID: this.props.currentCommitID,
+                                        location: this.props.location,
+                                    } as Pick<GitCommitNodeProps, 'currentCommitID' | 'location'>
+                                }
+                                defaultFirst={15}
+                                autoFocus={true}
+                                history={this.props.history}
+                                location={this.props.location}
+                                noSummaryIfAllNodesVisible={true}
+                                shouldUpdateURLQuery={false}
+                            />
+                        )
                     )}
                 </TabsWithLocalStorageViewStatePersistence>
             </div>

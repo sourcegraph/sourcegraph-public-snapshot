@@ -120,8 +120,9 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                             <small className="text-muted">
                                 <br />
                                 {this.props.node.serviceID}
-                                {this.state.showData &&
-                                    this.props.node.clientID && <> &mdash; {this.props.node.clientID}</>}
+                                {this.state.showData && this.props.node.clientID && (
+                                    <> &mdash; {this.props.node.clientID}</>
+                                )}
                             </small>
                         )}
                         <br />

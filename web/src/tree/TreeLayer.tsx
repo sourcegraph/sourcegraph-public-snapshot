@@ -268,34 +268,33 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     noopRowClick={this.noopRowClick}
                                     linkRowClick={this.linkRowClick}
                                 />
-                                {this.props.isExpanded &&
-                                    treeOrError !== LOADING && (
-                                        <tr>
-                                            <td className="tree__cell">
-                                                {isErrorLike(treeOrError) ? (
-                                                    <div
-                                                        className="tree__row-alert alert alert-danger"
-                                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                                        style={treePadding(this.props.depth, true)}
-                                                    >
-                                                        Error loading file tree: {treeOrError.message}
-                                                    </div>
-                                                ) : (
-                                                    treeOrError && (
-                                                        <ChildTreeLayer
-                                                            {...this.props}
-                                                            parent={this.node}
-                                                            key={singleChildTreeEntry.path}
-                                                            entries={treeOrError.entries}
-                                                            singleChildTreeEntry={singleChildTreeEntry}
-                                                            childrenEntries={singleChildTreeEntry.children}
-                                                            setChildNodes={this.setChildNode}
-                                                        />
-                                                    )
-                                                )}
-                                            </td>
-                                        </tr>
-                                    )}
+                                {this.props.isExpanded && treeOrError !== LOADING && (
+                                    <tr>
+                                        <td className="tree__cell">
+                                            {isErrorLike(treeOrError) ? (
+                                                <div
+                                                    className="tree__row-alert alert alert-danger"
+                                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                                    style={treePadding(this.props.depth, true)}
+                                                >
+                                                    Error loading file tree: {treeOrError.message}
+                                                </div>
+                                            ) : (
+                                                treeOrError && (
+                                                    <ChildTreeLayer
+                                                        {...this.props}
+                                                        parent={this.node}
+                                                        key={singleChildTreeEntry.path}
+                                                        entries={treeOrError.entries}
+                                                        singleChildTreeEntry={singleChildTreeEntry}
+                                                        childrenEntries={singleChildTreeEntry.children}
+                                                        setChildNodes={this.setChildNode}
+                                                    />
+                                                )
+                                            )}
+                                        </td>
+                                    </tr>
+                                )}
                             </>
                         ) : (
                             <File

@@ -65,7 +65,9 @@ export const DiffStat: React.FunctionComponent<{
     return (
         <div className={`diff-stat ${className}`} data-tooltip={labels.join(', ')}>
             <small className="diff-stat__total">{total}</small>
-            {squares.map((verb, i) => <div key={i} className={`diff-stat__square diff-stat__${verb}`} />)}
+            {squares.map((verb, i) => (
+                <div key={i} className={`diff-stat__square diff-stat__${verb}`} />
+            ))}
         </div>
     )
 }

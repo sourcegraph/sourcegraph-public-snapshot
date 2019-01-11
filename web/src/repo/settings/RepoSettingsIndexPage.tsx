@@ -159,7 +159,8 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.error && (
                     <div className="alert alert-danger">
-                        Error getting repository index status:<br />
+                        Error getting repository index status:
+                        <br />
                         <code>{this.state.error.message}</code>
                     </div>
                 )}
@@ -189,25 +190,25 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                             <tr>
                                                 <th>Content size</th>
                                                 <td>
-                                                    {prettyBytes(this.state.textSearchIndex.status.contentByteSize)} ({
-                                                        this.state.textSearchIndex.status.contentFilesCount
-                                                    }{' '}
+                                                    {prettyBytes(this.state.textSearchIndex.status.contentByteSize)} (
+                                                    {this.state.textSearchIndex.status.contentFilesCount}{' '}
                                                     {pluralize(
                                                         'file',
                                                         this.state.textSearchIndex.status.contentFilesCount
-                                                    )})
+                                                    )}
+                                                    )
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <th>Index size</th>
                                                 <td>
-                                                    {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} ({
-                                                        this.state.textSearchIndex.status.indexShardsCount
-                                                    }{' '}
+                                                    {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} (
+                                                    {this.state.textSearchIndex.status.indexShardsCount}{' '}
                                                     {pluralize(
                                                         'shard',
                                                         this.state.textSearchIndex.status.indexShardsCount
-                                                    )})
+                                                    )}
+                                                    )
                                                 </td>
                                             </tr>
                                         </tbody>

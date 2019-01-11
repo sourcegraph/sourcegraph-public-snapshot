@@ -37,6 +37,4 @@ export const settingsActions: EditorAction[] = [
     { id: 'sourcegraph.settings.addSlackWebhook', label: 'Add Slack webhook', run: addSlackWebhook },
 ]
 
-export const siteConfigActions: EditorAction[] = [
-
-]
+export const siteConfigActions: EditorAction[] = []

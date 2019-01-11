@@ -211,13 +211,12 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                         <p>All repositories included in this scope</p>
                                     ))}
                             </div>
-                            {window.context.sourcegraphDotComMode &&
-                                !this.props.authenticatedUser && (
-                                    <small>
-                                        Have an idea for a search scope for your community, or want to add a repository
-                                        to this scope? Tweet us <a href="https://twitter.com/srcgraph">@srcgraph</a>.
-                                    </small>
-                                )}
+                            {window.context.sourcegraphDotComMode && !this.props.authenticatedUser && (
+                                <small>
+                                    Have an idea for a search scope for your community, or want to add a repository to
+                                    this scope? Tweet us <a href="https://twitter.com/srcgraph">@srcgraph</a>.
+                                </small>
+                            )}
                         </div>
                     </section>
                 </div>
