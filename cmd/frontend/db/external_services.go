@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -93,11 +94,54 @@ func (c *externalServices) validateConfig(kind, config string) error {
 				return err
 			}
 		}
+	case "OTHER":
+		return validateOtherExternalServiceConfig(config)
+
 	default:
 		if _, err := jsonc.Parse(config); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func validateOtherExternalServiceConfig(config string) error {
+	var cfg schema.OtherExternalServiceConnection
+	if err := jsonc.Unmarshal(config, &cfg); err != nil {
+		return err
+	}
+
+	if len(cfg.Repos) == 0 {
+		return errors.New(`required "repos" property is empty`)
+	}
+
+	parseRepo := url.Parse
+	if cfg.Url != "" {
+		baseURL, err := url.Parse(cfg.Url)
+		if err != nil {
+			return fmt.Errorf(`failed to parse "url": %q`, err)
+		}
+		parseRepo = baseURL.Parse
+	}
+
+	for i, repo := range cfg.Repos {
+		if repo == "" {
+			return fmt.Errorf(`invalid empty repos[%d]`, i)
+		}
+
+		cloneURL, err := parseRepo(repo)
+		if err != nil {
+			return fmt.Errorf(`failed to parse repos[%d]=%q with url=%q: %s`, i, repo, cfg.Url, err)
+		}
+
+		switch cloneURL.Scheme {
+		case "git", "http", "https", "ssh":
+			continue
+		default:
+			return fmt.Errorf("failed to parse repos[%d]=%q with url=%q. scheme %q not one of git, http, https or ssh", i, repo, cfg.Url, cloneURL.Scheme)
+		}
+	}
+
 	return nil
 }
 
@@ -321,6 +365,17 @@ func (c *externalServices) ListGitoliteConnections(ctx context.Context) ([]*sche
 func (c *externalServices) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
 	var connections []*schema.PhabricatorConnection
 	if err := c.listConfigs(ctx, "PHABRICATOR", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
+// ListOtherExternalServicesConnections returns a list of OtherExternalServiceConnection configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *externalServices) ListOtherExternalServicesConnections(ctx context.Context) ([]*schema.OtherExternalServiceConnection, error) {
+	var connections []*schema.OtherExternalServiceConnection
+	if err := c.listConfigs(ctx, "OTHER", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil

@@ -107,6 +107,8 @@ For more information, see ["Configuration overview"](index.md).
 
 - [GitoliteConnection](all.md#gitoliteconnection-object)
 
+- [OtherExternalServiceConnection](all.md#otherexternalserviceconnection-object)
+
 - [CloneURLToRepositoryName](all.md#cloneurltorepositoryname-object)
 
 - [Repository](all.md#repository-object)
@@ -977,7 +979,21 @@ Regular expression to filter repositories from auto-discovery, so they will not 
 
 Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
 
-<hr />
+----
+
+## OtherExternalServiceConnection (object)
+
+Properties of the `OtherExternalServiceConnection` object:
+
+### url (string)
+
+Base Git clone URL of an external service for which a full integration is not yet available. Supported schemes are `git://`, `ssh://`, `http://` and `https://`.
+
+### repos (array[string], required)
+
+An array of repository clone paths relative to a previously defined `url` (preferred) or, if `url` isn't set, an array of absolute URLs.
+
+----
 
 ## CloneURLToRepositoryName (object)
 

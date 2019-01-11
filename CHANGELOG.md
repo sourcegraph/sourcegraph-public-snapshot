@@ -54,7 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
   - Github via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
   - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
   - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
-  - [Other code hosts](https://github.com/sourcegraph/sourcegraph/issues/1324)
+  - [Other external services](https://docs.sourcegraph.com/admin/repo/add_from_other_external_services)
 - Removed the `httpStrictTransportSecurity` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 - Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 - Removed the `tls.cert` and `tls.key` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.

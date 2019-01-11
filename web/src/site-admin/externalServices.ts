@@ -93,4 +93,19 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   "repos": []
 }`,
     },
+    {
+        kind: GQL.ExternalServiceKind.OTHER,
+        displayName: 'Other',
+        defaultConfig: `{
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+  // Configuration options are documented here:
+  // https://docs.sourcegraph.com/admin/site_config/all#phabricatorconnection-object
+
+  // Supported URL schemes are: http, https, git and ssh
+  "url": "https://my-other-githost.example.com",
+
+  // Repository clone paths may be relative to the url (preferred) or absolute.
+  "repos": []
+}`,
+    },
 ]

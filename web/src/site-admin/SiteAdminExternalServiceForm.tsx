@@ -117,5 +117,7 @@ function getKindDefinitionId(kind: GQL.ExternalServiceKind): string {
             return 'GitoliteConnection'
         case GQL.ExternalServiceKind.PHABRICATOR:
             return 'PhabricatorConnection'
+        case GQL.ExternalServiceKind.OTHER:
+            return 'OtherExternalServiceConnection'
     }
 }
