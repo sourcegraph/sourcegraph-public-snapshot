@@ -50,7 +50,7 @@ func New(urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return &Map{
 			urlspec: urlspec,
-			urls:    newConsistentHashMap(strings.Split(urlspec, " ")),
+			urls:    newConsistentHashMap(strings.Fields(urlspec)),
 		}
 	}
 
