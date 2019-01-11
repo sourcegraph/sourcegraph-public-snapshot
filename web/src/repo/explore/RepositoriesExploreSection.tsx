@@ -89,7 +89,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                                 ) : (
                                     <Link
                                         key={i}
-                                        className={`${itemClass} list-group-item list-group-item-action`}
+                                        className={`${itemClass} list-group-item list-group-item-action text-truncate`}
                                         to={repo.url}
                                     >
                                         <h3 className="mb-0 text-truncate">
