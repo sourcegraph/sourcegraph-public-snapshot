@@ -37,7 +37,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 				Kind:        "OTHER",
 				Config:      "{",
 			},
-			err: "external-service=\"Other\": config error: failed to parse JSON: [CloseBraceExpected]; \n",
+			err: "external-service=0: config error: failed to parse JSON: [CloseBraceExpected]; \n",
 		},
 	} {
 		tc := tc

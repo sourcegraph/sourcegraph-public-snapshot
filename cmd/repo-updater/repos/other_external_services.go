@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -109,6 +110,17 @@ func (errs SyncErrors) Error() string {
 	return sb.String()
 }
 
+// RepoErrors returns all SyncErrors that have a Repo set.
+func (errs SyncErrors) RepoErrors() SyncErrors {
+	se := make(SyncErrors, 0, len(errs))
+	for _, err := range errs {
+		if err.Repo != nil {
+			se = append(se, err)
+		}
+	}
+	return se
+}
+
 // SyncError is an error type containing information about a failed sync of an external service
 // of kind "OTHER".
 type SyncError struct {
@@ -125,9 +137,9 @@ type SyncError struct {
 // Error implements the error interface.
 func (e SyncError) Error() string {
 	if e.Repo == nil {
-		return fmt.Sprintf("external-service=%q: %s", e.Service.DisplayName, e.Err)
+		return fmt.Sprintf("external-service=%d: %s", e.Service.ID, e.Err)
 	}
-	return fmt.Sprintf("external-service=%q repo=%q: %s", e.Service.DisplayName, e.Repo.Name, e.Err)
+	return fmt.Sprintf("external-service=%d repo=%q: %s", e.Service.ID, e.Repo.Name, e.Err)
 }
 
 // SyncResult is returned by Sync to indicate which external services and their
@@ -165,12 +177,20 @@ func (s *OtherReposSyncer) SyncMany(ctx context.Context, svcs ...*api.ExternalSe
 }
 
 // Sync synchronizes the repositories of a single external service of kind "OTHER"
-func (s *OtherReposSyncer) Sync(ctx context.Context, svc *api.ExternalService) *SyncResult {
+func (s *OtherReposSyncer) Sync(ctx context.Context, svc *api.ExternalService) (res *SyncResult) {
+	defer func(began time.Time) {
+		id, now := strconv.FormatInt(svc.ID, 10), time.Now().UTC()
+		otherExternalServicesLastSync.WithLabelValues(id).Set(float64(now.Unix()))
+		otherExternalServicesSyncedReposTotal.WithLabelValues(id, "synced").Add(float64(len(res.Synced)))
+		otherExternalServicesSyncedReposTotal.WithLabelValues(id, "errored").Add(float64(len(res.Errors.RepoErrors())))
+		otherExternalServicesSyncDuration.WithLabelValues(id).Observe(time.Since(began).Seconds())
+	}(time.Now().UTC())
+
 	cloneURLs, err := otherExternalServiceCloneURLs(svc)
 	if err != nil {
 		return &SyncResult{
 			Service: svc,
-			Errors:  []*SyncError{{Service: svc, Err: err.Error()}},
+			Errors:  SyncErrors{{Service: svc, Err: err.Error()}},
 		}
 	}
 
@@ -179,12 +199,7 @@ func (s *OtherReposSyncer) Sync(ctx context.Context, svc *api.ExternalService) *
 		repos = append(repos, repoFromCloneURL(u))
 	}
 
-	res := s.store(ctx, svc, repos...)
-	if len(res.Synced) > 0 {
-		otherExternalServicesUpdateTime.WithLabelValues(svc.DisplayName).Set(float64(time.Now().Unix()))
-	}
-
-	return res
+	return s.store(ctx, svc, repos...)
 }
 
 func repoFromCloneURL(u *url.URL) *protocol.RepoInfo {
