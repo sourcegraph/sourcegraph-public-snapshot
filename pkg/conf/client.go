@@ -35,8 +35,7 @@ func Raw() conftypes.RawUnified {
 // handler) to ensure it responds to configuration changes while the process
 // is running.
 //
-// There are a select few configuration options that do restart the server (for
-// example, TLS or which port the frontend listens on) but these are the
+// There are a select few configuration options that do restart the server, but these are the
 // exception rather than the rule. In general, ANY use of configuration should
 // be done in such a way that it responds to config changes while the process
 // is running.
@@ -60,8 +59,7 @@ func (c *client) Raw() conftypes.RawUnified {
 // handler) to ensure it responds to configuration changes while the process
 // is running.
 //
-// There are a select few configuration options that do restart the server (for
-// example, TLS or which port the frontend listens on) but these are the
+// There are a select few configuration options that do restart the server but these are the
 // exception rather than the rule. In general, ANY use of configuration should
 // be done in such a way that it responds to config changes while the process
 // is running.

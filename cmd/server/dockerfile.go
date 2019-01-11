@@ -5,6 +5,8 @@ package main
 
 //docker:install docker
 
+//docker:install nginx
+
 // make the "en_US.UTF-8" locale so postgres will be utf-8 enabled by default
 // alpine doesn't require explicit locale-file generation
 

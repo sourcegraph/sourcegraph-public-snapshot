@@ -25,6 +25,6 @@ See [all site configuration options](all.md), or read walkthroughs of common con
 - [Configure search scopes](../../user/search/scopes.md)
 - [Integrate with Phabricator](../../integration/phabricator.md)
 - [Add organizations](../../user/organizations.md)
-- [Add a TLS/SSL certificate](../tls_ssl.md)
+- [Set up HTTPS](../nginx.md)
 - [Use a custom domain](../url.md)
 - [Updating Sourcegraph Server](../updates.md)
