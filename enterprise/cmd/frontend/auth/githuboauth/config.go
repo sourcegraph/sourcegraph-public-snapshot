@@ -34,8 +34,8 @@ func init() {
 					newProvidersList = append(newProvidersList, p)
 				}
 				auth.UpdateProviders(pkgName, newProvidersList)
+				ffIsEnabled = true
 			}
-			ffIsEnabled = true
 		})
 		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
 			_, problems = parseConfig(&cfg)
@@ -50,7 +50,6 @@ func parseConfig(cfg *conf.Unified) (providers map[schema.GitHubAuthProvider]aut
 		if pr.Github == nil {
 			continue
 		}
-
 		provider, providerProblems := parseProvider(pr.Github, pr)
 		problems = append(problems, providerProblems...)
 		if provider != nil {

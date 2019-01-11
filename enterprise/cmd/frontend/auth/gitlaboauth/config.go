@@ -36,8 +36,8 @@ func init() {
 					newProvidersList = append(newProvidersList, p)
 				}
 				auth.UpdateProviders(PkgName, newProvidersList)
+				ffIsEnabled = true
 			}
-			ffIsEnabled = true
 		})
 		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
 			_, problems = parseConfig(&cfg)
