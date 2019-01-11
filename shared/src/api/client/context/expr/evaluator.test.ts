@@ -19,6 +19,8 @@ describe('evaluate', () => {
         'a != b': false,
         'a + b == c': true,
         x: 'y',
+        'd === false': false,
+        'd !== false': true,
         '!a': false,
         '!!a': true,
         'a && c': 2,
