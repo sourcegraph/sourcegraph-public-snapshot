@@ -51,14 +51,16 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                                 data-tooltip="Access to this repository is enabled. All users can view and search it."
                                 className="ml-2 text-success"
                             >
-                                <CheckIcon className="icon-inline" />Enabled
+                                <CheckIcon className="icon-inline" />
+                                Enabled
                             </small>
                         ) : (
                             <small
                                 data-tooltip="Access to this repository is disabled. Enable access to it to allow users to view and search it."
                                 className="ml-2 text-danger"
                             >
-                                <CloseIcon className="icon-inline" />Disabled
+                                <CloseIcon className="icon-inline" />
+                                Disabled
                             </small>
                         )}
                         {this.props.node.mirrorInfo.cloneInProgress && (
@@ -219,12 +221,12 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
         return (
             <div className="site-admin-repositories-page">
                 <PageTitle title="Repositories - Admin" />
-				<div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-					<h2 className="mb-0">Repositories</h2>
-				</div>
-				<p>
-				Repositories are mirrored from connected{' '}
-				<Link to="/site-admin/external-services">external services</Link>.
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                    <h2 className="mb-0">Repositories</h2>
+                </div>
+                <p>
+                    Repositories are mirrored from connected{' '}
+                    <Link to="/site-admin/external-services">external services</Link>.
                 </p>
                 <FilteredRepositoryConnection
                     className="list-group list-group-flush mt-3"

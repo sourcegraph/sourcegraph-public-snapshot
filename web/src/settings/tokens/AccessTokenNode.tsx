@@ -133,7 +133,8 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                                 </>
                             ) : (
                                 'Never used'
-                            )}, created <Timestamp date={this.props.node.createdAt} />
+                            )}
+                            , created <Timestamp date={this.props.node.createdAt} />
                             {this.props.node.subject.username !== this.props.node.creator.username && (
                                 <>
                                     {' '}
@@ -156,14 +157,13 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         )}
                     </div>
                 </div>
-                {this.props.newToken &&
-                    this.props.node.id === this.props.newToken.id && (
-                        <AccessTokenCreatedAlert
-                            className="alert alert-success mt-4"
-                            tokenSecret={this.props.newToken.token}
-                            token={this.props.node}
-                        />
-                    )}
+                {this.props.newToken && this.props.node.id === this.props.newToken.id && (
+                    <AccessTokenCreatedAlert
+                        className="alert alert-success mt-4"
+                        tokenSecret={this.props.newToken.token}
+                        token={this.props.node}
+                    />
+                )}
             </li>
         )
     }

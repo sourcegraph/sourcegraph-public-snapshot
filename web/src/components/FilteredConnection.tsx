@@ -227,27 +227,23 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         return (
             <>
                 {this.props.connectionQuery && summary}
-                {this.props.connection &&
-                    this.props.connection.nodes.length > 0 && (
-                        <ListComponent className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
-                            {HeadComponent && <HeadComponent nodes={this.props.connection.nodes} />}
-                            {ListComponent === 'table' ? <tbody>{nodes}</tbody> : nodes}
-                            {FootComponent && <FootComponent nodes={this.props.connection.nodes} />}
-                        </ListComponent>
-                    )}
+                {this.props.connection && this.props.connection.nodes.length > 0 && (
+                    <ListComponent className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
+                        {HeadComponent && <HeadComponent nodes={this.props.connection.nodes} />}
+                        {ListComponent === 'table' ? <tbody>{nodes}</tbody> : nodes}
+                        {FootComponent && <FootComponent nodes={this.props.connection.nodes} />}
+                    </ListComponent>
+                )}
                 {!this.props.connectionQuery && summary}
-                {!this.props.loading &&
-                    !this.props.noShowMore &&
-                    this.props.connection &&
-                    hasNextPage && (
-                        <button
-                            className={`btn btn-secondary btn-sm filtered-connection__show-more ${this.props
-                                .showMoreClassName || ''}`}
-                            onClick={this.onClickShowMore}
-                        >
-                            Show more
-                        </button>
-                    )}
+                {!this.props.loading && !this.props.noShowMore && this.props.connection && hasNextPage && (
+                    <button
+                        className={`btn btn-secondary btn-sm filtered-connection__show-more ${this.props
+                            .showMoreClassName || ''}`}
+                        onClick={this.onClickShowMore}
+                    >
+                        Show more
+                    </button>
+                )}
             </>
         )
     }
@@ -650,14 +646,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 spellCheck={false}
                             />
                         )}
-                        {this.props.filters &&
-                            this.state.activeFilter && (
-                                <FilteredConnectionFilterControl
-                                    filters={this.props.filters}
-                                    onDidSelectFilter={this.onDidSelectFilter}
-                                    value={this.state.activeFilter.id}
-                                />
-                            )}
+                        {this.props.filters && this.state.activeFilter && (
+                            <FilteredConnectionFilterControl
+                                filters={this.props.filters}
+                                onDidSelectFilter={this.onDidSelectFilter}
+                                value={this.state.activeFilter.id}
+                            />
+                        )}
                     </Form>
                 )}
                 {errors.length > 0 && (
@@ -670,30 +665,29 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         ))}
                     </div>
                 )}
-                {this.state.connectionOrError &&
-                    !isErrorLike(this.state.connectionOrError) && (
-                        <ConnectionNodes
-                            connection={this.state.connectionOrError}
-                            loading={this.state.loading}
-                            connectionQuery={this.state.connectionQuery}
-                            first={this.state.first}
-                            query={this.state.query}
-                            noun={this.props.noun}
-                            pluralNoun={this.props.pluralNoun}
-                            listComponent={this.props.listComponent}
-                            listClassName={this.props.listClassName}
-                            headComponent={this.props.headComponent}
-                            footComponent={this.props.footComponent}
-                            showMoreClassName={this.props.showMoreClassName}
-                            nodeComponent={this.props.nodeComponent}
-                            nodeComponentProps={this.props.nodeComponentProps}
-                            noShowMore={this.props.noShowMore}
-                            noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
-                            onShowMore={this.onClickShowMore}
-                            location={this.props.location}
-                            emptyElement={this.props.emptyElement}
-                        />
-                    )}
+                {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
+                    <ConnectionNodes
+                        connection={this.state.connectionOrError}
+                        loading={this.state.loading}
+                        connectionQuery={this.state.connectionQuery}
+                        first={this.state.first}
+                        query={this.state.query}
+                        noun={this.props.noun}
+                        pluralNoun={this.props.pluralNoun}
+                        listComponent={this.props.listComponent}
+                        listClassName={this.props.listClassName}
+                        headComponent={this.props.headComponent}
+                        footComponent={this.props.footComponent}
+                        showMoreClassName={this.props.showMoreClassName}
+                        nodeComponent={this.props.nodeComponent}
+                        nodeComponentProps={this.props.nodeComponentProps}
+                        noShowMore={this.props.noShowMore}
+                        noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
+                        onShowMore={this.onClickShowMore}
+                        location={this.props.location}
+                        emptyElement={this.props.emptyElement}
+                    />
+                )}
                 {this.state.loading && (
                     <span className="filtered-connection__loader">
                         <LoadingSpinner className="icon-inline" />

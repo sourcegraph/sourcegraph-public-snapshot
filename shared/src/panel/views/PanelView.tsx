@@ -38,17 +38,16 @@ export class PanelView extends React.PureComponent<Props, State> {
                     </div>
                 )}
                 {this.props.panelView.reactElement}
-                {this.props.panelView.locationProvider &&
-                    this.props.repoName && (
-                        <HierarchicalLocationsView
-                            locations={this.props.panelView.locationProvider}
-                            defaultGroup={this.props.repoName}
-                            isLightTheme={this.props.isLightTheme}
-                            fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                            extensionsController={this.props.extensionsController}
-                            settingsCascade={this.props.settingsCascade}
-                        />
-                    )}
+                {this.props.panelView.locationProvider && this.props.repoName && (
+                    <HierarchicalLocationsView
+                        locations={this.props.panelView.locationProvider}
+                        defaultGroup={this.props.repoName}
+                        isLightTheme={this.props.isLightTheme}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        extensionsController={this.props.extensionsController}
+                        settingsCascade={this.props.settingsCascade}
+                    />
+                )}
                 {!this.props.panelView.content &&
                     !this.props.panelView.reactElement &&
                     !this.props.panelView.locationProvider && <EmptyPanelView className="mt-3" />}

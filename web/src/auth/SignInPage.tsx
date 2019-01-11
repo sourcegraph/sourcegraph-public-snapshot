@@ -34,15 +34,14 @@ export class SignInPage extends React.Component<SignInPageProps> {
                     title="Sign into Sourcegraph"
                     body={
                         window.context.authProviders && window.context.authProviders.length > 0 ? (
-                            window.context.authProviders.map(
-                                (p, i) =>
-                                    p.isBuiltin ? (
-                                        <UsernamePasswordSignInForm key={i} {...this.props} />
-                                    ) : (
-                                        <a key={i} href={p.authenticationURL} className="btn btn-primary mt-3 mb-1">
-                                            Sign in with {p.displayName}
-                                        </a>
-                                    )
+                            window.context.authProviders.map((p, i) =>
+                                p.isBuiltin ? (
+                                    <UsernamePasswordSignInForm key={i} {...this.props} />
+                                ) : (
+                                    <a key={i} href={p.authenticationURL} className="btn btn-primary mt-3 mb-1">
+                                        Sign in with {p.displayName}
+                                    </a>
+                                )
                             )
                         ) : (
                             <div className="alert alert-info mt-3">

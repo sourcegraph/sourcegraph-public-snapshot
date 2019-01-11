@@ -109,7 +109,11 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                     <SiteAdminManagementConsolePassword />
                 </div>
                 {this.props.overviewComponents.length > 0 && (
-                    <div className="mb-4">{this.props.overviewComponents.map((C, i) => <C key={i} />)}</div>
+                    <div className="mb-4">
+                        {this.props.overviewComponents.map((C, i) => (
+                            <C key={i} />
+                        ))}
+                    </div>
                 )}
                 {!this.state.info && <LoadingSpinner className="icon-inline" />}
                 <OverviewList>

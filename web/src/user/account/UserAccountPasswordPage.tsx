@@ -90,7 +90,8 @@ export class UserAccountPasswordPage extends React.Component<Props, State> {
                         Only the user may change their password. Site admins may{' '}
                         <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
                             reset a user's password
-                        </Link>.
+                        </Link>
+                        .
                     </div>
                 ) : (
                     <>

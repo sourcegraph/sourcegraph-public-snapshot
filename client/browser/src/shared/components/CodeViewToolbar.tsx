@@ -72,26 +72,25 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         }}
                     />
                 </ul>
-                {this.props.baseCommitID &&
-                    this.props.baseHasFileContents && (
-                        <OpenOnSourcegraph
-                            label={'View File (base)'}
-                            ariaLabel="View file on Sourcegraph"
-                            openProps={{
-                                repoName: this.props.baseRepoName || this.props.repoName,
-                                filePath: this.props.baseFilePath || this.props.filePath,
-                                rev: this.props.baseRev || this.props.baseCommitID,
-                                query: {
-                                    diff: {
-                                        rev: this.props.baseCommitID,
-                                    },
+                {this.props.baseCommitID && this.props.baseHasFileContents && (
+                    <OpenOnSourcegraph
+                        label={'View File (base)'}
+                        ariaLabel="View file on Sourcegraph"
+                        openProps={{
+                            repoName: this.props.baseRepoName || this.props.repoName,
+                            filePath: this.props.baseFilePath || this.props.filePath,
+                            rev: this.props.baseRev || this.props.baseCommitID,
+                            query: {
+                                diff: {
+                                    rev: this.props.baseCommitID,
                                 },
-                            }}
-                            className={this.props.buttonProps.className}
-                            style={this.props.buttonProps.style}
-                            iconStyle={this.props.buttonProps.iconStyle}
-                        />
-                    )}
+                            },
+                        }}
+                        className={this.props.buttonProps.className}
+                        style={this.props.buttonProps.style}
+                        iconStyle={this.props.buttonProps.iconStyle}
+                    />
+                )}
 
                 {/*
                   Use a ternary here because prettier insists on changing parens resulting in this button only being rendered

@@ -47,25 +47,27 @@ describe('Sourcegraph Chrome extension', () => {
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
     // Open browser.
-    beforeAll(async (): Promise<void> => {
-        jest.setTimeout(90 * 1000)
+    beforeAll(
+        async (): Promise<void> => {
+            jest.setTimeout(90 * 1000)
 
-        let args: string[] = [
-            `--disable-extensions-except=${chromeExtensionPath}`,
-            `--load-extension=${chromeExtensionPath}`,
-        ]
+            let args: string[] = [
+                `--disable-extensions-except=${chromeExtensionPath}`,
+                `--load-extension=${chromeExtensionPath}`,
+            ]
 
-        if (process.getuid() === 0) {
-            // TODO don't run as root in CI
-            console.warn('Running as root, disabling sandbox')
-            args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
+            if (process.getuid() === 0) {
+                // TODO don't run as root in CI
+                console.warn('Running as root, disabling sandbox')
+                args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
+            }
+
+            browser = await puppeteer.launch({
+                headless: false,
+                args,
+            })
         }
-
-        browser = await puppeteer.launch({
-            headless: false,
-            args,
-        })
-    })
+    )
 
     // Open page.
     beforeEach(async () => {

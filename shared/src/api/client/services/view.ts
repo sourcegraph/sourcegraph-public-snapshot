@@ -81,16 +81,18 @@ export function getViews(
     return entries.pipe(
         switchMap(entries =>
             combineLatestOrDefault(
-                entries.filter(e => e.registrationOptions.container === container).map(entry =>
-                    addRegistrationOptions(entry).pipe(
-                        catchError(err => {
-                            if (logErrors) {
-                                console.error(err)
-                            }
-                            return [null]
-                        })
+                entries
+                    .filter(e => e.registrationOptions.container === container)
+                    .map(entry =>
+                        addRegistrationOptions(entry).pipe(
+                            catchError(err => {
+                                if (logErrors) {
+                                    console.error(err)
+                                }
+                                return [null]
+                            })
+                        )
                     )
-                )
             ).pipe(
                 map(entries =>
                     entries.filter(

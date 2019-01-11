@@ -36,16 +36,15 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
             <div className="discussions-create">
                 <DiscussionsNavbar {...this.props} threadTitle={this.state.title} />
                 <div className="discussions-create__content">
-                    {this.state.title &&
-                        this.state.title.length > 60 && (
-                            <div className="alert alert-info p-1 mt-3 ml-3 mr-3 mb-0">
-                                <small>
-                                    <InformationVariantIcon className="icon-inline" />
-                                    The first line of your message will become the title of your discussion. A good
-                                    title is usually 50 characters or less.
-                                </small>
-                            </div>
-                        )}
+                    {this.state.title && this.state.title.length > 60 && (
+                        <div className="alert alert-info p-1 mt-3 ml-3 mr-3 mb-0">
+                            <small>
+                                <InformationVariantIcon className="icon-inline" />
+                                The first line of your message will become the title of your discussion. A good title is
+                                usually 50 characters or less.
+                            </small>
+                        </div>
+                    )}
                     <DiscussionsInput
                         submitLabel="Create discussion"
                         titleMode={TitleMode.Implicit}

@@ -187,7 +187,8 @@ export class APIConsole extends React.PureComponent<Props, State> {
                             target="_blank"
                         >
                             Graph<em>i</em>QL
-                        </a>.
+                        </a>
+                        .
                     </span>
                     <span className="api-console__footer-section" />
                 </div>

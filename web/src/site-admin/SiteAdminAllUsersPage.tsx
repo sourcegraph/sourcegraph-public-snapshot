@@ -309,14 +309,14 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
-				<div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-					<h2 className="mb-0">Users</h2>
-					<div>
-	                    <Link to="/site-admin/users/new" className="btn btn-primary">
-	                        <AddIcon className="icon-inline" /> Create user account
-	                    </Link>
-	                </div>
-				</div>
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                    <h2 className="mb-0">Users</h2>
+                    <div>
+                        <Link to="/site-admin/users/new" className="btn btn-primary">
+                            <AddIcon className="icon-inline" /> Create user account
+                        </Link>
+                    </div>
+                </div>
                 <FilteredUserConnection
                     className="list-group list-group-flush mt-3"
                     noun="user"
