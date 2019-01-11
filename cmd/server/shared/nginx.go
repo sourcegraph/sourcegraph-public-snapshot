@@ -20,23 +20,30 @@ events {
 }
 
 http {
-    server_tokens off;
-    client_max_body_size 150M;
+	server_tokens off;
 
-    access_log off;
-    upstream backend {
-        server localhost:8080;
-    }
+	# We can upload large extensions
+	client_max_body_size 150M;
 
-    server {
-        listen 7080;
-        location / {
-            proxy_pass http://backend;
-            proxy_set_header Host $http_host;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-    }
+	# Don't timeout websockets quickly. Default is 60s. This is the timeout
+	# between reads/writes, not the full session timeout.
+	proxy_send_timeout 1h
+	proxy_read_timeout 1h
+
+	access_log off;
+	upstream backend {
+		server localhost:8080;
+	}
+
+	server {
+		listen 7080;
+		location / {
+			proxy_pass http://backend;
+			proxy_set_header Host $http_host;
+			proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+			proxy_set_header X-Forwarded-Proto $scheme;
+		}
+	}
 }
 `
 
