@@ -43,7 +43,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 
 - Select **Next: ...** until you get to the **Configure Security Group** page, then add the default **HTTP** rule (port range "80", source "0.0.0.0/0, ::/0")
 - Launch your instance, then navigate to the its public URL.
-- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. If `externalURL` has the HTTPS protocol then Sourcegraph will get a certificate via [Let's Encrypt](https://letsencrypt.org/). For more information or alternative methods view our documentation on [TLS](../../tls_ssl.md). (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
+- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
 
 ### Option B: use the CLI
 
@@ -73,6 +73,6 @@ docker run -d ... sourcegraph/server:X.Y.Z
 
 The Docker container has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the container, you can [use external databases](../../external_database.md) for persistence, such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) and [Amazon ElastiCache](https://aws.amazon.com/elasticache/redis/).
 
-The [site configuration JSON](../../site_config/index.md) is not yet stored in the database, so you must manually back it up. This will no longer be necessary in [Sourcegraph 3.0 preview](https://github.com/sourcegraph/about/pull/36). <!-- TODO: remove this when https://github.com/sourcegraph/about/pull/36 is merged -->
+The [site configuration JSON](../../site_config/index.md) is not yet stored in the database, so you must manually back it up. This will no longer be necessary in [Sourcegraph 3.0](https://github.com/sourcegraph/about/pull/36). <!-- TODO: remove this when https://github.com/sourcegraph/about/pull/36 is merged -->
 
 > NOTE: Use of external databases requires [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).

@@ -2,7 +2,7 @@
 
 /** @type {import('@babel/core').TransformOptions} */
 const config = {
-  presets: ['env'],
+  presets: ['@babel/preset-env'],
 }
 
 module.exports = config

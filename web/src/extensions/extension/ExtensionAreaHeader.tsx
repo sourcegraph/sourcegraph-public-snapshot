@@ -1,6 +1,7 @@
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { Path } from '../../../../shared/src/components/Path'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extension.schema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
@@ -53,31 +54,32 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         <img className="extension-area-header__icon mr-2" src={manifest.icon} />
                                     )}
                                 <div>
-                                    <div className="d-flex align-items-center">
-                                        <h2 className="mb-0">
-                                            <Link to="/extensions" className="extensions-nav-link">
-                                                Extensions
-                                            </Link>{' '}
-                                            <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" />{' '}
-                                            {(manifest && manifest.title) || props.extension.id}
-                                        </h2>
-                                    </div>
-                                    {manifest &&
-                                        manifest.title && <div className="text-muted">{props.extension.id}</div>}
-                                    {manifest &&
-                                        (manifest.description || isWorkInProgress) && (
-                                            <p className="mt-1 mb-0">
-                                                {isWorkInProgress && (
-                                                    <WorkInProgressBadge
-                                                        viewerCanAdminister={
-                                                            !!props.extension.registryExtension &&
-                                                            props.extension.registryExtension.viewerCanAdminister
-                                                        }
-                                                    />
-                                                )}
-                                                {manifest.description}
-                                            </p>
-                                        )}
+                                    <h2 className="d-flex align-items-center mb-0 font-weight-normal">
+                                        <Link to="/extensions" className="extensions-nav-link">
+                                            Extensions
+                                        </Link>
+                                        <ChevronRightIcon className="icon-inline extension-area-header__icon-chevron" />{' '}
+                                        <Path
+                                            path={
+                                                props.extension.registryExtension
+                                                    ? props.extension.registryExtension.extensionIDWithoutRegistry
+                                                    : props.extension.id
+                                            }
+                                        />
+                                    </h2>
+                                    {manifest && (manifest.description || isWorkInProgress) && (
+                                        <p className="mt-1 mb-0">
+                                            {isWorkInProgress && (
+                                                <WorkInProgressBadge
+                                                    viewerCanAdminister={
+                                                        !!props.extension.registryExtension &&
+                                                        props.extension.registryExtension.viewerCanAdminister
+                                                    }
+                                                />
+                                            )}
+                                            {manifest.description}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -87,8 +89,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     <ExtensionToggle
                                         extension={props.extension}
                                         settingsCascade={props.settingsCascade}
-                                        onUpdate={props.onDidUpdateExtension}
-                                        addClassName="btn-primary"
                                         platformContext={props.platformContext}
                                     />
                                 </div>

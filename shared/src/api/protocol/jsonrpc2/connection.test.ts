@@ -142,6 +142,48 @@ describe('Connection', () => {
         ).resolves.toEqual([2, 3, 4, 5])
     })
 
+    test('abort request before it is handled', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+        const server = createConnection(serverTransports)
+        let handled = false
+        server.onRequest('m', () => (handled = true))
+        server.listen()
+        const client = createConnection(clientTransports)
+        client.listen()
+        // Connection processes messages asynchronously.
+        // When calling observeRequest() and unsubscribing from
+        // the returned observable in the same tick,
+        // the request handler is never called.
+        const subscription = client.observeRequest('m').subscribe()
+        subscription.unsubscribe()
+        expect(handled).toBe(false)
+    })
+
+    test('abort request with observable emission', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+        const server = createConnection(serverTransports)
+        const handlerCalled = createBarrier()
+        const handlerUnsubscribed = createBarrier()
+        server.onRequest(
+            'm',
+            () =>
+                new Observable<void>(() => {
+                    handlerCalled.done()
+                    return handlerUnsubscribed.done
+                })
+        )
+        server.listen()
+        const client = createConnection(clientTransports)
+        client.listen()
+        const subscription = client.observeRequest('m').subscribe()
+        // Connection processes messages asynchronously.
+        // wait until the request handler gets subscribed to server-side
+        // to unsubscribe client-side.
+        await handlerCalled.wait
+        subscription.unsubscribe()
+        await handlerUnsubscribed.wait
+    })
+
     test('handle multiple requests', async () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()

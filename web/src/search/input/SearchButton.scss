@@ -1,4 +1,10 @@
 .search-button {
+    &__btn {
+        // Left side is flush with QueryInput.
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
     &__label {
         margin-left: 0.25rem;
     }

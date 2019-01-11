@@ -7,7 +7,6 @@ Sourcegraph extensions use a `package.json` file for metadata and configuration.
 Name | Required | Type | Details
 ---- |:--------:| ---- | -------
 `name` | ✔️ | `string` | Extension identifier: all lowercase, alphanumeric with hyphens and underscores.
-`title` | ✔️ | `string`| The name displayed in the extension registry. Can be used to indicate a [work-in-progress extension](publishing.md#wip-extensions).
 `description` | ✔️ | `string` | The extension's description, which summarizes the extension's purpose and features.
 `version` | | `string` | [Semantic versioning](https://semver.org/) format.
 `publisher` | ✔️ | `string` | Your [Sourcegraph username](development_environment.md#sourcegraph-com-account-and-the-sourcegraph-cli) (or the name of an organization you're a member of)
@@ -22,6 +21,7 @@ Name | Required | Type | Details
 `repository` | | `object` | npm field for the repository location.
 `categories` | | `string[]` | Categories that describe this extension, from the predefined set [`Programming languages`](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22), `Linters`, `Code analysis`, `External services`, `Reports and stats`, `Other`.
 `tags` | | `string[]` | Arbitrary tags that describe this extension.
+`wip` | | `boolean`| Indicates that this is a [work-in-progress extension](publishing.md#wip-extensions).
 
 See the [npm package.json documentation](https://docs.npmjs.com/creating-a-package-json-file) for other fields.
 
@@ -41,7 +41,6 @@ Here is an example `package.json` created by the [Sourcegraph extension creator]
 ```json
 {
   "name": "my-extension",
-  "title": "WIP: My extension",
   "description": "An awesome Sourcegraph extension",
   "publisher": "your-sourcegraph-username",
   "repository": {

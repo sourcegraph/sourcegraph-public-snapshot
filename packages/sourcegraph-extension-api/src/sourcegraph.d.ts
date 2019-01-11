@@ -344,40 +344,27 @@ declare module 'sourcegraph' {
      * A document filter denotes a document by different properties like the
      * [language](#TextDocument.languageId), the scheme of its resource, or a glob-pattern that is
      * applied to the [path](#TextDocument.fileName).
+     * A document filter matches if all the provided properties (those of `language`, `scheme` and `pattern` that are not `undefined`) match.
+     * If all properties are `undefined`, the document filter matches all documents.
      *
      * @sample A language filter that applies to typescript files on disk: `{ language: 'typescript', scheme: 'file' }`
      * @sample A language filter that applies to all package.json paths: `{ language: 'json', pattern: '**package.json' }`
      */
-    export type DocumentFilter =
-        | {
-              /** A language id, such as `typescript`. */
-              language: string
-              /** A URI scheme, such as `file` or `untitled`. */
-              scheme?: string
-              /** A glob pattern, such as `*.{ts,js}`. */
-              pattern?: string
-          }
-        | {
-              /** A language id, such as `typescript`. */
-              language?: string
-              /** A URI scheme, such as `file` or `untitled`. */
-              scheme: string
-              /** A glob pattern, such as `*.{ts,js}`. */
-              pattern?: string
-          }
-        | {
-              /** A language id, such as `typescript`. */
-              language?: string
-              /** A URI scheme, such as `file` or `untitled`. */
-              scheme?: string
-              /** A glob pattern, such as `*.{ts,js}`. */
-              pattern: string
-          }
+    export interface DocumentFilter {
+        /** A language id, such as `typescript` or `*`. */
+        language?: string
+        /** A URI scheme, such as `file` or `untitled`. */
+        scheme?: string
+        /** A glob pattern, such as `*.{ts,js}`. */
+        pattern?: string
+    }
 
     /**
      * A document selector is the combination of one or many document filters.
+     * A document matches the selector if any of the given filters matches.
+     * If the filter is a string and not a {@link DocumentFilter}, it will be treated as a language id.
      *
-     * @sample `let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }]`;
+     * @example let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }];
      */
     export type DocumentSelector = (string | DocumentFilter)[]
 
@@ -576,10 +563,12 @@ declare module 'sourcegraph' {
     /**
      * Represents a handle to a set of decorations.
      *
-     * To get an instance of {@link TextDocumentDecorationType}, use {@link createDecorationType}
+     * To get an instance of {@link TextDocumentDecorationType}, use
+     * {@link sourcegraph.app.createDecorationType}
      */
     export interface TextDocumentDecorationType {
-        key: string
+        /** An opaque identifier. */
+        readonly key: string
     }
 
     /**
@@ -613,9 +602,10 @@ declare module 'sourcegraph' {
 
         /**
          * Add a set of decorations to this editor. If a set of decorations already exists with the given
-         * {@link DecorationType}, they will be replaced.
+         * {@link TextDocumentDecorationType}, they will be replaced.
          *
          * @see {@link TextDocumentDecorationType}
+         * @see {@link sourcegraph.app.createDecorationType}
          *
          */
         setDecorations(decorationType: TextDocumentDecorationType, decorations: TextDocumentDecoration[]): void
@@ -1224,7 +1214,7 @@ declare module 'sourcegraph' {
      * The extension context is passed to the extension's activate function and contains utilities for the
      * extension lifecycle.
      *
-     * @since Sourcegraph 3.0-preview. Use `export function activate(ctx?: ExtensionContext) { ... }` for prior
+     * @since Sourcegraph 3.0. Use `export function activate(ctx?: ExtensionContext) { ... }` for prior
      * versions (to ensure your code handles the pre-3.0-preview case when `ctx` is undefined).
      */
     export interface ExtensionContext {

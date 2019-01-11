@@ -263,7 +263,7 @@ func TestRegistryExtensions(t *testing.T) {
 		}
 	})
 
-	t.Run("List ExcludeWIP and sort non-WIP first", func(t *testing.T) {
+	t.Run("List sort non-WIP first", func(t *testing.T) {
 		// xwip1 is a WIP extension because its title begins with "WIP:".
 		xwip1 := createAndGet(t, user.ID, 0, "wiptest1")
 		_, err := dbReleases{}.Create(ctx, &dbRelease{
@@ -281,10 +281,24 @@ func TestRegistryExtensions(t *testing.T) {
 		// xwip2 is a WIP extension because it has no published releases.
 		xwip2 := createAndGet(t, user.ID, 0, "wiptest2")
 
-		// xnonwip is a non-WIP extension.
-		xnonwip := createAndGet(t, user.ID, 0, "wiptest3")
+		// xwip3 is a WIP extension because it has a "wip": true property.
+		xwip3 := createAndGet(t, user.ID, 0, "wiptest3")
 		_, err = dbReleases{}.Create(ctx, &dbRelease{
-			RegistryExtensionID: xnonwip.ID,
+			RegistryExtensionID: xwip3.ID,
+			CreatorUserID:       user.ID,
+			ReleaseTag:          "release",
+			Manifest:            `{"wip": true}`,
+			Bundle:              strptr(""),
+			SourceMap:           strptr(""),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// xnonwip1 is a non-WIP extension.
+		xnonwip1 := createAndGet(t, user.ID, 0, "wiptest4")
+		_, err = dbReleases{}.Create(ctx, &dbRelease{
+			RegistryExtensionID: xnonwip1.ID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
 			Manifest:            `{"title": "x"}`,
@@ -294,13 +308,25 @@ func TestRegistryExtensions(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		xnonwip.NonCanonicalIsWorkInProgress = false
+		xnonwip1.NonCanonicalIsWorkInProgress = false
+
+		// xnonwip2 is a non-WIP extension because its wip property is not true.
+		xnonwip2 := createAndGet(t, user.ID, 0, "wiptest5")
+		_, err = dbReleases{}.Create(ctx, &dbRelease{
+			RegistryExtensionID: xnonwip2.ID,
+			CreatorUserID:       user.ID,
+			ReleaseTag:          "release",
+			Manifest:            `{"wip": 123}`,
+			Bundle:              strptr(""),
+			SourceMap:           strptr(""),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		xnonwip2.NonCanonicalIsWorkInProgress = false
 
 		// The non-WIP extension should be sorted first.
-		testList(t, dbExtensionsListOptions{ExcludeWIP: false, Query: "wiptest", LimitOffset: &db.LimitOffset{Limit: 3}}, []*dbExtension{xnonwip, xwip1, xwip2})
-
-		// The WIP extension should be excluded.
-		testList(t, dbExtensionsListOptions{ExcludeWIP: true, Query: "wiptest", LimitOffset: &db.LimitOffset{Limit: 3}}, []*dbExtension{xnonwip})
+		testList(t, dbExtensionsListOptions{Query: "wiptest", LimitOffset: &db.LimitOffset{Limit: 5}}, []*dbExtension{xnonwip1, xnonwip2, xwip1, xwip2, xwip3})
 	})
 }
 
@@ -362,10 +388,14 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 	createAndGet(t, "xnomanifest", ``) // create extension without manifest to ensure it is not matched
 	createAndGet(t, "xinvalidmanifest", `123`)
 	createAndGet(t, "xinvalidtitle", `{"title": 123}`)
+	createAndGet(t, "xinvaliddescription", `{"description": 123}`)
 	createAndGet(t, "xinvalidcategoriestags", `{"title": "invalidcategories", "categories": 123, "tags": 123}`)
-	x1 := createAndGet(t, "x", `{"title": "foo", "categories": ["mycategory1", "Mycategory2"], "tags": ["t1", "T2"], "xyz": 1}`)
+	x1 := createAndGet(t, "x", `{"title": "foo1", "description": "foo2", "categories": ["mycategory1", "Mycategory2"], "tags": ["t1", "T2"], "xyz": 1}`)
 	t.Run("by title", func(t *testing.T) {
 		testListCount(t, dbExtensionsListOptions{Query: "foo"}, []*dbExtension{x1})
+		// BACKCOMPAT: match on title even though extension manifests no longer have a title property.
+		testListCount(t, dbExtensionsListOptions{Query: "foo1"}, []*dbExtension{x1})
+		testListCount(t, dbExtensionsListOptions{Query: "foo2"}, []*dbExtension{x1})
 		// Ensure it's not just searching the full JSON manifest.
 		testListCount(t, dbExtensionsListOptions{Query: "xyz"}, nil)
 		// Ensure it's not matching on category.

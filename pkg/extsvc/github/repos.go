@@ -265,7 +265,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 // https://developer.github.com/v3/repos/#list-all-public-repositories
 func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
 	var restRepos []restRepository
-	path := "v3/repositories"
+	path := "repositories"
 	if sinceRepoID > 0 {
 		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
 	}
@@ -318,12 +318,7 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 // return. Pages are 1-indexed (so the first call should be for page 1).
 func (c *Client) ListViewerRepositories(ctx context.Context, token string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	var restRepos []restRepository
-	var path string
-	if c.githubDotCom {
-		path = fmt.Sprintf("user/repos?sort=pushed&page=%d&per_page=100", page)
-	} else {
-		path = fmt.Sprintf("v3/user/repos?sort=pushed&page=%d&per_page=100", page)
-	}
+	path := fmt.Sprintf("user/repos?sort=pushed&page=%d&per_page=100", page)
 	if err := c.requestGet(ctx, token, path, &restRepos); err != nil {
 		return nil, false, 1, err
 	}
@@ -347,12 +342,7 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		"q":    []string{searchString},
 		"page": []string{strconv.Itoa(page)},
 	}
-	var path string
-	if c.githubDotCom {
-		path = "search/repositories?" + urlValues.Encode()
-	} else {
-		path = "v3/search/repositories?" + urlValues.Encode()
-	}
+	path := "search/repositories?" + urlValues.Encode()
 	var response restSearchResponse
 	if err := c.requestGet(ctx, "", path, &response); err != nil {
 		return nil, false, 1, err

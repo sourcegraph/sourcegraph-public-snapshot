@@ -1,11 +1,17 @@
 .site-admin-survey-responses-summary {
-    &__container {
-        display: flex;
-    }
+	&__container {
+		display: flex;
+		justify-content: space-between;
+		flex-wrap: wrap;
+	}
 
-    &__item {
-        flex: 1 1;
-    }
+	&__item {
+		width: 32%;
+		@media (max-width: $media-md) {
+			width: 100%;
+			margin-bottom: 1rem;
+		}
+	}
 }
 
 .site-admin-survey-responses-connection {

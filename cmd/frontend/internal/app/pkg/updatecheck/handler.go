@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
+	"github.com/sourcegraph/sourcegraph/pkg/pubsub/pubsubutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -163,7 +164,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		activity = `{}`
 	}
 
-	eventlogger.LogEvent("", "ServerUpdateCheck", json.RawMessage(fmt.Sprintf(`{
+	message := fmt.Sprintf(`{
 		"remote_ip": "%s",
 		"remote_site_version": "%s",
 		"remote_site_id": "%s",
@@ -174,7 +175,8 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		"installer_email": "%s",
 		"auth_providers": "%s",
 		"deploy_type": "%s",
-		"total_user_accounts": "%s"
+		"total_user_accounts": "%s",
+		"timestamp": "%s"
 	}`,
 		clientAddr,
 		clientVersionString,
@@ -187,7 +189,17 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		authProviders,
 		deployType,
 		totalUsers,
-	)))
+		time.Now().UTC().Format(time.RFC3339),
+	)
+
+	eventlogger.LogEvent("", "ServerUpdateCheck", json.RawMessage(message))
+
+	if pubsubutil.Enabled() {
+		err := pubsubutil.Publish(pubsubutil.PubSubTopicID, message)
+		if err != nil {
+			log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
+		}
+	}
 
 	// Sync the initial administrator email in HubSpot.
 	if initialAdminEmail != "" && strings.Contains(initialAdminEmail, "@") {

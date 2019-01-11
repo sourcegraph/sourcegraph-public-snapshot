@@ -42,31 +42,31 @@ func TestToDBExtensionsListOptions(t *testing.T) {
 	}{
 		"empty": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{},
-			want: dbExtensionsListOptions{ExcludeWIP: true},
+			want: dbExtensionsListOptions{},
 		},
 		"Query simple": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr("q")},
-			want: dbExtensionsListOptions{Query: "q", ExcludeWIP: true},
+			want: dbExtensionsListOptions{Query: "q"},
 		},
 		"Query category quoted": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b category:"C🚀" c`)},
-			want: dbExtensionsListOptions{Query: "a b c", Category: "C🚀", ExcludeWIP: true},
+			want: dbExtensionsListOptions{Query: "a b c", Category: "C🚀"},
 		},
 		"Query category unquoted": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b category:C c`)},
-			want: dbExtensionsListOptions{Query: "a b c", Category: "C", ExcludeWIP: true},
+			want: dbExtensionsListOptions{Query: "a b c", Category: "C"},
 		},
 		"Query multiple categories": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a category:"C🚀" b category:"DD" c`)},
-			want: dbExtensionsListOptions{Query: "a b c", Category: "DD", ExcludeWIP: true},
+			want: dbExtensionsListOptions{Query: "a b c", Category: "DD"},
 		},
 		"Query tag": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b tag:"T🚀" c`)},
-			want: dbExtensionsListOptions{Query: "a b c", Tag: "T🚀", ExcludeWIP: true},
+			want: dbExtensionsListOptions{Query: "a b c", Tag: "T🚀"},
 		},
 		"PrioritizeExensionIDs": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{PrioritizeExtensionIDs: strarrayptr([]string{"a", "b"})},
-			want: dbExtensionsListOptions{PrioritizeExtensionIDs: []string{"a", "b"}, ExcludeWIP: true},
+			want: dbExtensionsListOptions{PrioritizeExtensionIDs: []string{"a", "b"}},
 		},
 	}
 	for name, test := range tests {

@@ -2,6 +2,7 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import { Path } from '../../../shared/src/components/Path'
 import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsSubject } from '../../../shared/src/graphql/schema'
@@ -14,10 +15,17 @@ import { ExtensionConfigurationState } from './extension/ExtensionConfigurationS
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionToggle } from './ExtensionToggle'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps {
-    node: ConfiguredRegistryExtension<GQL.IRegistryExtension>
+interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
+    node: Pick<
+        ConfiguredRegistryExtension<
+            Pick<
+                GQL.IRegistryExtension,
+                'id' | 'extensionIDWithoutRegistry' | 'isWorkInProgress' | 'viewerCanAdminister' | 'url'
+            >
+        >,
+        'id' | 'manifest' | 'registryExtension'
+    >
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
-    onDidUpdate: () => void
 }
 
 /** Displays an extension as a card. */
@@ -50,17 +58,24 @@ export class ExtensionCard extends React.PureComponent<Props> {
                                 /^data:image\/png(;base64)?,/.test(manifest.icon) && (
                                     <img className="extension-card__icon mr-2" src={manifest.icon} />
                                 )}
-                            <div>
-                                <h4 className="card-title extension-card__body-title mb-0">
-                                    {manifest && manifest.title ? manifest.title : node.id}
-                                </h4>
-                                <div className="extension-card__body-text d-inline-block mt-1">
-                                    {node.registryExtension &&
-                                        node.registryExtension.isWorkInProgress && (
-                                            <WorkInProgressBadge
-                                                viewerCanAdminister={node.registryExtension.viewerCanAdminister}
-                                            />
-                                        )}
+                            <div className="text-truncate">
+                                <div className="d-flex align-items-center">
+                                    <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal">
+                                        <Path
+                                            path={
+                                                node.registryExtension
+                                                    ? node.registryExtension.extensionIDWithoutRegistry
+                                                    : node.id
+                                            }
+                                        />
+                                    </h4>
+                                    {node.registryExtension && node.registryExtension.isWorkInProgress && (
+                                        <WorkInProgressBadge
+                                            viewerCanAdminister={node.registryExtension.viewerCanAdminister}
+                                        />
+                                    )}
+                                </div>
+                                <div className="mt-1">
                                     {node.manifest ? (
                                         isErrorLike(node.manifest) ? (
                                             <span className="text-danger small" title={node.manifest.message}>
@@ -68,7 +83,9 @@ export class ExtensionCard extends React.PureComponent<Props> {
                                             </span>
                                         ) : (
                                             node.manifest.description && (
-                                                <span className="text-muted">{node.manifest.description}</span>
+                                                <div className="text-muted text-truncate">
+                                                    {node.manifest.description}
+                                                </div>
                                             )
                                         )
                                     ) : (
@@ -82,22 +99,19 @@ export class ExtensionCard extends React.PureComponent<Props> {
                     </LinkOrSpan>
                     <div className="card-footer extension-card__footer py-0 pl-0">
                         <ul className="nav align-items-center">
-                            {node.registryExtension &&
-                                node.registryExtension.url && (
-                                    <li className="nav-item">
-                                        <Link to={node.registryExtension.url} className="nav-link px-2" tabIndex={-1}>
-                                            Details
-                                        </Link>
-                                    </li>
-                                )}
+                            {node.registryExtension && node.registryExtension.url && (
+                                <li className="nav-item">
+                                    <Link to={node.registryExtension.url} className="nav-link px-2" tabIndex={-1}>
+                                        Details
+                                    </Link>
+                                </li>
+                            )}
                             <li className="extension-card__spacer" />
                             {props.subject &&
                                 (props.subject.viewerCanAdminister ? (
                                     <ExtensionToggle
                                         extension={node}
                                         settingsCascade={this.props.settingsCascade}
-                                        onUpdate={props.onDidUpdate}
-                                        className="btn-sm btn-secondary"
                                         platformContext={this.props.platformContext}
                                     />
                                 ) : (

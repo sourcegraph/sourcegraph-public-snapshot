@@ -46,7 +46,9 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
         return (
             <div className="site-admin-product-subscriptions-page">
                 <PageTitle title="Product subscriptions" />
-                <h2>License key lookup</h2>
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+					<h2 className="mb-0">License key lookup</h2>
+				</div>
                 <p>Find matching licenses and their associated product subscriptions.</p>
                 <FilteredProductLicenseConnection
                     className="list-group list-group-flush mt-3"

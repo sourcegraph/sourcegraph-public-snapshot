@@ -1,5 +1,4 @@
 import { DOMFunctions } from '@sourcegraph/codeintellify'
-import { CodeView } from '../code_intelligence'
 
 const getLineNumberCell = (codeElement: HTMLElement) => {
     let elem: HTMLElement | null = codeElement
@@ -94,25 +93,12 @@ export const diffDomFunctions: DOMFunctions = {
 export const diffusionDOMFns: DOMFunctions = {
     getCodeElementFromTarget: target => target.closest('td'),
     getCodeElementFromLineNumber: (codeView, line) => {
-        const lineAnchor = codeView.querySelector(`[data-n="${line}"]`)
-        if (!lineAnchor) {
-            return null
-        }
-        const lineCell = lineAnchor.closest('th')
-        if (!lineCell) {
-            return null
+        const row = codeView.querySelector(`tr:nth-of-type(${line})`)
+        if (!row) {
+            throw new Error(`unable to find row ${line} from code view`)
         }
 
-        let codeElement = lineCell as HTMLElement | null
-        while (
-            codeElement !== null &&
-            codeElement.tagName !== 'TD' &&
-            !codeElement.classList.contains('phabricator-source-code')
-        ) {
-            codeElement = lineCell.nextElementSibling as HTMLElement | null
-        }
-
-        return codeElement
+        return row.querySelector<HTMLElement>('td')
     },
     getLineNumberFromCodeElement: codeElement => {
         let lineCell = codeElement as HTMLElement | null
@@ -129,18 +115,9 @@ export const diffusionDOMFns: DOMFunctions = {
 
         const lineAnchor = lineCell.querySelector('a')
         if (!lineAnchor) {
-            throw new Error('could not find line number cell from code element')
+            throw new Error('could not find line number anchor from code element')
         }
-        const lineNumberStr = lineAnchor.dataset.n
-        if (!lineNumberStr) {
-            throw new Error('could not get line number from line number cell')
-        }
-
-        return parseInt(lineNumberStr, 10)
+        return parseInt(lineAnchor.textContent || '', 10)
     },
     isFirstCharacterDiffIndicator: () => false,
-}
-
-export const getLineRanges: CodeView['getLineRanges'] = () => {
-    throw new Error('TODO: implement')
 }

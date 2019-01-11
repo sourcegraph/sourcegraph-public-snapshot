@@ -33,7 +33,7 @@ The `ctx.subscriptions.add` function accepts both `Unsubscribable` values (which
 
 Tips:
 
-- If your extension needs to support Sourcegraph versions prior to 3.0-preview, see "[Backcompat for Sourcegraph versions prior to 3.0-preview](activation.md#backcompat-for-sourcegraph-versions-prior-to-3-0-preview)".
+- If your extension needs to support Sourcegraph versions prior to 3.0, see "[Backcompat for Sourcegraph versions prior to 3.0](activation.md#backcompat-for-sourcegraph-versions-prior-to-3-0)".
 - It is safe to double-unsubscribe `Unsubscribable` values. Subsequent calls will be no-ops. There is no need to remove a subscription from `ctx.subscriptions` if your extension explicitly unsubscribed it already.
 - Your extension can add subscriptions to `ctx.subscriptions` at any time, not just during initial activation.
 - There is no guarantee that an extension will be deactivated, or that the deactivation process will finish. For example, if you close the browser tab where it was running, it may uncleanly terminate all extensions immediately or after deactivation has partially completed.
@@ -52,16 +52,16 @@ If the extension was never activated, then it does not need to be deactivated.
 
 Extensions must support deactivation because there is no way for Sourcegraph to know (in general) which resources to free when an extension is deactivated. All extensions run in the same JavaScript execution context (usually a Web Worker), so Sourcegraph can't determine *which* extension called functions such as `registerHoverProvider`.
 
-### Backcompat for Sourcegraph versions prior to 3.0-preview
+### Backcompat for Sourcegraph versions prior to 3.0
 
-The `ctx: sourcegraph.ExtensionContext` parameter was [added in Sourcegraph 3.0-preview (#1120)](https://github.com/sourcegraph/sourcegraph/pull/1120). In prior Sourcegraph versions, the `activate` function is called with no parameters.
+The `ctx: sourcegraph.ExtensionContext` parameter was [added in Sourcegraph 3.0 (#1120)](https://github.com/sourcegraph/sourcegraph/pull/1120). In prior Sourcegraph versions, the `activate` function is called with no parameters.
 
 To avoid [`Uncaught ReferenceError: ctx is not defined`](#uncaught-referenceerror-ctx-is-not-defined) errors and support prior Sourcegraph versions in your extension, use the following workaround (which provides a default value for the `ctx` argument):
 
 ```typescript
 import * as sourcegraph from 'sourcegraph'
 
-// No-op for Sourcegraph versions prior to 3.0-preview
+// No-op for Sourcegraph versions prior to 3.0
 const DUMMY_CTX = { subscriptions: { add: (_unsubscribable: any) => void 0 } }
 
 export function activate(ctx: sourcegraph.ExtensionContext = DUMMY_CTX): void {
@@ -110,4 +110,4 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
 
 #### Uncaught ReferenceError: ctx is not defined
 
-This occurs when an extension's `activate` function expects to be passed a `ctx: sourcegraph.ExtensionContext` argument, but it is used in a version of Sourcegraph prior to 3.0-preview. To fix this issue, the extension author must republish the extension with the workaround described in "[Backcompat for Sourcegraph versions prior to 3.0-preview](activation.md#backcompat-for-sourcegraph-versions-prior-to-3-0-preview)".
+This occurs when an extension's `activate` function expects to be passed a `ctx: sourcegraph.ExtensionContext` argument, but it is used in a version of Sourcegraph prior to 3.0. To fix this issue, the extension author must republish the extension with the workaround described in "[Backcompat for Sourcegraph versions prior to 3.0](activation.md#backcompat-for-sourcegraph-versions-prior-to-3-0-preview)".

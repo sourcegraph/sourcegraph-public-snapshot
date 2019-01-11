@@ -76,10 +76,6 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                         <Link className="font-weight-bold" to={this.props.node.url}>
                             {this.props.node.extensionID}
                         </Link>{' '}
-                        {this.props.node.manifest &&
-                            this.props.node.manifest.title && (
-                                <span className="text-muted">({this.props.node.manifest.title})</span>
-                            )}
                         <div className="text-muted small">
                             <RegistryExtensionSourceBadge extension={this.props.node} showText={true} />
                             {this.props.node.updatedAt && (
@@ -99,17 +95,15 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                                 Manage
                             </Link>
                         )}
-                        {!this.props.node.isLocal &&
-                            this.props.node.remoteURL &&
-                            this.props.node.registryName && (
-                                <a
-                                    href={this.props.node.remoteURL}
-                                    className="btn btn-link text-info btn-sm ml-1"
-                                    title={`View extension on ${this.props.node.registryName}`}
-                                >
-                                    Visit
-                                </a>
-                            )}
+                        {!this.props.node.isLocal && this.props.node.remoteURL && this.props.node.registryName && (
+                            <a
+                                href={this.props.node.remoteURL}
+                                className="btn btn-link text-info btn-sm ml-1"
+                                title={`View extension on ${this.props.node.registryName}`}
+                            >
+                                Visit
+                            </a>
+                        )}
                         {this.props.node.viewerCanAdminister && (
                             <button
                                 className="btn btn-outline-danger btn-sm ml-1"
@@ -173,9 +167,9 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
         return (
             <div className="registry-extensions-page">
                 <PageTitle title="Registry extensions" />
-                <div className="d-flex justify-content-between align-items-center">
-                    <h2 className="mr-sm-2 mb-0">Registry extensions</h2>
-                    <div>
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+					<h2 className="mb-0">Registry extensions</h2>
+					<div>
                         <Link className="btn btn-outline-link mr-sm-2" to="/extensions">
                             View extensions
                         </Link>
@@ -183,15 +177,14 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                             <AddIcon className="icon-inline" /> Publish new extension
                         </Link>
                     </div>
-                </div>
-                <p className="mt-2">
-                    Extensions add features to Sourcegraph and other connected tools (such as editors, code hosts, and
-                    code review tools).
+				</div>
+				<p>
+				Extensions add features to Sourcegraph and other connected tools (such as editors, code hosts, and
+				code review tools).
                 </p>
                 <FilteredConnection<GQL.IRegistryExtension, Pick<RegistryExtensionNodeSiteAdminProps, 'onDidUpdate'>>
-                    className="registry-extensions-list"
+                    className="list-group list-group-flush registry-extensions-list"
                     listComponent="ul"
-                    listClassName="list-group"
                     noun="extension"
                     pluralNoun="extensions"
                     queryConnection={this.queryRegistryExtensions}

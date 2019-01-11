@@ -31,13 +31,6 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "canonicalURLRedirect": {
-          "description":
-            "Enables or disables enforcing that HTTP requests use the externalURL as a prefix, by redirecting other requests to the same request URI on the externalURL. For example, if the externalURL is https://sourcegraph.example.com and the site is also available under the DNS name http://foo, then a request to http://foo/bar would be redirected to https://sourcegraph.example.com/bar. Disabled by default.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "discussions": {
           "description": "Enables the code discussions experiment.",
           "type": "string",
@@ -55,16 +48,6 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
-        },
-        "githubAuth": {
-          "description":
-            "Enables GitHub instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitHub instance to the ` + "`" + `auth.providers` + "`" + ` field in the management console.",
-          "type": "boolean"
-        },
-        "gitlabAuth": {
-          "description":
-            "Enables GitLab instances as a sign-in mechanism. Note: after setting this to true, it is still necessary to add the GitLab instance to the ` + "`" + `auth.providers` + "`" + ` field in the management console.",
-          "type": "boolean"
         }
       }
     },
@@ -230,7 +213,8 @@ const SiteSchemaJSON = `{
       "properties": {
         "url": {
           "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
-          "type": "string"
+          "type": "string",
+          "examples": ["https://phabricator.example.com"]
         },
         "token": {
           "description": "API token for the Phabricator instance.",
@@ -266,7 +250,6 @@ const SiteSchemaJSON = `{
           "description":
             "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
           "type": "string",
-          "default": "https://github.com",
           "not": {
             "type": "string",
             "pattern": "example\\.com"
@@ -325,7 +308,7 @@ const SiteSchemaJSON = `{
       "type": "object",
       "properties": {
         "ttl": {
-          "description": "The TTL of the repository permissions data cache.",
+          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
           "type": "string",
           "default": "3h"
         }
@@ -340,7 +323,6 @@ const SiteSchemaJSON = `{
           "description":
             "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.",
           "type": "string",
-          "default": "https://gitlab.com",
           "pattern": "^https?://",
           "not": {
             "type": "string",
@@ -546,11 +528,13 @@ const SiteSchemaJSON = `{
         "prefix": {
           "description":
             "Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., \"gitolite.example.com/\".\n\nIt is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
-          "type": "string"
+          "type": "string",
+          "examples": ["gitolite.example.com/"]
         },
         "host": {
           "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com).",
-          "type": "string"
+          "type": "string",
+          "examples": ["git@gitolite.example.com"]
         },
         "blacklist": {
           "description":

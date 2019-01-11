@@ -1,4 +1,4 @@
-import { NEVER } from 'rxjs'
+import { BehaviorSubject, NEVER } from 'rxjs'
 import { Services } from './services'
 
 describe('Services', () => {
@@ -10,6 +10,7 @@ describe('Services', () => {
             queryGraphQL: () => NEVER,
             getScriptURLForExtension: scriptURL => scriptURL,
             clientApplication: 'sourcegraph',
+            sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
         })
     })
 })

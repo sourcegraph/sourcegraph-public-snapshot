@@ -45,18 +45,18 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
         return (
             <div className="user-settings-tokens-page">
                 <PageTitle title="Access tokens - Admin" />
-                <div className="d-flex justify-content-between align-items-center">
-                    <h2>Access tokens</h2>
-                    <Link
-                        className="btn btn-primary ml-2"
-                        to={`${userURL(this.props.authenticatedUser.username)}/account/tokens/new`}
-                    >
-                        <AddIcon className="icon-inline" /> Generate access token
-                    </Link>
-                </div>
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+					<h2 className="mb-0">Access tokens</h2>
+					<Link
+						className="btn btn-primary ml-2"
+						to={`${userURL(this.props.authenticatedUser.username)}/account/tokens/new`}
+					>
+						<AddIcon className="icon-inline" /> Generate access token
+					</Link>
+				</div>
                 <p>Tokens may be used to access the Sourcegraph API with the full privileges of the token's creator.</p>
                 <FilteredAccessTokenConnection
-                    listClassName="list-group list-group-flush"
+					className="list-group list-group-flush mt-3"
                     noun="access token"
                     pluralNoun="access tokens"
                     queryConnection={this.queryAccessTokens}

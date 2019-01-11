@@ -56,18 +56,6 @@ export interface PlatformContext {
     ): Subscribable<GraphQLResult<R>>
 
     /**
-     * Sends a batch of LSP requests to the Sourcegraph LSP gateway API and returns the result.
-     *
-     * @todo This only remains for backcompat in the browser extension's communication with old Sourcegraph
-     * instances pre-3.0.
-     * @param requests An array of LSP requests (with methods `initialize`, the (optional) request, `shutdown`,
-     *                 `exit`).
-     * @return Observable that emits the result and then completes, or an error if the request fails. The value is
-     *         an array of LSP responses.
-     */
-    backcompatQueryLSP(requests: object[]): Subscribable<object[]>
-
-    /**
      * Forces the currently displayed tooltip, if any, to update its contents.
      */
     forceUpdateTooltip(): void
@@ -132,11 +120,17 @@ export interface PlatformContext {
      * Whether to log all messages sent between the client and the extension host.
      */
     traceExtensionHostCommunication: Subscribable<boolean> & NextObserver<boolean>
+
+    /**
+     * The URL to the Parcel dev server for a single extension.
+     * Used for extension development purposes, to run an extension that isn't on the registry.
+     */
+    sideloadedExtensionURL: Subscribable<string | null> & NextObserver<string | null>
 }
 
 /**
  * React partial props for components needing the {@link PlatformContext}.
  */
-export interface PlatformContextProps {
-    platformContext: PlatformContext
+export interface PlatformContextProps<K extends keyof PlatformContext = keyof PlatformContext> {
+    platformContext: Pick<PlatformContext, K>
 }

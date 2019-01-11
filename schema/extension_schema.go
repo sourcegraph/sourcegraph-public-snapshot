@@ -14,7 +14,7 @@ type SourcegraphExtensionManifest struct {
 	Icon             string                  `json:"icon,omitempty"`
 	Readme           string                  `json:"readme,omitempty"`
 	Repository       *ExtensionRepository    `json:"repository,omitempty"`
-	Title            string                  `json:"title,omitempty"`
+	Wip              bool                    `json:"wip,omitempty"`
 	Url              string                  `json:"url"`
 }
 

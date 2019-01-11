@@ -19,7 +19,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
+    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
     "prepublishOnly": "yarn run tslint"
   },
   "dependencies": {

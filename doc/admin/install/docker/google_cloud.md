@@ -36,7 +36,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 
 - Create your VM, then navigate to its public IP address.
 
-- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. If `externalURL` has the HTTPS protocol then Sourcegraph will get a certificate via [Let's Encrypt](https://letsencrypt.org/). For more information or alternative methods view our documentation on [TLS](../../tls_ssl.md). (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
+- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
 
 ---
 
@@ -56,6 +56,6 @@ docker run -d ... sourcegraph/server:X.Y.Z
 
 The Docker container has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the container, you can [use external databases](../../external_database.md) for persistence, such as Google Cloud's [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/) and [Cloud Memorystore](https://cloud.google.com/memorystore/).
 
-The [site configuration JSON](../../site_config/index.md) is not yet stored in the database, so you must manually back it up. This will no longer be necessary in [Sourcegraph 3.0 preview](https://github.com/sourcegraph/about/pull/36). <!-- TODO: remove this when https://github.com/sourcegraph/about/pull/36 is merged -->
+The [site configuration JSON](../../site_config/index.md) is not yet stored in the database, so you must manually back it up. This will no longer be necessary in [Sourcegraph 3.0](https://github.com/sourcegraph/about/pull/36). <!-- TODO: remove this when https://github.com/sourcegraph/about/pull/36 is merged -->
 
 > NOTE: Use of external databases requires [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).

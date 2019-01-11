@@ -36,21 +36,25 @@ Configuration and deployment:
 
 ### 3.1 (week of 2019-02-04)
 
-- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
-- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
-- Migration paths from 2.x to 3.x
-- [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
-- [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
-- [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
-- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
+This release will be focused on addressing tech debt, fixing bugs, and improving documentation.
+
+### 3.2 (week of 2019-03-04)
+
+Needs planning.
 
 ---
 
 ### Future
 
+Search
+
+- [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
+- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
+
 Code intelligence
 
+- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
+- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
 - [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
 - [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981) (followup from 3.0)
@@ -70,6 +74,9 @@ Sourcegraph extensions
 
 Other
 
+- [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
+- [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
+- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 - Enhanced notification preferences
 - [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)
 - API access logging

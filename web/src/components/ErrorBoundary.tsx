@@ -1,10 +1,10 @@
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import React from 'react'
-import { asError, ErrorLike } from '../../../shared/src/util/errors'
+import { asError } from '../../../shared/src/util/errors'
 import { HeroPage } from './HeroPage'
 
 interface State {
-    error?: ErrorLike
+    error?: Error
 }
 
 /**
@@ -33,7 +33,9 @@ export class ErrorBoundary extends React.PureComponent<{}, State> {
                                 Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it,
                                 contact your site admin or Sourcegraph support.
                             </p>
-                            <p>Open your browser's JavaScript console for details.</p>
+                            <p>
+                                <code>{this.state.error.message}</code>
+                            </p>
                         </div>
                     }
                 />

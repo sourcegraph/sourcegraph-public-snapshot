@@ -1,6 +1,5 @@
 import { FormattingOptions } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { OpenIDConnectAuthProvider, SAMLAuthProvider } from '../schema/critical.schema'
 import { SlackNotificationsConfig } from '../schema/settings.schema'
 import { ConfigInsertionFunction } from '../settings/MonacoSettingsEditor'
 
@@ -8,36 +7,6 @@ const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
     insertSpaces: true,
     tabSize: 2,
-}
-
-const addGSuiteOIDCAuthProvider: ConfigInsertionFunction = config => {
-    const value: OpenIDConnectAuthProvider = {
-        type: 'openidconnect',
-        issuer: 'https://accounts.google.com',
-        clientID: '<see documentation: https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials>',
-        clientSecret: '<see same documentation as clientID>',
-        requireEmailDomain: "<your company's email domain (example: mycompany.com)>",
-    }
-    return {
-        edits: [...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions)],
-    }
-}
-
-const addSAMLAuthProvider: ConfigInsertionFunction = config => {
-    const value: SAMLAuthProvider = {
-        type: 'saml',
-        identityProviderMetadataURL: '<see https://docs.sourcegraph.com/admin/auth/#saml>',
-    }
-    return {
-        edits: [...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions)],
-    }
-}
-
-const addLicenseKey: ConfigInsertionFunction = config => {
-    const value =
-        '<input a license key generated from /site-admin/license. See https://about.sourcegraph.com/pricing for more details>'
-    const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
-    return { edits, selectText: value }
 }
 
 const addSearchScopeToSettings: ConfigInsertionFunction = config => {
@@ -69,11 +38,5 @@ export const settingsActions: EditorAction[] = [
 ]
 
 export const siteConfigActions: EditorAction[] = [
-    {
-        id: 'sourcegraph.site.addGSuiteOIDCAuthProvider',
-        label: 'Add G Suite user auth',
-        run: addGSuiteOIDCAuthProvider,
-    },
-    { id: 'sourcegraph.site.addSAMLAUthProvider', label: 'Add SAML user auth', run: addSAMLAuthProvider },
-    { id: 'sourcegraph.site.addLicenseKey', label: 'Add license key', run: addLicenseKey },
+
 ]

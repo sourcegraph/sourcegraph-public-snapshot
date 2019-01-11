@@ -1,13 +1,20 @@
+import H from 'history'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
-import { ExtensionsEmptyState } from './ExtensionsEmptyState'
 import { ExtensionsList } from './ExtensionsList'
 
-interface Props extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {}
+interface Props
+    extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject'>,
+        PlatformContextProps<'settings' | 'updateSettings' | 'queryGraphQL'>,
+        SettingsCascadeProps {
+    location: H.Location
+    history: H.History
+}
 
 /** A page that displays overview information about the available extensions. */
 export class ExtensionsOverviewPage extends React.PureComponent<Props> {
@@ -17,7 +24,7 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="container px-2 px-xl-0">
+            <div className="container">
                 <PageTitle title="Extensions" />
                 <div className="py-3">
                     {!this.props.authenticatedUser && (
@@ -30,7 +37,6 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
                     )}
                     <ExtensionsList
                         {...this.props}
-                        emptyElement={<ExtensionsEmptyState />}
                         subject={this.props.subject}
                         settingsCascade={this.props.settingsCascade}
                     />

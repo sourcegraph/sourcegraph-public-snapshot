@@ -15,7 +15,7 @@ Sourcegraph is a self-hosted code search and intelligence tool that helps develo
 
 - Sourcegraph supports [searching any revision](../../user/search/index.md) (not just specific branches) and does not require waiting for periodic reindexing.
 - Sourcegraph's [query syntax](../../user/search/queries.md), user interface, and [integrations](../../integration/index.md) are superior and easier to use.
-- Sourcegraph's [code intelligence](../../extensions/language_servers/index.md), has better language support (hover tooltips, definitions, references, implementations, etc.) and is based on the Language Server Protocol standard.
+- Sourcegraph's [code intelligence](../../user/code_intelligence/index.md), has better language support (hover tooltips, definitions, references, implementations, etc.) and is based on the Language Server Protocol standard.
 - The [Sourcegraph API](../../api/graphql/index.md) is more powerful, better documented, and easier to use than OpenGrok's API.
 - Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/kubernetes_cluster.md)).
 
@@ -86,12 +86,7 @@ Like Oracle OpenGrok, Sourcegraph is self-hosted. You control who can access it.
 - [OpenID Connect user authentication](../auth/index.md#openid-connect) and [SAML user authentication](../auth/index.md#saml) (for Google/G Suite accounts, Okta, OneLogin, etc.)
 - [HTTP user authentication proxies](../auth/index.md#http-authentication-proxies)
 - [Builtin username-password authentication](../auth/index.md#builtin-authentication)
-- [TLS/SSL](../tls_ssl.md) via provided certs/keys, Let's Encrypt, or a reverse proxy
-
-For more information, see the following Sourcegraph documentation pages:
-
-- "[User authentication](../auth/index.md)"
-- "[TLS/SSL](../tls_ssl.md)"
+- [TLS/SSL and other HTTP/HTTPS configuration](../nginx.md)
 
 ### Rolling out Sourcegraph organization-wide
 

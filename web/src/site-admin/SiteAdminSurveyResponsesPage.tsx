@@ -294,13 +294,13 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
         return (
             <div className="site-admin-survey-responses-page">
                 <PageTitle title="Survey Responses - Admin" />
-                <h2>Survey responses</h2>
-                <p>
-                    After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
-                    it that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some
-                    feedback. Responses are visible below (and are also sent to Sourcegraph).
-                </p>
-
+				<div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+					<h2 className="mb-0">Survey responses</h2>
+				</div>
+                <p>After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
+				it that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some
+				feedback. Responses are visible below (and are also sent to Sourcegraph).</p>
+				
                 <SiteAdminSurveyResponsesSummary />
 
                 <h3>Responses</h3>

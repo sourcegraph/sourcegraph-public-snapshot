@@ -82,16 +82,6 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			}
 			remote = append(remote, xs...)
 		}
-		// Filter out WIP extensions from the remote extensions list if WIP extensions are excluded.
-		if !r.args.IncludeWIP {
-			keep := remote[:0]
-			for _, x := range remote {
-				if !IsWorkInProgressExtension(x.Manifest) {
-					keep = append(keep, x)
-				}
-			}
-			remote = keep
-		}
 
 		r.registryExtensions = make([]graphqlbackend.RegistryExtension, len(local)+len(remote))
 		copy(r.registryExtensions, local)
