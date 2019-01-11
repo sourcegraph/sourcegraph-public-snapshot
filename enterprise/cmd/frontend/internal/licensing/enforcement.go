@@ -131,7 +131,7 @@ func init() {
 				if info == nil {
 					message = fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users. A site admin must purchase a subscription at https://sourcegraph.com/user/subscriptions/new. Enter the license key in the Sourcegraph management console.", noLicenseMaximumAllowedUserCount)
 				} else {
-					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Enter the license key in the Sourcegraph management console."
+					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Enter the license key in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console)."
 				}
 				return errcode.NewPresentationError(message)
 			}
