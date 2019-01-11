@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { IFileDiffConnection } from '../../../../../shared/src/graphql/schema'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffInternalIDs'
 import { OpenDiffInSourcegraphProps } from '../repo'
@@ -32,6 +32,10 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
+            // Fetch all fileDiffs in a given comparison. We rely on queryRepositoryComparisonFileDiffs
+            // being memoized so that there is at most one network request when viewing
+            // a commit/comparison on GitHub to get this information, despite this request occuring in
+            // this component, which appears for each file in a diff.
             this.componentUpdates
                 .pipe(
                     switchMap(props =>
@@ -39,12 +43,18 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
                             repo: this.props.openProps.repoName,
                             base: this.props.openProps.commit.baseRev,
                             head: this.props.openProps.commit.headRev,
-                        })
-                    ),
-                    map(fileDiff => ({
-                        ...fileDiff,
-                        nodes: fileDiff.nodes.filter(node => node.oldPath === this.props.openProps.filePath),
-                    }))
+                        }).pipe(
+                            map(fileDiff => ({
+                                ...fileDiff,
+                                // Only include the relevant file diff.
+                                nodes: fileDiff.nodes.filter(node => node.oldPath === this.props.openProps.filePath),
+                            })),
+                            catchError(err => {
+                                console.error(err)
+                                return [undefined]
+                            })
+                        )
+                    )
                 )
                 .subscribe(result => {
                     this.setState({ fileDiff: result })
@@ -66,11 +76,18 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
 
         if (this.state.fileDiff) {
             if (this.state.fileDiff.nodes.length > 0) {
-                // Go to the specfic file in the commit diff.
-                return `${urlToCommit}#diff-${this.state.fileDiff.nodes[0].internalID}`
+                // If the total number of files in the diff exceeds 25 (the default shown on commit pages),
+                // make sure the commit page loads all files to make sure we can get to the file.
+                const first =
+                    this.state.fileDiff.totalCount && this.state.fileDiff.totalCount > 25
+                        ? `&first=${this.state.fileDiff.totalCount}`
+                        : ''
+
+                // Go to the specfic file in the commit diff using the internalID of the matched file diff.
+                return `${urlToCommit}${first}#diff-${this.state.fileDiff.nodes[0].internalID}`
             }
         }
-
+        // If the request for fileDiffs fails, and we can't get the internal ID, just go to the comparison page.
         return urlToCommit
     }
 }
