@@ -205,7 +205,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         const { children, ...props } = this.props
 
         return (
-            <ErrorBoundary>
+            <ErrorBoundary location={null}>
                 <ShortcutProvider>
                     <TelemetryContext.Provider value={eventLogger}>
                         <BrowserRouter key={0}>
