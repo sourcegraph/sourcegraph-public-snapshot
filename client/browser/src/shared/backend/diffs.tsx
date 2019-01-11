@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { memoizeObservable } from '../../shared/util/memoize'
+import { memoizeObservable } from '../util/memoize'
 import { createAggregateError } from './errors'
 import { queryGraphQL } from './graphql'
 
@@ -17,14 +17,12 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
             request: `
             query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
                 repository(name: $repo) {
-                    ... on Repository {
-                        comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first) {
-                                nodes {
-                                    ...FileDiffFields
-                                }
-                                totalCount
+                    comparison(base: $base, head: $head) {
+                        fileDiffs(first: $first) {
+                            nodes {
+                                ...FileDiffFields
                             }
+                            totalCount
                         }
                     }
                 }

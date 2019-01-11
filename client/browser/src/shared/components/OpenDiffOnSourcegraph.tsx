@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { IFileDiffConnection } from '../../../../../shared/src/graphql/schema'
-import { queryRepositoryComparisonFileDiffs } from '../backend/diffInternalIDs'
+import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { Button } from './Button'
@@ -74,18 +74,16 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
             props.commit.headRev
         }?utm_source=${getPlatformName()}`
 
-        if (this.state.fileDiff) {
-            if (this.state.fileDiff.nodes.length > 0) {
-                // If the total number of files in the diff exceeds 25 (the default shown on commit pages),
-                // make sure the commit page loads all files to make sure we can get to the file.
-                const first =
-                    this.state.fileDiff.totalCount && this.state.fileDiff.totalCount > 25
-                        ? `&first=${this.state.fileDiff.totalCount}`
-                        : ''
+        if (this.state.fileDiff && this.state.fileDiff.nodes.length > 0) {
+            // If the total number of files in the diff exceeds 25 (the default shown on commit pages),
+            // make sure the commit page loads all files to make sure we can get to the file.
+            const first =
+                this.state.fileDiff.totalCount && this.state.fileDiff.totalCount > 25
+                    ? `&first=${this.state.fileDiff.totalCount}`
+                    : ''
 
-                // Go to the specfic file in the commit diff using the internalID of the matched file diff.
-                return `${urlToCommit}${first}#diff-${this.state.fileDiff.nodes[0].internalID}`
-            }
+            // Go to the specfic file in the commit diff using the internalID of the matched file diff.
+            return `${urlToCommit}${first}#diff-${this.state.fileDiff.nodes[0].internalID}`
         }
         // If the request for fileDiffs fails, and we can't get the internal ID, just go to the comparison page.
         return urlToCommit
