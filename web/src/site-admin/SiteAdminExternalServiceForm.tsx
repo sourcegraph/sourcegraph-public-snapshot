@@ -5,8 +5,8 @@ import * as React from 'react'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
-import { Dropdown } from '../components/Dropdown'
 import { Form } from '../components/Form'
+import { Select } from '../components/Select'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { ALL_EXTERNAL_SERVICES } from './externalServices'
 
@@ -43,21 +43,23 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         disabled={this.props.loading}
                     />
                 </div>
-				<label htmlFor="external-service-page-form-kind">Kind</label>
-				<Dropdown
-					id="external-service-page-form-kind"
-					onChange={this.onKindChange}
-					required={true}
-					disabled={this.props.loading || this.props.mode === 'edit'}
-					value={this.props.input.kind}
-				>
-					{ALL_EXTERNAL_SERVICES.map(s => (
-						<option key={s.kind} value={s.kind}>
-							{s.displayName}
-						</option>
-					))}
-				</Dropdown>
-                <div>
+                <div className="form-group">
+                    <label htmlFor="external-service-page-form-kind">Kind</label>
+                    <Select
+                        id="external-service-page-form-kind"
+                        onChange={this.onKindChange}
+                        required={true}
+                        disabled={this.props.loading || this.props.mode === 'edit'}
+                        value={this.props.input.kind}
+                    >
+                        {ALL_EXTERNAL_SERVICES.map(s => (
+                            <option key={s.kind} value={s.kind}>
+                                {s.displayName}
+                            </option>
+                        ))}
+                    </Select>
+                </div>
+                <div className="form-group">
                     <DynamicallyImportedMonacoSettingsEditor
                         // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
                         // if it thinks the config is dirty. We want to always replace the config if the kind changes

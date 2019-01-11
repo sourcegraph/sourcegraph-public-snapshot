@@ -69,21 +69,19 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
                 </div>
                 {(this.props.node.reason || this.props.node.better) && (
                     <dl className="mt-3">
-                        {this.props.node.reason &&
-                            this.props.node.reason !== '' && (
-                                <>
-                                    <dt>What is the most important reason for the score you gave Sourcegraph?</dt>
-                                    <dd>{this.props.node.reason}</dd>
-                                </>
-                            )}
+                        {this.props.node.reason && this.props.node.reason !== '' && (
+                            <>
+                                <dt>What is the most important reason for the score you gave Sourcegraph?</dt>
+                                <dd>{this.props.node.reason}</dd>
+                            </>
+                        )}
                         {this.props.node.reason && this.props.node.better && <div className="mt-2" />}
-                        {this.props.node.better &&
-                            this.props.node.better !== '' && (
-                                <>
-                                    <dt>What could Sourcegraph do to provide a better product?</dt>
-                                    <dd>{this.props.node.better}</dd>
-                                </>
-                            )}
+                        {this.props.node.better && this.props.node.better !== '' && (
+                            <>
+                                <dt>What could Sourcegraph do to provide a better product?</dt>
+                                <dd>{this.props.node.better}</dd>
+                            </>
+                        )}
                     </dl>
                 )}
             </li>
@@ -167,24 +165,22 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                                         <ScoreBadge score={response.score} />
                                         <br />
                                         {(response.reason || response.better) && <div className="mt-2" />}
-                                        {response.reason &&
-                                            response.reason !== '' && (
-                                                <>
-                                                    <dt>
-                                                        What is the most important reason for the score you gave
-                                                        Sourcegraph?
-                                                    </dt>
-                                                    <dd>{response.reason}</dd>
-                                                </>
-                                            )}
+                                        {response.reason && response.reason !== '' && (
+                                            <>
+                                                <dt>
+                                                    What is the most important reason for the score you gave
+                                                    Sourcegraph?
+                                                </dt>
+                                                <dd>{response.reason}</dd>
+                                            </>
+                                        )}
                                         {response.reason && response.better && <div className="mt-2" />}
-                                        {response.better &&
-                                            response.better !== '' && (
-                                                <>
-                                                    <dt>What could Sourcegraph do to provide a better product?</dt>
-                                                    <dd>{response.better}</dd>
-                                                </>
-                                            )}
+                                        {response.better && response.better !== '' && (
+                                            <>
+                                                <dt>What could Sourcegraph do to provide a better product?</dt>
+                                                <dd>{response.better}</dd>
+                                            </>
+                                        )}
                                     </div>
                                 </dl>
                             ))}
@@ -227,8 +223,8 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
             this.state.summary.netPromoterScore > 0
                 ? 'text-success'
                 : this.state.summary.netPromoterScore < 0
-                    ? 'text-danger'
-                    : 'text-info'
+                ? 'text-danger'
+                : 'text-info'
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
         return (
             <div className="msite-admin-survey-responses-summary mb-2">
@@ -294,13 +290,15 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
         return (
             <div className="site-admin-survey-responses-page">
                 <PageTitle title="Survey Responses - Admin" />
-				<div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-					<h2 className="mb-0">Survey responses</h2>
-				</div>
-                <p>After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
-				it that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some
-				feedback. Responses are visible below (and are also sent to Sourcegraph).</p>
-				
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                    <h2 className="mb-0">Survey responses</h2>
+                </div>
+                <p>
+                    After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
+                    it that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some
+                    feedback. Responses are visible below (and are also sent to Sourcegraph).
+                </p>
+
                 <SiteAdminSurveyResponsesSummary />
 
                 <h3>Responses</h3>

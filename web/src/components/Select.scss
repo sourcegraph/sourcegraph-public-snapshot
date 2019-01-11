@@ -1,0 +1,31 @@
+.select {
+    position: relative;
+
+    &__picker {
+        appearance: none;
+
+        &:focus {
+            color: var(--input-color);
+            background-color: var(--input-bg);
+            border-color: #1c7ed6;
+            outline: 0;
+            box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+        }
+
+        &:disabled {
+            &,
+            ~ .select__icon {
+                opacity: 0.5;
+            }
+        }
+    }
+
+    &__icon {
+        display: block;
+        pointer-events: none;
+        right: 0.5rem;
+        top: 0.25rem;
+        height: 1.625rem;
+        position: absolute;
+    }
+}
