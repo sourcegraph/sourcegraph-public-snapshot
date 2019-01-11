@@ -31,12 +31,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Code host configuration has moved out of the site config JSON into the "External services" area of the site admin web UI. Sourcegraph instances will automatically perform a one time migration of existing data in the site config JSON. After the migration these keys can be safely deleted from the site config JSON: `awsCodeCommit`, `bitbucketServer`, `github`, `gitlab`, `gitolite`, and `phabricator`.
-- The top-level `repos.list` site configuration was removed in favour of each code-host's equivalent options,
-  now configured via the new _External Services UI_ available at `/site-admin/external-services`. Equivalent options in code hosts configuration:
-  - Github via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
-  - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
-  - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
-  - [Other external services](https://docs.sourcegraph.com/admin/repo/add_from_other_external_services)
 - Site and user usage statistics are now visible to all users. Previously only site admins (and users, for their own usage statistics) could view this information. The information consists of aggregate counts of actions such as searches, page views, etc.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
 - The `appURL` site configuration option was renamed to `externalURL`.
@@ -60,7 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
   - Github via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
   - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
   - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
-  - [Other code hosts](https://github.com/sourcegraph/sourcegraph/issues/1324)
+  - [Other external services](https://docs.sourcegraph.com/admin/repo/add_from_other_external_services)
 - Removed the `httpStrictTransportSecurity` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 - Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 - Removed the `tls.cert` and `tls.key` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
