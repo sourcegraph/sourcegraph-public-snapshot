@@ -31,7 +31,7 @@ func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Han
 		// instance, and it's an app request, redirect to signin immediately. The user wouldn't be
 		// able to do anything else anyway; there's no point in showing them a signin screen with
 		// just a single signin option.
-		if pc := getExactlyOneOAuthProvider(); pc != nil && !isAPIHandler {
+		if pc := getExactlyOneOAuthProvider(); pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix {
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
 			v.Set("pc", pc.ConfigID().ID)
