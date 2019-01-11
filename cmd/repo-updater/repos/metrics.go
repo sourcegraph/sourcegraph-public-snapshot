@@ -70,13 +70,6 @@ var (
 		Help:      "Time spent syncing a single external service of kind OTHER",
 	}, []string{"id"})
 
-	repoListUpdateTime = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_repolist_sync",
-		Help:      "The time the last repository sync loop completed",
-	})
-
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
