@@ -11,7 +11,7 @@ describe('ErrorBoundary', () => {
         expect(
             renderer
                 .create(
-                    <ErrorBoundary>
+                    <ErrorBoundary location={null}>
                         <ThrowError />
                     </ErrorBoundary>
                 )
@@ -22,7 +22,7 @@ describe('ErrorBoundary', () => {
         expect(
             renderer
                 .create(
-                    <ErrorBoundary>
+                    <ErrorBoundary location={null}>
                         <span>hello</span>
                     </ErrorBoundary>
                 )

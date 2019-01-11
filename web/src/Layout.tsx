@@ -99,7 +99,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             )}
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
-            <ErrorBoundary>
+            <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                     <Switch>
                         {props.routes.map(route => {
