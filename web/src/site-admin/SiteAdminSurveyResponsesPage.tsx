@@ -300,7 +300,7 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                 <p>After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
 				it that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some
 				feedback. Responses are visible below (and are also sent to Sourcegraph).</p>
-				
+
                 <SiteAdminSurveyResponsesSummary />
 
                 <h3>Responses</h3>
