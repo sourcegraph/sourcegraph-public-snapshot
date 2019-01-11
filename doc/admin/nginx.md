@@ -47,3 +47,7 @@ add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" alway
 ```
 
 See [`add_header` documentation](https://nginx.org/en/docs/http/ngx_http_headers_module.html#add_header) and "[Configuring HSTS in nginx](https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/)" for more details.
+
+## nginx for Sourcegraph Cluster (Kubernetes)
+
+We use [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster. Refer to the [deploy-sourcegraph Configuration](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md) documentation for more information.
