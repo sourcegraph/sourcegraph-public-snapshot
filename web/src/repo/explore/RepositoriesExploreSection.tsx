@@ -95,7 +95,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                                         <h3 className="mb-0 text-truncate">
                                             <RepoLink to={null} repoName={repo.name} />
                                         </h3>
-                                        <span className="text-truncate">{repo.description || <>&nbsp;</>}</span>
+                                        <span>{repo.description || <>&nbsp;</>}</span>
                                     </Link>
                                 )
                             )}
