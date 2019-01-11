@@ -20,7 +20,7 @@ func init() {
 			info, err := GetConfiguredProductLicenseInfo()
 			if err != nil {
 				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
-				WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the Sourcegraph management console.")
+				WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console).")
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
