@@ -21,6 +21,7 @@ events {
 
 http {
     server_tokens off;
+    client_max_body_size 150M;
 
     access_log off;
     upstream backend {
