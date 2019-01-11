@@ -102,7 +102,7 @@ require (
 	github.com/shurcooL/httpgzip v0.0.0-20180522190206-b1c53ac65af9 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
-	github.com/sirupsen/logrus v1.0.6 // indirect
+	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/docsite v0.0.0-20181231165911-11f5f871132b
