@@ -5,9 +5,9 @@
 package main
 
 import (
+	"time"
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"log"
 	"net"
 	"net/http"
@@ -16,6 +16,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -58,7 +59,10 @@ func main() {
 	synced := make(chan *protocol.RepoInfo)
 
 	// Other external services syncing thread. Repo updates will be sent on the given channel.
-	syncer := repos.NewOtherReposSyncer(api.InternalClient, synced)
+	syncer := repos.NewOtherReposSyncer(
+		repos.NewInternalAPI(10 * time.Second),
+		synced,
+	)
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{OtherReposSyncer: syncer}
