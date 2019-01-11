@@ -127,6 +127,7 @@ export class MonacoEditor extends React.Component<Props, {}> {
             scrollBeyondLastLine: false,
             quickSuggestions: true,
             quickSuggestionsDelay: 200,
+            wordBasedSuggestions: false,
             wordWrap: 'on',
             theme: 'vs-dark',
             model,
