@@ -139,7 +139,9 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	case urlPath == extensionsPath:
 		query := r.URL.Query().Get("q")
 		ev.AddField("query", query)
-		xs, err := registryList(r.Context(), dbExtensionsListOptions{Query: query})
+		var opt dbExtensionsListOptions
+		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(query)
+		xs, err := registryList(r.Context(), opt)
 		if err != nil {
 			return err
 		}
