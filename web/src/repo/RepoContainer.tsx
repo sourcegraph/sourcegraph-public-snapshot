@@ -272,7 +272,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     }
                     {...this.state.repoHeaderContributionsLifecycleProps}
                 />
-                <ErrorBoundary>
+                <ErrorBoundary location={this.props.location}>
                     {this.state.repoOrError.enabled || isSettingsPage ? (
                         <Switch>
                             {[

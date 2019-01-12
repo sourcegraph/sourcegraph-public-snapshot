@@ -181,13 +181,12 @@ export class UserAccountEmailsPage extends React.Component<Props, State> {
             <div className="user-settings-emails-page">
                 <PageTitle title="Emails" />
                 <h2>Emails</h2>
-                {this.state.siteFlags &&
-                    !this.state.siteFlags.sendsEmailVerificationEmails && (
-                        <div className="alert alert-warning mt-2">
-                            Sourcegraph is not configured to send email verifications. Newly added email addresses must
-                            be manually verified by a site admin.
-                        </div>
-                    )}
+                {this.state.siteFlags && !this.state.siteFlags.sendsEmailVerificationEmails && (
+                    <div className="alert alert-warning mt-2">
+                        Sourcegraph is not configured to send email verifications. Newly added email addresses must be
+                        manually verified by a site admin.
+                    </div>
+                )}
                 <FilteredConnection<GQL.IUserEmail, Pick<UserEmailNodeProps, 'user' | 'onDidUpdate'>>
                     className="list-group list-group-flush mt-3"
                     noun="email address"

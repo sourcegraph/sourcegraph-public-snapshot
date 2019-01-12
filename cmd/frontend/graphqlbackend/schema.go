@@ -1053,6 +1053,7 @@ enum ExternalServiceKind {
     GITLAB
     GITOLITE
     PHABRICATOR
+    OTHER
 }
 
 # A configured external service.
@@ -2710,13 +2711,6 @@ type SiteConfiguration {
     # This includes both JSON Schema validation problems and other messages that perform more advanced checks
     # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
-    # Whether the viewer can update the site configuration (using the
-    # updateSiteConfiguration mutation).
-    canUpdate: Boolean!
-    # The source of the configuration as a human-readable description,
-    # referring to either the on-disk file path or the SOURCEGRAPH_CONFIG
-    # env var.
-    source: String!
 }
 
 # Information about software updates for Sourcegraph.

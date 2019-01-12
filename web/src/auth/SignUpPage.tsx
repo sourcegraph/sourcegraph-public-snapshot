@@ -120,7 +120,8 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         and{' '}
                         <a href="https://about.sourcegraph.com/privacy" target="_blank">
                             Privacy Policy
-                        </a>.
+                        </a>
+                        .
                     </small>
                 )}
             </Form>

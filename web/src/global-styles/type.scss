@@ -1,9 +1,9 @@
 @import 'bootstrap/scss/type';
 
-// Defined in https://www.figma.com/file/YVJp5yV7Bz8sueXekODPDEjd/styleguide-atoms?node-id=962%3A0
+// Defined in https://zpl.io/2jv9lx6
 
-$body-color-light: #2b3750;
-$body-color-dark: #f2f4f8;
+$body-color-light: $gray-19;
+$body-color-dark: $white;
 
 .theme-light {
     --body-color: #{$body-color-light};

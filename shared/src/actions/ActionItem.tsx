@@ -59,11 +59,9 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-export interface ActionItemComponentProps {
-    extensionsController:
-        | ExtensionsControllerProps['extensionsController']
-        | { executeCommand: (params: ExecuteCommandParams) => Promise<any> }
-    platformContext: PlatformContextProps['platformContext'] | { forceUpdateTooltip: () => void }
+export interface ActionItemComponentProps
+    extends ExtensionsControllerProps<'executeCommand'>,
+        PlatformContextProps<'forceUpdateTooltip'> {
     location: H.Location
 }
 
@@ -160,6 +158,20 @@ export class ActionItem extends React.PureComponent<Props, State> {
             tooltip = this.props.action.description
         }
 
+        const variantClassName = this.props.variant === 'actionItem' ? 'action-item--variant-action-item' : ''
+
+        // Simple display if the action is a noop.
+        if (!this.props.action.command) {
+            return (
+                <span
+                    data-tooltip={tooltip}
+                    className={`action-item ${this.props.className || ''} ${variantClassName}`}
+                >
+                    {content}
+                </span>
+            )
+        }
+
         const showLoadingSpinner = this.props.showLoadingSpinnerDuringExecution && this.state.actionOrError === LOADING
 
         return (
@@ -175,7 +187,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
                 }
                 className={`action-item ${this.props.className || ''} ${
                     showLoadingSpinner ? 'action-item--loading' : ''
-                } ${this.props.variant === 'actionItem' ? 'action-item--variant-action-item' : ''}`}
+                } ${variantClassName}`}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
                 to={
@@ -198,6 +210,12 @@ export class ActionItem extends React.PureComponent<Props, State> {
 
     public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
         const action = (isAltEvent(e) && this.props.altAction) || this.props.action
+
+        if (!action.command) {
+            // Unexpectedly arrived here; noop actions should not have event handlers that trigger
+            // this.
+            return
+        }
 
         // Record action ID (but not args, which might leak sensitive data).
         this.context.log(action.id)

@@ -1,9 +1,9 @@
 import { decode } from 'he'
-import marked from 'marked'
 import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'
 import { ResultContainer } from '../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { SearchResultMatch } from './SearchResultMatch'
 
 export interface HighlightRange {
@@ -37,7 +37,7 @@ export class SearchResult extends React.Component<Props> {
                 dangerouslySetInnerHTML={{
                     __html: this.props.result.label.html
                         ? decode(this.props.result.label.html)
-                        : marked(this.props.result.label.text, { gfm: true, breaks: true, sanitize: true }),
+                        : renderMarkdown(this.props.result.label.text),
                 }}
             />
             {this.props.result.detail && (
@@ -47,7 +47,7 @@ export class SearchResult extends React.Component<Props> {
                         dangerouslySetInnerHTML={{
                             __html: this.props.result.detail.html
                                 ? decode(this.props.result.detail.html)
-                                : marked(this.props.result.detail.text, { gfm: true, breaks: true, sanitize: true }),
+                                : renderMarkdown(this.props.result.detail.text),
                         }}
                     />
                 </>

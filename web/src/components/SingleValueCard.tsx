@@ -14,7 +14,7 @@ export const SingleValueCard: React.FunctionComponent<{
     valueTooltip?: string
     subText?: string
 }> = ({ title, value, subTitle, link, className, valueClassName, valueTooltip, subText }) => (
-    <div className={`card m-2 single-value-card ${className || ''}`}>
+    <div className={`card single-value-card ${className || ''}`}>
         <div className="card-body text-center">
             <h4 className="card-title mb-0">{title}</h4>
             <small className="card-text">{subTitle || ''}</small>

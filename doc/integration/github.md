@@ -10,13 +10,26 @@ Sourcegraph supports syncing repositories from GitHub.com and GitHub Enterprise 
 
 - Read the [GitHub configuration documentation](../admin/site_config/all.md#githubconnection-object) or press Ctrl+Space or Cmd+Space in the configuration editor.
 
-By default, it adds all repositories that are affiliated with the user whose token you provide. 
+By default, it adds all repositories that are affiliated with the user whose token you provide.
+
+If you want to synchronize public repositories from GitHub.com, the repositories need to be explicitly enumerated in the [repos](https://docs.sourcegraph.com/admin/site_config/all#repos-array) field of the GitHub external service configuration.
 
 If you don't want to use an access token from your personal GitHub user account, generate a token for a [machine user](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users) affiliated with the organizations whose repositories you wish to make available.
 
 **GitHub.com rate limits**
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [repo scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
+
+## Authentication
+
+To configure GitHub as an authentication provider (which will enable sign-in via GitHub), see the
+[authentication documentation](../admin/auth.md#github).
+
+## Repository permissions
+
+By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
+GitHub's per-user repository permissions, see "[Repository
+permissions](../admin/repo/permissions.md#github)".
 
 ## Browser extension
 

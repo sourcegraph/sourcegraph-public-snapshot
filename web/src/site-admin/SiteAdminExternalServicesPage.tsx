@@ -12,6 +12,7 @@ import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface ExternalServiceNodeProps {
@@ -73,6 +74,10 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
             .toPromise()
             .then(
                 () => {
+                    // Refresh site flags so that global site alerts
+                    // reflect the latest configuration.
+                    refreshSiteFlags().subscribe(undefined, err => console.error(err))
+
                     this.setState({ loading: false })
                     if (this.props.onDidUpdate) {
                         this.props.onDidUpdate()
@@ -127,13 +132,15 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
         return (
             <div className="site-admin-external-services-page">
                 <PageTitle title="External services - Admin" />
-                <h2>External services</h2>
-                <Link className="btn btn-primary" to="/site-admin/external-services/add">
-                    <AddIcon className="icon-inline" /> Add external service
-                </Link>
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                    <h2 className="mb-0">External services</h2>
+                    <Link className="btn btn-primary" to="/site-admin/external-services/add">
+                        <AddIcon className="icon-inline" /> Add external service
+                    </Link>
+                </div>
                 <p className="mt-2">Manage connections to external services.</p>
                 <FilteredExternalServiceConnection
-                    className="list-group list-group-flush"
+                    className="list-group list-group-flush mt-3"
                     noun="external service"
                     pluralNoun="external services"
                     queryConnection={queryExternalServices}

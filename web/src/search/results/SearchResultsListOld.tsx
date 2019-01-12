@@ -204,7 +204,11 @@ export class SearchResultsListOld extends React.PureComponent<SearchResultsListP
         return (
             <>
                 <h4>Recommendations:</h4>
-                <ul>{recommendations.map((recommendation, i) => <li key={i}>{recommendation}</li>)}</ul>
+                <ul>
+                    {recommendations.map((recommendation, i) => (
+                        <li key={i}>{recommendation}</li>
+                    ))}
+                </ul>
             </>
         )
     }

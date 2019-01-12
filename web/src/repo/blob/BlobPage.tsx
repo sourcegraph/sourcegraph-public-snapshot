@@ -266,48 +266,39 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
-                {this.state.blobOrError.richHTML &&
-                    renderMode === 'rendered' && (
-                        <RenderedFile
-                            dangerousInnerHTML={this.state.blobOrError.richHTML}
-                            location={this.props.location}
-                        />
-                    )}
-                {renderMode === 'code' &&
-                    !this.state.blobOrError.highlight.aborted && (
-                        <Blob
-                            className="blob-page__blob"
-                            repoName={this.props.repoName}
-                            commitID={this.props.commitID}
-                            filePath={this.props.filePath}
-                            content={this.state.blobOrError.content}
-                            html={this.state.blobOrError.highlight.html}
-                            rev={this.props.rev}
-                            mode={this.props.mode}
-                            settingsCascade={this.props.settingsCascade}
-                            platformContext={this.props.platformContext}
-                            extensionsController={this.props.extensionsController}
-                            wrapCode={this.state.wrapCode}
-                            renderMode={renderMode}
-                            location={this.props.location}
-                            history={this.props.history}
-                            isLightTheme={this.props.isLightTheme}
-                        />
-                    )}
-                {!this.state.blobOrError.richHTML &&
-                    this.state.blobOrError.highlight.aborted && (
-                        <div className="blob-page__aborted">
-                            <div className="alert alert-info">
-                                Syntax-highlighting this file took too long. &nbsp;
-                                <button
-                                    onClick={this.onExtendHighlightingTimeoutClick}
-                                    className="btn btn-sm btn-primary"
-                                >
-                                    Try again
-                                </button>
-                            </div>
+                {this.state.blobOrError.richHTML && renderMode === 'rendered' && (
+                    <RenderedFile dangerousInnerHTML={this.state.blobOrError.richHTML} location={this.props.location} />
+                )}
+                {renderMode === 'code' && !this.state.blobOrError.highlight.aborted && (
+                    <Blob
+                        className="blob-page__blob"
+                        repoName={this.props.repoName}
+                        commitID={this.props.commitID}
+                        filePath={this.props.filePath}
+                        content={this.state.blobOrError.content}
+                        html={this.state.blobOrError.highlight.html}
+                        rev={this.props.rev}
+                        mode={this.props.mode}
+                        settingsCascade={this.props.settingsCascade}
+                        platformContext={this.props.platformContext}
+                        extensionsController={this.props.extensionsController}
+                        wrapCode={this.state.wrapCode}
+                        renderMode={renderMode}
+                        location={this.props.location}
+                        history={this.props.history}
+                        isLightTheme={this.props.isLightTheme}
+                    />
+                )}
+                {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (
+                    <div className="blob-page__aborted">
+                        <div className="alert alert-info">
+                            Syntax-highlighting this file took too long. &nbsp;
+                            <button onClick={this.onExtendHighlightingTimeoutClick} className="btn btn-sm btn-primary">
+                                Try again
+                            </button>
                         </div>
-                    )}
+                    </div>
+                )}
                 <BlobPanel
                     {...this.props}
                     repoID={this.props.repoID}

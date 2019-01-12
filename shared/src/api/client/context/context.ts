@@ -28,9 +28,9 @@ export function applyContextUpdate(base: Context, update: Context): Context {
  */
 export interface Context<T = never>
     extends Record<
-            string,
-            string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
-        > {}
+        string,
+        string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
+    > {}
 
 export type ContributionScope =
     | (Pick<ViewComponentData, 'type' | 'selections'> & {

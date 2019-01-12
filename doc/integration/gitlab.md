@@ -2,7 +2,7 @@
 
 Sourcegraph integrates with GitLab.com, GitLab CE, and GitLab EE.
 
-## GitLab configuration
+## Syncing GitLab repositories
 
 Sourcegraph supports syncing repositories from GitLab.com, GitLab CE, and GitLab EE (version 10.0 and newer).
 
@@ -22,7 +22,13 @@ Replace `$ACCESS_TOKEN` with the access token you are providing to Sourcegraph, 
 curl -H 'Private-Token: $ACCESS_TOKEN' -XGET 'https://$GITLAB_HOSTNAME/api/v4/projects'
 ```
 
-### Repository permissions
+## Authentication
+
+To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
+[authentication documentation](../admin/auth.md#gitlab).
+
+
+## Repository permissions
 
 By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use GitLab's per-user repository permissions, see "[Repository permissions](../admin/repo/permissions.md)".
 

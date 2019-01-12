@@ -268,6 +268,7 @@ hr {
 @import './components/PopoverButton';
 @import './components/Overview';
 @import './components/RadioButtons';
+@import './components/Select';
 @import './components/tooltip/Tooltip';
 @import './user/account/UserAccountArea';
 @import './site-admin/SiteAdminAlert';
@@ -282,5 +283,6 @@ hr {
 @import './repo/blob/discussions/DiscussionsTree';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
+@import '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner';
 
 @import './extensions/shared';

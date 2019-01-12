@@ -1,12 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
+import { Select } from '../components/Select'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { ALL_EXTERNAL_SERVICES } from './externalServices'
 
@@ -43,12 +43,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         disabled={this.props.loading}
                     />
                 </div>
-
                 <div className="form-group">
                     <label htmlFor="external-service-page-form-kind">Kind</label>
-
-                    <select
-                        className="form-control"
+                    <Select
                         id="external-service-page-form-kind"
                         onChange={this.onKindChange}
                         required={true}
@@ -60,11 +57,14 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                                 {s.displayName}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
-
-                <div>
+                <div className="form-group">
                     <DynamicallyImportedMonacoSettingsEditor
+                        // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
+                        // if it thinks the config is dirty. We want to always replace the config if the kind changes
+                        // so the editor is keyed on the kind.
+                        key={this.props.input.kind}
                         value={this.props.input.config}
                         jsonSchemaId={`site.schema.json#definitions/${getKindDefinitionId(this.props.input.kind)}`}
                         extraSchemas={EXTRA_SCHEMAS}
@@ -80,12 +80,8 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                     </p>
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={this.props.loading}>
-                    {this.props.loading ? (
-                        <LoadingSpinner className="icon-inline" />
-                    ) : (
-                        this.props.mode === 'create' && <AddIcon className="icon-inline" />
-                    )}
-                    {this.props.mode === 'edit' ? 'Update' : 'Add external service'}
+                    {this.props.loading && <LoadingSpinner className="icon-inline" />}
+                    {this.props.mode === 'edit' ? 'Update external service' : 'Add external service'}
                 </button>
             </Form>
         )
@@ -118,5 +114,7 @@ function getKindDefinitionId(kind: GQL.ExternalServiceKind): string {
             return 'GitoliteConnection'
         case GQL.ExternalServiceKind.PHABRICATOR:
             return 'PhabricatorConnection'
+        case GQL.ExternalServiceKind.OTHER:
+            return 'OtherExternalServiceConnection'
     }
 }

@@ -32,7 +32,6 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
 }) => (
     <>
         <div className={`product-certificate card ${className || ''}`}>
-            <div className="product-certificate__bg" />
             <div className="card-body d-flex align-items-center">
                 <img className="product-certificate__logo mr-1 p-2" src="/.assets/img/sourcegraph-mark.svg" />
                 <div>
@@ -41,6 +40,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
                     {detail && <p className="text-muted mb-0">{detail}</p>}
                 </div>
             </div>
+            <div className="product-certificate__bg" />
             {footer}
         </div>
     </>

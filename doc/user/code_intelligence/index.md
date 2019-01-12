@@ -47,6 +47,10 @@ By spinning up Sourcegraph, you can get code intelligence:
 
 <img src="img/SymbolSidebar.png" width="500"/>
 
+## Language server deployment
+
+Most Sourcegraph extensions that provide code intelligence require a server component, called a language server. These language servers are usually deployed alongside other Sourcegraph services in another Docker container or within the same Kubernetes cluster. Check the corresponding extension documentation for deployment instructions.
+
 ---
 
 ### Open standards

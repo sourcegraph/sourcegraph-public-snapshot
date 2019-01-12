@@ -8,20 +8,28 @@
         bottom: 0;
         left: 0;
         right: 0;
-        background-image: url(/.assets/img/sourcegraph-mark.svg);
-        background-repeat: repeat;
-        background-size: 5rem;
+        background-image: url(/.assets/img/bg-sprinkles-2x.png);
+        background-color: var(--body-bg);
+        background-repeat: none;
+        background-size: cover;
     }
 
     &__logo {
         height: 5rem;
+        z-index: 9;
+    }
+    .btn {
+        z-index: 9;
+    }
+    .card-footer {
+        z-index: 9;
     }
 }
 
 .theme-light {
     .product-certificate {
         &__bg {
-            opacity: 0.025;
+            opacity: 0.125;
         }
     }
 }
@@ -29,8 +37,11 @@
 .theme-dark {
     .product-certificate {
         &__bg {
-            opacity: 0.1;
-            filter: grayscale(100%);
+            opacity: 0.35;
+            background-blend-mode: overlay;
+        }
+        .card-footer {
+            background-color: rgba(43, 55, 80, 0.85);
         }
     }
 }

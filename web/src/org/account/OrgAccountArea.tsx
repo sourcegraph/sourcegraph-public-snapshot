@@ -45,7 +45,7 @@ export const OrgAccountArea: React.FunctionComponent<Props> = props => {
         <div className="org-settings-area area">
             <OrgAccountSidebar {...props} className="area__sidebar" />
             <div className="area__content">
-                <ErrorBoundary>
+                <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                         <Switch>
                             <Route

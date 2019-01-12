@@ -12,7 +12,7 @@ The URL is `https://sourcegraph.example.com/site-admin/configuration`.
 
 For Kubernetes cluster deployments of Sourcegraph, edit the `config-file.ConfigMap.yaml` file and then use `kubectl apply -f ...` to update the resource.
 
-![](img/Admin.png)
+<img src="img/site_config.png" style="border:solid 1px #ccc"/>
 
 ---
 
