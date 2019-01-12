@@ -15,6 +15,7 @@
 
     border: 1px solid #2b3750;
     border-radius: 0.125rem;
+    position: relative;
 
     .icon-click-area {
         margin: 0;
@@ -28,19 +29,9 @@
         height: 2rem;
         cursor: pointer;
     }
-    .icon-rotate {
-        position: relative;
-        .icon-container {
-            margin: 0;
-            padding: 0;
-            transition: transform 200ms ease;
-        }
 
-        &__close {
-            .icon-container {
-                transform: rotate(45deg);
-            }
-        }
+    &__toggle-icon {
+        cursor: pointer;
     }
 
     &__header {
@@ -78,18 +69,19 @@
 
     &__block {
         .overview-item__header {
-            color: $color-light-text-1;
+            color: $color-text;
         }
         &:hover {
             text-decoration: none;
             .overview-item__header {
                 text-decoration: underline;
+                color: $color-text;
             }
         }
 
         a {
             .overview-item__header {
-                color: $color-light-text-1;
+                color: $color-text;
             }
 
             &:hover {
@@ -107,6 +99,14 @@
         border-color: $color-light-border;
         &__header {
             &-link {
+                color: $color-light-text-1;
+            }
+        }
+        &__block {
+            .overview-item__header {
+                color: $color-light-text-1;
+            }
+            &:hover {
                 color: $color-light-text-1;
             }
         }

@@ -83,6 +83,7 @@ func middleware(next http.Handler) http.Handler {
 				AccountID: rawUsername,
 			},
 			CreateIfNotExist: true,
+			LookUpByUsername: true,
 		})
 		if err != nil {
 			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "rawUsername", rawUsername, "err", err, "userErr", safeErrMsg)
