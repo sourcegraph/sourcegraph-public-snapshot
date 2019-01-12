@@ -78,7 +78,6 @@ export class OverviewItem extends React.Component<Props, State> {
             )
         }
 
-<<<<<<< HEAD
 		if ((this.props.link !== undefined) && (this.props.isBlock)) {
 			return (
 				<Link to={this.props.link} className="overview-item__block">
@@ -105,17 +104,6 @@ export class OverviewItem extends React.Component<Props, State> {
 	        )
 		}
 
-=======
-        return (
-            <div className="overview-item">
-                <div className="overview-item__header">{e}</div>
-                {actions && <div className="overview-item__actions">{actions}</div>}
-                {this.props.children && this.state.expanded && (
-                    <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
-                )}
-            </div>
-        )
->>>>>>> master
     }
 
     private toggleExpand = () => this.setState(prevState => ({ expanded: !prevState.expanded }))
