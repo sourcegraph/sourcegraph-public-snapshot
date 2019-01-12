@@ -64,7 +64,8 @@ export class OverviewItem extends React.Component<Props, State> {
             )
             actions = (
                 <div>
-                    <div className="overview-item__toggle-icon" onClick={this.toggleExpand}>
+                    <span className="icon-click-area" onClick={this.toggleExpand} />
+                    <div className="overview-item__toggle-icon">
                         {this.state.expanded ? (
                             <ChevronUpIcon className="icon-inline" />
                         ) : (

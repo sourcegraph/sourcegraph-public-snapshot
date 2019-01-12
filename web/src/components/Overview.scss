@@ -15,6 +15,20 @@
 
     border: 1px solid #2b3750;
     border-radius: 0.125rem;
+    position: relative;
+
+    .icon-click-area {
+        margin: 0;
+        padding: 0;
+        top: 0;
+        right: 0;
+        position: absolute;
+        width: 3rem;
+        z-index: 9;
+        opacity: 0;
+        height: 2rem;
+        cursor: pointer;
+    }
 
     &__toggle-icon {
         cursor: pointer;
@@ -55,18 +69,19 @@
 
     &__block {
         .overview-item__header {
-            color: $color-light-text-1;
+            color: $color-text;
         }
         &:hover {
             text-decoration: none;
             .overview-item__header {
                 text-decoration: underline;
+                color: $color-text;
             }
         }
 
         a {
             .overview-item__header {
-                color: $color-light-text-1;
+                color: $color-text;
             }
 
             &:hover {
@@ -84,6 +99,14 @@
         border-color: $color-light-border;
         &__header {
             &-link {
+                color: $color-light-text-1;
+            }
+        }
+        &__block {
+            .overview-item__header {
+                color: $color-light-text-1;
+            }
+            &:hover {
                 color: $color-light-text-1;
             }
         }
