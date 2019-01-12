@@ -9,21 +9,21 @@
         left: 0;
         right: 0;
         background-image: url(/.assets/img/bg-sprinkles-2x.png);
-		background-color: var(--body-bg);
+        background-color: var(--body-bg);
         background-repeat: none;
-		background-size: cover;
+        background-size: cover;
     }
 
     &__logo {
         height: 5rem;
-		z-index: 9;
+        z-index: 9;
     }
-	.btn {
-		z-index: 9;
-	}
-	.card-footer {
-		z-index: 9;
-	}
+    .btn {
+        z-index: 9;
+    }
+    .card-footer {
+        z-index: 9;
+    }
 }
 
 .theme-light {
@@ -38,10 +38,10 @@
     .product-certificate {
         &__bg {
             opacity: 0.35;
-			background-blend-mode: overlay;
+            background-blend-mode: overlay;
         }
-		.card-footer {
-			background-color: rgba(43, 55, 80, .85);
-		}
+        .card-footer {
+            background-color: rgba(43, 55, 80, 0.85);
+        }
     }
 }

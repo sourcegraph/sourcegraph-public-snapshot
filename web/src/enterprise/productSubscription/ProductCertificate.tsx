@@ -40,7 +40,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
                     {detail && <p className="text-muted mb-0">{detail}</p>}
                 </div>
             </div>
-			<div className="product-certificate__bg" />
+            <div className="product-certificate__bg" />
             {footer}
         </div>
     </>

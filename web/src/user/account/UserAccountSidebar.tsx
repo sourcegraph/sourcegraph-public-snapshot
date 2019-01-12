@@ -80,9 +80,9 @@ export const UserAccountSidebar: React.FunctionComponent<UserAccountSidebarProps
                         ))}
                     </SidebarGroupItems>
                     {!siteAdminViewingOtherUser && (
-                            <Link to="/organizations/new" className="btn btn-secondary btn-sm w-100">
-                                <AddIcon className="icon-inline" /> New organization
-                            </Link>
+                        <Link to="/organizations/new" className="btn btn-secondary btn-sm w-100">
+                            <AddIcon className="icon-inline" /> New organization
+                        </Link>
                     )}
                 </SidebarGroup>
             )}

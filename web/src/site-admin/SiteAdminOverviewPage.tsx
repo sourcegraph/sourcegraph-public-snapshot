@@ -126,18 +126,18 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     </Link>
                                 }
                                 title="Explore"
-								isBlock={true}
+                                isBlock={true}
                             />
                             <OverviewItem
                                 link="/site-admin/repositories"
                                 icon={RepositoryIcon}
                                 actions={
                                     <>
-										<Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
-											<OpenInNewIcon className="icon-inline" /> View all
-										</Link>
+                                        <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
+                                            <OpenInNewIcon className="icon-inline" /> View all
+                                        </Link>
                                         <Link to="/site-admin/external-services" className="pr-2">
-											Configure external services
+                                            Configure external services
                                         </Link>
                                     </>
                                 }
@@ -152,11 +152,11 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 icon={UserIcon}
                                 actions={
                                     <>
-										<Link to="/site-admin/users" className="btn btn-secondary btn-sm">
-											<OpenInNewIcon className="icon-inline" /> View all
-										</Link>
+                                        <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
+                                            <OpenInNewIcon className="icon-inline" /> View all
+                                        </Link>
                                         <Link to="/site-admin/users/new" className="pr-2">
-											Create user account
+                                            Create user account
                                         </Link>
                                     </>
                                 }
@@ -170,9 +170,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 icon={CityIcon}
                                 actions={
                                     <>
-										<Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
-											<OpenInNewIcon className="icon-inline" /> View all
-										</Link>
+                                        <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
+                                            <OpenInNewIcon className="icon-inline" /> View all
+                                        </Link>
                                         <Link to="/organizations/new" className="pr-2">
                                             Create organization
                                         </Link>

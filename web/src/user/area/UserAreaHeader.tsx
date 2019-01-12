@@ -27,7 +27,7 @@ export const UserAreaHeader: React.FunctionComponent<UserAreaHeaderProps> = (pro
                         {props.user.avatarURL && <UserAvatar className="user-area-header__avatar" user={props.user} />}
                         {props.user.displayName ? (
                             <div>
-								<div className="user-area-header__title-subtitle">{props.user.username}</div>
+                                <div className="user-area-header__title-subtitle">{props.user.username}</div>
                                 {props.user.displayName}{' '}
                             </div>
                         ) : (
