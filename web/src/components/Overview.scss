@@ -16,31 +16,8 @@
     border: 1px solid #2b3750;
     border-radius: 0.125rem;
 
-    .icon-click-area {
-        margin: 0;
-        padding: 0;
-        top: 0;
-        right: 0;
-        position: absolute;
-        width: 3rem;
-        z-index: 9;
-        opacity: 0;
-        height: 2rem;
+    &__toggle-icon {
         cursor: pointer;
-    }
-    .icon-rotate {
-        position: relative;
-        .icon-container {
-            margin: 0;
-            padding: 0;
-            transition: transform 200ms ease;
-        }
-
-        &__close {
-            .icon-container {
-                transform: rotate(45deg);
-            }
-        }
     }
 
     &__header {
