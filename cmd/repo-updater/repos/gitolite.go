@@ -32,6 +32,7 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 		config, err := conf.GitoliteConfigs(context.Background())
 		if err != nil {
 			log15.Error("unable to fetch Gitolite configs", "err", err)
+			time.Sleep(GetUpdateInterval())
 			continue
 		}
 
