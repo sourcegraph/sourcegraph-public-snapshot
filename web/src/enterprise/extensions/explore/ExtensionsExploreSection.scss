@@ -1,12 +1,12 @@
 .extensions-explore-section {
 
-	&--row {
+	&__row {
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-between;
 	}
 
-	&--card {
+	&__card {
 		display: inline-block;
 		box-sizing: border-box;
 		position: relative;
@@ -26,7 +26,7 @@
 			}
         }
 
-		&--content {
+		&__content {
 			display: block;
 			height: 100%;
 			min-height: 150px;
@@ -34,8 +34,8 @@
 			border-radius: 2px;
 			padding: 8px;
 
-			&--body {
-				&--title {
+			&__body {
+				&__title {
   					font-size: 16px;
 					font-weight: 600;
 					font-style: normal;
@@ -44,7 +44,7 @@
 					letter-spacing: normal;
 					color: #ffffff;
 				}
-				&--text {
+				&__text {
 					font-weight: 500;
 					line-height: 1.33;
 					letter-spacing: normal;
@@ -58,13 +58,13 @@
 	}
 
 	.theme-dark & {
-		&--card--content {
+		&__card__content {
 			background-image: linear-gradient(116deg, #0c1e41, #171941);
 			border-color: #184bb1;
 		}
 	}
 	.theme-light & {
-		&--card--content {
+		&__card__content {
 
 		}
 	}

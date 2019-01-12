@@ -72,12 +72,12 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                     <p>No extensions are available.</p>
                 ) : (
                     <>
-                        <div className="extensions-explore-section--row">
+                        <div className="extensions-explore-section__row">
                             {extensionsOrError.slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).map((
                                 extension /* or loading */,
                                 i
                             ) => (
-                                <div key={i} className="extensions-explore-section--card">
+                                <div key={i} className="extensions-explore-section__card">
                                     {extension === LOADING ? (
                                         <ExtensionsExploreSectionExtensionCard
                                             extensionID=""

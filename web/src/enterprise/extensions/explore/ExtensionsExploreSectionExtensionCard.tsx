@@ -11,11 +11,11 @@ export const ExtensionsExploreSectionExtensionCard: React.FunctionComponent<{
 }> = ({ extensionID: title, description = '', url }) => (
     <LinkOrSpan
         to={url}
-        className="extensions-explore-section--card--content"
+        className="extensions-explore-section__card__content"
     >
-        <div className="extensions-explore-section--card--content--body">
-            <p className="extensions-explore-section--card--content--body--title">{title}</p>
-            {description && <p className="extensions-explore-section--card--content--body--text">{description}</p>}
+        <div className="extensions-explore-section__card__content__body">
+            <p className="extensions-explore-section__card__content__body__title">{title}</p>
+            {description && <p className="extensions-explore-section__card__content__body__text">{description}</p>}
         </div>
     </LinkOrSpan>
 )
