@@ -46,7 +46,7 @@ The self-signed TLS certificate in use ensures that your interaction with the ma
 
 ### What is the password to my management console?
 
--> Visit Sourcegraph's **Site admin** area (https://sourcegraph.example.com/site-admin) to retrieve your management console password (enter any username):
+-> Visit Sourcegraph's **Site admin** area (https://sourcegraph.example.com/site-admin) to retrieve your management console password (**enter any username**):
 
 ![image](https://user-images.githubusercontent.com/3173176/50871227-3eac6700-1378-11e9-8ba7-4c712e622039.png)
 
