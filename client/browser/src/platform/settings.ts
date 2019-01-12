@@ -66,14 +66,14 @@ export function mergeCascades(
             cascadeOrError.subjects === null
                 ? cascade.subjects
                 : isErrorLike(cascadeOrError.subjects)
-                    ? cascadeOrError.subjects
-                    : [...cascadeOrError.subjects, ...cascade.subjects],
+                ? cascadeOrError.subjects
+                : [...cascadeOrError.subjects, ...cascade.subjects],
         final:
             cascadeOrError.final === null
                 ? cascade.final
                 : isErrorLike(cascadeOrError.final)
-                    ? cascadeOrError.final
-                    : mergeSettings([cascadeOrError.final, cascade.final]),
+                ? cascadeOrError.final
+                : mergeSettings([cascadeOrError.final, cascade.final]),
     }
 }
 

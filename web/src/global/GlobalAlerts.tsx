@@ -61,10 +61,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             )}
 
                         {/* Only show if the user has already enabled repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                        {window.context.likelyDockerOnMac &&
-                            !this.state.siteFlags.noRepositoriesEnabled && (
-                                <DockerForMacAlert className="global-alerts__alert" />
-                            )}
+                        {window.context.likelyDockerOnMac && !this.state.siteFlags.noRepositoriesEnabled && (
+                            <DockerForMacAlert className="global-alerts__alert" />
+                        )}
 
                         {this.state.siteFlags.alerts.map((alert, i) => (
                             <GlobalAlert key={i} alert={alert} className="global-alerts__alert" />

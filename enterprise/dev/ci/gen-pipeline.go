@@ -62,7 +62,7 @@ func main() {
 	}
 
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier all:tslint all:stylelint all:typecheck graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
 
 	pipeline.AddStep(":ie:",
 		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
@@ -326,10 +326,10 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 
 	case strings.HasPrefix(branch, "docker-images/"):
-		addDockerImageStep(branch[14:], true)
-		pipeline.AddWait()
 		// Only deploy images that aren't auto deployed from master.
 		if branch != "docker-images/server" && branch != "docker-images/frontend" {
+			addDockerImageStep(branch[14:], true)
+			pipeline.AddWait()
 			addDeploySteps()
 		}
 	}

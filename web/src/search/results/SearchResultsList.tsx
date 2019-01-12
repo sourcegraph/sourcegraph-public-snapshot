@@ -298,15 +298,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     />
 
                                     {/* Show more button */}
-                                    {results.limitHit &&
-                                        results.results.length === this.state.resultsShown && (
-                                            <button
-                                                className="btn btn-secondary btn-block"
-                                                onClick={this.props.onShowMoreResultsClick}
-                                            >
-                                                Show more
-                                            </button>
-                                        )}
+                                    {results.limitHit && results.results.length === this.state.resultsShown && (
+                                        <button
+                                            className="btn btn-secondary btn-block"
+                                            onClick={this.props.onShowMoreResultsClick}
+                                        >
+                                            Show more
+                                        </button>
+                                    )}
 
                                     {/* Server-provided help message */}
                                     {results.alert ? (
@@ -403,7 +402,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         return (
             <>
                 <h4>Recommendations:</h4>
-                <ul>{recommendations.map((recommendation, i) => <li key={i}>{recommendation}</li>)}</ul>
+                <ul>
+                    {recommendations.map((recommendation, i) => (
+                        <li key={i}>{recommendation}</li>
+                    ))}
+                </ul>
             </>
         )
     }

@@ -14,9 +14,11 @@ describe('tryCatchPromise', () => {
             throw ERROR
         })
         let rejected: any
-        return p.then(undefined, v => (rejected = v)).then(() => {
-            expect(rejected).toBe(ERROR)
-        })
+        return p
+            .then(undefined, v => (rejected = v))
+            .then(() => {
+                expect(rejected).toBe(ERROR)
+            })
     })
 
     test('returns a rejected promise with the asynchronous error', () => {
@@ -24,9 +26,11 @@ describe('tryCatchPromise', () => {
             () => Promise.reject(ERROR) // tslint:disable-line:no-floating-promises
         )
         let rejected: any
-        return p.then(undefined, v => (rejected = v)).then(() => {
-            expect(rejected).toBe(ERROR)
-        })
+        return p
+            .then(undefined, v => (rejected = v))
+            .then(() => {
+                expect(rejected).toBe(ERROR)
+            })
     })
 })
 

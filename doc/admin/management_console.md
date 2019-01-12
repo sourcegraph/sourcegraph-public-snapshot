@@ -46,7 +46,7 @@ The self-signed TLS certificate in use ensures that your interaction with the ma
 
 ### What is the password to my management console?
 
--> Visit Sourcegraph's **Site admin** area (https://sourcegraph.example.com/site-admin) to retrieve your management console password (enter any username):
+-> Visit Sourcegraph's **Site admin** area (https://sourcegraph.example.com/site-admin) to retrieve your management console password (**enter any username**):
 
 ![image](https://user-images.githubusercontent.com/3173176/50871227-3eac6700-1378-11e9-8ba7-4c712e622039.png)
 
@@ -57,6 +57,18 @@ This password is automatically generated for you to ensure it is very long and s
 ### How can I reset my management console password?
 
 Resetting the management console password can be done manually via the database.
+
+#### (Option 1): If you have access to Sourcegraph still
+
+Open a `psql` prompt on your Sourcegraph instance (see ["How do I access my Sourcegraph database?"](faq.md#how-do-i-access-the-sourcegraph-database)) and run:
+
+```sql
+UPDATE global_state SET mgmt_password_plaintext='', mgmt_password_bcrypt='';
+```
+
+When you next visit sourcegraph.example.com/site-admin, a new password will be generated and presented to you.
+
+#### (Option 2) If you _don't_ have access Sourcegraph
 
 First, determine what your new password will be. If your management console is exposed to the public internet, it is important that this be a **very** long and random password (e.g. 128 characters in length). For this example, we will use `abc123`.
 

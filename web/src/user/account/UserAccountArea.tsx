@@ -105,7 +105,7 @@ export const UserAccountArea = withAuthenticatedUser(
                         className="area__sidebar"
                     />
                     <div className="area__content">
-                        <ErrorBoundary>
+                        <ErrorBoundary location={this.props.location}>
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                                 <Switch>
                                     {this.props.routes.map(

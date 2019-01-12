@@ -14,15 +14,14 @@ const PublishNewManifestAlert: React.FunctionComponent<{
 }> = ({ extension, text, buttonLabel, alertClass }) => (
     <div className={`alert ${alertClass}`}>
         {text}
-        {extension.registryExtension &&
-            extension.registryExtension.viewerCanAdminister && (
-                <>
-                    <br />
-                    <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
-                        {buttonLabel}
-                    </Link>
-                </>
-            )}
+        {extension.registryExtension && extension.registryExtension.viewerCanAdminister && (
+            <>
+                <br />
+                <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                    {buttonLabel}
+                </Link>
+            </>
+        )}
     </div>
 )
 

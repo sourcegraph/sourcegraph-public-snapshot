@@ -46,7 +46,7 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 		// an int wrapped, I'm sorry.
 		phabricatorMetadataCounter++
 		gitoliteUpdateTime.Set(float64(time.Now().Unix()))
-		time.Sleep(getUpdateInterval())
+		time.Sleep(GetUpdateInterval())
 	}
 }
 

@@ -1,6 +1,6 @@
 import { AbortController } from 'abort-controller'
 import { Observable, of } from 'rxjs'
-import { bufferCount, delay, take } from 'rxjs/operators'
+import { bufferCount, delay } from 'rxjs/operators'
 import { createBarrier } from '../../integration-test/testHelpers'
 import { createConnection } from './connection'
 import { ErrorCodes } from './messages'
@@ -142,36 +142,46 @@ describe('Connection', () => {
         ).resolves.toEqual([2, 3, 4, 5])
     })
 
+    test('abort request before it is handled', async () => {
+        const [serverTransports, clientTransports] = createMessageTransports()
+        const server = createConnection(serverTransports)
+        let handled = false
+        server.onRequest('m', () => (handled = true))
+        server.listen()
+        const client = createConnection(clientTransports)
+        client.listen()
+        // Connection processes messages asynchronously.
+        // When calling observeRequest() and unsubscribing from
+        // the returned observable in the same tick,
+        // the request handler is never called.
+        const subscription = client.observeRequest('m').subscribe()
+        subscription.unsubscribe()
+        expect(handled).toBe(false)
+    })
+
     test('abort request with observable emission', async () => {
         const [serverTransports, clientTransports] = createMessageTransports()
         const server = createConnection(serverTransports)
-        const { wait, done } = createBarrier()
+        const handlerCalled = createBarrier()
+        const handlerUnsubscribed = createBarrier()
         server.onRequest(
             'm',
-            (params: number[]) =>
-                new Observable<number>(observer => {
-                    let complete = false
-                    const emit = () => {
-                        if (!complete) {
-                            observer.next()
-                            setTimeout(emit, 0)
-                        }
-                    }
-                    emit()
-                    return () => {
-                        complete = true
-                        done()
-                    }
+            () =>
+                new Observable<void>(() => {
+                    handlerCalled.done()
+                    return handlerUnsubscribed.done
                 })
         )
         server.listen()
         const client = createConnection(clientTransports)
         client.listen()
-        await client
-            .observeRequest('m')
-            .pipe(take(4))
-            .toPromise()
-        await wait
+        const subscription = client.observeRequest('m').subscribe()
+        // Connection processes messages asynchronously.
+        // wait until the request handler gets subscribed to server-side
+        // to unsubscribe client-side.
+        await handlerCalled.wait
+        subscription.unsubscribe()
+        await handlerUnsubscribed.wait
     })
 
     test('handle multiple requests', async () => {

@@ -195,7 +195,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 />
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
-                        <ErrorBoundary>
+                        <ErrorBoundary location={this.props.location}>
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                                 <Switch>
                                     {this.props.userAreaRoutes.map(

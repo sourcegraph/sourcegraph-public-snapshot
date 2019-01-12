@@ -5,6 +5,7 @@
 - [Add repositories from Bitbucket Server](../../integration/bitbucket_server.md)
 - [Add repositories from AWS CodeCommit](../../integration/aws_codecommit.md)
 - [Add repositories from Phabricator](../../integration/phabricator.md)
+- [Add repositories from other external services](add_from_other_external_services.md)
 - [Add repositories from the local disk](add_from_local_disk.md)
 
 ## Troubleshooting

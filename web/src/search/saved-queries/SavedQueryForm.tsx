@@ -238,33 +238,28 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         adding <code>type:diff</code> or <code>type:commit</code> to your query.
                     </div>
                 )}
-                {notify &&
-                    !window.context.emailEnabled &&
-                    !this.isUnsupportedNotifyQuery(this.state.values) && (
-                        <div className="alert alert-warning mb-2">
-                            <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
-                            server.{' '}
-                            {this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin
-                                ? 'Use the email.smtp site configuration setting to enable sending emails.'
-                                : 'Contact your server admin for more information.'}
-                        </div>
-                    )}
-                {notifySlack &&
-                    this.isSubjectMissingSlackWebhook() && (
-                        <div className="alert alert-warning mb-2">
-                            <strong>Required:</strong>{' '}
-                            <Link target="_blank" to={this.getConfigureSlackURL()}>
-                                Configure a Slack webhook URL
-                            </Link>{' '}
-                            to receive Slack notifications.
-                        </div>
-                    )}
-                {error &&
-                    !isSubmitting && (
-                        <div className="alert alert-danger mb-2">
-                            <strong>Error:</strong> {error.message}
-                        </div>
-                    )}
+                {notify && !window.context.emailEnabled && !this.isUnsupportedNotifyQuery(this.state.values) && (
+                    <div className="alert alert-warning mb-2">
+                        <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph server.{' '}
+                        {this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin
+                            ? 'Use the email.smtp site configuration setting to enable sending emails.'
+                            : 'Contact your server admin for more information.'}
+                    </div>
+                )}
+                {notifySlack && this.isSubjectMissingSlackWebhook() && (
+                    <div className="alert alert-warning mb-2">
+                        <strong>Required:</strong>{' '}
+                        <Link target="_blank" to={this.getConfigureSlackURL()}>
+                            Configure a Slack webhook URL
+                        </Link>{' '}
+                        to receive Slack notifications.
+                    </div>
+                )}
+                {error && !isSubmitting && (
+                    <div className="alert alert-danger mb-2">
+                        <strong>Error:</strong> {error.message}
+                    </div>
+                )}
                 <div>
                     <button type="submit" className="btn btn-primary" disabled={!subject || isSubmitting}>
                         {submitLabel}

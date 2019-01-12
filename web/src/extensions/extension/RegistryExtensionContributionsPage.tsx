@@ -36,11 +36,19 @@ const ContributionsTable: React.FunctionComponent<{ contributionGroups: Contribu
                         {group.error && <div className="alert alert-danger mt-1">Error: {group.error.message}</div>}
                         <table className="table">
                             <thead>
-                                <tr>{group.columnHeaders.map((label, i) => <th key={i}>{label}</th>)}</tr>
+                                <tr>
+                                    {group.columnHeaders.map((label, i) => (
+                                        <th key={i}>{label}</th>
+                                    ))}
+                                </tr>
                             </thead>
                             <tbody>
                                 {group.rows.map((cells, i) => (
-                                    <tr key={i}>{cells.map((content, i) => <td key={i}>{content}</td>)}</tr>
+                                    <tr key={i}>
+                                        {cells.map((content, i) => (
+                                            <td key={i}>{content}</td>
+                                        ))}
+                                    </tr>
                                 ))}
                             </tbody>
                         </table>

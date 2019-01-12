@@ -22,10 +22,12 @@ export const UpdateAvailableAlert: React.FunctionComponent<{
         partialStorageKey={`Update/${updateVersionAvailable}`}
         className={`alert-animated-bg alert-success update-available-alert ${className}`}
     >
-        <CloudDownloadIcon className="icon-inline site-alert__link-icon mr-2" />An update is available:&nbsp;
+        <CloudDownloadIcon className="icon-inline site-alert__link-icon mr-2" />
+        An update is available:&nbsp;
         <a className="site-alert__link" href="https://about.sourcegraph.com" target="_blank" onClick={onClickCTA}>
             <span className="underline">Sourcegraph {updateVersionAvailable}</span>
-        </a>&nbsp;-&nbsp;
+        </a>
+        &nbsp;-&nbsp;
         <a
             className="site-alert__link"
             href="https://about.sourcegraph.com/changelog" // this is the old URL, but it redirects

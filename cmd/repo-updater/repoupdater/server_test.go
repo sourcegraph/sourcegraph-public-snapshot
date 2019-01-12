@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -14,11 +15,53 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
+func TestServer_handleExternalServiceSync(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		svc  *api.ExternalService
+		err  string
+	}{
+		{
+			name: "bad kind",
+			svc:  &api.ExternalService{},
+			err:  "empty external service kind\n",
+		},
+		{
+			name: "bad service config",
+			svc: &api.ExternalService{
+				DisplayName: "Other",
+				Kind:        "OTHER",
+				Config:      "{",
+			},
+			err: "external-service=0: config error: failed to parse JSON: [CloseBraceExpected]; \n",
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			fa := repos.NewFakeInternalAPI([]*api.ExternalService{tc.svc}, nil)
+			s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(fa, nil)}
+			ts := httptest.NewServer(s.Handler())
+			defer ts.Close()
+
+			cli := repoupdater.Client{URL: ts.URL, HTTPClient: http.DefaultClient}
+			ctx := context.Background()
+
+			err := cli.SyncExternalService(ctx, *tc.svc)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("\nhave: %s\nwant: %s", have, want)
+			}
+		})
+	}
+}
+
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{}
+	s := &Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
 	h := s.Handler()
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
@@ -113,8 +156,10 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestRepoLookup(t *testing.T) {
+	s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
+
 	t.Run("no args", func(t *testing.T) {
-		if _, err := repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
+		if _, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
 			t.Error()
 		}
 	})
@@ -127,7 +172,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
-			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "example.com/a/b"})
+			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "example.com/a/b"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -143,7 +188,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
-			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
+			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -161,7 +206,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
-			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
+			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
 			if err != wantErr {
 				t.Fatal(err)
 			}
@@ -199,7 +244,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
-			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
+			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -1,5 +1,5 @@
 import { toPromise } from 'abortable-rx'
-import { from, isObservable, Observable, Observer, Subject, Unsubscribable } from 'rxjs'
+import { from, fromEvent, isObservable, Observable, Observer, Subject, Unsubscribable } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { isPromise } from '../../util'
 import { Emitter, Event } from './events'
@@ -362,13 +362,6 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
         if (requestHandler || starRequestHandler) {
             const abortController = new AbortController()
             const signalKey = String(requestMessage.id)
-            const aborted = from(
-                new Promise<void>(resolve => {
-                    abortController.signal.onabort = () => {
-                        resolve()
-                    }
-                })
-            )
             requestAbortControllers[signalKey] = abortController
             try {
                 const params = requestMessage.params !== undefined ? requestMessage.params : null
@@ -384,7 +377,7 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
                         delete requestAbortControllers[signalKey]
                     }
                     from(handlerResult)
-                        .pipe(takeUntil(aborted))
+                        .pipe(takeUntil(fromEvent(abortController.signal, 'abort')))
                         .subscribe(
                             value => reply(value, false),
                             error => {

@@ -44,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed number formatting issues on site admin Overview and Survey Response pages.
 - Fixed resolving of git clone URLs with `git+` prefix through the GraphQL API
 - Fixed an issue where the graphql Repositories endpoint would order by a field which was not indexed. Times on Sourcegraph.com went from 10s to 200ms.
+- Fixed an issue where whitespace was not handled properly in environment variable lists (`SYMBOLS_URL`, `SEARCHER_URL`).
 
 ### Removed
 
@@ -54,6 +55,11 @@ All notable changes to Sourcegraph are documented in this file.
   - Github via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
   - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
   - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
+  - [Other external services](https://docs.sourcegraph.com/admin/repo/add_from_other_external_services)
+- Removed the `httpStrictTransportSecurity` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `tls.cert` and `tls.key` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `httpToHttpsRedirect` and `experimentalFeatures.canonicalURLRedireect` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for these instead.
   - [Other code hosts](https://github.com/sourcegraph/sourcegraph/issues/1324)
 
 ## 2.13.6

@@ -58,41 +58,40 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />
-				<div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-					<h2 className="mb-0">Updates</h2>
-				</div>
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                    <h2 className="mb-0">Updates</h2>
+                </div>
                 {this.state.error && (
                     <p className="site-admin-updates-page__error">Error: {upperFirst(this.state.error)}</p>
                 )}
-                {this.state.updateCheck &&
-                    (this.state.updateCheck.pending || this.state.updateCheck.checkedAt) && (
-                        <div>
-                            {this.state.updateCheck.pending && (
-                                <div className="site-admin-updates-page__alert alert alert-primary">
-                                    <LoadingSpinner className="icon-inline" /> Checking for updates... (reload in a few
-                                    seconds)
+                {this.state.updateCheck && (this.state.updateCheck.pending || this.state.updateCheck.checkedAt) && (
+                    <div>
+                        {this.state.updateCheck.pending && (
+                            <div className="site-admin-updates-page__alert alert alert-primary">
+                                <LoadingSpinner className="icon-inline" /> Checking for updates... (reload in a few
+                                seconds)
+                            </div>
+                        )}
+                        {!this.state.updateCheck.errorMessage &&
+                            (this.state.updateCheck.updateVersionAvailable ? (
+                                <div className="site-admin-updates-page__alert alert alert-success">
+                                    <CloudDownloadIcon className="icon-inline" /> Update available:{' '}
+                                    <a href="https://about.sourcegraph.com">
+                                        {this.state.updateCheck.updateVersionAvailable}
+                                    </a>
                                 </div>
-                            )}
-                            {!this.state.updateCheck.errorMessage &&
-                                (this.state.updateCheck.updateVersionAvailable ? (
-                                    <div className="site-admin-updates-page__alert alert alert-success">
-                                        <CloudDownloadIcon className="icon-inline" /> Update available:{' '}
-                                        <a href="https://about.sourcegraph.com">
-                                            {this.state.updateCheck.updateVersionAvailable}
-                                        </a>
-                                    </div>
-                                ) : (
-                                    <div className="site-admin-updates-page__alert alert alert-success">
-                                        <CheckIcon className="icon-inline" /> Up to date.
-                                    </div>
-                                ))}
-                            {this.state.updateCheck.errorMessage && (
-                                <div className="site-admin-updates-page__alert alert alert-danger">
-                                    Error checking for updates: {this.state.updateCheck.errorMessage}
+                            ) : (
+                                <div className="site-admin-updates-page__alert alert alert-success">
+                                    <CheckIcon className="icon-inline" /> Up to date.
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            ))}
+                        {this.state.updateCheck.errorMessage && (
+                            <div className="site-admin-updates-page__alert alert alert-danger">
+                                Error checking for updates: {this.state.updateCheck.errorMessage}
+                            </div>
+                        )}
+                    </div>
+                )}
                 {!autoUpdateCheckingEnabled && (
                     <div className="site-admin-updates-page__alert alert alert-warning">
                         Automatic update checking is disabled.
@@ -101,14 +100,16 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
 
                 <p className="site-admin-updates_page__info">
                     <small>
-                        <strong>Current product version:</strong> {this.state.productVersion} ({this.state.buildVersion})
+                        <strong>Current product version:</strong> {this.state.productVersion} ({this.state.buildVersion}
+                        )
                     </small>
                     <br />
                     <small>
                         <strong>Last update check:</strong>{' '}
                         {this.state.updateCheck && this.state.updateCheck.checkedAt
                             ? formatDistance(this.state.updateCheck.checkedAt, new Date(), { addSuffix: true })
-                            : 'never'}.
+                            : 'never'}
+                        .
                     </small>
                     <br />
                     <small>

@@ -233,16 +233,21 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-configuration-page">
                 <PageTitle title="Configuration - Admin" />
-				<div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-					<h2 className="mb-0">Site configuration</h2>
-				</div>
-				<p>
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                    <h2 className="mb-0">Site configuration</h2>
+                </div>
+                <p>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/site_config">documentation</Link> for more information.
                 </p>
                 <div className="mb-3">
                     <SiteAdminManagementConsolePassword />
                 </div>
+                <p>
+                    Authentication providers, the application URL, license key, and other critical configuration may be
+                    edited via the{' '}
+                    <a href="https://docs.sourcegraph.com/admin/management_console">management console</a>.
+                </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.site && this.state.site.configuration && (

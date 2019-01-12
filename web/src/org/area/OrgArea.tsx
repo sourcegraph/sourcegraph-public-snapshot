@@ -171,7 +171,7 @@ export class OrgArea extends React.Component<Props> {
                 <OrgHeader className="area--vertical__header" {...this.props} {...transferProps} />
                 <div className="org-area__content area--vertical__content">
                     <div className="org-area__content-inner area--vertical__content-inner">
-                        <ErrorBoundary>
+                        <ErrorBoundary location={this.props.location}>
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                                 <Switch>
                                     <Route
