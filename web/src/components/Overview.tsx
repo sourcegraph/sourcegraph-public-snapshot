@@ -1,3 +1,4 @@
+import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -29,6 +30,11 @@ export interface Props {
      * Whether the item's children are expanded and visible by default.
      */
     defaultExpanded?: boolean
+
+    /**
+     * Wether the item should be a block link.
+     */
+    isBlock?: boolean
 }
 
 export interface State {
@@ -56,12 +62,13 @@ export class OverviewItem extends React.Component<Props, State> {
                 </div>
             )
             actions = (
-                <>
-                    <button className="btn btn-secondary btn-sm" onClick={this.toggleExpand}>
-                        {this.state.expanded ? 'Hide' : 'View more'}
-                    </button>
+                <div className={`${this.state.expanded ? 'icon-rotate icon-rotate__close' : 'icon-rotate'}`}>
+                    <span className="icon-click-area" onClick={this.toggleExpand} />
+                    <div className="icon-container">
+                        <AddIcon className="icon-inline" />
+                    </div>
                     {actions && actions}
-                </>
+                </div>
             )
         } else if (this.props.link !== undefined) {
             e = (
@@ -71,15 +78,32 @@ export class OverviewItem extends React.Component<Props, State> {
             )
         }
 
-        return (
-            <div className="overview-item">
-                <div className="overview-item__header">{e}</div>
-                {actions && <div className="overview-item__actions">{actions}</div>}
-                {this.props.children && this.state.expanded && (
-                    <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
-                )}
-            </div>
-        )
+        if (this.props.link !== undefined && this.props.isBlock) {
+            return (
+                <Link to={this.props.link} className="overview-item__block">
+                    <div className="overview-item">
+                        <div className="overview-item__header">
+                            {this.props.icon && <this.props.icon className="icon-inline overview-item__header-icon" />}
+                            {this.props.title}
+                        </div>
+                        {actions && <div className="overview-item__actions">{actions}</div>}
+                        {this.props.children && this.state.expanded && (
+                            <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
+                        )}
+                    </div>
+                </Link>
+            )
+        } else {
+            return (
+                <div className="overview-item">
+                    <div className="overview-item__header">{e}</div>
+                    {actions && <div className="overview-item__actions">{actions}</div>}
+                    {this.props.children && this.state.expanded && (
+                        <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
+                    )}
+                </div>
+            )
+        }
     }
 
     private toggleExpand = () => this.setState(prevState => ({ expanded: !prevState.expanded }))

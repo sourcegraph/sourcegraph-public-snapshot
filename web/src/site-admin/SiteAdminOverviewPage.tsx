@@ -1,12 +1,10 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import CityIcon from 'mdi-react/CityIcon'
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
-import EyeIcon from 'mdi-react/EyeIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
+import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -121,24 +119,25 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                         <>
                             <OverviewItem
                                 link="/explore"
-                                icon={EyeIcon}
+                                icon={PackageVariantIcon}
                                 actions={
-                                    <Link to="/explore" className="btn btn-primary btn-sm">
-                                        Explore
+                                    <Link to="/explore" className="btn btn-secondary btn-sm">
+                                        <OpenInNewIcon className="icon-inline" /> Explore
                                     </Link>
                                 }
                                 title="Explore"
+                                isBlock={true}
                             />
                             <OverviewItem
                                 link="/site-admin/repositories"
                                 icon={RepositoryIcon}
                                 actions={
                                     <>
-                                        <Link to="/site-admin/external-services" className="btn btn-primary btn-sm">
-                                            <SettingsIcon className="icon-inline" /> Configure external services
-                                        </Link>
                                         <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
                                             <OpenInNewIcon className="icon-inline" /> View all
+                                        </Link>
+                                        <Link to="/site-admin/external-services" className="pr-2">
+                                            Configure external services
                                         </Link>
                                     </>
                                 }
@@ -153,11 +152,11 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 icon={UserIcon}
                                 actions={
                                     <>
-                                        <Link to="/site-admin/users/new" className="btn btn-primary btn-sm">
-                                            <AddIcon className="icon-inline" /> Create user account
-                                        </Link>
                                         <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
                                             <OpenInNewIcon className="icon-inline" /> View all
+                                        </Link>
+                                        <Link to="/site-admin/users/new" className="pr-2">
+                                            Create user account
                                         </Link>
                                     </>
                                 }
@@ -171,11 +170,11 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 icon={CityIcon}
                                 actions={
                                     <>
-                                        <Link to="/organizations/new" className="btn btn-primary btn-sm">
-                                            <AddIcon className="icon-inline" /> Create organization
-                                        </Link>
                                         <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
                                             <OpenInNewIcon className="icon-inline" /> View all
+                                        </Link>
+                                        <Link to="/organizations/new" className="pr-2">
+                                            Create organization
                                         </Link>
                                     </>
                                 }
