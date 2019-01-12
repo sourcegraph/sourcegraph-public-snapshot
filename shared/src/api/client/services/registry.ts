@@ -55,7 +55,7 @@ export abstract class DocumentFeatureProviderRegistry<
      * @returns an observable of the set of registered providers that apply to the document. The observable emits
      * initially and whenever the set changes (due to a provider being registered or unregistered).
      */
-    protected providersForDocument(
+    public providersForDocument(
         document: TextDocumentIdentifier,
         filter?: (registrationOptions: O) => boolean
     ): Observable<P[]> {

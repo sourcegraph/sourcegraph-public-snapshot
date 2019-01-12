@@ -144,8 +144,6 @@ type ExperimentalFeatures struct {
 	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
 	Discussions          string `json:"discussions,omitempty"`
 	ExternalServices     string `json:"externalServices,omitempty"`
-	GithubAuth           bool   `json:"githubAuth,omitempty"`
-	GitlabAuth           bool   `json:"gitlabAuth,omitempty"`
 	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
 }
 
@@ -242,6 +240,12 @@ type OpenIDConnectAuthProvider struct {
 	Issuer             string `json:"issuer"`
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 	Type               string `json:"type"`
+}
+
+// OtherExternalServiceConnection description: Connection to Git repositories for which an external service integration isn't yet available.
+type OtherExternalServiceConnection struct {
+	Repos []string `json:"repos"`
+	Url   string   `json:"url,omitempty"`
 }
 
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"

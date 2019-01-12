@@ -2,10 +2,22 @@ import React from 'react'
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute } from '../../user/area/UserArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
-import { UserSubscriptionsEditProductSubscriptionPage } from './productSubscriptions/UserSubscriptionsEditProductSubscriptionPage'
-import { UserSubscriptionsNewProductSubscriptionPage } from './productSubscriptions/UserSubscriptionsNewProductSubscriptionPage'
-import { UserSubscriptionsProductSubscriptionPage } from './productSubscriptions/UserSubscriptionsProductSubscriptionPage'
-import { UserSubscriptionsProductSubscriptionsPage } from './productSubscriptions/UserSubscriptionsProductSubscriptionsPage'
+const UserSubscriptionsEditProductSubscriptionPage = React.lazy(async () => ({
+    default: (await import('./productSubscriptions/UserSubscriptionsEditProductSubscriptionPage'))
+        .UserSubscriptionsEditProductSubscriptionPage,
+}))
+const UserSubscriptionsNewProductSubscriptionPage = React.lazy(async () => ({
+    default: (await import('./productSubscriptions/UserSubscriptionsNewProductSubscriptionPage'))
+        .UserSubscriptionsNewProductSubscriptionPage,
+}))
+const UserSubscriptionsProductSubscriptionPage = React.lazy(async () => ({
+    default: (await import('./productSubscriptions/UserSubscriptionsProductSubscriptionPage'))
+        .UserSubscriptionsProductSubscriptionPage,
+}))
+const UserSubscriptionsProductSubscriptionsPage = React.lazy(async () => ({
+    default: (await import('./productSubscriptions/UserSubscriptionsProductSubscriptionsPage'))
+        .UserSubscriptionsProductSubscriptionsPage,
+}))
 
 export const enterpriseUserAreaRoutes: ReadonlyArray<UserAreaRoute> = [
     ...userAreaRoutes,

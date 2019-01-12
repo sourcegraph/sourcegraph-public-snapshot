@@ -54,6 +54,28 @@ const TreeEntry: React.FunctionComponent<{
     )
 }
 
+/**
+ * Use a multi-column layout for tree entries when there are at least this many. See TreePage.scss
+ * for more information.
+ */
+const MIN_ENTRIES_FOR_COLUMN_LAYOUT = 6
+
+const TreeEntriesSection: React.FunctionComponent<{
+    title: string
+    parentPath: string
+    entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
+}> = ({ title, parentPath, entries }) =>
+    entries.length > 0 ? (
+        <section className="tree-page__section">
+            <h3 className="tree-page__section-header">{title}</h3>
+            <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
+                {entries.map((e, i) => (
+                    <TreeEntry key={i} isDir={e.isDirectory} name={e.name} parentPath={parentPath} url={e.url} />
+                ))}
+            </div>
+        </section>
+    ) : null
+
 const fetchTreeCommits = memoizeObservable(
     (args: {
         repo: GQL.ID
@@ -262,38 +284,11 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     <SearchButton />
                                 </Form>
                             </section>
-                            {this.state.treeOrError.directories.length > 0 && (
-                                <section className="tree-page__section">
-                                    <h3 className="tree-page__section-header">Directories</h3>
-                                    <div className="tree-page__entries tree-page__entries-directories">
-                                        {this.state.treeOrError.directories.map((e, i) => (
-                                            <TreeEntry
-                                                key={i}
-                                                isDir={true}
-                                                name={e.name}
-                                                parentPath={this.props.filePath}
-                                                url={e.url}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-                            {this.state.treeOrError.files.length > 0 && (
-                                <section className="tree-page__section">
-                                    <h3 className="tree-page__section-header">Files</h3>
-                                    <div className="tree-page__entries tree-page__entries-files">
-                                        {this.state.treeOrError.files.map((e, i) => (
-                                            <TreeEntry
-                                                key={i}
-                                                isDir={false}
-                                                name={e.name}
-                                                parentPath={this.props.filePath}
-                                                url={e.url}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
+                            <TreeEntriesSection
+                                title="Files and directories"
+                                parentPath={this.props.filePath}
+                                entries={this.state.treeOrError.entries}
+                            />
                             {isDiscussionsEnabled(this.props.settingsCascade) && (
                                 <div className="tree-page__section mt-2 tree-page__section--discussions">
                                     <h3 className="tree-page__section-header">Discussions</h3>

@@ -57,11 +57,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 .pipe(
                     filter(([, isVisible]) => isVisible),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(
-                        ([props]) =>
-                            props.item.body.html
-                                ? of(sanitizeHtml(props.item.body.html))
-                                : renderMarkdown({ markdown: props.item.body.text })
+                    switchMap(([props]) =>
+                        props.item.body.html
+                            ? of(sanitizeHtml(props.item.body.html))
+                            : renderMarkdown({ markdown: props.item.body.text })
                     ),
                     switchMap(markdownHTML => {
                         if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {

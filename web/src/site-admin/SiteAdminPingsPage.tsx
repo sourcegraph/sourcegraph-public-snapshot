@@ -3,12 +3,14 @@ import { Subscription } from 'rxjs'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
+interface Props {}
+
 interface State {}
 
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export class SiteAdminPingsPage extends React.Component<{}, State> {
+export class SiteAdminPingsPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
@@ -27,7 +29,9 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
         return (
             <div className="site-admin-pings-page">
                 <PageTitle title="Pings - Admin" />
-                <h2>Pings</h2>
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                    <h2 className="mb-0">Pings</h2>
+                </div>
                 <p>
                     Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It
                     sends only the high-level data below. It never sends code, repository names, usernames, or any other
@@ -57,7 +61,8 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
                         To disable pings (for customers only),{' '}
                         <a href="https://about.sourcegraph.com/contact/" target="_blank">
                             contact support
-                        </a>.
+                        </a>
+                        .
                     </p>
                 )}
             </div>

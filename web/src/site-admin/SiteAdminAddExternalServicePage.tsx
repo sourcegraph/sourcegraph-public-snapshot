@@ -7,7 +7,8 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
-import { ALL_EXTERNAL_SERVICES } from './externalServices'
+import { refreshSiteFlags } from '../site/backend'
+import { ALL_EXTERNAL_SERVICES, ExternalServiceMetadata, GITHUB_EXTERNAL_SERVICE } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
 interface Props {
@@ -21,7 +22,8 @@ interface Props {
 }
 
 interface State {
-    input: Pick<GQL.IAddExternalServiceInput, 'displayName' | 'config'>
+    displayName: string
+    config: string
 
     /**
      * Holds any error returned by the remote GraphQL endpoint on failed requests.
@@ -34,36 +36,38 @@ interface State {
     loading: boolean
 }
 
-const defaultConfig = `{
-    // Configure your external service here (Ctrl+Space to see hints)
-}`
-
 export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
     public state: State = {
         loading: false,
-        input: {
-            displayName: '',
-            config: defaultConfig,
-        },
+        displayName: '',
+        config: this.getExternalServiceMetadata().defaultConfig,
     }
 
     private submits = new Subject<GQL.IAddExternalServiceInput>()
     private subscriptions = new Subscription()
 
-    private getExternalServiceKind(): GQL.ExternalServiceKind {
-        const params = new URLSearchParams(this.props.history.location.search)
-        const kind = params.get('kind')
+    private getExternalServiceMetadata(kind?: string | GQL.ExternalServiceKind): ExternalServiceMetadata {
+        if (!kind) {
+            const params = new URLSearchParams(this.props.history.location.search)
+            kind = params.get('kind') || undefined
+        }
+
         if (kind) {
-            const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind.toUpperCase())
+            const k = kind
+            const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === k.toUpperCase())
             if (service) {
-                return service.kind
+                return service
             }
         }
-        return GQL.ExternalServiceKind.GITHUB
+        return GITHUB_EXTERNAL_SERVICE
     }
 
     private getExternalServiceInput(): GQL.IAddExternalServiceInput {
-        return { ...this.state.input, kind: this.getExternalServiceKind() }
+        return {
+            displayName: this.state.displayName,
+            config: this.state.config,
+            kind: this.getExternalServiceMetadata().kind,
+        }
     }
 
     public componentDidMount(): void {
@@ -74,9 +78,13 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
                         addExternalService(input, this.props.eventLogger).pipe(
-                            map(externalService => {
+                            map(() => {
+                                // Refresh site flags so that global site alerts
+                                // reflect the latest configuration.
+                                refreshSiteFlags().subscribe(undefined, err => console.error(err))
+
                                 this.setState({ loading: false })
-                                this.props.history.push(`/site-admin/external-services/${externalService.id}`)
+                                this.props.history.push(`/site-admin/external-services`)
                             }),
                             catchError(error => {
                                 console.error(error)
@@ -115,11 +123,18 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 
     private onChange = (input: GQL.IAddExternalServiceInput) => {
-        this.setState({ input })
-
-        if (input.kind.toLowerCase() === this.getExternalServiceKind().toLowerCase()) {
+        if (input.kind.toLowerCase() === this.getExternalServiceMetadata().kind.toLowerCase()) {
+            this.setState({
+                displayName: input.displayName,
+                config: input.config,
+            })
             return
         }
+
+        this.setState({
+            displayName: input.displayName,
+            config: this.getExternalServiceMetadata(input.kind).defaultConfig,
+        })
 
         const { search, ...loc } = this.props.location
 

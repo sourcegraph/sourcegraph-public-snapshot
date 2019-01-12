@@ -1,7 +1,9 @@
 import React from 'react'
 import { userAccountAreaRoutes } from '../../../user/account/routes'
 import { UserAccountAreaRoute } from '../../../user/account/UserAccountArea'
-import { UserAccountExternalAccountsPage } from './UserAccountExternalAccountsPage'
+const UserAccountExternalAccountsPage = React.lazy(async () => ({
+    default: (await import('./UserAccountExternalAccountsPage')).UserAccountExternalAccountsPage,
+}))
 
 export const enterpriseUserAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [
     ...userAccountAreaRoutes,

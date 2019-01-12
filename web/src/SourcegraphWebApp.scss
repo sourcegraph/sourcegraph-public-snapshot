@@ -23,8 +23,13 @@ $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
 $grid-gutter-width: 1.5rem;
+
+// No max width except for xl.
 $container-max-widths: (
-    xl: 74rem,
+    sm: null,
+    md: null,
+    lg: null,
+    xl: 1140px,
 );
 
 // Tell Bootstrap to use colors from OpenColor
@@ -119,12 +124,18 @@ $table-border-color: #2b3750;
 $table-hover-bg-light: #f2f4f8;
 $table-border-color-light: #e4e9f1;
 
+// Progress
+$progress-border-radius: 0;
+$progress-bg: transparent;
+$progress-height: auto;
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
 @import './global-styles/badge';
 @import './global-styles/breadcrumb';
@@ -257,6 +268,7 @@ hr {
 @import './components/PopoverButton';
 @import './components/Overview';
 @import './components/RadioButtons';
+@import './components/Select';
 @import './components/tooltip/Tooltip';
 @import './user/account/UserAccountArea';
 @import './site-admin/SiteAdminAlert';
@@ -271,5 +283,6 @@ hr {
 @import './repo/blob/discussions/DiscussionsTree';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
+@import '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner';
 
 @import './extensions/shared';

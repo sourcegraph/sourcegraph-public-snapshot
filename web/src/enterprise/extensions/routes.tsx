@@ -1,7 +1,7 @@
 import React from 'react'
 import { ExtensionsAreaRoute } from '../../extensions/ExtensionsArea'
 import { extensionsAreaRoutes } from '../../extensions/routes'
-import { RegistryArea } from './registry/RegistryArea'
+const RegistryArea = React.lazy(async () => ({ default: (await import('./registry/RegistryArea')).RegistryArea }))
 
 export const enterpriseExtensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute> = [
     extensionsAreaRoutes[0],

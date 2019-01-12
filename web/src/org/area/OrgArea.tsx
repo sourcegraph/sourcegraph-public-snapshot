@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -11,6 +12,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
+import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
@@ -169,69 +171,73 @@ export class OrgArea extends React.Component<Props> {
                 <OrgHeader className="area--vertical__header" {...this.props} {...transferProps} />
                 <div className="org-area__content area--vertical__content">
                     <div className="org-area__content-inner area--vertical__content-inner">
-                        <Switch>
-                            <Route
-                                path={this.props.match.url}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <OrgOverviewPage {...routeComponentProps} {...transferProps} />
-                                )}
-                            />
-                            <Route
-                                path={`${this.props.match.url}/members`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <OrgMembersPage {...routeComponentProps} {...transferProps} />
-                                )}
-                            />
-                            <Route
-                                path={`${this.props.match.url}/settings`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <SettingsArea
-                                        {...routeComponentProps}
-                                        {...transferProps}
-                                        subject={transferProps.org}
-                                        isLightTheme={this.props.isLightTheme}
-                                        extraHeader={
-                                            <>
-                                                {transferProps.authenticatedUser &&
-                                                    transferProps.org.viewerCanAdminister &&
-                                                    !transferProps.org.viewerIsMember && (
-                                                        <SiteAdminAlert className="sidebar__alert">
-                                                            Viewing settings for{' '}
-                                                            <strong>{transferProps.org.name}</strong>
-                                                        </SiteAdminAlert>
-                                                    )}
-                                                <p>
-                                                    Organization settings apply to all members. User settings override
-                                                    organization settings.
-                                                </p>
-                                            </>
-                                        }
+                        <ErrorBoundary location={this.props.location}>
+                            <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                                <Switch>
+                                    <Route
+                                        path={this.props.match.url}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <OrgOverviewPage {...routeComponentProps} {...transferProps} />
+                                        )}
                                     />
-                                )}
-                            />
-                            <Route
-                                path={`${this.props.match.url}/account`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <OrgAccountArea
-                                        {...routeComponentProps}
-                                        {...transferProps}
-                                        isLightTheme={this.props.isLightTheme}
+                                    <Route
+                                        path={`${this.props.match.url}/members`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <OrgMembersPage {...routeComponentProps} {...transferProps} />
+                                        )}
                                     />
-                                )}
-                            />
-                            <Route key="hardcoded-key" component={NotFoundPage} />
-                        </Switch>
+                                    <Route
+                                        path={`${this.props.match.url}/settings`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <SettingsArea
+                                                {...routeComponentProps}
+                                                {...transferProps}
+                                                subject={transferProps.org}
+                                                isLightTheme={this.props.isLightTheme}
+                                                extraHeader={
+                                                    <>
+                                                        {transferProps.authenticatedUser &&
+                                                            transferProps.org.viewerCanAdminister &&
+                                                            !transferProps.org.viewerIsMember && (
+                                                                <SiteAdminAlert className="sidebar__alert">
+                                                                    Viewing settings for{' '}
+                                                                    <strong>{transferProps.org.name}</strong>
+                                                                </SiteAdminAlert>
+                                                            )}
+                                                        <p>
+                                                            Organization settings apply to all members. User settings
+                                                            override organization settings.
+                                                        </p>
+                                                    </>
+                                                }
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${this.props.match.url}/account`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <OrgAccountArea
+                                                {...routeComponentProps}
+                                                {...transferProps}
+                                                isLightTheme={this.props.isLightTheme}
+                                            />
+                                        )}
+                                    />
+                                    <Route key="hardcoded-key" component={NotFoundPage} />
+                                </Switch>
+                            </React.Suspense>
+                        </ErrorBoundary>
                     </div>
                 </div>
             </div>

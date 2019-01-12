@@ -6,14 +6,12 @@
 
 ## Step 1: Run Sourcegraph
 
-```
-docker run \
-  --publish 7080:7080 --publish 2633:2633 --rm \
-  --volume ~/.sourcegraph/config:/etc/sourcegraph \
-  --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
-  --volume /var/run/docker.sock:/var/run/docker.sock \
-  sourcegraph/server:2.13.5
-```
+<!--
+  DO NOT CHANGE THIS TO A CODEBLOCK.
+  We want line breaks for readability, but backslashes to escape them do not work cross-platform.
+  This uses line breaks that are rendered but not copy-pasted to the clipboard.
+-->
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> --volume /var/run/docker.sock:/var/run/docker.sock<span class="virtual-br"></span> sourcegraph/server:2.13.5</code></pre>
 
 When Sourcegraph is ready, continue at http://localhost:7080.
 
@@ -30,7 +28,7 @@ Click **Add GitHub.com repositories** to add all repositories associated with yo
 ## Next steps
 
 - [Configure your Sourcegraph instance](../../site_config/index.md)
-- [Configure code intelligence](../../../extensions/language_servers/index.md)
+- [Configure code intelligence](../../../user/code_intelligence/index.md)
 - [Deploy Sourcegraph on AWS](../../install/docker/aws.md)
 - [Deploy Sourcegraph on Google Cloud Platform](../../install/docker/google_cloud.md)
 - [Deploy Sourcegraph on Digital Ocean](../../install/docker/digitalocean.md)

@@ -439,22 +439,6 @@ export function getPhabricatorState(
     })
 }
 
-export function getFilepathFromFile(fileContainer: HTMLElement): { filePath: string; baseFilePath?: string } {
-    const filePath = fileContainer.children[3].textContent as string
-    const metas = fileContainer.querySelectorAll('.differential-meta-notice')
-    let baseFilePath: string | undefined
-    const movedFilePrefix = 'This file was moved from '
-    for (const meta of metas) {
-        let metaText = meta.textContent!
-        if (metaText.startsWith(movedFilePrefix)) {
-            metaText = metaText.substr(0, metaText.length - 1) // remove trailing '.'
-            baseFilePath = metaText.split(movedFilePrefix)[1]
-            break
-        }
-    }
-    return { filePath, baseFilePath }
-}
-
 /**
  * This hacks javelin Stratcom to ignore command + click actions on sg-clickable tokens.
  * Without this, two windows open when a user command + clicks on a token.

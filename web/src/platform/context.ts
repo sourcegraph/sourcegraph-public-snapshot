@@ -1,4 +1,4 @@
-import { concat, Observable, ReplaySubject, throwError } from 'rxjs'
+import { concat, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!../../../shared/src/api/extension/main.worker.ts'
 import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
@@ -51,10 +51,6 @@ export function createPlatformContext(): PlatformContext {
                 `,
                 variables
             ),
-        backcompatQueryLSP: () =>
-            throwError(
-                'queryLSP is no longer implemented; extensions must manage their own connection to a language server'
-            ),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
         createExtensionHost: () => {
             const worker = new ExtensionHostWorker()
@@ -69,6 +65,7 @@ export function createPlatformContext(): PlatformContext {
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
+        sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
     }
     return context
 }

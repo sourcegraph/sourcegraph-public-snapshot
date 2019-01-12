@@ -77,9 +77,15 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     >
                         Use {this.props.isLightTheme ? 'dark' : 'light'} theme
                     </button>
-                    <Link to="/help" className="dropdown-item">
-                        Help
-                    </Link>
+                    {window.context.sourcegraphDotComMode ? (
+                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
+                            Help
+                        </a>
+                    ) : (
+                        <Link to="/help" className="dropdown-item">
+                            Help
+                        </Link>
+                    )}
                     {this.props.authenticatedUser.siteAdmin && (
                         <>
                             <DropdownItem divider={true} />
@@ -88,15 +94,14 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             </Link>
                         </>
                     )}
-                    {this.props.authenticatedUser.session &&
-                        this.props.authenticatedUser.session.canSignOut && (
-                            <>
-                                <DropdownItem divider={true} />
-                                <a href="/-/sign-out" className="dropdown-item">
-                                    Sign out
-                                </a>
-                            </>
-                        )}
+                    {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
+                        <>
+                            <DropdownItem divider={true} />
+                            <a href="/-/sign-out" className="dropdown-item">
+                                Sign out
+                            </a>
+                        </>
+                    )}
                     {this.props.showAbout && (
                         <>
                             <DropdownItem divider={true} />

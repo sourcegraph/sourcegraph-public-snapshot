@@ -4,6 +4,8 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { NEVER, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -24,15 +26,12 @@ const DiffBoundary: React.FunctionComponent<{
     <tr className="diff-boundary">
         {props.lineNumbers && <td className={`diff-boundary__num ${props.lineNumberClassName}`} colSpan={2} />}
         <td className={`diff-boundary__content ${props.contentClassName}`}>
-            {props.oldRange.lines !== undefined &&
-                props.newRange.lines !== undefined && (
-                    <code>
-                        @@ -{props.oldRange.startLine},{props.oldRange.lines} +{props.newRange.startLine},{
-                            props.newRange.lines
-                        }{' '}
-                        {props.section && `@@ ${props.section}`}
-                    </code>
-                )}
+            {props.oldRange.lines !== undefined && props.newRange.lines !== undefined && (
+                <code>
+                    @@ -{props.oldRange.startLine},{props.oldRange.lines} +{props.newRange.startLine},
+                    {props.newRange.lines} {props.section && `@@ ${props.section}`}
+                </code>
+            )}
         </td>
     </tr>
 )
@@ -202,7 +201,7 @@ interface Props extends PlatformContextProps {
     className: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
 }
 
 interface State {}

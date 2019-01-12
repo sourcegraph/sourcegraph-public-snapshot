@@ -2,7 +2,7 @@
 
 ## Linking and syncing Phabricator repositories
 
-If you mirror your source repositories on Phabricator, Sourcegraph can provide users with links to various Phabricator pages if you [add a Phabricator external service](../../site-admin/external-services/add?kind=phabricator).
+If you mirror your source repositories on Phabricator, Sourcegraph can provide users with links to various Phabricator pages if you add Phabricator as an external service (in **Site admin > External services**, or in the site config JSON editor in Sourcegraph 2.x).
 
 A Phabricator external service configuration consists of the following fields:
 

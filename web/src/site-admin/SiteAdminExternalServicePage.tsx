@@ -63,11 +63,11 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     switchMap(input =>
                         updateExternalService(input).pipe(
                             mapTo(null),
-                            startWith(LOADING)
+                            startWith(LOADING),
+                            catchError(err => [asError(err)]),
+                            map(u => ({ updateOrError: u }))
                         )
-                    ),
-                    catchError(err => [asError(err)]),
-                    map(u => ({ updateOrError: u }))
+                    )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
         )

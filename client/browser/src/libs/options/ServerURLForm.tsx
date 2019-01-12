@@ -115,48 +115,46 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         onChange={this.handleChange}
                     />
                 </div>
-                {!this.state.isUpdating &&
-                    this.props.connectionError === ConnectionErrors.AuthError && (
-                        <div className="server-url-form__error">
-                            Authentication to Sourcegraph failed.{' '}
+                {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
+                    <div className="server-url-form__error">
+                        Authentication to Sourcegraph failed.{' '}
+                        <a href={this.props.value} target="_blank">
+                            Sign in to your instance
+                        </a>{' '}
+                        to continue.
+                    </div>
+                )}
+                {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.UnableToConnect && (
+                    <div className="server-url-form__error">
+                        <p>
+                            Unable to connect to{' '}
                             <a href={this.props.value} target="_blank">
-                                Sign in to your instance
+                                {this.props.value}
+                            </a>
+                            . Ensure the URL is correct and you are{' '}
+                            <a href={this.props.value + '/sign-in'} target="_blank">
+                                logged in
+                            </a>
+                            .
+                        </p>
+                        <p>
+                            <b>If you are an admin,</b> please ensure that{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/admin/site_config/all#auth-accesstokens-object"
+                                target="_blank"
+                            >
+                                all users can create access tokens
                             </a>{' '}
-                            to continue.
-                        </div>
-                    )}
-                {!this.state.isUpdating &&
-                    this.props.connectionError === ConnectionErrors.UnableToConnect && (
-                        <div className="server-url-form__error">
-                            <p>
-                                Unable to connect to{' '}
-                                <a href={this.props.value} target="_blank">
-                                    {this.props.value}
-                                </a>
-                                . Ensure the URL is correct and you are{' '}
-                                <a href={this.props.value + '/sign-in'} target="_blank">
-                                    logged in
-                                </a>
-                                .
-                            </p>
-                            <p>
-                                <b>If you are an admin,</b> please ensure that{' '}
-                                <a
-                                    href="https://docs.sourcegraph.com/admin/site_config/all#auth-accesstokens-object"
-                                    target="_blank"
-                                >
-                                    all users can create access tokens
-                                </a>{' '}
-                                or you have added your code hosts to your{' '}
-                                <a
-                                    href="https://docs.sourcegraph.com/admin/site_config/all#corsorigin-string"
-                                    target="_blank"
-                                >
-                                    corsOrigin setting.
-                                </a>
-                            </p>
-                        </div>
-                    )}
+                            or you have added your code hosts to your{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/admin/site_config/all#corsorigin-string"
+                                target="_blank"
+                            >
+                                corsOrigin setting.
+                            </a>
+                        </p>
+                    </div>
+                )}
             </form>
         )
     }

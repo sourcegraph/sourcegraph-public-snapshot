@@ -25,13 +25,12 @@ export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, disabled, s
 
     return (
         <>
-            {error &&
-                !saving && (
-                    <div className="save-toolbar__error">
-                        <AlertCircleIcon className="icon-inline save-toolbar__error-icon" />
-                        {error.message}
-                    </div>
-                )}
+            {error && !saving && (
+                <div className="save-toolbar__error">
+                    <AlertCircleIcon className="icon-inline save-toolbar__error-icon" />
+                    {error.message}
+                </div>
+            )}
             <div className="save-toolbar__actions">
                 <button
                     disabled={saveDiscardDisabled}

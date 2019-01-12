@@ -38,3 +38,15 @@ The following keywords are only used for **commit diff** and **commit message** 
 | **before:"string specifying time frame"** | Only include results from diffs or commits which have a commit date before the specified time frame                                                                                                                                                                                                                                                                                                     | [`before:"last thursday"`](https://sourcegraph.com/search?q=repo:sourcegraph+type:diff+author:nickdsnyder%40gmail.com+before:%223+weeks+ago%22) <br> [`before:"june 25 2017"`](https://sourcegraph.com/search?q=repo:sourcegraph+type:diff+author:nickdsnyder%40gmail.com+before:%22january+1+2018%22) |
 | **after:"string specifying time frame"**  | Only include results from diffs or commits which have a commit date after the specified time frame                                                                                                                                                                                                                                                                                                      | [`after:"3 weeks ago"`](https://sourcegraph.com/search?q=repo:sourcegraph+type:diff+author:nickdsnyder%40gmail.com+after:%223+weeks+ago%22) <br> [`after:"june 25 2017"`](https://sourcegraph.com/search?q=repo:sourcegraph+type:diff+author:nickdsnyder%40gmail.com+after:%22january+1+2018%22)       |
 | **message:"any string"**                  | Only include results from diffs or commits which have commit messages containing the string                                                                                                                                                                                                                                                                                                             | [`type:commit message:"testing"`](https://sourcegraph.com/search?q=repogroup:sample+type:commit+message:%22testing%22) <br> [`type:diff message:"testing"`](https://sourcegraph.com/search?q=repogroup:sample+type:diff+message:%22testing%22)                                                         |
+
+## Repository name search
+
+A query with only `repo:` filters returns a list of repositories with matching names.
+
+Example: [`repo:docker repo:registry`](https://sourcegraph.com/search?q=repo:docker+repo:registry)
+
+## Filename search
+
+A query with `type:path` restricts terms to matching filenames only (not file contents).
+
+Example: [`type:path repo:/docker/ registry`](https://sourcegraph.com/search?q=type:path+repo:/docker/+registry)

@@ -3,6 +3,7 @@ import React from 'react'
 import { Subscription } from 'rxjs'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../shared/src/highlight/contributions'
+import { registerHoverContributions } from '../../shared/src/hover/actions'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -18,6 +19,7 @@ export class GlobalContributions extends React.Component<Props> {
 
     public componentDidMount(): void {
         registerHighlightContributions() // no way to unregister these
+        this.subscriptions.add(registerHoverContributions(this.props))
     }
 
     public componentWillUnmount(): void {

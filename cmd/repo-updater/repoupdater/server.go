@@ -21,6 +21,7 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
+	*repos.OtherReposSyncer
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -29,6 +30,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
+	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	return mux
 }
 
@@ -58,7 +60,7 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := time.Now()
-	result, err := repoLookup(r.Context(), args)
+	result, err := s.repoLookup(r.Context(), args)
 	if err != nil {
 		if err == context.Canceled {
 			http.Error(w, "request canceled", http.StatusGatewayTimeout)
@@ -91,9 +93,30 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	repos.UpdateOnce(r.Context(), req.Repo, req.URL)
 }
 
+func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
+	var req protocol.ExternalServiceSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	switch req.ExternalService.Kind {
+	case "OTHER":
+		res := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService)
+		if len(res.Errors) > 0 {
+			log15.Error("server.external-service-sync", res.Errors)
+			http.Error(w, res.Errors.Error(), http.StatusInternalServerError)
+		}
+	case "":
+		http.Error(w, "empty external service kind", http.StatusBadRequest)
+	default:
+		// TODO(tsenart): Handle other external service kinds.
+	}
+}
+
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
-func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 	if args.Repo == "" && args.ExternalRepo == nil {
 		return nil, errors.New("at least one of Repo and ExternalRepo must be set (both are empty)")
 	}
@@ -102,22 +125,37 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 		return mockRepoLookup(args)
 	}
 
-	var result protocol.RepoLookupResult
+	var (
+		result        protocol.RepoLookupResult
+		repo          *protocol.RepoInfo
+		authoritative bool
+		err           error
+	)
 
-	// Try all GetXyzRepository funcs until one returns authoritatively.
-	repo, authoritative, err := repos.GetGitHubRepository(ctx, args)
-	if !authoritative {
-		repo, authoritative, err = repos.GetGitLabRepository(ctx, args)
+	type getfn func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
+
+	// Find the authoritative source of the repository being looked up.
+	for _, get := range []getfn{
+		// We begin by searching the "OTHER" external service kind repos because lookups
+		// are fast in-memory only operations, as opposed to the other external service kinds which
+		// don't *always* have enough metadata cached to answer this request without performing network
+		// requests to their respective code host APIs
+		func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
+			r := s.OtherReposSyncer.GetRepoInfoByName(ctx, string(args.Repo))
+			return r, r != nil, nil
+		},
+		// Slower, *potentially* I/O bound lookups, unless there's an HTTP client cache hit.
+		repos.GetGitHubRepository,
+		repos.GetGitLabRepository,
+		repos.GetBitbucketServerRepository,
+		repos.GetAWSCodeCommitRepository,
+		repos.GetGitoliteRepository,
+	} {
+		if repo, authoritative, err = get(ctx, args); authoritative {
+			break
+		}
 	}
-	if !authoritative {
-		repo, authoritative, err = repos.GetBitbucketServerRepository(ctx, args)
-	}
-	if !authoritative {
-		repo, authoritative, err = repos.GetAWSCodeCommitRepository(ctx, args)
-	}
-	if !authoritative {
-		repo, authoritative, err = repos.GetGitoliteRepository(ctx, args)
-	}
+
 	if authoritative {
 		if isNotFound(err) {
 			result.ErrorNotFound = true

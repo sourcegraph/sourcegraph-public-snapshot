@@ -182,13 +182,17 @@ func (s dbExtensions) GetByExtensionID(ctx context.Context, extensionID string) 
 // dbExtensionsListOptions contains options for listing registry extensions.
 type dbExtensionsListOptions struct {
 	Publisher              dbPublisher
-	Query                  string // matches the extension ID
+	Query                  string // matches the extension ID and latest release's manifest's title
+	Category               string // matches the latest release's manifest's categories array
+	Tag                    string // matches the latest release's manifest's tags array
 	PrioritizeExtensionIDs []string
-	ExcludeWIP             bool // exclude extensions marked as WIP
 	*db.LimitOffset
 }
 
-var extensionIsWIPExpr = sqlf.Sprintf(`COALESCE(rer.manifest IS NULL OR rer.manifest::json->>'title' SIMILAR TO %s, true)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
+// extensionIsWIPExpr is the SQL expression for whether the extension is a WIP extension.
+//
+// BACKCOMPAT: It still reads the title property even though extensions no longer have titles.
+var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR COALESCE((rer.manifest->>'wip')::jsonb = 'true'::jsonb, rer.manifest->>'title' SIMILAR TO %s, false)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query
@@ -199,10 +203,31 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("x.publisher_org_id=%d", o.Publisher.OrgID))
 	}
 	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf(extensionIDExpr+" ILIKE %s", "%"+strings.Replace(strings.ToLower(o.Query), " ", "%", -1)+"%"))
+		likePattern := func(value string) string {
+			return "%" + strings.Replace(strings.ToLower(value), " ", "%", -1) + "%"
+		}
+		queryConds := []*sqlf.Query{
+			sqlf.Sprintf(extensionIDExpr+" ILIKE %s", likePattern(o.Query)),
+			// BACKCOMPAT: This still reads the title property even though extensions no longer have titles.
+			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'description' ILIKE %s OR rer.manifest->>'title' ILIKE %s) ELSE false END`, likePattern(o.Query), likePattern(o.Query)),
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(queryConds, ") OR (")))
 	}
-	if o.ExcludeWIP {
-		conds = append(conds, sqlf.Sprintf("NOT (%s)", extensionIsWIPExpr))
+	if o.Category != "" {
+		categoryConds := []*sqlf.Query{
+			sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Category),
+		}
+		if o.Category == "Other" {
+			// Special-case the "Other" category: it matches extensions explicitly categorized as
+			// "Other" or extensions with a manifest with no category. (Extensions with no manifest
+			// are omitted.) HACK: This ideally would be implemented at a different layer, but it is
+			// so much simpler to just special-case it here.
+			categoryConds = append(categoryConds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb IS NULL ELSE false END`))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(categoryConds, ") OR (")))
+	}
+	if o.Tag != "" {
+		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'tags')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Tag))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
@@ -302,7 +327,7 @@ func (dbExtensions) Update(ctx context.Context, id int32, name *string) error {
 	}
 
 	res, err := dbconn.Global.ExecContext(ctx,
-		"UPDATE registry_extensions SET name=COALESCE($2, name),  updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
+		"UPDATE registry_extensions SET name=COALESCE($2, name), updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
 		id, name,
 	)
 	if err != nil {

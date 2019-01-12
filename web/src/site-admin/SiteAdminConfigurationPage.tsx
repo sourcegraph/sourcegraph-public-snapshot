@@ -11,7 +11,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../settings/Dynamically
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { siteConfigActions } from './configHelpers'
+import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 
 interface Props extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -163,25 +163,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
             )
         }
-        if (this.state.site && this.state.site.configuration && !this.state.site.configuration.canUpdate) {
-            alerts.push(
-                <div key="volatile" className="alert alert-danger site-admin-configuration-page__alert">
-                    <p>
-                        Use this editor as a scratch area for composing Sourcegraph site configuration.{' '}
-                        <strong>Changes will NOT be saved</strong> and will be lost when you leave this page.
-                    </p>
-                    <p>
-                        <small>
-                            To save and apply changes, manually update{' '}
-                            {formatEnvVar(this.state.site.configuration.source)} (or <code>values.yaml</code> for
-                            Kubernetes cluster deployments) with the configuration below and restart the server. Online
-                            configuration editing is only supported when deployed on Docker and when the configuration
-                            lives in a writable file on disk.
-                        </small>
-                    </p>
-                </div>
-            )
-        }
         if (
             this.state.site &&
             this.state.site.configuration &&
@@ -252,42 +233,46 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-configuration-page">
                 <PageTitle title="Configuration - Admin" />
-                <h2>Site configuration</h2>
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                    <h2 className="mb-0">Site configuration</h2>
+                </div>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/site_config">documentation</Link> for more information.
                 </p>
+                <div className="mb-3">
+                    <SiteAdminManagementConsolePassword />
+                </div>
+                <p>
+                    Authentication providers, the application URL, license key, and other critical configuration may be
+                    edited via the{' '}
+                    <a href="https://docs.sourcegraph.com/admin/management_console">management console</a>.
+                </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.site &&
-                    this.state.site.configuration && (
-                        <div>
-                            <DynamicallyImportedMonacoSettingsEditor
-                                value={contents || ''}
-                                actions={siteConfigActions}
-                                jsonSchemaId="site.schema.json#"
-                                extraSchemas={EXTRA_SCHEMAS}
-                                onDirtyChange={this.onDirtyChange}
-                                canEdit={this.state.site.configuration.canUpdate}
-                                saving={this.state.saving}
-                                loading={isReloading || this.state.saving}
-                                height={600}
-                                isLightTheme={this.props.isLightTheme}
-                                onSave={this.onSave}
-                                history={this.props.history}
-                            />
-                            <p className="form-text text-muted">
-                                <small>Source: {formatEnvVar(this.state.site.configuration.source)}</small>
-                            </p>
-                            <p className="form-text text-muted">
-                                <small>
-                                    Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
-                                    more information, see the{' '}
-                                    <Link to="/help/admin/site_config/all">documentation</Link>.
-                                </small>
-                            </p>
-                        </div>
-                    )}
+                {this.state.site && this.state.site.configuration && (
+                    <div>
+                        <DynamicallyImportedMonacoSettingsEditor
+                            value={contents || ''}
+                            jsonSchemaId="site.schema.json#"
+                            extraSchemas={EXTRA_SCHEMAS}
+                            onDirtyChange={this.onDirtyChange}
+                            canEdit={true}
+                            saving={this.state.saving}
+                            loading={isReloading || this.state.saving}
+                            height={600}
+                            isLightTheme={this.props.isLightTheme}
+                            onSave={this.onSave}
+                            history={this.props.history}
+                        />
+                        <p className="form-text text-muted">
+                            <small>
+                                Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
+                                more information, see the <Link to="/help/admin/site_config/all">documentation</Link>.
+                            </small>
+                        </p>
+                    </div>
+                )}
             </div>
         )
     }
@@ -303,13 +288,4 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         eventLogger.log('SiteReloaded')
         this.siteReloads.next()
     }
-}
-
-function formatEnvVar(text: string): React.ReactChild[] | string {
-    const S = 'SOURCEGRAPH_CONFIG'
-    const idx = text.indexOf(S)
-    if (idx === -1) {
-        return text
-    }
-    return [text.slice(0, idx), <code key={S}>{S}</code>, text.slice(idx + S.length)]
 }

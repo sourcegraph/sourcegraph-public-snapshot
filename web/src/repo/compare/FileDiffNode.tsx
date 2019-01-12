@@ -4,6 +4,8 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -24,7 +26,7 @@ export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsContr
     className?: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
 }
 
 interface State {

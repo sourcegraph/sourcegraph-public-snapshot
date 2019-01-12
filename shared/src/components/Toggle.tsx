@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 interface Props {
-    /** The initial value.  */
+    /** The initial value. */
     value?: boolean
 
     /** The DOM ID of the element. */
@@ -24,14 +24,14 @@ interface Props {
 export class Toggle extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         const onClick = () => {
-            if (this.props.onToggle) {
+            if (this.props.onToggle && !this.props.disabled) {
                 this.props.onToggle(!this.props.value)
             }
         }
 
         return (
             <button
-                className={`toggle ${this.props.disabled ? 'toggle__disabled' : ''}`}
+                className={`toggle ${this.props.disabled ? 'toggle__disabled' : ''} ${this.props.className || ''}`}
                 id={this.props.id}
                 title={this.props.title}
                 value={this.props.value ? 1 : 0}

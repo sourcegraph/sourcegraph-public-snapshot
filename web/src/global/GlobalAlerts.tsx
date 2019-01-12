@@ -1,8 +1,8 @@
-import marked from 'marked'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { isSettingsValid, SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Settings } from '../schema/settings.schema'
 import { SiteFlags } from '../site'
@@ -61,10 +61,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             )}
 
                         {/* Only show if the user has already enabled repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                        {window.context.likelyDockerOnMac &&
-                            !this.state.siteFlags.noRepositoriesEnabled && (
-                                <DockerForMacAlert className="global-alerts__alert" />
-                            )}
+                        {window.context.likelyDockerOnMac && !this.state.siteFlags.noRepositoriesEnabled && (
+                            <DockerForMacAlert className="global-alerts__alert" />
+                        )}
 
                         {this.state.siteFlags.alerts.map((alert, i) => (
                             <GlobalAlert key={i} alert={alert} className="global-alerts__alert" />
@@ -80,7 +79,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             partialStorageKey={`motd.${m}`}
                             className="alert alert-info global-alerts__alert"
                         >
-                            <Markdown dangerousInnerHTML={marked(m, { gfm: true, breaks: true, sanitize: true })} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(m)} />
                         </DismissibleAlert>
                     ))}
             </div>

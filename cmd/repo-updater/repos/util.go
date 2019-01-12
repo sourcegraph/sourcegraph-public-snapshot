@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 
 	"github.com/gregjones/httpcache"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"

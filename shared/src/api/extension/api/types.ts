@@ -33,6 +33,7 @@ export function fromHover(hover: sourcegraph.Hover): clientType.Hover {
     return {
         contents: hover.contents,
         __backcompatContents: hover.__backcompatContents, // tslint:disable-line deprecation
+        priority: hover.priority,
         range: fromRange(hover.range),
     }
 }

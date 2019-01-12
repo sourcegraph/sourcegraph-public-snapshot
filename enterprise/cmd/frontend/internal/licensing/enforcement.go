@@ -20,11 +20,11 @@ func init() {
 			info, err := GetConfiguredProductLicenseInfo()
 			if err != nil {
 				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
-				WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information.")
+				WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console).")
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
-				WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features).")
+				WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features). Update the license key in the Sourcegraph management console.")
 				return
 			}
 
@@ -40,7 +40,7 @@ func WriteSubscriptionErrorResponseForFeature(w http.ResponseWriter, featureName
 	WriteSubscriptionErrorResponse(
 		w, http.StatusForbidden,
 		fmt.Sprintf("License is not valid for %s", featureNameHumanReadable),
-		fmt.Sprintf("To use the %s feature, a site admin must upgrade the Sourcegraph license. (The site admin may also remove the site configuration that enables this feature to dismiss this message.)", featureNameHumanReadable),
+		fmt.Sprintf("To use the %s feature, a site admin must upgrade the Sourcegraph license in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console). (The site admin may also remove the site configuration that enables this feature to dismiss this message.)", featureNameHumanReadable),
 	)
 }
 
@@ -129,9 +129,9 @@ func init() {
 			} else {
 				message := "Unable to create user account: "
 				if info == nil {
-					message = fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users. A site admin must purchase a subscription at https://sourcegraph.com/user/subscriptions/new.", noLicenseMaximumAllowedUserCount)
+					message = fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users. A site admin must purchase a subscription at https://sourcegraph.com/user/subscriptions/new. Enter the license key in the Sourcegraph management console.", noLicenseMaximumAllowedUserCount)
 				} else {
-					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users."
+					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Enter the license key in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console)."
 				}
 				return errcode.NewPresentationError(message)
 			}

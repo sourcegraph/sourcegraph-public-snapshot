@@ -14,12 +14,9 @@ export class Location implements sourcegraph.Location {
         return Range.isRange((thing as Location).range) && URI.isURI((thing as Location).uri)
     }
 
-    public uri: sourcegraph.URI
-    public range?: sourcegraph.Range
+    public readonly range?: sourcegraph.Range
 
-    constructor(uri: sourcegraph.URI, rangeOrPosition?: sourcegraph.Range | sourcegraph.Position) {
-        this.uri = uri
-
+    constructor(public readonly uri: sourcegraph.URI, rangeOrPosition?: sourcegraph.Range | sourcegraph.Position) {
         if (!rangeOrPosition) {
             // that's OK
         } else if (rangeOrPosition instanceof Range) {

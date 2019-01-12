@@ -2,13 +2,8 @@ import mermaid from 'mermaid'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
-import storage from '../../browser/storage'
 import { Alerts } from '../../shared/components/Alerts'
-import { ConfigureSourcegraphButton } from '../../shared/components/ConfigureSourcegraphButton'
-import { ContextualSourcegraphButton } from '../../shared/components/ContextualSourcegraphButton'
-import { ServerAuthButton } from '../../shared/components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
-import { WithResolvedRev } from '../../shared/components/WithResolvedRev'
 import { eventLogger, inlineSymbolSearchEnabled, renderMermaidGraphsEnabled } from '../../shared/util/context'
 import { getFileContainers, parseURL } from './util'
 
@@ -36,7 +31,6 @@ export async function injectGitHubApplication(marker: HTMLElement): Promise<void
 
 async function inject(): Promise<void> {
     injectServerBanner()
-    injectOpenOnSourcegraphButton()
 
     injectMermaid()
 
@@ -74,42 +68,6 @@ function injectServerBanner(): void {
         </TelemetryContext.Provider>,
         mount
     )
-}
-
-/**
- * Appends an Open on Sourcegraph button to the GitHub DOM.
- * The button is only rendered on a repo homepage after the "find file" button.
- */
-function injectOpenOnSourcegraphButton(): void {
-    storage.getSync(items => {
-        const container = createOpenOnSourcegraphIfNotExists()
-
-        if (items.featureFlags.useExtensions) {
-            container.classList.add('use-extensions')
-        }
-
-        const pageheadActions = document.querySelector('.pagehead-actions')
-        if (!pageheadActions || !pageheadActions.children.length) {
-            return
-        }
-        pageheadActions.insertBefore(container, pageheadActions.children[0])
-        if (container) {
-            const { repoName, rev } = parseURL()
-            if (repoName) {
-                render(
-                    <WithResolvedRev
-                        component={ContextualSourcegraphButton}
-                        repoName={repoName}
-                        rev={rev}
-                        defaultBranch={'HEAD'}
-                        notFoundComponent={ConfigureSourcegraphButton}
-                        requireAuthComponent={ServerAuthButton}
-                    />,
-                    container
-                )
-            }
-        }
-    })
 }
 
 function injectMermaid(): void {
@@ -223,7 +181,7 @@ function injectInlineSearch(): void {
 
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
-function createOpenOnSourcegraphIfNotExists(): HTMLElement {
+export function createOpenOnSourcegraphIfNotExists(): HTMLElement | null {
     let container = document.getElementById(OPEN_ON_SOURCEGRAPH_ID)
     if (container) {
         container.remove()
@@ -231,5 +189,14 @@ function createOpenOnSourcegraphIfNotExists(): HTMLElement {
 
     container = document.createElement('li')
     container.id = OPEN_ON_SOURCEGRAPH_ID
+
+    const pageheadActions = document.querySelector('.pagehead-actions')
+    // If ran on page that isn't under a repository namespace.
+    if (!pageheadActions || !pageheadActions.children.length) {
+        return null
+    }
+
+    pageheadActions.insertAdjacentElement('afterbegin', container)
+
     return container
 }

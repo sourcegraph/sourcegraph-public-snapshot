@@ -1,7 +1,9 @@
 import React from 'react'
 import { ExploreSectionDescriptor } from '../../explore/ExploreArea'
 import { exploreSections } from '../../explore/exploreSections'
-import { ExtensionsExploreSection } from '../extensions/explore/ExtensionsExploreSection'
+const ExtensionsExploreSection = React.lazy(async () => ({
+    default: (await import('../extensions/explore/ExtensionsExploreSection')).ExtensionsExploreSection,
+}))
 
 export const enterpriseExploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
     { render: props => <ExtensionsExploreSection {...props} /> },

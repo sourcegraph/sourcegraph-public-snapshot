@@ -17,6 +17,7 @@ type GetAndSaveUserOp struct {
 	ExternalAccount     extsvc.ExternalAccountSpec
 	ExternalAccountData extsvc.ExternalAccountData
 	CreateIfNotExist    bool
+	LookUpByUsername    bool
 }
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
@@ -27,6 +28,8 @@ type GetAndSaveUserOp struct {
 //    a. If ctx contains an authenticated Actor, the Actor's identity is the user identity.
 //    b. Look up the user by external account ID.
 //    c. If the email specified in op.UserProps is verified, Look up the user by verified email.
+//       If op.LookUpByUsername is true, look up by username instead of verified email.
+//       (Note: most clients should look up by email, as username is typically insecure.)
 //    d. If op.CreateIfNotExist is true, attempt to create a new user with the properties
 //       specified in op.UserProps. This may fail if the desired username is already taken.
 // 2. Ensure that the user is associated with the external account information. This means
@@ -63,12 +66,23 @@ func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, saf
 			return 0, false, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", lookupByExternalErr
 		}
 
-		if op.UserProps.EmailIsVerified {
+		if op.LookUpByUsername {
+			user, getByUsernameErr := db.Users.GetByUsername(ctx, op.UserProps.Username)
+			if getByUsernameErr == nil {
+				return user.ID, false, false, "", nil
+			}
+			if !errcode.IsNotFound(getByUsernameErr) {
+				return 0, false, false, "Unexpected error looking up the Sourcegraph user by username. Ask a site admin for help.", getByUsernameErr
+			}
+			if !op.CreateIfNotExist {
+				return 0, false, false, fmt.Sprintf("User account with username %q does not exist. Ask a site admin to create your account.", op.UserProps.Username), getByUsernameErr
+			}
+		} else if op.UserProps.EmailIsVerified {
 			user, getByVerifiedEmailErr := db.Users.GetByVerifiedEmail(ctx, op.UserProps.Email)
 			if getByVerifiedEmailErr == nil {
 				return user.ID, false, false, "", nil
 			}
-			if getByVerifiedEmailErr != nil && !errcode.IsNotFound(getByVerifiedEmailErr) {
+			if !errcode.IsNotFound(getByVerifiedEmailErr) {
 				return 0, false, false, "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help.", getByVerifiedEmailErr
 			}
 			if !op.CreateIfNotExist {

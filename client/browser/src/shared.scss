@@ -9,21 +9,11 @@
 $body-color-light: #2b3750;
 $body-color-dark: #f2f4f8;
 
-.theme-light {
-    --body-color: #{$body-color-light};
+:root {
     --body-bg: white;
     --text-muted: #{$color-light-text-2};
     --link-color: #566e9f;
     --link-hover-color: #1d2535;
-    --extension-card-bg: #{lighten($color-light-bg-2, 2.5%)};
-}
-.theme-dark {
-    --body-color: #{$body-color-dark};
-    --body-bg: #151c28;
-    --text-muted: #{$color-text-1};
-    --link-color: #a2b0cd;
-    --link-hover-color: white;
-    --extension-card-bg: #{$color-bg-2};
 }
 
 .command-palette-button {

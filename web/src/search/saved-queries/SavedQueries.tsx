@@ -68,15 +68,17 @@ export class SavedQueries extends React.Component<Props, State> {
                     startWith(void 0),
                     switchMap(fetchSavedQueries),
                     map(savedQueries => ({
-                        savedQueries: savedQueries.filter(query => !isHomepage || query.showOnHomepage).sort((a, b) => {
-                            if (a.description < b.description) {
-                                return -1
-                            }
-                            if (a.description === b.description && a.index < b.index) {
-                                return -1
-                            }
-                            return 1
-                        }),
+                        savedQueries: savedQueries
+                            .filter(query => !isHomepage || query.showOnHomepage)
+                            .sort((a, b) => {
+                                if (a.description < b.description) {
+                                    return -1
+                                }
+                                if (a.description === b.description && a.index < b.index) {
+                                    return -1
+                                }
+                                return 1
+                            }),
                         loading: false,
                     }))
                 )
@@ -120,60 +122,57 @@ export class SavedQueries extends React.Component<Props, State> {
 
         return (
             <div className="saved-queries">
-                {!isHomepage &&
-                    !this.props.hideTitle && (
-                        <div>
-                            <div className="saved-queries__header">
-                                <h3>{!isPanelOpen && 'Saved searches'}</h3>
-                                <div className="saved-queries__actions">
-                                    {!this.state.disableBuiltInSearches && (
-                                        <button
-                                            className="btn btn-link"
-                                            onClick={this.toggleExamples}
-                                            disabled={this.state.isViewingExamples}
-                                        >
-                                            <AutoFixIcon className="icon-inline" /> Discover built-in searches
-                                        </button>
-                                    )}
-
+                {!isHomepage && !this.props.hideTitle && (
+                    <div>
+                        <div className="saved-queries__header">
+                            <h3>{!isPanelOpen && 'Saved searches'}</h3>
+                            <div className="saved-queries__actions">
+                                {!this.state.disableBuiltInSearches && (
                                     <button
                                         className="btn btn-link"
-                                        onClick={this.toggleCreating}
-                                        disabled={this.state.isCreating}
+                                        onClick={this.toggleExamples}
+                                        disabled={this.state.isViewingExamples}
                                     >
-                                        <AddIcon className="icon-inline" /> Add new search
+                                        <AutoFixIcon className="icon-inline" /> Discover built-in searches
                                     </button>
+                                )}
 
-                                    <Link
-                                        to="/help/user/search/saved_searches"
-                                        onClick={this.onDidClickQueryHelp}
-                                        className="btn btn-link"
-                                    >
-                                        <HelpCircleOutlineIcon className="icon-inline" /> Help
-                                    </Link>
-                                </div>
+                                <button
+                                    className="btn btn-link"
+                                    onClick={this.toggleCreating}
+                                    disabled={this.state.isCreating}
+                                >
+                                    <AddIcon className="icon-inline" /> Add new search
+                                </button>
+
+                                <Link
+                                    to="/help/user/search/saved_searches"
+                                    onClick={this.onDidClickQueryHelp}
+                                    className="btn btn-link"
+                                >
+                                    <HelpCircleOutlineIcon className="icon-inline" /> Help
+                                </Link>
                             </div>
-                            {this.state.isCreating && (
-                                <SavedQueryCreateForm
-                                    authenticatedUser={this.props.authenticatedUser}
-                                    onDidCreate={this.onDidCreateSavedQuery}
-                                    onDidCancel={this.toggleCreating}
-                                    values={this.state.exampleQuery || {}}
-                                    settingsCascade={this.props.settingsCascade}
-                                />
-                            )}
                         </div>
-                    )}
-                <div>
-                    {!this.props.hideExampleSearches &&
-                        !this.state.isCreating &&
-                        this.state.isViewingExamples && (
-                            <ExampleSearches
-                                isLightTheme={this.props.isLightTheme}
-                                onClose={this.toggleExamples}
-                                onExampleSelected={this.onExampleSelected}
+                        {this.state.isCreating && (
+                            <SavedQueryCreateForm
+                                authenticatedUser={this.props.authenticatedUser}
+                                onDidCreate={this.onDidCreateSavedQuery}
+                                onDidCancel={this.toggleCreating}
+                                values={this.state.exampleQuery || {}}
+                                settingsCascade={this.props.settingsCascade}
                             />
                         )}
+                    </div>
+                )}
+                <div>
+                    {!this.props.hideExampleSearches && !this.state.isCreating && this.state.isViewingExamples && (
+                        <ExampleSearches
+                            isLightTheme={this.props.isLightTheme}
+                            onClose={this.toggleExamples}
+                            onExampleSelected={this.onExampleSelected}
+                        />
+                    )}
                     {!this.state.disableBuiltInSearches &&
                         !this.props.hideExampleSearches &&
                         !this.props.hideTitle &&
@@ -182,8 +181,9 @@ export class SavedQueries extends React.Component<Props, State> {
                                 <h3>Saved searches</h3>
                             </div>
                         )}
-                    {!isHomepage &&
-                        this.state.savedQueries.length === 0 && <p>You don't have any saved searches yet.</p>}
+                    {!isHomepage && this.state.savedQueries.length === 0 && (
+                        <p>You don't have any saved searches yet.</p>
+                    )}
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
                             authenticatedUser={this.props.authenticatedUser}
@@ -196,20 +196,17 @@ export class SavedQueries extends React.Component<Props, State> {
                         />
                     ))}
                 </div>
-                {this.state.savedQueries.length === 0 &&
-                    this.props.authenticatedUser &&
-                    isHomepage && (
-                        <div className="saved-query">
-                            <Link to="/search/searches">
-                                <div className={`saved-query__row`}>
-                                    <div className="saved-query-row__add-query">
-                                        <AddIcon className="icon-inline" /> Add a new search to start monitoring your
-                                        code
-                                    </div>
+                {this.state.savedQueries.length === 0 && this.props.authenticatedUser && isHomepage && (
+                    <div className="saved-query">
+                        <Link to="/search/searches">
+                            <div className={`saved-query__row`}>
+                                <div className="saved-query-row__add-query">
+                                    <AddIcon className="icon-inline" /> Add a new search to start monitoring your code
                                 </div>
-                            </Link>
-                        </div>
-                    )}
+                            </div>
+                        </Link>
+                    </div>
+                )}
             </div>
         )
     }

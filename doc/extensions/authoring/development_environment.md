@@ -20,12 +20,7 @@ Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli#ins
 
 Bring your extension's features for code viewed on GitHub, GitLab and other code hosts by [installing the Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
 
-### Enabling Sourcegraph extensions outside a Sourcegraph instance
+## Next steps
 
-As Sourcegraph extensions are in alpha, they need to be manually enabled in the browser extension:
-
-1. Click the Sourcegraph icon to the right of the address bar.
-1. Click the gear ⚙️ icon.
-1. Check the **Use extensions** checkbox.
-
-<img src="img/enable-sourcegraph-extensions.png" width="400" />
+[Creating a Sourcegraph extension](creating.md)
+[Local development](local_development.md)

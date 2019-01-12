@@ -1,9 +1,9 @@
-import marked from 'marked'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
 import { Progress } from 'sourcegraph'
 import { MessageType } from '../api/client/services/notifications'
+import { renderMarkdown } from '../util/markdown'
 import { Notification } from './notification'
 
 interface Props {
@@ -15,8 +15,6 @@ interface Props {
 interface State {
     progress?: Required<Progress>
 }
-
-const renderMarkdown = (md: string): string => marked(md, { gfm: true, breaks: true, sanitize: false })
 
 /**
  * A notification message displayed in a {@link module:./Notifications.Notifications} component.
@@ -78,7 +76,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
             >
                 <div className="w-100 d-flex align-items-start">
                     <div className="p-2 flex-grow-1 mw-100">
-                        <h4
+                        <div
                             className="sourcegraph-notification-item__title"
                             dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.notification.message || '') }}
                         />
@@ -102,16 +100,15 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                         </button>
                     )}
                 </div>
-                {this.props.notification.progress &&
-                    this.state.progress && (
-                        <div className="progress w-100">
-                            <div
-                                className={`sourcegraph-notification-item__progressbar bg-${bootstrapClass}`}
-                                // tslint:disable-next-line:jsx-ban-props
-                                style={{ width: this.state.progress.percentage + '%' }}
-                            />
-                        </div>
-                    )}
+                {this.props.notification.progress && this.state.progress && (
+                    <div className="progress">
+                        <div
+                            className={`sourcegraph-notification-item__progressbar progress-bar`}
+                            // tslint:disable-next-line:jsx-ban-props
+                            style={{ width: this.state.progress.percentage + '%' }}
+                        />
+                    </div>
+                )}
             </div>
         )
     }

@@ -264,12 +264,11 @@ export class DiscussionsInputMentionOverlay extends React.PureComponent<Props> {
                 }}
             >
                 <ul className="discussions-input-mention-overlay__list-group list-group">
-                    {loading &&
-                        !connection && (
-                            <li className="discussions-input-mention-overlay__list-group-item list-group-item">
-                                Loading...
-                            </li>
-                        )}
+                    {loading && !connection && (
+                        <li className="discussions-input-mention-overlay__list-group-item list-group-item">
+                            Loading...
+                        </li>
+                    )}
                     {error && (
                         <li className="discussions-input-mention-overlay__list-group-item list-group-item">
                             Error: {error}
@@ -285,12 +284,11 @@ export class DiscussionsInputMentionOverlay extends React.PureComponent<Props> {
                                 onClick={() => this.select(index)}
                             />
                         ))}
-                    {connection &&
-                        connection.nodes.length === 0 && (
-                            <li className="discussions-input-mention-overlay__list-group-item list-group-item">
-                                no results
-                            </li>
-                        )}
+                    {connection && connection.nodes.length === 0 && (
+                        <li className="discussions-input-mention-overlay__list-group-item list-group-item">
+                            no results
+                        </li>
+                    )}
                 </ul>
             </div>
         )

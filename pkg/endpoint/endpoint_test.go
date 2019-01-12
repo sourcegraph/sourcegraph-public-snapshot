@@ -68,3 +68,20 @@ func TestEndpoints(t *testing.T) {
 		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
 	}
 }
+
+func TestEndpointsList(t *testing.T) {
+	eps := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
+	want := map[string]struct{}{}
+	for _, addr := range eps {
+		want[addr] = struct{}{}
+	}
+
+	m := New(" http://test-1  http://test-2 http://test-3 http://test-4 ")
+	got, err := m.Endpoints()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
+	}
+}

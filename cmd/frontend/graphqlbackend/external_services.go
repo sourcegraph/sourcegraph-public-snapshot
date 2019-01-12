@@ -6,10 +6,13 @@ import (
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
 var externalServiceKinds = map[string]struct{}{
@@ -19,6 +22,7 @@ var externalServiceKinds = map[string]struct{}{
 	"GITLAB":          {},
 	"GITOLITE":        {},
 	"PHABRICATOR":     {},
+	"OTHER":           {},
 }
 
 func validateKind(kind string) error {
@@ -49,8 +53,16 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	err := db.ExternalServices.Create(ctx, externalService)
-	return &externalServiceResolver{externalService: externalService}, err
+
+	if err := db.ExternalServices.Create(ctx, externalService); err != nil {
+		return nil, err
+	}
+
+	if err := syncExternalService(ctx, externalService); err != nil {
+		return nil, errors.Wrap(err, "external service created, but sync request failed")
+	}
+
+	return &externalServiceResolver{externalService: externalService}, nil
 }
 
 func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
@@ -82,7 +94,25 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+
+	if err = syncExternalService(ctx, externalService); err != nil {
+		return nil, errors.Wrap(err, "external service updated, but sync request failed")
+	}
+
 	return &externalServiceResolver{externalService: externalService}, nil
+}
+
+// Eagerly trigger a repo-updater sync.
+func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
+	return repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
+		ID:          svc.ID,
+		Kind:        svc.Kind,
+		DisplayName: svc.DisplayName,
+		Config:      svc.Config,
+		CreatedAt:   svc.CreatedAt,
+		UpdatedAt:   svc.UpdatedAt,
+		DeletedAt:   svc.DeletedAt,
+	})
 }
 
 func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {

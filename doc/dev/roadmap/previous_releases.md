@@ -1,6 +1,6 @@
 # Previous releases
 
-See the [Sourcegraph changelog](https://about.sourcegraph.com/changelog) for a detailed list of changes.
+See the [Sourcegraph changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md) for a detailed list of changes.
 
 ## Sourcegraph 2.13 (2018-11-06)
 

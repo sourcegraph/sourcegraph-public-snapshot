@@ -1,0 +1,113 @@
+@import '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+
+.hover-overlay {
+    position: absolute;
+    min-width: 6rem;
+    max-width: 32rem;
+    max-height: 15rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    z-index: 100;
+
+    $animation-duration: 100ms;
+    transition: opacity $animation-duration ease-in-out;
+
+    &__close-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 0.25rem;
+        border-radius: 0;
+        background: transparent;
+        z-index: 1;
+        border: none;
+        opacity: 0;
+        transition: opacity $animation-duration ease-in-out;
+        &:focus {
+            outline: none; // override GitHub style
+        }
+        &:active {
+            box-shadow: none; // override GitHub style
+        }
+    }
+    &:hover &__close-button {
+        opacity: 1;
+    }
+
+    &__row {
+        display: block;
+        width: 100%;
+        margin: 0;
+        &:not(:first-child) {
+            border-top: 1px solid var(--border-color);
+        }
+        hr {
+            margin: 0.5rem -0.5rem;
+            background: var(--border-color);
+        }
+        p,
+        pre {
+            &:not(:last-child) {
+                margin-bottom: 0.5rem;
+            }
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+
+    &__contents {
+        flex: 1 1 auto;
+        overflow-y: auto;
+    }
+
+    &__content {
+        padding: 0.5rem;
+        overflow-x: auto;
+        word-wrap: normal;
+        p:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__actions {
+        flex: 0 0 auto;
+        display: flex;
+    }
+
+    &__action:not(:first-child) {
+        border-left: 1px solid var(--border-color);
+    }
+
+    &__action {
+        text-align: center;
+        border: none;
+    }
+
+    &__action,
+    &__actions-placeholder {
+        flex: 1 1 auto;
+        border-radius: 0;
+    }
+
+    &__loader-row {
+        text-align: center;
+    }
+
+    &__loader-row,
+    &__hover-error,
+    &__content-error,
+    &__alert-below {
+        padding: 0.5rem;
+    }
+
+    &__alert-below {
+        margin: 0;
+        overflow-y: auto;
+    }
+
+    code {
+        white-space: pre;
+    }
+}

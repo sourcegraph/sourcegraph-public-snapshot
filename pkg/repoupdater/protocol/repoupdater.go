@@ -120,3 +120,12 @@ type RepoUpdateRequest struct {
 	// URL is the repository's Git remote URL (from which to clone or update).
 	URL string `json:"url"`
 }
+
+// ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
+//
+// The FrontendAPI is one of the issuers of this request. It does so when creating or
+// updating an external service so that admins don't have to wait until the next sync
+// run to see their repos being synced.
+type ExternalServiceSyncRequest struct {
+	ExternalService api.ExternalService
+}

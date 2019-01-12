@@ -62,8 +62,7 @@ var Cluster = conftypes.RawUnified{
 	// The builtin auth provider with signup disallowed (shown below) means that
 	// after the initial site admin signs in, all other users must be invited.
 	//
-	// Other providers are documented here:
-	// https://about.sourcegraph.com/docs/config/site#authproviders-array
+	// Other providers are documented at https://docs.sourcegraph.com/admin/auth.
 	"auth.providers": [
 		{
 			"type": "builtin",
@@ -81,5 +80,5 @@ var Cluster = conftypes.RawUnified{
 // not strictly one of the declared defaults in this package but rather may be
 // defaults from a user's old configuration.
 //
-// TODO(slimsag): Remove legacy warning above after 3.0 (not 3.0-preview).
+// TODO(slimsag): Remove legacy warning above after 3.0.
 var Default conftypes.RawUnified

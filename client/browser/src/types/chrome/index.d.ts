@@ -2150,8 +2150,8 @@ declare namespace chrome.downloads {
 
     export interface DownloadDeterminingFilenameEvent
         extends chrome.events.IEvent<
-                (downloadItem: DownloadItem, suggest: (suggestion?: DownloadFilenameSuggestion) => void) => void
-            > {}
+            (downloadItem: DownloadItem, suggest: (suggestion?: DownloadFilenameSuggestion) => void) => void
+        > {}
 
     /**
      * Find DownloadItem. Set query to the empty object to get all DownloadItem. To get a specific DownloadItem, set only the id field. To page through a large number of items, set orderBy: ['-startTime'], set limit to the number of items per page, and set startedAfter to the startTime of the last item from the last page.
@@ -2509,9 +2509,9 @@ declare namespace chrome.extension {
 
     export interface OnRequestEvent
         extends chrome.events.IEvent<
-                | ((request: any, sender: runtime.MessageSender, sendResponse: (response: any) => void) => void)
-                | ((sender: runtime.MessageSender, sendResponse: (response: any) => void) => void)
-            > {}
+            | ((request: any, sender: runtime.MessageSender, sendResponse: (response: any) => void) => void)
+            | ((sender: runtime.MessageSender, sendResponse: (response: any) => void) => void)
+        > {}
 
     /**
      * Since browser 7.
@@ -2871,120 +2871,116 @@ declare namespace chrome.fileSystemProvider {
 
     export interface RequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: RequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (options: RequestedEventOptions, successCallback: Function, errorCallback: (error: string) => void) => void
+        > {}
 
     export interface MetadataRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: MetadataRequestedEventOptions,
-                    successCallback: (metadata: EntryMetadata) => void,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: MetadataRequestedEventOptions,
+                successCallback: (metadata: EntryMetadata) => void,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface DirectoryPathRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: DirectoryPathRequestedEventOptions,
-                    successCallback: (entries: EntryMetadata[], hasMore: boolean) => void,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: DirectoryPathRequestedEventOptions,
+                successCallback: (entries: EntryMetadata[], hasMore: boolean) => void,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface OpenFileRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: OpenFileRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: OpenFileRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface OpenedFileRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: OpenedFileRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: OpenedFileRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface OpenedFileOffsetRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: OpenedFileOffsetRequestedEventOptions,
-                    successCallback: (data: ArrayBuffer, hasMore: boolean) => void,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: OpenedFileOffsetRequestedEventOptions,
+                successCallback: (data: ArrayBuffer, hasMore: boolean) => void,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface DirectoryPathRecursiveRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: DirectoryPathRecursiveRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: DirectoryPathRecursiveRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface EntryPathRecursiveRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: EntryPathRecursiveRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: EntryPathRecursiveRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface FilePathRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: FilePathRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: FilePathRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface SourceTargetPathRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: SourceTargetPathRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: SourceTargetPathRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface FilePathLengthRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: FilePathLengthRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: FilePathLengthRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface OpenedFileIoRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: OpenedFileIoRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: OpenedFileIoRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface OperationRequestedEvent
         extends chrome.events.IEvent<
-                (
-                    options: OperationRequestedEventOptions,
-                    successCallback: Function,
-                    errorCallback: (error: string) => void
-                ) => void
-            > {}
+            (
+                options: OperationRequestedEventOptions,
+                successCallback: Function,
+                errorCallback: (error: string) => void
+            ) => void
+        > {}
 
     export interface OptionlessRequestedEvent
         extends chrome.events.IEvent<(successCallback: Function, errorCallback: (error: string) => void) => void> {}
@@ -4932,8 +4928,8 @@ declare namespace chrome.printerProvider {
 
     export interface CapabilityRequestedEvent
         extends chrome.events.IEvent<
-                (printerId: string, resultCallback: (capabilities: PrinterCapabilities) => void) => void
-            > {}
+            (printerId: string, resultCallback: (capabilities: PrinterCapabilities) => void) => void
+        > {}
 
     export interface PrintRequestedEvent
         extends chrome.events.IEvent<(printJob: PrintJob, resultCallback: (result: string) => void) => void> {}
@@ -5209,8 +5205,8 @@ declare namespace chrome.runtime {
 
     export interface ExtensionMessageEvent
         extends chrome.events.IEvent<
-                (message: any, sender: MessageSender, sendResponse: (response: any) => void) => void
-            > {}
+            (message: any, sender: MessageSender, sendResponse: (response: any) => void) => void
+        > {}
 
     export interface ExtensionConnectEvent extends chrome.events.IEvent<(port: Port) => void> {}
 
@@ -7011,8 +7007,8 @@ declare namespace chrome.ttsEngine {
 
     export interface TtsEngineSpeakEvent
         extends chrome.events.IEvent<
-                (utterance: string, options: SpeakOptions, sendTtsEvent: (event: chrome.tts.TtsEvent) => void) => void
-            > {}
+            (utterance: string, options: SpeakOptions, sendTtsEvent: (event: chrome.tts.TtsEvent) => void) => void
+        > {}
 
     /** Called when the user makes a call to tts.speak() and one of the voices from this extension's manifest is the first to match the options object. */
     export var onSpeak: TtsEngineSpeakEvent
@@ -7627,8 +7623,8 @@ declare namespace chrome.webRequest {
 
     export interface WebAuthenticationChallengeEvent
         extends chrome.events.IEvent<
-                (details: WebAuthenticationChallengeDetails, callback?: (response: BlockingResponse) => void) => void
-            > {
+            (details: WebAuthenticationChallengeDetails, callback?: (response: BlockingResponse) => void) => void
+        > {
         addListener(
             callback: (
                 details: WebAuthenticationChallengeDetails,

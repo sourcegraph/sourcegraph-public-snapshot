@@ -221,7 +221,8 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                             : `${this.props.node.parents.length} ${pluralize(
                                                   'parent',
                                                   this.props.node.parents.length
-                                              )}`}:
+                                              )}`}
+                                        :
                                     </span>{' '}
                                     {this.props.node.parents.map((parent, i) => (
                                         <Link

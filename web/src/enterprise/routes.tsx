@@ -1,6 +1,9 @@
 import React from 'react'
 import { LayoutRouteProps, routes } from '../routes'
-import { NewProductSubscriptionPageOrRedirectUser } from './user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'
+const NewProductSubscriptionPageOrRedirectUser = React.lazy(async () => ({
+    default: (await import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'))
+        .NewProductSubscriptionPageOrRedirectUser,
+}))
 
 export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     {

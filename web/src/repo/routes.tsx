@@ -3,13 +3,17 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
 import { isLegacyFragment, parseHash } from '../../../shared/src/util/url'
 import { formatHash } from '../util/url'
-import { BlobPage } from './blob/BlobPage'
-import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
-import { FilePathBreadcrumb } from './FilePathBreadcrumb'
+const BlobPage = React.lazy(async () => ({ default: (await import('./blob/BlobPage')).BlobPage }))
+const RepositoryCommitsPage = React.lazy(async () => ({
+    default: (await import('./commits/RepositoryCommitsPage')).RepositoryCommitsPage,
+}))
+const FilePathBreadcrumb = React.lazy(async () => ({
+    default: (await import('./FilePathBreadcrumb')).FilePathBreadcrumb,
+}))
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainerContext, RepoRevContainerRoute } from './RepoRevContainer'
-import { RepoRevSidebar } from './RepoRevSidebar'
-import { TreePage } from './TreePage'
+const RepoRevSidebar = React.lazy(async () => ({ default: (await import('./RepoRevSidebar')).RepoRevSidebar }))
+const TreePage = React.lazy(async () => ({ default: (await import('./TreePage')).TreePage }))
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')

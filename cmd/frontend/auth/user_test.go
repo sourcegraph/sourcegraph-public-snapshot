@@ -255,6 +255,19 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 			},
+			{
+				description: "ext acct doesn't exist, user has same username, lookupByUsername=true",
+				op: GetAndSaveUserOp{
+					ExternalAccount:  ext("st1", "s1", "c1", "doesnotexist"),
+					UserProps:        userProps("u1", "", true),
+					LookUpByUsername: true,
+				},
+				createIfNotExistIrrelevant: true,
+				expUserID:                  1,
+				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+					1: {ext("st1", "s1", "c1", "doesnotexist")},
+				},
+			},
 		},
 	}
 	errorCases := []outerCase{
@@ -449,6 +462,7 @@ type mockParams struct {
 	createUserAndSaveErr    error
 	associateUserAndSaveErr error
 	getByVerifiedEmailErr   error
+	getByUsernameErr        error
 	getByIDErr              error
 	updateErr               error
 }
@@ -462,6 +476,7 @@ func (m *mocks) apply() {
 	db.Mocks.Users = db.MockUsers{
 		GetByID:            m.GetByID,
 		GetByVerifiedEmail: m.GetByVerifiedEmail,
+		GetByUsername:      m.GetByUsername,
 		Update:             m.Update,
 	}
 }
@@ -573,6 +588,20 @@ func (m *mocks) GetByVerifiedEmail(ctx context.Context, email string) (*types.Us
 			if e == email {
 				return &u.user, nil
 			}
+		}
+	}
+	return nil, db.MockUserNotFoundErr
+}
+
+// GetByUsername mocks db.Users.GetByUsername
+func (m *mocks) GetByUsername(ctx context.Context, username string) (*types.User, error) {
+	if m.getByUsernameErr != nil {
+		return nil, m.getByUsernameErr
+	}
+
+	for _, u := range m.userInfos {
+		if u.user.Username == username {
+			return &u.user, nil
 		}
 	}
 	return nil, db.MockUserNotFoundErr

@@ -19,19 +19,9 @@ func init() {
 
 var Middleware = &auth.Middleware{
 	API: func(next http.Handler) http.Handler {
-		return ffHandler(oauth.NewHandler(gitlab.ServiceType, authPrefix, true, next), next)
+		return oauth.NewHandler(gitlab.ServiceType, authPrefix, true, next)
 	},
 	App: func(next http.Handler) http.Handler {
-		return ffHandler(oauth.NewHandler(gitlab.ServiceType, authPrefix, false, next), next)
+		return oauth.NewHandler(gitlab.ServiceType, authPrefix, false, next)
 	},
-}
-
-func ffHandler(ffEnabled, ffDisabled http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if ffIsEnabled {
-			ffEnabled.ServeHTTP(w, r)
-		} else {
-			ffDisabled.ServeHTTP(w, r)
-		}
-	})
 }

@@ -7,10 +7,6 @@
   "additionalProperties": true,
   "required": ["activationEvents", "publisher"],
   "properties": {
-    "title": {
-      "description": "The title of the extension. If not specified, the extension ID is used.",
-      "type": "string"
-    },
     "description": {
       "description":
         "The extension's description, which summarizes the extension's purpose and features. It should not exceed a few sentences.",
@@ -42,6 +38,27 @@
           "format": "uri"
         }
       }
+    },
+    "categories": {
+      "description": "The categories that describe this extension, to help users browsing the extension registry to discover this extension.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Programming languages",
+          "Linters",
+          "Code analysis",
+          "External services",
+          "Reports and stats",
+          "Other",
+          "Demos"
+        ]
+      }
+    },
+    "tags": {
+      "description": "Arbitrary tags that describe this extension.",
+      "type": "array",
+      "items": { "type": "string" }
     },
     "activationEvents": {
       "description":
@@ -160,6 +177,12 @@
               "type": "array"
             },
             "global/nav": {
+              "items": {
+                "$ref": "#/properties/contributes/definitions/MenuItemContribution"
+              },
+              "type": "array"
+            },
+            "hover": {
               "items": {
                 "$ref": "#/properties/contributes/definitions/MenuItemContribution"
               },

@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -13,6 +14,7 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
+import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
@@ -41,7 +43,6 @@ export const registryExtensionFragment = gql`
         name
         manifest {
             raw
-            title
             description
         }
         createdAt
@@ -81,7 +82,6 @@ export interface ExtensionAreaRouteContext extends SettingsCascadeProps, Platfor
     /** The extension that is the subject of the page. */
     extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
 
-    /** Called when the component updates the extension and it should be refreshed here. */
     onDidUpdateExtension: () => void
 
     /** The currently authenticated user. */
@@ -185,21 +185,27 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
             <div className="registry-extension-area area--vertical">
                 <ExtensionAreaHeader {...this.props} {...context} navItems={this.props.extensionAreaHeaderNavItems} />
                 <div className="container pt-3">
-                    <Switch>
-                        {this.props.routes.map(
-                            ({ path, render, exact, condition = () => true }) =>
-                                condition(context) && (
-                                    <Route
-                                        path={url + path}
-                                        exact={exact}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                    />
-                                )
-                        )}
-                        <Route key="hardcoded-key" component={NotFoundPage} />
-                    </Switch>
+                    <ErrorBoundary location={this.props.location}>
+                        <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                            <Switch>
+                                {this.props.routes.map(
+                                    ({ path, render, exact, condition = () => true }) =>
+                                        condition(context) && (
+                                            <Route
+                                                path={url + path}
+                                                exact={exact}
+                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                // tslint:disable-next-line:jsx-no-lambda
+                                                render={routeComponentProps =>
+                                                    render({ ...context, ...routeComponentProps })
+                                                }
+                                            />
+                                        )
+                                )}
+                                <Route key="hardcoded-key" component={NotFoundPage} />
+                            </Switch>
+                        </React.Suspense>
+                    </ErrorBoundary>
                 </div>
             </div>
         )

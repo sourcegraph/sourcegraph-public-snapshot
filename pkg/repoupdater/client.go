@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -155,6 +156,26 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) err
 		return err
 	}
 	resp.Body.Close()
+	return nil
+}
+
+// SyncExternalService requests the given external service to be synced.
+func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) error {
+	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
+	resp, err := c.httpPost(ctx, "sync-external-service", req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		bs, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(bs))
+	}
+
 	return nil
 }
 

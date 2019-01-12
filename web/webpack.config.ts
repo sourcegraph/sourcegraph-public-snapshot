@@ -1,8 +1,12 @@
+// tslint:disable-next-line:no-reference
+/// <reference path="../shared/src/types/terser-webpack-plugin/index.d.ts" />
+
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
+import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 // @ts-ignore
 import rxPaths from 'rxjs/_esm5/path-mapping'
-import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
+import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
@@ -45,8 +49,8 @@ const config: webpack.Configuration = {
     optimization: {
         minimize: mode === 'production',
         minimizer: [
-            new UglifyJsPlugin({
-                uglifyOptions: {
+            new TerserPlugin({
+                terserOptions: {
                     compress: {
                         // // Don't inline functions, which causes name collisions with uglify-es:
                         // https://github.com/mishoo/UglifyJS2/issues/2842
@@ -72,7 +76,7 @@ const config: webpack.Configuration = {
     output: {
         path: path.join(rootDir, 'ui', 'assets'),
         filename: 'scripts/[name].bundle.js',
-        chunkFilename: 'scripts/[id]-[chunkhash].chunk.js',
+        chunkFilename: 'scripts/[id]-[contenthash].chunk.js',
         publicPath: '/.assets/',
         globalObject: 'self',
         pathinfo: false,
@@ -87,6 +91,7 @@ const config: webpack.Configuration = {
         }),
         new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
         new MiniCssExtractPlugin({ filename: 'styles/[name].bundle.css' }) as any, // @types package is incorrect
+        new OptimizeCssAssetsPlugin(),
         // Don't build the files referenced by dynamic imports for all the basic languages monaco supports.
         // They won't ever be loaded at runtime because we only edit JSON
         new webpack.IgnorePlugin(/^\.\/[^.]+.js$/, /\/node_modules\/monaco-editor\/esm\/vs\/basic-languages\/\w+$/),
@@ -132,9 +137,6 @@ const config: webpack.Configuration = {
                     MiniCssExtractPlugin.loader,
                     {
                         loader: 'css-loader',
-                        options: {
-                            minimize: mode === 'production',
-                        },
                     },
                     {
                         loader: 'postcss-loader',

@@ -6,6 +6,7 @@ import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -16,7 +17,7 @@ import { CodeIntellifyBlob } from './CodeIntellifyBlob'
 import { QueryInputForModal } from './QueryInputForModal'
 import { SearchButton } from './SearchButton'
 
-interface Props extends ExtensionsControllerProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -332,6 +333,27 @@ export class MainPage extends React.Component<Props, State> {
                     </div>
                 </section>
                 <div className="about-section-container">
+                    <section className="company-logos">
+                        <div className="container">
+                            <div className="row">
+                                <div className="col-12">
+                                    <h2>Powering developers at</h2>
+                                </div>
+                                <div className="col-3 logo">
+                                    <figure className="logo-image logo1" />
+                                </div>
+                                <div className="col-3 logo">
+                                    <figure className="logo-image logo2" />
+                                </div>
+                                <div className="col-3 logo">
+                                    <figure className="logo-image logo3" />
+                                </div>
+                                <div className="col-3 logo">
+                                    <figure className="logo-image logo4" />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                     <section className="about-section code-search">
                         <div className="container">
                             <div className="row">
@@ -647,7 +669,7 @@ export class MainPage extends React.Component<Props, State> {
                                         autoFocus={'cursor-at-end'}
                                         hasGlobalQueryBehavior={true}
                                     />
-                                    <SearchButton />
+                                    <SearchButton noHelp={true} noLabel={true} />
                                 </div>
                             </Form>
                         </div>

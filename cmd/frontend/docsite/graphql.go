@@ -2,7 +2,10 @@ package docsite
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"html/template"
+	"net/http"
 	"net/url"
 	"os"
 
@@ -12,8 +15,17 @@ import (
 
 // Site is the documentation site.
 var Site = docsite.Site{
-	Content: content,
+	Content: nonVersionedFileSystem{content},
 	Base:    &url.URL{Path: "/help/"},
+}
+
+type nonVersionedFileSystem struct{ http.FileSystem }
+
+func (fs nonVersionedFileSystem) OpenVersion(_ context.Context, version string) (http.FileSystem, error) {
+	if version != "" {
+		return nil, errors.New("content versioning is not supported")
+	}
+	return fs.FileSystem, nil
 }
 
 // indexTemplate renders the HTML for the page index.
@@ -48,8 +60,8 @@ var indexTemplate = template.Must(template.New("").Parse(`
 
 // Register the resolver for the GraphQL field Query.docSitePage.
 func init() {
-	graphqlbackend.DocSitePageResolver = func(args graphqlbackend.DocSitePageArgs) (graphqlbackend.DocSitePage, error) {
-		page, err := Site.ResolveContentPage(args.Path)
+	graphqlbackend.DocSitePageResolver = func(ctx context.Context, args graphqlbackend.DocSitePageArgs) (graphqlbackend.DocSitePage, error) {
+		page, err := Site.ResolveContentPage(ctx, "", args.Path)
 		if os.IsNotExist(err) {
 			return nil, nil
 		} else if err != nil {

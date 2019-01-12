@@ -16,6 +16,33 @@
     border: 1px solid #2b3750;
     border-radius: 0.125rem;
 
+    .icon-click-area {
+        margin: 0;
+        padding: 0;
+        top: 0;
+        right: 0;
+        position: absolute;
+        width: 3rem;
+        z-index: 9;
+        opacity: 0;
+        height: 2rem;
+        cursor: pointer;
+    }
+    .icon-rotate {
+        position: relative;
+        .icon-container {
+            margin: 0;
+            padding: 0;
+            transition: transform 200ms ease;
+        }
+
+        &__close {
+            .icon-container {
+                transform: rotate(45deg);
+            }
+        }
+    }
+
     &__header {
         font-size: 20px;
         white-space: nowrap;
@@ -47,6 +74,31 @@
     }
     &__children {
         width: 100%;
+    }
+
+    &__block {
+        .overview-item__header {
+            color: $color-light-text-1;
+        }
+        &:hover {
+            text-decoration: none;
+            .overview-item__header {
+                text-decoration: underline;
+            }
+        }
+
+        a {
+            .overview-item__header {
+                color: $color-light-text-1;
+            }
+
+            &:hover {
+                text-decoration: none;
+                .overview-item__header {
+                    text-decoration: underline;
+                }
+            }
+        }
     }
 }
 

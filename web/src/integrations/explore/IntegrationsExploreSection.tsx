@@ -26,38 +26,37 @@ const DATA: { title: string; description: string; url: string; backgroundImage: 
     },
 ]
 
+interface Props {}
+
 /**
  * An explore section that shows integrations.
  */
-export class IntegrationsExploreSection extends React.PureComponent {
-    public render(): JSX.Element | null {
-        return (
-            <div className="integrations-explore-section">
-                <h2>Popular integrations</h2>
-                <div className="row">
-                    {DATA.map(({ title, description, url, backgroundImage }, i) => (
-                        <div key={i} className="col-md-4 mb-2 mb-md-0">
-                            <a
-                                href={url}
-                                target="_blank"
-                                className="card rounded border-white card-link text-white"
-                                // tslint:disable-next-line:jsx-ban-props
-                                style={{ backgroundImage }}
-                            >
-                                <div className="card-body">
-                                    <h2 className="card-title h6 font-weight-bold mb-0">{title}</h2>
-                                    <p className="card-text">{description}</p>
-                                </div>
-                            </a>
+export const IntegrationsExploreSection: React.FunctionComponent<Props> = () => (
+    <div className="integrations-explore-section">
+        <h2>Popular integrations</h2>
+        <div className="row">
+            {DATA.map(({ title, description, url, backgroundImage }, i) => (
+                <div key={i} className="col-md-4 mb-2 mb-md-0">
+                    <a
+                        href={url}
+                        target="_blank"
+                        className="card rounded border-white card-link text-white"
+                        // tslint:disable-next-line:jsx-ban-props
+                        style={{ backgroundImage }}
+                    >
+                        <div className="card-body">
+                            <h2 className="card-title h6 font-weight-bold mb-0">{title}</h2>
+                            <p className="card-text">{description}</p>
                         </div>
-                    ))}
+                    </a>
                 </div>
-                <div className="text-right mt-3">
-                    <Link to="/help/integration" target="_blank">
-                        View all integrations<ChevronRightIcon className="icon-inline" />
-                    </Link>
-                </div>
-            </div>
-        )
-    }
-}
+            ))}
+        </div>
+        <div className="text-right mt-3">
+            <Link to="/help/integration" target="_blank">
+                View all integrations
+                <ChevronRightIcon className="icon-inline" />
+            </Link>
+        </div>
+    </div>
+)

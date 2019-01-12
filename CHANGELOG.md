@@ -18,7 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The repository settings mirroring page now shows when a repo is next scheduled for an update (requires experiment `"updateScheduler2": "enabled"`).
 - Configured repositories are periodically scheduled for updates using a new algorithm. You can disable the new algorithm with the following site configuration: `"experimentalFeatures": { "updateScheduler2": "disabled" }`. If you do so, please file a public issue to describe why you needed to disable it.
 - When using HTTP header authentication, [`stripUsernameHeaderPrefix`](https://docs.sourcegraph.com/admin/auth/#username-header-prefixes) field lets an admin specify a prefix to strip from the HTTP auth header when converting the header value to a username.
-- Sourcegraph extensions whose title begins with `WIP:` or `[WIP]` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/creating_and_publishing#work-in-progress-wip-extensions) and are indicated as such to avoid users accidentally using them.
+- Sourcegraph extensions whose package.json contains `"wip": true` are considered [work-in-progress extensions](https://docs.sourcegraph.com/extensions/authoring/publishing#wip-extensions) and are indicated as such to avoid users accidentally using them.
 - Information about user survey submissions and a chart showing weekly active users is now displayed on the site admin Overview page.
 - A new GraphQL API field `UserEmail.isPrimary` was added that indicates whether an email is the user's primary email.
 - The filters bar in the search results page can now display filters from extensions.
@@ -35,6 +35,8 @@ All notable changes to Sourcegraph are documented in this file.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
 - The `appURL` site configuration option was renamed to `externalURL`.
 - The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled`.
+- The repository and directory pages now show all entries together instead of showing files and (sub)directories separately.
+- Extensions no longer can specify titles (in the `title` property in the `package.json` extension manifest). Their extension ID (such as `alice/myextension`) is used.
 
 ### Fixed
 
@@ -42,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed number formatting issues on site admin Overview and Survey Response pages.
 - Fixed resolving of git clone URLs with `git+` prefix through the GraphQL API
 - Fixed an issue where the graphql Repositories endpoint would order by a field which was not indexed. Times on Sourcegraph.com went from 10s to 200ms.
+- Fixed an issue where whitespace was not handled properly in environment variable lists (`SYMBOLS_URL`, `SEARCHER_URL`).
 
 ### Removed
 
@@ -52,6 +55,11 @@ All notable changes to Sourcegraph are documented in this file.
   - Github via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
   - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
   - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
+  - [Other external services](https://docs.sourcegraph.com/admin/repo/add_from_other_external_services)
+- Removed the `httpStrictTransportSecurity` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `tls.cert` and `tls.key` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
+- Removed the `httpToHttpsRedirect` and `experimentalFeatures.canonicalURLRedireect` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for these instead.
   - [Other code hosts](https://github.com/sourcegraph/sourcegraph/issues/1324)
 
 ## 2.13.6
@@ -496,7 +504,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added 14 new experimental language servers on the code intelligence admin page.
 - Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header. It defaults to `max-age=31536000` (one year).
 - Added `nameIDFormat` in the `saml` auth provider to set the SAML NameID format. The default changed from transient to persistent.
-- Experimental env var expansion in site config JSON: set `SOURCEGRAPH_EXPAND_CONFIG_VARS=1` to replace `${var}` or `$var` (based on environment variables) in any string value in site config JSON (except for JSON object property names).
+- (This feature has been removed.) Experimental env var expansion in site config JSON: set `SOURCEGRAPH_EXPAND_CONFIG_VARS=1` to replace `${var}` or `$var` (based on environment variables) in any string value in site config JSON (except for JSON object property names).
 - The new (optional) SAML `serviceProviderIssuer` site config property (in an `auth.providers` array entry with `{"type":"saml", ...}`) allows customizing the SAML Service Provider issuer name.
 - The site admin area now has an "Auth" section that shows the enabled authentication provider(s) and users' external accounts.
 

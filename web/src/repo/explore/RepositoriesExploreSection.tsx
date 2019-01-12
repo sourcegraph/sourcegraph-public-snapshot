@@ -57,8 +57,8 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
             this.state.repositoriesOrError === LOADING
                 ? Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
                 : isErrorLike(this.state.repositoriesOrError)
-                    ? this.state.repositoriesOrError
-                    : this.state.repositoriesOrError.nodes
+                ? this.state.repositoriesOrError
+                : this.state.repositoriesOrError.nodes
 
         const itemClass = 'py-2 border-white'
 
@@ -81,29 +81,29 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                 ) : (
                     <>
                         <div className="list-group list-group-flush">
-                            {repositoriesOrError.map(
-                                (repo /* or loading */, i) =>
-                                    repo === LOADING ? (
-                                        <div key={i} className={`${itemClass} list-group-item`}>
-                                            <h3 className="text-muted mb-0">⋯</h3>&nbsp;
-                                        </div>
-                                    ) : (
-                                        <Link
-                                            key={i}
-                                            className={`${itemClass} list-group-item list-group-item-action`}
-                                            to={repo.url}
-                                        >
-                                            <h3 className="mb-0 text-truncate">
-                                                <RepoLink to={null} repoName={repo.name} />
-                                            </h3>
-                                            <span className="text-truncate">{repo.description || <>&nbsp;</>}</span>
-                                        </Link>
-                                    )
+                            {repositoriesOrError.map((repo /* or loading */, i) =>
+                                repo === LOADING ? (
+                                    <div key={i} className={`${itemClass} list-group-item`}>
+                                        <h3 className="text-muted mb-0">⋯</h3>&nbsp;
+                                    </div>
+                                ) : (
+                                    <Link
+                                        key={i}
+                                        className={`${itemClass} list-group-item list-group-item-action text-truncate`}
+                                        to={repo.url}
+                                    >
+                                        <h3 className="mb-0 text-truncate">
+                                            <RepoLink to={null} repoName={repo.name} />
+                                        </h3>
+                                        <span>{repo.description || <>&nbsp;</>}</span>
+                                    </Link>
+                                )
                             )}
                         </div>
                         <div className="text-right mt-3">
                             <Link to={`/search?${buildSearchURLQuery('repo:')}`}>
-                                View all repositories<ChevronRightIcon className="icon-inline" />
+                                View all repositories
+                                <ChevronRightIcon className="icon-inline" />
                             </Link>
                         </div>
                     </>

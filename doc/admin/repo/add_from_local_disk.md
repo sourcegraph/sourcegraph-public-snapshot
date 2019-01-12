@@ -1,4 +1,4 @@
-## Add repositories already cloned to disk
+# Add repositories already cloned to disk
 
 You can also add repositories to Sourcegraph that are already cloned to disk on the host machine. This is useful for repositories requiring non-standard authentication to clone, or very large repositories on which cloning exceeds the resources available to the Docker container.
 

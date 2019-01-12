@@ -8,7 +8,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 interface Props extends RouteComponentProps<{}>, ExtensionsAreaRouteContext {}
 

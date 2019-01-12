@@ -144,7 +144,7 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         return (
-            <>
+            <div className="mt-3">
                 <h2>{term} settings</h2>
                 {this.props.extraHeader}
                 <Switch>
@@ -157,7 +157,7 @@ export class SettingsArea extends React.Component<Props, State> {
                     />
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
-            </>
+            </div>
         )
     }
 
@@ -168,11 +168,15 @@ export class SettingsArea extends React.Component<Props, State> {
             this.props.platformContext,
             extensionIDsFromSettings(gqlToCascade(cascade))
         ).pipe(
+            catchError(error => {
+                console.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
+                return [null]
+            }),
             map(configuredExtensions => ({
                 $id: 'settings.schema.json',
                 allOf: [
                     settingsSchemaJSON,
-                    ...configuredExtensions
+                    ...(configuredExtensions || [])
                         .map(ce => {
                             if (
                                 ce.manifest &&
