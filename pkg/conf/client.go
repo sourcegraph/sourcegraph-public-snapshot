@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"math/rand"
+	"net"
+	"net/url"
 	"sync"
 	"time"
 
@@ -155,15 +157,60 @@ func (c *client) notifyWatchers() {
 	}
 }
 
-func (c *client) continuouslyUpdate() {
+type continuousUpdateOptions struct {
+	// delayBeforeUnreachableLog is how long to wait before logging an error upon initial startup
+	// due to the frontend being unreachable. It is used to avoid log spam when other services (that
+	// contact the frontend for configuration) start up before the frontend.
+	delayBeforeUnreachableLog time.Duration
+
+	log   func(format string, v ...interface{}) // log.Printf equivalent
+	sleep func()                                // sleep between updates
+}
+
+// continuouslyUpdate runs (*client).fetchAndUpdate in an infinte loop, with error logging and
+// random sleep intervals.
+//
+// The optOnlySetByTests parameter is ONLY customized by tests. All callers in main code should pass
+// nil (so that the same defaults are used).
+func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) {
+	opt := optOnlySetByTests
+	if opt == nil {
+		// Apply defaults.
+		opt = &continuousUpdateOptions{
+			// This needs to be long enough to allow the frontend to fully migrate the PostgreSQL
+			// database in most cases, to avoid log spam when running sourcegraph/server for the
+			// first time.
+			delayBeforeUnreachableLog: 15 * time.Second,
+			log:                       log.Printf,
+			sleep: func() {
+				jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
+				time.Sleep(jitter)
+			},
+		}
+	}
+
+	isFrontendUnreachableError := func(err error) bool {
+		if urlErr, ok := errors.Cause(err).(*url.Error); ok {
+			if netErr, ok := urlErr.Err.(*net.OpError); ok && netErr.Op == "dial" {
+				return true
+			}
+		}
+		return false
+	}
+
+	start := time.Now()
 	for {
 		err := c.fetchAndUpdate()
 		if err != nil {
-			log.Printf("received error during background config update, err: %s", err)
+			// Suppress log messages for errors caused by the frontend being unreachable until we've
+			// given the frontend enough time to initialize (in case other services start up before
+			// the frontend), to reduce log spam.
+			if time.Since(start) > opt.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
+				opt.log("received error during background config update, err: %s", err)
+			}
 		}
 
-		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
-		time.Sleep(jitter)
+		opt.sleep()
 	}
 }
 

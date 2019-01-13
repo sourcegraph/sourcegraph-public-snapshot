@@ -90,7 +90,7 @@ func init() {
 	// The default client is started in InitConfigurationServerFrontendOnly in
 	// the case of server mode.
 	if mode == modeClient {
-		go defaultClient.continuouslyUpdate()
+		go defaultClient.continuouslyUpdate(nil)
 		close(configurationServerFrontendOnlyInitialized)
 	}
 }
@@ -117,7 +117,7 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	// and instead only relies on the DB.
 	defaultClient.passthrough = source
 
-	go defaultClient.continuouslyUpdate()
+	go defaultClient.continuouslyUpdate(nil)
 	configurationServerFrontendOnly = server
 	close(configurationServerFrontendOnlyInitialized)
 	return server
