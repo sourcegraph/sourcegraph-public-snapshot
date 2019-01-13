@@ -43,6 +43,7 @@ export class DiscussionsPage extends React.PureComponent<Props, State> {
                     <PageTitle title="Discussions" />
                     <h2>All discussions</h2>
                     <DiscussionsList
+                        withRepo={true}
                         repoID={undefined}
                         rev={undefined}
                         filePath={'/**'}

@@ -12,9 +12,10 @@ import { fetchDiscussionThreads } from './backend'
 interface DiscussionNodeProps {
     node: GQL.IDiscussionThread
     location: H.Location
+    withRepo?: boolean
 }
 
-const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, location }) => {
+const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, location, withRepo }) => {
     const currentURL = location.pathname + location.search + location.hash
 
     // TODO(slimsag:discussions): future: Improve rendering of discussions when there is no inline URL
@@ -23,16 +24,20 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
     const openDiscussion = (e: any) => openFromJS(inlineURL, e)
     const preventDefault = (e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()
     const stopPropagation = (e: React.MouseEvent<HTMLAnchorElement>) => e.stopPropagation()
+
+    console.log(withRepo)
     return (
         <li
             className={'discussions-list__row' + (currentURL === inlineURL ? ' discussions-list__row--active' : '')}
             onClick={openDiscussion}
         >
             <div className="discussions-list__row-top-line">
-                <a href="#" onClick={preventDefault} className="discussions-list__row-title ">
-                    {node.title}
-                </a>
-                <small className="discussions-list__row-id">#{node.id}</small>
+                <h3 className="discussions-list__row-title ">
+                    <a href="#" onClick={preventDefault}>
+                        {node.title}
+                    </a>
+                    <small className="discussions-list__row-id">#{node.id}</small>
+                </h3>
                 <span className="discussions-list__row-spacer" />
                 <span
                     className="discussions-list__row-comments-count"
@@ -57,7 +62,15 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
                         data-tooltip={node.author.displayName}
                     />
                     <br />
-                    {node.target.repository.name}
+                    {withRepo && (
+                        <Link
+                            to={node.target.repository.name}
+                            onClick={stopPropagation}
+                            data-tooltip={'View repository on Sourcegraph'}
+                        >
+                            {node.target.repository.name}
+                        </Link>
+                    )}
                 </span>
             </div>
         </li>
@@ -82,6 +95,7 @@ interface Props {
     noun?: string
     pluralNoun?: string
     noFlex?: boolean
+    withRepo?: boolean
 }
 
 export class DiscussionsList extends React.PureComponent<Props> {
@@ -95,7 +109,12 @@ export class DiscussionsList extends React.PureComponent<Props> {
                 pluralNoun={this.props.pluralNoun || 'discussions'}
                 queryConnection={this.fetchThreads}
                 nodeComponent={DiscussionNode}
-                nodeComponentProps={{ location: this.props.location } as Pick<DiscussionNodeProps, 'location'>}
+                nodeComponentProps={
+                    { location: this.props.location, withRepo: this.props.withRepo } as Pick<
+                        DiscussionNodeProps,
+                        'location'
+                    >
+                }
                 updateOnChange={`${this.props.repoID}:${this.props.rev}:${this.props.filePath}`}
                 defaultFirst={this.props.defaultFirst || 100}
                 hideSearch={this.props.hideSearch}
