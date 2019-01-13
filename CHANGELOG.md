@@ -45,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed resolving of git clone URLs with `git+` prefix through the GraphQL API
 - Fixed an issue where the graphql Repositories endpoint would order by a field which was not indexed. Times on Sourcegraph.com went from 10s to 200ms.
 - Fixed an issue where whitespace was not handled properly in environment variable lists (`SYMBOLS_URL`, `SEARCHER_URL`).
+- Fixed an issue where clicking inside the repository popover or clicking "Show more" would dismiss the popover.
 
 ### Removed
 
