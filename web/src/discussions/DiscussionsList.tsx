@@ -25,7 +25,6 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
     const preventDefault = (e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()
     const stopPropagation = (e: React.MouseEvent<HTMLAnchorElement>) => e.stopPropagation()
 
-    console.log(withRepo)
     return (
         <li
             className={'discussions-list__row' + (currentURL === inlineURL ? ' discussions-list__row--active' : '')}
