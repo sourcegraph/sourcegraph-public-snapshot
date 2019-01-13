@@ -65,7 +65,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
 
         return (
             <div className="extensions-explore-section">
-                <h2>Top Sourcegraph extensions</h2>
+                <h2 className="extensions-explore-section__section-title">Top Sourcegraph extensions</h2>
                 {isErrorLike(extensionsOrError) ? (
                     <div className="alert alert-danger">Error: {extensionsOrError.message}</div>
                 ) : extensionsOrError.length === 0 ? (
@@ -96,7 +96,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                                 </div>
                             ))}
                         </div>
-                        <div className="text-right mt-1">
+                        <div className="text-right mt-2">
                             <Link to="/extensions">
                                 View all extensions
                                 <ChevronRightIcon className="icon-inline" />
