@@ -15,14 +15,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
-var externalServiceKinds = map[string]struct{}{
-	"AWSCODECOMMIT":   {},
-	"BITBUCKETSERVER": {},
-	"GITHUB":          {},
-	"GITLAB":          {},
-	"GITOLITE":        {},
-	"PHABRICATOR":     {},
-	"OTHER":           {},
+var externalServiceKinds = map[string]struct {
+	// True if the external service can host repositories.
+	codeHost bool
+}{
+	"AWSCODECOMMIT":   {codeHost: true},
+	"BITBUCKETSERVER": {codeHost: true},
+	"GITHUB":          {codeHost: true},
+	"GITLAB":          {codeHost: true},
+	"GITOLITE":        {codeHost: true},
+	"PHABRICATOR":     {codeHost: true},
+	"OTHER":           {codeHost: true},
 }
 
 func validateKind(kind string) error {
