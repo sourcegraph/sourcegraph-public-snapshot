@@ -23,6 +23,7 @@ interface State {
 /**
  * An explore section that shows recent discussion threads.
  */
+
 export class DiscussionsExploreSection extends React.PureComponent<Props, State> {
     private static QUERY_DISCUSSIONS_ARG_FIRST = 4
 
@@ -51,7 +52,6 @@ export class DiscussionsExploreSection extends React.PureComponent<Props, State>
                 : this.state.threadsOrError.nodes
 
         const itemClass = 'py-2 border-white'
-
         return (
             <div className="discussions-explore-section">
                 <h2>Recent discussions</h2>
@@ -64,7 +64,7 @@ export class DiscussionsExploreSection extends React.PureComponent<Props, State>
                     </p>
                 ) : (
                     <>
-                        <div className="list-group list-group-flush">
+                        <div className="discussions-explore-section__list">
                             {threadsOrError.map((thread /* or loading */, i) =>
                                 thread === LOADING ? (
                                     <div key={i} className={`${itemClass} list-group-item`}>
@@ -73,22 +73,24 @@ export class DiscussionsExploreSection extends React.PureComponent<Props, State>
                                 ) : (
                                     <LinkOrSpan
                                         key={i}
-                                        className={`${itemClass} list-group-item list-group-item-action d-flex align-items-center justify-content-between`}
+                                        className={`d-flex align-items-center justify-content-between discussions-explore-section__list__item`}
                                         to={thread.inlineURL}
                                     >
                                         <div>
-                                            <h3 className="mb-0 text-truncate">
-                                                {thread.title} #{thread.id}
+                                            <h3 className="mb-0 text-truncate discussions-explore-section__list__title">
+                                                {thread.title} <small>#{thread.id}</small>
                                             </h3>
-                                            {uniqueAuthors(thread.comments.nodes).map(user => (
-                                                <span key={user.username} className="mr-1">
-                                                    @{user.username}
-                                                </span>
-                                            ))}{' '}
-                                            &mdash;{' '}
+                                            Created{' '}
                                             {formatDistanceStrict(thread.updatedAt, Date.now(), {
                                                 addSuffix: true,
                                             })}
+                                            {uniqueAuthors(thread.comments.nodes).map(user => (
+                                                <span key={user.username} className="mr-1">
+                                                    by {user.username}
+                                                </span>
+                                            ))}{' '}
+                                            <br />
+                                            {thread.target.repository.name}
                                         </div>
                                         <div className="h4 mb-0">{thread.comments.totalCount}</div>
                                     </LinkOrSpan>
@@ -126,13 +128,14 @@ function queryDiscussionThreads(
 ): Observable<GQL.IDiscussionThreadConnection> {
     return queryGraphQL(
         gql`
-            query ExploreDiscussionThreads($first: Int) {
+            query DiscussionThreads($first: Int) {
                 discussionThreads(first: $first) {
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
                     nodes {
-                        id
-                        title
-                        updatedAt
-                        inlineURL
+                        ...DiscussionThreadFields
                         comments(first: 10) {
                             nodes {
                                 author {
@@ -143,6 +146,32 @@ function queryDiscussionThreads(
                         }
                     }
                 }
+            }
+
+            fragment DiscussionThreadFields on DiscussionThread {
+                id
+                author {
+                    ...UserFields
+                }
+                title
+                target {
+                    __typename
+                    ... on DiscussionThreadTargetRepo {
+                        repository {
+                            name
+                        }
+                    }
+                }
+                inlineURL
+                createdAt
+                updatedAt
+                archivedAt
+            }
+
+            fragment UserFields on User {
+                displayName
+                username
+                avatarURL
             }
         `,
         args

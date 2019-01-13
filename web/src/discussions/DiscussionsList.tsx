@@ -6,7 +6,6 @@ import { ChatIcon } from '../../../shared/src/components/icons'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { Timestamp } from '../components/time/Timestamp'
-import { UserAvatar } from '../user/UserAvatar'
 import { openFromJS } from '../util/url'
 import { fetchDiscussionThreads } from './backend'
 
@@ -24,7 +23,6 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
     const openDiscussion = (e: any) => openFromJS(inlineURL, e)
     const preventDefault = (e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()
     const stopPropagation = (e: React.MouseEvent<HTMLAnchorElement>) => e.stopPropagation()
-
     return (
         <li
             className={'discussions-list__row' + (currentURL === inlineURL ? ' discussions-list__row--active' : '')}
@@ -57,9 +55,9 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
                         to={`/users/${node.author.username}`}
                         onClick={stopPropagation}
                         data-tooltip={node.author.displayName}
-                    >
-                        <UserAvatar user={node.author} className="icon-inline icon-sm" />
-                    </Link>
+                    />
+                    <br />
+                    {node.target.repository.name}
                 </span>
             </div>
         </li>
