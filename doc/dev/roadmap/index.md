@@ -10,7 +10,10 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ## Future releases
 
-### 3.0 (week of 2019-01-14)
+### 3.0
+
+- 3.0-beta (week of 2019-01-14)
+- 3.0 (week of 2019-02-04)
 
 Code intelligence:
 
@@ -30,17 +33,7 @@ Configuration and deployment:
 - [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
 - [Upgrade to PostgreSQL 11](https://github.com/sourcegraph/sourcegraph/issues/1404)
 
-<small>[Draft announcement](https://github.com/sourcegraph/about/pull/68) --- [All 3.0 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%223.0%22)</small>
-
----
-
-### 3.1 (week of 2019-02-04)
-
-This release will be focused on addressing tech debt, fixing bugs, and improving documentation.
-
-### 3.2 (week of 2019-03-04)
-
-Needs planning.
+<small>Draft announcements: [beta](https://github.com/sourcegraph/about/pull/75) [release](https://github.com/sourcegraph/about/pull/68) --- [All 3.0-beta issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%223.0-beta%22)</small>
 
 ---
 
