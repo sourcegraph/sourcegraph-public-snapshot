@@ -12,14 +12,13 @@ package main
 
 //docker:env LANG=en_US.utf8
 
-// We run 9.4 in production, but if we are embedding might as well get
-// something modern, 9.6. We add the version specifier to prevent accidentally
-// upgrading to an even newer version.
-// NOTE: We have to stay at 9.6, otherwise existing users databases won't run
-// due to needing to be upgraded. There is no nice auto-upgrade we have here
-// without some engineering investment.
+// At the time of the 3.0-beta release, we ran Postgres 9.4 in sourcegraph.com
+// and existing customer deployments. With this release, we're upgrading to
+// 11.1 for new users and will follow up with providing documentation and
+// automation for existing deployments to be upgraded safely.
+// See: https://github.com/sourcegraph/sourcegraph/issues/1404
 
-//docker:repository v3.6
-//docker:install 'postgresql<9.7' 'postgresql-contrib<9.7' su-exec
+//docker:repository edge
+//docker:install 'postgresql=11.1-r0' 'postgresql-contrib=11.1-r0' su-exec
 
 //docker:install redis
