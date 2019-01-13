@@ -86,6 +86,7 @@ export class DiscussionsExploreSection extends React.PureComponent<Props, State>
                                             })}
                                             {uniqueAuthors(thread.comments.nodes).map(user => (
                                                 <span key={user.username} className="mr-1">
+                                                    {' '}
                                                     by {user.username}
                                                 </span>
                                             ))}{' '}

@@ -6,7 +6,7 @@
         display: block;
     }
     &__row {
-        border-top: 1px solid $color-border;
+        border-top: 1px solid $border-color;
         display: block;
         padding: 0.75rem;
         white-space: nowrap;
@@ -15,7 +15,7 @@
         cursor: pointer;
 
         &:last-of-type {
-            border-bottom: 1px solid $color-border;
+            border-bottom: 1px solid $border-color;
         }
 
         &--active,
@@ -42,6 +42,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             color: $color-text-2;
+            margin-bottom: 0;
         }
         &:hover &-title {
             text-decoration: underline;
