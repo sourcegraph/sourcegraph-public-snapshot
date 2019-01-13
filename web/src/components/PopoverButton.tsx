@@ -116,10 +116,12 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                     {!this.props.link && <MenuDownIcon className="icon-inline popover-button__icon" />}
                 </LinkOrSpan>
                 {this.props.link ? (
-                    <button className="popover-button__anchor btn-icon" onClick={this.onPopoverVisibilityToggle}>
-                        <MenuDownIcon className="icon-inline popover-button__icon popover-button__icon--outside" />
+                    <>
+                        <button className="popover-button__anchor btn-icon" onClick={this.onPopoverVisibilityToggle}>
+                            <MenuDownIcon className="icon-inline popover-button__icon popover-button__icon--outside" />
+                        </button>
                         {popoverAnchor}
-                    </button>
+                    </>
                 ) : (
                     popoverAnchor
                 )}
