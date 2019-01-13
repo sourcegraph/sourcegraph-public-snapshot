@@ -88,10 +88,8 @@ func main() {
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
 	if !isBextReleaseBranch {
-		// TODO(sqs): reenable the DB backcompat test
-		//
-		// pipeline.AddStep(":postgres:",
-		// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+		pipeline.AddStep(":postgres:",
+			bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
 		pipeline.AddStep(":go:",
 			bk.Cmd("go generate ./..."),
