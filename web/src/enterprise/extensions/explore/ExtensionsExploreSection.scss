@@ -1,3 +1,6 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable color-hex-length */
+/* stylelint-disable color-named */
 .extensions-explore-section {
     &__section-title {
         margin-bottom: 0.75rem;
@@ -14,7 +17,7 @@
         box-sizing: border-box;
         position: relative;
         width: 100%;
-        margin-top: 12px;
+        margin-top: 0.75rem;
         transition: all 150ms ease;
         &:first-of-type {
             margin-top: 0;
@@ -27,7 +30,7 @@
             height: 100%;
             border: 1px solid;
             border-radius: 2px;
-            padding: 8px;
+            padding: 0.5rem;
 
             &__body {
                 &__title {
@@ -70,7 +73,7 @@
     .theme-light & {
         &__card {
             &:hover {
-                box-shadow: 0 6px 10px 0px rgba(7, 61, 144, 0.05);
+                box-shadow: 0 6px 10px 0 rgba(7, 61, 144, 0.05);
             }
             &__content {
                 background-image: linear-gradient(116deg, #ffffff, #fdfdfe);

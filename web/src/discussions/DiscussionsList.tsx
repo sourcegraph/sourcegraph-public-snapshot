@@ -43,7 +43,7 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
             </div>
             <div className="discussions-list__row-bottom-line">
                 <span>
-					Created <Timestamp date={node.createdAt} /> by{' '}
+                    Created <Timestamp date={node.createdAt} /> by{' '}
                     <Link
                         to={`/users/${node.author.username}`}
                         onClick={stopPropagation}
@@ -55,10 +55,9 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
                         to={`/users/${node.author.username}`}
                         onClick={stopPropagation}
                         data-tooltip={node.author.displayName}
-                    >
-                    </Link>
-					<br/>
-					{node.target.repository.name}
+                    />
+                    <br />
+                    {node.target.repository.name}
                 </span>
             </div>
         </li>

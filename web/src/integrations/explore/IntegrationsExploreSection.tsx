@@ -46,13 +46,13 @@ export const IntegrationsExploreSection: React.FunctionComponent<Props> = () => 
                         // style={{ backgroundImage }}
                     >
                         <div className="integrations-explore-section__card__content__body">
-							<div className="integrations-explore-section__card__content__body__content">
-	                            <h2 className="integrations-explore-section__card__content__body__title">{title}</h2>
-	                            <p className="integrations-explore-section__card__content__body__text">{description}</p>
-							</div>
-							<div className="integrations-explore-section__card__content__icon">
-								<OpenInNewIcon className="" />
-							</div>
+                            <div className="integrations-explore-section__card__content__body__content">
+                                <h2 className="integrations-explore-section__card__content__body__title">{title}</h2>
+                                <p className="integrations-explore-section__card__content__body__text">{description}</p>
+                            </div>
+                            <div className="integrations-explore-section__card__content__icon">
+                                <OpenInNewIcon className="" />
+                            </div>
                         </div>
                     </a>
                 </div>

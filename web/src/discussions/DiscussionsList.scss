@@ -6,7 +6,7 @@
         display: block;
     }
     &__row {
-		border-top: 1px solid $color-border;
+        border-top: 1px solid $color-border;
         display: block;
         padding: 0.75rem;
         white-space: nowrap;
@@ -14,9 +14,9 @@
         text-overflow: ellipsis;
         cursor: pointer;
 
-		&:last-of-type {
-			border-bottom: 1px solid $color-border;
-		}
+        &:last-of-type {
+            border-bottom: 1px solid $color-border;
+        }
 
         &--active,
         &:hover {

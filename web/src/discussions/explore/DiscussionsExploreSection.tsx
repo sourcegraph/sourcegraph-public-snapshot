@@ -80,7 +80,8 @@ export class DiscussionsExploreSection extends React.PureComponent<Props, State>
                                             <h3 className="mb-0 text-truncate discussions-explore-section__list__title">
                                                 {thread.title} <small>#{thread.id}</small>
                                             </h3>
-											Created {formatDistanceStrict(thread.updatedAt, Date.now(), {
+                                            Created{' '}
+                                            {formatDistanceStrict(thread.updatedAt, Date.now(), {
                                                 addSuffix: true,
                                             })}
                                             {uniqueAuthors(thread.comments.nodes).map(user => (
@@ -88,8 +89,8 @@ export class DiscussionsExploreSection extends React.PureComponent<Props, State>
                                                     by {user.username}
                                                 </span>
                                             ))}{' '}
-											<br/>
-											{thread.target.repository.name}
+                                            <br />
+                                            {thread.target.repository.name}
                                         </div>
                                         <div className="h4 mb-0">{thread.comments.totalCount}</div>
                                     </LinkOrSpan>
@@ -127,51 +128,51 @@ function queryDiscussionThreads(
 ): Observable<GQL.IDiscussionThreadConnection> {
     return queryGraphQL(
         gql`
-			query DiscussionThreads($first: Int) {
-			  discussionThreads(first: $first) {
-				totalCount
-				pageInfo {
-				  hasNextPage
-				}
-				nodes {
-				  ...DiscussionThreadFields
-				  comments(first: 10) {
-					  nodes {
-						  author {
-							  username
-						  }
-					  }
-					  totalCount
-				  }
-				}
-			  }
-			}
+            query DiscussionThreads($first: Int) {
+                discussionThreads(first: $first) {
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
+                    nodes {
+                        ...DiscussionThreadFields
+                        comments(first: 10) {
+                            nodes {
+                                author {
+                                    username
+                                }
+                            }
+                            totalCount
+                        }
+                    }
+                }
+            }
 
-			fragment DiscussionThreadFields on DiscussionThread {
-			  id
-			  author {
-				...UserFields
-			  }
-			  title
-			  target {
-				__typename
-				... on DiscussionThreadTargetRepo {
-				  repository {
-					name
-				  }
-				}
-			  }
-			  inlineURL
-			  createdAt
-			  updatedAt
-			  archivedAt
-			}
+            fragment DiscussionThreadFields on DiscussionThread {
+                id
+                author {
+                    ...UserFields
+                }
+                title
+                target {
+                    __typename
+                    ... on DiscussionThreadTargetRepo {
+                        repository {
+                            name
+                        }
+                    }
+                }
+                inlineURL
+                createdAt
+                updatedAt
+                archivedAt
+            }
 
-			fragment UserFields on User {
-			  displayName
-			  username
-			  avatarURL
-			}
+            fragment UserFields on User {
+                displayName
+                username
+                avatarURL
+            }
         `,
         args
     ).pipe(
