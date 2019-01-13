@@ -1,0 +1,13 @@
+.repositories-explore-section {
+	.list-group-item-action {
+		border-bottom: 1px solid $border-color;
+		&:first-of-type {
+			border-top: 1px solid $border-color;
+		}
+	}
+
+	&__name {
+		color: $body-color;
+	}
+
+}
