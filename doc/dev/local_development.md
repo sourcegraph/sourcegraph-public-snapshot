@@ -42,6 +42,7 @@ Sourcegraph has the following dependencies:
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.x)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
+- [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 
 You have two options for installing these dependencies.
 
@@ -58,10 +59,10 @@ This is a streamlined setup for Mac machines.
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL 9, Redis, Git with the following command:
+3.  Install Go, Node, PostgreSQL 9, Redis, Git, and nginx with the following command:
 
     ```
-    brew install go node redis postgresql@9.6 git gnu-sed
+    brew install go node redis postgresql@9.6 git gnu-sed nginx
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically

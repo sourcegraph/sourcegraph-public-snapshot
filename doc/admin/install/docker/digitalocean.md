@@ -35,7 +35,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 
 - Launch your instance, then navigate to its IP address.
 
-- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. If `externalURL` has the HTTPS protocol then Sourcegraph will get a certificate via [Let's Encrypt](https://letsencrypt.org/). For more information or alternative methods, see "[Using TLS/SSL](../../tls_ssl.md)". (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
+- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
 
 ---
 

@@ -26,13 +26,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "canonicalURLRedirect": {
-          "description":
-            "Enables or disables enforcing that HTTP requests use the externalURL as a prefix, by redirecting other requests to the same request URI on the externalURL. For example, if the externalURL is https://sourcegraph.example.com and the site is also available under the DNS name http://foo, then a request to http://foo/bar would be redirected to https://sourcegraph.example.com/bar. Disabled by default.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "discussions": {
           "description": "Enables the code discussions experiment.",
           "type": "string",

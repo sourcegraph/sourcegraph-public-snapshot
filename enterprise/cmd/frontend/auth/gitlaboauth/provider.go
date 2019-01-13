@@ -60,9 +60,7 @@ func getStateConfig() gologin.CookieConfig {
 		Path:     "/",
 		MaxAge:   120, // 120 seconds
 		HTTPOnly: true,
-	}
-	if conf.Get().Critical.TlsCert != "" {
-		cfg.Secure = true
+		Secure:   conf.IsExternalURLSecure(),
 	}
 	return cfg
 }

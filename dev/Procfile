@@ -7,6 +7,7 @@ symbols: ./dev/delve-hook .bin/symbols
 github-proxy: ./dev/delve-hook .bin/github-proxy
 frontend: env CONFIGURATION_MODE=server ./dev/delve-hook .bin/frontend
 watch: ./dev/changewatch.sh
+nginx: nginx -p . -g 'daemon off;' -c $PWD/dev/nginx.conf | grep -v 'could not open error log file'
 web: ./node_modules/.bin/gulp --color watch
 syntect_server: ./dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072

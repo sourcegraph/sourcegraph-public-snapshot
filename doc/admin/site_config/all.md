@@ -17,16 +17,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [experimentalFeatures](all.md#experimentalfeatures-object)
 
-- [tls.letsencrypt](all.md#tlsletsencrypt-string-enum)
-
-- [tlsCert](all.md#tlscert-string)
-
-- [tlsKey](all.md#tlskey-string)
-
-- [httpToHttpsRedirect](all.md#httptohttpsredirect)
-
-- [httpStrictTransportSecurity](all.md#httpstricttransportsecurity)
-
 - [corsOrigin](all.md#corsorigin-string)
 
 - [disableBrowserExtension](all.md#disablebrowserextension-boolean)
@@ -202,17 +192,6 @@ Experimental features to enable or disable. Features that are now enabled by def
 
 Properties of the `experimentalFeatures` object:
 
-### canonicalURLRedirect (string, enum)
-
-Enables or disables redirecting to the canonical URL for incoming HTTP requests. Enabled by default.
-
-This property must be one of the following enum values:
-
-- `enabled`
-- `disabled`
-
-Default: `"disabled"`
-
 ### discussions (string, enum)
 
 Enables the code discussions experiment.
@@ -229,65 +208,6 @@ Default: `"disabled"`
 ## search.index.enabled (boolean)
 
 Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
-
-## tls.letsencrypt (string, enum)
-
-Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.
-The default value is auto, which uses the following conditions to switch on:
-
-- tlsCert and tlsKey are unset.
-- `externalURL` is a https:// URL (`appURL` in Sourcegraph 2.13 and earlier)
-- Can successfully bind to port 443
-
-This property must be one of the following enum values:
-
-- `auto`
-- `on`
-- `off`
-
-Default: `"auto"`
-
-<br/>
-
-## tlsCert (string)
-
-The contents of the PEM-encoded TLS certificate for the web server (for the web app and API).
-
-See [https://docs.sourcegraph.com/admin/tls_ssl](../tls_ssl.md) for more information.
-
-Additional restrictions:
-
-- Regex pattern: `^-----BEGIN CERTIFICATE-----`
-
-<br/>
-
-## tlsKey (string)
-
-The contents of the PEM-encoded TLS key for the web server (for the web app and API).
-
-See [https://docs.sourcegraph.com/admin/tls_ssl](../tls_ssl.md) for more information.
-
-Additional restrictions:
-
-- Regex pattern: `^-----BEGIN`
-
-<br/>
-
-## httpToHttpsRedirect
-
-Redirect users from HTTP to HTTPS. Accepted values are "on", "off", and "load-balanced" (boolean values true and false are also accepted and equivalent to "on" and "off" respectively). If "load-balanced" then additionally we use "X-Forwarded-Proto" to determine if on HTTP.
-
-Default: `"off"`
-
-<br/>
-
-## httpStrictTransportSecurity
-
-The value of the HTTP Strict-Transport-Security (HSTS) header sent by Sourcegraph, if non-empty
-
-Default: `"max-age=31536000"`
-
-<br/>
 
 ## corsOrigin (string)
 
