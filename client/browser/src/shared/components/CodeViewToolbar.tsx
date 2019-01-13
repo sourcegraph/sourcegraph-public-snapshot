@@ -10,6 +10,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { toURIWithPath } from '../../../../../shared/src/util/url'
 import { FileInfo } from '../../libs/code_intelligence'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
+import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
@@ -73,9 +74,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     />
                 </ul>
                 {this.props.baseCommitID && this.props.baseHasFileContents && (
-                    <OpenOnSourcegraph
-                        label={'View File (base)'}
-                        ariaLabel="View file on Sourcegraph"
+                    <OpenDiffOnSourcegraph
+                        label={'View file diff'}
+                        ariaLabel="View file diff on Sourcegraph"
                         openProps={{
                             repoName: this.props.baseRepoName || this.props.repoName,
                             filePath: this.props.baseFilePath || this.props.filePath,
@@ -84,6 +85,10 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                 diff: {
                                     rev: this.props.baseCommitID,
                                 },
+                            },
+                            commit: {
+                                baseRev: this.props.baseRev!,
+                                headRev: this.props.rev!,
                             },
                         }}
                         className={this.props.buttonProps.className}
@@ -96,9 +101,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                   Use a ternary here because prettier insists on changing parens resulting in this button only being rendered
                   if the condition after the || is satisfied.
                  */}
-                {!this.props.baseCommitID || (this.props.baseCommitID && this.props.headHasFileContents) ? (
+                {!this.props.baseCommitID && (
                     <OpenOnSourcegraph
-                        label={`View File${this.props.baseCommitID ? ' (head)' : ''}`}
+                        label={`View file`}
                         ariaLabel="View file on Sourcegraph"
                         openProps={{
                             repoName: this.props.repoName,
@@ -116,7 +121,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         style={this.props.buttonProps.style}
                         iconStyle={this.props.buttonProps.iconStyle}
                     />
-                ) : null}
+                )}
             </div>
         )
     }
