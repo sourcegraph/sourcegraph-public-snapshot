@@ -13,7 +13,7 @@ export interface Props {
     iconStyle?: React.CSSProperties
     className?: string
     ariaLabel?: string
-    onClick?: (e: MouseEvent) => void
+    onClick?: (e: MouseEvent<HTMLElement>) => void
     label: string
 }
 
