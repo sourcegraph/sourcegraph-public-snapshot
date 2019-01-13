@@ -1,6 +1,7 @@
 import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import LogoutIcon from 'mdi-react/LogoutIcon'
+import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -79,11 +80,9 @@ export const UserAccountSidebar: React.FunctionComponent<UserAccountSidebarProps
                         ))}
                     </SidebarGroupItems>
                     {!siteAdminViewingOtherUser && (
-                        <div className="card-body">
-                            <Link to="/organizations/new" className="btn btn-secondary btn-sm w-100">
-                                <AddIcon className="icon-inline" /> New organization
-                            </Link>
-                        </div>
+                        <Link to="/organizations/new" className="btn btn-secondary btn-sm w-100">
+                            <AddIcon className="icon-inline" /> New organization
+                        </Link>
                     )}
                 </SidebarGroup>
             )}
@@ -94,7 +93,7 @@ export const UserAccountSidebar: React.FunctionComponent<UserAccountSidebarProps
             )}
             {props.authenticatedUser.siteAdmin && (
                 <Link to="/site-admin" className={SIDEBAR_BUTTON_CLASS}>
-                    Site admin
+                    <ServerIcon className="icon-inline list-group-item-action-icon" /> Site admin
                 </Link>
             )}
             {!siteAdminViewingOtherUser &&

@@ -50,7 +50,7 @@ export async function webpackDevServer(): Promise<void> {
         },
     })
     return new Promise<void>((resolve, reject) => {
-        server.listen(3080, '127.0.0.1', (err?: Error) => {
+        server.listen(3080, '0.0.0.0', (err?: Error) => {
             if (err) {
                 reject(err)
             } else {

@@ -15,9 +15,11 @@ export const FeedbackText: React.FunctionComponent<Props> = (props: Props) => (
         or{' '}
         <a href="mailto:support@sourcegraph.com" target="_blank">
             support@sourcegraph.com
-        </a>, or file issues on our{' '}
+        </a>
+        , or file issues on our{' '}
         <a href="https://github.com/sourcegraph/issues/issues" target="_blank">
             public issue tracker
-        </a>. {props.footerText}
+        </a>
+        . {props.footerText}
     </p>
 )

@@ -1,5 +1,4 @@
 import H from 'history'
-import marked from 'marked'
 import React from 'react'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -8,6 +7,7 @@ import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { createLinkClickHandler } from '../../../../shared/src/util/linkClickHandler'
+import { renderMarkdown } from '../../../../shared/src/util/markdown'
 
 interface Props extends ExtensionsControllerProps {
     history: H.History
@@ -52,7 +52,7 @@ export class ExtensionViewsExploreSection extends React.PureComponent<Props, Sta
                     <div key={i} className="mt-5">
                         <h2>{view.title}</h2>
                         <div onClick={createLinkClickHandler(this.props.history)}>
-                            <Markdown dangerousInnerHTML={marked(view.content)} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(view.content)} />
                         </div>
                     </div>
                 ))}

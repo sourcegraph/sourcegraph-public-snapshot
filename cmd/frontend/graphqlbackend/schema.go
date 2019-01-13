@@ -1053,6 +1053,7 @@ enum ExternalServiceKind {
     GITLAB
     GITOLITE
     PHABRICATOR
+    OTHER
 }
 
 # A configured external service.

@@ -47,8 +47,8 @@ export class DiscussionsExploreSection extends React.PureComponent<Props, State>
             this.state.threadsOrError === LOADING
                 ? Array(DiscussionsExploreSection.QUERY_DISCUSSIONS_ARG_FIRST).fill(LOADING)
                 : isErrorLike(this.state.threadsOrError)
-                    ? this.state.threadsOrError
-                    : this.state.threadsOrError.nodes
+                ? this.state.threadsOrError
+                : this.state.threadsOrError.nodes
 
         const itemClass = 'py-2 border-white'
 
@@ -65,40 +65,40 @@ export class DiscussionsExploreSection extends React.PureComponent<Props, State>
                 ) : (
                     <>
                         <div className="list-group list-group-flush">
-                            {threadsOrError.map(
-                                (thread /* or loading */, i) =>
-                                    thread === LOADING ? (
-                                        <div key={i} className={`${itemClass} list-group-item`}>
-                                            <h3 className="text-muted mb-0">⋯</h3>&nbsp;
+                            {threadsOrError.map((thread /* or loading */, i) =>
+                                thread === LOADING ? (
+                                    <div key={i} className={`${itemClass} list-group-item`}>
+                                        <h3 className="text-muted mb-0">⋯</h3>&nbsp;
+                                    </div>
+                                ) : (
+                                    <LinkOrSpan
+                                        key={i}
+                                        className={`${itemClass} list-group-item list-group-item-action d-flex align-items-center justify-content-between`}
+                                        to={thread.inlineURL}
+                                    >
+                                        <div>
+                                            <h3 className="mb-0 text-truncate">
+                                                {thread.title} #{thread.id}
+                                            </h3>
+                                            {uniqueAuthors(thread.comments.nodes).map(user => (
+                                                <span key={user.username} className="mr-1">
+                                                    @{user.username}
+                                                </span>
+                                            ))}{' '}
+                                            &mdash;{' '}
+                                            {formatDistanceStrict(thread.updatedAt, Date.now(), {
+                                                addSuffix: true,
+                                            })}
                                         </div>
-                                    ) : (
-                                        <LinkOrSpan
-                                            key={i}
-                                            className={`${itemClass} list-group-item list-group-item-action d-flex align-items-center justify-content-between`}
-                                            to={thread.inlineURL}
-                                        >
-                                            <div>
-                                                <h3 className="mb-0 text-truncate">
-                                                    {thread.title} #{thread.id}
-                                                </h3>
-                                                {uniqueAuthors(thread.comments.nodes).map(user => (
-                                                    <span key={user.username} className="mr-1">
-                                                        @{user.username}
-                                                    </span>
-                                                ))}{' '}
-                                                &mdash;{' '}
-                                                {formatDistanceStrict(thread.updatedAt, Date.now(), {
-                                                    addSuffix: true,
-                                                })}
-                                            </div>
-                                            <div className="h4 mb-0">{thread.comments.totalCount}</div>
-                                        </LinkOrSpan>
-                                    )
+                                        <div className="h4 mb-0">{thread.comments.totalCount}</div>
+                                    </LinkOrSpan>
+                                )
                             )}
                         </div>
                         <div className="text-right mt-3">
                             <Link to="/discussions">
-                                View all discussions<ChevronRightIcon className="icon-inline" />
+                                View all discussions
+                                <ChevronRightIcon className="icon-inline" />
                             </Link>
                         </div>
                     </>

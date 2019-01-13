@@ -1,27 +1,13 @@
 package githuboauth
 
 import (
-	"os"
-	"strings"
-
 	"github.com/dghubble/gologin"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var (
-	ffIsEnabled bool
-)
-
 func init() {
-	// HACK: don't run this watch loop in tests, because it results in a race condition.
-	// This can be removed once the feature flag is removed.
-	if strings.HasSuffix(os.Args[0], ".test") {
-		ffIsEnabled = true
-		return
-	}
-
 	const pkgName = "githuboauth"
 	go func() {
 		conf.Watch(func() {
@@ -35,7 +21,6 @@ func init() {
 				}
 				auth.UpdateProviders(pkgName, newProvidersList)
 			}
-			ffIsEnabled = true
 		})
 		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
 			_, problems = parseConfig(&cfg)

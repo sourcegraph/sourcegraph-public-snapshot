@@ -279,7 +279,7 @@ var gitHubRepositorySyncWorker = &worker{
 					select {
 					case <-shutdown:
 						return
-					case <-time.After(getUpdateInterval()):
+					case <-time.After(GetUpdateInterval()):
 					}
 				}
 			}(c)

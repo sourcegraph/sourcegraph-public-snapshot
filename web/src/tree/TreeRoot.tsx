@@ -157,7 +157,8 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                         <td className="tree__cell">
                             {treeOrError === LOADING ? (
                                 <div className="tree__row-loader">
-                                    <LoadingSpinner className="icon-inline tree-page__entries-loader" />Loading tree
+                                    <LoadingSpinner className="icon-inline tree-page__entries-loader" />
+                                    Loading tree
                                 </div>
                             ) : isErrorLike(treeOrError) ? (
                                 <div

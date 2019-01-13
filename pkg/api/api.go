@@ -115,3 +115,14 @@ type Settings struct {
 	Contents     string          // the raw JSON (with comments and trailing commas allowed)
 	CreatedAt    time.Time       // the date when this settings value was created
 }
+
+// ExternalService represents an complete external service record.
+type ExternalService struct {
+	ID          int64
+	Kind        string
+	DisplayName string
+	Config      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   *time.Time
+}

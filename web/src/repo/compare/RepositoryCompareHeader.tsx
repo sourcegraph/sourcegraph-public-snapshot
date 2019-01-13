@@ -82,12 +82,11 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
                                 {stateDiffers ? 'Update comparison' : 'Compare'}
                             </button>
                         )}
-                        {stateDiffers &&
-                            !specIsEmpty && (
-                                <button type="reset" className="btn btn-secondary mb-2" onClick={this.onCancel}>
-                                    Cancel
-                                </button>
-                            )}
+                        {stateDiffers && !specIsEmpty && (
+                            <button type="reset" className="btn btn-secondary mb-2" onClick={this.onCancel}>
+                                Cancel
+                            </button>
+                        )}
                     </Form>
                 </div>
             </div>

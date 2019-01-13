@@ -8,7 +8,7 @@ hash migrate 2>/dev/null || {
     if [[ $(uname) == "Darwin" ]]; then
         brew install golang-migrate
     else
-        echo "You need to install the 'migrate' tool: https://github.com/golang-migrate/migrate/"
+        echo "You need to install the 'migrate' tool: https://github.com/tsenart/migrate/"
         exit 1
     fi
 }

@@ -49,15 +49,14 @@ export class Notifications extends React.PureComponent<Props, State> {
                                 .subscribe({
                                     error: err => {
                                         this.setState(({ notifications }) => ({
-                                            notifications: notifications.map(
-                                                n =>
-                                                    n === notification
-                                                        ? {
-                                                              ...n,
-                                                              type: MessageType.Error,
-                                                              message: asError(err).message,
-                                                          }
-                                                        : n
+                                            notifications: notifications.map(n =>
+                                                n === notification
+                                                    ? {
+                                                          ...n,
+                                                          type: MessageType.Error,
+                                                          message: asError(err).message,
+                                                      }
+                                                    : n
                                             ),
                                         }))
                                     },
@@ -80,16 +79,14 @@ export class Notifications extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="sourcegraph-notifications">
-                {this.state.notifications
-                    .slice(0, Notifications.MAX_RETAIN)
-                    .map(notification => (
-                        <NotificationItem
-                            key={notification.id}
-                            notification={notification}
-                            onDismiss={this.onDismiss}
-                            className="sourcegraph-notifications__notification m-2"
-                        />
-                    ))}
+                {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
+                    <NotificationItem
+                        key={notification.id}
+                        notification={notification}
+                        onDismiss={this.onDismiss}
+                        className="sourcegraph-notifications__notification m-2"
+                    />
+                ))}
             </div>
         )
     }

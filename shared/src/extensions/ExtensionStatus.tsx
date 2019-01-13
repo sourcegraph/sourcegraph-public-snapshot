@@ -113,7 +113,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     />
                 </div>
                 <div className="card-body border-top">
-                    <h6>Sideload Extension</h6>
+                    <h6>Sideload extension</h6>
                     {this.state.sideloadedExtensionURL ? (
                         <div>
                             <p>

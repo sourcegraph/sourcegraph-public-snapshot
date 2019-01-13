@@ -62,3 +62,7 @@ type PhabricatorRepoCreateRequest struct {
 type ExternalServiceConfigsRequest struct {
 	Kind string `json:"kind"`
 }
+
+type ExternalServicesListRequest struct {
+	Kind string `json:"kind"`
+}

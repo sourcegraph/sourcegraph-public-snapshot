@@ -25,6 +25,12 @@ You should always include a token in a configuration for a GitHub.com URL to avo
 To configure GitHub as an authentication provider (which will enable sign-in via GitHub), see the
 [authentication documentation](../admin/auth.md#github).
 
+## Repository permissions
+
+By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
+GitHub's per-user repository permissions, see "[Repository
+permissions](../admin/repo/permissions.md#github)".
+
 ## Browser extension
 
 The [Sourcegraph browser extension](browser_extension.md) supports GitHub. When installed in your web browser, it adds hover tooltips, go-to-definition, find-references, and code search to files and pull requests viewed on GitHub and GitHub Enterprise.

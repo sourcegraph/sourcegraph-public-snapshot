@@ -395,7 +395,7 @@ func Search() *SearchProviders {
 
 		// Searcher
 		var searcherURLs *endpoint.Map
-		if searcherURL == "" {
+		if len(strings.Fields(searcherURL)) == 0 {
 			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
 		} else {
 			searcherURLs = endpoint.New(searcherURL)

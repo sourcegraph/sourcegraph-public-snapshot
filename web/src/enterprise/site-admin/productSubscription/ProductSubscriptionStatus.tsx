@@ -76,7 +76,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
         // forever, and show them how to upgrade.
 
         return (
-            <>
+            <div className="mt-3">
                 <ProductCertificate
                     title={productNameWithBrand}
                     detail={
@@ -117,15 +117,8 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                             : ''}
                                     </div>
                                     <div className="text-nowrap flex-wrap-reverse">
-                                        <Link
-                                            to="/site-admin/configuration"
-                                            className="mr-2"
-                                            data-tooltip="Set the license key in the licenseKey site configuration property"
-                                        >
-                                            Add
-                                        </Link>
                                         <a
-                                            href="http://sourcegraph.com/user/subscriptions"
+                                            href="http://sourcegraph.com/user/subscriptions/new"
                                             className="btn btn-primary btn-sm"
                                             target="_blank"
                                             data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
@@ -158,7 +151,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                             </div>
                         )
                     ))}
-            </>
+            </div>
         )
     }
 

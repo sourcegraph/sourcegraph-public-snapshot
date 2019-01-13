@@ -7,10 +7,10 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -19,8 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
@@ -53,8 +55,17 @@ func main() {
 		}),
 	})
 
+	// Synced repos will be sent here.
+	synced := make(chan *protocol.RepoInfo)
+
+	// Other external services syncing thread. Repo updates will be sent on the given channel.
+	syncer := repos.NewOtherReposSyncer(
+		repos.NewInternalAPI(10*time.Second),
+		synced,
+	)
+
 	// Start up handler that frontend relies on
-	var repoupdater repoupdater.Server
+	repoupdater := repoupdater.Server{OtherReposSyncer: syncer}
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	host := ""
 	if env.InsecureDev {
@@ -91,6 +102,21 @@ func main() {
 
 	// Bitbucket Server syncing thread
 	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
+
+	// Start other repos syncer syncing thread
+	go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
+
+	// Start other repos updates scheduler relay thread.
+	go func() {
+		newScheduler := conf.UpdateScheduler2Enabled()
+		for repo := range synced {
+			if newScheduler {
+				repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
+			} else {
+				repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
+			}
+		}
+	}()
 
 	select {}
 }

@@ -34,5 +34,4 @@ docker run "$@" \
  -e DEBUG=t \
  --volume $DATA/config:/etc/sourcegraph \
  --volume $DATA/data:/var/opt/sourcegraph \
- -v /var/run/docker.sock:/var/run/docker.sock \
  $IMAGE

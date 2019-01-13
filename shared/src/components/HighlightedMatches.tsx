@@ -12,15 +12,14 @@ export const HighlightedMatches: React.FunctionComponent<{
     className?: string
 }> = ({ text, pattern, className }) => (
     <span>
-        {fuzzyMatches(text.toLowerCase(), pattern.toLowerCase()).map(
-            (span, i) =>
-                span.match ? (
-                    <strong key={i} className={className}>
-                        {text.slice(span.start, span.end)}
-                    </strong>
-                ) : (
-                    text.slice(span.start, span.end)
-                )
+        {fuzzyMatches(text.toLowerCase(), pattern.toLowerCase()).map((span, i) =>
+            span.match ? (
+                <strong key={i} className={className}>
+                    {text.slice(span.start, span.end)}
+                </strong>
+            ) : (
+                text.slice(span.start, span.end)
+            )
         )}
     </span>
 )

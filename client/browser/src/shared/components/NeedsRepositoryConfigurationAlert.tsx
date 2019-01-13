@@ -42,9 +42,9 @@ export class NeedsRepositoryConfigurationAlert extends React.Component<Props, {}
                     <span className="icon-inline site-alert__link-icon">
                         <WarningIcon size={17} />
                     </span>{' '}
-                    <span className="underline">Configure external services</span>
+                    <span className="underline">Configure code hosts</span>
                 </a>
-                &nbsp;to connect to Sourcegraph.
+                &nbsp; (and other external services) to add repositories to Sourcegraph.
                 <div
                     style={{
                         display: 'inline-flex',
