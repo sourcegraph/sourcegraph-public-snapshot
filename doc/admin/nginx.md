@@ -54,7 +54,7 @@ We use [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegr
 
 ## nginx for other Sourcegraph clusters (e.g. pure-Docker)
 
-The pure-Docker deployment reference ([deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker) aims to be minimal and not tied to any specific deployment method, so we don't bundle nginx in there. You can use any reverse proxy to provide HTTPS for your Sourcegraph instance.
+The pure-Docker deployment reference ([deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker)) aims to be minimal and not tied to any specific deployment method, so we don't bundle nginx in there. You can use any reverse proxy to provide HTTPS for your Sourcegraph instance.
 
 We suggest using [the official nginx docker images](https://hub.docker.com/_/nginx) and following their instructions for [securing HTTP traffic with a proxied server](https://docs.nginx.com/nginx/admin-guide/security-controls/securing-http-traffic-upstream/).
 
