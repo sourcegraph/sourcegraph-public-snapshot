@@ -21,4 +21,5 @@ package main
 //docker:repository edge
 //docker:install 'postgresql=11.1-r0' 'postgresql-contrib=11.1-r0' su-exec
 
-//docker:install redis
+//docker:repository v3.6
+//docker:install 'redis=3.2.12-r0'
