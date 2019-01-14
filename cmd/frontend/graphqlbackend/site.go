@@ -185,9 +185,9 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-    if args.Input == "" {
-        return false, fmt.Errorf("the empty string is not valid site configuration (you can clear the site configuration by entering an empty JSON object: {})")
-    }
+	if args.Input == "" {
+		return false, fmt.Errorf("the empty string is not valid site configuration (you can clear the site configuration by entering an empty JSON object: {})")
+	}
 	prev := globals.ConfigurationServerFrontendOnly.Raw()
 	prev.Site = args.Input
 	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
