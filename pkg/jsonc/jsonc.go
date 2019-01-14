@@ -15,7 +15,7 @@ func Unmarshal(text string, v interface{}) error {
 		return err
 	}
 	if len(data) == 0 {
-		return nil
+		return fmt.Errorf("the empty string is not valid jsonc")
 	}
 	return json.Unmarshal(data, v)
 }
