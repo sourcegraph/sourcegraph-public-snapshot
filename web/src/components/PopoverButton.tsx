@@ -69,17 +69,21 @@ export class PopoverButton extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         window.addEventListener('keydown', this.onGlobalKeyDown)
+        window.addEventListener('mousedown', this.onClickOutside)
+        window.addEventListener('touchstart', this.onClickOutside)
     }
 
     public componentWillReceiveProps(props: Props): void {
         if (props.hideOnChange !== this.props.hideOnChange) {
-            this.setState({ open: false })
+            this.hide()
         }
     }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
         window.removeEventListener('keydown', this.onGlobalKeyDown)
+        window.removeEventListener('mousedown', this.onClickOutside)
+        window.removeEventListener('touchstart', this.onClickOutside)
     }
 
     public render(): React.ReactFragment {
@@ -110,7 +114,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                         this.props.link ? 'popover-button__btn popover-button__btn--link' : 'popover-button__container'
                     }
                     to={this.props.link}
-                    onClick={this.props.link ? this.onClickLink : this.onPopoverVisibilityToggle}
+                    onClick={this.props.link ? this.hide : this.onPopoverVisibilityToggle}
                 >
                     {this.props.children}{' '}
                     {!this.props.link && <MenuDownIcon className="icon-inline popover-button__icon" />}
@@ -129,14 +133,12 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         )
     }
 
-    private onClickLink = (): void => {
-        this.setState({ open: false })
-    }
+    private hide = () => this.setState({ open: false })
 
     private onGlobalKeyDown = (event: KeyboardEvent) => {
         if (event.key === Key.Escape) {
             // Always close the popover when Escape is pressed, even when in an input.
-            this.setState({ open: false })
+            this.hide()
             return
         }
 
@@ -154,6 +156,12 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         ) {
             event.preventDefault()
             this.onPopoverVisibilityToggle()
+        }
+    }
+
+    private onClickOutside = (e: MouseEvent | TouchEvent) => {
+        if (this.rootRef && !this.rootRef.contains(e.target as HTMLElement)) {
+            this.hide()
         }
     }
 
