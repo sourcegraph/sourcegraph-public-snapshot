@@ -2,7 +2,7 @@
 
 Sourcegraph can be configured to enforce repository permissions from code hosts.
 
-Currently, GitLab permissions are supported. Check the [roadmap](../../dev/roadmap.md) for plans to
+Currently, GitHub, GitHub Enterprise, and GitLab permissions are supported. Check the [roadmap](../../dev/roadmap.md) for plans to
 support other code hosts. If your desired code host is not yet on the roadmap, please [open a
 feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
