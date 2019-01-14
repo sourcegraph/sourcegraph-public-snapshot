@@ -34,7 +34,7 @@ func TestRepositories(t *testing.T) {
 								"name": "repo2"
 							}
 						],
-						"totalCount": 2
+						"totalCount": null
 					}
 				}
 			`,
