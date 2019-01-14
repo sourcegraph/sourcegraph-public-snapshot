@@ -17,7 +17,7 @@ Then you can configure nginx to listen with ssl using the above certificates:
 
 ```nginx
 server {
-    listen 7433 ssl;
+    listen 7443 ssl;
     server_name sourcegraph.example.com;
 
     ssl_certificate     sourcegraph.example.com.crt;
