@@ -102,7 +102,7 @@ require (
 	github.com/sourcegraph/godockerize v0.0.0-20181126200657-4f825419611b
 	github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10
 	github.com/sourcegraph/httpcache v0.0.0-20160524185540-16db777d8ebe
-	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
+	github.com/sourcegraph/jsonx v0.0.0-20190114094009-4b3eb4946c82
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
