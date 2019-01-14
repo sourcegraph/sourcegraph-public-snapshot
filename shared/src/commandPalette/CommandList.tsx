@@ -21,9 +21,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     /** Called when the user has selected an item in the list. */
     onSelect?: () => void
 
-    /** Whether the text input should have autofocus. */
-    autoFocus: boolean
-
     location: H.Location
 }
 
@@ -89,11 +86,9 @@ export class CommandList extends React.PureComponent<Props, State> {
         )
 
         // Only focus input after it has been rendered in the DOM
-        if (this.props.autoFocus) {
-            setTimeout(() => {
-                this.setState({ autoFocus: true })
-            })
-        }
+        setTimeout(() => {
+            this.setState({ autoFocus: true })
+        })
     }
 
     public componentDidUpdate(_prevProps: Props, prevState: State): void {

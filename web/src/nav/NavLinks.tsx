@@ -97,7 +97,6 @@ export class NavLinks extends React.PureComponent<Props> {
                     extensionsController={this.props.extensionsController}
                     platformContext={this.props.platformContext}
                     toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
-                    autoFocus={true}
                     location={this.props.location}
                 />
                 {this.props.authenticatedUser && (
