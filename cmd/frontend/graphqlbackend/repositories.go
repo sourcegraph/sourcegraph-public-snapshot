@@ -188,14 +188,6 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *struct {
 	Precise bool
 }) (countptr *int32, err error) {
-	if isAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx); isAdminErr != nil {
-		if args.Precise {
-			// Only site admins can perform precise counts, because it is a slow operation.
-			return nil, isAdminErr
-		}
-		return nil, nil
-	}
-
 	i32ptr := func(v int32) *int32 {
 		return &v
 	}
@@ -207,6 +199,13 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *str
 	if !r.indexed || !r.notIndexed {
 		// Don't support counting if filtering by index status.
 		return nil, nil
+	}
+
+	if args.Precise {
+		// Only site admins can perform precise counts, because it is a slow operation.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
