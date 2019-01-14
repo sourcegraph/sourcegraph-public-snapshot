@@ -68,6 +68,10 @@ To enable/disable an extension for all organization members, add it to the `exte
 }
 ```
 
+### For all users
+
+On a self-hosted Sourcegraph instance, add the same JSON above to global settings (in **Site admin > Global settings**).
+
 ## [Authoring](authoring/index.md)
 
 Ready to create your own extension? See the [extension authoring documentation](authoring/index.md).
