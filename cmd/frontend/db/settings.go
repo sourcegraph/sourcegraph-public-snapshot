@@ -20,6 +20,10 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSub
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
 	}
 
+	if contents == "" {
+		return nil, fmt.Errorf("the empty string is not valid JSONC (you can clear the settings by entering an empty JSON object: {})")
+	}
+
 	// Validate JSON syntax before saving.
 	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
 		return nil, fmt.Errorf("invalid settings JSON: %v", errs)
