@@ -20,13 +20,13 @@ When you're done, clear the sideload URL from the extensions debug menu.
 **Note:** This workflow assumes that, when running the Parcel dev server, a symlink exists in the `dist/` directory pointing to your `package.json`. If you [created your extension the easy way](creating.md#creating-an-extension-the-easy-way), this is already set up for you. Otherwise, follow these steps:
 
 1. Add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`).
-1. Add the following npm script to your `package.json`:
+2. Add the following npm script to your `package.json`:
 
     ```json
     "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json"
     ```
 
-1. Edit the `serve` npm script to run `symlink-package`:
+3. Edit the `serve` npm script to run `symlink-package`:
 
     ```json
     "serve": "npm run symlink package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
