@@ -12,7 +12,7 @@ package main
 
 //docker:env LANG=en_US.utf8
 
-// At the time of the 3.0-beta release, we ran Postgres 9.4 in sourcegraph.com
+// Prior to the 3.0-beta release, we ran Postgres 9.4 in sourcegraph.com
 // and existing customer deployments. With this release, we're upgrading to
 // 11.1 for new users and will follow up with providing documentation and
 // automation for existing deployments to be upgraded safely.
