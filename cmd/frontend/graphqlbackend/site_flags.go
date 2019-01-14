@@ -25,7 +25,7 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 }
 
 func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
-	kinds := []string{}
+	kinds := make([]string, 0, len(externalServiceKinds))
 	for kind, config := range externalServiceKinds {
 		if config.codeHost {
 			kinds = append(kinds, kind)
