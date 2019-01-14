@@ -1,10 +1,10 @@
 package db
 
 import (
-	"strings"
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
