@@ -273,7 +273,7 @@ func (p *Provider) setCachedUserRepos(ctx context.Context, userAccount *extsvc.E
 // getCachedUserRepos accepts a user account and set of repos and returns a map from repo ID to
 // true/false indicating whether the user can access the repo. The returned map may be incomplete
 // (i.e., not every input repo may be represented in the key set) due to cache incompleteness.
-func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[string]bool, error) {
+func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (cachedUserRepos map[string]bool, err error) {
 	if userAccount == nil {
 		return nil, nil
 	}
@@ -321,7 +321,7 @@ func (p *Provider) fetchUserRepo(ctx context.Context, userAccount *extsvc.Extern
 	if err != nil {
 		return false, false, err
 	}
-	ghRepo, err := p.client.GetRepositoryByNodeID(ctx, tok.AccessToken, repoID)
+	ghRepo, err := p.client.GetRepositoryByNodeIDNoCache(ctx, tok.AccessToken, repoID)
 	if err != nil {
 		if err == github.ErrNotFound {
 			return false, false, nil

@@ -357,6 +357,8 @@ type graphqlErrors []struct {
 	} `json:"locations,omitempty"`
 }
 
+const graphqlErrTypeNotFound = "NOT_FOUND"
+
 func (e graphqlErrors) Error() string {
 	return fmt.Sprintf("error in GraphQL response: %s", e[0].Message)
 }
