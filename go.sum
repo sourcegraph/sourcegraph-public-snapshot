@@ -442,8 +442,6 @@ github.com/sourcegraph/httpcache v0.0.0-20160524185540-16db777d8ebe h1:JAHsmn5ix
 github.com/sourcegraph/httpcache v0.0.0-20160524185540-16db777d8ebe/go.mod h1:0AJ8DDXVNSPaIhEfFiCg9TqPt9YgLf+umcJSUjuG9SA=
 github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd h1:NPk22RvonOjkNI4JgKJbOnGJrRT2C6Bg35LVtbrIULM=
 github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
-github.com/sourcegraph/jsonx v0.0.0-20190114094009-4b3eb4946c82 h1:LLma5i1ja6kJaPkZI5B4nUZjPvavlc/U9zP8vHQmAgE=
-github.com/sourcegraph/jsonx v0.0.0-20190114094009-4b3eb4946c82/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/zoekt v0.0.0-20181115082148-dacbbfd8c3ce h1:TP4fl7kMJdB4LKqVkME7tqyFwWiOuNyEefiVCBdGJIE=
 github.com/sourcegraph/zoekt v0.0.0-20181115082148-dacbbfd8c3ce/go.mod h1:f1Qnbu4glSRTb9A/H7qLv4AhudFf3eStkDbpyb21KYQ=
 github.com/spf13/afero v1.1.0 h1:bopulORc2JeYaxfHLvJa5NzxviA9PoWhpiiJkru7Ji4=
