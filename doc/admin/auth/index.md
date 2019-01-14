@@ -62,7 +62,7 @@ Site configuration example:
 
 The top-level [`auth.public`](../site_config/all.md#authpublic-boolean) (default `false`) site configuration option controls whether anonymous users are allowed to access and use the site without being signed in .
 
-## GitHub
+## GitHub (beta)
 
 [Create a GitHub OAuth
 application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) (if using
@@ -100,7 +100,7 @@ Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up wi
 GitHub only if an account with the same verified email already exists. If none exists, a site admin
 must create one explicitly.
 
-## GitLab
+## GitLab (beta)
 
 [Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
 the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
