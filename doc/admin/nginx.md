@@ -2,6 +2,47 @@
 
 Sourcegraph uses [nginx](https://nginx.org/en/) to proxy HTTP traffic between clients and the Sourcegraph HTTP server. It ships with a default nginx configuration that is intended for local/internal network usage.
 
+On initial startup Sourcegraph will generate an `nginx.conf` which you can modify. It is located at `/etc/sourcegraph/nginx.conf` in the container. So if you use the quick start docker run command it will be at `~/.sourcegraph/config/nginx.conf`. (due to the docker flag `--volume ~/.sourcegraph/config:/etc/sourcegraph`).
+
+## TLS / HTTPS
+
+If you have a TLS certificate and key to use for Sourcegraph, you can setup nginx to terminate TLS. First copy your TLS certificate and key into the same directory as `nginx.conf`:
+
+```shell
+cp sourcegraph.example.com.crt ~/.sourcegraph/config/
+cp sourcegraph.example.com.key ~/.sourcegraph/config/
+```
+
+Then you can configure nginx to listen with ssl using the above certificates:
+
+```nginx
+server {
+    listen 7433 ssl;
+    server_name sourcegraph.example.com;
+
+    ssl_certificate     sourcegraph.example.com.crt;
+    ssl_certificate_key sourcegraph.example.com.key;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Next, restart your Sourcegraph instance using the same `docker run` [command](install/docker/index.md), but map the host port to the container HTTPS port 7443 (not the HTTP port 7080). In this example, the host port 443 (HTTPS) is mapped to the container's HTTPS port 7443.
+
+<!--
+  DO NOT CHANGE THIS TO A CODEBLOCK.
+  We want line breaks for readability, but backslashes to escape them do not work cross-platform.
+  This uses line breaks that are rendered but not copy-pasted to the clipboard.
+-->
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 443:7443 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> --volume /var/run/docker.sock:/var/run/docker.sock<span class="virtual-br"></span> sourcegraph/server:3.0.0</code></pre>
+
+See [NGINX SSL Termination](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/) guide and [Configuring HTTPS Servers](https://nginx.org/en/docs/http/configuring_https_servers.html) for more information.
+
 ## Let's Encrypt
 
 [Let's Encrypt](https://letsencrypt.org) automatically provisions TLS certificates so that your server is accessible via HTTPS. You can configure it with nginx using EFF's [Certbot](https://certbot.eff.org/), which has instructions for most common setups:
