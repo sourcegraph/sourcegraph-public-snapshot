@@ -1085,6 +1085,7 @@ type RepositoryConnection {
     nodes: [Repository!]!
     # The total count of repositories in the connection. This total count may be larger
     # than the number of nodes in this object when the result is paginated.
+    # This requires admin permissions and will return null for all non-admin users.
     #
     # In some cases, the total count can't be computed quickly; if so, it is null. Pass
     # precise: true to always compute total counts even if it takes a while.
