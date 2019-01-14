@@ -30,6 +30,7 @@ To enable GitHub permissions,
 
     See the [GitHub connection documentation](../../admin/site_config/all.md#githubconnection-object) for the meaning of specific fields.
 
+
 ## GitLab
 
 Enabling GitLab repository permissions on Sourcegraph requires the following:
