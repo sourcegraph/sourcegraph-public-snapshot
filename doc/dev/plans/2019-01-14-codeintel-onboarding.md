@@ -12,15 +12,15 @@ Today, there basically is no way to discover code intelligence unless the admin 
 
 ## Plan
 
-1) **First**, we add a post-install site alert for admins only that links them to http://sourcegraph.example.com/extensions?query=category%3A%22Programming+languages%22.
+1) **First** (3.0), we add a post-install site alert for admins only that links them to http://sourcegraph.example.com/extensions?query=category%3A%22Programming+languages%22.
 
 This would appear at the top of every page (after the admin adds repos and the "Add repositories" alert goes away) and it would say something like "Enable Sourcegraph extensions to get code intelligence for your team"
 
-2) **Second**, we add a new type of toast (using https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/web/src/marketing/Toast.tsx) for all users that appears programmatically when a user visits a new file extension (.go, .ts, etc.) that links them to the relevant extension (or basic codeintel) if they don't have it enabled. If the user is an admin, the toast would be enhanced with a link to docs on language server deployment (though no obvious page exists for this in the admin docs today, see below). 
+2) **Second** (3.1), we add a new type of toast (using https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/web/src/marketing/Toast.tsx) for all users that appears programmatically when a user visits a new file extension (.go, .ts, etc.) that links them to the relevant extension (or basic codeintel) if they don't have it enabled. If the user is an admin, the toast would be enhanced with a link to docs on language server deployment (though no obvious page exists for this in the admin docs today, see below). 
 
 These would be dismissable by language. This work would provide the foundation for future extension recommendations.
 
-3) **Third**, we enhance documentation around deployment + enablement. This means providing a "Code intelligence" page for admins in the Sourcegraph docs (i.e., on https://docs.sourcegraph.com) that provides a walkthrough for enabling language support for one or two Sourcegraph-provided languages (e.g. how to start the Go langserver). This comes on top of any documentation that appears on the extension READMEs themselves.
+3) **Third** (3.0), we enhance documentation around deployment + enablement. This means providing a "Code intelligence" page for admins in the Sourcegraph docs (i.e., on https://docs.sourcegraph.com) that provides a walkthrough for enabling language support for one or two Sourcegraph-provided languages (e.g. how to start the Go langserver). This comes on top of any documentation that appears on the extension READMEs themselves.
 
 This is necessary because of how busy/complicated the extension READMEs have already become. There are so many potential paths on those pages (e.g.: admin setup vs. user extension enablement; sourcegraph.com vs. self-hosted; 3.0 vs. 2.x; single Docker image vs. cluster, etc.). Pulling the admin setup portion out of those READMEs, and leaving them to focus on how end users (i.e., non-admins) enable the extension, would simplify and clarify them. They would, of course, link out to the docs page.
 
@@ -35,6 +35,8 @@ These would be low-risk additions. They would be released to all users as soon a
 ### Success metrics
 
 Interaction rates on Sourcegraph.com (i.e., users who click through the toast to enable code intellgience for a given language),and usage of code intelligence on self-hosted instances. 
+
+Also, where difficult to measure, direct feedback from existing, friendly customers.
 
 ### Company goals
 
@@ -52,7 +54,9 @@ TBD, pending team approval of the proposals.
 
 ## Done date
 
-Sourcegraph 3.1 (early  March).
+Documentation and site alert can be implemented by the 3.0 launch.
+
+Recommendations (toasts) would be released in 3.1 (early  March).
 
 ## Retrospective
 
