@@ -109,6 +109,13 @@ func (c Client) IsAllowedURL(s string) (*url.Values, bool) {
 	return &url.Values{"site": []string{matchedSite}}, true
 }
 
+// fetchUpdate is the core logic of the exported FetchUpdate
+// it avoids most up-front error checking, and timeout handling
+// is deferred to the HTTP client via the context.Context.
+func (c Client) fetchUpdate(ctx context.Context, u url.URL) error {
+	return nil
+}
+
 // FetchUpdate takes a a URL and examines it for StackExchange API
 // compatibility, if the URL is in the allow list a request will
 // be made to that URL, answers will ne fetched, code samples parsed
@@ -125,7 +132,7 @@ func (c Client) FetchUpdate(ctx context.Context, s string) error {
 		return Error{Op: "parse-url", err: err}
 	}
 
-	locker := c.lockMechanismer(*u)
+	var locker = c.lockMechanismer(*u)
 
 	// wait for the lock in a goroutine, as if
 	// it blocks, we'll block the calling goroutine
@@ -136,31 +143,25 @@ func (c Client) FetchUpdate(ctx context.Context, s string) error {
 	// configuration.
 	//
 	// We cancel the lockCtx on successful lock, and
-	// this propagates as a "Cancelled" error on lockCtx.Err
-	// which we can use later to know if we succeeded or failed.
+	// this pre-empts a DeadlineEceeded error on lockCtx.Err()
+	// which we can use later to know if we acquired a lock
+	// early enough or not.
 	//
-	// Cancellation in our case is desired.
+	// Cancellation, in this case signals that we are no longer
+	// waiting to acquire a lock.
 	lockCtx, cancelFn := context.WithTimeout(ctx, c.lockWaitTimeout)
 	go func(cancel context.CancelFunc, l sync.Locker) {
 		l.Lock()
 		cancel()
 	}(cancelFn, locker)
 
-	select {
-	// the lock context yielded first
-	case <-lockCtx.Done():
-		if lockCtx.Err() == context.DeadlineExceeded {
-			return ErrTimeoutLocking
-		}
-		defer locker.Unlock()
+	<-lockCtx.Done()
+	if lockCtx.Err() == context.DeadlineExceeded {
+		return ErrTimeoutLocking
+	}
+	defer locker.Unlock()
 
-	// the given context (time constrained?) yielded
-	// first
-	// case <-ctx.Done():
-	// 	fmt.Println("hit the client's timeout")
-	// }
-
-	return nil
+	return c.fetchUpdate(ctx, *u)
 }
 
 // DefaultClient exposes a simple API that does not require
