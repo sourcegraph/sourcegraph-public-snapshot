@@ -1,0 +1,14 @@
+# allow access from all instances
+protected-mode no
+
+# limit memory usage, return error when hitting limit
+maxmemory 1gb
+maxmemory-policy noeviction
+
+# live commit log to disk, additionally snapshots every 10 minutes
+dir {{ .Dir }}
+appendonly yes
+save 600 1
+
+# least verbose logging
+loglevel warning
