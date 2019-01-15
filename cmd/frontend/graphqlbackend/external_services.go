@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -83,6 +84,10 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Only site admins are allowed to update the user.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
+	}
+
+	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
+		return nil, fmt.Errorf("blank external service configuration is invalid (must be valid JSONC)")
 	}
 
 	update := &db.ExternalServiceUpdate{
