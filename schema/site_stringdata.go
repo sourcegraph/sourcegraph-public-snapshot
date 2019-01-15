@@ -826,8 +826,7 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "phabricatorMetadataCommand": {
-          "description":
-            "This is DEPRECATED. Use the ` + "`" + `phabricator` + "`" + ` field instead.",
+          "description": "This is DEPRECATED. Use the ` + "`" + `phabricator` + "`" + ` field instead.",
           "type": "string"
         },
         "phabricator": {
@@ -837,11 +836,13 @@ const SiteSchemaJSON = `{
           "additionalProperties": false,
           "properties": {
             "url": {
-              "description": "URL of the Phabricator instance that integrates with this Gitolite instance. This should be set ",
+              "description":
+                "URL of the Phabricator instance that integrates with this Gitolite instance. This should be set ",
               "type": "string"
             },
             "callsignCommand": {
-              "description": " Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
+              "description":
+                " Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
               "type": "string"
             }
           }
