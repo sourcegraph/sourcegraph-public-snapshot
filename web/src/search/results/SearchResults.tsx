@@ -149,20 +149,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public render(): JSX.Element | null {
         const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
+        const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
 
         return (
             <div className="search-results">
                 <PageTitle key="page-title" title={query} />
-                {((isSearchResults(this.state.resultsOrError) && filters.length > 0) ||
-                    (this.state.contributions &&
-                        this.state.contributions.searchFilters &&
-                        this.state.contributions.searchFilters.length > 0)) && (
+                {((isSearchResults(this.state.resultsOrError) && filters.length > 0) || extensionFilters) && (
                     <div className="search-results__filters-bar">
                         Filters:
                         <div className="search-results__filters">
-                            {this.state.contributions &&
-                                this.state.contributions.searchFilters &&
-                                this.state.contributions.searchFilters
+                            {extensionFilters &&
+                                extensionFilters
                                     .filter(filter => filter.value !== '')
                                     .map((filter, i) => (
                                         <FilterChip
