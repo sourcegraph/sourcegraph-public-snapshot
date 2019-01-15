@@ -3,6 +3,7 @@ package jsonc
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/jsonx"
 )
@@ -14,8 +15,8 @@ func Unmarshal(text string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	if len(data) == 0 {
-		return nil
+	if strings.TrimSpace(text) == "" {
+		return fmt.Errorf("blank input is invalid jsonc")
 	}
 	return json.Unmarshal(data, v)
 }
