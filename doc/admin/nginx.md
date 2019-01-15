@@ -39,7 +39,7 @@ Next, restart your Sourcegraph instance using the same `docker run` [command](in
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 443:7443 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> --volume /var/run/docker.sock:/var/run/docker.sock<span class="virtual-br"></span> sourcegraph/server:3.0.0</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 443:7443 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.0.0</code></pre>
 
 See [NGINX SSL Termination](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/) guide and [Configuring HTTPS Servers](https://nginx.org/en/docs/http/configuring_https_servers.html) for more information.
 
