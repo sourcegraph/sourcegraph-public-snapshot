@@ -38,10 +38,10 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 			if gconf.Host != gitoliteHost {
 				continue
 			}
-			if gconf.PhabricatorMetadataCommand == "" {
+			if gconf.Phabricator == nil {
 				continue
 			}
-			callsign, err := getGitolitePhabCallsign(r.Context(), gconf, repoName, gconf.PhabricatorMetadataCommand)
+			callsign, err := getGitolitePhabCallsign(r.Context(), gconf, repoName, gconf.Phabricator.CallsignCommand)
 			if err != nil {
 				log15.Warn("failed to get Phabricator callsign", "host", gconf.Host, "repo", repoName, "err", err)
 				continue
