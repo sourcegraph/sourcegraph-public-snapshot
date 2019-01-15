@@ -31,7 +31,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   sudo apt-get install -y docker-ce
   mkdir -p /root/.sourcegraph/config
   mkdir -p /root/.sourcegraph/data
-  docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.13.5
+  docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.0.0-beta
   ```
 
 - Create your VM, then navigate to its public IP address.

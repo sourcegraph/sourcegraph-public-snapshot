@@ -9,6 +9,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.0.0-beta
+
+### Added
+
 - Repositories can now be queried by a git clone URL through the GraphQL API.
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
 - Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`. By default, GitHub identities must be linked to an existing Sourcegraph user account. To enable new account creation via GitHub, use the `allowSignup` option in the `GitHubConnection` config.
@@ -61,6 +71,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 - Removed the `tls.cert` and `tls.key` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 - Removed the `httpToHttpsRedirect` and `experimentalFeatures.canonicalURLRedireect` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for these instead.
+- Sourcegraph no longer requires access to `/var/run/docker.sock`.
 
 ## 2.13.6
 
