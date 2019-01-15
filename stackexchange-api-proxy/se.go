@@ -2,11 +2,17 @@ package se
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
 	"sync"
 	"time"
+)
+
+var (
+	ErrURLNotAllowed  = errors.New("url is not allowed")
+	ErrTimeoutLocking = errors.New("took too long to get a lock")
 )
 
 // Error wrap the original error and propagates an
@@ -25,8 +31,21 @@ func (e Error) Error() string {
 
 type AllowList map[string]*regexp.Regexp
 
+// DefaultAllowList
 var DefaultAllowListPatterns = AllowList{
 	"stackoverflow": regexp.MustCompile("^(|www.)stackoverflow.com$"),
+}
+
+// DefaultLockMechanismer implements an extremely naïve locker
+// for any URL it returns the same mutex
+var DefaultLockMechanismer = (&syncMutexLockMechanism{sm: sync.Mutex{}}).LockMechanism
+
+type syncMutexLockMechanism struct {
+	sm sync.Mutex
+}
+
+func (smlm *syncMutexLockMechanism) LockMechanism(_ url.URL) sync.Locker {
+	return &smlm.sm
 }
 
 // Client encapsulates logic for speaking to a StackExchange
@@ -44,6 +63,7 @@ func NewClient(optFns ...ClientOptionFn) (*Client, error) {
 	var c = &Client{
 		allowList:       DefaultAllowListPatterns,
 		lockWaitTimeout: DefaultLockWaitTimeout,
+		lockMechanismer: DefaultLockMechanismer,
 	}
 
 	for _, optFn := range optFns {
@@ -93,8 +113,54 @@ func (c Client) IsAllowedURL(s string) (*url.Values, bool) {
 // compatibility, if the URL is in the allow list a request will
 // be made to that URL, answers will ne fetched, code samples parsed
 // out of the question, and answer markdowns.
-func (c Client) FetchUpdate(ctx context.Context, s string) {
+func (c Client) FetchUpdate(ctx context.Context, s string) error {
 
+	if _, allowed := c.IsAllowedURL(s); !allowed {
+		return ErrURLNotAllowed
+	}
+
+	u, err := url.Parse(s)
+	if err != nil {
+		fmt.Printf("%#v %q", u, err)
+		return Error{Op: "parse-url", err: err}
+	}
+
+	locker := c.lockMechanismer(*u)
+
+	// wait for the lock in a goroutine, as if
+	// it blocks, we'll block the calling goroutine
+	// indefinitely.
+	//
+	// Use a context derived from the caller's context
+	// with a timeout applied based on the client
+	// configuration.
+	//
+	// We cancel the lockCtx on successful lock, and
+	// this propagates as a "Cancelled" error on lockCtx.Err
+	// which we can use later to know if we succeeded or failed.
+	//
+	// Cancellation in our case is desired.
+	lockCtx, cancelFn := context.WithTimeout(ctx, c.lockWaitTimeout)
+	go func(cancel context.CancelFunc, l sync.Locker) {
+		l.Lock()
+		cancel()
+	}(cancelFn, locker)
+
+	select {
+	// the lock context yielded first
+	case <-lockCtx.Done():
+		if lockCtx.Err() == context.DeadlineExceeded {
+			return ErrTimeoutLocking
+		}
+		defer locker.Unlock()
+
+	// the given context (time constrained?) yielded
+	// first
+	// case <-ctx.Done():
+	// 	fmt.Println("hit the client's timeout")
+	// }
+
+	return nil
 }
 
 // DefaultClient exposes a simple API that does not require
