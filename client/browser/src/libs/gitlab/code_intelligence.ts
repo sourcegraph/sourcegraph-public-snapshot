@@ -28,6 +28,11 @@ const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left })
 }
 
 const createToolbarMount = (codeView: HTMLElement) => {
+    const existingMount: HTMLElement | null = codeView.querySelector('.sg-toolbar-mount-gitlab')
+    if (existingMount) {
+        return existingMount
+    }
+
     const fileActions = codeView.querySelector('.file-actions')
     if (!fileActions) {
         throw new Error('Unable to find mount location')
