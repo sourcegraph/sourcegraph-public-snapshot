@@ -21,7 +21,9 @@ export const Button: React.FunctionComponent<Props> = (props: Props) => (
         onClick={props.onClick}
         target={props.target}
     >
-        <SourcegraphIcon style={props.iconStyle || { marginTop: '-1px', paddingRight: '4px', fontSize: '18px' }} />
+        <SourcegraphIcon
+            style={props.iconStyle || { marginTop: '-1px', paddingRight: '4px', fontSize: '18px', position: 'static' }}
+        />
         {props.label}
     </a>
 )
