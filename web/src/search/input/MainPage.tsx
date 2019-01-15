@@ -593,7 +593,9 @@ export class MainPage extends React.Component<Props, State> {
                                         <a href="https://docs.sourcegraph.com">Documentation</a>
                                     </li>
                                     <li>
-                                        <a href="//about.sourcegraph.com/changelog">Changelog</a>
+                                        <a href="//sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md">
+                                            Changelog
+                                        </a>
                                     </li>
                                     <li>
                                         <a href="//about.sourcegraph.com/pricing">Pricing</a>
