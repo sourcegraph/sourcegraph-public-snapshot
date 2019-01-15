@@ -137,7 +137,6 @@ type Discussions struct {
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
 	Discussions      string `json:"discussions,omitempty"`
-	ExternalServices string `json:"externalServices,omitempty"`
 	UpdateScheduler2 string `json:"updateScheduler2,omitempty"`
 }
 
