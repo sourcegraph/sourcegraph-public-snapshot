@@ -4,7 +4,7 @@ import * as React from 'react'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery } from '..'
-import { SearchFiltersContainer } from '../../../../shared/src/actions/SearchFiltersContainer'
+import { Contributions } from '../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -46,6 +46,8 @@ interface SearchResultsState {
     // Saved Queries
     showSavedQueryModal: boolean
     didSaveQuery: boolean
+    /** The contributions, merged from all extensions, or undefined before the initial emission. */
+    contributions?: Contributions
 }
 
 const newRepoFilters = localStorage.getItem('newRepoFilters') !== 'false'
@@ -116,6 +118,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )
                 .subscribe(newState => this.setState(newState as SearchResultsState), err => console.error(err))
         )
+
+        this.props.extensionsController.services.contribution
+            .getContributions()
+            .subscribe(contributions => this.setState({ contributions }))
     }
 
     public componentDidUpdate(prevProps: SearchResultsProps): void {
@@ -143,36 +149,30 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public render(): JSX.Element | null {
         const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
-        const extensionFilters = (
-            <SearchFiltersContainer
-                // tslint:disable-next-line:jsx-no-lambda
-                render={items => (
-                    <>
-                        {items
-                            .filter(item => item.name && item.value)
-                            .map((item, i) => (
-                                <FilterChip
-                                    query={this.props.navbarSearchQuery}
-                                    onFilterChosen={this.onDynamicFilterClicked}
-                                    key={item.name + item.value}
-                                    value={item.value}
-                                    name={item.name}
-                                />
-                            ))}
-                    </>
-                )}
-                empty={null}
-                extensionsController={this.props.extensionsController}
-            />
-        )
+
         return (
             <div className="search-results">
                 <PageTitle key="page-title" title={query} />
-                {((isSearchResults(this.state.resultsOrError) && filters.length > 0) || extensionFilters) && (
+                {((isSearchResults(this.state.resultsOrError) && filters.length > 0) ||
+                    (this.state.contributions &&
+                        this.state.contributions.searchFilters &&
+                        this.state.contributions.searchFilters.length > 0)) && (
                     <div className="search-results__filters-bar">
                         Filters:
                         <div className="search-results__filters">
-                            {extensionFilters}
+                            {this.state.contributions &&
+                                this.state.contributions.searchFilters &&
+                                this.state.contributions.searchFilters
+                                    .filter(filter => filter.value !== '')
+                                    .map((filter, i) => (
+                                        <FilterChip
+                                            query={this.props.navbarSearchQuery}
+                                            onFilterChosen={this.onDynamicFilterClicked}
+                                            key={filter.name + filter.value}
+                                            value={filter.value}
+                                            name={filter.name}
+                                        />
+                                    ))}
                             {filters
                                 .filter(filter => filter.value !== '')
                                 .map((filter, i) => (
