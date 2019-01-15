@@ -447,7 +447,12 @@ func (c *externalServices) migrateJsonConfigToExternalServices(ctx context.Conte
 				Gitolite        []*schema.GitoliteConnection        `json:"gitolite"`
 				Phabricator     []*schema.PhabricatorConnection     `json:"phabricator"`
 			}
-			if err := jsonc.Unmarshal(legacyconf.Raw(), &legacyConfig); err != nil {
+			raw := legacyconf.Raw()
+			if strings.TrimSpace(raw) == "" {
+				// Nothing to migrate
+				return nil
+			}
+			if err := jsonc.Unmarshal(raw, &legacyConfig); err != nil {
 				return err
 			}
 			if err := migrate(legacyConfig.AwsCodeCommit, "AWSCodeCommit"); err != nil {
