@@ -1,9 +1,11 @@
 package se
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -68,4 +70,26 @@ func Test_IsAllowedURL(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_FetchUpdate(t *testing.T) {
+
+	var c = Client{
+		allowList:   defaultAllowListPatterns,
+		lockTimeout: 50 * time.Millisecond,
+	}
+
+	t.Run("locking", func(t *testing.T) {
+		t.Run("errs with a lock contnetion error on time", func(t *testing.T) {
+
+			t.Skip("needs configurable workdir before I can write lockfiles to disk")
+
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
+
+			go c.FetchUpdate(ctx, "http://stackoverflow.com/...")
+			c.FetchUpdate(ctx, "http://stackoverflow.com/...")
+		})
+	})
+
 }

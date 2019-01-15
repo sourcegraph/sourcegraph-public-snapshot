@@ -1,9 +1,26 @@
 package se
 
 import (
+	"context"
+	"fmt"
 	"net/url"
 	"regexp"
+	"time"
 )
+
+// Error wrap the original error and propagates an
+// Op string to help understand where in the
+// package they originated. This is modelled
+// after the way things like url.Parse propagate
+// their errors.
+type Error struct {
+	err error
+	Op  string
+}
+
+func (e Error) Error() string {
+	return fmt.Sprintf("StackExchange package error: %q (wraps %q)", e.Op, e.err)
+}
 
 type allowList map[string]*regexp.Regexp
 
@@ -14,7 +31,8 @@ var defaultAllowListPatterns = allowList{
 // Client encapsulates logic for speaking to a StackExchange
 // compatible API (targeted API v2.2).
 type Client struct {
-	allowList allowList
+	allowList   allowList
+	lockTimeout time.Duration
 }
 
 // IsAllowedURL takes a URL string and tries to parse it
@@ -53,12 +71,21 @@ func (c Client) IsAllowedURL(s string) (*url.Values, bool) {
 	return &url.Values{"site": []string{matchedSite}}, true
 }
 
+// FetchUpdate takes a a URL and examines it for StackExchange API
+// compatibility, if the URL is in the allow list a request will
+// be made to that URL, answers will ne fetched, code samples parsed
+// out of the question, and answer markdowns.
+func (c Client) FetchUpdate(ctx context.Context, s string) {
+
+}
+
 // DefaultClient exposes a simple API that does not require
 // extensive configuration to allow simple use of the package
 // in cases such as pre-flighting a URL without configuring
 // a fully-fledged client.
 var DefaultClient = Client{
-	allowList: defaultAllowListPatterns,
+	allowList:   defaultAllowListPatterns,
+	lockTimeout: 5 * time.Second,
 }
 
 // IsAllowedURL is a simple function reference exposed
