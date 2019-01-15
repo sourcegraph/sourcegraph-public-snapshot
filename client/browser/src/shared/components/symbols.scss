@@ -13,7 +13,7 @@
     min-width: 180px;
     margin-top: 20px;
     cursor: pointer;
-    background: white;
+    background: #ffffff;
     border: 1px solid #dfe2e5;
     border-radius: 3px;
     box-shadow: 0 0 5px rgba(27, 31, 35, 0.1);
@@ -36,7 +36,7 @@
         border-bottom: 1px solid #dfe2e5;
 
         &--focused {
-            color: white;
+            color: #ffffff;
             text-decoration: none;
             background: #0366d6;
         }
@@ -53,7 +53,7 @@
         color: #586069;
 
         &--focused {
-            color: white;
+            color: #ffffff;
         }
     }
 }

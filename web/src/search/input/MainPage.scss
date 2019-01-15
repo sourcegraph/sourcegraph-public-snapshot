@@ -109,10 +109,8 @@ body.main-page {
         z-index: 1;
 
         &__bg {
-            background: rgb(8, 51, 95);
-            background: -moz-linear-gradient(20deg, rgb(8, 51, 95) 0%, rgba(0, 0, 0, 1) 65%);
-            background: -webkit-linear-gradient(20deg, rgb(8, 51, 95) 0%, rgba(0, 0, 0, 1) 65%);
-            background: linear-gradient(20deg, rgb(8, 51, 95) 0%, rgba(0, 0, 0, 1) 65%);
+            background: #08335f;
+            background: linear-gradient(20deg, #08335f 0%, #000000 65%);
             position: fixed;
             z-index: -1;
             top: 0;
@@ -450,7 +448,7 @@ body.main-page {
             padding-top: 1.5rem;
             padding-bottom: 0.5rem;
         }
-        background: rgb(249, 98, 22);
+        background: #f96216;
         background: -moz-radial-gradient(
             center,
             ellipse cover,
@@ -615,7 +613,7 @@ body.main-page {
                 p {
                     transition: all 350ms ease;
 
-                    color: white !important;
+                    color: #ffffff !important;
                 }
             }
         }

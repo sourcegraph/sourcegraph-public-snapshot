@@ -127,7 +127,7 @@
     .docExplorerShow,
     .doc-category .show-btn {
         @extend .btn;
-        color: white;
+        color: #ffffff;
         box-shadow: none;
         &:active {
             box-shadow: none;
@@ -144,7 +144,7 @@
         @extend .btn-primary;
         background: $blue;
         border-color: $blue;
-        fill: white;
+        fill: #ffffff;
         padding: 0;
         &.error {
             background: $blue;
@@ -179,7 +179,7 @@
         margin: 0 3px 0;
         width: 10px;
         height: 10px;
-        border-color: white;
+        border-color: #ffffff;
     }
     .doc-explorer {
         .search-box {
@@ -278,7 +278,7 @@ body > .CodeMirror-hints {
             }
         }
         &-active {
-            color: white !important;
+            color: #ffffff !important;
             background-color: #1c7cd6;
         }
     }
