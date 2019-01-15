@@ -90,3 +90,13 @@ func Test_FetchUpdate(t *testing.T) {
 	})
 
 }
+
+// TODO: This test could be much more comprehensive, this is just a
+// big sanity check.
+func Test_NewClient(t *testing.T) {
+	var c1, _ = NewClient()
+	var c2, _ = NewClient(SpecifyLockWaitTimeout(c1.lockWaitTimeout * 2))
+	if c1.lockWaitTimeout == c2.lockWaitTimeout {
+		t.Fatalf("Expected %s to equal %s when checking whether client optionsFns were applied correctly.", c1.lockWaitTimeout, c2.lockWaitTimeout)
+	}
+}
