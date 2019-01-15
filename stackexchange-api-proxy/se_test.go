@@ -45,7 +45,7 @@ func Test_IsAllowedURL(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(fmt.Sprintf("%s", tc.urlStr), func(t *testing.T) {
+		t.Run(fmt.Sprintf("simple client %s", tc.urlStr), func(t *testing.T) {
 			vals, allowed := IsAllowedURL(tc.urlStr)
 			if allowed != tc.allowed {
 				t.Fatalf("Expected %t to equal %t when checking if %q is allowed.", allowed, tc.allowed, tc.urlStr)
@@ -56,6 +56,16 @@ func Test_IsAllowedURL(t *testing.T) {
 				t.Failed()
 			}
 		})
+		t.Run(fmt.Sprintf("custom client %s", tc.urlStr), func(t *testing.T) {
+			vals, allowed := Client{allowList: defaultAllowListPatterns}.IsAllowedURL(tc.urlStr)
+			if allowed != tc.allowed {
+				t.Fatalf("Expected %t to equal %t when checking if %q is allowed.", allowed, tc.allowed, tc.urlStr)
+				t.Failed()
+			}
+			if cmp.Diff(vals, tc.vals) != "" {
+				t.Fatalf("Expected %#v to equal %#v when checking if %q is allowed.", vals, tc.vals, tc.urlStr)
+				t.Failed()
+			}
+		})
 	}
-
 }
