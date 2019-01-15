@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -76,8 +77,9 @@ func main() {
 	srv := &http.Server{Addr: addr, Handler: handler}
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 
-	// Sync relies on access to frontend, so wait until it has started up.
+	// Sync relies on access to frontend and git-server, so wait until it they started up.
 	api.WaitForFrontend(ctx)
+	gitserver.DefaultClient.WaitForGitServers(ctx)
 
 	// Repos List syncing thread
 	go repos.RunRepositorySyncWorker(ctx)
