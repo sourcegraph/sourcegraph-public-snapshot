@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"regexp"
 	"sync"
@@ -54,6 +55,7 @@ type Client struct {
 	allowList       AllowList
 	lockWaitTimeout time.Duration
 	lockMechanismer LockMechanismer
+	httpDoFn        httpDoFn
 }
 
 // NewClient allows passing a variadic list of ClientOptionFns
@@ -64,6 +66,7 @@ func NewClient(optFns ...ClientOptionFn) (*Client, error) {
 		allowList:       DefaultAllowListPatterns,
 		lockWaitTimeout: DefaultLockWaitTimeout,
 		lockMechanismer: DefaultLockMechanismer,
+		httpDoFn:        http.DefaultClient.Do,
 	}
 
 	for _, optFn := range optFns {
@@ -113,7 +116,11 @@ func (c Client) IsAllowedURL(s string) (*url.Values, bool) {
 // it avoids most up-front error checking, and timeout handling
 // is deferred to the HTTP client via the context.Context.
 func (c Client) fetchUpdate(ctx context.Context, u url.URL) error {
-	return nil
+
+	req, _ := http.NewRequest("GET", u.String(), nil)
+	_, err := c.httpDoFn(req)
+
+	return err
 }
 
 // FetchUpdate takes a a URL and examines it for StackExchange API
@@ -122,17 +129,23 @@ func (c Client) fetchUpdate(ctx context.Context, u url.URL) error {
 // out of the question, and answer markdowns.
 func (c Client) FetchUpdate(ctx context.Context, s string) error {
 
-	if _, allowed := c.IsAllowedURL(s); !allowed {
+	vals, allowed := c.IsAllowedURL(s)
+	if !allowed {
 		return ErrURLNotAllowed
 	}
 
-	u, err := url.Parse(s)
+	originalURL, err := url.Parse(s)
 	if err != nil {
-		fmt.Printf("%#v %q", u, err)
 		return Error{Op: "parse-url", err: err}
 	}
 
-	var locker = c.lockMechanismer(*u)
+	for k, vs := range *vals {
+		for _, v := range vs {
+			originalURL.Query().Add(k, v)
+		}
+	}
+
+	var locker = c.lockMechanismer(*originalURL)
 
 	// wait for the lock in a goroutine, as if
 	// it blocks, we'll block the calling goroutine
@@ -161,7 +174,7 @@ func (c Client) FetchUpdate(ctx context.Context, s string) error {
 	}
 	defer locker.Unlock()
 
-	return c.fetchUpdate(ctx, *u)
+	return c.fetchUpdate(ctx, *originalURL)
 }
 
 // DefaultClient exposes a simple API that does not require
@@ -185,6 +198,10 @@ var IsAllowedURL = DefaultClient.IsAllowedURL
 // a shared sync.Mutex, the LockMechanismer is under no obligation
 // to make use of finer-grained locks.
 type LockMechanismer func(u url.URL) sync.Locker
+
+// httpDoFn allows us to drop in a stub or double
+// for testing purposes.
+type httpDoFn func(req *http.Request) (*http.Response, error)
 
 // ClientOptionFn is a function to configure
 // options on Client such as the LockMechanismer
@@ -219,6 +236,18 @@ func SpecifyAllowList(al AllowList) ClientOptionFn {
 func SpecifyLockWaitTimeout(ttl time.Duration) ClientOptionFn {
 	return func(c *Client) error {
 		c.lockWaitTimeout = ttl
+		return nil
+	}
+}
+
+// SpecifyhttpDoFn allows the Client's internal http.Client.Do()
+// analog method to be set. This is ideal for testing pursposes,
+// but in a real application where some transport mechanics need
+// to be configured such as keepalive and timeouts this would
+// also be ideal.
+func SpecifyHTTPDoFn(do httpDoFn) ClientOptionFn {
+	return func(c *Client) error {
+		c.httpDoFn = do
 		return nil
 	}
 }

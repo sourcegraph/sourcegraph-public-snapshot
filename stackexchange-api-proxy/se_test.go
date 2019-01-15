@@ -1,8 +1,12 @@
 package se
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"regexp"
 	"sync"
@@ -134,6 +138,56 @@ func Test_FetchUpdate(t *testing.T) {
 			}
 
 		})
+	})
+
+	// this test uses a spy to check we mutate the URL correctly
+	t.Run("injecting URL query params", func(t *testing.T) {
+
+		t.Skip("URL mutation doesn't yet turn stackoverflow.com/... into api.stackexchange.com/....&site=stackoverflow")
+
+		var expectedURL = "https://api.stackexchange.com/2.2/questions/18390852?site=stackoverflow&filter=" + FilterID
+		var requestedURL string
+		var httpDoFnStub = func(req *http.Request) (*http.Response, error) {
+			requestedURL = req.URL.String()
+			return &http.Response{
+				Status:     http.StatusText(201),
+				StatusCode: 201,
+				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte("no content"))),
+			}, nil
+		}
+		var c, _ = NewClient(SpecifyHTTPDoFn(httpDoFnStub))
+		c.FetchUpdate(context.Background(), "https://stackoverflow.com/questions/18390852/go-concurrency-and-channel-confusion")
+
+		if requestedURL != expectedURL {
+			t.Fatalf("Expected requested URL %q to match %q", requestedURL, expectedURL)
+		}
+	})
+
+	t.Run("parsing a response", func(t *testing.T) {
+
+		t.Skip("no asserertions in place yet, will pick this up again soon")
+
+		var b bytes.Buffer
+		var respJSON = `{"items":[{"answers":[{"last_activity_date":1377212032,"answer_id":18392073,"body_markdown":"The exact output of your program is not defined and depends on the scheduler. The scheduler can choose freely between all goroutines that are currently not blocked. It tries to run those goroutines concurrently by switching the current goroutine in very short time intervals so that the user gets the feeling that everything happens simultanously. In addition to that, it can also execute more than one goroutine in parallel on different CPUs (if you happen to have a multicore system and increase [runtime.GOMAXPROCS][1]). One situation that might lead to your output is:\r\n\r\n1. ` + "`main`" + `creates two goroutines\r\n2. the scheduler chooses to switch to one of the new goroutines immediately and chooses ` + "`display`" + `\r\n3.` + "`display`" + `prints out the message and is blocked by the channel send (` + "`c &lt;- true`" + `) since there isn&#39;t a receiver yet.\r\n4. the scheduler chooses to run ` + "`sum`" + `next\r\n5. the sum is computed and printed on the screen\r\n6. the scheduler chooses to not resume the ` + "`sum`" + ` goroutine (it has already used a fair amount of time) and continues with ` + "`display`" + `\r\n7. ` + "`display`" + `sends the value to the channel\r\n8. the scheduler chooses to run main next\r\n9. main quits and all goroutines are destroyed\r\n\r\nBut that is just one possible execution order. There are many others and some of them will lead to a different output. If you want to print just the first result and quit the program afterwards, you should probably use a ` + "`result chan string`" + `and change your ` + "`main`" + ` function to print ` + "`fmt.Println(&lt;-result)`" + `.\r\n\r\n\r\n  [1]: http://golang.org/pkg/runtime/#GOMAXPROCS"}],"last_activity_date":1377229506,"question_id":18390852,"body_markdown":"I&#39;m new to Go and have a problem understanding the concurrency and channel.\r\n\r\n    package main\r\n\r\n    import &quot;fmt&quot;\r\n\r\n    func display(msg string, c chan bool){\r\n        fmt.Println(&quot;display first message:&quot;, msg)\r\n        c &lt;- true\r\n    }\r\n\r\n    func sum(c chan bool){\r\n        sum := 0\r\n        for i:=0; i &lt; 10000000000; i++ {\r\n            sum++\r\n        }\r\n        fmt.Println(sum)\r\n        c &lt;- true\r\n    }\r\n\r\n    func main(){\r\n        c := make(chan bool)\r\n\r\n        go display(&quot;hello&quot;, c)\r\n        go sum(c)\r\n        &lt;-c\r\n    }\r\n\r\nThe output of the program is:\r\n\r\n    display first message: hello\r\n    10000000000 \r\n\r\nBut I thought it should be only one line:\r\n\r\n    display first message: hello\r\n\r\nSo in the main function, &lt;-c is blocking it and waits for the other two go rountines to send data to the channel. Once the main function receives the data from c, it should proceed and exit.\r\n\r\ndisplay and sum run simultaneously and sum takes longer so display should send true to c and the program should exit before sum finishes...\r\n\r\nI&#39;m not sure I understand it clearly. Could someone help me with this? Thank you!  "}],"quota_max":300,"quota_remaining":210}`
+		gzip.NewWriter(&b).Write([]byte(respJSON))
+
+		type fakeHTTP struct {
+			responseCode     int
+			responseRawBytes bytes.Buffer
+			Do               func(req *http.Request) (*http.Response, error)
+		}
+
+		var httpDoFnStub = func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				Status:     http.StatusText(200),
+				StatusCode: 200,
+				Body:       ioutil.NopCloser(&b),
+			}, nil
+		}
+
+		var c, _ = NewClient(SpecifyHTTPDoFn(httpDoFnStub))
+		c.FetchUpdate(context.Background(), "http://www.stackoverflow.com/")
+
 	})
 
 }
