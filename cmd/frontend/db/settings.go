@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -19,10 +18,6 @@ type settings struct{}
 func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
-	}
-
-	if strings.TrimSpace(contents) == "" {
-		return nil, fmt.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
 	}
 
 	// Validate JSON syntax before saving.

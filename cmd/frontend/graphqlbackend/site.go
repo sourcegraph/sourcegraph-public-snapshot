@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -185,9 +184,6 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
-	}
-	if strings.TrimSpace(args.Input) == "" {
-		return false, fmt.Errorf("blank site configuration is invalid (you can clear the site configuration by entering an empty JSON object: {})")
 	}
 	prev := globals.ConfigurationServerFrontendOnly.Raw()
 	prev.Site = args.Input
