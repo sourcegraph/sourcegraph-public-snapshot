@@ -16,7 +16,7 @@ func Unmarshal(text string, v interface{}) error {
 		return err
 	}
 	if strings.TrimSpace(text) == "" {
-		return fmt.Errorf("blank input is invalid jsonc")
+		return nil
 	}
 	return json.Unmarshal(data, v)
 }
