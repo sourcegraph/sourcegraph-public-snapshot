@@ -9,11 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
-
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -92,7 +91,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	}
 }
 
-func fetchPhabRepos(ctx context.Context, cfg *schema.Phabricator, after string) (*phabRepoLookupResponse, error) {
+func fetchPhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, after string) (*phabRepoLookupResponse, error) {
 	form := url.Values{}
 	form.Add("output", "json")
 	form.Add("params[__conduit__]", `{"token": "`+cfg.Token+`"}`)
@@ -124,7 +123,7 @@ func fetchPhabRepos(ctx context.Context, cfg *schema.Phabricator, after string) 
 }
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, cfg *schema.Phabricator, repos []*phabRepo) error {
+func updatePhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, repos []*phabRepo) error {
 	for _, repo := range repos {
 		if repo.Fields.VCS != "git" {
 			continue

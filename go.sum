@@ -42,7 +42,7 @@ github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc h1:nqMZEd
 github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc/go.mod h1:dv4zxwHi5C/8AeI+4gX4dCWOIvNi7I6JCSX0HvlKPgE=
 github.com/docker/distribution v0.0.0-20180720172123-0dae0957e5fe h1:ZRQNMB7Sw5jf9g/0imDbI+vTFNk4J7qBdtFI5/zf1kg=
 github.com/docker/distribution v0.0.0-20180720172123-0dae0957e5fe/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
-github.com/docker/docker v0.0.0-20170502054910-90d35abf7b35 h1:zQuy/ry/KtSvCczhEPo+ud47S8alruA/Z9NDlz7EzVo=
+github.com/docker/docker v0.0.0-20170502054910-90d35abf7b35 h1:ly3dRUfvdP5i/t9iqVHd2VQQIDtO3tpfFWPah7g4CFw=
 github.com/docker/docker v0.0.0-20170502054910-90d35abf7b35/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.3.0 h1:3lOnM9cSzgGwx8VfK/NGOW5fLQ0GjIlCkaktF+n1M6o=
 github.com/docker/go-connections v0.3.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
@@ -178,7 +178,7 @@ github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513 h1:xa9SZfAi
 github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513/go.mod h1:MhGoae1pr+JFXxDAYx3b0fMn1xtr1ly9dHa0+KHHon4=
 github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8 h1:XCAOLCXtvhcmu7F5N3y85a4c3S/y8z+LPINdLIbpluA=
 github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8/go.mod h1:I7eBHoOOU9N76qKli6iiqWZqh7iyxraK7SgR+kbDgW4=
-github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible h1:GxQXdxHr/j1qkRigV351ePJBbDkwHuDWJU7pJNmi7+k=
+github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible h1:iOFJ6E+tlvzzrf/EW/iMaEQoD/bPiqRsrhSI/W9gLr0=
 github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible/go.mod h1:/pEEZ72flUW2p0yi30bslSp9YqD9pysLxunQDdb2CPM=
 github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
@@ -259,7 +259,7 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWif
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d h1:mOqbJXhk6waoL3rWnLee6TDX85TgZyws7vx82MwAqqk=
 github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d/go.mod h1:8m7AP/HZwL7m7f8RibUjr32a3AOxKDbSXMiXrds9WjM=
-github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d h1:BAP431YeA7rgSoySjmVzBfFjXsLtnD93zZip5JIOWdk=
+github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d h1:npjNYW9m1jUtBLMEjlfqgoTQ7cvVf1fHvITAd6TSS5s=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d/go.mod h1:6DfNy4BLIggAeittTJ8o9z/6d1ly+YujBTSnv03i7Bk=
 github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18 h1:XOwy8S85zGn+1CudjP8ZCQYot3u40RjsPRyltEsBa1s=
 github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18/go.mod h1:tpps84QRlOVVLYk5QpKYX8Tr289D1v/UTWDLqeguiqM=

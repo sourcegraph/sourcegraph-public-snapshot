@@ -147,37 +147,7 @@ const SiteSchemaJSON = `{
         "JSON array of configuration for Phabricator hosts. See Phabricator Configuration section for more information.",
       "type": "array",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "url": {
-            "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
-            "type": "string"
-          },
-          "token": {
-            "description": "API token for the Phabricator instance.",
-            "type": "string"
-          },
-          "repos": {
-            "description": "The list of repositories available on Phabricator.",
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["path", "callsign"],
-              "properties": {
-                "path": {
-                  "description": "Display path for the url e.g. gitolite/my/repo",
-                  "type": "string"
-                },
-                "callsign": {
-                  "description": "The unique Phabricator identifier for the repository, like 'MUX'.",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
+        "$ref": "#/definitions/PhabricatorConnection"
       }
     },
     "git.cloneURLToRepositoryName": {
@@ -857,8 +827,57 @@ const SiteSchemaJSON = `{
         },
         "phabricatorMetadataCommand": {
           "description":
-            "Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the URI of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
+            "This is DEPRECATED. Use the ` + "`" + `phabricator` + "`" + ` field instead.",
           "type": "string"
+        },
+        "phabricator": {
+          "description": "Phabricator instance that integrates with this Gitolite instance",
+          "type": "object",
+          "required": ["url", "callsignCommand"],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "description": "URL of the Phabricator instance that integrates with this Gitolite instance. This should be set ",
+              "type": "string"
+            },
+            "callsignCommand": {
+              "description": " Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "PhabricatorConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
+          "type": "string"
+        },
+        "token": {
+          "description": "API token for the Phabricator instance.",
+          "type": "string"
+        },
+        "repos": {
+          "description": "The list of repositories available on Phabricator.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "callsign"],
+            "properties": {
+              "path": {
+                "description": "Display path for the url e.g. gitolite/my/repo",
+                "type": "string"
+              },
+              "callsign": {
+                "description": "The unique Phabricator identifier for the repository, like 'MUX'.",
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },

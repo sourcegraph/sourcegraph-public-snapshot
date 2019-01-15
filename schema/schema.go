@@ -173,10 +173,11 @@ type GitLabConnection struct {
 	Url                         string         `json:"url"`
 }
 type GitoliteConnection struct {
-	Blacklist                  string `json:"blacklist,omitempty"`
-	Host                       string `json:"host"`
-	PhabricatorMetadataCommand string `json:"phabricatorMetadataCommand,omitempty"`
-	Prefix                     string `json:"prefix"`
+	Blacklist                  string       `json:"blacklist,omitempty"`
+	Host                       string       `json:"host"`
+	Phabricator                *Phabricator `json:"phabricator,omitempty"`
+	PhabricatorMetadataCommand string       `json:"phabricatorMetadataCommand,omitempty"`
+	Prefix                     string       `json:"prefix"`
 }
 
 // HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
@@ -246,7 +247,13 @@ type OpenIDConnectAuthProvider struct {
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
 }
+
+// Phabricator description: Phabricator instance that integrates with this Gitolite instance
 type Phabricator struct {
+	CallsignCommand string `json:"callsignCommand"`
+	Url             string `json:"url"`
+}
+type PhabricatorConnection struct {
 	Repos []*Repos `json:"repos,omitempty"`
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
@@ -367,7 +374,7 @@ type SiteConfiguration struct {
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
 	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
-	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
+	Phabricator                       []*PhabricatorConnection     `json:"phabricator,omitempty"`
 	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
 	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
 	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`
