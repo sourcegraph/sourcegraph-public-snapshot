@@ -2,57 +2,50 @@ package se
 
 // Complete API docs at https://api.stackexchange.com/docs/
 
-// User mirrors https://api.stackexchange.com/docs/types/user
-type User struct {
-	Reputation   int    `json:"reputation"`
-	UserID       int    `json:"user_id"`
-	UserType     string `json:"user_type"`
-	AcceptRate   int    `json:"accept_rate"`
-	ProfileImage string `json:"profile_image"`
-	DisplayName  string `json:"display_name"`
-	Link         string `json:"link"`
-}
+// These types are written to be extremely slimmed-down and use an aggressive
+// filter which fetches only the bare minimum data to populate a git repository
+// for the purposes of code indexing.
+//
+// According to the documentation filters are immutable and aggressively cached
+// on StackExchange's side the filter that is used it based on the following
+// API call:
+//
+// https://api.stackexchange.com/docs/create-filter#include=.items%3B.backoff%3B.quota_max%3B.quota_remaining%3Bquestion.body_markdown%3Banswer.body_markdown%3Bquestion.question_id%3Banswer.answer_id%3Bquestion.last_activity_date%3Banswer.last_activity_date%3Bquestion.answers%3B.error_id%3B.error_name%3B.error_message&base=none&unsafe=false&filter=default&run=true
+//
+// From the docs:
+//
+// > It is not expected that many applications will call this method
+// > at runtime, filters should be pre-calculated and "baked in" in
+// > the common cases. Furthermore, there are a number of built-in
+// > filters which cover common use cases.
 
-// Answer mirrors https://api.stackexchange.com/docs/types/answer
+// FilterID is closely bound to the URL in the doc block
+// above, do not change it without ensuring that it matches
+// that which is emit by the link above.
+const FilterID = "!*T0B4iEq2Y9dRWeCGhAfJ_2wl_Q2"
+
+// Answer https://api.stackexchange.com/docs/types/answer
 type Answer struct {
-	Owner            User   `json:"owner"`
-	IsAccepted       bool   `json:"is_accepted"`
-	Score            int    `json:"score"`
 	LastActivityDate int    `json:"last_activity_date"`
-	CreationDate     int    `json:"creation_date"`
 	AnswerID         int    `json:"answer_id"`
-	QuestionID       int    `json:"question_id"`
-	Body             string `json:"body"`
+	BodyMarkdown     string `json:"body_markdown"`
 }
 
-// Question mirrors https://api.stackexchange.com/docs/types/question
+// Question https://api.stackexchange.com/docs/types/question
 type Question struct {
-	Tags             []string `json:"tags"`
-	Owner            User     `json:"owner"`
-	IsAnswered       bool     `json:"is_answered"`
-	ViewCount        int      `json:"view_count"`
-	AcceptedAnswerID int      `json:"accepted_answer_id"`
-	AnswerCount      int      `json:"answer_count"`
-	Score            int      `json:"score"`
 	LastActivityDate int      `json:"last_activity_date"`
-	CreationDate     int      `json:"creation_date"`
 	QuestionID       int      `json:"question_id"`
-	Link             string   `json:"link"`
-	Title            string   `json:"title"`
+	BodyMarkdown     string   `json:"body_markdown"`
+	Answers          []Answer `json:"answers"`
 }
 
-// AnswersResp mirrors https://api.stackexchange.com/docs/answers
-type AnswersResp struct {
-	Items          []Answer `json:"items"`
-	HasMore        bool     `json:"has_more"`
-	QuotaMax       int      `json:"quota_max"`
-	QuotaRemaining int      `json:"quota_remaining"`
-}
-
-// QuestionsResp mirrors https://api.stackexchange.com/docs/questions
+// ResponseWrapper mirrors https://api.stackexchange.com/docs/wrapper
 type QuestionsResp struct {
 	Questions      []Question `json:"items"`
-	HasMore        bool       `json:"has_more"`
 	QuotaMax       int        `json:"quota_max"`
 	QuotaRemaining int        `json:"quota_remaining"`
+
+	ErrorID      int    `json:"error_id"`
+	ErrorName    string `json:"error_name"`
+	ErrorMessage string `json:"error_message"`
 }
