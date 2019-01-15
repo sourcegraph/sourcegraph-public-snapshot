@@ -23,45 +23,47 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var bitbucketServerConnections = atomicvalue.New()
-
-func init() {
-	bitbucketServerConnections.Set(func() interface{} {
+var bitbucketServerConnections = func() *atomicvalue.Value {
+	c := atomicvalue.New()
+	c.Set(func() interface{} {
 		return []*bitbucketServerConnection{}
 	})
+	return c
+}()
 
-	go func() {
-		t := time.NewTicker(configWatchInterval)
-		var lastConfig []*schema.BitbucketServerConnection
-		for range t.C {
-			config, err := conf.BitbucketServerConfigs(context.Background())
-			if err != nil {
-				log15.Error("unable to fetch Bitbucket Server configs", "err", err)
-				continue
-			}
-
-			if reflect.DeepEqual(config, lastConfig) {
-				continue
-			}
-			lastConfig = config
-
-			var conns []*bitbucketServerConnection
-			for _, c := range config {
-				conn, err := newBitbucketServerConnection(c)
-				if err != nil {
-					log15.Error("Error processing configured Bitbucket Server connection. Skipping it.", "url", c.Url, "error", err)
-					continue
-				}
-				conns = append(conns, conn)
-			}
-
-			bitbucketServerConnections.Set(func() interface{} {
-				return conns
-			})
-
-			bitbucketServerWorker.restart()
+// SyncBitbucketServerConnections periodically syncs connections from
+// the Frontend API.
+func SyncBitbucketServerConnections(ctx context.Context) {
+	t := time.NewTicker(configWatchInterval)
+	var lastConfig []*schema.BitbucketServerConnection
+	for range t.C {
+		config, err := conf.BitbucketServerConfigs(ctx)
+		if err != nil {
+			log15.Error("unable to fetch Bitbucket Server configs", "err", err)
+			continue
 		}
-	}()
+
+		if reflect.DeepEqual(config, lastConfig) {
+			continue
+		}
+		lastConfig = config
+
+		var conns []*bitbucketServerConnection
+		for _, c := range config {
+			conn, err := newBitbucketServerConnection(c)
+			if err != nil {
+				log15.Error("Error processing configured Bitbucket Server connection. Skipping it.", "url", c.Url, "error", err)
+				continue
+			}
+			conns = append(conns, conn)
+		}
+
+		bitbucketServerConnections.Set(func() interface{} {
+			return conns
+		})
+
+		bitbucketServerWorker.restart()
+	}
 }
 
 // getBitbucketServerConnection returns the BitbucketServer connection (config + API client) that is responsible for
