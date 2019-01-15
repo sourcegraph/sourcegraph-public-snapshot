@@ -1505,9 +1505,8 @@
     sourcegraph "*"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "1.1.0"
-  dependencies:
-    sourcegraph "*"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -1519,10 +1518,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
   integrity sha512-F4GMp+8XhlRQzEngc+CwbalT8zy8vXMxMrUjhm2cslTjWgWuSft0vSNCmCJDVPshpG/B+Ehb/OzpLLAzsG2JKg==
 
-"@sourcegraph/stylelint-config@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.0.1.tgz#23681417146498a766c7bff22b8e2d2929f88ef4"
-  integrity sha512-4XHu2x+0+dlT+QIOHs89j0FBmNs/6oDmaKunwd7VECh0gIbEZ2Btfv3SCEs9ttS9eBpELfLe1/2r/XDlHg3Orw==
+"@sourcegraph/stylelint-config@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.1.1.tgz#b7dd3c2ee19f5f7abe6785a885fdada9afd7410e"
+  integrity sha512-gjdVXJfgkw1wJAMqR43HX7Rsh74csOjZqr7hwkvaBeOBMheitdUiXMQ3WVAKR6eVy19XMCJmbCQtm6BWEkWqog==
   dependencies:
     stylelint-config-prettier "^4.0.0"
     stylelint-config-standard "^18.2.0"
@@ -13654,7 +13653,8 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "20.1.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
