@@ -77,7 +77,7 @@ func main() {
 	srv := &http.Server{Addr: addr, Handler: handler}
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 
-	// Sync relies on access to frontend and git-server, so wait until it they started up.
+	// Sync relies on access to frontend and git-server, so wait until they started up.
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
