@@ -59,7 +59,7 @@ func Test_IsAllowedURL(t *testing.T) {
 			}
 		})
 		t.Run(fmt.Sprintf("custom client %s", tc.urlStr), func(t *testing.T) {
-			vals, allowed := Client{allowList: defaultAllowListPatterns}.IsAllowedURL(tc.urlStr)
+			vals, allowed := Client{allowList: DefaultAllowListPatterns}.IsAllowedURL(tc.urlStr)
 			if allowed != tc.allowed {
 				t.Fatalf("Expected %t to equal %t when checking if %q is allowed.", allowed, tc.allowed, tc.urlStr)
 				t.Failed()
@@ -74,10 +74,7 @@ func Test_IsAllowedURL(t *testing.T) {
 
 func Test_FetchUpdate(t *testing.T) {
 
-	var c = Client{
-		allowList:   defaultAllowListPatterns,
-		lockTimeout: 50 * time.Millisecond,
-	}
+	var c, _ = NewClient(SpecifyLockWaitTimeout(50 * time.Millisecond))
 
 	t.Run("locking", func(t *testing.T) {
 		t.Run("errs with a lock contnetion error on time", func(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sync"
 	"time"
 )
 
@@ -22,17 +23,34 @@ func (e Error) Error() string {
 	return fmt.Sprintf("StackExchange package error: %q (wraps %q)", e.Op, e.err)
 }
 
-type allowList map[string]*regexp.Regexp
+type AllowList map[string]*regexp.Regexp
 
-var defaultAllowListPatterns = allowList{
+var DefaultAllowListPatterns = AllowList{
 	"stackoverflow": regexp.MustCompile("^(|www.)stackoverflow.com$"),
 }
 
 // Client encapsulates logic for speaking to a StackExchange
 // compatible API (targeted API v2.2).
 type Client struct {
-	allowList   allowList
-	lockTimeout time.Duration
+	allowList       AllowList
+	lockWaitTimeout time.Duration
+	lockMechanismer LockMechanismer
+}
+
+// NewClient allows passing a variadic list of ClientOptionFns
+// to configure a client based on the defaults.
+func NewClient(optFns ...ClientOptionFn) (*Client, error) {
+
+	var c = &Client{
+		allowList:       DefaultAllowListPatterns,
+		lockWaitTimeout: DefaultLockWaitTimeout,
+	}
+
+	for _, optFn := range optFns {
+		optFn(c)
+	}
+
+	return c, nil
 }
 
 // IsAllowedURL takes a URL string and tries to parse it
@@ -83,12 +101,57 @@ func (c Client) FetchUpdate(ctx context.Context, s string) {
 // extensive configuration to allow simple use of the package
 // in cases such as pre-flighting a URL without configuring
 // a fully-fledged client.
-var DefaultClient = Client{
-	allowList:   defaultAllowListPatterns,
-	lockTimeout: 5 * time.Second,
-}
+var DefaultClient, _ = NewClient()
+
+// DefaultLockWaitTimeout is 5 seconds, after which
+// we'll return an error in FetchUpdate
+var DefaultLockWaitTimeout = 5 * time.Second
 
 // IsAllowedURL is a simple function reference exposed
 // to make the external API more pleasant to use in
 // the common case.
 var IsAllowedURL = DefaultClient.IsAllowedURL
+
+// LockMechanismer takes a url.URL and returns a sync.Locker
+// that is used to prevent concurrent requests to refresh that
+// resource. A naîve implementation may simply pass back
+// a shared sync.Mutex, the LockMechanismer is under no obligation
+// to make use of finer-grained locks.
+type LockMechanismer func(u url.URL) sync.Locker
+
+// ClientOptionFn is a function to configure
+// options on Client such as the LockMechanismer
+// or timeouts, etc.
+type ClientOptionFn func(c *Client) error
+
+// SpecifyLockMechanism allows to set the lock mechanism
+// a LockMechanism may optionally take a URL or similar
+// for now the LockMechanism is only implemented
+// as a simple sync.Mutex
+func SpecifyLockMechanism(lm LockMechanismer) ClientOptionFn {
+	// Should maybe check no locks are held before
+	// allowing this to be overwritten?
+	return func(c *Client) error {
+		c.lockMechanismer = lm
+		return nil
+	}
+}
+
+// SpecifyAllowList specifies the AllowList for a Client {
+func SpecifyAllowList(al AllowList) ClientOptionFn {
+	return func(c *Client) error {
+		c.allowList = al
+		return nil
+	}
+}
+
+// SpecifyLockWaitTimeout returns a ClientOptionsFn that interplays
+// with the LockMechanismer and prevents the client waiting longer
+// than the specified ttl to get a lock on a URL before returning
+// an error.
+func SpecifyLockWaitTimeout(ttl time.Duration) ClientOptionFn {
+	return func(c *Client) error {
+		c.lockWaitTimeout = ttl
+		return nil
+	}
+}
