@@ -1,5 +1,7 @@
 package main
 
+//docker:run apk update && apk upgrade
+
 //docker:install curl
 //docker:run curl -o /usr/local/bin/syntect_server https://storage.googleapis.com/sourcegraph-artifacts/syntect_server/f85a9897d3c23ef84eb219516efdbb2d && chmod +x /usr/local/bin/syntect_server
 
