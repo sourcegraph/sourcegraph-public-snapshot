@@ -61,7 +61,7 @@ There is only one replica running in production. However, we can have multiple r
 
 Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, should go through repo-updater.
 
-This is a IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service. The service is stateful (maintianing git clones). However, it only contains data mirrored from upstream code hosts.
+This is a IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service. The service is stateful (maintaining git clones). However, it only contains data mirrored from upstream code hosts.
 
 ### Sourcegraph extensions
 
