@@ -26,7 +26,7 @@ func nginxProcFile() (string, error) {
 	// than the frontend address.
 	SetDefaultEnv("SRC_NGINX_HTTP_ADDR", ":7080")
 
-	return fmt.Sprintf(`nginx: nginx -p . -g 'daemon off;' -c %s | grep -v 'could not open error log file'`, path), nil
+	return fmt.Sprintf(`nginx: nginx -p . -g 'daemon off;' -c %s 2>&1 | grep -v 'could not open error log file' 1>&2`, path), nil
 }
 
 // nginxWriteFiles writes the nginx related configuration files to
