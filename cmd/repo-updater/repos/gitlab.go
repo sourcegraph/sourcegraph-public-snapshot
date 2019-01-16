@@ -20,63 +20,65 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var gitlabConnections = atomicvalue.New()
-
-func init() {
-	gitlabConnections.Set(func() interface{} {
+var gitlabConnections = func() *atomicvalue.Value {
+	c := atomicvalue.New()
+	c.Set(func() interface{} {
 		return []*gitlabConnection{}
 	})
+	return c
+}()
 
-	go func() {
-		t := time.NewTicker(configWatchInterval)
-		var lastConfig []*schema.GitLabConnection
-		for range t.C {
-			gitlabConf, err := conf.GitLabConfigs(context.Background())
-			if err != nil {
-				log15.Error("unable to fetch Gitlab configs", "err", err)
-				continue
-			}
-
-			var hasGitLabDotComConnection bool
-			for _, c := range gitlabConf {
-				u, _ := url.Parse(c.Url)
-				if u != nil && (u.Hostname() == "gitlab.com" || u.Hostname() == "www.gitlab.com") {
-					hasGitLabDotComConnection = true
-					break
-				}
-			}
-			if !hasGitLabDotComConnection {
-				// Add a GitLab.com entry by default, to support navigating to URL paths like
-				// /gitlab.com/foo/bar to auto-add that project.
-				gitlabConf = append(gitlabConf, &schema.GitLabConnection{
-					ProjectQuery:                []string{"none"}, // don't try to list all repositories during syncs
-					Url:                         "https://gitlab.com",
-					InitialRepositoryEnablement: true,
-				})
-			}
-
-			if reflect.DeepEqual(gitlabConf, lastConfig) {
-				continue
-			}
-			lastConfig = gitlabConf
-
-			var conns []*gitlabConnection
-			for _, c := range gitlabConf {
-				conn, err := newGitLabConnection(c)
-				if err != nil {
-					log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)
-					continue
-				}
-				conns = append(conns, conn)
-			}
-
-			gitlabConnections.Set(func() interface{} {
-				return conns
-			})
-
-			gitLabRepositorySyncWorker.restart()
+// SyncGitLabConnections periodically syncs connections from
+// the Frontend API.
+func SyncGitLabConnections(ctx context.Context) {
+	t := time.NewTicker(configWatchInterval)
+	var lastConfig []*schema.GitLabConnection
+	for range t.C {
+		gitlabConf, err := conf.GitLabConfigs(ctx)
+		if err != nil {
+			log15.Error("unable to fetch Gitlab configs", "err", err)
+			continue
 		}
-	}()
+
+		var hasGitLabDotComConnection bool
+		for _, c := range gitlabConf {
+			u, _ := url.Parse(c.Url)
+			if u != nil && (u.Hostname() == "gitlab.com" || u.Hostname() == "www.gitlab.com") {
+				hasGitLabDotComConnection = true
+				break
+			}
+		}
+		if !hasGitLabDotComConnection {
+			// Add a GitLab.com entry by default, to support navigating to URL paths like
+			// /gitlab.com/foo/bar to auto-add that project.
+			gitlabConf = append(gitlabConf, &schema.GitLabConnection{
+				ProjectQuery:                []string{"none"}, // don't try to list all repositories during syncs
+				Url:                         "https://gitlab.com",
+				InitialRepositoryEnablement: true,
+			})
+		}
+
+		if reflect.DeepEqual(gitlabConf, lastConfig) {
+			continue
+		}
+		lastConfig = gitlabConf
+
+		var conns []*gitlabConnection
+		for _, c := range gitlabConf {
+			conn, err := newGitLabConnection(c)
+			if err != nil {
+				log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)
+				continue
+			}
+			conns = append(conns, conn)
+		}
+
+		gitlabConnections.Set(func() interface{} {
+			return conns
+		})
+
+		gitLabRepositorySyncWorker.restart()
+	}
 }
 
 // getGitLabConnection returns the GitLab connection (config + API client) that is responsible for

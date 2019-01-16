@@ -326,6 +326,49 @@ func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
 
+// WaitForGitServers retries a noop request to all gitserver instances until
+// getting back a successful response.
+func (c *Client) WaitForGitServers(ctx context.Context) {
+	for {
+		if errs := c.pingAll(ctx); len(errs) == 0 {
+			return
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+}
+
+func (c *Client) pingAll(ctx context.Context) []error {
+	addrs := c.Addrs(ctx)
+
+	ch := make(chan error, len(addrs))
+	for _, addr := range addrs {
+		go func(addr string) {
+			ch <- c.ping(ctx, addr)
+		}(addr)
+	}
+
+	errs := make([]error, 0, len(addrs))
+	for i := 0; i < cap(ch); i++ {
+		if err := <-ch; err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errs
+}
+
+func (c *Client) ping(ctx context.Context, addr string) error {
+	resp, err := ctxhttp.Get(ctx, c.HTTPClient, "http://"+addr+"/ping")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
+	}
+	return nil
+}
+
 // ListGitolite lists Gitolite repositories.
 func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) ([]string, error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
