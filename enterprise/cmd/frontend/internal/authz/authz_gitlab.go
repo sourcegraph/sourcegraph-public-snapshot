@@ -61,6 +61,24 @@ func gitlabProvider(cfg *conf.Unified, gl *schema.GitLabConnection) (authz.Provi
 		return nil, fmt.Errorf("Could not parse URL for GitLab instance %q: %s", gl.Url, err)
 	}
 
+	foundAuthProvider := false
+	for _, authnProvider := range cfg.Critical.AuthProviders {
+		if authnProvider.Gitlab == nil {
+			continue
+		}
+		authProviderURL, err := url.Parse(authnProvider.Gitlab.Url)
+		if err != nil {
+			continue
+		}
+		if authProviderURL.Hostname() == glURL.Hostname() {
+			foundAuthProvider = true
+			break
+		}
+	}
+	if !foundAuthProvider {
+		return nil, fmt.Errorf("Did not find authentication provider matching %q", gl.Url)
+	}
+
 	ttl, err := parseTTL(gl.Authorization.Ttl)
 	if err != nil {
 		return nil, err
