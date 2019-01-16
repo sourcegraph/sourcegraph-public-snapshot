@@ -1,8 +1,8 @@
 # Add repositories from other external services
 
-If your Git repositories are hosted in an external service for which a direct integration isn't yet available, you can still connect them with Sourcegraph.
+If an integration for your external service is not yet offered, you can still connect to it.
 
-Simply go to `https://sourcegraph.example.com/site-admin/external-services/add?kind=other` and [configure](https://docs.sourcegraph.com/admin/site_config/all#otherexternalserviceconnection-object) the list of Git clone URLs you want Sourcegraph to discover.
+Select **Other** from the **Kind** option list, then [configure](https://docs.sourcegraph.com/admin/site_config/all#otherexternalserviceconnection-object) the list of Git clone URLs you want Sourcegraph to discover.
 
 ## Browser extension
 
