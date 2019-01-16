@@ -8,7 +8,7 @@
 Sourcegraph supports the following ways for users to sign in:
 
 - [Builtin](#builtin-authentication)
-- [GitHub OAuth](#github)
+- [GitHub OAuth](#github-beta)
 - [GitLab OAuth](#gitlab)
 - [OpenID Connect](#openid-connect) (including [Google accounts on G Suite](#g-suite-google-accounts))
 - [SAML](#saml)
