@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -22,25 +23,23 @@ import (
 
 var requestCounter = metrics.NewRequestCounter("gitlab", "Total number of requests sent to the GitLab API.")
 
-// Client is a GitLab API client.
-type Client struct {
-	baseURL *url.URL // base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
+// ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
+// separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple
+// unauthenticated API client should use `NewClientProvider(baseURL, transport).GetClient()`.
+type ClientProvider struct {
+	// baseURL is the base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
+	baseURL *url.URL
 
-	personalAccessToken string // a personal access token to authenticate requests, if set
-	oauthToken          string // an OAuth bearer token, if set
+	// httpClient is the underlying the HTTP client to use
+	httpClient *http.Client
 
-	httpClient *http.Client // the HTTP client to use
+	gitlabClients   map[string]*Client
+	gitlabClientsMu sync.Mutex
 
 	RateLimit *ratelimit.Monitor // the API rate limit monitor
-
-	projCache *rcache.Cache
 }
 
-// NewClient creates a new GitLab API client with an optional personal access token to authenticate requests.
-//
-// The URL must point to the base URL of the GitLab instance. This is https://gitlab.com for GitLab.com and
-// http[s]://[gitlab-hostname] for self-hosted GitLab instances.
-func NewClient(baseURL *url.URL, personalAccessToken, oauthToken string, transport http.RoundTripper) *Client {
+func NewClientProvider(baseURL *url.URL, transport http.RoundTripper) *ClientProvider {
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
@@ -54,24 +53,70 @@ func NewClient(baseURL *url.URL, personalAccessToken, oauthToken string, transpo
 		return category
 	})
 
+	return &ClientProvider{
+		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		httpClient:    &http.Client{Transport: transport},
+		gitlabClients: make(map[string]*Client),
+		RateLimit:     &ratelimit.Monitor{},
+	}
+}
+
+func (p *ClientProvider) GetPATClient(personalAccessToken string) *Client {
+	return p.getClient(fmt.Sprintf("pat::%s", personalAccessToken), personalAccessToken, "")
+}
+
+func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
+	return p.getClient(fmt.Sprintf("oauth::%s", oauthToken), "", oauthToken)
+}
+
+func (p *ClientProvider) GetClient() *Client {
+	return p.getClient("", "", "")
+}
+
+func (p *ClientProvider) getClient(key, personalAccessToken, oauthToken string) *Client {
+	p.gitlabClientsMu.Lock()
+	defer p.gitlabClientsMu.Unlock()
+
+	if c, ok := p.gitlabClients[key]; ok {
+		return c
+	}
+
+	c := p.newClient(p.baseURL, personalAccessToken, oauthToken, p.httpClient, p.RateLimit)
+	p.gitlabClients[key] = c
+	return c
+}
+
+type Client struct {
+	baseURL             *url.URL
+	httpClient          *http.Client
+	projCache           *rcache.Cache
+	personalAccessToken string // a personal access token to authenticate requests, if set
+	oauthToken          string // an OAuth bearer token, if set
+	RateLimit           *ratelimit.Monitor
+}
+
+// newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
+//
+// The URL must point to the base URL of the GitLab instance. This is https://gitlab.com for GitLab.com and
+// http[s]://[gitlab-hostname] for self-hosted GitLab instances.
+func (p *ClientProvider) newClient(baseURL *url.URL, personalAccessToken, oauthToken string, httpClient *http.Client, rateLimit *ratelimit.Monitor) *Client {
+	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(baseURL) && personalAccessToken == "" && oauthToken == "" {
 		cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
 	} else {
 		cacheTTL = 30 * time.Second
 	}
-
-	// Cache for GitLab project metadata.
 	key := sha256.Sum256([]byte(personalAccessToken + ":" + oauthToken + ":" + baseURL.String()))
 	projCache := rcache.NewWithTTL("gl_proj:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
 	return &Client{
-		baseURL:             baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		baseURL:             baseURL,
+		httpClient:          httpClient,
+		projCache:           projCache,
 		personalAccessToken: personalAccessToken,
 		oauthToken:          oauthToken,
-		httpClient:          &http.Client{Transport: transport},
-		RateLimit:           &ratelimit.Monitor{},
-		projCache:           projCache,
+		RateLimit:           rateLimit,
 	}
 }
 

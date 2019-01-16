@@ -35,8 +35,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	var data extsvc.ExternalAccountData
-	data.SetAccountData(gUser)
-	data.SetAuthData(token)
+	gitlab.SetExternalAccountData(&data, gUser, token)
 
 	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
 		UserProps: db.NewUser{
