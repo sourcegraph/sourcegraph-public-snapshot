@@ -4,7 +4,7 @@ This is a high level overview of our architecture at Sourcegraph so you can unde
 
 ![Sourcegraph architecture](img/architecture.svg)
 <!--
-# Updating the architecture image
+Updating the architecture image
 
 TODO: Automate this or replace mermaidjs diagrams
 
