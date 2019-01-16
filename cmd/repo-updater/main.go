@@ -14,7 +14,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
-	"gopkg.in/inconshreveable/log15.v2"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -76,8 +77,9 @@ func main() {
 	srv := &http.Server{Addr: addr, Handler: handler}
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 
-	// Sync relies on access to frontend, so wait until it has started up.
+	// Sync relies on access to frontend and git-server, so wait until they started up.
 	api.WaitForFrontend(ctx)
+	gitserver.DefaultClient.WaitForGitServers(ctx)
 
 	// Repos List syncing thread
 	go repos.RunRepositorySyncWorker(ctx)
@@ -85,13 +87,16 @@ func main() {
 	// Repos purging thread
 	go repos.RunRepositoryPurgeWorker(ctx)
 
-	// GitHub Repository syncing thread
+	// GitHub connections and repos syncing threads
+	go repos.SyncGitHubConnections(ctx)
 	go repos.RunGitHubRepositorySyncWorker(ctx)
 
-	// GitLab Repository syncing thread
+	// GitLab connections and repos syncing threads
+	go repos.SyncGitLabConnections(ctx)
 	go repos.RunGitLabRepositorySyncWorker(ctx)
 
-	// AWS CodeCommit repository syncing thread
+	// AWS CodeCommit connections and repos syncing threads
+	go repos.SyncAWSCodeCommitConnections(ctx)
 	go repos.RunAWSCodeCommitRepositorySyncWorker(ctx)
 
 	// Phabricator Repository syncing thread
@@ -100,7 +105,8 @@ func main() {
 	// Gitolite syncing thread
 	go repos.RunGitoliteRepositorySyncWorker(ctx)
 
-	// Bitbucket Server syncing thread
+	// Bitbucket connections and repos syncing threads
+	go repos.SyncBitbucketServerConnections(ctx)
 	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
 
 	// Start other repos syncer syncing thread

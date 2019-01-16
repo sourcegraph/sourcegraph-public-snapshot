@@ -27,45 +27,47 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var awsCodeCommitConnections = atomicvalue.New()
-
-func init() {
-	awsCodeCommitConnections.Set(func() interface{} {
+var awsCodeCommitConnections = func() *atomicvalue.Value {
+	c := atomicvalue.New()
+	c.Set(func() interface{} {
 		return []*awsCodeCommitConnection{}
 	})
+	return c
+}()
 
-	go func() {
-		t := time.NewTicker(configWatchInterval)
-		var lastConfig []*schema.AWSCodeCommitConnection
-		for range t.C {
-			config, err := conf.AWSCodeCommitConfigs(context.Background())
-			if err != nil {
-				log15.Error("unable to fetch AWS CodeCommit configs", "err", err)
-				continue
-			}
-
-			if reflect.DeepEqual(config, lastConfig) {
-				continue
-			}
-			lastConfig = config
-
-			var conns []*awsCodeCommitConnection
-			for _, c := range config {
-				conn, err := newAWSCodeCommitConnection(c)
-				if err != nil {
-					log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)
-					continue
-				}
-				conns = append(conns, conn)
-			}
-
-			awsCodeCommitConnections.Set(func() interface{} {
-				return conns
-			})
-
-			awsCodeCommitRepositorySyncWorker.restart()
+// SyncAWSCodeCommitConnections periodically syncs connections from
+// the Frontend API.
+func SyncAWSCodeCommitConnections(ctx context.Context) {
+	t := time.NewTicker(configWatchInterval)
+	var lastConfig []*schema.AWSCodeCommitConnection
+	for range t.C {
+		config, err := conf.AWSCodeCommitConfigs(ctx)
+		if err != nil {
+			log15.Error("unable to fetch AWS CodeCommit configs", "err", err)
+			continue
 		}
-	}()
+
+		if reflect.DeepEqual(config, lastConfig) {
+			continue
+		}
+		lastConfig = config
+
+		var conns []*awsCodeCommitConnection
+		for _, c := range config {
+			conn, err := newAWSCodeCommitConnection(c)
+			if err != nil {
+				log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)
+				continue
+			}
+			conns = append(conns, conn)
+		}
+
+		awsCodeCommitConnections.Set(func() interface{} {
+			return conns
+		})
+
+		awsCodeCommitRepositorySyncWorker.restart()
+	}
 }
 
 // GetAWSCodeCommitRepositoryMock is set by tests that need to mock GetAWSCodeCommitRepository.
