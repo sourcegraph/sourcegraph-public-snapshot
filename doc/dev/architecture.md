@@ -2,40 +2,26 @@
 
 This is a high level overview of our architecture at Sourcegraph so you can understand how our services fit together.
 
-## Diagram
+![Sourcegraph architecture](img/architecture.svg)
+<!--
+# Updating the architecture image
 
-To view this diagram in its rendered form on GitHub, [install the Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
+TODO: Automate this or replace mermaidjs diagrams
 
-```mermaid
-graph LR
-    Frontend-- HTTP -->gitserver
-    searcher-- HTTP -->gitserver
+TLDR: Get @ryan-blunden to render a new svg after making changes to architecture.mermaid.
 
-    query-runner-- HTTP -->Frontend
-    query-runner-- Graphql -->Frontend
-    repo-updater-- HTTP -->github-proxy
-    github-proxy-- HTTP -->github[github.com]
+After changing architecture.mermaid, render the new diagram at https://mermaidjs.github.io/mermaid-live-editor/, set "theme" to be "neutral" in the config textarea, then download and replace img/architecture.svg. But there's one more step.
 
-    repo-updater-- HTTP -->codehosts[Code hosts: GitHub Enterprise, BitBucket, etc.]
-    repo-updater-->redis-cache
+if you try rendering the downloaded SVG as is, the text is cut off in most boxes. This is because the  downloaded SVG is missing font styles that were present in the live editor page.
 
-    Frontend-- HTTP -->query-runner
-    Frontend-->redis-cache["Redis (cache)"]
-    Frontend-- SQL -->db[Postgresql Database]
-    Frontend-->redis["Redis (session data)"]
-    Frontend-- HTTP -->searcher
-    Frontend-- HTTP ---repo-updater
-    Frontend-- net/rpc -->indexed-search
-    indexed-search[indexed-search/zoekt]-- HTTP -->Frontend
+To fix, open the new architecture.svg, then add the following to the first class (`#mermaid-numbers .label`).
 
-    repo-updater-- HTTP -->gitserver
+  font-size: 14px;
+  font-variant: tabular-nums;
+  line-height: 1.5;
 
-    react[React App]-- Graphql -->Frontend
-    react[React App]-- Sourcegraph extensions -->Frontend
-
-    browser_extensions[Browser Extensions]-- Graphql -->Frontend
-    browser_extensions[Browser Extensions]-- Sourcegraph extensions -->Frontend
-```
+Save architecture.svg, view architecture.md and the labels should now render correctly.
+-->
 
 ## Services
 
