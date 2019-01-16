@@ -45,7 +45,7 @@ func newTestClient(t *testing.T) *Client {
 	return &Client{
 		baseURL:    &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
 		httpClient: &http.Client{},
-		rateLimit:  &ratelimit.Monitor{},
+		RateLimit:  &ratelimit.Monitor{},
 		projCache:  rcache.NewWithTTL("__test__gl_proj", 1000),
 	}
 }

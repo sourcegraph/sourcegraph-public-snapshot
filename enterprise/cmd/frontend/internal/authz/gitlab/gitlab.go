@@ -79,14 +79,20 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 	if r, exists := p.getCachedAccessList(accountID); exists {
 		accessibleRepos = r
 	} else {
-		var err error
+		var (
+			err         error
+			accessToken string
+		)
 
-		_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
-		if err != nil {
-			return nil, err
+		if account != nil {
+			_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
+			if err != nil {
+				return nil, err
+			}
+			accessToken = tok.AccessToken
 		}
 
-		accessibleRepos, err = p.fetchUserAccessList(ctx, accountID, tok.AccessToken)
+		accessibleRepos, err = p.fetchUserAccessList(ctx, accountID, accessToken)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +158,7 @@ func (p *GitLabOAuthAuthzProvider) getCachedAccessList(accountID string) (map[in
 func (p *GitLabOAuthAuthzProvider) fetchUserAccessList(ctx context.Context, glUserID, oauthTok string) (map[int]struct{}, error) {
 	projIDs := make(map[int]struct{})
 	var iters = 0
-	var pageURL = fmt.Sprintf("projects?%s", url.Values(map[string][]string{"per_page": []string{"100"}}).Encode())
+	var pageURL = fmt.Sprintf("projects?%s", url.Values(map[string][]string{"per_page": {"100"}}).Encode())
 	for {
 		if iters >= 100 && iters%100 == 0 {
 			log15.Warn("Excessively many GitLab API requests to fetch complete user authz list", "iters", iters, "gitlabUserID", glUserID, "host", p.clientURL.String())

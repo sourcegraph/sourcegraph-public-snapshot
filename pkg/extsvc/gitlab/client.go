@@ -91,7 +91,7 @@ type Client struct {
 	httpClient          *http.Client
 	projCache           *rcache.Cache
 	personalAccessToken string // a personal access token to authenticate requests, if set
-	oauthToken          string // an OAuth bearer token, if set
+	OAuthToken          string // an OAuth bearer token, if set
 	RateLimit           *ratelimit.Monitor
 }
 
@@ -115,7 +115,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, personalAccessToken, oauthT
 		httpClient:          httpClient,
 		projCache:           projCache,
 		personalAccessToken: personalAccessToken,
-		oauthToken:          oauthToken,
+		OAuthToken:          oauthToken,
 		RateLimit:           rateLimit,
 	}
 }
@@ -131,8 +131,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if c.personalAccessToken != "" {
 		req.Header.Set("Private-Token", c.personalAccessToken) // https://docs.gitlab.com/ee/api/README.html#personal-access-tokens
 	}
-	if c.oauthToken != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.oauthToken))
+	if c.OAuthToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OAuthToken))
 	}
 
 	var resp *http.Response
