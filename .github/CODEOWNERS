@@ -3,7 +3,7 @@
 # https://help.github.com/articles/about-codeowners/
 
 *git*/* @keegancsmith
-/cmd/searcher/ @keegancsmith
+/cmd/searcher/ @beyang @keegancsmith
 /web/src/ @felixfbecker
 /xlang/ @keegancsmith @beyang
 /dev/ @nicksnyder
@@ -13,9 +13,8 @@
 /web/src/tracking/ @dadlerj
 /enterprise/ @beyang
 /cmd/frontend/ @beyang
-/cmd/gitserver/ @beyang
-/cmd/repo-updater/ @beyang @nicksnyder
-/cmd/searcher/ @beyang
+/cmd/gitserver/ @beyang @tsenart
+/cmd/repo-updater/ @beyang @tsenart
 /cmd/server/ @beyang
 /cmd/symbols/ @beyang
 /pkg/ @beyang
