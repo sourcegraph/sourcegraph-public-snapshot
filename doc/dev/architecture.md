@@ -79,7 +79,7 @@ Repo-updater (which may get renamed since it does more than that) tracks the sta
 
 Provides on-demand search for repositories. It scans through a git archive fetched from gitserver to find results.
 
-This service should be scaled up the more on-demand searches that need to be done at once. For a search the frontend will scatter the search for each repo@commit across the replicas. The frontend will the gather the results. Like gitserver this is an IO and compute bound service. However, its state is a cache which can be lost at anytime.
+This service should be scaled up the more on-demand searches that need to be done at once. For a search the frontend will scatter the search for each repo@commit across the replicas. The frontend will then gather the results. Like gitserver this is an IO and compute bound service. However, its state is a cache which can be lost at anytime.
 
 ### indexed-search/zoekt ([code](https://github.com/sourcegraph/zoekt))
 
@@ -91,7 +91,7 @@ We forked [zoekt](https://github.com/google/zoekt).
 
 ### symbols ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/symbols))
 
-Indexes symbols in repositories using Ctags. Similar to architecture to searcher, except over ctags output.
+Indexes symbols in repositories using Ctags. Similar in architecture to searcher, except over ctags output.
 
 ### syntect ([code](https://github.com/sourcegraph/syntect_server))
 
