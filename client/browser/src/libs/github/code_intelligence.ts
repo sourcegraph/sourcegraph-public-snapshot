@@ -22,7 +22,7 @@ import {
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
 import { createOpenOnSourcegraphIfNotExists } from './inject'
-import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
+import { createCodeViewToolbarMount, getFileContainers, isGitHubEnterprise, parseURL } from './util'
 
 const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-n',
@@ -138,10 +138,8 @@ function checkIsGithub(): boolean {
     const href = window.location.href
 
     const isGithub = /^https?:\/\/(www.)?github.com/.test(href)
-    const ogSiteName = document.head!.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
-    const isGitHubEnterprise = ogSiteName ? ogSiteName.content === 'GitHub Enterprise' : false
 
-    return isGithub || isGitHubEnterprise
+    return isGithub || isGitHubEnterprise()
 }
 
 const getOverlayMount = () => {
