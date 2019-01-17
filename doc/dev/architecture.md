@@ -1,8 +1,9 @@
-# Sourcegraph architecture overview
+# Sourcegraph Architecture Overview
 
 This is a high level overview of our architecture at Sourcegraph so you can understand how our services fit together.
 
 ![Sourcegraph architecture](img/architecture.svg)
+
 <!--
 Updating the architecture image
 
