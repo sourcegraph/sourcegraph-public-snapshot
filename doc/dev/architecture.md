@@ -35,13 +35,19 @@ Application data is stored in our Postgresql database.
 
 Session data is stored in redis.
 
+Typically there are multiple replicas running in production to scale with load.
+
 ### github-proxy ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy))
 
 Proxies all requests to github.com to keep track of rate limits and prevent triggering abuse mechanisms.
 
+There is only one replica running in production. However, we can have multiple replicas to increase our rate limits (rate limit is per IP).
+
 ### gitserver ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/gitserver))
 
 Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, should go through repo-updater.
+
+This is a IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service. The service is stateful (maintaining git clones). However, it only contains data mirrored from upstream code hosts.
 
 ### Sourcegraph extensions
 
@@ -49,29 +55,35 @@ Mirrors repositories from their code host. All other Sourcegraph services talk t
 
 ### query-runner ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/query-runner))
 
-Periodically runs saved searches and sends notification emails.
+Periodically runs saved searches and sends notification emails. Only one replica should be running.
 
 ### repo-updater ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/repo-updater))
 
-Repo-updater (which may get renamed since it does more than that) tracks the state of repos, and is responsible for automatically scheduling updates ("git fetch" runs) using gitserver. Other apps which desire updates or fetches should be telling repo-updater, rather than using gitserver directly, so repo-updater can take their changes into account.
+Repo-updater (which may get renamed since it does more than that) tracks the state of repos, and is responsible for automatically scheduling updates ("git fetch" runs) using gitserver. Other apps which desire updates or fetches should be telling repo-updater, rather than using gitserver directly, so repo-updater can take their changes into account. Only one replica should be running.
 
 ### searcher ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/searcher))
 
 Provides on-demand search for repositories. It scans through a git archive fetched from gitserver to find results.
 
+This service should be scaled up the more on-demand searches that need to be done at once. For a search the frontend will scatter the search for each repo@commit across the replicas. The frontend will then gather the results. Like gitserver this is an IO and compute bound service. However, its state is a cache which can be lost at anytime.
+
 ### indexed-search/zoekt ([code](https://github.com/sourcegraph/zoekt))
 
 Provides search results for repositories that have been indexed.
 
-We forked https://github.com/google/zoekt.
+This service can only have one replica. Typically large customers provision a large node for it since it is memory and CPU heavy.
+
+We forked [zoekt](https://github.com/google/zoekt).
 
 ### symbols ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/symbols))
 
-Indexes symbols in repositories using Ctags.
+Indexes symbols in repositories using Ctags. Similar in architecture to searcher, except over ctags output.
 
 ### syntect ([code](https://github.com/sourcegraph/syntect_server))
 
 Syntect is a Rust service that is responsible for syntax highlighting.
+
+Horizontally scalable, but typically only one replica is necessary.
 
 ### Browser extensions ([code](https://github.com/sourcegraph/sourcegraph/tree/master/client/browser) | [docs](https://docs.sourcegraph.com/integration/browser_extension))
 
