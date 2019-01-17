@@ -53,7 +53,7 @@ const heroEyebrow = 'Sourcegraph'
 const heroTitle = 'Open. For business.'
 const heroCopyTop =
     'Sourcegraph is a free, open-source, self-hosted code search and intelligence server that helps developers find, review, understand, and debug code. Use it with any Git code host for teams of any size. Start using it now, then install the Sourcegraph Docker image on your private code.'
-const heroCopyBottom = 'Upgraded features start at $4/user/month.'
+const heroCopyBottom = 'Upgraded features available for enterprise users.'
 
 const searchSections = [
     {
