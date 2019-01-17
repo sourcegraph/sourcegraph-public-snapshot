@@ -1,28 +1,18 @@
-# Paid subscriptions for Sourcegraph Enterprise and Enterprise Starter
+# Paid subscriptions for Sourcegraph Enterprise
 
-> NOTE: Sourcegraph is [open source](https://github.com/sourcegraph/sourcegraph). Pricing documentation below applies to [Sourcegraph Enterprise and Enterprise Starter](https://about.sourcegraph.com/pricing).
+> NOTE: Sourcegraph is [open source](https://github.com/sourcegraph/sourcegraph). Pricing documentation below applies to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).
 
-Organizations using Sourcegraph can [upgrade to Sourcegraph Enterprise or Enterprise Starter](https://about.sourcegraph.com/pricing) to get the features that large organizations need (single sign-on, backups and recovery, cluster deployment, etc.). These additional features in Sourcegraph Enterprise and Enterprise Starter are paid and not open source.
+Organizations using Sourcegraph can [upgrade to Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) to get the features that large organizations need (single sign-on, backups and recovery, cluster deployment, etc.). These additional features in Sourcegraph Enterprise are paid and not open source.
 
 You can [buy a subscription](https://sourcegraph.com/user/subscriptions/new) on Sourcegraph.com. This entitles you to a license key (immediately generated after purchase), which activates Enterprise features on your Sourcegraph instance.
 
 ## Volume discounts
 
-[Sourcegraph Enterprise Starter](https://about.sourcegraph.com/pricing) provides volume discounts above 500 users according to the following table:
-
-| Users           | Discount     |
-|-----------------|--------------|
-| 500–1,000       | 10% discount |
-| 1,000–1,500     | 15% discount |
-| 1,500 and above | 20% discount |
-
-[Get a quote for your team](https://sourcegraph.com/user/subscriptions/new) now.
-
 [Contact us](https://about.sourcegraph.com/contact) to ask about volume discounts for Sourcegraph Enterprise. 
 
 ## True-up pricing
 
-When you purchase a new Sourcegraph Enterprise or Enterprise Starter license, you select and pay for a number of users. [Like GitLab, Sourcegraph offers true-up pricing](https://about.gitlab.com/handbook/product/pricing/#true-up-pricing), which means the license is never blocking user growth.
+When you purchase a new Sourcegraph Enterprise license, you select and pay for a number of users. [Like GitLab, Sourcegraph offers true-up pricing](https://about.gitlab.com/handbook/product/pricing/#true-up-pricing), which means the license is never blocking user growth.
 
 Instead, if you exceed the number of users on the license, Sourcegraph will true up your license at your next renewal. This means a retroactive charge for the full yearly cost of a user will be applied for the difference between the maximum number of user accounts at any given time on your instance, and the number of users on the license.
 
