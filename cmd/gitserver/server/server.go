@@ -560,6 +560,12 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !repoCloned(dir) {
+		if req.URL == "" {
+			status = "repo-not-found"
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
+			return
+		}
 		cloneProgress, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
 		if err != nil {
 			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
