@@ -22,14 +22,17 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Code style guide](style.md)
 - [Telemetry](telemetry.md)
 
-### Product
+### Plans and processes
 
 - [Roadmap](roadmap/index.md)
+- [Issues](issues.md)
+- [Releases](releases.md)
 - [Retrospectives](retrospectives/index.md)
+- [Company goals](goals.md)
 - [Documentation guide](documentation/index.md)
-- [Website (about.sourcegraph.com)](https://github.com/sourcegraph/about/tree/master/website)
 
 ### Other
 
+- [about.sourcegraph.com](https://github.com/sourcegraph/about/tree/master/website)
 - [FAQ](faq.md)
 - [Code of conduct](conduct.md)
