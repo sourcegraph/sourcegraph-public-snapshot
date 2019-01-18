@@ -401,8 +401,3 @@ export function parseGitHubHash(hash: string): { startLine: number; endLine?: nu
     const endLine = m[2] ? parseInt(m[2], 10) : undefined
     return { startLine, endLine }
 }
-
-export function isGitHubEnterprise(): boolean {
-    const ogSiteName = document.head!.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
-    return ogSiteName ? ogSiteName.content === 'GitHub Enterprise' : false
-}
