@@ -1,8 +1,9 @@
-import { Observable, throwError } from 'rxjs'
+import { from, Observable, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { GraphQLResult } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { isBackground, isInPage } from '../../context'
 import { removeAccessToken } from '../auth/access_token'
 import { DEFAULT_SOURCEGRAPH_URL, isPrivateRepository, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { RequestContext } from './context'
@@ -26,6 +27,13 @@ export interface GraphQLRequestArgs {
     requestMightContainPrivateInfo?: boolean
 }
 
+function privateRepoPublicSourcegraph({
+    url = sourcegraphUrl,
+    requestMightContainPrivateInfo = true,
+}: Pick<GraphQLRequestArgs, 'url' | 'requestMightContainPrivateInfo'>): boolean {
+    return isPrivateRepository() && url === DEFAULT_SOURCEGRAPH_URL && requestMightContainPrivateInfo
+}
+
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`
  *
@@ -35,7 +43,37 @@ export interface GraphQLRequestArgs {
  * @param options configuration options for the request
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
+export const requestGraphQL: typeof performRequest = (args: GraphQLRequestArgs) => {
+    // https://github.com/sourcegraph/sourcegraph/issues/1945
+    // make sure all GraphQL API requests are sent
+    // from the background page, so as to bypass CORS restrictions
+    // when running on private code hosts with the public Sourcegraph instance.
+    // This allows us to run extensions on private code hosts without
+    // needing a private Sourcegraph instance.
+    if (isBackground || isInPage) {
+        return performRequest(args)
+    }
+
+    // Check if it's a private repo - if so don't make a request to Sourcegraph.com.
+    const nameMatch = args.request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+    if (privateRepoPublicSourcegraph(args)) {
+        return throwError(new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '<unnamed>'))
+    }
+
+    return from(
+        new Promise<any>((resolve, reject) => {
+            chrome.runtime.sendMessage(
+                {
+                    type: 'requestGraphQL',
+                    payload: args,
+                },
+                ({ err, result }) => (err ? reject(err) : resolve(result))
+            )
+        })
+    )
+}
+
+function performRequest<T extends GQL.IGraphQLResponseRoot>({
     ctx,
     request,
     variables = {},
@@ -49,7 +87,7 @@ export function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
     const queryName = nameMatch ? '?' + nameMatch[1] : ''
 
     // Check if it's a private repo - if so don't make a request to Sourcegraph.com.
-    if (isPrivateRepository() && url === DEFAULT_SOURCEGRAPH_URL && requestMightContainPrivateInfo) {
+    if (isInPage && privateRepoPublicSourcegraph({ url, requestMightContainPrivateInfo })) {
         return throwError(new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '<unnamed>'))
     }
 
