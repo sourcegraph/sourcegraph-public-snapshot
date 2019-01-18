@@ -5,6 +5,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// GetExternalAccountData returns the deserialized user and token from the external account data
+// JSON blob in a typesafe way.
 func GetExternalAccountData(data *extsvc.ExternalAccountData) (usr *User, tok *oauth2.Token, err error) {
 	var (
 		u User
@@ -26,6 +28,7 @@ func GetExternalAccountData(data *extsvc.ExternalAccountData) (usr *User, tok *o
 	return usr, tok, nil
 }
 
+// SetExternalAccountData sets the user and token into the external account data blob.
 func SetExternalAccountData(data *extsvc.ExternalAccountData, user *User, token *oauth2.Token) {
 	data.SetAccountData(user)
 	data.SetAuthData(token)

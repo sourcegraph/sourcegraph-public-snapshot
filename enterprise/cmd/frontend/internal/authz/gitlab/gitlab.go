@@ -18,8 +18,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// TODO: this should replace the old sudo-token-based auth method
-
 var _ authz.Provider = ((*GitLabOAuthAuthzProvider)(nil))
 
 type GitLabOAuthAuthzProvider struct {

@@ -61,14 +61,17 @@ func NewClientProvider(baseURL *url.URL, transport http.RoundTripper) *ClientPro
 	}
 }
 
+// GetPATClient returns a client authenticated by the personal access token.
 func (p *ClientProvider) GetPATClient(personalAccessToken string) *Client {
 	return p.getClient(fmt.Sprintf("pat::%s", personalAccessToken), personalAccessToken, "")
 }
 
+// GetOAuthClient returns a client authenticated by the OAuth token.
 func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	return p.getClient(fmt.Sprintf("oauth::%s", oauthToken), "", oauthToken)
 }
 
+// GetClient returns an unauthenticated client.
 func (p *ClientProvider) GetClient() *Client {
 	return p.getClient("", "", "")
 }
