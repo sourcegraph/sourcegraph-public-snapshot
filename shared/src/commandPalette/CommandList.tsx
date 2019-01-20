@@ -21,16 +21,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     /** Called when the user has selected an item in the list. */
     onSelect?: () => void
 
-    /**
-     * Whether the text input should have autofocus.
-     *
-     * When used in the browser extension, this sometimes results in the page being scrolled to the bottom in the
-     * web browser because it attempts to autofocus (and scroll to reveal) before the element is attached to the
-     * correct position. Therefore this should be set to true only in the Sourcegraph web app (or unless you're
-     * confident that it works otherwise and have tested it, in which case you should update this comment).
-     */
-    autoFocus: boolean
-
     location: H.Location
 }
 
@@ -43,8 +33,6 @@ interface State {
 
     /** Recently invoked actions, which should be sorted first in the list. */
     recentActions: string[] | null
-
-    autoFocus?: boolean
 }
 
 /** Displays a list of commands contributed by extensions for a specific menu. */
@@ -94,10 +82,6 @@ export class CommandList extends React.PureComponent<Props, State> {
                 .getContributions()
                 .subscribe(contributions => this.setState({ contributions }))
         )
-
-        setTimeout(() => {
-            this.setState({ autoFocus: true })
-        })
     }
 
     public componentDidUpdate(_prevProps: Props, prevState: State): void {
@@ -134,6 +118,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                         </label>
                         <input
                             id="command-list__input"
+                            ref={input => input && input.focus({ preventScroll: true })}
                             type="text"
                             className="form-control px-2 py-1 rounded-0"
                             value={this.state.input}
@@ -141,7 +126,6 @@ export class CommandList extends React.PureComponent<Props, State> {
                             spellCheck={false}
                             autoCorrect="off"
                             autoComplete="off"
-                            autoFocus={this.props.autoFocus || this.state.autoFocus}
                             onChange={this.onInputChange}
                             onKeyDown={this.onInputKeyDown}
                         />
