@@ -8,7 +8,7 @@ and [Effective Go](http://golang.org/doc/effective_go.html).
 
 # English
 
-See https://sourcegraph.com/github.com/sourcegraph/about/-/blob/website/STYLEGUIDE.md.
+See https://sourcegraph.com/github.com/sourcegraph/about/-/blob/STYLEGUIDE.md.
 
 # Code
 
