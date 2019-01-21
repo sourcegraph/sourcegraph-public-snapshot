@@ -4,8 +4,17 @@
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 set -ex
 
+OUTPUT=`mktemp -d -t sgserver`
+cleanup() {
+    rm -rf "$OUTPUT"
+}
+trap cleanup EXIT
+
+# Environment for building linux binaries
 export GO111MODULE=on
-GOBIN=$PWD/.bin go install github.com/sourcegraph/godockerize
+export GOARCH=amd64
+export GOOS=linux
+export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
@@ -15,8 +24,7 @@ additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend}
 # our enterprise build scripts.
 server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
-./.bin/godockerize build --base 'alpine:3.8' -t ${IMAGE} --go-build-flags="-ldflags" --go-build-flags="-X github.com/sourcegraph/sourcegraph/pkg/version.version=${VERSION}" --env VERSION=${VERSION} --env GO111MODULES=on \
-    $server_pkg \
+for pkg in $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/management-console \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
@@ -26,4 +34,9 @@ server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
     github.com/sourcegraph/sourcegraph/cmd/searcher \
     github.com/google/zoekt/cmd/zoekt-archive-index \
     github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-    github.com/google/zoekt/cmd/zoekt-webserver $additional_images
+    github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
+
+    go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+done
+
+docker build -f Dockerfile -t $IMAGE $OUTPUT
