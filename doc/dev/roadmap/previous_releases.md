@@ -2,6 +2,10 @@
 
 See the [Sourcegraph changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md) for a detailed list of changes.
 
+## Sourcegraph 3.0 beta (2019-01-14)
+
+See the blog post "[Sourcegraph 3.0 beta is now available](https://about.sourcegraph.com/blog/sourcegraph-3.0-beta-is-now-available)".
+
 ## Sourcegraph 2.13 (2018-11-06)
 
 📣 See the blog post "[Announcing Sourcegraph 2.13](https://about.sourcegraph.com/blog/announcing-sourcegraph-2.13)".
@@ -18,7 +22,7 @@ Explore page | [🚢](https://sourcegraph.com/explore)[📣](https://github.com/
 Product documentation | [📣](https://github.com/sourcegraph/about/pull/43)[📖](https://docs.sourcegraph.com/dev/documentation)[📖](https://github.com/sourcegraph/docs.sourcegraph.com#readme) | [@sqs](http://github.com/sqs)
 Sourcegraph extensions usage and authoring experience | [📽](https://drive.google.com/file/d/1lguzuXbKYuSFwIvM7KK6FW8p6jMibxGF/view)[📖](https://docs.sourcegraph.com/extensions) | [@slimsag](http://github.com/slimsag) [@ryan-blunden](http://github.com/ryan-blunden)
 
-## Key for emojis
+### Key for emojis
 
 🌞 = pull request or code<br>
 📣 = draft blog post<br>

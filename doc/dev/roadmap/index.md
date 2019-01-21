@@ -12,19 +12,13 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ### 3.0
 
-- 3.0-beta (week of 2019-01-14)
-- 3.0 (week of 2019-02-04)
-
-Code intelligence:
+Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sourcegraph.com/blog/sourcegraph-3.0-beta-is-now-available) on 2019-01-14.)
 
 - [Go language support via extension](https://github.com/sourcegraph/sourcegraph/issues/958)
 - [JavaScript/TypeScript language support via extension](https://github.com/sourcegraph/sourcegraph/issues/960)
 - [Python language support via extension](https://github.com/sourcegraph/sourcegraph/issues/959)
 - [Basic code intel](https://github.com/sourcegraph/sourcegraph/pull/1313)
 - [Datadog metrics extension](https://github.com/sourcegraph/sourcegraph/issues/655)
-
-Configuration and deployment:
-
 - [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
 - [External services UI](https://github.com/sourcegraph/sourcegraph/pull/1103)
 - [GitHub user authentication](https://github.com/sourcegraph/sourcegraph/issues/964)
@@ -33,7 +27,21 @@ Configuration and deployment:
 - [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
 - [Upgrade to PostgreSQL 11](https://github.com/sourcegraph/sourcegraph/issues/1404)
 
-<small>Draft announcements: [beta](https://github.com/sourcegraph/about/pull/75) [release](https://github.com/sourcegraph/about/pull/68) --- [All 3.0-beta issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%223.0-beta%22)</small>
+<small>[Draft announcement](https://github.com/sourcegraph/about/pull/68) --- [All 3.0 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.0)</small>
+
+---
+
+### 3.1
+
+Release date: T.B.D.
+
+- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
+- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
+- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
+- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
+- Other items T.B.D.
+
+<small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
 
 ---
 
@@ -42,36 +50,35 @@ Configuration and deployment:
 Search
 
 - [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
-- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
+- [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
+- Improvements to saved searches
 
-Code intelligence
+Code intelligence and navigation
 
-- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
-- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
 - [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
 - [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981) (followup from 3.0)
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
+- [Scoped symbols sidebar](https://github.com/sourcegraph/sourcegraph/issues/1967)
 - PHP language support via extension
 
 Sourcegraph extensions
 
-- [Support and documentation for testing Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/733)
-- [Improved Sourcegraph extension documentation](https://github.com/sourcegraph/sourcegraph/issues/1151)
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - Codecov extension
-- 3rd-party extensions: LightStep, Sentry, FOSSA, SonarQube, Datadog, LaunchDarkly, Figma
-- Configuration data search extension
+- More 3rd-party extensions: LightStep, Sentry, FOSSA, SonarQube, [LaunchDarkly](https://github.com/sourcegraph/sourcegraph/issues/1249), Figma
+- [Configuration data search extension](https://github.com/sourcegraph/sourcegraph/issues/670)
 - Improved code host support for Sourcegraph extensions
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
+- [Sourcegraph extension testing](https://github.com/sourcegraph/sourcegraph/issues/733)
 
 Other
 
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
-- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- Enhanced notification preferences
+- [Checklist-based repository reviews](https://github.com/sourcegraph/sourcegraph/issues/1526)
 - [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)
+- Enhanced notification preferences
 - API access logging
 
 ---
@@ -89,30 +96,10 @@ Our work generally falls into the following categories:
 - **Deployment:** making it easy to run and maintain a self-hosted Sourcegraph instance
 - **Enterprise:** features that larger companies need (e.g., scaling, authentication, authorization, auditing, etc.)
 
-## Previous releases
+## [Previous releases](previous_releases.md)
 
 See [previous Sourcegraph releases](previous_releases.md).
 
-[sourcegraph]: https://github.com/sourcegraph/sourcegraph
-[sourcegraph-extension-api]: https://github.com/sourcegraph/sourcegraph/tree/master/packages/sourcegraph-extension-api
-[browser-extensions]: https://github.com/sourcegraph/sourcegraph/tree/master/client/browser
-[deploy-sourcegraph]: https://github.com/sourcegraph/deploy-sourcegraph
-[src-cli]: https://github.com/sourcegraph/src-cli
-[chrismwendt]: https://github.com/chrismwendt
-[keegancsmith]: https://github.com/keegancsmith
-[vanesa]: https://github.com/vanesa
-[attfarhan]: https://github.com/attfarhan
-[sqs]: https://github.com/sqs
-[beyang]: https://github.com/beyany
-[ggilmore]: https://github.com/ggilmore
-[ryan-blunden]: https://github.com/ryan-blunden
-[francisschmaltz]: https://github.com/francisschmaltz
-[ijsnow]: https://github.com/ijsnow
-[nicksnyder]: https://github.com/nicksnyder
-[dadlerj]: https://github.com/dadlerj
-[felixfbecker]: https://github.com/felixfbecker
-[slimsag]: https://github.com/slimsag
-[kattmingming]: https://github.com/kattmingming
 
 <!--
 
