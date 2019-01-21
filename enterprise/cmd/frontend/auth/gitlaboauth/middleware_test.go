@@ -47,6 +47,7 @@ func TestMiddleware(t *testing.T) {
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
 		}
+		req.Header.Set("User-Agent", "Mozilla")
 		if authed {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
 		}
