@@ -4,7 +4,7 @@
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 set -ex
 
-OUTPUT=`mktemp -d -t sgserver`
+OUTPUT=`mktemp -d -t sgserver_XXXXXXX`
 cleanup() {
     rm -rf "$OUTPUT"
 }
