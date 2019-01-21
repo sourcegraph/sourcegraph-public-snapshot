@@ -18,6 +18,7 @@ export interface Message {
         | 'fetched-files'
         | 'repo-closed'
         | 'createBlobURL'
+        | 'requestGraphQL'
     payload?: any
 }
 
