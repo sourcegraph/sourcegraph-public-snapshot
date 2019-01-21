@@ -74,7 +74,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/lightstep/lightstep-tracer-go v0.15.4
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
-	github.com/mattn/goreman v0.2.1-0.20180930133601-738cf1257bd3
+	github.com/mattn/goreman v0.2.1
 	github.com/microcosm-cc/bluemonday v1.0.1
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190104202730-77df8e8e70b4
