@@ -45,6 +45,10 @@ func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) (signOutURLs []ap
 			e.ProviderDisplayName = p.Github.DisplayName
 			e.ProviderServiceType = p.Github.Type
 			e.URL, err = githuboauth.SignOutURL(p.Github.Url)
+		case p.Gitlab != nil:
+			e.ProviderDisplayName = p.Gitlab.DisplayName
+			e.ProviderServiceType = p.Gitlab.Type
+			e.URL, err = gitlaboauth.SignOutURL(p.Gitlab.Url)
 		}
 		if e.URL != "" {
 			signOutURLs = append(signOutURLs, e)
