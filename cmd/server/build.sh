@@ -39,4 +39,4 @@ for pkg in $server_pkg \
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
-docker build -f Dockerfile -t $IMAGE $OUTPUT
+docker build -f cmd/server/Dockerfile -t $IMAGE $OUTPUT
