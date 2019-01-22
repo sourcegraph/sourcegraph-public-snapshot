@@ -27,7 +27,7 @@ Product is responsible for each project being planned at least through the [curr
 
 ### Meetings
 
-Project planning is a continuous process, punctuated with meetings to (hopefully) ensure everyone is on the same page.
+Project planning is a continuous process, punctuated with meetings to ensure everyone is on the same page.
 
 The agenda for a project planning kickoff or checkin is:
 
