@@ -19,7 +19,7 @@ The goals of product at Sourcegraph are to make the following true:
 
 We plan each project with the project team at least through the [current release](../releases.md). The outcome of planning a project is that:
 
-- The [product roadmap](../roadmap/index.md) describes what the project will ship (by linking to tracking issues). TODO!(sqs): add tracking issue template, possibly remove plans/0000-00-00-template.md
+- The [product roadmap](../roadmap/index.md) describes what the project will ship (by linking to tracking issues). The tracking issue is the source of truth for the status of a project and should be the primary planning artifact. TODO!(sqs): add tracking issue template, possibly remove plans/0000-00-00-template.md
 - The [issues](../issues.md) for the project are correctly prioritized, assigned, and documented.
 - The project team has the context necessary to work effectively and to [triage issues](../issues.md#triage) that are filed between now and the next planning session.
 
