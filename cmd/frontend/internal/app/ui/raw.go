@@ -126,6 +126,8 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			ext = ".tar"
 		}
 		downloadName := path.Base(string(common.Repo.Name)) + ext
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Content-Type", contentType)
 		w.Header().Set("Content-Disposition", mime.FormatMediaType("Attachment", map[string]string{"filename": downloadName}))
 
 		format := vfsutil.ArchiveFormatZip
