@@ -11,6 +11,9 @@ const WelcomeSearchPage = React.lazy(async () => ({
 const WelcomeCodeIntelligencePage = React.lazy(async () => ({
     default: (await import('./enterprise/dotcom/welcome/WelcomeCodeIntelligencePage')).WelcomeCodeIntelligencePage,
 }))
+const WelcomeIntegrationsPage = React.lazy(async () => ({
+    default: (await import('./enterprise/dotcom/welcome/WelcomeIntegrationsPage')).WelcomeIntegrationsPage,
+}))
 const SearchPage = React.lazy(async () => ({
     default: (await import('./search/input/SearchPage')).SearchPage,
 }))
@@ -100,6 +103,11 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/welcome/code-intelligence',
         render: props => <WelcomeCodeIntelligencePage {...props} />,
+        exact: true,
+    },
+    {
+        path: '/welcome/integrations',
+        render: props => <WelcomeIntegrationsPage {...props} />,
         exact: true,
     },
     {

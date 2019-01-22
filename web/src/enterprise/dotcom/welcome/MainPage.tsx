@@ -1,5 +1,4 @@
 import * as H from 'history'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -16,80 +15,11 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     history: H.History
 }
 
-interface State {
-    // modalXXopen sets a state that the modal is open before animations or closed after animation
-    // modalXXclosing sets a state that starts the closing process
-    modalIntegrationsOpen: boolean
-    modalIntegrationsClosing: boolean
-    // determine what button in modal is active
-    activeButton?: string
-    // determine what section inside a modal is active
-    activesection?: string
-    // animateModalXX starts the animation process after opening.
-    animateModalIntegrations: boolean
-    // Manual click state is to determine if animation should be stopped
-    manualClick?: boolean
-}
 const heroEyebrow = 'Sourcegraph'
 const heroTitle = 'Search, navigate, and review code. Find answers.'
 const heroCopyTop =
     'Sourcegraph is a free, open-source, self-hosted code search and navigation tool for developers. Use it with any Git code host for teams of any size.'
 const heroCopyBottom = 'Upgraded features available for enterprise users.'
-
-const integrationsSections = [
-    {
-        title: 'Connect across your development workflow.',
-        paragraph:
-            'Sourcegraph has powerful integrations for every step of development. From planning with code discussion, development with Sourcegraph and IDE extensions, to review in PRs and Issues. Use Sourcegraph integrations to get code intelligence at every step of your workflow.',
-        buttons: [],
-    },
-    {
-        title: 'Browser extensions',
-        paragraph:
-            'Code intelligence makes browsing code easier, with IDE-like hovers, go-to-definition, and find-references on your code, powered by language servers based on the open-source Language Server Protocol.',
-        buttons: [
-            {
-                id: 'btn-chrome',
-                text: 'Chrome',
-                link: 'https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack',
-            },
-        ],
-    },
-
-    {
-        title: 'Code host integrations',
-        paragraph:
-            'The Sourcegraph browser extension will add go-to-definition, find-references, hover tooltips, and code search to all files and diffs on supported code hosts. The extension will also add code intelligence and code search to public repositories. ',
-        buttons: [
-            { id: 'btn-gitlab', text: 'GitLab', link: 'https://docs.sourcegraph.com/integration/browser_extension' },
-            { id: 'btn-github', text: 'GitHub', link: 'https://docs.sourcegraph.com/integration/browser_extension' },
-            {
-                id: 'btn-phabricator',
-                text: 'Phabricator',
-                link: 'https://docs.sourcegraph.com/integration/browser_extension',
-            },
-        ],
-    },
-    {
-        title: 'Editor extensions',
-        paragraph:
-            'Our editor plugins let you quickly jump to files and search code on your Sourcegraph instance from your editor. Seamlessly jump for development to review without missing a step.',
-        buttons: [
-            { id: 'btn-atom', text: 'Atom', link: 'https://atom.io/packages/sourcegraph' },
-            { id: 'btn-intellij', text: 'IntelliJ', link: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph' },
-            {
-                id: 'btn-sublime',
-                text: 'Sublime',
-                link: 'https://github.com/sourcegraph/sourcegraph-sublime',
-            },
-            {
-                id: 'btn-vscode',
-                text: 'Visual Studio Code',
-                link: 'https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph',
-            },
-        ],
-    },
-]
 
 const inlineStyle = `
     .hero-tooltip {
@@ -109,15 +39,7 @@ const defaultTooltipHeroPosition = { line: 244, character: 11 }
 /**
  * The main page
  */
-export class MainPage extends React.Component<Props, State> {
-    public state: State = {
-        modalIntegrationsOpen: false,
-        modalIntegrationsClosing: false,
-        manualClick: false,
-        activesection: 'none',
-        animateModalIntegrations: false,
-    }
-
+export class MainPage extends React.Component<Props> {
     public render(): JSX.Element | null {
         window.context.sourcegraphDotComMode = true // TODO!(sqs)
         if (!window.context.sourcegraphDotComMode) {
@@ -127,7 +49,7 @@ export class MainPage extends React.Component<Props, State> {
             <div className="main-page container-fluid px-0">
                 <style>{inlineStyle}</style>
                 <section className="hero-section">
-                    <div className=" container hero-container">
+                    <div className="container hero-container">
                         <div className="row">
                             <div className="col-lg-6 col-md-12 col-sm-12">
                                 <h2>{heroEyebrow}</h2>
@@ -235,13 +157,9 @@ export class MainPage extends React.Component<Props, State> {
                                         Connect your Sourcegraph instance with your existing tools. Get code
                                         intelligence while browsing code on the web, and code search from your editor.
                                     </p>
-                                    <button
-                                        className="btn btn-secondary"
-                                        id="sampleButton"
-                                        onClick={this.activateModal('integrations')}
-                                    >
+                                    <Link className="btn btn-secondary" to="/welcome/integrations">
                                         Explore integrations
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
@@ -379,30 +297,24 @@ export class MainPage extends React.Component<Props, State> {
                                         <a href="//about.sourcegraph.com/jobs">Careers</a>
                                     </li>
                                 </ul>
-                                <div className="close--icon">
-                                    <CloseIcon className="material-icons" />
-                                </div>
                             </div>
                             <div className="col-xs-12 col-sm-12 col-m-2 col-lg-2 item footer__extend features">
                                 <h3>Features</h3>
                                 <input type="checkbox" />
                                 <ul>
                                     <li>
-                                        <a onClick={this.activateModal('search')}>Code search</a>
+                                        <Link to="/welcome/search">Code Search</Link>
                                     </li>
                                     <li>
-                                        <a onClick={this.activateModal('intelligence')}>Code intelligence</a>
+                                        <Link to="/welcome/code-intelligence">Code intelligence</Link>
                                     </li>
                                     <li>
-                                        <a onClick={this.activateModal('integrations')}>Integrations</a>
+                                        <Link to="/welcome/integrations">Integrations</Link>
                                     </li>
                                     <li>
                                         <a href="//about.sourcegraph.com/pricing">Enterprise</a>
                                     </li>
                                 </ul>
-                                <div className="close--icon">
-                                    <CloseIcon className="material-icons" />
-                                </div>
                             </div>
                             <div className="col-xs-12 col-sm-12 col-m-2 col-lg-2 item footer__extend resources">
                                 <h3>Resources</h3>
@@ -423,9 +335,6 @@ export class MainPage extends React.Component<Props, State> {
                                         <a href="//about.sourcegraph.com/security">Security</a>
                                     </li>
                                 </ul>
-                                <div className="close--icon">
-                                    <CloseIcon className="material-icons" />
-                                </div>
                             </div>
                         </div>
                         <div className="small__contact">
@@ -457,111 +366,7 @@ export class MainPage extends React.Component<Props, State> {
                         </div>
                     </div>
                 </section>
-                <div
-                    className={`modal-integrations ${this.state.modalIntegrationsOpen ? 'modal-open' : 'modal-close'} ${
-                        this.state.modalIntegrationsClosing ? 'modal-closing' : ''
-                    }`}
-                >
-                    <div className="container">
-                        <button className="btn-close-top" onClick={this.closeModal('integrations')}>
-                            <CloseIcon className="material-icons" />
-                        </button>
-                        <div className="row copy-section">
-                            <div className="col-12 modal-header">
-                                <h2>Integrations</h2>
-                                <h1>Get it. Together.</h1>
-                            </div>
-                        </div>
-                        <div className="row intelligence-row">
-                            <div className="col-12 modal-header copy-section">
-                                {integrationsSections.map(({ title, paragraph, buttons }, i) => (
-                                    <div
-                                        key={`search-sections-${i}`}
-                                        className={`row copy-section modal-copy-row activesec`}
-                                    >
-                                        <div className="col-12">
-                                            <h3>{title}</h3>
-                                            <p>{paragraph}</p>
-                                            {buttons.map(({ text, id, link }, j) => (
-                                                <a
-                                                    key={`integrations-buttons-${j}`}
-                                                    className={`btn btn-secondary btn-integrations  ${id}`}
-                                                    href={`${link}`}
-                                                >
-                                                    <span className="logo-icon" />
-                                                    {text}
-                                                </a>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="col-6 modal-code-intellify" />
-                        </div>
-                        <div className="row action-row">
-                            <div className="col-12 action-col">
-                                <p className="action-text">
-                                    Get started with Sourcegraph for free, and get get cross-repository code
-                                    intelligence, advanced code search, and extensive integrations.
-                                </p>
-
-                                <a className="action-link" href="https://docs.sourcegraph.com/#quickstart">
-                                    Deploy Sourcegraph
-                                    <ChevronRightIcon className="material-icons" />
-                                </a>
-                            </div>
-                            <div className="col-12 action-col">
-                                <p className="action-text">
-                                    Explore all of Sourcegraph's integrations and see how you can get cross-repository
-                                    code intelligence on your favorite code host and editor.
-                                </p>
-                                <a
-                                    className="action-link"
-                                    href="//about.sourcegraph.com/docs/integrations"
-                                    target="_blank"
-                                >
-                                    Integrations documentation
-                                    <ChevronRightIcon className="material-icons" />
-                                </a>
-                            </div>
-                        </div>
-
-                        <button className="btn-close-bottom" onClick={this.closeModal('integrations')}>
-                            Close <CloseIcon className="material-icons" />
-                        </button>
-                    </div>
-                </div>
             </div>
         )
-    }
-
-    private activateModal = (section: string) => () => {
-        const windowBody = document.body
-        windowBody.classList.add('modal-open')
-
-        if (section === 'integrations') {
-            this.setState(state => ({ modalIntegrationsOpen: !state.modalIntegrationsOpen }))
-            this.setState(state => ({ animateModalIntegrations: !state.animateModalIntegrations }))
-            this.setState(() => ({ activesection: '99' }))
-        }
-    }
-
-    private closeModal = (modalName: string) => () => {
-        const windowBody = document.body
-        windowBody.classList.remove('modal-open')
-
-        if (modalName === 'integrations') {
-            this.setState(state => ({
-                modalIntegrationsClosing: !state.modalIntegrationsClosing,
-                animateModalIntegrations: false,
-            }))
-            // RESET DID CLOSE
-            setTimeout(() => {
-                this.setState(state => ({
-                    modalIntegrationsOpen: !state.modalIntegrationsOpen,
-                    modalIntegrationsClosing: !state.modalIntegrationsClosing,
-                }))
-            }, 400)
-        }
     }
 }
