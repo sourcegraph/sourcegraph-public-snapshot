@@ -422,8 +422,6 @@ github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incomp
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
 github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1 h1:O1d7nVzpGmP5pGAZBSlp9TSpjNwwI0xThxhPd9oVJuU=
 github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1/go.mod h1:tpps84QRlOVVLYk5QpKYX8Tr289D1v/UTWDLqeguiqM=
-github.com/sourcegraph/godockerize v0.0.0-20181126200657-4f825419611b h1:EuY/1gvLCQi/T/L9J5o6+yUe5NFRPMxzNXxc/hp7eNU=
-github.com/sourcegraph/godockerize v0.0.0-20181126200657-4f825419611b/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8 h1:K7hzuWsJGoU8ILHJzrXxsuvXvLHpP/g4iUk7VFj2lY8=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8/go.mod h1:0VfoEApmSPgPhnePllwhrB4vwCUkI0K0w8aueOgoJQI=
 github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d/go.mod h1:8HCyYaC38XwX0AOu0+fuY02Y5Z7CkITW0oVJavbna4Q=
@@ -587,8 +585,6 @@ gopkg.in/src-d/go-git.v4 v4.8.0 h1:dDEbgvfNG9vUDM54uhCYPExiGa8uYgXpQ/MR8YvxcAM=
 gopkg.in/src-d/go-git.v4 v4.8.0/go.mod h1:Vtut8izDyrM8BUVQnzJ+YvmNcem2J89EmfZYCkLokZk=
 gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 h1:uRGJdciOHaEIrze2W8Q3AKkepLTh2hOroT7a+7czfdQ=
 gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7/go.mod h1:dt/ZhP58zS4L8KSrWDmTeBkI65Dw0HsyUHuEVlX15mw=
-gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8 h1:Ggy3mWN4l3PUFPfSG0YB3n5fVYggzysUmiUQ89SnX6Y=
-gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8/go.mod h1:cKXr3E0k4aosgycml1b5z33BVV6hai1Kh7uDgFOkbcs=
 gopkg.in/warnings.v0 v0.1.2 h1:wFXVbFY8DY5/xOe1ECiWdKCzZlxgshcYVNkBHstARME=
 gopkg.in/warnings.v0 v0.1.2/go.mod h1:jksf8JmL6Qr/oQM2OXTHunEvvTAsrWBLb6OOjuVWRNI=
 gopkg.in/yaml.v2 v2.2.1/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=

@@ -96,7 +96,6 @@ require (
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
-	github.com/sourcegraph/godockerize v0.0.0-20181126200657-4f825419611b
 	github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10
 	github.com/sourcegraph/httpcache v0.0.0-20160524185540-16db777d8ebe
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
@@ -127,7 +126,6 @@ require (
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.8.0
-	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	sourcegraph.com/sourcegraph/go-diff v0.0.0-20171119081133-3f415a150aec
 	sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4 // indirect
