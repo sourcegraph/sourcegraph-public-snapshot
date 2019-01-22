@@ -104,7 +104,7 @@ export class WelcomeSearchPage extends React.PureComponent<Props> {
                     </p>
                     <a
                         className="btn btn-secondary"
-                        href="//about.sourcegraph.com/docs/search/query-syntax"
+                        href="https://about.sourcegraph.com/docs/search/query-syntax"
                         target="_blank"
                     >
                         Search Documentation

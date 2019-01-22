@@ -10,6 +10,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
 import { RouteDescriptor } from '../../../util/contributions'
+import { WelcomeAreaFooter } from './WelcomeAreaFooter'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -42,7 +43,7 @@ export class WelcomeArea extends React.PureComponent<WelcomeAreaProps> {
                     </nav>
                 )}
                 <ErrorBoundary location={this.props.location}>
-                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                    <React.Suspense fallback={<LoadingSpinner className="icon-inline my-2 d-block mx-auto" />}>
                         <Switch>
                             {this.props.routes.map(
                                 ({ path, exact, render, condition = () => true }) =>
@@ -52,9 +53,12 @@ export class WelcomeArea extends React.PureComponent<WelcomeAreaProps> {
                                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                             exact={exact}
                                             // tslint:disable-next-line:jsx-no-lambda
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
+                                            render={routeComponentProps => (
+                                                <>
+                                                    {render({ ...context, ...routeComponentProps })}
+                                                    <WelcomeAreaFooter isLightTheme={this.props.isLightTheme} />
+                                                </>
+                                            )}
                                         />
                                     )
                             )}

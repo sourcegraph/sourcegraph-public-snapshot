@@ -76,7 +76,11 @@ export class WelcomeCodeIntelligencePage extends React.PureComponent<Props> {
                     Explore how Sourcegraph's code intelligence can augment and add to your workflow, prepare you for
                     code review, and speed through development.
                 </p>
-                <a className="btn btn-secondary" href="//about.sourcegraph.com/docs/code-intelligence" target="_blank">
+                <a
+                    className="btn btn-secondary"
+                    href="https://about.sourcegraph.com/docs/code-intelligence"
+                    target="_blank"
+                >
                     Code Intelligence Documentation
                     <ChevronRightIcon className="icon-inline" />
                 </a>

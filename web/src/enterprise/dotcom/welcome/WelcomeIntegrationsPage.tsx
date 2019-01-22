@@ -14,9 +14,14 @@ const integrationsSections = [
             'Code intelligence makes browsing code easier, with IDE-like hovers, go-to-definition, and find-references on your code, powered by language servers based on the open-source Language Server Protocol.',
         buttons: [
             {
-                id: 'btn-chrome',
+                iconUrl: 'https://about.sourcegraph.com/integrations/chrome.svg',
                 text: 'Chrome',
-                link: 'https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack',
+                link: 'https://docs.sourcegraph.com/integration/browser_extension',
+            },
+            {
+                iconUrl: 'https://about.sourcegraph.com/integrations/firefox.svg',
+                text: 'Firefox',
+                link: 'https://docs.sourcegraph.com/integration/browser_extension',
             },
         ],
     },
@@ -26,29 +31,45 @@ const integrationsSections = [
         paragraph:
             'The Sourcegraph browser extension will add go-to-definition, find-references, hover tooltips, and code search to all files and diffs on supported code hosts. The extension will also add code intelligence and code search to public repositories. ',
         buttons: [
-            { id: 'btn-gitlab', text: 'GitLab', link: 'https://docs.sourcegraph.com/integration/browser_extension' },
-            { id: 'btn-github', text: 'GitHub', link: 'https://docs.sourcegraph.com/integration/browser_extension' },
             {
-                id: 'btn-phabricator',
+                iconUrl: 'https://about.sourcegraph.com/integrations/gitlab.svg',
+                text: 'GitLab',
+                link: 'https://docs.sourcegraph.com/integration/browser_extension',
+            },
+            {
+                iconUrl: 'https://about.sourcegraph.com/integrations/github.png',
+                text: 'GitHub',
+                link: 'https://docs.sourcegraph.com/integration/browser_extension',
+            },
+            {
+                iconUrl: 'https://about.sourcegraph.com/integrations/phabricator.png',
                 text: 'Phabricator',
                 link: 'https://docs.sourcegraph.com/integration/browser_extension',
             },
         ],
     },
     {
-        title: 'IDE extensions',
+        title: 'Editor extensions',
         paragraph:
-            'Our editor plugins let you quickly jump to files and search code on your Sourcegraph instance from your editor. Seamlessly jump for development to review without missing a step.',
+            'Our editor extensions let you quickly jump to files and search code on your Sourcegraph instance from your editor. Seamlessly jump for development to review without missing a step.',
         buttons: [
-            { id: 'btn-atom', text: 'Atom', link: 'https://atom.io/packages/sourcegraph' },
-            { id: 'btn-intellij', text: 'IntelliJ', link: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph' },
             {
-                id: 'btn-sublime',
+                iconUrl: 'https://about.sourcegraph.com/integrations/atom.svg',
+                text: 'Atom',
+                link: 'https://atom.io/packages/sourcegraph',
+            },
+            {
+                iconUrl: 'https://about.sourcegraph.com/integrations/jetbrains.svg',
+                text: 'IntelliJ',
+                link: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph',
+            },
+            {
+                iconUrl: 'https://about.sourcegraph.com/integrations/sublime.svg',
                 text: 'Sublime',
                 link: 'https://github.com/sourcegraph/sourcegraph-sublime',
             },
             {
-                id: 'btn-vscode',
+                iconUrl: 'https://about.sourcegraph.com/integrations/vscode.svg',
                 text: 'VS Code',
                 link: 'https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph',
             },
@@ -71,13 +92,10 @@ export class WelcomeIntegrationsPage extends React.PureComponent<Props> {
                     <div key={i}>
                         <h3>{title}</h3>
                         <p>{paragraph}</p>
-                        {buttons.map(({ text, id, link }, j) => (
-                            <a
-                                key={`integrations-buttons-${j}`}
-                                className={`btn btn-secondary btn-integrations  ${id}`}
-                                href={`${link}`}
-                            >
-                                <span className="logo-icon" />
+                        {buttons.map(({ text, iconUrl, link }, i) => (
+                            <a key={i} className="btn btn-secondary btn-integrations" href={link}>
+                                {/* tslint:disable-next-line:jsx-ban-props */}
+                                <img src={iconUrl} style={{ maxHeight: '24px' }} className="mr-1" />
                                 {text}
                             </a>
                         ))}
@@ -95,7 +113,7 @@ export class WelcomeIntegrationsPage extends React.PureComponent<Props> {
                     Explore all of Sourcegraph's integrations and see how you can get cross-repository code intelligence
                     on your favorite code host and editor.
                 </p>
-                <a href="//about.sourcegraph.com/docs/integrations" target="_blank">
+                <a href="https://about.sourcegraph.com/docs/integrations" target="_blank">
                     Integrations Documentation
                     <ChevronRightIcon className="icon-inline" />
                 </a>
