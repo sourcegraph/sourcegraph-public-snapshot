@@ -4,13 +4,11 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { HeroPage } from '../../../components/HeroPage'
 import { CodeIntellifyBlob } from './CodeIntellifyBlob'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
-    authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
 }
@@ -46,7 +44,7 @@ export class WelcomeMainPage extends React.Component<Props> {
             return <HeroPage icon={MapSearchIcon} title="Page not found" />
         }
         return (
-            <div className="welcome-area container-fluid px-0">
+            <div className="welcome-area">
                 <style>{inlineStyle}</style>
                 <section className="hero-section">
                     <div className="container hero-container">

@@ -64,7 +64,7 @@ interface Props {}
 export class WelcomeIntegrationsPage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <div className="welcome-integrations-page container">
+            <div className="welcome-integrations-page">
                 <h2>Integrations</h2>
                 <h1>Get it. Together.</h1>
                 {integrationsSections.map(({ title, paragraph, buttons }, i) => (

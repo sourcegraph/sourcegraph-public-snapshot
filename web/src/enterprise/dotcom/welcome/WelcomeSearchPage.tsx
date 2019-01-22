@@ -73,7 +73,7 @@ interface Props {}
 export class WelcomeSearchPage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <div className="welcome-search-page container">
+            <div className="welcome-search-page">
                 <h2>Advanced Code Search</h2>
                 <h1>Find. Then replace.</h1>
                 {searchSections.map(({ title, paragraph, buttons }, i) => (

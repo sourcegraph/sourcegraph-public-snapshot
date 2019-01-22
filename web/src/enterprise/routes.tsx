@@ -1,17 +1,9 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 import { LayoutRouteProps, routes } from '../routes'
-const WelcomeMainPage = React.lazy(async () => ({
-    default: (await import('./dotcom/welcome/WelcomeMainPage')).WelcomeMainPage,
-}))
-const WelcomeSearchPage = React.lazy(async () => ({
-    default: (await import('./dotcom/welcome/WelcomeSearchPage')).WelcomeSearchPage,
-}))
-const WelcomeCodeIntelligencePage = React.lazy(async () => ({
-    default: (await import('./dotcom/welcome/WelcomeCodeIntelligencePage')).WelcomeCodeIntelligencePage,
-}))
-const WelcomeIntegrationsPage = React.lazy(async () => ({
-    default: (await import('./dotcom/welcome/WelcomeIntegrationsPage')).WelcomeIntegrationsPage,
+import { welcomeAreaRoutes } from './dotcom/welcome/routes'
+const WelcomeArea = React.lazy(async () => ({
+    default: (await import('./dotcom/welcome/WelcomeArea')).WelcomeArea,
 }))
 const NewProductSubscriptionPageOrRedirectUser = React.lazy(async () => ({
     default: (await import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'))
@@ -33,23 +25,7 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/welcome',
-        render: props => <WelcomeMainPage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/welcome/search',
-        render: props => <WelcomeSearchPage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/welcome/code-intelligence',
-        render: props => <WelcomeCodeIntelligencePage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/welcome/integrations',
-        render: props => <WelcomeIntegrationsPage {...props} />,
-        exact: true,
+        render: props => <WelcomeArea {...props} routes={welcomeAreaRoutes} />,
     },
     ...routes,
 ]

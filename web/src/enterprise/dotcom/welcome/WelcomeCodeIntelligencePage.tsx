@@ -40,7 +40,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 export class WelcomeCodeIntelligencePage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <div className="welcome-code-intelligence-page container">
+            <div className="welcome-code-intelligence-page">
                 <h2>Enhanced Code Browsing and Intelligence</h2>
                 <h1>Mine your language.</h1>
                 <div className="row">
