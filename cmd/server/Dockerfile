@@ -10,6 +10,11 @@ RUN go mod download
 
 COPY . .
 
+# At this step we are still missing generating production assets, and
+# embedding them into go files. For now we rely on pre-build.sh to do those
+# steps in CI. Once we port that over to Docker, we can just rely on docker
+# build and not use any build scripts.
+
 # Enterprise build uses its own version of frontend and includes more images.
 ARG ADDITIONAL_IMAGES=github.com/sourcegraph/sourcegraph/cmd/frontend
 # Enterprise build uses its own version of server
@@ -35,7 +40,7 @@ RUN go install \
 # This Dockerfile was generated from github.com/sourcegraph/godockerize. It
 # was not written by a human, and as such looks janky. As you change this
 # file, please don't be scared to make it more pleasant / remove hadolint
-# ingores.
+# ignores.
 FROM alpine:3.8
 RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
     echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
