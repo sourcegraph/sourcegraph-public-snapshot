@@ -265,6 +265,22 @@ func serveStart(w http.ResponseWriter, r *http.Request) error {
 	return renderTemplate(w, "app.html", common)
 }
 
+func serveWelcome(w http.ResponseWriter, r *http.Request) error {
+	common, err := newCommon(w, r, "Sourcegraph", serveError)
+	if err != nil {
+		return err
+	}
+	if common == nil {
+		return nil // request was handled
+	}
+
+	if !envvar.SourcegraphDotComMode() {
+		// The welcome page only exists on Sourcegraph.com.
+		w.WriteHeader(http.StatusNotFound)
+	}
+	return renderTemplate(w, "app.html", common)
+}
+
 func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, "", serveError)

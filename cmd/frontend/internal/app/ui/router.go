@@ -64,6 +64,7 @@ const (
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
 	routeExplore        = "explore"
+	routeWelcome        = "welcome"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -113,6 +114,7 @@ func newRouter() *mux.Router {
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/start").Methods("GET").Name(routeStart)
+	r.PathPrefix("/welcome").Methods("GET").Name(routeWelcome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/searches").Methods("GET").Name(routeSearchSearches)
@@ -186,6 +188,7 @@ func initRouter() {
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeStart).Handler(handler(serveStart))
+	router.Get(routeWelcome).Handler(handler(serveWelcome))
 	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))

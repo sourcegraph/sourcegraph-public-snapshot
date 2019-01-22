@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
 import { HeroPage } from '../../../components/HeroPage'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeIntellifyBlob } from './CodeIntellifyBlob'
@@ -21,9 +20,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 interface State {
     // modalXXopen sets a state that the modal is open before animations or closed after animation
     // modalXXclosing sets a state that starts the closing process
-    modalSearchOpen: boolean
     modalIntelligenceOpen: boolean
-    modalSearchClosing: boolean
     modalIntelligenceClosing: boolean
     modalIntegrationsOpen: boolean
     modalIntegrationsClosing: boolean
@@ -32,7 +29,6 @@ interface State {
     // determine what section inside a modal is active
     activesection?: string
     // animateModalXX starts the animation process after opening.
-    animateModalSearch: boolean
     animateModalIntelligence: boolean
     animateModalIntegrations: boolean
     // Manual click state is to determine if animation should be stopped
@@ -44,67 +40,6 @@ const heroCopyTop =
     'Sourcegraph is a free, open-source, self-hosted code search and navigation tool for developers. Use it with any Git code host for teams of any size.'
 const heroCopyBottom = 'Upgraded features available for enterprise users.'
 
-const searchSections = [
-    {
-        title: 'Powerful, flexible queries',
-        paragraph:
-            'Sourcegraph code search performs full-text searches and supports both regular expression and exact queries. By default, Sourcegraph searches across all your repositories. Our search query syntax allows for advanced queries, such as searching over any branch or commit, narrowing searches by programming language or file pattern, and more.',
-        buttons: [
-            { query: 'repo:^gitlab.com/ ', text: 'Code on GitLab' },
-            { query: 'repogroup:goteam file:\\.go$', text: 'Go Code by Go Team' },
-            {
-                query: 'repogroup:ethereum file:\\.(txt|md)$ file:(test|spec) ',
-                text: 'Core Ethereum test files',
-            },
-            { query: 'repogroup:angular file:\\.JSON$', text: 'Angular JSON Files' },
-        ],
-    },
-    {
-        title: 'Commit diff search',
-        paragraph:
-            'Search over commit diffs using type:diff to see how your codebase has changed over time. This is often used to find changes to particular functions, classes, or areas of the codebase when debugging. You can also search within commit diffs on multiple branches by specifying the branches in a repo: field after the @ sign.',
-        buttons: [
-            { query: 'repo:^github\\.com/apple/swift$@master-next type:diff', text: 'Swift diff' },
-            { query: 'repo:^github.com/facebook/react$ file:(test|spec)  type:diff', text: 'React test file diff' },
-            {
-                query: 'repo:^github.com/golang/oauth2$ type:diff',
-                text: 'Go oauth2 diff',
-            },
-            {
-                query: 'repo:^github.com/kubernetes/kubernetes$ type:diff statefulset',
-                text: 'Kubernetes statefulset diff',
-            },
-        ],
-    },
-    {
-        title: 'Commit message search',
-        paragraph:
-            'Searching over commit messages is supported in Sourcegraph by adding type:commit to your search query. Separately, you can also use the message:"any string" token to filter type:diff searches for a given commit message.',
-        buttons: [
-            { query: 'type:commit  repogroup:angular author:google.com>$ ', text: 'Angular commits by Googlers' },
-            { query: 'repogroup:npm type:commit security', text: 'NPM commits mentioning security' },
-            {
-                query: 'repogroup:ethereum type:commit money loss',
-                text: "Ethereum commits mentioning 'money loss'",
-            },
-            { query: 'repo:^github.com/sourcegraph/sourcegraph type:commit', text: 'Sourcegraph commits' },
-        ],
-    },
-    {
-        title: 'Symbol Search',
-        paragraph:
-            'Searching for symbols makes it easier to find specific functions, variables and more. Use the type:symbol filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name.',
-        buttons: [
-            { query: 'repogroup:goteam type:symbol httpRouter', text: 'Go code with httpRouter' },
-            { query: 'repo:^github.com/apple/swift$ type:symbol main', text: "Calls to 'main' in Swift" },
-            {
-                query: 'repo:golang/go$ type:symbol sprintf',
-                text: 'Go sprintf',
-            },
-            { query: 'repo:golang/go$ type:symbol newDecoder', text: 'Go newDecoder' },
-        ],
-    },
-]
 const intelligenceSections = [
     {
         title: 'Code browsing',
@@ -206,15 +141,12 @@ const defaultTooltipModalPosition = { line: 248, character: 11 }
  */
 export class MainPage extends React.Component<Props, State> {
     public state: State = {
-        modalSearchOpen: false,
-        modalSearchClosing: false,
         modalIntelligenceOpen: false,
         modalIntelligenceClosing: false,
         modalIntegrationsOpen: false,
         modalIntegrationsClosing: false,
         manualClick: false,
         activesection: 'none',
-        animateModalSearch: false,
         animateModalIntelligence: false,
         animateModalIntegrations: false,
     }
@@ -312,13 +244,9 @@ export class MainPage extends React.Component<Props, State> {
                                         Syncs repositories with your code host and supports searching any commit/branch,
                                         with no indexing delay.
                                     </p>
-                                    <button
-                                        className="btn btn-secondary "
-                                        id="sampleButton"
-                                        onClick={this.activateModal('search')}
-                                    >
+                                    <Link className="btn btn-secondary" to="/welcome/search">
                                         Explore code search
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
@@ -583,77 +511,6 @@ export class MainPage extends React.Component<Props, State> {
                     </div>
                 </section>
                 <div
-                    className={`modal-search ${this.state.modalSearchOpen ? 'modal-open' : 'modal-close'} ${
-                        this.state.modalSearchClosing ? 'modal-closing' : ''
-                    }`}
-                >
-                    <div className="container search-modal-container">
-                        <button className="btn-close-top" onClick={this.closeModal('search')}>
-                            <CloseIcon className="material-icons" />
-                        </button>
-                        <div className="row copy-section">
-                            <div className="col-12 modal-header">
-                                <h2>Advanced code search</h2>
-                                <h1>Find. Then replace.</h1>
-                            </div>
-                        </div>
-                        {searchSections.map(({ title, paragraph, buttons }, i) => (
-                            <div
-                                key={`search-sections-${i}`}
-                                className={`row copy-section modal-copy-row ${
-                                    this.state.activesection === `${i}` || this.state.activesection === '99'
-                                        ? 'activesec'
-                                        : ''
-                                }`}
-                            >
-                                <div className="col-12">
-                                    <h3>{title}</h3>
-                                    <p>{paragraph}</p>
-                                    {buttons.map(({ text, query }, i) => (
-                                        <Link
-                                            key={i}
-                                            className="btn btn-secondary"
-                                            to={`/search?${buildSearchURLQuery(query)}`}
-                                        >
-                                            {text}
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                        <div className="row action-row">
-                            <div className="col-12 action-col">
-                                <p className="action-text">
-                                    Get started with Sourcegraph for free, and get get cross-repository code
-                                    intelligence, advanced code search, and extensive integrations.
-                                </p>
-
-                                <a className="action-link" href="https://docs.sourcegraph.com/#quickstart">
-                                    Deploy Sourcegraph
-                                    <ChevronRightIcon className="material-icons" />
-                                </a>
-                            </div>
-                            <div className="col-12 action-col">
-                                <p className="action-text">
-                                    Explore the power and extensibility of Sourcegraph's search query syntax, and learn
-                                    how to search across all of your public and private code.
-                                </p>
-                                <a
-                                    className="action-link"
-                                    href="//about.sourcegraph.com/docs/search/query-syntax"
-                                    target="_blank"
-                                >
-                                    Search documentation
-                                    <ChevronRightIcon className="material-icons" />
-                                </a>
-                            </div>
-                        </div>
-                        <button className="btn-close-bottom" onClick={this.closeModal('search')}>
-                            Close <CloseIcon className="material-icons" />
-                        </button>
-                    </div>
-                </div>
-                <div
                     className={`modal-intelligence ${this.state.modalIntelligenceOpen ? 'modal-open' : 'modal-close'} ${
                         this.state.modalIntelligenceClosing ? 'modal-closing' : ''
                     }`}
@@ -821,14 +678,6 @@ export class MainPage extends React.Component<Props, State> {
             this.setState(state => ({ modalIntegrationsOpen: !state.modalIntegrationsOpen }))
             this.setState(state => ({ animateModalIntegrations: !state.animateModalIntegrations }))
             this.setState(() => ({ activesection: '99' }))
-        } else if (section === 'search') {
-            this.setState(state => ({ modalSearchOpen: !state.modalSearchOpen }))
-            this.setState(state => ({ animateModalSearch: !state.modalSearchOpen }))
-            setTimeout(() => {
-                if (this.state.animateModalSearch) {
-                    this.setState(() => ({ animateModalSearch: false }))
-                }
-            }, 750)
         }
     }
 
@@ -836,14 +685,7 @@ export class MainPage extends React.Component<Props, State> {
         const windowBody = document.body
         windowBody.classList.remove('modal-open')
 
-        if (modalName === 'search') {
-            this.setState(state => ({ modalSearchClosing: !state.modalSearchClosing, animateModalSearch: false }))
-            // RESET DID CLOSE
-            setTimeout(() => {
-                this.setState(state => ({ modalSearchOpen: !state.modalSearchOpen }))
-                this.setState(state => ({ modalSearchClosing: !state.modalSearchClosing }))
-            }, 400)
-        } else if (modalName === 'intelligence') {
+        if (modalName === 'intelligence') {
             this.setState(state => ({
                 modalIntelligenceClosing: !state.modalIntelligenceClosing,
                 animateModalIntelligence: false,
