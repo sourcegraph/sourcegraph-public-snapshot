@@ -20,5 +20,5 @@ rm syntect_server
 set +x
 echo
 echo
-echo "Please update dockerfile.go to have this run directive instead:"
-echo "//docker:run curl -o /usr/local/bin/syntect_server https://storage.googleapis.com/sourcegraph-artifacts/syntect_server/${HASH} && chmod +x /usr/local/bin/syntect_server"
+echo "Please update Dockerfile to have this run directive instead:"
+echo "RUN curl -o /usr/local/bin/syntect_server https://storage.googleapis.com/sourcegraph-artifacts/syntect_server/${HASH} && chmod +x /usr/local/bin/syntect_server"
