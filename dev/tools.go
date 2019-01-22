@@ -14,6 +14,5 @@ import (
 	_ "github.com/shurcooL/vfsgen/cmd/vfsgendev"
 	_ "github.com/sourcegraph/docsite/cmd/docsite"
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
-	_ "github.com/sourcegraph/godockerize"
 	_ "golang.org/x/tools/cmd/stringer"
 )
