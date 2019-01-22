@@ -57,6 +57,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     public state: State = { open: false }
 
     private rootRef: HTMLElement | null = null
+    private popoverRef: HTMLElement | null = null
 
     public componentWillReceiveProps(props: Props): void {
         if (props.hideOnChange !== this.props.hideOnChange) {
@@ -89,7 +90,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                 trigger=""
             >
                 {isOpen && <Shortcut ordered={['Escape']} onMatch={this.toggleVisibility} ignoreInput={true} />}
-                {this.props.popoverElement}
+                <div ref={this.setPopoverRef}>{this.props.popoverElement}</div>
             </Popover>
         )
 
@@ -132,12 +133,14 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     }
 
     public onClickOutside = (e: MouseEvent | TouchEvent) => {
-        if (this.rootRef && !this.rootRef.contains(e.target as HTMLElement)) {
+        if (this.popoverRef && !this.popoverRef.contains(e.target as HTMLElement)) {
             this.hide()
         }
     }
 
     private hide = () => this.setState({ open: false })
+
+    private setPopoverRef = (e: HTMLElement | null) => (this.popoverRef = e)
 
     private setRootRef = (e: HTMLElement | null) => (this.rootRef = e)
 

@@ -66,6 +66,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     private rootRef: HTMLElement | null = null
+    private popoverRef: HTMLElement | null = null
 
     public componentDidMount(): void {
         window.addEventListener('keydown', this.onGlobalKeyDown)
@@ -99,7 +100,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                 // in link mode (this.props.link), only caret (not link) opens the popover.
                 trigger=""
             >
-                {this.props.popoverElement}
+                <div ref={this.setPopoverRef}>{this.props.popoverElement}</div>
             </Popover>
         )
         return (
@@ -160,10 +161,12 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     }
 
     private onClickOutside = (e: MouseEvent | TouchEvent) => {
-        if (this.rootRef && !this.rootRef.contains(e.target as HTMLElement)) {
+        if (this.popoverRef && !this.popoverRef.contains(e.target as HTMLElement)) {
             this.hide()
         }
     }
+
+    private setPopoverRef = (e: HTMLElement | null) => (this.popoverRef = e)
 
     private setRootRef = (e: HTMLElement | null) => (this.rootRef = e)
 
