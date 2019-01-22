@@ -14,8 +14,8 @@ Here's an example using curl.
 curl -XPOST -H 'Authorization: token $ACCESS_TOKEN' $SOURCEGRAPH_ORIGIN/.api/repos/$REPO_URI/-/refresh
 ```
 
-## Disabling built-in repo update polling
+## Disabling built-in repo updating
 
-If you wish to disable the built-in polling functionality of Sourcegraph, you can set [`repoListUpdateInterval`](../site_config/all.md#repolistupdateinterval-integer) to `-1`.
+Sourcegraph will periodically ask your code-host to list its repositories (e.g. via its HTTP API) to _discover repositories_. You can control how often this occurs by changing [`repoListUpdateInterval`](../site_config/all.md#repolistupdateinterval-integer) in the site config.
 
-This may be desirable in cases where you wish to rely solely on the repository update webhook, for example.
+For repositories that Sourcegraph is already aware of, it will periodically perform background Git repository updates. You can disable this if you wish by setting [`disableAutoGitUpdates`](../site_config/all.md#disableautogitupdates-boolean) to `true`. In which case, the repository will only update when the webhook is used or, e.g., if a user visits the repository directly. This may be desirable in cases where you wish to rely solely on the repository update webhook, for example.
