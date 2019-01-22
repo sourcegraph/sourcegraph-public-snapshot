@@ -15,7 +15,14 @@ import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { isDefined, propertyIsDefined } from '../../../../../shared/src/util/types'
-import { FileSpec, ModeSpec, PositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
+import {
+    FileSpec,
+    ModeSpec,
+    PositionSpec,
+    RepoSpec,
+    ResolvedRevSpec,
+    RevSpec,
+} from '../../../../../shared/src/util/url'
 import { getHover } from '../../../backend/features'
 import { fetchBlob } from '../../../repo/blob/BlobPage'
 
@@ -27,7 +34,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     endLine: number
     parentElement: string
 
-    overlayPortal?: HTMLElement
     tooltipClass: string
     defaultHoverPosition: Position
 }

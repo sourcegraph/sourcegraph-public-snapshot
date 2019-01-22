@@ -8,6 +8,9 @@ const MainPage = React.lazy(async () => ({
 const WelcomeSearchPage = React.lazy(async () => ({
     default: (await import('./enterprise/dotcom/welcome/WelcomeSearchPage')).WelcomeSearchPage,
 }))
+const WelcomeCodeIntelligencePage = React.lazy(async () => ({
+    default: (await import('./enterprise/dotcom/welcome/WelcomeCodeIntelligencePage')).WelcomeCodeIntelligencePage,
+}))
 const SearchPage = React.lazy(async () => ({
     default: (await import('./search/input/SearchPage')).SearchPage,
 }))
@@ -86,12 +89,17 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/start',
-        render: (props: any) => <MainPage {...props} />,
+        render: props => <MainPage {...props} />,
         exact: true,
     },
     {
         path: '/welcome/search',
-        render: (props: any) => <WelcomeSearchPage {...props} />,
+        render: props => <WelcomeSearchPage {...props} />,
+        exact: true,
+    },
+    {
+        path: '/welcome/code-intelligence',
+        render: props => <WelcomeCodeIntelligencePage {...props} />,
         exact: true,
     },
     {

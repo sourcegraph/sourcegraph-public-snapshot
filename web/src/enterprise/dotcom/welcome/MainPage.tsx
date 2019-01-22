@@ -8,7 +8,6 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { HeroPage } from '../../../components/HeroPage'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeIntellifyBlob } from './CodeIntellifyBlob'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -20,8 +19,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 interface State {
     // modalXXopen sets a state that the modal is open before animations or closed after animation
     // modalXXclosing sets a state that starts the closing process
-    modalIntelligenceOpen: boolean
-    modalIntelligenceClosing: boolean
     modalIntegrationsOpen: boolean
     modalIntegrationsClosing: boolean
     // determine what button in modal is active
@@ -29,7 +26,6 @@ interface State {
     // determine what section inside a modal is active
     activesection?: string
     // animateModalXX starts the animation process after opening.
-    animateModalIntelligence: boolean
     animateModalIntegrations: boolean
     // Manual click state is to determine if animation should be stopped
     manualClick?: boolean
@@ -39,29 +35,6 @@ const heroTitle = 'Search, navigate, and review code. Find answers.'
 const heroCopyTop =
     'Sourcegraph is a free, open-source, self-hosted code search and navigation tool for developers. Use it with any Git code host for teams of any size.'
 const heroCopyBottom = 'Upgraded features available for enterprise users.'
-
-const intelligenceSections = [
-    {
-        title: 'Code browsing',
-        paragraph:
-            'View open source code, like gorilla/mux, on sourcegraph.com, or deploy your own instance to see public code alongside your private code. See how your codebase changes over time in by browsing through branches, commits, and diffs.',
-    },
-    {
-        title: 'Advanced code intelligence',
-        paragraph:
-            'Code intelligence makes browsing code easier, with IDE-like hovers, go-to-definition, and find-references on your code, powered by language servers based on the open-source Language Server Protocol.',
-    },
-    {
-        title: 'Hover tooltip',
-        paragraph:
-            'Use the hover tooltip to discover and understand your code faster. Click on a token and then go to its definition, other references, or implementations. Speed through reviews by understanding new code, changed code, and what it affects.',
-    },
-    {
-        title: '',
-        paragraph:
-            'Code intelligence is powered by language servers based on the open-standard Language Server Protocol (published by Microsoft, with participation from Facebook, Google, Sourcegraph, GitHub, RedHat, Twitter, Salesforce, Eclipse, and others). Visit langserver.org to learn more about the Language Server Protocol, find the latest support for your favorite language, and get involved.',
-    },
-]
 
 const integrationsSections = [
     {
@@ -133,37 +106,16 @@ const inlineStyle = `
 // Set the defauly hover token of the hero tooltip
 const defaultTooltipHeroPosition = { line: 244, character: 11 }
 
-// Set the defauly hover token of the hero tooltip
-const defaultTooltipModalPosition = { line: 248, character: 11 }
-
 /**
  * The main page
  */
 export class MainPage extends React.Component<Props, State> {
     public state: State = {
-        modalIntelligenceOpen: false,
-        modalIntelligenceClosing: false,
         modalIntegrationsOpen: false,
         modalIntegrationsClosing: false,
         manualClick: false,
         activesection: 'none',
-        animateModalIntelligence: false,
         animateModalIntegrations: false,
-    }
-
-    private overlayPortal: HTMLElement | undefined
-
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('Home')
-
-        const portal = document.createElement('div')
-        document.body.appendChild(portal)
-        this.overlayPortal = portal
-    }
-
-    public componentWillUnmount(): void {
-        const windowBody = document.body
-        windowBody.classList.remove('modal-open')
     }
 
     public render(): JSX.Element | null {
@@ -200,7 +152,6 @@ export class MainPage extends React.Component<Props, State> {
                                     endLine={250}
                                     parentElement={'.hero-section'}
                                     className={'code-intellify-container'}
-                                    overlayPortal={this.overlayPortal}
                                     tooltipClass={'hero-tooltip'}
                                     defaultHoverPosition={defaultTooltipHeroPosition}
                                 />
@@ -267,13 +218,9 @@ export class MainPage extends React.Component<Props, State> {
                                         It even works in code review diffs on GitHub and GitLab with our browser
                                         extensions.
                                     </p>
-                                    <button
-                                        className="btn btn-secondary"
-                                        id="sampleButton"
-                                        onClick={this.activateModal('intelligence')}
-                                    >
+                                    <Link className="btn btn-secondary" to="/welcome/code-intelligence">
                                         Explore code intelligence
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
@@ -511,84 +458,6 @@ export class MainPage extends React.Component<Props, State> {
                     </div>
                 </section>
                 <div
-                    className={`modal-intelligence ${this.state.modalIntelligenceOpen ? 'modal-open' : 'modal-close'} ${
-                        this.state.modalIntelligenceClosing ? 'modal-closing' : ''
-                    }`}
-                >
-                    <div className="container">
-                        <button className="btn-close-top" onClick={this.closeModal('intelligence')}>
-                            <CloseIcon className="material-icons" />
-                        </button>
-                        <div className="row copy-section">
-                            <div className="col-12 modal-header">
-                                <h2>Enhanced code browsing and intelligence</h2>
-                                <h1>Mine your language.</h1>
-                            </div>
-                        </div>
-                        <div className="row intelligence-row">
-                            <div className="col-lg-6 col-md-12 col-sm-12 modal-header copy-section">
-                                {intelligenceSections.map(({ title, paragraph }, i) => (
-                                    <div
-                                        key={`search-sections-${i}`}
-                                        className={`row modal-copy-row ${
-                                            this.state.activesection === `${i}` || this.state.activesection === '99'
-                                                ? 'activesec'
-                                                : ''
-                                        }`}
-                                    >
-                                        <div className="col-12">
-                                            <h3>{title}</h3>
-                                            <p>{paragraph}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="col-6 modal-code-intellify small-hidden">
-                                <CodeIntellifyBlob
-                                    {...this.props}
-                                    startLine={236}
-                                    endLine={284}
-                                    parentElement={'.modal-code-intellify'}
-                                    className={'code-intellify-container-modal'}
-                                    overlayPortal={this.overlayPortal}
-                                    tooltipClass={'modal-tooltip'}
-                                    defaultHoverPosition={defaultTooltipModalPosition}
-                                />
-                            </div>
-                        </div>
-                        <div className="row action-row">
-                            <div className="col-12 action-col">
-                                <p className="action-text">
-                                    Get started with Sourcegraph for free, and get get cross-repository code
-                                    intelligence, advanced code search, and extensive integrations.
-                                </p>
-
-                                <a className="action-link" href="https://docs.sourcegraph.com/#quickstart">
-                                    Deploy Sourcegraph
-                                    <ChevronRightIcon className="material-icons" />
-                                </a>
-                            </div>
-                            <div className="col-12 action-col">
-                                <p className="action-text">
-                                    Explore how Sourcegraph's code intelligence can augment and add to your workflow,
-                                    prepare you for code review, and speed through development.
-                                </p>
-                                <a
-                                    className="action-link"
-                                    href="//about.sourcegraph.com/docs/code-intelligence"
-                                    target="_blank"
-                                >
-                                    Code intelligence documentation
-                                    <ChevronRightIcon className="material-icons" />
-                                </a>
-                            </div>
-                        </div>
-                        <button className="btn-close-bottom" onClick={this.closeModal('intelligence')}>
-                            Close <CloseIcon className="material-icons" />
-                        </button>
-                    </div>
-                </div>
-                <div
                     className={`modal-integrations ${this.state.modalIntegrationsOpen ? 'modal-open' : 'modal-close'} ${
                         this.state.modalIntegrationsClosing ? 'modal-closing' : ''
                     }`}
@@ -670,11 +539,7 @@ export class MainPage extends React.Component<Props, State> {
         const windowBody = document.body
         windowBody.classList.add('modal-open')
 
-        if (section === 'intelligence') {
-            this.setState(state => ({ modalIntelligenceOpen: !state.modalIntelligenceOpen }))
-            this.setState(state => ({ animateModalIntelligence: !state.animateModalIntelligence }))
-            this.setState(() => ({ activesection: '99' }))
-        } else if (section === 'integrations') {
+        if (section === 'integrations') {
             this.setState(state => ({ modalIntegrationsOpen: !state.modalIntegrationsOpen }))
             this.setState(state => ({ animateModalIntegrations: !state.animateModalIntegrations }))
             this.setState(() => ({ activesection: '99' }))
@@ -685,19 +550,7 @@ export class MainPage extends React.Component<Props, State> {
         const windowBody = document.body
         windowBody.classList.remove('modal-open')
 
-        if (modalName === 'intelligence') {
-            this.setState(state => ({
-                modalIntelligenceClosing: !state.modalIntelligenceClosing,
-                animateModalIntelligence: false,
-            }))
-            // RESET DID CLOSE
-            setTimeout(() => {
-                this.setState(state => ({
-                    modalIntelligenceOpen: !state.modalIntelligenceOpen,
-                    modalIntelligenceClosing: !state.modalIntelligenceClosing,
-                }))
-            }, 400)
-        } else if (modalName === 'integrations') {
+        if (modalName === 'integrations') {
             this.setState(state => ({
                 modalIntegrationsClosing: !state.modalIntegrationsClosing,
                 animateModalIntegrations: false,
