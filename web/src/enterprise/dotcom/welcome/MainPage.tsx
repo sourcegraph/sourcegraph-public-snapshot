@@ -3,19 +3,14 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { Form } from '../../../components/Form'
+import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
 import { HeroPage } from '../../../components/HeroPage'
-import { PageTitle } from '../../../components/PageTitle'
-import { parseSearchURLQuery } from '../../../search'
-import { queryIndexOfScope, submitSearch } from '../../../search/helpers'
-import { SearchButton } from '../../../search/input/SearchButton'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { limitString } from '../../../util'
 import { CodeIntellifyBlob } from './CodeIntellifyBlob'
-import { QueryInputForModal } from './QueryInputForModal'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
@@ -24,8 +19,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 }
 
 interface State {
-    /** The query value entered by the user in the query input */
-    userQuery: string
     // modalXXopen sets a state that the modal is open before animations or closed after animation
     // modalXXclosing sets a state that starts the closing process
     modalSearchOpen: boolean
@@ -212,42 +205,24 @@ const defaultTooltipModalPosition = { line: 248, character: 11 }
  * The main page
  */
 export class MainPage extends React.Component<Props, State> {
-    private static HIDE_REPOGROUP_SAMPLE_STORAGE_KEY = 'MainPage/hideRepogroupSample'
+    public state: State = {
+        modalSearchOpen: false,
+        modalSearchClosing: false,
+        modalIntelligenceOpen: false,
+        modalIntelligenceClosing: false,
+        modalIntegrationsOpen: false,
+        modalIntegrationsClosing: false,
+        manualClick: false,
+        activesection: 'none',
+        animateModalSearch: false,
+        animateModalIntelligence: false,
+        animateModalIntegrations: false,
+    }
 
     private overlayPortal: HTMLElement | undefined
 
-    constructor(props: Props) {
-        super(props)
-
-        const query = parseSearchURLQuery(props.location.search)
-
-        this.state = {
-            userQuery: query || '',
-            modalSearchOpen: false,
-            modalSearchClosing: false,
-            modalIntelligenceOpen: false,
-            modalIntelligenceClosing: false,
-            modalIntegrationsOpen: false,
-            modalIntegrationsClosing: false,
-            manualClick: false,
-            activesection: 'none',
-            animateModalSearch: false,
-            animateModalIntelligence: false,
-            animateModalIntegrations: false,
-        }
-    }
-
     public componentDidMount(): void {
-        window.context.sourcegraphDotComMode = true // TODO!(sqs)
-
         eventLogger.logViewEvent('Home')
-        if (
-            window.context.sourcegraphDotComMode &&
-            !localStorage.getItem(MainPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY) &&
-            !this.state.userQuery
-        ) {
-            this.setState({ userQuery: 'repogroup:sample' })
-        }
 
         const portal = document.createElement('div')
         document.body.appendChild(portal)
@@ -258,14 +233,15 @@ export class MainPage extends React.Component<Props, State> {
         const windowBody = document.body
         windowBody.classList.remove('modal-open')
     }
+
     public render(): JSX.Element | null {
+        window.context.sourcegraphDotComMode = true // TODO!(sqs)
         if (!window.context.sourcegraphDotComMode) {
             return <HeroPage icon={MapSearchIcon} title="Page not found" />
         }
         return (
             <div className="main-page container-fluid px-0">
                 <style>{inlineStyle}</style>
-                <PageTitle title={this.getPageTitle()} />
                 <section className="hero-section">
                     <div className=" container hero-container">
                         <div className="row">
@@ -621,29 +597,6 @@ export class MainPage extends React.Component<Props, State> {
                                 <h1>Find. Then replace.</h1>
                             </div>
                         </div>
-                        <div
-                            className={`search-row copy-section  ${
-                                this.state.animateModalSearch ? 'search-row-animate' : ''
-                            }`}
-                        >
-                            <Form className="search main-page__container" onSubmit={this.onSubmit}>
-                                <div
-                                    className="main-page__input-container"
-                                    onClick={this.handleQueryChange('0', '')}
-                                    onKeyPress={this.handleQueryChange('0', '')}
-                                >
-                                    <QueryInputForModal
-                                        {...this.props}
-                                        value={this.state.userQuery}
-                                        onChange={this.onUserQueryChange}
-                                        autoFocus={'cursor-at-end'}
-                                        hasGlobalQueryBehavior={true}
-                                    />
-                                    <SearchButton noHelp={true} noLabel={true} />
-                                </div>
-                            </Form>
-                        </div>
-
                         {searchSections.map(({ title, paragraph, buttons }, i) => (
                             <div
                                 key={`search-sections-${i}`}
@@ -656,16 +609,14 @@ export class MainPage extends React.Component<Props, State> {
                                 <div className="col-12">
                                     <h3>{title}</h3>
                                     <p>{paragraph}</p>
-                                    {buttons.map(({ text, query }, j) => (
-                                        <button
-                                            key={`search-buttons-${j}`}
-                                            className={`btn btn-secondary ${
-                                                this.state.activeButton === `${i}-${j}` ? 'active' : ''
-                                            }`}
-                                            onClick={this.handleQueryChange(`${i}-${j}`, query)}
+                                    {buttons.map(({ text, query }, i) => (
+                                        <Link
+                                            key={i}
+                                            className="btn btn-secondary"
+                                            to={`/search?${buildSearchURLQuery(query)}`}
                                         >
                                             {text}
-                                        </button>
+                                        </Link>
                                     ))}
                                 </div>
                             </div>
@@ -858,14 +809,6 @@ export class MainPage extends React.Component<Props, State> {
         )
     }
 
-    private handleQueryChange = (activeButton: string, passedQ: string) => () => {
-        if (passedQ === '') {
-            this.setState({ activeButton, manualClick: true, activesection: '99' })
-        } else {
-            this.setState({ activeButton, userQuery: passedQ, manualClick: true, activesection: '99' })
-        }
-    }
-
     private activateModal = (section: string) => () => {
         const windowBody = document.body
         windowBody.classList.add('modal-open')
@@ -873,65 +816,19 @@ export class MainPage extends React.Component<Props, State> {
         if (section === 'intelligence') {
             this.setState(state => ({ modalIntelligenceOpen: !state.modalIntelligenceOpen }))
             this.setState(state => ({ animateModalIntelligence: !state.animateModalIntelligence }))
-            this.setState(state => ({ activesection: '99' }))
+            this.setState(() => ({ activesection: '99' }))
         } else if (section === 'integrations') {
             this.setState(state => ({ modalIntegrationsOpen: !state.modalIntegrationsOpen }))
             this.setState(state => ({ animateModalIntegrations: !state.animateModalIntegrations }))
-            this.setState(state => ({ activesection: '99' }))
+            this.setState(() => ({ activesection: '99' }))
         } else if (section === 'search') {
             this.setState(state => ({ modalSearchOpen: !state.modalSearchOpen }))
             this.setState(state => ({ animateModalSearch: !state.modalSearchOpen }))
             setTimeout(() => {
                 if (this.state.animateModalSearch) {
-                    this.setState(state => ({ animateModalSearch: false }))
+                    this.setState(() => ({ animateModalSearch: false }))
                 }
             }, 750)
-            setTimeout(() => {
-                if (this.state.manualClick === false) {
-                    this.setState(state => ({
-                        activeButton: '0-1',
-                        activesection: '0',
-                        userQuery: 'repogroup:goteam file:\\.go$',
-                    }))
-                }
-            }, 1450)
-            setTimeout(() => {
-                if (this.state.manualClick === false) {
-                    this.setState(state => ({
-                        activeButton: '1-0',
-                        activesection: '1',
-
-                        userQuery: 'repo:^github\\.com/apple/swift$@master-next type:diff',
-                    }))
-                }
-            }, 7450)
-            setTimeout(() => {
-                if (this.state.manualClick === false) {
-                    this.setState(state => ({
-                        activeButton: '2-3',
-                        activesection: '2',
-                        userQuery: 'repogroup:goteam file:\\.go$',
-                    }))
-                }
-            }, 15550)
-            setTimeout(() => {
-                if (this.state.manualClick === false) {
-                    this.setState(state => ({
-                        activeButton: '3-2',
-                        activesection: '3',
-                        userQuery: 'repogroup:goteam file:\\.go$',
-                    }))
-                }
-            }, 21450)
-            setTimeout(() => {
-                if (this.state.manualClick === false) {
-                    this.setState(state => ({
-                        activeButton: '0-0',
-                        activesection: '99',
-                        userQuery: 'repogroup:goteam file:\\.go$',
-                    }))
-                }
-            }, 28450)
         }
     }
 
@@ -971,30 +868,5 @@ export class MainPage extends React.Component<Props, State> {
                 }))
             }, 400)
         }
-    }
-
-    private onUserQueryChange = (userQuery: string) => {
-        this.setState({ userQuery })
-
-        if (window.context.sourcegraphDotComMode) {
-            if (queryIndexOfScope(userQuery, 'repogroup:sample') !== -1) {
-                localStorage.removeItem(MainPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
-            } else {
-                localStorage.setItem(MainPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY, 'true')
-            }
-        }
-    }
-
-    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        event.preventDefault()
-        submitSearch(this.props.history, this.state.userQuery, 'home')
-    }
-
-    private getPageTitle(): string | undefined {
-        const query = parseSearchURLQuery(this.props.location.search)
-        if (query) {
-            return `${limitString(this.state.userQuery, 25, true)}`
-        }
-        return undefined
     }
 }

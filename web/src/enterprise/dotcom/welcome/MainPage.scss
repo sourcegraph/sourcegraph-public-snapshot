@@ -5,8 +5,6 @@
 // stylelint-disable color-hex-length
 // RGBA is prefered in some CSS properties and hex length should be consistant.
 
-@import './QueryInputForModal';
-
 body.modal-open {
     overflow: hidden !important;
     max-height: 100%;
@@ -440,23 +438,6 @@ body.modal-open {
             padding-bottom: 10rem;
         }
 
-        .search-row {
-            width: 100%;
-            @media screen and (max-width: $media-md) {
-                input {
-                    font-size: 16px;
-                }
-            }
-            top: -5rem;
-            z-index: 9999;
-            padding-top: 1rem;
-            padding-bottom: 0.5rem;
-
-            form {
-                margin-top: 0;
-                padding-top: 0;
-            }
-        }
         .btn {
             margin-right: 2rem;
             transition: all 0.325s ease-in-out;
@@ -618,20 +599,6 @@ body.modal-open {
                     transform: translateY(1.25rem);
                 }
             }
-        }
-        .search-row-animate {
-            animation: display 350ms ease-in 400ms forwards;
-            @keyframes display {
-                from {
-                    opacity: 0;
-                    transform: translateY(1.25rem);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-            opacity: 1;
         }
         @for $i from 1 through 8 {
             .modal-copy-row:nth-child(#{$i}) {
