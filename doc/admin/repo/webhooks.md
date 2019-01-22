@@ -11,7 +11,7 @@ To address this, there is a repository update webhook that lets an external serv
 Here's an example using curl.
 
 ```bash
-curl -XPOST -H 'Authorization: token $ACCESS_TOKEN' $SOURCEGRAPH_ORIGIN/.api/repos/$REPO_URI/-/refresh
+curl -XPOST -H 'Authorization: token $ACCESS_TOKEN' $SOURCEGRAPH_ORIGIN/.api/repos/$REPO_NAME/-/refresh
 ```
 
 ## Disabling built-in repo updating
