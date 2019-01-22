@@ -19,10 +19,10 @@ import {
     toArray,
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import { eventLogger } from '../../tracking/eventLogger'
-import { scrollIntoView } from '../../util'
-import { fetchSuggestions } from '../backend'
-import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { scrollIntoView } from '../../../util'
+import { fetchSuggestions } from '../../../search/backend'
+import { createSuggestion, Suggestion, SuggestionItem } from '../../../search/input/Suggestion'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as

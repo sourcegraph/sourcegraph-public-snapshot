@@ -3,6 +3,7 @@
 @import './SourcegraphWebApp.scss'; // Need .scss extension because of https://github.com/webpack-contrib/sass-loader/issues/556
 
 // Enterprise styles
+@import './enterprise/dotcom/welcome/MainPage';
 @import './enterprise/extensions/registry/RegistryArea';
 @import './enterprise/extensions/registry/RegistryNewExtensionPage';
 @import './enterprise/extensions/extension/RegistryExtensionManagePage';

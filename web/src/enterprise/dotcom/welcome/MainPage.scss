@@ -5,11 +5,7 @@
 // stylelint-disable color-hex-length
 // RGBA is prefered in some CSS properties and hex length should be consistant.
 
-@import '../../nav/GlobalNavbar';
-@import './SearchFilterChips';
-@import './QueryInput';
 @import './QueryInputForModal';
-@import '../saved-queries/SavedQueries';
 
 body.modal-open {
     overflow: hidden !important;

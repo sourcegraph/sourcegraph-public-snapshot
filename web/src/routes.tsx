@@ -3,7 +3,7 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
 const MainPage = React.lazy(async () => ({
-    default: (await import('./search/input/MainPage')).MainPage,
+    default: (await import('./enterprise/dotcom/welcome/MainPage')).MainPage,
 }))
 const SearchPage = React.lazy(async () => ({
     default: (await import('./search/input/SearchPage')).SearchPage,
