@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -47,6 +49,12 @@ var (
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
+
+func init() {
+	// If CACHE_DIR is specified, use that
+	cacheDir := env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
+	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "frontend-archive-cache")
+}
 
 func configureExternalURL() (*url.URL, error) {
 	addr := nginxAddr
