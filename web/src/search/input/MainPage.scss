@@ -16,13 +16,6 @@ body.modal-open {
     max-height: 100%;
 }
 .main-page {
-    // Colors to match about.sourcegraph.com
-    $light-2: #7a8fb8;
-    $light-6: #afbcd4;
-    $light-11: #f2f4f8;
-    $dark-1: #566e9f;
-    $dark-4: #405377;
-    $dark-11: #0e121b;
     // Viewport breakpoints to match about.sourcegraph.com
     $media-sm: 576px;
     $media-md: 768px;
@@ -35,15 +28,6 @@ body.modal-open {
         }
         z-index: 1;
 
-        &__bg {
-            background: #08335f;
-            background: linear-gradient(20deg, #08335f 0%, #000000 65%);
-            position: fixed;
-            z-index: -1;
-            top: 0;
-            width: 100%;
-            height: 100%;
-        }
         .hero-container {
             width: 100%;
             padding-right: 0.75rem;
@@ -122,7 +106,7 @@ body.modal-open {
         }
     }
     .company-logos {
-        background-color: #151c28;
+        background-color: red; // TODO!(sqs)
         @media screen and (max-width: 800px) and (max-height: 420px) {
             padding-top: 2rem;
             padding-bottom: 3rem;
@@ -134,7 +118,6 @@ body.modal-open {
             }
         }
         z-index: 2;
-        box-shadow: rgba(0, 0, 0, 0.35) 0 4rem 8rem 12rem;
         padding-top: 1rem;
         padding-bottom: 1rem;
         width: 100%;
@@ -298,21 +281,14 @@ body.modal-open {
             padding-bottom: 8rem;
         }
         z-index: 2;
-        box-shadow: rgba(0, 0, 0, 0.35) 0 4rem 8rem 12rem;
-        // stylelint-disable-next-line no-duplicate-selectors
-        &:nth-of-type(2) {
-            box-shadow: none;
-        }
         padding-top: 2rem;
         padding-bottom: 4rem;
-        background-color: #000000;
         width: 100%;
     }
     .up-next-section {
         h1 {
             font-size: 54px;
             padding-top: 0;
-            color: #1e232e;
             @media screen and (max-width: $media-md) {
                 line-height: normal;
             }
@@ -321,12 +297,10 @@ body.modal-open {
             font-size: 22px;
             font-weight: 400;
             margin-bottom: 0;
-            color: #000000;
         }
         p {
             font-size: 16px;
             padding-right: 2rem;
-            color: #000000;
         }
         .btn {
             margin-right: 1rem;
@@ -344,7 +318,6 @@ body.modal-open {
         z-index: 3;
         padding-top: 2rem;
         padding-bottom: 4rem;
-        background: #e6ebf3;
         width: 100%;
         .row {
             padding-top: 12rem;
@@ -352,15 +325,6 @@ body.modal-open {
         }
     }
     .blog-callout {
-        h1,
-        h2,
-        p {
-            color: #fafcff;
-        }
-        p a {
-            color: #fafcfe;
-            text-decoration: underline;
-        }
         .row {
             padding-top: 1.5rem;
             padding-bottom: 0.5rem;
@@ -398,8 +362,6 @@ body.modal-open {
             margin-right: 1rem;
             border-radius: 50%;
             border: none;
-            background-color: #222222;
-            color: #fafafa;
             position: absolute;
             right: 0;
             cursor: pointer;
@@ -410,8 +372,6 @@ body.modal-open {
             height: 2.5rem;
             border-radius: 1.5rem;
             border: none;
-            background-color: #333333;
-            color: #fafafa;
             position: absolute;
             right: calc(50% - 53px);
             bottom: 3rem;
@@ -475,7 +435,6 @@ body.modal-open {
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: #000000;
         overflow-y: scroll !important;
         -webkit-overflow-scrolling: touch;
 
@@ -496,7 +455,6 @@ body.modal-open {
             z-index: 9999;
             padding-top: 1rem;
             padding-bottom: 0.5rem;
-            background-color: #000000;
 
             form {
                 margin-top: 0;
@@ -507,31 +465,6 @@ body.modal-open {
             margin-right: 2rem;
             transition: all 0.325s ease-in-out;
             margin-bottom: 1rem;
-        }
-        .search-modal-container {
-            .modal-copy-row {
-                h1,
-                h2,
-                h3,
-                h4,
-                h5,
-                p {
-                    transition: all 350ms ease;
-                    color: #666666 !important;
-                }
-            }
-            .activesec {
-                h1,
-                h2,
-                h3,
-                h4,
-                h5,
-                p {
-                    transition: all 350ms ease;
-
-                    color: #ffffff !important;
-                }
-            }
         }
         .modal-copy-row {
             padding-bottom: 4rem;
@@ -569,10 +502,6 @@ body.modal-open {
             background-color: var(--input-bg);
             border-color: #1c7ed6;
             outline: 0;
-            box-shadow: 0 0 0.125rem 0.125rem rgba(28, 126, 214, 0.25);
-        }
-        .active {
-            box-shadow: rgba(69, 127, 183, 0.7) 0 0 0.16rem 0.125rem;
         }
 
         .intelligence-row {
@@ -591,9 +520,6 @@ body.modal-open {
             margin-top: 4rem;
             .action-col {
                 padding-bottom: 2rem;
-                a {
-                    color: #1c7ed6;
-                }
                 p {
                     margin-bottom: 0.5rem;
                 }
@@ -747,10 +673,8 @@ body.modal-open {
     }
     .code-intellify-container,
     .code-intellify-container-modal {
-        background-color: #10111a;
         .code-header {
             width: 100%;
-            background-color: #232532;
             border-top-left-radius: 0.5rem;
             border-top-right-radius: 0.5rem;
             padding-left: 0.5rem;
@@ -765,9 +689,6 @@ body.modal-open {
             &__link {
                 float: right;
                 padding-top: 0.25rem;
-                a {
-                    color: #329af0;
-                }
             }
         }
     }
@@ -779,8 +700,6 @@ body.modal-open {
         //
 
         z-index: 4;
-        background: #151c28;
-        color: #7a8fb8;
         padding: 4rem 0 1rem 0;
         overflow: hidden !important;
 
@@ -792,9 +711,6 @@ body.modal-open {
             }
         }
         .logo__section {
-            a {
-                color: $light-6;
-            }
             .footer__logo {
                 padding: 0 0 1.25rem 0;
                 margin: 0 0 0 -0.5rem;
@@ -836,11 +752,7 @@ body.modal-open {
                 }
             }
             @media screen and (max-width: $media-md) {
-                &:last-of-type {
-                    border-bottom: solid 1px $light-2;
-                }
                 padding-top: 0.5rem;
-                border-top: solid 1px $light-2;
                 &.community,
                 &.company,
                 &.features,
@@ -860,7 +772,7 @@ body.modal-open {
                             transform: rotate(-45deg);
                         }
                         svg path {
-                            fill: $light-2;
+                            fill: red; // TODO!(sqs)
                         }
                     }
                     li:last-child {
@@ -904,20 +816,12 @@ body.modal-open {
             .icon {
                 margin-left: 1rem;
                 svg path {
-                    fill: $dark-1;
-                }
-                &:hover {
-                    svg path {
-                        fill: $dark-11;
-                    }
+                    fill: red; // TODO!(sqs)
                 }
             }
             img,
             .btn {
                 margin-bottom: 1rem;
-            }
-            .copyright {
-                color: $dark-1;
             }
         }
         h3 {
@@ -927,7 +831,6 @@ body.modal-open {
             letter-spacing: 0.1rem;
         }
         ul {
-            color: $light-6;
             margin: 0;
             list-style: none;
 
@@ -935,9 +838,7 @@ body.modal-open {
                 margin-bottom: 0.5rem;
 
                 a {
-                    color: $light-6;
                     &:hover {
-                        color: $light-11;
                         text-decoration: underline;
                     }
                 }
@@ -946,7 +847,6 @@ body.modal-open {
         .copyright__container {
             margin: 3rem 0 0 0;
             padding-top: 1rem;
-            border-top: 2px solid $dark-4;
             .copyright {
                 float: left;
                 @media screen and (max-width: $media-md) {
@@ -982,13 +882,5 @@ body.modal-open {
 .small-hidden {
     @media screen and (max-width: $media-lg) {
         display: none !important;
-    }
-}
-
-.theme-light {
-    .main-page {
-        &__sign-in {
-            color: $color-light-text-4;
-        }
     }
 }

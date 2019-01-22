@@ -21,9 +21,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
-    isLightTheme: boolean
-    onThemeChange: () => void
-    onMainPage: (mainPage: boolean) => void
 }
 
 interface State {
@@ -255,15 +252,9 @@ export class MainPage extends React.Component<Props, State> {
         const portal = document.createElement('div')
         document.body.appendChild(portal)
         this.overlayPortal = portal
-
-        // communicate onMainPage to SourcegraphWebApp for dark theme look
-        if (window.context.sourcegraphDotComMode) {
-            this.props.onMainPage(true)
-        }
     }
 
     public componentWillUnmount(): void {
-        this.props.onMainPage(false)
         const windowBody = document.body
         windowBody.classList.remove('modal-open')
     }
@@ -276,7 +267,6 @@ export class MainPage extends React.Component<Props, State> {
                 <style>{inlineStyle}</style>
                 <PageTitle title={this.getPageTitle()} />
                 <section className="hero-section">
-                    <div className="hero-section__bg" />
                     <div className=" container hero-container">
                         <div className="row">
                             <div className="col-lg-6 col-md-12 col-sm-12">

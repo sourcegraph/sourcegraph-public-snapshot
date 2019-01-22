@@ -11,7 +11,6 @@ interface Props {
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
     onThemeChange: () => void
-    isMainPage?: boolean
     showAbout: boolean
     showDiscussions: boolean
 }

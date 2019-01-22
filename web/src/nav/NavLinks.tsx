@@ -21,7 +21,6 @@ interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsCo
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
-    isMainPage?: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
