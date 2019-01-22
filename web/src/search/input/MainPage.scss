@@ -15,36 +15,6 @@ body.modal-open {
     overflow: hidden !important;
     max-height: 100%;
 }
-body.main-page {
-    .nav-links {
-        @media screen and (max-width: $media-md) {
-            display: none !important;
-        }
-        @media screen and (max-height: 420px) {
-            display: none !important;
-        }
-    }
-    .query-input2__suggestions,
-    .query-input2-for-modal__suggestions {
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        ul {
-            li {
-                overflow: hidden !important;
-            }
-        }
-    }
-    .query-input2-for-modal__suggestions {
-        .query-input2__loading-notifier {
-            top: 1rem;
-        }
-    }
-    .hover-overlay__content.hover-overlay__row {
-        p {
-            font-size: 14px !important;
-        }
-    }
-}
 .main-page {
     // Colors to match about.sourcegraph.com
     $light-2: #7a8fb8;
@@ -57,52 +27,9 @@ body.main-page {
     $media-sm: 576px;
     $media-md: 768px;
     $media-lg: 992px;
-    width: 100%;
-    display: block;
 
-    &__logo {
-        flex: 0 0 auto;
-        display: flex;
-        align-items: center;
-        width: 20rem;
-        margin-top: 6rem;
-        max-width: 90%;
-    }
-
-    &__container {
-        width: 100%;
-        margin-top: 4rem;
-        position: relative;
-    }
-
-    &__input-container {
-        width: 100%;
-        display: flex;
-    }
-
-    &__input-sub-container {
-        width: 100%;
-        display: block;
-        margin-top: 0.5rem;
-        margin-bottom: 2rem;
-    }
-
-    &__query-container {
-        flex: 0 0 auto;
-        width: 49rem;
-        max-width: 90%;
-        position: relative;
-    }
-    @media screen and (max-width: 500px) {
-        .btn-primary,
-        .btn-secondary {
-            width: 100%;
-        }
-    }
     .hero-section {
         width: 100%;
-        position: sticky;
-        position: -webkit-sticky;
         @media screen and (min-height: 650px) and (min-width: 376px) {
             top: 44px;
         }
@@ -196,8 +123,6 @@ body.main-page {
     }
     .company-logos {
         background-color: #151c28;
-        position: sticky;
-        position: -webkit-sticky;
         @media screen and (max-width: 800px) and (max-height: 420px) {
             padding-top: 2rem;
             padding-bottom: 3rem;
@@ -254,8 +179,6 @@ body.main-page {
         }
     }
     .about-section {
-        position: sticky;
-        position: -webkit-sticky;
         @media screen and (max-width: 800px) and (max-height: 420px) {
             padding-top: 4rem;
             padding-bottom: 4rem;
@@ -374,10 +297,6 @@ body.main-page {
             padding-top: 12rem;
             padding-bottom: 8rem;
         }
-        // stylelint-disable-next-line declaration-block-no-duplicate-properties
-        position: sticky;
-        // stylelint-disable-next-line declaration-block-no-duplicate-properties
-        position: -webkit-sticky;
         z-index: 2;
         box-shadow: rgba(0, 0, 0, 0.35) 0 4rem 8rem 12rem;
         // stylelint-disable-next-line no-duplicate-selectors
@@ -422,8 +341,6 @@ body.main-page {
                 padding-bottom: 6rem;
             }
         }
-        position: sticky;
-        position: -webkit-sticky;
         z-index: 3;
         padding-top: 2rem;
         padding-bottom: 4rem;
@@ -575,7 +492,6 @@ body.main-page {
                     font-size: 16px;
                 }
             }
-            position: -webkit-sticky;
             top: -5rem;
             z-index: 9999;
             padding-top: 1rem;
@@ -862,8 +778,6 @@ body.main-page {
         font-size: 16px;
         //
 
-        position: sticky;
-        position: -webkit-sticky;
         z-index: 4;
         background: #151c28;
         color: #7a8fb8;

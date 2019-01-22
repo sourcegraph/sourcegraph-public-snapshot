@@ -47,7 +47,6 @@ interface State {
     animateModalIntegrations: boolean
     // Manual click state is to determine if animation should be stopped
     manualClick?: boolean
-    bgScrollStyle: string
 }
 const heroEyebrow = 'Sourcegraph'
 const heroTitle = 'Search, navigate, and review code. Find answers.'
@@ -195,20 +194,10 @@ const integrationsSections = [
 ]
 
 const inlineStyle = `
-    .layout {
-        display: block !important;
-    }
-    * {
-        overflow: visible !important;
-    }
     .hero-tooltip {
         z-index: 1;
         position: fixed !important;
         transform: translateY(44px);
-    }
-    .hover-overlay__contents {
-        overflow-y: auto !important;
-        max-height: 200px;
     }
     .modal-tooltip {
         z-index: 9999 !important;
@@ -248,21 +237,12 @@ export class MainPage extends React.Component<Props, State> {
             animateModalSearch: false,
             animateModalIntelligence: false,
             animateModalIntegrations: false,
-            bgScrollStyle: `
-            .feature-card {
-                transform: translateY(-0px);
-                opacity: .5;
-            }
-			.global-alerts {
-				position: sticky;
-				position: -webkit-sticky;
-				z-index: 99;
-			}
-        `,
         }
     }
 
     public componentDidMount(): void {
+        window.context.sourcegraphDotComMode = true // TODO!(sqs)
+
         eventLogger.logViewEvent('Home')
         if (
             window.context.sourcegraphDotComMode &&
@@ -280,16 +260,11 @@ export class MainPage extends React.Component<Props, State> {
         if (window.context.sourcegraphDotComMode) {
             this.props.onMainPage(true)
         }
-
-        // Add class to body to prevent global element styles from affecting other pages
-        const windowBody = document.body
-        windowBody.classList.add('main-page')
     }
 
     public componentWillUnmount(): void {
         this.props.onMainPage(false)
         const windowBody = document.body
-        windowBody.classList.remove('main-page')
         windowBody.classList.remove('modal-open')
     }
     public render(): JSX.Element | null {
@@ -297,10 +272,8 @@ export class MainPage extends React.Component<Props, State> {
             return <HeroPage icon={MapSearchIcon} title="Page not found" />
         }
         return (
-            <div className="main-page">
+            <div className="main-page container-fluid px-0">
                 <style>{inlineStyle}</style>
-                <style>{this.state.bgScrollStyle}</style>
-
                 <PageTitle title={this.getPageTitle()} />
                 <section className="hero-section">
                     <div className="hero-section__bg" />
