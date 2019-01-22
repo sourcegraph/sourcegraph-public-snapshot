@@ -86,17 +86,17 @@ export class WelcomeMainPage extends React.Component<Props> {
                                 <div className="col-12">
                                     <h2>Powering developers at</h2>
                                 </div>
-                                <div className="col-3 logo">
-                                    <figure className="logo-image logo1" />
+                                <div className="col-3 welcome-company-logo">
+                                    <figure className="welcome-company-logo--image welcome-company-logo__1" />
                                 </div>
-                                <div className="col-3 logo">
-                                    <figure className="logo-image logo2" />
+                                <div className="col-3 welcome-company-logo">
+                                    <figure className="welcome-company-logo--image welcome-company-logo__2" />
                                 </div>
-                                <div className="col-3 logo">
-                                    <figure className="logo-image logo3" />
+                                <div className="col-3 welcome-company-logo">
+                                    <figure className="welcome-company-logo--image welcome-company-logo__3" />
                                 </div>
-                                <div className="col-3 logo">
-                                    <figure className="logo-image logo4" />
+                                <div className="col-3 welcome-company-logo">
+                                    <figure className="welcome-company-logo--image welcome-company-logo__4" />
                                 </div>
                             </div>
                         </div>
