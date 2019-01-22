@@ -16,6 +16,6 @@ curl -XPOST -H 'Authorization: token $ACCESS_TOKEN' $SOURCEGRAPH_ORIGIN/.api/rep
 
 ## Disabling built-in repo update polling
 
-If you wish to disable the built-in polling functionality of Sourcegraph, you can set [`repoListUpdateInterval`](../site_config/all.md#repolistupdateinterval-integer) to zero.
+If you wish to disable the built-in polling functionality of Sourcegraph, you can set [`repoListUpdateInterval`](../site_config/all.md#repolistupdateinterval-integer) to `-1`.
 
 This may be desirable in cases where you wish to rely solely on the repository update webhook, for example.
