@@ -15,11 +15,7 @@ if [ -f .env ]; then
 fi
 
 export GO111MODULE=on
-goversion_above_111=$(go run ./pkg/version/minversion)
-if [ "$goversion_above_111" = false ]; then
-    echo "Go version 1.11.x or newer must be used to build Sourcegraph; found: $(go version)"
-    exit 1
-fi
+go run ./pkg/version/minversion
 
 export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
 

@@ -1,10 +1,9 @@
-// Ensure that users are running Go 1.11 or newer
-
-// Package minversion prints a boolean stating whether users are running the minimum required Go version.
+// Command minversion prints a boolean stating whether users are running the minimum required Go version.
 package main
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
@@ -12,7 +11,12 @@ import (
 )
 
 func main() {
+	minimumVersion := "1.11.0"
 	rawVersion := runtime.Version()
 	versionNumber := strings.TrimPrefix(rawVersion, "go")
-	fmt.Println(version.Compare("1.11.0", versionNumber, "<="))
+	minimumVersionMet := version.Compare(minimumVersion, versionNumber, "<=")
+	if !minimumVersionMet {
+		fmt.Printf("Go version %s or newer must be used; found: %s", minimumVersion, versionNumber)
+		os.Exit(1) // minimum version not met means non-zero exit code
+	}
 }
