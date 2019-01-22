@@ -2,18 +2,6 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
-const MainPage = React.lazy(async () => ({
-    default: (await import('./enterprise/dotcom/welcome/MainPage')).MainPage,
-}))
-const WelcomeSearchPage = React.lazy(async () => ({
-    default: (await import('./enterprise/dotcom/welcome/WelcomeSearchPage')).WelcomeSearchPage,
-}))
-const WelcomeCodeIntelligencePage = React.lazy(async () => ({
-    default: (await import('./enterprise/dotcom/welcome/WelcomeCodeIntelligencePage')).WelcomeCodeIntelligencePage,
-}))
-const WelcomeIntegrationsPage = React.lazy(async () => ({
-    default: (await import('./enterprise/dotcom/welcome/WelcomeIntegrationsPage')).WelcomeIntegrationsPage,
-}))
 const SearchPage = React.lazy(async () => ({
     default: (await import('./search/input/SearchPage')).SearchPage,
 }))
@@ -87,27 +75,11 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/',
         render: (props: any) =>
-            window.context.sourcegraphDotComMode && !props.user ? <Redirect to="/start" /> : <Redirect to="/search" />,
-        exact: true,
-    },
-    {
-        path: '/start',
-        render: props => <MainPage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/welcome/search',
-        render: props => <WelcomeSearchPage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/welcome/code-intelligence',
-        render: props => <WelcomeCodeIntelligencePage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/welcome/integrations',
-        render: props => <WelcomeIntegrationsPage {...props} />,
+            window.context.sourcegraphDotComMode && !props.user ? (
+                <Redirect to="/welcome" />
+            ) : (
+                <Redirect to="/search" />
+            ),
         exact: true,
     },
     {

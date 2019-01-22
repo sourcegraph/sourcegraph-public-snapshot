@@ -215,9 +215,9 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if envvar.SourcegraphDotComMode() && !actor.FromContext(r.Context()).IsAuthenticated() {
-		// The user is not signed in and tried to access our main site at sourcegraph.com.
-		// Redirect to sourcegraph.com/start so they see general info.
-		http.Redirect(w, r, "/start", http.StatusTemporaryRedirect)
+		// The user is not signed in and tried to access Sourcegraph.com.  Redirect to /welcome so
+		// they see the welcome page.
+		http.Redirect(w, r, "/welcome", http.StatusTemporaryRedirect)
 		return nil
 	}
 	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
@@ -245,23 +245,6 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusUnauthorized)
 	}
 
-	return renderTemplate(w, "app.html", common)
-}
-
-func serveStart(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "Sourcegraph", serveError)
-	if err != nil {
-		return err
-	}
-	if common == nil {
-		return nil // request was handled
-	}
-
-	if !envvar.SourcegraphDotComMode() {
-		// The user is signed in and tried to access sourcegraph.com/start,
-		// this page should be a 404 under that situation.
-		w.WriteHeader(http.StatusNotFound)
-	}
 	return renderTemplate(w, "app.html", common)
 }
 

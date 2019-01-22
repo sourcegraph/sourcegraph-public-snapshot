@@ -37,16 +37,16 @@ const inlineStyle = `
 const defaultTooltipHeroPosition = { line: 244, character: 11 }
 
 /**
- * The main page
+ * The welcome main page, which describes Sourcegraph functionality and other general information.
  */
-export class MainPage extends React.Component<Props> {
+export class WelcomeMainPage extends React.Component<Props> {
     public render(): JSX.Element | null {
         window.context.sourcegraphDotComMode = true // TODO!(sqs)
         if (!window.context.sourcegraphDotComMode) {
             return <HeroPage icon={MapSearchIcon} title="Page not found" />
         }
         return (
-            <div className="main-page container-fluid px-0">
+            <div className="welcome-area container-fluid px-0">
                 <style>{inlineStyle}</style>
                 <section className="hero-section">
                     <div className="container hero-container">

@@ -187,7 +187,7 @@ func initRouter() {
 	router := newRouter()
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeStart).Handler(handler(serveStart))
+	router.Get(routeStart).Handler(staticRedirectHandler("/welcome", http.StatusMovedPermanently))
 	router.Get(routeWelcome).Handler(handler(serveWelcome))
 	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))

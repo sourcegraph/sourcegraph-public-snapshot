@@ -9,7 +9,7 @@ body.modal-open {
     overflow: hidden !important;
     max-height: 100%;
 }
-.main-page {
+.welcome-area {
     // Viewport breakpoints to match about.sourcegraph.com
     $media-sm: 576px;
     $media-md: 768px;
@@ -447,7 +447,7 @@ body.modal-open {
             padding-bottom: 4rem;
         }
 
-        .main-page__container {
+        .welcome-area__container {
             width: 100%;
             max-width: 100%;
             font-size: 20px;
