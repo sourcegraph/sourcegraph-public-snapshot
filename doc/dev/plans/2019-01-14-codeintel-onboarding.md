@@ -20,7 +20,13 @@ This would appear at the top of every page (after the admin adds repos and the "
 
 These would be dismissable by language. This work would provide the foundation for future extension recommendations.
 
-3) **Third** (3.0), we enhance documentation around deployment + enablement. This means providing a "Code intelligence" page for admins in the Sourcegraph docs (i.e., on https://docs.sourcegraph.com) that provides a walkthrough for enabling language support for one or two Sourcegraph-provided languages (e.g. how to start the Go langserver). This comes on top of any documentation that appears on the extension READMEs themselves.
+3) **Third** (3.0), we make each language extension's README follow the same format:
+
+- Table of contents
+- Image showing a hover tooltip
+- Who this README is for (admins)
+- Instructions for running in Docker and Kubernetes
+- Then information specific to the language server (e.g. private dependencies)
 
 This is necessary because of how busy/complicated the extension READMEs have already become. There are so many potential paths on those pages (e.g.: admin setup vs. user extension enablement; sourcegraph.com vs. self-hosted; 3.0 vs. 2.x; single Docker image vs. cluster, etc.). Pulling the admin setup portion out of those READMEs, and leaving them to focus on how end users (i.e., non-admins) enable the extension, would simplify and clarify them. They would, of course, link out to the docs page.
 
