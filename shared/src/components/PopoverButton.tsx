@@ -133,7 +133,12 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     }
 
     public onClickOutside = (e: MouseEvent | TouchEvent) => {
-        if (this.popoverRef && !this.popoverRef.contains(e.target as HTMLElement)) {
+        if (
+            this.popoverRef &&
+            this.rootRef &&
+            !this.popoverRef.contains(e.target as HTMLElement) &&
+            !this.rootRef.contains(e.target as HTMLElement)
+        ) {
             this.hide()
         }
     }
