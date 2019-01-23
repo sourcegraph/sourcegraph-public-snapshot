@@ -6,7 +6,13 @@ On initial startup Sourcegraph will generate an `nginx.conf` which you can modif
 
 ## TLS / HTTPS
 
-If you have a TLS certificate and key to use for Sourcegraph, you can setup nginx to terminate TLS. First copy your TLS certificate and key into the same directory as `nginx.conf`:
+If you don't already have a TLS certificate and key, you can generate them with:
+
+```shell
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ~/.sourcegraph/config/sourcegraph.example.com.key -out ~/.sourcegraph/config/sourcegraph.example.com.crt
+```
+
+If you already have a TLS certificate and key, copy them into the same directory as `nginx.conf`:
 
 ```shell
 cp sourcegraph.example.com.crt ~/.sourcegraph/config/
