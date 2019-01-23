@@ -9,12 +9,10 @@ import (
 	"log"
 	"net/http"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -25,6 +23,11 @@ var mockGetProviderValue *provider
 func getProvider(pcID string) *provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
+	}
+
+	// testcode
+	for _, p := range auth.Providers() {
+		log.Printf("# p.ID: %v", p.ConfigID().ID)
 	}
 
 	p, _ := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: providerType, ID: pcID}).(*provider)
@@ -136,7 +139,8 @@ func providerConfigID(pc *schema.SAMLAuthProvider, multiple bool) string {
 	return base64.RawURLEncoding.EncodeToString(b[:16])
 }
 
-var traceLogEnabled, _ = strconv.ParseBool(env.Get("INSECURE_SAML_LOG_TRACES", "false", "Log all SAML requests and responses. Only use during testing because the log messages will contain sensitive data."))
+// var traceLogEnabled, _ = strconv.ParseBool(env.Get("INSECURE_SAML_LOG_TRACES", "false", "Log all SAML requests and responses. Only use during testing because the log messages will contain sensitive data."))
+var traceLogEnabled = true
 
 func traceLog(description, body string) {
 	if traceLogEnabled {

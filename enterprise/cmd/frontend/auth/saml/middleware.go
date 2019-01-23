@@ -9,11 +9,10 @@ import (
 	"strings"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // All SAML endpoints are under this path prefix.
@@ -73,6 +72,8 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Handle GET endpoints.
 	if r.Method == "GET" {
+		// MARK
+
 		// All of these endpoints expect the provider ID in the URL query.
 		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
 		if handled {
