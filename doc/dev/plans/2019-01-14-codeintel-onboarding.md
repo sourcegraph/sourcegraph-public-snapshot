@@ -60,8 +60,6 @@ TBD, pending team approval of the proposals.
 
 Documentation and site alert can be implemented by the 3.0 launch.
 
-Recommendations (toasts) would be released in 3.1 (early  March).
-
 ## Retrospective
 
 [This section is completed after the project is completely done (i.e. the checklist is complete).]
