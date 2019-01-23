@@ -2,7 +2,7 @@ package gitlab
 
 import "time"
 
-type pcache interface {
+type cache interface {
 	Get(key string) ([]byte, bool)
 	Set(key string, b []byte)
 	Delete(key string)

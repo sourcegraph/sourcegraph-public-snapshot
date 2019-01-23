@@ -24,7 +24,7 @@ type GitLabOAuthAuthzProvider struct {
 	clientProvider *gitlab.ClientProvider
 	clientURL      *url.URL
 	codeHost       *gitlab.CodeHost
-	cache          pcache
+	cache          cache
 	cacheTTL       time.Duration
 }
 
@@ -37,7 +37,7 @@ type GitLabOAuthAuthzProviderOp struct {
 
 	// MockCache, if non-nil, replaces the default Redis-based cache with the supplied cache mock.
 	// Should only be used in tests.
-	MockCache pcache
+	MockCache cache
 }
 
 func NewProvider(op GitLabOAuthAuthzProviderOp) *GitLabOAuthAuthzProvider {

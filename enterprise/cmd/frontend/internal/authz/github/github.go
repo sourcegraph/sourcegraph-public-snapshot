@@ -21,10 +21,10 @@ type Provider struct {
 	client   *github.Client
 	codeHost *github.CodeHost
 	cacheTTL time.Duration
-	cache    pcache
+	cache    cache
 }
 
-func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, mockCache pcache) *Provider {
+func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, mockCache cache) *Provider {
 	apiURL, _ := github.APIRoot(githubURL)
 	client := github.NewClient(apiURL, baseToken, nil)
 
