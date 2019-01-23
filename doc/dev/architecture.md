@@ -36,7 +36,11 @@ Application data is stored in our Postgresql database.
 
 Session data is stored in redis.
 
+#### Scaling
+
 Typically there are multiple replicas running in production to scale with load.
+
+frontend tends to use a large amount of memory. The graphQL API uses a large amount of memory when gathering large result sets, and frontend's monolithic nature means that it holds on to memory in bad ways. (cc @keegancsmith could you expand on this?)
 
 ### github-proxy ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy))
 
@@ -48,7 +52,13 @@ There is only one replica running in production. However, we can have multiple r
 
 Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, should go through repo-updater.
 
-This is a IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service. The service is stateful (maintaining git clones). However, it only contains data mirrored from upstream code hosts.
+#### Scaling
+
+gitserver's memory usage consists of short lived git subprocesses.
+
+This is a IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service. 
+
+The service is stateful (maintaining git clones). However, it only contains data mirrored from upstream code hosts.
 
 ### Sourcegraph extensions
 
