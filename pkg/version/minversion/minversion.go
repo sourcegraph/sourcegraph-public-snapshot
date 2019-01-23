@@ -1,4 +1,4 @@
-// Command minversion prints a boolean stating whether users are running the minimum required Go version.
+// Command minversion ensures users are running the minimum required Go version. If not, it will exit with a non-zero exit code.
 package main
 
 import (
@@ -16,7 +16,7 @@ func main() {
 	versionNumber := strings.TrimPrefix(rawVersion, "go")
 	minimumVersionMet := version.Compare(minimumVersion, versionNumber, "<=")
 	if !minimumVersionMet {
-		fmt.Printf("Go version %s or newer must be used; found: %s", minimumVersion, versionNumber)
+		fmt.Printf("Go version %s or newer must be used; found: %s\n", minimumVersion, versionNumber)
 		os.Exit(1) // minimum version not met means non-zero exit code
 	}
 }
