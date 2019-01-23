@@ -265,7 +265,7 @@ const SiteSchemaJSON = `{
           "pattern": "^[^<>]+$"
         },
         "certificate": {
-          "description": "TLS certificate of a GitHub Enterprise instance.",
+          "description": "TLS certificate of a GitHub Enterprise instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
@@ -339,7 +339,7 @@ const SiteSchemaJSON = `{
           "default": "http"
         },
         "certificate": {
-          "description": "TLS certificate of a GitLab instance.",
+          "description": "TLS certificate of a GitLab instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
@@ -442,7 +442,7 @@ const SiteSchemaJSON = `{
           "default": "http"
         },
         "certificate": {
-          "description": "TLS certificate of a Bitbucket Server instance.",
+          "description": "TLS certificate of a Bitbucket Server instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
