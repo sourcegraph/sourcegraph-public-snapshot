@@ -16,7 +16,7 @@ Today, there basically is no way to discover code intelligence unless the admin 
 
 This would appear at the top of every page (after the admin adds repos and the "Add repositories" alert goes away) and it would say something like "Enable Sourcegraph extensions to get code intelligence for your team"
 
-2) **Second** (3.1), we add a new type of toast (using https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/web/src/marketing/Toast.tsx) for all users that appears programmatically when a user visits a new file extension (.go, .ts, etc.) that links them to the relevant extension (or basic codeintel) if they don't have it enabled. If the user is an admin, the toast would be enhanced with a link to docs on language server deployment (though no obvious page exists for this in the admin docs today, see below). 
+2) ~~**Second** (3.1), we add a new type of toast (using https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/web/src/marketing/Toast.tsx) for all users that appears programmatically when a user visits a new file extension (.go, .ts, etc.) that links them to the relevant extension (or basic codeintel) if they don't have it enabled. If the user is an admin, the toast would be enhanced with a link to docs on language server deployment (though no obvious page exists for this in the admin docs today, see below).~~ Omitted from this proposal, but left here to preserve the numbering and correspondence with the discussion.
 
 These would be dismissable by language. This work would provide the foundation for future extension recommendations.
 
