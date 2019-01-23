@@ -1,10 +1,8 @@
 import * as H from 'history'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { HeroPage } from '../../../components/HeroPage'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     isLightTheme: boolean
@@ -17,10 +15,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
  */
 export class WelcomeMainPage extends React.Component<Props> {
     public render(): JSX.Element | null {
-        window.context.sourcegraphDotComMode = true // TODO!(sqs)
-        if (!window.context.sourcegraphDotComMode) {
-            return <HeroPage icon={MapSearchIcon} title="Page not found" />
-        }
         return (
             <div className="welcome-area">
                 <section className="hero-section">

@@ -30,8 +30,25 @@ export interface WelcomeAreaRouteContext extends WelcomeAreaProps {}
  */
 export class WelcomeArea extends React.PureComponent<WelcomeAreaProps> {
     public render(): JSX.Element | null {
-        const { children, ...context } = this.props
+        if (!window.context.sourcegraphDotComMode) {
+            return (
+                <HeroPage
+                    icon={MapSearchIcon}
+                    title="No welcome page"
+                    detail={
+                        <p>
+                            Visit{' '}
+                            <a href="https://sourcegraph.com/welcome" target="_blank">
+                                sourcegraph.com/welcome
+                            </a>{' '}
+                            instead.
+                        </p>
+                    }
+                />
+            )
+        }
 
+        const { children, ...context } = this.props
         return (
             <div className="welcome-area container">
                 {this.props.location.pathname !== '/welcome' && (
