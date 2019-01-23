@@ -1,6 +1,3 @@
-//docker:install git@edge openssh-client
-//docker:user sourcegraph /data/repos
-
 // gitserver is the gitserver server.
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
