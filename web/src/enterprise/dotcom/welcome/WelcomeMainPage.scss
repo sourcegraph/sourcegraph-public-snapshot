@@ -1,0 +1,20 @@
+.welcome-main-page {
+    &__logo-mark {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    &__header {
+        font-size: 1.5rem;
+    }
+
+    &__customer-logo {
+        width: auto;
+        &-1 {
+            height: 1.5rem;
+        }
+        &-2 {
+            height: 2rem;
+            margin-top: 5px; // different text baseline
+        }
+    }
+}

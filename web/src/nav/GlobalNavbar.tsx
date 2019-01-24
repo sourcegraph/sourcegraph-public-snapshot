@@ -70,7 +70,20 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const logo = <img className="global-navbar__logo" src="/.assets/img/sourcegraph-mark.svg" />
+        let logoSrc: string
+        // TODO!(sqs): hack for finding if welcome page is active
+        const showFullLogo = this.props.location.pathname.startsWith('/welcome')
+        if (showFullLogo) {
+            logoSrc = this.props.isLightTheme
+                ? '/.assets/img/sourcegraph-light-head-logo.svg'
+                : '/.assets/img/sourcegraph-head-logo.svg'
+        } else {
+            logoSrc = '/.assets/img/sourcegraph-mark.svg'
+        }
+
+        const logo = (
+            <img className={`global-navbar__logo ${showFullLogo ? 'global-navbar__logo--full' : ''}`} src={logoSrc} />
+        )
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg'}`}>
                 {this.props.lowProfile ? (

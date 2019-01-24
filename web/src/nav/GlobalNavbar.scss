@@ -22,19 +22,25 @@
     }
 
     &__logo {
-        width: 1.5rem;
         height: 1.5rem;
 
-        &:hover {
-            animation: spin 0.5s ease-in-out 1;
+        &--full {
+            width: 150px;
+            margin-right: 0.25rem; // full logo image has slightly more spacing on left side
+        }
+        &:not(&--full) {
+            width: 1.5rem;
+            &:hover {
+                animation: spin 0.5s ease-in-out 1;
 
-            @keyframes spin {
-                50% {
-                    transform: rotate(180deg) scale(1.2);
-                }
+                @keyframes spin {
+                    50% {
+                        transform: rotate(180deg) scale(1.2);
+                    }
 
-                100% {
-                    transform: rotate(180deg) scale(1);
+                    100% {
+                        transform: rotate(180deg) scale(1);
+                    }
                 }
             }
         }
