@@ -3,10 +3,12 @@ package gitlaboauth
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -37,27 +39,47 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	var data extsvc.ExternalAccountData
 	gitlab.SetExternalAccountData(&data, gUser, token)
 
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
-		UserProps: db.NewUser{
-			Username:        login,
-			Email:           gUser.Email,
-			EmailIsVerified: gUser.Email != "",
-			DisplayName:     gUser.Name,
-			AvatarURL:       gUser.AvatarURL,
-		},
-		ExternalAccount: extsvc.ExternalAccountSpec{
-			ServiceType: s.ServiceType(),
-			ServiceID:   s.ServiceID(),
-			ClientID:    s.clientID,
-			AccountID:   strconv.FormatInt(int64(gUser.ID), 10),
-		},
-		ExternalAccountData: data,
-		CreateIfNotExist:    true,
-	})
-	if err != nil {
-		return nil, safeErrMsg, err
+	verifiedEmails, err := s.getVerifiedEmails(ctx, token)
+	if err != nil || len(verifiedEmails) == 0 {
+		if err == nil {
+			err = errors.New("no verified email")
+		}
+		return nil, "Could not get verified email for GitLab user. Check that your GitLab account has a verified email that matches one of your Sourcegraph verified emails.", err
 	}
-	return actor.FromUser(userID), "", nil
+
+	var (
+		firstSafeErrMsg string
+		firstErr        error
+	)
+	// for i, verifiedEmail := range verifiedEmails {
+	for i, verifiedEmail := range []string{gUser.Email} {
+		log.Printf("# considering verified email: %q", verifiedEmail)
+		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
+			UserProps: db.NewUser{
+				Username:        login,
+				Email:           verifiedEmail,
+				EmailIsVerified: true,
+				DisplayName:     gUser.Name,
+				AvatarURL:       gUser.AvatarURL,
+			},
+			ExternalAccount: extsvc.ExternalAccountSpec{
+				ServiceType: s.ServiceType(),
+				ServiceID:   s.ServiceID(),
+				ClientID:    s.clientID,
+				AccountID:   strconv.FormatInt(int64(gUser.ID), 10),
+			},
+			ExternalAccountData: data,
+			CreateIfNotExist:    true,
+		})
+		if err == nil {
+			return actor.FromUser(userID), "", nil
+		}
+		if i == 0 {
+			firstSafeErrMsg, firstErr = safeErrMsg, err
+		}
+	}
+	// On failure, return the first error
+	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
@@ -88,4 +110,17 @@ func SignOutURL(gitlabURL string) (string, error) {
 	}
 	ghURL.Path = path.Join(ghURL.Path, "users/sign_out")
 	return ghURL.String(), nil
+}
+
+func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oauth2.Token) (verifiedEmails []string, err error) {
+	c := gitlab.NewClientProvider(s.BaseURL(), nil).GetOAuthClient(token.AccessToken)
+	emails, err := c.ListEmails(ctx)
+	if err != nil {
+		return nil, err
+	}
+	emailStrs := make([]string, 0, len(emails))
+	for _, e := range emails {
+		emailStrs = append(emailStrs, e.Email)
+	}
+	return emailStrs, nil
 }

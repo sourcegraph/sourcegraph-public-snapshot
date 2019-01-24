@@ -12,3 +12,6 @@ var MockListUsers func(c *Client, ctx context.Context, urlStr string) (users []*
 
 // MockGetUser, if non-nil, will be called instead of Client.GetUser
 var MockGetUser func(c *Client, ctx context.Context, id string) (*User, error)
+
+// MockListEmails, if non-nil, will be called instead of Client.ListEmails
+var MockListEmails func(ctx context.Context) ([]*UserEmail, error)

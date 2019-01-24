@@ -68,3 +68,25 @@ func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
 	}
 	return &usr, nil
 }
+
+type UserEmail struct {
+	ID    int64  `json:"id"`
+	Email string `json:"email"`
+}
+
+// ListEmails lists the currently authenticated user's emails (the client must be authenticated).
+func (c *Client) ListEmails(ctx context.Context) ([]*UserEmail, error) {
+	if MockListEmails != nil {
+		return MockListEmails(ctx)
+	}
+
+	var emails []*UserEmail
+	req, err := http.NewRequest("GET", "user/emails", nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := c.do(ctx, req, &emails); err != nil {
+		return nil, err
+	}
+	return emails, nil
+}
