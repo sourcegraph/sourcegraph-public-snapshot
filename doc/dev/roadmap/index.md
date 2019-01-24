@@ -39,6 +39,7 @@ Release date: T.B.D.
 - [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
 - [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
+- [Safe update process](TODO(tomas))
 - Other items T.B.D.
 
 <small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
