@@ -36,7 +36,11 @@ Application data is stored in our Postgresql database.
 
 Session data is stored in redis.
 
+#### Scaling
+
 Typically there are multiple replicas running in production to scale with load.
+
+frontend tends to use a large amount of memory. For example our search architecture does a scatter and gather amongst the search backends in the frontend. The gathering of results can result in a lot of memory usage, even though the final result set returned to the user is much smaller. There are a few more examples of these since our frontend has a monolithic architecture. Additionally we haven't optimized for memory usage since it hasn't caused us issues in production since we can just scale it out.
 
 ### github-proxy ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy))
 
@@ -48,7 +52,13 @@ There is only one replica running in production. However, we can have multiple r
 
 Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, should go through repo-updater.
 
-This is a IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service. The service is stateful (maintaining git clones). However, it only contains data mirrored from upstream code hosts.
+#### Scaling
+
+gitserver's memory usage consists of short lived git subprocesses.
+
+This is an IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service. 
+
+The service is stateful (maintaining git clones). However, it only contains data mirrored from upstream code hosts.
 
 ### Sourcegraph extensions
 
@@ -72,9 +82,9 @@ This service should be scaled up the more on-demand searches that need to be don
 
 Provides search results for repositories that have been indexed.
 
-This service can only have one replica. Typically large customers provision a large node for it since it is memory and CPU heavy.
+This service can only have one replica. Typically large customers provision a large node for it since it is memory and CPU heavy. Note: We could shard across multiple replicas to scale out. However, we haven't had a customer were this is necessary yet so haven't written the code for it yet.
 
-We forked [zoekt](https://github.com/google/zoekt).
+We forked [zoekt](https://github.com/google/zoekt) to add some Sourcegraph specific integrations. See our [fork's README](https://github.com/sourcegraph/zoekt/blob/master/README.md) for details.
 
 ### symbols ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/symbols))
 
