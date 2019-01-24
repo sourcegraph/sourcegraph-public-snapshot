@@ -204,6 +204,10 @@ const SiteSchemaJSON = `{
     "PhabricatorConnection": {
       "type": "object",
       "additionalProperties": false,
+      "anyOf": [
+        {"required": ["token"]},
+        {"required": ["repos"]}
+      ],
       "properties": {
         "url": {
           "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
@@ -217,6 +221,7 @@ const SiteSchemaJSON = `{
         "repos": {
           "description": "The list of repositories available on Phabricator.",
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -384,6 +389,21 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "required": ["url"],
+      "oneOf": [
+        {
+          "required": ["token"],
+          "properties": {
+            "username": {"type": "null"},
+            "password": {"type": "null"}
+          }
+        },
+        {
+          "required": ["username", "password"],
+          "properties": {
+            "token": {"type": "null"}
+          }
+        }
+      ],
       "properties": {
         "url": {
           "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com.",
@@ -463,6 +483,7 @@ const SiteSchemaJSON = `{
             "eu-central-1",
             "eu-west-1",
             "eu-west-2",
+            "eu-west-3",
             "sa-east-1",
             "us-east-1",
             "us-east-2",
@@ -500,18 +521,27 @@ const SiteSchemaJSON = `{
         "prefix": {
           "description":
             "Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., \"gitolite.example.com/\".\n\nIt is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
           "type": "string",
           "examples": ["gitolite.example.com/"]
         },
         "host": {
           "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com).",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
           "type": "string",
           "examples": ["git@gitolite.example.com"]
         },
         "blacklist": {
           "description":
             "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
-          "type": "string"
+          "type": "string",
+          "format": "regex"
         },
         "phabricatorMetadataCommand": {
           "description":
@@ -526,7 +556,8 @@ const SiteSchemaJSON = `{
           "properties": {
             "url": {
               "description": "URL of the Phabricator instance that integrates with this Gitolite instance. This should be set ",
-              "type": "string"
+              "type": "string",
+              "format": "uri"
             },
             "callsignCommand": {
               "description": " Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
@@ -540,13 +571,16 @@ const SiteSchemaJSON = `{
       "description": "Connection to Git repositories for which an external service integration isn't yet available.",
       "type": "object",
       "required": ["repos"],
-      "additionalProperties": false,
       "properties": {
         "url": {
           "title": "Git clone base URL",
           "type": "string",
           "format": "uri",
           "pattern": "^(git|ssh|https?)://",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
           "examples": [
             "https://github.com/?access_token=secret",
             "ssh://user@host.xz:2333/",
@@ -556,8 +590,10 @@ const SiteSchemaJSON = `{
         "repos": {
           "title": "List of repository clone URLs to be discovered.",
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "string",
+            "minLength": 1,
             "format": "uri-reference",
             "examples": [
               "path/to/my/repo",
