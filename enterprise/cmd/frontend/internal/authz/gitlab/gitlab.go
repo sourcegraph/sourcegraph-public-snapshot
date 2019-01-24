@@ -1,3 +1,5 @@
+// Package gitlab contains an authorization provider for GitLab that uses GitLab OAuth
+// authenetication.
 package gitlab
 
 import (
