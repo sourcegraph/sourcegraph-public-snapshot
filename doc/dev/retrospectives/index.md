@@ -1,67 +1,58 @@
 # Retrospectives
 
-Retrospectives are an important part of our product-engineering process. They help us continuously improve Sourcegraph as a company, team, and product.
+We value continuous learning and improvement.
 
-Significant projects and releases should all have retrospectives. Anyone involved in a project or release can lead a retrospective.
+Retrospectives are a chance for teams to reflect on past experiences, celebrate what went well, and identify areas of improvement for the future.
 
-## Current and past retrospectives
+Significant projects and releases are great learning opportunities and should always have retrospectives. Anyone involved in a project or release can lead a retrospective.
+
+## Completed retrospectives
 
 <!--
 Add links to completed retrospective docs here. These are publicly visible, so make sure they don't include anything sensitive.
-
-Format for active retrospectives:
-- $PROJECT retrospective: [survey]($SURVEY_LINK) ($LEADER)
-
-Format for past retrospectives:
-- [$PROJECT retrospective]($DOC_LINK) ($LEADER)
 -->
 
-- Sourcegraph 3.0 beta retrospective: [survey](https://docs.google.com/forms/d/e/1FAIpQLSceowJsPCfow-7cwSiQk4xpQkwu_az6sQ2xIWbSLGEbnLePMQ/viewform?usp=sf_link) (@sqs)
+- [Sourcegraph 3.0 beta retrospective](./3.0-beta.md)
 
 ## How to lead a retrospective
 
 If you want to lead a retrospective for a project or release, follow these steps.
 
-### Set up the survey and meeting
+### Collect feedback
 
-Start at least 3 days before you intend to hold the retrospective meeting.
+Identify everyone who should participate in the retrospective: this is the retrospective group. This should include everyone who participated in the project or release.
 
-To begin, create the retrospective survey and schedule the meeting:
+Collect written answers to the following questions from everyone in the retrospective group.
 
-1. Tell the other people involved that you will be leading the retrospective (to avoid having multiple lead duplicate retrospectives).
-1. Create a survey for the retrospective:
-   1. Open the [Retrospective TEMPLATE](https://docs.google.com/forms/d/1gt9UMYmYKmsAH--UE2SWh-aixwmQXLvGfJOHRt6oZ9w/edit).
-   1. Click **⋮ > Make a copy**
-   1. Name and title it "$PROJECT retrospective".
-   1. Update the intro text as needed.
-   1. Click **SEND** and then click the link icon to copy the survey link (hereafter $SURVEY_LINK).
-1. Create a calendar event for the retrospective meeting.
+> What should we start doing?
+>
+> What should we stop doing?
+>
+> What should we continue doing?
 
-    Be sure to choose a time (hereafter $MEETING_TIME) at least 48 hours from now so people have time to fill out the survey and you have time to compile the results. Also, be sure to choose a time that is likely to work for everyone, which usually means in the European afternoon or Caliornia morning.
+The medium through which you collect answers to these questions is not important (e.g. Google Docs, Google Forms, Slack messages).
 
-    > Event title: $PROJECT retrospective
-    >
-    > Event description: To participate, please submit the retrospective survey at $SURVEY_LINK. Everyone who submits the survey will get an invite to this calendar event.
-1. Announce the retrospective in #dev-announce (or directly to the people involved, for smaller projects). Usually $SURVEY_DEADLINE is 24 hours before $MEETING_TIME.
+Allocate enough time for teammates to thoughtfully respond to the survey (aim for 100% participation), but don't let the process take an unbounded amount of time. It is useful to complete the retrospective process expediently so that information is fresh in people's minds and so we can apply learnings sooner. 3 business days is a good default.
 
-    > To participate in the $PROJECT retrospective, please fill out this survey by $SURVEY_DEADLINE: $SURVEY_LINK.
+### Organize the feedback
 
-Next, monitor survey responses until the deadline:
+Assemble all of the raw feedback into a single document and group related items together by theme.
 
-- Add survey submitters to the calendar event.
-- Send a personal message to each desired participant if they haven't yet submitted the survey:
+Share this document with the retrospective group and ask each participant to:
+- Provide feedback on whether the feedback items were grouped effectively (e.g. it is possible that you misunderstood some raw feedback)
+- +1 the most important themes. Each individual should not +1 more than half of the themes.
 
-    > Please fill out the $PROJECT retrospective survey by $SURVEY_DEADLINE if you want to get your points in: $SURVEY_LINK.
-- If needed, ask participants for clarification or details on their survey submission.
+### Discuss the feedback
 
-### Compile the retrospective doc from the survey responses
+Schedule a meeting to discuss the results.
 
-TODO(sqs): Fill this out when I do this for the Sourcegraph 3.0 beta retrospective.
+The meeting should be time-bounded (e.g. 1 hour), so there might not be time to discuss everything. Sort the themes by +1s and make a jugement about which themes to discuss and how much time to allocate to each discussion.
 
-### Hold the retrospective meeting
+For each theme, ask someone to read (out loud) the theme followed by the raw feedback. Then have an open discussion about the theme and how we should move forward.
 
-TODO(sqs): Fill this out when I do this for the Sourcegraph 3.0 beta retrospective.
+Update the retrospective document with notes from the discussion, action items, and owners for those actions.
 
-### Post the retrospective doc
+### Publish the results
 
-TODO(sqs): Fill this out when I do this for the Sourcegraph 3.0 beta retrospective.
+Remove any sensitive information from the retrospective document and commit it to this directory.
+
