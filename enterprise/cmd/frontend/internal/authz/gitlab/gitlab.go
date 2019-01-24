@@ -79,11 +79,7 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 	if r, exists := p.getCachedAccessList(accountID); exists {
 		accessibleRepos = r
 	} else {
-		var (
-			err         error
-			accessToken string
-		)
-
+		var accessToken string
 		if account != nil {
 			_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
 			if err != nil {
@@ -92,6 +88,7 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 			accessToken = tok.AccessToken
 		}
 
+		var err error
 		accessibleRepos, err = p.fetchUserAccessList(ctx, accountID, accessToken)
 		if err != nil {
 			return nil, err
