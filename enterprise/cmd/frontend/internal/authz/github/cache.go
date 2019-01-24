@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// pcache describes the shape of the repo permissions cache that Provider uses internally.
-type pcache interface {
+// cache describes the shape of the repo permissions cache that Provider uses internally.
+type cache interface {
 	GetMulti(keys ...string) [][]byte
 	SetMulti(keyvals ...[2]string)
 	Get(key string) ([]byte, bool)
