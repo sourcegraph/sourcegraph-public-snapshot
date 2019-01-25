@@ -2,11 +2,11 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import { concat, Observable, of, Subject, Subscription } from 'rxjs'
+import { catchError, delay, distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike, createAggregateError } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -25,15 +25,13 @@ interface State {
      * The result of updating the external service: null when complete or not started yet,
      * loading, or an error.
      */
-    updateOrError: null | typeof LOADING | ErrorLike
-    updated: boolean
+    updateOrError: null | true | typeof LOADING | ErrorLike
 }
 
 export class SiteAdminExternalServicePage extends React.Component<Props, State> {
     public state: State = {
         externalServiceOrError: LOADING,
         updateOrError: null,
-        updated: false,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -66,15 +64,19 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         updateExternalService(input).pipe(
                             mapTo(null),
                             startWith(LOADING),
-                            catchError(err => [asError(err)]),
-                            // Flash updated text if not an error
-                            map(u => ({ updateOrError: u, updated: !isErrorLike(u) })),
-                            // Remove updated text after 500ms
-                            tap(() => setTimeout(() => this.setState({ updated: false }), 500))
+                            mergeMap(u =>
+                                concat(
+                                    // Flash "updated" text
+                                    of<Partial<State>>({ updateOrError: true }),
+                                    // Hide "updated" text again after 1s
+                                    of<Partial<State>>({ updateOrError: u }).pipe(delay(1000))
+                                )
+                            ),
+                            catchError((error: Error) => [{ updateOrError: asError(error) }])
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => this.setState(stateUpdate as State))
         )
 
         this.componentUpdates.next(this.props)
@@ -124,7 +126,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         isLightTheme={this.props.isLightTheme}
                     />
                 )}
-                {this.state.updated && (
+                {this.state.updateOrError === true && (
                     <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
                 )}
             </div>
