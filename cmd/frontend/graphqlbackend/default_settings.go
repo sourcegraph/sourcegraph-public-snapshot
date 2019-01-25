@@ -30,11 +30,11 @@ func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settings
 	for _, extensionID := range builtinExtensionIDs {
 		extensions["extensions"][extensionID] = true
 	}
-	s, err := json.Marshal(extensions)
+	contents, err := json.Marshal(extensions)
 	if err != nil {
 		return nil, err
 	}
-	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: string(s)}
+	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: string(contents)}
 	return &settingsResolver{&settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 
