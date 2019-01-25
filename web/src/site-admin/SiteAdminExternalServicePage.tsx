@@ -3,7 +3,7 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
@@ -26,12 +26,14 @@ interface State {
      * loading, or an error.
      */
     updateOrError: null | typeof LOADING | ErrorLike
+    updated: boolean
 }
 
 export class SiteAdminExternalServicePage extends React.Component<Props, State> {
     public state: State = {
         externalServiceOrError: LOADING,
         updateOrError: null,
+        updated: false,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -65,7 +67,10 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                             mapTo(null),
                             startWith(LOADING),
                             catchError(err => [asError(err)]),
-                            map(u => ({ updateOrError: u }))
+                            // Flash updated text if not an error
+                            map(u => ({ updateOrError: u, updated: !isErrorLike(u) })),
+                            // Remove updated text after 500ms
+                            tap(() => setTimeout(() => this.setState({ updated: false }), 500))
                         )
                     )
                 )
@@ -118,6 +123,9 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         history={this.props.history}
                         isLightTheme={this.props.isLightTheme}
                     />
+                )}
+                {this.state.updated && (
+                    <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
                 )}
             </div>
         )

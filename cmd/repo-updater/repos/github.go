@@ -23,63 +23,65 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var githubConnections = atomicvalue.New()
-
-func init() {
-	githubConnections.Set(func() interface{} {
+var githubConnections = func() *atomicvalue.Value {
+	c := atomicvalue.New()
+	c.Set(func() interface{} {
 		return []*githubConnection{}
 	})
+	return c
+}()
 
-	go func() {
-		t := time.NewTicker(configWatchInterval)
-		var lastGitHubConf []*schema.GitHubConnection
-		for range t.C {
-			githubConf, err := conf.GitHubConfigs(context.Background())
-			if err != nil {
-				log15.Error("unable to fetch GitHub configs", "err", err)
-				continue
-			}
-
-			var hasGitHubDotComConnection bool
-			for _, c := range githubConf {
-				u, _ := url.Parse(c.Url)
-				if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
-					hasGitHubDotComConnection = true
-					break
-				}
-			}
-			if !hasGitHubDotComConnection {
-				// Add a GitHub.com entry by default, to support navigating to URL paths like
-				// /github.com/foo/bar to auto-add that repository.
-				githubConf = append(githubConf, &schema.GitHubConnection{
-					RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
-					Url:                         "https://github.com",
-					InitialRepositoryEnablement: true,
-				})
-			}
-
-			if reflect.DeepEqual(githubConf, lastGitHubConf) {
-				continue
-			}
-			lastGitHubConf = githubConf
-
-			var conns []*githubConnection
-			for _, c := range githubConf {
-				conn, err := newGitHubConnection(c)
-				if err != nil {
-					log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
-					continue
-				}
-				conns = append(conns, conn)
-			}
-
-			githubConnections.Set(func() interface{} {
-				return conns
-			})
-
-			gitHubRepositorySyncWorker.restart()
+// SyncGitHubConnections periodically syncs connections from
+// the Frontend API.
+func SyncGitHubConnections(ctx context.Context) {
+	t := time.NewTicker(configWatchInterval)
+	var lastGitHubConf []*schema.GitHubConnection
+	for range t.C {
+		githubConf, err := conf.GitHubConfigs(ctx)
+		if err != nil {
+			log15.Error("unable to fetch GitHub configs", "err", err)
+			continue
 		}
-	}()
+
+		var hasGitHubDotComConnection bool
+		for _, c := range githubConf {
+			u, _ := url.Parse(c.Url)
+			if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
+				hasGitHubDotComConnection = true
+				break
+			}
+		}
+		if !hasGitHubDotComConnection {
+			// Add a GitHub.com entry by default, to support navigating to URL paths like
+			// /github.com/foo/bar to auto-add that repository.
+			githubConf = append(githubConf, &schema.GitHubConnection{
+				RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
+				Url:                         "https://github.com",
+				InitialRepositoryEnablement: true,
+			})
+		}
+
+		if reflect.DeepEqual(githubConf, lastGitHubConf) {
+			continue
+		}
+		lastGitHubConf = githubConf
+
+		var conns []*githubConnection
+		for _, c := range githubConf {
+			conn, err := newGitHubConnection(c)
+			if err != nil {
+				log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
+				continue
+			}
+			conns = append(conns, conn)
+		}
+
+		githubConnections.Set(func() interface{} {
+			return conns
+		})
+
+		gitHubRepositorySyncWorker.restart()
+	}
 }
 
 // getGitHubConnection returns the GitHub connection (config + API client) that is responsible for

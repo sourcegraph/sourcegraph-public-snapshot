@@ -23,6 +23,6 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ classN
             <CircleChevronRightIcon className="icon-inline site-alert__link-icon" />{' '}
             <span className="underline">Configure external services</span>
         </Link>
-        &nbsp;to connect to Sourcegraph.
+        &nbsp;to connect repositories to Sourcegraph.
     </DismissibleAlert>
 )

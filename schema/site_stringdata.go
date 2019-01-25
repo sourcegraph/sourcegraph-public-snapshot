@@ -31,24 +31,11 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "canonicalURLRedirect": {
-          "description":
-            "Enables or disables enforcing that HTTP requests use the externalURL as a prefix, by redirecting other requests to the same request URI on the externalURL. For example, if the externalURL is https://sourcegraph.example.com and the site is also available under the DNS name http://foo, then a request to http://foo/bar would be redirected to https://sourcegraph.example.com/bar. Disabled by default.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "discussions": {
           "description": "Enables the code discussions experiment.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
-        },
-        "externalServices": {
-          "description": "Enables external service management UI",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
         },
         "updateScheduler2": {
           "description": "Enables a new update scheduler algorithm",
@@ -384,29 +371,7 @@ const SiteSchemaJSON = `{
         "If non-null, enforces GitLab repository permissions. This requires that the value of ` + "`" + `token` + "`" + ` be an access token with \"sudo\" and \"api\" scopes.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["authnProvider"],
       "properties": {
-        "authnProvider": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["configID", "type", "gitlabProvider"],
-          "description": "Identifies the authentication provider to use to identify users to GitLab.",
-          "properties": {
-            "configID": {
-              "type": "string",
-              "description": "The value of the ` + "`" + `configID` + "`" + ` field of the targeted authentication provider."
-            },
-            "type": {
-              "type": "string",
-              "description": "The ` + "`" + `type` + "`" + ` field of the targeted authentication provider."
-            },
-            "gitlabProvider": {
-              "type": "string",
-              "description":
-                "The provider name that identifies the authentication provider to GitLab. This is the name passed to the ` + "`" + `?provider=` + "`" + ` query parameter in calls to the GitLab Users API."
-            }
-          }
-        },
         "ttl": {
           "description":
             "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
@@ -550,8 +515,24 @@ const SiteSchemaJSON = `{
         },
         "phabricatorMetadataCommand": {
           "description":
-            "Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
+            "This is DEPRECATED. Use the ` + "`" + `phabricator` + "`" + ` field instead.",
           "type": "string"
+        },
+        "phabricator": {
+          "description": "Phabricator instance that integrates with this Gitolite instance",
+          "type": "object",
+          "required": ["url", "callsignCommand"],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "description": "URL of the Phabricator instance that integrates with this Gitolite instance. This should be set ",
+              "type": "string"
+            },
+            "callsignCommand": {
+              "description": " Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
+              "type": "string"
+            }
+          }
         }
       }
     },

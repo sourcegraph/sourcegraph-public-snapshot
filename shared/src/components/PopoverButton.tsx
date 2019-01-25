@@ -57,11 +57,22 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     public state: State = { open: false }
 
     private rootRef: HTMLElement | null = null
+    private popoverRef: HTMLElement | null = null
 
     public componentWillReceiveProps(props: Props): void {
         if (props.hideOnChange !== this.props.hideOnChange) {
-            this.setState({ open: false })
+            this.hide()
         }
+    }
+
+    public componentDidMount(): void {
+        window.addEventListener('mousedown', this.onClickOutside)
+        window.addEventListener('touchstart', this.onClickOutside)
+    }
+
+    public componentWillUnmount(): void {
+        window.removeEventListener('mousedown', this.onClickOutside)
+        window.removeEventListener('touchstart', this.onClickOutside)
     }
 
     public render(): React.ReactFragment {
@@ -79,7 +90,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                 trigger=""
             >
                 {isOpen && <Shortcut ordered={['Escape']} onMatch={this.toggleVisibility} ignoreInput={true} />}
-                {this.props.popoverElement}
+                <div ref={this.setPopoverRef}>{this.props.popoverElement}</div>
             </Popover>
         )
 
@@ -97,7 +108,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                             : 'popover-button2__container'
                     }
                     to={this.props.link}
-                    onClick={this.props.link ? this.onClickLink : this.toggleVisibility}
+                    onClick={this.props.link ? this.hide : this.toggleVisibility}
                 >
                     {this.props.children}{' '}
                     {!this.props.link && <MenuDownIcon className="icon-inline popover-button2__icon" />}
@@ -121,9 +132,20 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         )
     }
 
-    private onClickLink = (e: React.MouseEvent<HTMLElement>): void => {
-        this.setState({ open: false })
+    public onClickOutside = (e: MouseEvent | TouchEvent) => {
+        if (
+            this.popoverRef &&
+            this.rootRef &&
+            !this.popoverRef.contains(e.target as HTMLElement) &&
+            !this.rootRef.contains(e.target as HTMLElement)
+        ) {
+            this.hide()
+        }
     }
+
+    private hide = () => this.setState({ open: false })
+
+    private setPopoverRef = (e: HTMLElement | null) => (this.popoverRef = e)
 
     private setRootRef = (e: HTMLElement | null) => (this.rootRef = e)
 

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -20,7 +19,7 @@ import (
 )
 
 type newGitLabAuthzProviderParams struct {
-	Op gitlab.GitLabAuthzProviderOp
+	Op gitlab.GitLabOAuthAuthzProviderOp
 }
 
 func (m newGitLabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
@@ -41,7 +40,7 @@ func (m newGitLabAuthzProviderParams) ServiceType() string {
 func (m newGitLabAuthzProviderParams) Validate() []string { return nil }
 
 func Test_providersFromConfig(t *testing.T) {
-	NewGitLabProvider = func(op gitlab.GitLabAuthzProviderOp) authz.Provider {
+	NewGitLabProvider = func(op gitlab.GitLabOAuthAuthzProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return newGitLabAuthzProviderParams{op}
 	}
@@ -58,27 +57,23 @@ func Test_providersFromConfig(t *testing.T) {
 		expSeriousProblems           []string
 	}{
 		{
-			description: "1 auth provider (okta), 1 GitLab referencing okta",
+			description: "1 GitLab connection with authz enabled, 1 GitLab matching auth provider",
 			cfg: conf.Unified{
 				Critical: schema.CriticalConfiguration{
-					AuthProviders: []schema.AuthProviders{
-						{
-							Saml: &schema.SAMLAuthProvider{
-								ConfigID: "okta-config-id",
-								Type:     "saml",
-							},
+					AuthProviders: []schema.AuthProviders{{
+						Gitlab: &schema.GitLabAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitLab",
+							Type:         "gitlab",
+							Url:          "https://gitlab.mine",
 						},
-					},
+					}},
 				},
 			},
 			gitlabConnections: []*schema.GitLabConnection{
 				{
 					Authorization: &schema.GitLabAuthorization{
-						AuthnProvider: schema.AuthnProvider{
-							ConfigID:       "okta-config-id",
-							Type:           "saml",
-							GitlabProvider: "okta",
-						},
 						Ttl: "48h",
 					},
 					Url:   "https://gitlab.mine",
@@ -88,31 +83,81 @@ func Test_providersFromConfig(t *testing.T) {
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: []authz.Provider{
 				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabAuthzProviderOp{
-						BaseURL:        mustURLParse(t, "https://gitlab.mine"),
-						AuthnConfigID:  auth.ProviderConfigID{Type: "saml", ID: "okta-config-id"},
-						SudoToken:      "asdf",
-						GitLabProvider: "okta",
-						CacheTTL:       48 * time.Hour,
+					Op: gitlab.GitLabOAuthAuthzProviderOp{
+						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
+						CacheTTL: 48 * time.Hour,
 					},
 				},
 			},
 		},
 		{
-			description: "2 auth providers (okta, onelogin), 2 GitLabs referencing okta and onelogin, respectively",
+			description: "1 GitLab connection with authz enabled, 1 GitLab auth provider but doesn't match",
+			cfg: conf.Unified{
+				Critical: schema.CriticalConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						Gitlab: &schema.GitLabAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitLab",
+							Type:         "gitlab",
+							Url:          "https://gitlab.com",
+						},
+					}},
+				},
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						Ttl: "48h",
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\""},
+		},
+		{
+			description: "1 GitLab connection with authz enabled, no GitLab auth provider",
+			cfg: conf.Unified{
+				Critical: schema.CriticalConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						Builtin: &schema.BuiltinAuthProvider{Type: "builtin"},
+					}},
+				},
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						Ttl: "48h",
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\""},
+		},
+		{
+			description: "Two GitLab connections with authz enabled, two matching GitLab auth providers",
 			cfg: conf.Unified{
 				Critical: schema.CriticalConfiguration{
 					AuthProviders: []schema.AuthProviders{
 						{
-							Saml: &schema.SAMLAuthProvider{
-								ConfigID: "okta-config-id",
-								Type:     "saml",
+							Gitlab: &schema.GitLabAuthProvider{
+								ClientID:     "clientID",
+								ClientSecret: "clientSecret",
+								DisplayName:  "GitLab.com",
+								Type:         "gitlab",
+								Url:          "https://gitlab.com",
 							},
-						},
-						{
-							Openidconnect: &schema.OpenIDConnectAuthProvider{
-								ConfigID: "onelogin-config-id",
-								Type:     "openidconnect",
+						}, {
+							Gitlab: &schema.GitLabAuthProvider{
+								ClientID:     "clientID",
+								ClientSecret: "clientSecret",
+								DisplayName:  "GitLab.mine",
+								Type:         "gitlab",
+								Url:          "https://gitlab.mine",
 							},
 						},
 					},
@@ -120,147 +165,77 @@ func Test_providersFromConfig(t *testing.T) {
 			},
 			gitlabConnections: []*schema.GitLabConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						AuthnProvider: schema.AuthnProvider{
-							ConfigID:       "onelogin-config-id",
-							GitlabProvider: "onelogin",
-							Type:           "openidconnect",
-						},
-					},
-					Url:   "https://gitlab-0.mine",
-					Token: "asdf",
+					Authorization: &schema.GitLabAuthorization{},
+					Url:           "https://gitlab.mine",
+					Token:         "asdf",
 				},
 				{
-					Authorization: &schema.GitLabAuthorization{
-						AuthnProvider: schema.AuthnProvider{
-							ConfigID:       "okta-config-id",
-							GitlabProvider: "okta",
-							Type:           "saml",
-						},
-					},
-					Url:   "https://gitlab-1.mine",
-					Token: "asdf",
+					Authorization: &schema.GitLabAuthorization{},
+					Url:           "https://gitlab.com",
+					Token:         "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: []authz.Provider{
 				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabAuthzProviderOp{
-						BaseURL:        mustURLParse(t, "https://gitlab-0.mine"),
-						AuthnConfigID:  auth.ProviderConfigID{Type: "openidconnect", ID: "onelogin-config-id"},
-						SudoToken:      "asdf",
-						GitLabProvider: "onelogin",
-						CacheTTL:       3 * time.Hour,
+					Op: gitlab.GitLabOAuthAuthzProviderOp{
+						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
+						CacheTTL: 3 * time.Hour,
 					},
 				},
 				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabAuthzProviderOp{
-						BaseURL:        mustURLParse(t, "https://gitlab-1.mine"),
-						AuthnConfigID:  auth.ProviderConfigID{Type: "saml", ID: "okta-config-id"},
-						SudoToken:      "asdf",
-						GitLabProvider: "okta",
-						CacheTTL:       3 * time.Hour,
+					Op: gitlab.GitLabOAuthAuthzProviderOp{
+						BaseURL:  mustURLParse(t, "https://gitlab.com"),
+						CacheTTL: 3 * time.Hour,
 					},
 				},
 			},
 		},
 		{
-			description: "0 auth providers, 1 GitLab referencing non-existent auth provider",
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Authorization: &schema.GitLabAuthorization{
-						AuthnProvider: schema.AuthnProvider{
-							ConfigID:       "onelogin-config-id",
-							GitlabProvider: "onelogin",
-							Type:           "openidconnect",
+			description: "1 GitLab connection with authz disabled",
+			cfg: conf.Unified{
+				Critical: schema.CriticalConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						Gitlab: &schema.GitLabAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitLab",
+							Type:         "gitlab",
+							Url:          "https://gitlab.mine",
 						},
-					},
-					Url:   "https://gitlab-0.mine",
-					Token: "asdf",
+					}},
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Could not find item in `auth.providers` with config ID \"onelogin-config-id\" and type \"openidconnect\""},
-		},
-		{
-			description: "1 GitLab referencing no auth provider",
 			gitlabConnections: []*schema.GitLabConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{},
-					Url:           "https://gitlab-0.mine",
+					Authorization: nil,
+					Url:           "https://gitlab.mine",
 					Token:         "asdf",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"`authz.authnProvider.configID` was empty. No users will be granted access to these repositories."},
-		},
-		{
-			description: "1 GitLab with permissions disabled",
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Url:   "https://gitlab-0.mine",
-					Token: "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders:            nil,
-			expSeriousProblems:           nil,
 		},
 		{
-			description: "1 GitLab with incomplete auth provider descriptor",
+			description: "TTL error",
 			cfg: conf.Unified{
 				Critical: schema.CriticalConfiguration{
-					AuthProviders: []schema.AuthProviders{
-						{
-							Saml: &schema.SAMLAuthProvider{
-								ConfigID: "okta-config-id",
-								Type:     "saml",
-							},
+					AuthProviders: []schema.AuthProviders{{
+						Gitlab: &schema.GitLabAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitLab",
+							Type:         "gitlab",
+							Url:          "https://gitlab.mine",
 						},
-					},
+					}},
 				},
 			},
 			gitlabConnections: []*schema.GitLabConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						AuthnProvider: schema.AuthnProvider{
-							ConfigID:       "okta-config-id",
-							GitlabProvider: "okta",
-						},
-						Ttl: "48h",
-					},
-					Url:   "https://gitlab-0.mine",
-					Token: "asdf",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"`authz.authnProvider.type` was not specified, which means GitLab users cannot be resolved."},
-		},
-		{
-			description: "1 GitLab with incomplete auth provider descriptor, ttl error",
-			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
-					AuthProviders: []schema.AuthProviders{
-						{
-							Saml: &schema.SAMLAuthProvider{
-								ConfigID: "okta-config-id",
-								Type:     "saml",
-							},
-						},
-					},
-				},
-			},
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Authorization: &schema.GitLabAuthorization{
-						AuthnProvider: schema.AuthnProvider{
-							ConfigID:       "okta-config-id",
-							GitlabProvider: "okta",
-						},
-						Ttl: "invalid",
-					},
-					Url:   "https://gitlab-0.mine",
-					Token: "asdf",
+					Authorization: &schema.GitLabAuthorization{Ttl: "invalid"},
+					Url:           "https://gitlab.mine",
+					Token:         "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: false,

@@ -1,4 +1,5 @@
-import AddIcon from 'mdi-react/AddIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -62,12 +63,16 @@ export class OverviewItem extends React.Component<Props, State> {
                 </div>
             )
             actions = (
-                <div className={`${this.state.expanded ? 'icon-rotate icon-rotate__close' : 'icon-rotate'}`}>
+                <div>
                     <span className="icon-click-area" onClick={this.toggleExpand} />
-                    <div className="icon-container">
-                        <AddIcon className="icon-inline" />
+                    <div className="overview-item__toggle-icon">
+                        {this.state.expanded ? (
+                            <ChevronUpIcon className="icon-inline" />
+                        ) : (
+                            <ChevronDownIcon className="icon-inline" />
+                        )}
                     </div>
-                    {actions && actions}
+                    {actions}
                 </div>
             )
         } else if (this.props.link !== undefined) {

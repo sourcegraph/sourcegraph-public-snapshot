@@ -70,7 +70,6 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
 	h = secureHeadersMiddleware(h)
-	h = middleware.CanonicalURL(h)
 	h = healthCheckMiddleware(h)
 	h = gcontext.ClearHandler(h)
 	h = middleware.Trace(h)
@@ -131,9 +130,6 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Header().Set("X-Frame-Options", "DENY")
-		if hsts := conf.HTTPStrictTransportSecurity(); hsts != "" {
-			w.Header().Set("Strict-Transport-Security", hsts)
-		}
 		// no cache by default
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")
 

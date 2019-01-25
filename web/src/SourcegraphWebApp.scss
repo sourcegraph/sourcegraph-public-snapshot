@@ -286,3 +286,6 @@ hr {
 @import '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner';
 
 @import './extensions/shared';
+@import './integrations/explore/IntegrationsExploreSection';
+@import './repo/explore/RepositoriesExploreSection';
+@import './discussions/explore/DiscussionsExploreSection';

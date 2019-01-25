@@ -138,7 +138,9 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
                         <AddIcon className="icon-inline" /> Add external service
                     </Link>
                 </div>
-                <p className="mt-2">Manage connections to external services.</p>
+                <p className="mt-2">
+                    Manage connections to external services, such as code hosts (to sync repositories).
+                </p>
                 <FilteredExternalServiceConnection
                     className="list-group list-group-flush mt-3"
                     noun="external service"

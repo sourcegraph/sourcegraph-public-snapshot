@@ -34,7 +34,7 @@ Put effort towards one language at a time:
 
 - ✅ JavaScript/TypeScript using https://github.com/sourcegraph/lang-typescript
 - 📝 Java using https://github.com/beyang/eclipse.jdt.ls/tree/wip
-- 📝 Python using https://github.com/sourcegraph/sourcegraph-python
+- 📝 Python using https://github.com/sourcegraph/lang-python
 - ✅ Go using https://github.com/sourcegraph/lang-go
 - 📝 Swift using https://github.com/apple/sourcekit-lsp
 

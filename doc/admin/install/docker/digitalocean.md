@@ -30,12 +30,12 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   runcmd:
   - mkdir -p /root/.sourcegraph/config
   - mkdir -p /root/.sourcegraph/data
-  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.13.5' ]
+  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.0.0-beta' ]
   ```
 
 - Launch your instance, then navigate to its IP address.
 
-- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. If `externalURL` has the HTTPS protocol then Sourcegraph will get a certificate via [Let's Encrypt](https://letsencrypt.org/). For more information or alternative methods, see "[Using TLS/SSL](../../tls_ssl.md)". (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
+- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
 
 ---
 

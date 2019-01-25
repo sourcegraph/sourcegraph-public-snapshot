@@ -15,16 +15,9 @@ if [ -f .env ]; then
 fi
 
 export GO111MODULE=on
+go run ./pkg/version/minversion
+
 export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
-
-minimumgo="1.11.4"
-goversion=$(go version | grep -Eo '[1-9]+\.[0-9]+(\.[0-9]+)?')
-min=$(./node_modules/semver/bin/semver $goversion $minimumgo | head -n 1)
-
-if [ "$goversion" == "$min" ] && [ "$goversion" != "$minimumgo" ] ; then
-    echo "Go version $minimumgo is required; found $goversion"
-    exit 1
-fi
 
 # Verify postgresql config.
 hash psql 2>/dev/null || {
@@ -69,9 +62,10 @@ export DEPLOY_TYPE=dev
 export ZOEKT_HOST=localhost:6070
 
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
-# until they are (re)built and (2) otherwise passes through to Sourcegraph running on port
-# 3081. That is why Sourcegraph listens on 3081 despite the externalURL having port 3080.
-export SRC_HTTP_ADDR=":3081"
+# until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
+# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3081 despite the externalURL
+# having port 3080.
+export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1
 
 export DEV_OVERRIDE_CRITICAL_CONFIG=${DEV_OVERRIDE_CRITICAL_CONFIG:-./dev/critical-config.json}

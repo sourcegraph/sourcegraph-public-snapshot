@@ -401,10 +401,10 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create settings for the user, and for another user authored by this user.
-			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, &user.ID, ""); err != nil {
+			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, &user.ID, "{}"); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &otherUser.ID}, nil, &user.ID, ""); err != nil {
+			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &otherUser.ID}, nil, &user.ID, "{}"); err != nil {
 				t.Fatal(err)
 			}
 

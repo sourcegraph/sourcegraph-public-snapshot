@@ -33,6 +33,7 @@
 - Node.js (version 8 or 10)
 - Redis
 - Yarn
+- Nginx
 
 For a detailed guide to installing prerequisites, see [these
 instructions](doc/dev/local_development.md#step-2-install-dependencies).

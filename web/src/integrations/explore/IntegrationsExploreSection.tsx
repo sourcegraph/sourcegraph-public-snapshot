@@ -1,4 +1,5 @@
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -11,7 +12,7 @@ const DATA: { title: string; description: string; url: string; backgroundImage: 
             'linear-gradient(96deg, #397b9c, #b553af 46%, #bb5525), linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))',
     },
     {
-        title: 'src CLI',
+        title: 'Sourcegraph CLI',
         description: 'Search code from your terminal.',
         url: 'https://github.com/sourcegraph/src-cli',
         backgroundImage:
@@ -33,26 +34,31 @@ interface Props {}
  */
 export const IntegrationsExploreSection: React.FunctionComponent<Props> = () => (
     <div className="integrations-explore-section">
-        <h2>Popular integrations</h2>
-        <div className="row">
+        <h2 className="integrations-explore-section__section-title">Popular integrations</h2>
+        <div className="integrations-explore-section__row">
             {DATA.map(({ title, description, url, backgroundImage }, i) => (
-                <div key={i} className="col-md-4 mb-2 mb-md-0">
+                <div key={i} className="integrations-explore-section__card">
                     <a
                         href={url}
                         target="_blank"
-                        className="card rounded border-white card-link text-white"
+                        className="integrations-explore-section__card__content"
                         // tslint:disable-next-line:jsx-ban-props
-                        style={{ backgroundImage }}
+                        // style={{ backgroundImage }}
                     >
-                        <div className="card-body">
-                            <h2 className="card-title h6 font-weight-bold mb-0">{title}</h2>
-                            <p className="card-text">{description}</p>
+                        <div className="integrations-explore-section__card__content__body">
+                            <div className="integrations-explore-section__card__content__body__content">
+                                <h2 className="integrations-explore-section__card__content__body__title">{title}</h2>
+                                <p className="integrations-explore-section__card__content__body__text">{description}</p>
+                            </div>
+                            <div className="integrations-explore-section__card__content__icon">
+                                <OpenInNewIcon className="" />
+                            </div>
                         </div>
                     </a>
                 </div>
             ))}
         </div>
-        <div className="text-right mt-3">
+        <div className="text-right mt-2">
             <Link to="/help/integration" target="_blank">
                 View all integrations
                 <ChevronRightIcon className="icon-inline" />

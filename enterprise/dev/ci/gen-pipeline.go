@@ -88,10 +88,8 @@ func main() {
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
 	if !isBextReleaseBranch {
-		// TODO(sqs): reenable the DB backcompat test
-		//
-		// pipeline.AddStep(":postgres:",
-		// 	bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+		pipeline.AddStep(":postgres:",
+			bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
 		pipeline.AddStep(":go:",
 			bk.Cmd("go generate ./..."),
@@ -104,7 +102,7 @@ func main() {
 		)
 
 		pipeline.AddStep(":docker:",
-			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
 			bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 	}
 
@@ -123,12 +121,9 @@ func main() {
 		}
 
 		cmdDir := "cmd/" + app
-		var pkgPath string
 		if _, err := os.Stat(filepath.Join("enterprise", cmdDir)); err != nil {
 			fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
-			pkgPath = "github.com/sourcegraph/sourcegraph/cmd/" + app
 		} else {
-			pkgPath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/" + app
 			cmds = append(cmds, bk.Cmd("pushd enterprise"))
 		}
 
@@ -139,18 +134,11 @@ func main() {
 
 		image := "sourcegraph/" + app
 		buildScript := cmdDir + "/build.sh"
-		if _, err := os.Stat(buildScript); err == nil {
-			cmds = append(cmds,
-				bk.Env("IMAGE", image+":"+version),
-				bk.Env("VERSION", version),
-				bk.Cmd(buildScript),
-			)
-		} else {
-			cmds = append(cmds,
-				bk.Cmd("go build github.com/sourcegraph/godockerize"),
-				bk.Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s %s", image, version, version, version, pkgPath)),
-			)
-		}
+		cmds = append(cmds,
+			bk.Env("IMAGE", image+":"+version),
+			bk.Env("VERSION", version),
+			bk.Cmd(buildScript),
+		)
 
 		if app != "server" || taggedRelease {
 			cmds = append(cmds,

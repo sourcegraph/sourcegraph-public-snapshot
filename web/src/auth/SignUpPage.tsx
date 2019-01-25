@@ -95,7 +95,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                     <div className="form-group">
                         <label className="signin-signup-form__checkbox-label">
                             <input className="mr-1" type="checkbox" onChange={this.onRequestTrialFieldChange} />
-                            Try Sourcegraph Enterprise free for 30-days
+                            Try Sourcegraph Enterprise free for 30 days
                             <a className="ml-1" target="_blank" href="https://about.sourcegraph.com/pricing">
                                 <HelpCircleOutlineIcon className="icon-inline" />
                             </a>

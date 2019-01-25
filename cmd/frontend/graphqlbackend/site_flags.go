@@ -25,14 +25,15 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 }
 
 func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
+	kinds := make([]string, 0, len(externalServiceKinds))
+	for kind, config := range externalServiceKinds {
+		if config.codeHost {
+			kinds = append(kinds, kind)
+		}
+	}
+
 	count, err := db.ExternalServices.Count(ctx, db.ExternalServicesListOptions{
-		Kinds: []string{
-			"AWSCODECOMMIT",
-			"BITBUCKETSERVER",
-			"GITHUB",
-			"GITLAB",
-			"GITOLITE",
-		},
+		Kinds: kinds,
 	})
 	if err != nil {
 		return false, err

@@ -39,9 +39,10 @@ Sourcegraph has the following dependencies:
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
   - For macOS we recommend using Docker for Mac instead of `docker-machine`
-- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.x)
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v11.1.0)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
+- [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 
 You have two options for installing these dependencies.
 
@@ -58,26 +59,26 @@ This is a streamlined setup for Mac machines.
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL 9, Redis, Git with the following command:
+3.  Install Go, Node, PostgreSQL 11, Redis, Git, and nginx with the following command:
 
     ```
-    brew install go node redis postgresql@9.6 git gnu-sed
+    brew install go node redis postgresql@11 git gnu-sed nginx
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically
 
     ```
-    brew services start postgresql@9.6
+    brew services start postgresql@11
     brew services start redis
     ```
 
     (You can stop them later by calling `stop` instead of `start` above.)
 
 5.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
-    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@9.6`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
+    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@11`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
     ```bash
-    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@9.6/bin:$PATH"' >> ~/.bash_profile }
+    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@11/bin:$PATH"' >> ~/.bash_profile }
     source ~/.bash_profile
     ```
 
@@ -333,20 +334,36 @@ Requires "Debugger for Chrome" extension.
 
 ### Debug Go code
 
-**Note: If you run into an error `could not launch process: decoding dwarf section info at offset 0x0: too short` make sure you are on the latest delve version**
+Install [Delve](https://github.com/derekparker/delve):
 
-- Install [Delve](https://github.com/derekparker/delve)
-- Run `DELVE=frontend,searcher ./dev/launch.sh` (`DELVE` accepts a comma-separated list of components as specified in [dev/Procfile](https://github.com/sourcegraph/sourcegraph/blob/master/dev/Procfile))
-- Set a breakpoint in VS Code (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
-- Run "Attach to $component" in the VS Code debug view
-- The process should start once the debugger is attached
+```
+xcode-select --install
+go get -u github.com/go-delve/delve/cmd/dlv
+```
 
-Known issues:
+Then install `pgrep`:
 
-- At the time of writing there is an issue with homebrew formula so workarounds are required.
-  - Use homebrew and then google any errors you encounter.
-- There doesn't seem to be a clean way to stop debugging (https://github.com/derekparker/delve/issues/1057).
-  - The workaround is to manually kill the process when you are done.
+```
+brew install proctools
+```
+
+Make sure to run `env DELVE=true dev/launch.sh` to disable optimizations during compilation, otherwise Delve will have difficulty stepping through optimized functions (line numbers will be off, you won't be able to print local variables, etc.).
+
+Now you can attach a debugger to any Go process (e.g. frontend, searcher, go-langserver) in 1 command:
+
+```
+dlv attach $(pgrep frontend)
+```
+
+Delve will pause the process once it attaches the debugger. Most used [commands](https://github.com/go-delve/delve/tree/master/Documentation/cli):
+
+- `b cmd/frontend/db/access_tokens.go:52` to set a breakpoint on a line (`bp` lists all, `clearall` deletes all)
+- `c` to continue execution of the program
+- `Ctrl-C` pause the program to bring back the command prompt
+- `n` to step over the next statement
+- `s` to step into the next function call
+- `stepout` to step out of the current function call
+- `Ctrl-D` to exit
 
 ## Go dependency management
 
@@ -390,3 +407,18 @@ See [docs/style.md](style.md).
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).
 Sourcegraph currently relies on Unix specifics in several places, which makes it currently not possible to run Sourcegraph directly inside Windows without WSL.
 We are happy to accept contributions here! :)
+
+## Other nice things
+
+### Offline development
+
+Sometimes you will want to develop Sourcegraph but it just so happens you will be on a plane or a
+train or perhaps a beach, and you will have no WiFi. And you may raise your fist toward heaven and
+say something like, "Why, we can put a man on the moon, so why can't we develop high-quality code
+search without an Internet connection?" But lower your hand back to your keyboard and fret no
+further, for the year is 2019, and you *can* develop Sourcegraph with no connectivity by setting the
+`OFFLINE` environment variable:
+
+```
+OFFLINE=true dev/launch.sh
+```

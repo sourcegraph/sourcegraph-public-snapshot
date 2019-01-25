@@ -1,6 +1,7 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { getModeFromPath } from '../../../languages'
+import { parseRepoURI } from '../../../util/url'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
 
@@ -67,7 +68,7 @@ export abstract class DocumentFeatureProviderRegistry<
                             (filter ? filter(registrationOptions) : true) &&
                             match(registrationOptions.documentSelector, {
                                 uri: document.uri,
-                                languageId: getModeFromPath(document.uri),
+                                languageId: getModeFromPath(parseRepoURI(document.uri).filePath || ''),
                             })
                     )
                     .map(({ provider }) => provider)

@@ -29,4 +29,4 @@ An extension with no published releases, or whose `package.json` extension manif
 
 You can use WIP extensions for testing in-development extensions, as well as new versions of an existing extension.
 
-Don't forget to delete your WIP extension when it's no longer needed (in the **Manage** tab on the extension's registry page).
+Don't forget to delete your WIP extension when it's no longer needed (in the **Manage** tab on the extension's registry page). We reserve the right to periodically purge WIP extensions that are not in use, to avoid user confusion (to re-add an extension, just republish it, or contact us to restore it).

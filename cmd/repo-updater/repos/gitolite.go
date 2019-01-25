@@ -7,13 +7,12 @@ import (
 	"sync"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -23,8 +22,7 @@ var (
 
 // RunGitoliteRepositorySyncWorker runs the worker that syncs repositories from gitolite hosts to Sourcegraph
 //
-// If there is a PhabricatorMetadataCommand set, every ten loops we will try to run that for every
-// repo also.
+// If there is a Phabricator set, every ten loops we will try to run that for every repo also.
 func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 	phabricatorMetadataCounter := 0
 	for {
@@ -32,6 +30,7 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 		config, err := conf.GitoliteConfigs(context.Background())
 		if err != nil {
 			log15.Error("unable to fetch Gitolite configs", "err", err)
+			time.Sleep(GetUpdateInterval())
 			continue
 		}
 
@@ -74,7 +73,7 @@ func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (r
 // tryUpdateGitolitePhabricatorMetadata attempts to update Phabricator metadata for a Gitolite-sourced repository, if it
 // is appropriate to do so.
 func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.GitoliteConnection, repos []string) {
-	if gconf.PhabricatorMetadataCommand == "" {
+	if gconf.Phabricator == nil {
 		return
 	}
 	phabTaskMu.Lock()
@@ -94,7 +93,7 @@ func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.Git
 		if metadata.Callsign == "" {
 			continue
 		}
-		if err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(repoName), metadata.Callsign, gconf.Host); err != nil {
+		if err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(repoName), metadata.Callsign, gconf.Phabricator.Url); err != nil {
 			log15.Warn("could not ensure Gitolite Phabricator mapping", "repo", repoName, "error", err)
 		}
 	}
@@ -116,7 +115,7 @@ func gitoliteUpdateRepos(ctx context.Context, gconf *schema.GitoliteConnection, 
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("gitolite:%s", gconf.Prefix), repoChan)
-	if doPhabricator && gconf.PhabricatorMetadataCommand != "" {
+	if doPhabricator && gconf.Phabricator != nil {
 		go tryUpdateGitolitePhabricatorMetadata(ctx, gconf, rlist)
 	}
 	for _, entry := range rlist {

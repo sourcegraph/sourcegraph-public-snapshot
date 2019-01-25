@@ -66,20 +66,25 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     private rootRef: HTMLElement | null = null
+    private popoverRef: HTMLElement | null = null
 
     public componentDidMount(): void {
         window.addEventListener('keydown', this.onGlobalKeyDown)
+        window.addEventListener('mousedown', this.onClickOutside)
+        window.addEventListener('touchstart', this.onClickOutside)
     }
 
     public componentWillReceiveProps(props: Props): void {
         if (props.hideOnChange !== this.props.hideOnChange) {
-            this.setState({ open: false })
+            this.hide()
         }
     }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
         window.removeEventListener('keydown', this.onGlobalKeyDown)
+        window.removeEventListener('mousedown', this.onClickOutside)
+        window.removeEventListener('touchstart', this.onClickOutside)
     }
 
     public render(): React.ReactFragment {
@@ -95,7 +100,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                 // in link mode (this.props.link), only caret (not link) opens the popover.
                 trigger=""
             >
-                {this.props.popoverElement}
+                <div ref={this.setPopoverRef}>{this.props.popoverElement}</div>
             </Popover>
         )
         return (
@@ -110,16 +115,18 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                         this.props.link ? 'popover-button__btn popover-button__btn--link' : 'popover-button__container'
                     }
                     to={this.props.link}
-                    onClick={this.props.link ? this.onClickLink : this.onPopoverVisibilityToggle}
+                    onClick={this.props.link ? this.hide : this.onPopoverVisibilityToggle}
                 >
                     {this.props.children}{' '}
                     {!this.props.link && <MenuDownIcon className="icon-inline popover-button__icon" />}
                 </LinkOrSpan>
                 {this.props.link ? (
-                    <button className="popover-button__anchor btn-icon" onClick={this.onPopoverVisibilityToggle}>
-                        <MenuDownIcon className="icon-inline popover-button__icon popover-button__icon--outside" />
+                    <>
+                        <button className="popover-button__anchor btn-icon" onClick={this.onPopoverVisibilityToggle}>
+                            <MenuDownIcon className="icon-inline popover-button__icon popover-button__icon--outside" />
+                        </button>
                         {popoverAnchor}
-                    </button>
+                    </>
                 ) : (
                     popoverAnchor
                 )}
@@ -127,14 +134,12 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         )
     }
 
-    private onClickLink = (): void => {
-        this.setState({ open: false })
-    }
+    private hide = () => this.setState({ open: false })
 
     private onGlobalKeyDown = (event: KeyboardEvent) => {
         if (event.key === Key.Escape) {
             // Always close the popover when Escape is pressed, even when in an input.
-            this.setState({ open: false })
+            this.hide()
             return
         }
 
@@ -154,6 +159,19 @@ export class PopoverButton extends React.PureComponent<Props, State> {
             this.onPopoverVisibilityToggle()
         }
     }
+
+    private onClickOutside = (e: MouseEvent | TouchEvent) => {
+        if (
+            this.popoverRef &&
+            this.rootRef &&
+            !this.popoverRef.contains(e.target as HTMLElement) &&
+            !this.rootRef.contains(e.target as HTMLElement)
+        ) {
+            this.hide()
+        }
+    }
+
+    private setPopoverRef = (e: HTMLElement | null) => (this.popoverRef = e)
 
     private setRootRef = (e: HTMLElement | null) => (this.rootRef = e)
 

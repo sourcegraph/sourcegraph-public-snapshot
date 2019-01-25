@@ -350,6 +350,9 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         // Clear previous decorations.
                         for (const element of decoratedElements) {
                             element.style.backgroundColor = null
+                            element.style.border = null
+                            element.style.borderColor = null
+                            element.style.borderWidth = null
                         }
                     }
 

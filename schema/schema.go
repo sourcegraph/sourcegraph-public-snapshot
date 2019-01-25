@@ -79,12 +79,6 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
-// AuthnProvider description: Identifies the authentication provider to use to identify users to GitLab.
-type AuthnProvider struct {
-	ConfigID       string `json:"configID"`
-	GitlabProvider string `json:"gitlabProvider"`
-	Type           string `json:"type"`
-}
 type BitbucketServerConnection struct {
 	Certificate                 string `json:"certificate,omitempty"`
 	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
@@ -111,26 +105,21 @@ type CloneURLToRepositoryName struct {
 
 // CriticalConfiguration description: Critical configuration for a Sourcegraph site.
 type CriticalConfiguration struct {
-	AuthProviders               []AuthProviders     `json:"auth.providers,omitempty"`
-	AuthPublic                  bool                `json:"auth.public,omitempty"`
-	AuthSessionExpiry           string              `json:"auth.sessionExpiry,omitempty"`
-	AuthUserOrgMap              map[string][]string `json:"auth.userOrgMap,omitempty"`
-	ExternalURL                 string              `json:"externalURL,omitempty"`
-	HtmlBodyBottom              string              `json:"htmlBodyBottom,omitempty"`
-	HtmlBodyTop                 string              `json:"htmlBodyTop,omitempty"`
-	HtmlHeadBottom              string              `json:"htmlHeadBottom,omitempty"`
-	HtmlHeadTop                 string              `json:"htmlHeadTop,omitempty"`
-	HttpStrictTransportSecurity interface{}         `json:"httpStrictTransportSecurity,omitempty"`
-	HttpToHttpsRedirect         interface{}         `json:"httpToHttpsRedirect,omitempty"`
-	LicenseKey                  string              `json:"licenseKey,omitempty"`
-	LightstepAccessToken        string              `json:"lightstepAccessToken,omitempty"`
-	LightstepProject            string              `json:"lightstepProject,omitempty"`
-	Log                         *Log                `json:"log,omitempty"`
-	TlsLetsencrypt              string              `json:"tls.letsencrypt,omitempty"`
-	TlsCert                     string              `json:"tlsCert,omitempty"`
-	TlsKey                      string              `json:"tlsKey,omitempty"`
-	UpdateChannel               string              `json:"update.channel,omitempty"`
-	UseJaeger                   bool                `json:"useJaeger,omitempty"`
+	AuthProviders        []AuthProviders     `json:"auth.providers,omitempty"`
+	AuthPublic           bool                `json:"auth.public,omitempty"`
+	AuthSessionExpiry    string              `json:"auth.sessionExpiry,omitempty"`
+	AuthUserOrgMap       map[string][]string `json:"auth.userOrgMap,omitempty"`
+	ExternalURL          string              `json:"externalURL,omitempty"`
+	HtmlBodyBottom       string              `json:"htmlBodyBottom,omitempty"`
+	HtmlBodyTop          string              `json:"htmlBodyTop,omitempty"`
+	HtmlHeadBottom       string              `json:"htmlHeadBottom,omitempty"`
+	HtmlHeadTop          string              `json:"htmlHeadTop,omitempty"`
+	LicenseKey           string              `json:"licenseKey,omitempty"`
+	LightstepAccessToken string              `json:"lightstepAccessToken,omitempty"`
+	LightstepProject     string              `json:"lightstepProject,omitempty"`
+	Log                  *Log                `json:"log,omitempty"`
+	UpdateChannel        string              `json:"update.channel,omitempty"`
+	UseJaeger            bool                `json:"useJaeger,omitempty"`
 }
 
 // Discussions description: Configures Sourcegraph code discussions.
@@ -141,10 +130,8 @@ type Discussions struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	CanonicalURLRedirect string `json:"canonicalURLRedirect,omitempty"`
-	Discussions          string `json:"discussions,omitempty"`
-	ExternalServices     string `json:"externalServices,omitempty"`
-	UpdateScheduler2     string `json:"updateScheduler2,omitempty"`
+	Discussions      string `json:"discussions,omitempty"`
+	UpdateScheduler2 string `json:"updateScheduler2,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -191,8 +178,7 @@ type GitLabAuthProvider struct {
 
 // GitLabAuthorization description: If non-null, enforces GitLab repository permissions. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
 type GitLabAuthorization struct {
-	AuthnProvider AuthnProvider `json:"authnProvider"`
-	Ttl           string        `json:"ttl,omitempty"`
+	Ttl string `json:"ttl,omitempty"`
 }
 type GitLabConnection struct {
 	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
@@ -205,10 +191,11 @@ type GitLabConnection struct {
 	Url                         string               `json:"url"`
 }
 type GitoliteConnection struct {
-	Blacklist                  string `json:"blacklist,omitempty"`
-	Host                       string `json:"host"`
-	PhabricatorMetadataCommand string `json:"phabricatorMetadataCommand,omitempty"`
-	Prefix                     string `json:"prefix"`
+	Blacklist                  string       `json:"blacklist,omitempty"`
+	Host                       string       `json:"host"`
+	Phabricator                *Phabricator `json:"phabricator,omitempty"`
+	PhabricatorMetadataCommand string       `json:"phabricatorMetadataCommand,omitempty"`
+	Prefix                     string       `json:"prefix"`
 }
 
 // HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
@@ -251,6 +238,12 @@ type OtherExternalServiceConnection struct {
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
+}
+
+// Phabricator description: Phabricator instance that integrates with this Gitolite instance
+type Phabricator struct {
+	CallsignCommand string `json:"callsignCommand"`
+	Url             string `json:"url"`
 }
 type PhabricatorConnection struct {
 	Repos []*Repos `json:"repos,omitempty"`

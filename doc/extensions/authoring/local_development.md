@@ -1,4 +1,4 @@
-# Local Development (Sideloading)
+# Local development (sideloading)
 
 When developing an extension, you can sideload it from your local development machine's Parcel dev server (instead of re-publishing it after each code change). This speeds up the development cycle and avoids breaking the published version of your extension.
 
@@ -17,16 +17,18 @@ After doing this, the development cycle is as follows:
 
 When you're done, clear the sideload URL from the extensions debug menu.
 
-*NOTE:* this workflow assumes that, when running the Parcel dev server, a symlink exists in the `dist/` directory pointing to your `package.json`. If you [created your extension the easy way](creating.md#creating-an-extension-the-easy-way), this is already set up for you. Otherwise:
-1. Add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`).
-1. Add the following npm script to your `package.json`:
+**Note:** This workflow assumes that, when running the Parcel dev server, a symlink exists in the `dist/` directory pointing to your `package.json`. If you [created your extension the easy way](creating.md#creating-an-extension-the-easy-way), this is already set up for you. Otherwise, follow these steps:
 
-    ```
+1. Add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`).
+2. Add the following npm script to your `package.json`:
+
+    ```json
     "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json"
     ```
-2. Edit the `serve` npm script to run `symlink-package`:
 
-    ```
+3. Edit the `serve` npm script to run `symlink-package`:
+
+    ```json
     "serve": "npm run symlink package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
     ```
 

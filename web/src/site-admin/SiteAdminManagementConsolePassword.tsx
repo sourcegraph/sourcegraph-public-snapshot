@@ -79,7 +79,7 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
                 <div className="card">
                     <div className="card-header alert-warning">
                         <KeyVariantIcon /> Critical configuration is set in the{' '}
-                        <a href="https://docs.sourcegraph.com/admin/management_console ">management console</a>.
+                        <a href="/help/admin/management_console ">management console</a>.
                     </div>
                     <div className="card-body">
                         Your management console password has been automatically generated for you. <br />
@@ -90,7 +90,7 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
                             <CopyableText password={true} className="flex-wrap-reverse" text={plaintextPassword} />
                         </div>
                         <div className="flex-wrap-reverse">
-                            <a href="https://docs.sourcegraph.com/admin/management_console" className="mr-2">
+                            <a href="/help/admin/management_console" className="mr-2">
                                 Learn more
                             </a>
                             <button className="btn btn-primary btn-sm" onClick={this.nextDismissForeverClick}>

@@ -96,7 +96,7 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 			keys = append(keys, nodeIDCacheKey(repo.ID)) // also cache under GraphQL node ID
 		}
 		return repo, keys, err
-	})
+	}, false)
 }
 
 // GetRepositoryByNodeIDMock is set by tests to mock (*Client).GetRepositoryByNodeID.
@@ -104,11 +104,23 @@ var GetRepositoryByNodeIDMock func(ctx context.Context, token, id string) (*Repo
 
 // GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID using the specified user token.
 func (c *Client) GetRepositoryByNodeID(ctx context.Context, token, id string) (*Repository, error) {
+	return c.getRepositoryByNodeID(ctx, token, id, false)
+}
+
+// HACK: allows us to bypass the GitHub client cache (used for fetching repositories to determine
+// permissions). TODO(beyang): merge this into a unified GetRepositoryByNodeID with a clean
+// interface.
+func (c *Client) GetRepositoryByNodeIDNoCache(ctx context.Context, token, id string) (*Repository, error) {
+	return c.getRepositoryByNodeID(ctx, token, id, true)
+}
+
+func (c *Client) getRepositoryByNodeID(ctx context.Context, token, id string, nocache bool) (*Repository, error) {
 	if GetRepositoryByNodeIDMock != nil {
 		return GetRepositoryByNodeIDMock(ctx, token, id)
 	}
 
 	key := nodeIDCacheKey(id)
+
 	// 🚨 SECURITY: must forward token here to ensure caching by token
 	return c.cachedGetRepository(ctx, token, key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
 		keys = append(keys, key)
@@ -117,18 +129,20 @@ func (c *Client) GetRepositoryByNodeID(ctx context.Context, token, id string) (*
 			keys = append(keys, nameWithOwnerCacheKey(repo.NameWithOwner)) // also cache under "owner/name"
 		}
 		return repo, keys, err
-	})
+	}, nocache)
 }
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *Client) cachedGetRepository(ctx context.Context, token, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
+func (c *Client) cachedGetRepository(ctx context.Context, token, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
 	// 🚨 SECURITY: must forward token here to ensure caching by token
-	if cached := c.getRepositoryFromCache(ctx, token, key); cached != nil {
-		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
-		if cached.NotFound {
-			return nil, ErrNotFound
+	if !nocache {
+		if cached := c.getRepositoryFromCache(ctx, token, key); cached != nil {
+			reposGitHubCacheCounter.WithLabelValues("hit").Inc()
+			if cached.NotFound {
+				return nil, ErrNotFound
+			}
+			return &cached.Repository, nil
 		}
-		return &cached.Repository, nil
 	}
 
 	repo, keys, err := getRepositoryFromAPI(ctx)
@@ -296,6 +310,13 @@ query Repository($id: ID!) {
 		map[string]interface{}{"id": id},
 		&result,
 	); err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok {
+			for _, err2 := range gqlErrs {
+				if err2.Type == graphqlErrTypeNotFound {
+					return nil, ErrNotFound
+				}
+			}
+		}
 		return nil, err
 	}
 	if result.Node == nil {

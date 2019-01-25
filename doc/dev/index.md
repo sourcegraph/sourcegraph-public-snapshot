@@ -24,7 +24,8 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 
 ### Product
 
-- [Roadmap](roadmap.md)
+- [Roadmap](roadmap/index.md)
+- [Retrospectives](retrospectives/index.md)
 - [Documentation guide](documentation/index.md)
 - [Website (about.sourcegraph.com)](https://github.com/sourcegraph/about/tree/master/website)
 

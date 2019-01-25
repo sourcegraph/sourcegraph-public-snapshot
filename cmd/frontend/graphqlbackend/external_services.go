@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -15,14 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
-var externalServiceKinds = map[string]struct{}{
-	"AWSCODECOMMIT":   {},
-	"BITBUCKETSERVER": {},
-	"GITHUB":          {},
-	"GITLAB":          {},
-	"GITOLITE":        {},
-	"PHABRICATOR":     {},
-	"OTHER":           {},
+var externalServiceKinds = map[string]struct {
+	// True if the external service can host repositories.
+	codeHost bool
+}{
+	"AWSCODECOMMIT":   {codeHost: true},
+	"BITBUCKETSERVER": {codeHost: true},
+	"GITHUB":          {codeHost: true},
+	"GITLAB":          {codeHost: true},
+	"GITOLITE":        {codeHost: true},
+	"PHABRICATOR":     {codeHost: true},
+	"OTHER":           {codeHost: true},
 }
 
 func validateKind(kind string) error {
@@ -80,6 +84,10 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Only site admins are allowed to update the user.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
+	}
+
+	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
+		return nil, fmt.Errorf("blank external service configuration is invalid (must be valid JSONC)")
 	}
 
 	update := &db.ExternalServiceUpdate{

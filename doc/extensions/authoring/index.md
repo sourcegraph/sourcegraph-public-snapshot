@@ -8,7 +8,7 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 
 ## Topics
 
-- [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html)
+- [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html) (full API is in [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/packages/sourcegraph-extension-api/src/sourcegraph.d.ts))
 - [Set up your development environment](development_environment.md)
 - [Creating an extension](creating.md)
 - [Local development](local_development.md)

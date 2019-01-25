@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
@@ -49,8 +51,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// Try every verified email in succession until the first that succeeds
 	var data extsvc.ExternalAccountData
-	data.SetAccountData(ghUser)
-	data.SetAuthData(token)
+	githubsvc.SetExternalAccountData(&data, ghUser, token)
 	var (
 		firstSafeErrMsg string
 		firstErr        error
@@ -138,4 +139,16 @@ func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oaut
 		verifiedEmails = append(verifiedEmails, email.Email)
 	}
 	return verifiedEmails
+}
+
+func SignOutURL(githubURL string) (string, error) {
+	if githubURL == "" {
+		githubURL = "https://github.com"
+	}
+	ghURL, err := url.Parse(githubURL)
+	if err != nil {
+		return "", err
+	}
+	ghURL.Path = path.Join(ghURL.Path, "logout")
+	return ghURL.String(), nil
 }

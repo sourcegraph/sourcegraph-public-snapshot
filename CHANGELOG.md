@@ -9,6 +9,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+- Fixed an issue where the site admin is redirected to the start page instead of being redirected to the repositories overview page after deleting a repo.
+
+### Removed
+
+## 3.0.0-beta
+
+### Added
+
 - Repositories can now be queried by a git clone URL through the GraphQL API.
 - A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
 - Authentication via GitHub is now supported. To enable, add an item to the `auth.providers` list with `type: "github"`. By default, GitHub identities must be linked to an existing Sourcegraph user account. To enable new account creation via GitHub, use the `allowSignup` option in the `GitHubConnection` config.
@@ -30,11 +42,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The Postgres database backing Sourcegraph has been upgraded from 9.4 to 11.1. Existing Sourcegraph users must conduct an [upgrade procedure](https://docs.sourcegraph.com/admin/postgres_upgrade)
 - Code host configuration has moved out of the site config JSON into the "External services" area of the site admin web UI. Sourcegraph instances will automatically perform a one time migration of existing data in the site config JSON. After the migration these keys can be safely deleted from the site config JSON: `awsCodeCommit`, `bitbucketServer`, `github`, `gitlab`, `gitolite`, and `phabricator`.
 - Site and user usage statistics are now visible to all users. Previously only site admins (and users, for their own usage statistics) could view this information. The information consists of aggregate counts of actions such as searches, page views, etc.
 - The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
 - The `appURL` site configuration option was renamed to `externalURL`.
-- The default for `experimentalFeatures.canonicalURLRedirect` in site config was changed back to `disabled`.
 - The repository and directory pages now show all entries together instead of showing files and (sub)directories separately.
 - Extensions no longer can specify titles (in the `title` property in the `package.json` extension manifest). Their extension ID (such as `alice/myextension`) is used.
 
@@ -45,6 +57,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed resolving of git clone URLs with `git+` prefix through the GraphQL API
 - Fixed an issue where the graphql Repositories endpoint would order by a field which was not indexed. Times on Sourcegraph.com went from 10s to 200ms.
 - Fixed an issue where whitespace was not handled properly in environment variable lists (`SYMBOLS_URL`, `SEARCHER_URL`).
+- Fixed an issue where clicking inside the repository popover or clicking "Show more" would dismiss the popover.
 
 ### Removed
 
@@ -60,7 +73,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Removed the `tls.letsencrypt` site configuration option. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 - Removed the `tls.cert` and `tls.key` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for this instead.
 - Removed the `httpToHttpsRedirect` and `experimentalFeatures.canonicalURLRedireect` site configuration options. Use [nginx configuration](https://docs.sourcegraph.com/admin/nginx) for these instead.
-  - [Other code hosts](https://github.com/sourcegraph/sourcegraph/issues/1324)
+- Sourcegraph no longer requires access to `/var/run/docker.sock`.
 
 ## 2.13.6
 

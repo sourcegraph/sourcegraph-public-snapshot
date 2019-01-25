@@ -1,0 +1,94 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable color-hex-length */
+/* stylelint-disable color-named */
+.integrations-explore-section {
+    &__section-title {
+        margin-bottom: 0.75rem;
+    }
+
+    &__row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    &__card {
+        display: inline-block;
+        box-sizing: border-box;
+        position: relative;
+        width: 100%;
+        margin-top: 0.75rem;
+        transition: all 150ms ease;
+        &:first-of-type {
+            margin-top: 0;
+        }
+        &:hover {
+            transform: translateY(-2px);
+        }
+        &__content {
+            display: block;
+            height: 100%;
+            border: 1px solid;
+            border-radius: 2px;
+            padding: 0.5rem;
+
+            &__body {
+                display: flex;
+                justify-content: space-between;
+
+                &__title {
+                    word-wrap: break-word;
+                    font-size: 16px;
+                    font-weight: 600;
+                    font-style: normal;
+                    font-stretch: normal;
+                    line-height: 1.25;
+                    letter-spacing: normal;
+                    color: $body-color;
+                    margin: 0;
+                }
+                &__text {
+                    font-weight: 500;
+                    line-height: 1.33;
+                    font-size: 12px;
+                    letter-spacing: normal;
+                    color: $body-color;
+                    margin-bottom: 0.125rem;
+                }
+            }
+            &__icon {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding-bottom: 0.0625rem;
+                color: $body-color;
+            }
+            &:hover {
+                text-decoration: none;
+            }
+        }
+    }
+
+    .theme-dark & {
+        &__card {
+            &:hover {
+                box-shadow: 0 6px 12px 2px rgba(13, 108, 255, 0.125);
+            }
+            &__content {
+                background-image: linear-gradient(116deg, #0c1e41, #171941);
+                border-color: #184bb1;
+            }
+        }
+    }
+    .theme-light & {
+        &__card {
+            &:hover {
+                box-shadow: 0 6px 10px 0 rgba(7, 61, 144, 0.05);
+            }
+            &__content {
+                background-image: linear-gradient(116deg, #ffffff, #fdfdfe);
+                border-color: $border-color;
+            }
+        }
+    }
+}

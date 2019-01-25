@@ -1,16 +1,16 @@
-# delve-hook is for debugging Go processes
-gitserver: ./dev/delve-hook .bin/gitserver
-query-runner: ./dev/delve-hook .bin/query-runner
-repo-updater: ./dev/delve-hook .bin/repo-updater
-searcher: ./dev/delve-hook .bin/searcher
-symbols: ./dev/delve-hook .bin/symbols
-github-proxy: ./dev/delve-hook .bin/github-proxy
-frontend: env CONFIGURATION_MODE=server ./dev/delve-hook .bin/frontend
+gitserver: .bin/gitserver
+query-runner: .bin/query-runner
+repo-updater: .bin/repo-updater
+searcher: .bin/searcher
+symbols: .bin/symbols
+github-proxy: .bin/github-proxy
+frontend: env CONFIGURATION_MODE=server .bin/frontend
 watch: ./dev/changewatch.sh
+nginx: nginx -p . -g 'daemon off;' -c $PWD/dev/nginx.conf | grep -v 'could not open error log file'
 web: ./node_modules/.bin/gulp --color watch
 syntect_server: ./dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
 zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc
-management-console: PROJECT_ROOT=./cmd/management-console TLS_CERT=$HOME/.sourcegraph/management/cert.pem TLS_KEY=$HOME/.sourcegraph/management/key.pem ./dev/delve-hook management-console
+management-console: PROJECT_ROOT=./cmd/management-console TLS_CERT=$HOME/.sourcegraph/management/cert.pem TLS_KEY=$HOME/.sourcegraph/management/key.pem management-console
 management-console-web: cd ./cmd/management-console/web && ./serve.sh
 # jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest

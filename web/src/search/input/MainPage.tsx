@@ -50,14 +50,14 @@ interface State {
     bgScrollStyle: string
 }
 const heroEyebrow = 'Sourcegraph'
-const heroTitle = 'Open. For business.'
+const heroTitle = 'Search, navigate, and review code. Find answers.'
 const heroCopyTop =
-    'Sourcegraph is a free, open-source, self-hosted code search and intelligence server that helps developers find, review, understand, and debug code. Use it with any Git code host for teams of any size. Start using it now, then install the Sourcegraph Docker image on your private code.'
-const heroCopyBottom = 'Upgraded features start at $4/user/month.'
+    'Sourcegraph is a free, open-source, self-hosted code search and navigation tool for developers. Use it with any Git code host for teams of any size.'
+const heroCopyBottom = 'Upgraded features available for enterprise users.'
 
 const searchSections = [
     {
-        title: 'Powerful, Flexible Queries',
+        title: 'Powerful, flexible queries',
         paragraph:
             'Sourcegraph code search performs full-text searches and supports both regular expression and exact queries. By default, Sourcegraph searches across all your repositories. Our search query syntax allows for advanced queries, such as searching over any branch or commit, narrowing searches by programming language or file pattern, and more.',
         buttons: [
@@ -65,40 +65,40 @@ const searchSections = [
             { query: 'repogroup:goteam file:\\.go$', text: 'Go Code by Go Team' },
             {
                 query: 'repogroup:ethereum file:\\.(txt|md)$ file:(test|spec) ',
-                text: 'Core Etherium Test Files',
+                text: 'Core Ethereum test files',
             },
             { query: 'repogroup:angular file:\\.JSON$', text: 'Angular JSON Files' },
         ],
     },
     {
-        title: 'Commit Diff Search',
+        title: 'Commit diff search',
         paragraph:
             'Search over commit diffs using type:diff to see how your codebase has changed over time. This is often used to find changes to particular functions, classes, or areas of the codebase when debugging. You can also search within commit diffs on multiple branches by specifying the branches in a repo: field after the @ sign.',
         buttons: [
-            { query: 'repo:^github\\.com/apple/swift$@master-next type:diff', text: 'Swift Diff on Master-Next' },
-            { query: 'repo:^github.com/facebook/react$ file:(test|spec)  type:diff', text: 'ReactJS Test File Diff' },
+            { query: 'repo:^github\\.com/apple/swift$@master-next type:diff', text: 'Swift diff' },
+            { query: 'repo:^github.com/facebook/react$ file:(test|spec)  type:diff', text: 'React test file diff' },
             {
                 query: 'repo:^github.com/golang/oauth2$ type:diff',
-                text: 'Go oAuth2 Diff',
+                text: 'Go oauth2 diff',
             },
             {
                 query: 'repo:^github.com/kubernetes/kubernetes$ type:diff statefulset',
-                text: 'Kubernetes Statefulset Diff',
+                text: 'Kubernetes statefulset diff',
             },
         ],
     },
     {
-        title: 'Commit Message Search',
+        title: 'Commit message search',
         paragraph:
             'Searching over commit messages is supported in Sourcegraph by adding type:commit to your search query. Separately, you can also use the message:"any string" token to filter type:diff searches for a given commit message.',
         buttons: [
-            { query: 'type:commit  repogroup:angular author:google.com>$ ', text: 'Angular Commits by Googlers' },
-            { query: 'repogroup:npm type:commit security', text: 'NPM Commits mentioning Security' },
+            { query: 'type:commit  repogroup:angular author:google.com>$ ', text: 'Angular commits by Googlers' },
+            { query: 'repogroup:npm type:commit security', text: 'NPM commits mentioning security' },
             {
                 query: 'repogroup:ethereum type:commit money loss',
-                text: "Ethereum Commits mentioning 'Money Loss'",
+                text: "Ethereum commits mentioning 'money loss'",
             },
-            { query: 'repo:^github.com/sourcegraph/sourcegraph type:commit', text: 'Sourcegraph Commits' },
+            { query: 'repo:^github.com/sourcegraph/sourcegraph type:commit', text: 'Sourcegraph commits' },
         ],
     },
     {
@@ -106,13 +106,13 @@ const searchSections = [
         paragraph:
             'Searching for symbols makes it easier to find specific functions, variables and more. Use the type:symbol filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name.',
         buttons: [
-            { query: 'repogroup:goteam type:symbol httpRouter', text: 'Go Code with httpRouter' },
+            { query: 'repogroup:goteam type:symbol httpRouter', text: 'Go code with httpRouter' },
             { query: 'repo:^github.com/apple/swift$ type:symbol main', text: "Calls to 'main' in Swift" },
             {
-                query: 'repo:golang/go$ type:symbol sprintF',
-                text: 'Golang sprintF',
+                query: 'repo:golang/go$ type:symbol sprintf',
+                text: 'Go sprintf',
             },
-            { query: 'repo:golang/go$ type:symbol newDecoder', text: 'Golang newDecoder' },
+            { query: 'repo:golang/go$ type:symbol newDecoder', text: 'Go newDecoder' },
         ],
     },
 ]
@@ -174,7 +174,7 @@ const integrationsSections = [
         ],
     },
     {
-        title: 'IDE extensions',
+        title: 'Editor extensions',
         paragraph:
             'Our editor plugins let you quickly jump to files and search code on your Sourcegraph instance from your editor. Seamlessly jump for development to review without missing a step.',
         buttons: [
@@ -187,7 +187,7 @@ const integrationsSections = [
             },
             {
                 id: 'btn-vscode',
-                text: 'VS Code',
+                text: 'Visual Studio Code',
                 link: 'https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph',
             },
         ],
@@ -303,7 +303,7 @@ export class MainPage extends React.Component<Props, State> {
                         <div className="row">
                             <div className="col-lg-6 col-md-12 col-sm-12">
                                 <h2>{heroEyebrow}</h2>
-                                <h1>{heroTitle}</h1>
+                                <h1 className="mt-2">{heroTitle}</h1>
                                 <p>{heroCopyTop}</p>
                                 <p>{heroCopyBottom}</p>
                                 <a className="btn btn-primary" href="https://docs.sourcegraph.com/#quickstart">
@@ -358,7 +358,7 @@ export class MainPage extends React.Component<Props, State> {
                         <div className="container">
                             <div className="row">
                                 <div className="col-12">
-                                    <h2>Advanced Code Search</h2>
+                                    <h2>Advanced code search</h2>
                                     <h1>Find. Then replace.</h1>
                                     <p>
                                         Search in files and diffs on your private code using simple terms, regular
@@ -373,7 +373,7 @@ export class MainPage extends React.Component<Props, State> {
                                         id="sampleButton"
                                         onClick={this.activateModal('search')}
                                     >
-                                        Explore Code Search
+                                        Explore code search
                                     </button>
                                 </div>
                             </div>
@@ -383,7 +383,7 @@ export class MainPage extends React.Component<Props, State> {
                         <div className="container">
                             <div className="row">
                                 <div className="col-12">
-                                    <h2>Enhanced Code Browsing and Intelligence</h2>
+                                    <h2>Enhanced code browsing and intelligence</h2>
                                     <h1>Mine your language.</h1>
                                     <p>
                                         Solve problems before they exist, commit by commit. Code intelligence makes
@@ -400,7 +400,7 @@ export class MainPage extends React.Component<Props, State> {
                                         id="sampleButton"
                                         onClick={this.activateModal('intelligence')}
                                     >
-                                        Explore Code Intelligence
+                                        Explore code intelligence
                                     </button>
                                 </div>
                             </div>
@@ -421,7 +421,7 @@ export class MainPage extends React.Component<Props, State> {
                                         id="sampleButton"
                                         onClick={this.activateModal('integrations')}
                                     >
-                                        Explore Integrations
+                                        Explore integrations
                                     </button>
                                 </div>
                             </div>
@@ -451,7 +451,7 @@ export class MainPage extends React.Component<Props, State> {
                                 </a>
                             </div>
                             <div className="col-lg-6 col-md-12">
-                                <h2>Sourcegraph Pricing</h2>
+                                <h2>Sourcegraph pricing</h2>
                                 <h1>Size. Up.</h1>
                                 <p>
                                     When you grow to hundreds or thousands of users and repositories, scale up
@@ -569,10 +569,10 @@ export class MainPage extends React.Component<Props, State> {
                                 <input type="checkbox" />
                                 <ul>
                                     <li>
-                                        <a onClick={this.activateModal('search')}>Code Search</a>
+                                        <a onClick={this.activateModal('search')}>Code search</a>
                                     </li>
                                     <li>
-                                        <a onClick={this.activateModal('intelligence')}>Code Intelligence</a>
+                                        <a onClick={this.activateModal('intelligence')}>Code intelligence</a>
                                     </li>
                                     <li>
                                         <a onClick={this.activateModal('integrations')}>Integrations</a>
@@ -593,7 +593,9 @@ export class MainPage extends React.Component<Props, State> {
                                         <a href="https://docs.sourcegraph.com">Documentation</a>
                                     </li>
                                     <li>
-                                        <a href="//about.sourcegraph.com/changelog">Changelog</a>
+                                        <a href="//sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md">
+                                            Changelog
+                                        </a>
                                     </li>
                                     <li>
                                         <a href="//about.sourcegraph.com/pricing">Pricing</a>
@@ -647,7 +649,7 @@ export class MainPage extends React.Component<Props, State> {
                         </button>
                         <div className="row copy-section">
                             <div className="col-12 modal-header">
-                                <h2>Advanced Code Search</h2>
+                                <h2>Advanced code search</h2>
                                 <h1>Find. Then replace.</h1>
                             </div>
                         </div>
@@ -722,7 +724,7 @@ export class MainPage extends React.Component<Props, State> {
                                     href="//about.sourcegraph.com/docs/search/query-syntax"
                                     target="_blank"
                                 >
-                                    Search Documentation
+                                    Search documentation
                                     <ChevronRightIcon className="material-icons" />
                                 </a>
                             </div>
@@ -743,7 +745,7 @@ export class MainPage extends React.Component<Props, State> {
                         </button>
                         <div className="row copy-section">
                             <div className="col-12 modal-header">
-                                <h2>Enhanced Code Browsing and Intelligence</h2>
+                                <h2>Enhanced code browsing and intelligence</h2>
                                 <h1>Mine your language.</h1>
                             </div>
                         </div>
@@ -800,7 +802,7 @@ export class MainPage extends React.Component<Props, State> {
                                     href="//about.sourcegraph.com/docs/code-intelligence"
                                     target="_blank"
                                 >
-                                    Code Intelligence Documentation
+                                    Code intelligence documentation
                                     <ChevronRightIcon className="material-icons" />
                                 </a>
                             </div>
@@ -873,7 +875,7 @@ export class MainPage extends React.Component<Props, State> {
                                     href="//about.sourcegraph.com/docs/integrations"
                                     target="_blank"
                                 >
-                                    Integrations Documentation
+                                    Integrations documentation
                                     <ChevronRightIcon className="material-icons" />
                                 </a>
                             </div>

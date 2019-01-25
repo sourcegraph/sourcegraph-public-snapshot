@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -33,9 +35,11 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	var data extsvc.ExternalAccountData
-	data.SetAccountData(gUser)
-	data.SetAuthData(token)
+	gitlab.SetExternalAccountData(&data, gUser, token)
 
+	// Unlike with GitHub, we can *only* use the primary email to resolve the user's identity,
+	// because the GitLab API does not return whether an email has been verified. The user's primary
+	// email on GitLab is always verified, so we use that.
 	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
 		UserProps: db.NewUser{
 			Username:        login,
@@ -75,4 +79,16 @@ func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData
 		TokenType:   token.Type(),
 		// TODO(beyang): store and use refresh token to auto-refresh sessions
 	}
+}
+
+func SignOutURL(gitlabURL string) (string, error) {
+	if gitlabURL == "" {
+		gitlabURL = "https://gitlab.com"
+	}
+	ghURL, err := url.Parse(gitlabURL)
+	if err != nil {
+		return "", err
+	}
+	ghURL.Path = path.Join(ghURL.Path, "users/sign_out")
+	return ghURL.String(), nil
 }

@@ -1,6 +1,6 @@
 # Creating a Sourcegraph extension
 
-First [set up your development environment](development_environment.md) so you're ready for creating and publishing.
+First, [set up your development environment](development_environment.md) so you're ready for creating and publishing.
 
 ## What is a Sourcegraph extension?
 

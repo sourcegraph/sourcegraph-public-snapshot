@@ -30,7 +30,9 @@ To configure GitLab as an authentication provider (which will enable sign-in via
 
 ## Repository permissions
 
-By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use GitLab's per-user repository permissions, see "[Repository permissions](../admin/repo/permissions.md)".
+By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
+GitLab's per-user repository permissions, see "[Repository
+permissions](../admin/repo/permissions.md#gitlab)".
 
 ## Browser extension
 

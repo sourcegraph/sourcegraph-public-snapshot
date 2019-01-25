@@ -2,8 +2,7 @@
 {
   "externalURL": "http://localhost:3080",
   "experimentalFeatures": {
-    "discussions": "enabled",
-    "externalServices": "enabled"
+    "discussions": "enabled"
   },
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,

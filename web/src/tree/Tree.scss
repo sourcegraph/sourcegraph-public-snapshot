@@ -22,7 +22,7 @@
     }
 
     &__row {
-        color: white;
+        color: #ffffff;
         width: 100%;
         display: table;
 
@@ -40,7 +40,7 @@
         }
 
         &--active {
-            color: white;
+            color: #ffffff;
             width: 100%;
             display: table;
             background-color: #1c7cd6 !important;
@@ -54,14 +54,14 @@
     }
 
     &__row-icon {
-        color: white !important; // override link color
+        color: #ffffff !important; // override link color
         // stylelint-disable-next-line declaration-property-unit-whitelist
         width: 1.1em;
     }
 
     &__row-contents {
         display: flex;
-        color: white;
+        color: #ffffff;
         align-items: center;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
@@ -79,7 +79,7 @@
 
     &__row-label {
         margin-left: 0.25rem;
-        color: white !important; // override link color
+        color: #ffffff !important; // override link color
     }
 }
 

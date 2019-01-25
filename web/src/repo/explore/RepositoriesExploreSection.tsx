@@ -60,7 +60,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                 ? this.state.repositoriesOrError
                 : this.state.repositoriesOrError.nodes
 
-        const itemClass = 'py-2 border-white'
+        const itemClass = 'py-2'
 
         // Only show total count if it is counting *all* repositories (i.e., no filter args are specified).
         const queryingAllRepositories = RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.names === null
@@ -73,7 +73,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
 
         return (
             <div className="repositories-explore-section">
-                <h2>Repositories {totalCount}</h2>
+                <h2>Repositories: {totalCount}</h2>
                 {isErrorLike(repositoriesOrError) ? (
                     <div className="alert alert-danger">Error: {repositoriesOrError.message}</div>
                 ) : repositoriesOrError.length === 0 ? (
@@ -92,7 +92,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                                         className={`${itemClass} list-group-item list-group-item-action text-truncate`}
                                         to={repo.url}
                                     >
-                                        <h3 className="mb-0 text-truncate">
+                                        <h3 className="mb-0 text-truncate repositories-explore-section__name">
                                             <RepoLink to={null} repoName={repo.name} />
                                         </h3>
                                         <span>{repo.description || <>&nbsp;</>}</span>

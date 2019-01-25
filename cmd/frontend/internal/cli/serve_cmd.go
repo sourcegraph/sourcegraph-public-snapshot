@@ -2,20 +2,19 @@ package cli
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -30,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
-	"golang.org/x/crypto/acme/autocert"
+	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -41,8 +40,9 @@ var (
 	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
 
 	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
-	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API. Only used if manual tls cert and key are specified.")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
+
+	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
 
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
@@ -50,13 +50,23 @@ var (
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
 
+func init() {
+	// If CACHE_DIR is specified, use that
+	cacheDir := env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
+	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "frontend-archive-cache")
+}
+
 func configureExternalURL() (*url.URL, error) {
+	addr := nginxAddr
+	if addr == "" {
+		addr = httpAddr
+	}
 	var hostPort string
-	if strings.HasPrefix(httpAddr, ":") {
+	if strings.HasPrefix(addr, ":") {
 		// Prepend localhost if HTTP listen addr is just a port.
-		hostPort = "127.0.0.1" + httpAddr
+		hostPort = "127.0.0.1" + addr
 	} else {
-		hostPort = httpAddr
+		hostPort = addr
 	}
 	externalURL := conf.Get().Critical.ExternalURL
 	if externalURL == "" {
@@ -152,14 +162,6 @@ func Main() error {
 		hooks.AfterDBInit()
 	}
 
-	tlsCert := conf.Get().Critical.TlsCert
-	tlsKey := conf.Get().Critical.TlsKey
-	tlsCertAndKey := tlsCert != "" && tlsKey != ""
-	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.ExternalURL.Scheme == "https" && conf.Get().Critical.TlsLetsencrypt != "off"))
-	if useTLS && globals.ExternalURL.Scheme == "http" {
-		log15.Warn("TLS is enabled but app url scheme is http", "externalURL", globals.ExternalURL)
-	}
-
 	// Create the external HTTP handler.
 	externalHandler, err := newExternalHTTPHandler(context.Background())
 	if err != nil {
@@ -172,71 +174,17 @@ func Main() error {
 	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}
 
-	// Start HTTPS server.
-	if useTLS {
-		var tlsConf *tls.Config
-
-		// Configure tlsConf
-		if tlsCertAndKey {
-			// Manual
-			cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
-			if err != nil {
-				return err
-			}
-			tlsConf = &tls.Config{
-				NextProtos:   []string{"h2", "http/1.1"},
-				Certificates: []tls.Certificate{cert},
-			}
-		} else {
-			// LetsEncrypt
-			m := &autocert.Manager{
-				Prompt:     autocert.AcceptTOS,
-				HostPolicy: autocert.HostWhitelist(globals.ExternalURL.Host),
-				Cache:      db.CertCache,
-			}
-			// m.TLSConfig uses m's GetCertificate as well as enabling ACME
-			// "tls-alpn-01" challenges.
-			tlsConf = m.TLSConfig()
-			// We register paths on our HTTP handler so that we can do ACME
-			// "http-01" challenges.
-			srv.SetWrapper(m.HTTPHandler)
-		}
-
-		l, err := net.Listen("tcp", httpsAddr)
-		if err != nil {
-			// Fatal if we manually specified TLS or enforce lets encrypt
-			if tlsCertAndKey || conf.Get().Critical.TlsLetsencrypt == "on" {
-				log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
-			} else {
-				log15.Warn("Failed to bind to HTTPS port, TLS disabled", "address", httpsAddr, "error", err)
-			}
-		}
-
-		if l != nil {
-			l = tls.NewListener(l, tlsConf)
-			log15.Debug("HTTPS running", "on", l.Addr())
-			srv.GoServe(l, &http.Server{
-				Handler:      externalHandler,
-				ReadTimeout:  75 * time.Second,
-				WriteTimeout: 60 * time.Second,
-			})
-		}
-	}
-
 	// Start HTTP server.
-	if httpAddr != "" {
-		l, err := net.Listen("tcp", httpAddr)
-		if err != nil {
-			return err
-		}
-
-		log15.Debug("HTTP running", "on", httpAddr)
-		srv.GoServe(l, &http.Server{
-			Handler:      externalHandler,
-			ReadTimeout:  75 * time.Second,
-			WriteTimeout: 60 * time.Second,
-		})
+	l, err := net.Listen("tcp", httpAddr)
+	if err != nil {
+		return err
 	}
+	log15.Debug("HTTP running", "on", httpAddr)
+	srv.GoServe(l, &http.Server{
+		Handler:      externalHandler,
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	})
 
 	if httpAddrInternal != "" {
 		l, err := net.Listen("tcp", httpAddrInternal)

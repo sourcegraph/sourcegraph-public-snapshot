@@ -267,7 +267,13 @@ func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, erro
 	return names, err
 }
 
+// MockInternalClientConfiguration mocks (*internalClient).Configuration.
+var MockInternalClientConfiguration func() (conftypes.RawUnified, error)
+
 func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnified, error) {
+	if MockInternalClientConfiguration != nil {
+		return MockInternalClientConfiguration()
+	}
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err

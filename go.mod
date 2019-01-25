@@ -17,7 +17,7 @@ require (
 	github.com/derekparker/delve v1.1.0 // indirect
 	github.com/dghubble/gologin v1.0.2-0.20181013174641-0e442dd5bb73
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/die-net/lrucache v0.0.0-20180825112409-f89ea99a4e43
+	github.com/die-net/lrucache v0.0.0-20190123005519-19a39ef22a11
 	github.com/emersion/go-imap v1.0.0-beta.1
 	github.com/emersion/go-sasl v0.0.0-20161116183048-7e096a0a6197 // indirect
 	github.com/ericchiang/k8s v1.2.0
@@ -72,9 +72,10 @@ require (
 	github.com/kr/text v0.1.0
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348
 	github.com/lib/pq v1.0.0
-	github.com/lightstep/lightstep-tracer-go v0.15.4
+	github.com/lightstep/lightstep-tracer-go v0.15.6
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
-	github.com/mattn/goreman v0.2.1-0.20180930133601-738cf1257bd3
+	github.com/mattn/goreman v0.2.1
+	github.com/mcuadros/go-version v0.0.0-20180611085657-6d5863ca60fa
 	github.com/microcosm-cc/bluemonday v1.0.1
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190104202730-77df8e8e70b4
@@ -99,10 +100,9 @@ require (
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
-	github.com/sourcegraph/godockerize v0.0.0-20181126200657-4f825419611b
 	github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10
 	github.com/sourcegraph/httpcache v0.0.0-20160524185540-16db777d8ebe
-	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
+	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
@@ -130,15 +130,14 @@ require (
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
-	gopkg.in/src-d/go-git.v4 v4.7.0
-	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8 // indirect
+	gopkg.in/src-d/go-git.v4 v4.8.0
 	gopkg.in/yaml.v2 v2.2.2
 	sourcegraph.com/sourcegraph/go-diff v0.0.0-20171119081133-3f415a150aec
 	sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4 // indirect
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20181115082148-dacbbfd8c3ce
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190116094554-8aa57bd35909
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538

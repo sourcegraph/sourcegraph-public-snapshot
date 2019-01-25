@@ -23,10 +23,10 @@ func TestSettings_ListAll(t *testing.T) {
 	}
 
 	// Try creating both with non-nil author and nil author.
-	if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, ""); err != nil {
+	if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, "{}"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user2.ID}, nil, nil, ""); err != nil {
+	if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user2.ID}, nil, nil, "{}"); err != nil {
 		t.Fatal(err)
 	}
 

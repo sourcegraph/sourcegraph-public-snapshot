@@ -46,6 +46,14 @@ export const isOptions = ctx.scriptEnv === ScriptEnv.Options
 export const isExtension = ctx.appEnv === AppEnv.Extension
 export const isInPage = !isExtension
 
+export const isPublicCodeHost = ((): boolean => {
+    if (!isContent) {
+        return false
+    }
+    const { hostname } = window.location
+    return ['github.com', 'gitlab.com', 'bitbucket.org'].includes(hostname)
+})()
+
 export const isPhabricator = Boolean(document.querySelector('.phabricator-wordmark'))
 
 export default ctx

@@ -15,6 +15,7 @@ import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import initializeCli from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle, createExtensionHostWorker } from '../../platform/worker'
+import { requestGraphQL } from '../../shared/backend/graphql'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
@@ -288,6 +289,12 @@ runtime.onMessage((message, _, cb) => {
                 .catch(err => {
                     throw new Error(`Unable to create blob url for bundle ${message.payload} error: ${err}`)
                 })
+            return true
+        case 'requestGraphQL':
+            requestGraphQL(message.payload)
+                .toPromise()
+                .then(result => cb && cb({ result }))
+                .catch(err => cb && cb({ err }))
             return true
     }
 

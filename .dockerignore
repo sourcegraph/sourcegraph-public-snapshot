@@ -1,0 +1,108 @@
+.git/
+
+/vagrant_ansible_inventory_default
+/.vagrant
+
+# Vim
+*.swp
+
+# JetBrains/IntelliJ
+.idea
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.\#*
+.dir-locals.el
+
+# Go
+*.o
+*.a
+*.so
+
+# Mac OS X
+.DS_Store
+
+# Python
+*.py[cod]
+__pycache__
+
+# langkit
+/workspace/
+
+# Test binaries
+*.test
+
+grapher/python/pysonar2/tests
+grapher/ruby/rubysonar/target
+grapher/ruby/rubysonar/dependency-reduced-pom.xml
+grapher/ruby/yard/.bundle
+npm-debug.log
+yarn-error.log
+.codemod.bookmark
+.elasticbeanstalk/
+
+.tmp/*.jar
+
+/cmd/frontend/internal/graphqlbackend/node_modules
+
+/ui/artifacts
+/ui/node_modules
+/ui/assets/_goTemplates.js
+/ui/assets/analytics.js
+/ui/assets/bundle.js
+/ui/assets/bundle.css
+/ui/assets/sourcebox.js
+/ui/assets/sourcebox.css
+/ui/assets/test.js
+/ui/assets/test.css
+/ui/assets/vs
+/ui/assets/*.html
+/ui/assets/*.map
+/ui/assets/extension
+/ui/.tmp
+*.json.actual
+
+eb-bundle.zip
+
+/cmd/frontend/internal/app/assets/assets_vfsdata.go
+
+/release/
+
+/conf/private
+
+/provision/kubernetes/gen
+/deploy/sourcegraph.com/src
+/deploy/sourcegraph/src
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+.bin/
+.env
+
+/vendor/
+
+.gtm/
+
+cmd/src/debug
+cmd/gitserver/debug
+cmd/indexer/debug
+
+/dev/e2e/log.html
+/.gtm/
+
+# Web
+node_modules/
+/web
+
+# Extensions
+/packages/sourcegraph-extension-api/dist
+
+# Management console
+/cmd/management-console/web
+/cmd/management-console/assets
+!/cmd/management-console/assets/assets_vfsdata.go

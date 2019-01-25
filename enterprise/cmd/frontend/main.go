@@ -1,16 +1,4 @@
-//docker:user sourcegraph
-//docker:cmd ["serve"]
-//docker:env CONFIGURATION_MODE=server
-//docker:env PUBLIC_REPO_REDIRECTS=true
-
-// Postgres defaults for cluster deployments.
-//docker:env PGDATABASE=sg
-//docker:env PGHOST=pgsql
-//docker:env PGPORT=5432
-//docker:env PGSSLMODE=disable
-//docker:env PGUSER=sg
-
-// Package frontend contains the enterprise frontend implementation.
+// Command frontend contains the enterprise frontend implementation.
 //
 // It wraps the open source frontend command and merely injects a few
 // proprietary things into it via e.g. blank/underscore imports in this file

@@ -37,7 +37,7 @@
     }
 
     &:hover:not(:disabled):not(.disabled) {
-        color: white;
+        color: #ffffff;
 
         .theme-light & {
             color: $color-light-text-2;

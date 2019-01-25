@@ -37,6 +37,14 @@ export interface OpenInSourcegraphProps {
     withModifierKey?: boolean
 }
 
+export interface OpenDiffInSourcegraphProps
+    extends Pick<OpenInSourcegraphProps, Exclude<keyof OpenInSourcegraphProps, 'commit'>> {
+    commit: {
+        baseRev: string
+        headRev: string
+    }
+}
+
 export interface MaybeDiffSpec {
     isDelta: boolean
     isSplitDiff?: boolean
