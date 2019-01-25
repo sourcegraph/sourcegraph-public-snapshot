@@ -4,7 +4,7 @@ This is the template for the [project tracking issue](index.md#planning) that th
 
 1. [Create a new GitHub issue on sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph/issues/new?label=roadmap)
    - Label: `roadmap` and any other relevant labels
-   - Milestone: the milestone of the [release](../releases.md) that includes this project
+   - Milestone: the milestone of the [release](../releases.md) that includes this project. If a project spans multiple releases, then break it into multiple tracking issues (one per release).
 1. Use the project name as the issue title.
 1. Paste in the template below and fill it in.
 
