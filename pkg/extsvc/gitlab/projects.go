@@ -176,7 +176,7 @@ func (c *Client) getProjectFromAPI(ctx context.Context, id int, pathWithNamespac
 // ListProjects lists GitLab projects.
 func (c *Client) ListProjects(ctx context.Context, urlStr string) (projs []*Project, nextPageURL *string, err error) {
 	if MockListProjects != nil {
-		return MockListProjects(ctx, urlStr)
+		return MockListProjects(c, ctx, urlStr)
 	}
 
 	req, err := http.NewRequest("GET", urlStr, nil)

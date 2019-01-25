@@ -72,6 +72,11 @@ GitHub Enterprise, create one on your instance, not GitHub.com). Set the followi
 - Homepage URL: `https://sourcegraph.example.com`
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/github/callback`
 
+> Note: If you want to enable repository permissions, you should grant your OAuth app permission to
+> your GitHub organization(s). You can do that either by creating the OAuth app under your GitHub
+> organization (rather than your personal account) or by [following these
+> instructions](https://help.github.com/articles/approving-oauth-apps-for-your-organization/).
+
 Then add the following lines to your site configuration:
 
 ```json
@@ -100,6 +105,9 @@ Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up wi
 GitHub only if an account with the same verified email already exists. If none exists, a site admin
 must create one explicitly.
 
+Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to
+Sourcegraph](../../integration/github.md).
+
 ## GitLab (beta)
 
 [Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
@@ -123,6 +131,9 @@ Sourcegraph instance:
 
 Replace the `clientID` and `clientSecret` values with the values from your GitLab OAuth app
 configuration.
+
+Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to
+Sourcegraph](../../integration/gitlab.md).
 
 ## OpenID Connect
 

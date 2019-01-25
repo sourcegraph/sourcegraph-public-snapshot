@@ -26,7 +26,7 @@ type Identity struct {
 
 func (c *Client) ListUsers(ctx context.Context, urlStr string) (users []*User, nextPageURL *string, err error) {
 	if MockListUsers != nil {
-		return MockListUsers(ctx, urlStr)
+		return MockListUsers(c, ctx, urlStr)
 	}
 
 	req, err := http.NewRequest("GET", urlStr, nil)
@@ -48,7 +48,7 @@ func (c *Client) ListUsers(ctx context.Context, urlStr string) (users []*User, n
 
 func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
 	if MockGetUser != nil {
-		return MockGetUser(ctx, id)
+		return MockGetUser(c, ctx, id)
 	}
 
 	var urlStr string

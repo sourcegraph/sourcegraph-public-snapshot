@@ -130,7 +130,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
             .toPromise()
             .then(() => {
                 this.repoUpdates.next()
-                this.props.history.push('/')
+                this.props.history.push('/site-admin/repositories')
             })
     }
 }
