@@ -29,6 +29,8 @@ Treat these docs and processes as code:
 - Open PRs on them to propose changes or clarifications. (Each page has an **Edit this page** button.)
 - If you see unexpected behavior (i.e., what's documented isn't what's happening), that is a bug or needs-documentation. Raise it in Slack or in an issue!
 
+Having our processes documented means we can iterate and improve on them more easily. It also helps teammates spin up quickly and take on more responsibility. To reinforce usage of these docs, refer people to relevant doc sections instead of typing out bespoke answers to questions, updating the docs as needed, in cases where the answer should be documented.
+
 - [Roadmap](roadmap/index.md)
 - [Product planning](product/index.md)
 - [Issue triage](issues.md)
