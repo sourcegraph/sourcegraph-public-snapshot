@@ -38,10 +38,13 @@ Release date: 2019-02-20
 - [Improved repository handling](https://github.com/sourcegraph/sourcegraph/issues/2025)
 - [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
- (some subset thereof, pending 3.1 release planning)
+- [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
+- Extension API improvements (T.B.D.)
+- Browser extension improvements (T.B.D.)
+- Deployment improvements (T.B.D.)
 - [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
 - [Health/feature indicators in pings](https://github.com/sourcegraph/sourcegraph/issues/2024)
-- Other items T.B.D.
+
 
 <small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
 
@@ -51,7 +54,6 @@ Release date: 2019-02-20
 
 Search
 
-- [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
 - [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
 - Improvements to saved searches
 
