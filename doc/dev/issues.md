@@ -23,7 +23,7 @@ The **primary triage process** is how most issues will be triaged:
    - *The current release milestone:* if the assignee commits to closing it for the upcoming release.
    - *A future release milestone:* if the assignee, consulting the [roadmap](roadmap/index.md), thinks it's likely that it will/should be prioritized for that future release. The issue will be reviewed again during [release planning](release_planning.md).
    - Backlog: for all other issues.
-1. Details: The assignee is responsible for obtaining the information necessary for them to fix the issue.
+1. Details: The assignee is responsible for obtaining the information necessary for them to fix the issue and updating the first issue comment to reflect/summarize the current state so readers don't have to scan the entire conversation of the issue to get caught up.
 1. Labels (informal). Anyone can label an issue. The assignee is responsible for the issue having the right labels.
 
 ### Secondary triage
