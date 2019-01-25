@@ -33,13 +33,12 @@ Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sou
 
 ### 3.1
 
-Release date: T.B.D.
+Release date: 2019-02-20
 
 - [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
-- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
-- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 - [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914) (some subset thereof, pending 3.1 release planning)
+- Docs improvements
 - Enhance server pings with anonymous flags for installation completion and code intelligence diagnostics
 - Other items T.B.D.
 
@@ -57,8 +56,10 @@ Search
 
 Code intelligence and navigation
 
-- [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
+- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
+- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
 - [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
+- [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
 - [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981) (followup from 3.0)
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
 - [Scoped symbols sidebar](https://github.com/sourcegraph/sourcegraph/issues/1967)
