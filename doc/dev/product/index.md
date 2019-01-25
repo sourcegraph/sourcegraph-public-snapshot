@@ -10,11 +10,6 @@ The goals of product at Sourcegraph are to make the following true:
 - Each teammate has the customer and product context needed (about customer problems, likely future priorities, possible solutions, etc.) to perform their work effectively.
 - The product vision and roadmap are communicated well to teammates and everyone outside Sourcegraph.
 
-## Principles
-
-- Everyone at Sourcegraph is involved in the product.
-- We communicate product plans in ways that are useful to both our team and everyone outside Sourcegraph: on the [product roadmap](../roadmap/index.md), in [issues](../issues.md), and on [our blog](https://about.sourcegraph.com/blog).
-
 ## Planning
 
 We plan each project with the project team at least through the [current release](../releases.md). The outcome of planning a project is that:
