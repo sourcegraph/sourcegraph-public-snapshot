@@ -24,6 +24,11 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 
 ### Plans and processes
 
+Treat these docs and processes as code:
+
+- Open PRs on them to propose changes or clarifications. (Each page has an **Edit this page** button.)
+- If you see unexpected behavior (i.e., what's documented isn't what's happening), that is a bug or needs-documentation. Raise it in Slack or in an issue!
+
 - [Roadmap](roadmap/index.md)
 - [Product planning](product/index.md)
 - [Issue triage](issues.md)
