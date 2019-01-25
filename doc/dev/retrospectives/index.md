@@ -56,12 +56,12 @@ Next, monitor survey responses until the deadline:
 
 ### Compile the retrospective doc from the survey responses
 
-TODO(sqs): Fill this out when I do this for the Sourcegraph 3.0 beta retrospective.
+TODO(nick)
 
 ### Hold the retrospective meeting
 
-TODO(sqs): Fill this out when I do this for the Sourcegraph 3.0 beta retrospective.
+TODO(nick)
 
 ### Post the retrospective doc
 
-TODO(sqs): Fill this out when I do this for the Sourcegraph 3.0 beta retrospective.
+TODO(nick)
