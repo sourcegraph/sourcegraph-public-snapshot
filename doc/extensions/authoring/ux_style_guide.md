@@ -2,7 +2,7 @@
 
 In addition to what features your extension has, the way your extension behaves from the user's perspective has a big impact on whether or not they'll decide to keep your extension enabled.
 
-Your extension has to compete against alternative methods of achieving the same goal. For example, users can find the definition of a function in the same file in 2 seconds by double-clicking the variable, pressing <kbd>Ctr-C</kbd> <kbd>Ctr-F</kbd> <kbd>Ctr-V</kbd> and hitting <kbd>Enter</kbd> a few times, or in a different file in 10 seconds by running a Sourcegraph search. Users often times have finely-tuned development environments and can get there in 15 seconds by running `git stash && git checkout <branch> && code src/main.go`. If your extension does not respond in less than that time on every action, users will learn to avoid your extension and probably disable it.
+Your extension has to compete against alternative methods of achieving the same goal. For example, users can find the definition of a function in the same file in 2 seconds by double-clicking the variable, pressing <kbd>Ctrl</kbd>-<kbd>C</kbd> <kbd>Ctrl</kbd>-<kbd>F</kbd> <kbd>Ctrl</kbd>-<kbd>V</kbd> and hitting <kbd>Enter</kbd> a few times, or in a different file in 10 seconds by running a Sourcegraph search. Users often times have finely-tuned development environments and can get there in 15 seconds by running `git stash && git checkout <branch> && code src/main.go`. If your extension does not respond in less than that time on every action, users will learn to avoid your extension and probably disable it.
 
 **Guide the user**
 
@@ -23,3 +23,4 @@ Most of the time the user just opened a pull request and are busy reading the co
 When faced with a tradeoff between reassuring the user that progress is being made and respecting their attention, err on the quiet side and try to reduce the response time instead of making the progress updates more detailed and granular.
 
 If you absolutely must show messages to a user, ensure the information is actionable and doesn't require any knowledge about the implementation of your extension in order to understand what it means.
+
