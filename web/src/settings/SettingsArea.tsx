@@ -128,6 +128,9 @@ export class SettingsArea extends React.Component<Props, State> {
             case 'Site':
                 term = 'Global'
                 break
+            case 'DefaultSettings':
+                term = 'Default settings'
+                break
             default:
                 term = 'Unknown'
                 break

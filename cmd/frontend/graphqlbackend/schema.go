@@ -2597,6 +2597,29 @@ enum RepositoryOrderBy {
     REPOSITORY_CREATED_AT
 }
 
+# The default settings for the Sourcegraph instance.
+type DefaultSettings implements SettingsSubject {
+    # The opaque GraphQL ID.
+    id: ID!
+    # The latest default settings (this never changes).
+    latestSettings: Settings
+    # The URL to the default settings. This URL does not exist because you
+    # cannot edit or directly view default settings.
+    settingsURL: String!
+    # Whether the viewer can modify the subject's settings. Always false for
+    # default settings.
+    viewerCanAdminister: Boolean!
+    # The default settings, and the final merged settings.
+    #
+    # All viewers can access this field.
+    settingsCascade: SettingsCascade!
+    # DEPRECATED
+    configurationCascade: ConfigurationCascade!
+        @deprecated(
+            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
+        )
+}
+
 # A site is an installation of Sourcegraph that consists of one or more
 # servers that share the same configuration and database.
 #
@@ -2610,16 +2633,10 @@ type Site implements SettingsSubject {
     siteID: String!
     # The site's configuration. Only visible to site admins.
     configuration: SiteConfiguration!
-    # The site's latest site-wide settings (which are the lowest-precedence
+    # The site's latest site-wide settings (which are the second-lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
     # The global settings for this site, and the final merged settings.
-    #
-    # Global settings are the lowest precedence level in the settings cascade and are not merged from any other
-    # settings, so there is nothing to merge. The "final merged settings" for global settings is therefore just
-    # the global settings. that were merged to produce the final merged settings. (This is different for users,
-    # for example, whose final merged settings consist of the merger of global settings and organization
-    # settings.)
     #
     # All viewers can access this field.
     settingsCascade: SettingsCascade!

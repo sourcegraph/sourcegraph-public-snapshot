@@ -81,6 +81,10 @@ func settingsSubjectsEqual(a, b api.SettingsSubject) bool {
 	return false
 }
 
+func (s *settingsSubject) ToDefaultSettings() (*defaultSettingsResolver, bool) {
+	return s.defaultSettings, s.defaultSettings != nil
+}
+
 func (s *settingsSubject) ToSite() (*siteResolver, bool) {
 	return s.site, s.site != nil
 }
