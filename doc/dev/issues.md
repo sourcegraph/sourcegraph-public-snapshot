@@ -44,7 +44,7 @@ We use issues across multiple repositories (not just [sourcegraph/sourcegraph](h
 
 ### Finding issues across all repositories
 
-- Use a global issue search to find issues in all `sourcegraph`-organization repositories: [org:sourcegraph state:open](https://github.com/search?utf8=%E2%9C%93&q=org%3Asourcegraph+state%3Aopen&type=Issues).
+- Use a global issue search to find issues in all `sourcegraph`-organization repositories: [is:open is:issue user:sourcegraph](https://github.com/issues?page=3&q=is%3Aopen+is%3Aissue+milestone%3A3.0+user%3Asourcegraph&utf8=%E2%9C%93).
 - Add `assignee:$USER` to the query to find issues assigned to you (replace `$USER` with your GitHub username).
 - Add `milestone:$MILESTONE` (e.g., `milestone:3.1`) to the query to filter by milestone.
 - Monitor your [GitHub notifications](https://github.com/notifications) if you find that view useful.
