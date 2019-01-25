@@ -22,7 +22,12 @@ This is the template for the [project tracking issue](index.md#planning) that th
 
 [Issues](https://github.com/sourcegraph/sourcegraph/issues?q=is:issue+is:open+sort:updated-desc+label:mylabel+milestone:3.1)
 
-## Test plan
+## Test/review plan
+
+<!-- This part of the template is experimental. We'll see how it goes for 3.1 planning. -->
+
+- Code reviewer: <!-- fill in @user(s) -->
+- Tester: <!-- fill in @user(s) -->
 
 <!-- This is how the project will be tested for the release. Fill this out with at least high-level details right now, and finish it by one week before the release. -->
 
