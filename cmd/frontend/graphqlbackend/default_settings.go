@@ -26,7 +26,7 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
 func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	extensions := map[string]map[string]bool{"extensions": map[string]bool{}}
+	extensions := map[string]map[string]bool{"extensions": {}}
 	for _, extensionID := range builtinExtensionIDs {
 		extensions["extensions"][extensionID] = true
 	}
