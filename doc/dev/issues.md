@@ -21,14 +21,18 @@ The **primary triage process** is how most issues will be triaged:
 1. Assignment. Anyone who sees an unassigned issue should assign it if they know the right assignee.
 1. Prioritization. The assignee adds a milestone to the issue to indicate when it'll be closed, one of:
    - *The current release milestone:* if the assignee commits to closing it for the upcoming release.
-   - *A future release milestone:* if the assignee, consulting the [roadmap](roadmap/index.md), thinks it's likely that it will/should be prioritized for that future release. The issue will be reviewed again during [release planning](release_planning.md).
+   - *A future release milestone:* if the assignee, consulting the [roadmap](roadmap/index.md) (and the [product manager](product/index.md#product-manager) if necessary), thinks it's likely that it will/should be prioritized for that future release. The issue will be reviewed again in [product planning](product/index.md#planning) as a check.
    - Backlog: for all other issues.
 1. Details: The assignee is responsible for obtaining the information necessary for them to fix the issue and updating the first issue comment to reflect/summarize the current state so readers don't have to scan the entire conversation of the issue to get caught up.
+   - For issues in the current release milestone, each project's [tech lead](releases.md#tech-lead) is ultimately responsible for ensuring that these details are present in their project's issues.
+   - Skip this step (and avoid wasting time) for backlog issues in most cases.
 1. Labels (informal). Anyone can label an issue. The assignee is responsible for the issue having the right labels.
+
+If you see an issue you can close quickly (e.g., within 5 minutes) and want to handle, just self-assign it and don't bother following these steps.
 
 ### Secondary triage
 
-The **secondary triage process** (run by the product manager) ensures nothing falls through the cracks:
+The **secondary triage process** (run by the [product manager](product/index.md#product-manager)) ensures nothing falls through the cracks:
 
 - The PM reviews new unassigned issues a few times daily and assigns them.
 - The PM reviews issues with no milestone or a recently changed milestone and ensures they have the correct milestone.
@@ -44,7 +48,7 @@ We use issues across multiple repositories (not just [sourcegraph/sourcegraph](h
 
 ### Finding issues across all repositories
 
-- Use a global issue search to find issues in all `sourcegraph`-organization repositories: [is:open is:issue user:sourcegraph](https://github.com/issues?page=3&q=is%3Aopen+is%3Aissue+milestone%3A3.0+user%3Asourcegraph&utf8=%E2%9C%93).
+- Use a global issue search to find issues in all `sourcegraph`-organization repositories: [is:open is:issue user:sourcegraph](https://github.com/issues?page=3&q=is%3Aopen+is%3Aissue+milestone%3A3.0+user%3Asourcegraph).
 - Add `assignee:$USER` to the query to find issues assigned to you (replace `$USER` with your GitHub username).
 - Add `milestone:$MILESTONE` (e.g., `milestone:3.1`) to the query to filter by milestone.
 - Monitor your [GitHub notifications](https://github.com/notifications) if you find that view useful.

@@ -12,13 +12,20 @@ The goals of product at Sourcegraph are to make the following true:
 
 ## Planning
 
-We plan each project with the project team at least through the [current release](../releases.md). The outcome of planning a project is that:
+The [product manager](#product-manager) and project team plan each project at least through the [current release](../releases.md). The outcome of planning a project is that:
 
-- The [product roadmap](../roadmap/index.md) describes what the project will ship (by linking to tracking issues). The tracking issue is the source of truth for the status of a project and should be the primary planning artifact. TODO!(sqs): add tracking issue template, possibly remove plans/0000-00-00-template.md
+- The project has a [tracking issue](tracking_issue_template.md) in each release milestone that ships something related to the project. The tracking issue describes what a project will ship in a specific release. It is the source of truth for the description and status of a project.
+- The [product roadmap](../roadmap/index.md) links to the project's [tracking issues](tracking_issue_template.md).
 - The [issues](../issues.md) for the project are correctly prioritized, assigned, and documented.
 - The project team has the context necessary to work effectively and to [triage issues](../issues.md#triage) that are filed between now and the next planning session.
 
-Product is responsible for each project being planned at least through the [current release](../releases.md). How far out a project is planned depends on the project. Planning for a project can happen at any time, not just between releases. However, around the time we ship a release, product should review the plans for all projects in the next release for overall coherency.
+The [product manager](#product-manager) is responsible for each project being planned at least through the [current release](../releases.md). How far out a project is planned depends on the project.
+
+### Product planning is continuous
+
+Planning for a project is a continuous process and can happen at any time, not just between releases. However, the [product manager](#product-manager) should meet with the project team to check in within 1-2 weeks before each release. The product manager should also review the plans for all projects in the next release for overall coherency.
+
+This ensures that projects can work on the schedules that make the most sense for them (subject to the constraint of needing to ship some kind of milestone monthly). A particularly long-term project can have many months of visibility into requirements and plans, and shorter or more experimental projects can be planned with shorter time horizons.
 
 ### Meetings
 
@@ -26,12 +33,12 @@ Project planning is a continuous process, punctuated with meetings to ensure eve
 
 The agenda for a project planning kickoff or checkin is:
 
-1. Review, update, and/or create the project's tracking issue on the [product roadmap](../roadmap/index.md).
+1. Review, update, and/or create the project's tracking issue on the [product roadmap](../roadmap/index.md) for the next release.
    - Use the [**tracking issue template**](tracking_issue_template.md).
    - Are the tasks the most important things to work on?
    - Are they realistic?
    - Are they accurate and up to date?
-1. Review, update, and/or create the project's issues.
+1. Review, update, and/or create the project's issues in the next release milestone.
    - Are the tasks the best way to accomplish what the roadmap tracking issues say?
    - Are they assigned to the right person?
    - Are they added to the right milestone?
@@ -45,6 +52,14 @@ If a project wants to do a project-specific [retrospective](../retrospectives/in
 - [Scaling Engineering Teams via Writing Things Down and Sharing - aka RFCs](https://blog.pragmaticengineer.com/scaling-engineering-teams-via-writing-things-down-rfcs/)
 - [Go proposal template](https://github.com/golang/proposal/blob/master/design/TEMPLATE.md)
 - [Rust RFC template](https://github.com/rust-lang/rfcs/blob/master/0000-template.md)
+
+## Release early, release often
+
+Each project, no matter how long-running, needs to plan to ship *something* in each release. The "something" depends on the project. We strongly prefer for it to be a minimal viable feature that is enabled by default. The next best thing is to ship something that is feature-flagged off by default.
+
+The reason for this is to avoid going for too long without customer feedback (from customers trying it) or even technical/product feedback (from performing the diligent work of polishing it to be ready to release). Lacking these critical checks means we will end up building something that doesn't solve people's problems or that is over-built.
+
+When we have relaxed this in the past, the results have been bad and the overwhelming feedback from retrospectives has been to release regularly.
 
 ## Saying "no"
 
