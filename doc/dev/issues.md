@@ -2,7 +2,7 @@
 
 We use issues (on GitHub) to track all of our work.
 
-### Principles
+## Principles
 
 - Each issue is something that needs to be worked on: a bug, feature, doc page, blog post, question, etc.
 - For any given piece of work, the issue is the source of truth for the description and status of the work. If anyone asks a question like "What's the status of XYZ?" or "What are we doing for XYZ?", anyone else should be able to answer the question with a link to the issue for XYZ.
