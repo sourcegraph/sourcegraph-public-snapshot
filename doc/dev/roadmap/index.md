@@ -38,7 +38,7 @@ Release date: 2019-02-20
 - [Improved repository handling](https://github.com/sourcegraph/sourcegraph/issues/2025)
 - [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
+- [Search configuration data](https://github.com/sourcegraph/sourcegraph/issues/670)
 - Extension API improvements (T.B.D.)
 - Extensions: Datadog, LightStep, Git extras (T.B.D.)
 - Browser extension improvements (T.B.D.)
