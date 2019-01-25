@@ -22,5 +22,6 @@ Most of the time the user just opened a pull request and are busy reading the co
 
 When faced with a tradeoff between reassuring the user that progress is being made and respecting their attention, err on the quiet side and try to reduce the response time instead of making the progress updates more detailed and granular.
 
-If you absolutely must show messages to a user, ensure the information is actionable and doesn't require any knowledge about the implementation of your extension in order to understand what it means.
+**Write actionable and descriptive errors**
 
+Most users aren't experts in the subject of your extension. If the user did something wrong, point out what your extension noticed, what it expected, and what the user can do to fix or work around the problem.
