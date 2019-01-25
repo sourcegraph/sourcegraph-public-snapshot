@@ -10,7 +10,7 @@ We use issues (on GitHub) to track all of our work.
 
 ## Triage
 
-Triage is how we handle issues filed in our repositories. For example, if a user reports an unforeseen bug, we often want to fix it in the current release milestone instead of waiting to review it in [release planning](release_planning.md) for the following release. This may require delaying other work to make time for the fix.
+Triage is how we handle issues filed in our repositories. For example, if a user reports an unforeseen bug, we often want to fix it in the current release milestone instead of waiting to review it in the next [product planning meeting](product/index.md#meetings) for the following release. This may require delaying other work to make time for the fix.
 
 We use an "eventually consistent" triage process to ensure newly filed issues are handled.
 
