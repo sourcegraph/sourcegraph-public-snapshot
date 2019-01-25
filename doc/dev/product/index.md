@@ -65,7 +65,7 @@ When we have relaxed this in the past, the results have been bad and the overwhe
 
 We receive tons of feature request and bug reports, more than we can handle. This means we must frequently say "no" or prioritize things less urgently than some people would like. Our job is to find the most important things to work on.
 
-### Product manager
+## Product manager
 
 The product manager is responsible for prioritization, which means ensuring the following is true:
 

@@ -25,8 +25,9 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 ### Plans and processes
 
 - [Roadmap](roadmap/index.md)
-- [Issues](issues.md)
-- [Releases](releases.md)
+- [Product planning](product/index.md)
+- [Issue triage](issues.md)
+- [Release process and schedule](releases.md)
 - [Retrospectives](retrospectives/index.md)
 - [Company goals](goals.md)
 - [Documentation guide](documentation/index.md)
