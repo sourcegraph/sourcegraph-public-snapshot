@@ -12,7 +12,7 @@ Significant projects and releases are great learning opportunities and should al
 Add links to completed retrospective docs here. These are publicly visible, so make sure they don't include anything sensitive.
 -->
 
-- [Sourcegraph 3.0 beta retrospective](3.0_beta.md)
+- [Sourcegraph 3.0 beta retrospective](3_0_beta.md)
 
 ## How to lead a retrospective
 
