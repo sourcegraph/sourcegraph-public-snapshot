@@ -40,6 +40,7 @@ Release date: 2019-02-20
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 - [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
 - Extension API improvements (T.B.D.)
+- Extensions: Datadog, LightStep, Git extras (T.B.D.)
 - Browser extension improvements (T.B.D.)
 - Deployment improvements (T.B.D.)
 - [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
@@ -72,7 +73,7 @@ Sourcegraph extensions
 
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - Codecov extension
-- More 3rd-party extensions: LightStep, Sentry, FOSSA, SonarQube, [LaunchDarkly](https://github.com/sourcegraph/sourcegraph/issues/1249), Figma
+- More 3rd-party extensions: Sentry, FOSSA, SonarQube, [LaunchDarkly](https://github.com/sourcegraph/sourcegraph/issues/1249), Figma
 - [Configuration data search extension](https://github.com/sourcegraph/sourcegraph/issues/670)
 - Improved code host support for Sourcegraph extensions
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
