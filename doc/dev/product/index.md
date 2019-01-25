@@ -28,19 +28,19 @@ The agenda for a project planning kickoff or checkin is:
 
 1. Review, update, and/or create the project's tracking issue on the [product roadmap](../roadmap/index.md).
    - Use the [**tracking issue template**](tracking_issue_template.md).
-   - Are they the most important things to work on?
+   - Are the tasks the most important things to work on?
    - Are they realistic?
    - Are they accurate and up to date?
 1. Review, update, and/or create the project's issues.
-   - Are they the best way to accomplish what the roadmap tracking issues say?
+   - Are the tasks the best way to accomplish what the roadmap tracking issues say?
    - Are they assigned to the right person?
    - Are they added to the right milestone?
    - Are there hidden blockers?
    - Are they accurate and up to date?
 
-Projects should also hold [retrospectives](../retrospectives/index.md), and this may be combined with planning meetings.
+If a project wants to do a project-specific [retrospective](../retrospectives/index.md) (in addition to the full-team release retrospective), they can combine it with the planning meeting for the next cycle.
 
-#### Related reading
+### Related reading
 
 - [Scaling Engineering Teams via Writing Things Down and Sharing - aka RFCs](https://blog.pragmaticengineer.com/scaling-engineering-teams-via-writing-things-down-rfcs/)
 - [Go proposal template](https://github.com/golang/proposal/blob/master/design/TEMPLATE.md)
