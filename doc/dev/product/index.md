@@ -56,7 +56,7 @@ The product manager is responsible for prioritization, which means ensuring the 
 
 > The issues for each release milestone are the most important things to work on.
 
-This is a broader sense of the term "prioritization" that means the person responsible must do 3 things:
+This is a broader sense of the term "prioritization" that means the product manager must do 3 things:
 
 - **Educate** teams so they can prioritize on their own.
 - **Plan** with each team the set of issues to work on for each release.
