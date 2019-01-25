@@ -35,11 +35,12 @@ Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sou
 
 Release date: 2019-02-20
 
+- [Improved repository handling](https://github.com/sourcegraph/sourcegraph/issues/2025)
 - [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914) (some subset thereof, pending 3.1 release planning)
-- Docs improvements
-- Enhance server pings with anonymous flags for installation completion and code intelligence diagnostics
+ (some subset thereof, pending 3.1 release planning)
+- [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
+- [Health/feature indicators in pings](https://github.com/sourcegraph/sourcegraph/issues/2024)
 - Other items T.B.D.
 
 <small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
@@ -77,6 +78,7 @@ Sourcegraph extensions
 
 Other
 
+- [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
 - [Checklist-based repository reviews](https://github.com/sourcegraph/sourcegraph/issues/1526)
 - [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)
