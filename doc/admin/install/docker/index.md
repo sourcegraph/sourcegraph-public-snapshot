@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-[Docker](https://docs.docker.com/engine/installation/) is required.
+[Docker](https://www.bretfisher.com/installdocker/) is required.
 
 ## Step 1: Run Sourcegraph
 
