@@ -21,8 +21,6 @@ If you've got [Docker installed](https://www.bretfisher.com/installdocker/), you
   <iframe class="mx-auto" width="560" height="315" src="https://www.youtube.com/embed/HZAGneTpsyA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
 
-<!-- Then check out our [5 minute setup guide](https://www.youtube.com/playlist?list=PL6zLuuRVa1_gLH4sL1bbcHaW2KpV2_k7n) for configuring Sourcegraph with repositories code searching and code intelligence (go-to-definition, find references). -->
-
 ### 2. Sync repositories from GitHub
 
 Select git repositories for searching by integrating Sourcegraph with GitHub.
