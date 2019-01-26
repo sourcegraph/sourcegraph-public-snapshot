@@ -9,8 +9,8 @@ Code intelligence provides advanced code navigation and cross-references for you
 
 ## Language support
 
-- [Go](https://sourcegraph.com/extensions/sourcegraph/lang-go)
-- [TypeScript](https://sourcegraph.com/extensions/sourcegraph/lang-typescript)
+- [Go](https://sourcegraph.com/extensions/sourcegraph/go)
+- [TypeScript](https://sourcegraph.com/extensions/sourcegraph/typescript)
 - [Python](https://sourcegraph.com/extensions/sourcegraph/python)
 - Check the [extension registry](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) for more
 
