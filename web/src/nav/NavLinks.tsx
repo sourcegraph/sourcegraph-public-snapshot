@@ -11,7 +11,6 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { isDiscussionsEnabled } from '../discussions'
 import { KeybindingsProps } from '../keybindings'
-import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { UserNavItem } from './UserNavItem'
 
@@ -30,25 +29,14 @@ export class NavLinks extends React.PureComponent<Props> {
         this.subscriptions.unsubscribe()
     }
 
-    private onClickInstall = (): void => {
-        eventLogger.log('InstallSourcegraphServerCTAClicked', {
-            location_on_page: 'Navbar',
-        })
-    }
-
     public render(): JSX.Element | null {
         return (
             <ul className="nav-links nav align-items-center pl-2 pr-1">
                 {showDotComMarketing && (
                     <li className="nav-item">
-                        <a
-                            href="https://docs.sourcegraph.com/#quickstart"
-                            className="nav-link text-truncate"
-                            onClick={this.onClickInstall}
-                            title="Install self-hosted Sourcegraph to search your own (private) code"
-                        >
-                            Install Sourcegraph
-                        </a>
+                        <Link to="/welcome" className="nav-link">
+                            Welcome
+                        </Link>
                     </li>
                 )}
                 <ActionsNavItems

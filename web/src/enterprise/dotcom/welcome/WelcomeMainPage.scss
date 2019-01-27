@@ -2,11 +2,12 @@
     &__logo-mark {
         width: 1.5rem;
         height: 1.5rem;
+        position: absolute;
+        top: -1.5rem; // make CTAs flush with header text
     }
     &__header {
-        font-size: 1.5rem;
+        font-size: 24px;
     }
-
     &__customer-logo {
         width: auto;
         &-1 {
@@ -14,7 +15,18 @@
         }
         &-2 {
             height: 2rem;
-            margin-top: 5px; // different text baseline
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-top: 5px; // equalize perceived text baseline of customer logos
         }
+    }
+    &__demo {
+        border: solid 2px #cccccc; // TODO!(sqs): only while i am on airplane wifi
+        min-height: 200px; // reduce jitter while page is loading
+    }
+}
+
+.theme-dark .welcome-main-page {
+    &__sign-up {
+        color: #ffffff; // otherwise the signup CTA link text is indistinguishable from text-muted
     }
 }
