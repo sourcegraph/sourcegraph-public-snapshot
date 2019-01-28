@@ -8,7 +8,7 @@
 Sourcegraph supports the following ways for users to sign in:
 
 - [Builtin](#builtin-authentication)
-- [GitHub OAuth](#github-beta)
+- [GitHub OAuth](#github)
 - [GitLab OAuth](#gitlab)
 - [OpenID Connect](#openid-connect) (including [Google accounts on G Suite](#g-suite-google-accounts))
 - [SAML](#saml)
@@ -62,7 +62,7 @@ Site configuration example:
 
 The top-level [`auth.public`](../site_config/all.md#authpublic-boolean) (default `false`) site configuration option controls whether anonymous users are allowed to access and use the site without being signed in .
 
-## GitHub (beta)
+## GitHub
 
 [Create a GitHub OAuth
 application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) (if using
@@ -108,7 +108,7 @@ must create one explicitly.
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to
 Sourcegraph](../../integration/github.md).
 
-## GitLab (beta)
+## GitLab
 
 [Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
 the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
@@ -132,8 +132,7 @@ Sourcegraph instance:
 Replace the `clientID` and `clientSecret` values with the values from your GitLab OAuth app
 configuration.
 
-Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to
-Sourcegraph](../../integration/gitlab.md).
+Once you've configured GitLab as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../../integration/gitlab.md).
 
 ## OpenID Connect
 
