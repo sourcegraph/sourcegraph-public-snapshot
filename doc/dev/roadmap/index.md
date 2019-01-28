@@ -35,7 +35,7 @@ Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sou
 
 Release date: 2019-02-20
 
-- [Improved repository handling](https://github.com/sourcegraph/sourcegraph/issues/2025)
+- [Improved repository mirroring](https://github.com/sourcegraph/sourcegraph/issues/2025)
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 - Code navigation extensions: basic-code-intel, Codecov, Git extras, Datadog, LightStep (T.B.D.)
 - Search extensions: [#670](https://github.com/sourcegraph/sourcegraph/issues/670), etc. (T.B.D.)
