@@ -4,7 +4,7 @@ Sourcegraph is used by companies like Uber and Lyft to help developers search, n
 
 It takes less than 5 minutes to install and configure a self-hosted instance with GitHub integration and code intelligence enabled.
 
-> NOTE: If you get stuck or need help, [tweet (@srcgraph)](https://twitter.com/srcgraph), [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide) or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=ryan-blunden&labels=docs&template=bug_report.md&title=Improve+Sourcegraph+quickstart+guide).
+> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
 ### 1. Install Sourcegraph
 
