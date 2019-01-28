@@ -1,14 +1,15 @@
 # Installing Sourcegraph
 
-There are two ways of running Sourcegraph: Docker and Kubernetes.
+There two ways of running Sourcegraph: a single Docker container or a clustered deployment using Kubernetes.
+
 ## Docker
 
-Single instance, great for supporting up to 500 users. Takes 5 minutes to install and configure.
+Single Docker container, takes 5 minutes to install and configure.
 
 **[Install Sourcegraph with Docker](../../index.md)**.
 
-## Kubernetes
+## Clustered deployment with Kubernetes
 
-For companies managing code at a huge scale (hundreds or thousands of repositories) and/or 500+ users.
+Enables Sourcegraph to meet any scaling requirements.
 
 **[Install Sourcegraph with Kubernetes](cluster.md)**.
