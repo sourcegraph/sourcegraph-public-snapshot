@@ -19,7 +19,6 @@ import { AbsoluteRepo } from '../../../shared/src/util/url'
 import { fetchTreeEntries } from '../repo/backend'
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeNode } from './Tree'
-import { treePadding } from './util'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
 const maxEntries = 2500
@@ -155,7 +154,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
             <>
                 {isErrorLike(treeOrError) ? (
                     <div
-                        className="tree__row tree__row-alert-root alert alert-danger"
+                        className="tree__row tree__row-alert alert alert-danger"
                         // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                         style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
                     >
