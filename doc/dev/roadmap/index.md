@@ -40,6 +40,7 @@ Release date: 2019-02-20
 - Code navigation extensions: basic-code-intel, Codecov, Git extras, Datadog, LightStep (T.B.D.)
 - Search extensions: [#670](https://github.com/sourcegraph/sourcegraph/issues/670), etc. (T.B.D.)
 - [Health/feature indicators in pings](https://github.com/sourcegraph/sourcegraph/issues/2024)
+- Search UX (T.B.D.)
 - [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
 - [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
 - Deployment improvements (T.B.D.)
