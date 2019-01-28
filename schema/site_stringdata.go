@@ -216,7 +216,8 @@ const SiteSchemaJSON = `{
         },
         "token": {
           "description": "API token for the Phabricator instance.",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "repos": {
           "description": "The list of repositories available on Phabricator.",
@@ -267,7 +268,7 @@ const SiteSchemaJSON = `{
         "token": {
           "description": "A GitHub personal access token with repo and org scope.",
           "type": "string",
-          "pattern": "^[^<>]+$"
+          "minLength": 1
         },
         "certificate": {
           "description": "TLS certificate of a GitHub Enterprise instance.",
@@ -334,7 +335,7 @@ const SiteSchemaJSON = `{
           "description":
             "A GitLab access token with \"api\" and \"sudo\" scopes. If this token does not have \"sudo\" scope, then you must set ` + "`" + `permissions.ignore` + "`" + ` to true.",
           "type": "string",
-          "pattern": "^[^<>]+$"
+          "minLength": 1
         },
         "gitURLType": {
           "description":
@@ -420,7 +421,7 @@ const SiteSchemaJSON = `{
           "description":
             "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add.\n\nFor Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the \"username\" and \"password\" fields.",
           "type": "string",
-          "pattern": "^[^<>]+$"
+          "minLength": 1
         },
         "username": {
           "description":
@@ -571,7 +572,6 @@ const SiteSchemaJSON = `{
       "description": "Connection to Git repositories for which an external service integration isn't yet available.",
       "type": "object",
       "required": ["repos"],
-      "additionalProperties": false,
       "properties": {
         "url": {
           "title": "Git clone base URL",

@@ -14,6 +14,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 	equals := func(want ...string) func(testing.TB, []string) {
 		sort.Strings(want)
 		return func(t testing.TB, have []string) {
+			t.Helper()
 			sort.Strings(have)
 			if !reflect.DeepEqual(have, want) {
 				t.Error(pretty.Compare(have, want))
@@ -37,6 +38,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 
 	includes := func(want ...string) func(testing.TB, []string) {
 		return func(t testing.TB, have []string) {
+			t.Helper()
 			for _, err := range diff(want, have) {
 				t.Errorf("%q not found in set:\n%s", err, pretty.Sprint(have))
 			}
@@ -45,6 +47,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 
 	excludes := func(want ...string) func(testing.TB, []string) {
 		return func(t testing.TB, have []string) {
+			t.Helper()
 			for _, err := range diff(want, diff(want, have)) {
 				t.Errorf("%q found in set:\n%s", err, pretty.Sprint(have))
 			}
@@ -176,8 +179,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		{
 			kind:   "BITBUCKETSERVER",
 			desc:   "invalid token",
-			config: `{"token": "<foo>"}`,
-			assert: includes("token: Does not match pattern '^[^<>]+$'"),
+			config: `{"token": ""}`,
+			assert: includes(`token: String length must be greater than or equal to 1`),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -224,8 +227,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		{
 			kind:   "GITHUB",
 			desc:   "invalid token",
-			config: `{"token": "<foo>"}`,
-			assert: includes("token: Does not match pattern '^[^<>]+$'"),
+			config: `{"token": ""}`,
+			assert: includes(`token: String length must be greater than or equal to 1`),
 		},
 		{
 			kind:   "GITHUB",
@@ -278,8 +281,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		{
 			kind:   "GITLAB",
 			desc:   "invalid token",
-			config: `{"token": "<foo>"}`,
-			assert: includes("token: Does not match pattern '^[^<>]+$'"),
+			config: `{"token": ""}`,
+			assert: includes(`token: String length must be greater than or equal to 1`),
 		},
 		{
 			kind:   "GITLAB",
@@ -319,6 +322,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "with repos",
 			config: `{"repos": [{"path": "gitolite/my/repo", "callsign": "MUX"}]}`,
 			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "PHABRICATOR",
+			desc:   "invalid token",
+			config: `{"token": ""}`,
+			assert: includes(`token: String length must be greater than or equal to 1`),
 		},
 		{
 			kind:   "PHABRICATOR",
@@ -407,8 +416,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
-			t.Parallel()
-
 			var have []string
 			switch e := tc.ext.validateConfig(tc.kind, tc.config).(type) {
 			case nil:
