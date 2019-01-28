@@ -8,7 +8,7 @@ It takes less than 5 minutes to install and configure a self-hosted instance wit
 
 ### 1. Install Sourcegraph
 
-If you've got [Docker installed](https://www.bretfisher.com/installdocker/), you're ready to start the server which listens on port `7080` by default.
+If you've got [Docker installed](https://docs.docker.com/engine/installation/), you're ready to start the server which listens on port `7080` by default.
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
@@ -23,7 +23,7 @@ If you've got [Docker installed](https://www.bretfisher.com/installdocker/), you
 
 ### 2. Sync repositories from GitHub
 
-Select git repositories for searching by integrating Sourcegraph with GitHub.
+Select Git repositories for searching by integrating Sourcegraph with GitHub.
 
 <div class="container media-youtube">
   <iframe class="mx-auto" width="560" height="315" src="https://www.youtube.com/embed/NvPeBtI9gkA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
