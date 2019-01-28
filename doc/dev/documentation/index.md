@@ -118,6 +118,30 @@ deployed every hour from the `master` branch of `sourcegraph/sourcegraph`. Once 
 
 When you're building a new feature, you may need to link to the documentation from the product. In-product documentation links should refer to the documentation hosted on the product itself (at `/help`) so that the product and documentation versions are consistent. (The docs on docs.sourcegraph.com may be for a newer version than what the user is running.)
 
+## Prefer primary documents
+
+We want our written documents to be as up-to-date, accurate, and useful as possible. For this reason, we always prefer creating and using **primary documents** over secondary documents, such as in the case of documentation, plans, or design docs.
+
+A **primary document** is a document that is actually used to specify, communicate, or document something to the entire intended audience and is discoverable by that audience. A secondary document is a document that (effectively) only its creator uses or knows about.
+
+Examples:
+
+- A project's [tracking issues](../product/index.md#planning) are primary documents for "what will ship" because they specify precisely that and everyone would be able to discover them.
+  - Secondary documents for a project would be: a Google Doc with a list of TODOs, a checked-in Markdown project plan at `cmd/foo/PLAN.md`.
+- A project's [long-term plan](../product/index.md#planning) is a primary document that's either a published blog post (for particularly user-facing projects) or a set of tracking issues on future milestones.
+  - We don't have the product management capabilities right now for all projects to have a separate long-term plan separate from these existing documents that we already create.
+
+Add links to your primary document liberally, from anywhere your audience might be looking!
+
+To choose the right place for your primary document to live, ask yourself:
+
+- Where would people expect to find this information?
+- How can I maximize the probability that a developer who updates the underlying behavior described by the doc would realize they also need to update the doc? (To avoid the doc diverging from the actual behavior.)
+
+It's OK to create secondary documents for your own temporary use. If anybody else would need to use or discover them, transfer the information to the appropriate primary document (and delete the secondary document or clearly mark it as moved).
+
+> This is similar to saying "prefer a single source of truth". The problem with that, however, is that the designated source of truth might be a secondary document such as a technical spec that the intended audience is unaware of. Our use of the term "primary document" is intended to avoid that problem.
+
 ## Product documentation vs Technical articles
 
 ### Product documentation
