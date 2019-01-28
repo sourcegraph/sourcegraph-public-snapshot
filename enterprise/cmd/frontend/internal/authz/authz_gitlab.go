@@ -12,15 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func init() {
-	db.ExternalServices.GitLabValidators = append(db.ExternalServices.GitLabValidators, validateGitLabProvider)
-}
-
-func validateGitLabProvider(g *schema.GitLabConnection) error {
-	_, err := gitlabProvider(conf.Get(), g)
-	return err
-}
-
 func gitlabProviders(ctx context.Context, cfg *conf.Unified) (
 	authzProviders []authz.Provider,
 	seriousProblems []string,
