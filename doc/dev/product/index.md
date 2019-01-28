@@ -12,6 +12,12 @@ The goals of product at Sourcegraph are to make the following true:
 
 ## Planning
 
+Product planning has 3 parts:
+
+- Long-term/high-level product planning: described here, done [continuously](index.md#product-planning-is-continuous)
+- Planning for a release: described here, results in a tracking issue per project
+- [Triaging issues](../issues.md)
+
 The [product manager](#product-manager) and project team plan each project at least through the [current release](../releases.md). The outcome of planning a project is that:
 
 - The project has a [tracking issue](tracking_issue_template.md) in each release milestone that ships something related to the project. The tracking issue describes what a project will ship in a specific release. It is the source of truth for the description and status of a project.
@@ -83,4 +89,3 @@ The right mix of these 3 things depends on the team and what they're working on 
 - For other teams, the PM will be the first to respond to and prioritize issues that are filed on the team.
 
 No matter the chosen mix, the PM is still responsible for prioritization. For example, if the PM doesn't effectively educate the devs so they can plan and triage well, then the PM needs to step up on planning and triage (as a backstop).
-
