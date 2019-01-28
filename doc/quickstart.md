@@ -39,7 +39,7 @@ Enable basic code intelligence (go-to-definition, hover tooltips, and find-refer
 
 ## Configuration complete
 
-Now you should have a fully functioning Sourcegraph instance. If something didn't work or you've got a suggestion for making this guide better, [tweet](https://twitter.com/srcgraph), [email](mailto:ryan@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide) or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=ryan-blunden&labels=docs&template=bug_report.md&title=Improve+Sourcegraph+quickstart+guide).
+Now you should have a fully functioning Sourcegraph instance. If something didn't work or you've got a suggestion for making this guide better, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
 ## Learn about Sourcegraph
 
