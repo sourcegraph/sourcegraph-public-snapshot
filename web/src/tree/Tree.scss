@@ -53,6 +53,12 @@
         margin: 0;
     }
 
+    &__row-alert-root {
+        display: block;
+        padding: 0.75rem 1.25rem;
+        white-space: pre-wrap;
+    }
+
     &__row-icon {
         color: #ffffff !important; // override link color
         // stylelint-disable-next-line declaration-property-unit-whitelist
