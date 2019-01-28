@@ -571,6 +571,7 @@ const SiteSchemaJSON = `{
       "description": "Connection to Git repositories for which an external service integration isn't yet available.",
       "type": "object",
       "required": ["repos"],
+      "additionalProperties": false,
       "properties": {
         "url": {
           "title": "Git clone base URL",
