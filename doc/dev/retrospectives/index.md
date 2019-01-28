@@ -14,9 +14,15 @@ Add links to completed retrospective docs here. These are publicly visible, so m
 
 - [Sourcegraph 3.0 beta retrospective](3_0_beta.md)
 
-## How to lead a retrospective
+## How to facilitate a retrospective
 
-If you want to lead a retrospective for a project or release, follow these steps.
+If you are facilitating a retrospective for a project or release, follow these steps.
+
+### Set the context
+
+Why is this retrospective being held? What will it cover? Retrospectives, similarly to any other meeting, are more effective if the participants align their expectations before getting into it.
+
+Be sure that everyone understands the answers to the above questions before proceeding.
 
 ### Collect feedback
 
@@ -24,35 +30,57 @@ Identify everyone who should participate in the retrospective: this is the retro
 
 Collect written answers to the following questions from everyone in the retrospective group.
 
-> What should we start doing?
->
-> What should we stop doing?
->
-> What should we continue doing?
+1. What should we start doing?
+
+1. What should we stop doing?
+
+1. What should we continue doing?
 
 The medium through which you collect answers to these questions is not important (e.g. Google Docs, Google Forms, Slack messages).
 
-Allocate enough time for teammates to thoughtfully respond to the survey (aim for 100% participation), but don't let the process take an unbounded amount of time. It is useful to complete the retrospective process expediently so that information is fresh in people's minds and so we can apply learnings sooner. 3 business days is a good default.
+Allocate enough time for team-mates to thoughtfully respond to the survey (aim for 100% participation), but don't let the process take an unbounded amount of time. It is useful to complete the retrospective process expediently so that information is fresh in people's minds and so we can apply learnings sooner. 3 business days is a good default.
 
-### Organize the feedback
+### Retrospect, together
 
-Assemble all of the raw feedback into a single document and group related items together by theme.
+Schedule a meeting to discuss the submitted feedback, following this time-boxed approach.
 
-Share this document with the retrospective group and ask each participant to:
-- Provide feedback on whether the feedback items were grouped effectively (e.g. it is possible that you misunderstood some raw feedback)
-- +1 the most important themes. Each individual should not +1 more than half of the themes.
+#### Begin
 
-### Discuss the feedback
+Begin by asking one of the participants to read the [The Prime Directive](http://retrospectivewiki.org/index.php?title=The_Prime_Directive) out loud.
 
-Schedule a meeting to discuss the results.
+> "Regardless of what we discover, we understand and truly believe that everyone did the best job they could, given what they knew at the time, their skills and abilities, the resources available, and the situation at hand."
+> --Norm Kerth, Project Retrospectives: A Handbook for Team Review
 
-The meeting should be time-bounded (e.g. 1 hour), so there might not be time to discuss everything. Sort the themes by +1s and make a jugement about which themes to discuss and how much time to allocate to each discussion.
+This is to assure that a retrospective has the right tone to make it a positive and result oriented event. It makes a retrospective become an effective team gathering to learn and find solutions to improve the way of working together.
 
-For each theme, ask someone to read (out loud) the theme followed by the raw feedback. Then have an open discussion about the theme and how we should move forward.
+#### Group (10-15 min)
 
-Update the retrospective document with notes from the discussion, action items, and owners for those actions.
+Assemble all of the raw feedback into a single document and group related topics together by theme after every participant has explained to the group each of the topics they submitted.
+
+It's important that participants submit their feedback independently to prevent group-think and the reduce the risk of certain biases.
+
+#### Vote (5-10 min)
+
+Share this document with the retrospective group and ask each participant to assign five votes (+1s) to the topics that they deem most important. Make sure participants understand that they can distribute their votes as they wish. For example, one participant could place all their votes on a single topic to indicate how important it is to him or her to discuss that idea. On the other hand, another participant could distribute their votes evenly across many topics.
+
+#### Sort (5 min)
+
+After voting is complete, sort the topics based on the number of votes each received. This sorted list represents the collective prioritization of what to discuss.
+
+#### Discuss (45-90 min)
+
+The discussion is the main part of any retrospective and where real value is extracted.
+
+Announce the time-box for this phase. Optionally, choose to time-box the discussion of each individual topic (to 5 or 10 minutes). The advantage of this approach is that it tends to keep the conversation on topic and moving at a faster pace. Don't over-do it though. There's a fine balance between keeping things on time and missing important discussion. Use your judgement.
+
+Ensure you ask everyone what their thoughts on each topic are. Everyone is different; some people are loud and very outspoken. Some are quiet and observe more. It's important to capture everyone's opinions.
+
+For each topic, if necessary, ensure there's a written down actionable commitment with an agreed upon owner who will pursue its resolution. Additionally, capture important discussion points for each topic in the shared document.
+
+#### Meta-retro (5 min)
+
+At the end of your retrospective, it’s important to take five minutes to discuss how it went. Be open and encouraging of feedback from the participants, and in the same way as the topics that were discussed, look at ways to improve the retrospective the next time around.
 
 ### Publish the results
 
 Remove any sensitive information from the retrospective document and commit it to this directory.
-
