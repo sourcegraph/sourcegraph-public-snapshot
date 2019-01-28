@@ -6,6 +6,8 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 
 ## Quickstart
 
+> NOTE: We're working on a **[new quickstart guide for Sourcegraph 3.0](quickstart.md)** and want your opinion on how we can make it better.
+
 Run a self-hosted Sourcegraph instance in 1 command:
 
 <!--
