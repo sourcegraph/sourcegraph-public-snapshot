@@ -13,9 +13,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed an issue where the site admin is redirected to the start page instead of being redirected to the repositories overview page after deleting a repo.
-
 ### Removed
+
+## 3.0.0-beta.3
+
+- Fixed an issue where the site admin is redirected to the start page instead of being redirected to the repositories overview page after deleting a repo.
 
 ## 3.0.0-beta
 
