@@ -3,6 +3,6 @@
   "templates": "../dev/check/docsite",
   "content": ".",
   "check": {
-    "ignoreURLPattern": "(^https?://)|(^#)|(^mailto:support@sourcegraph\\.com$)|(^chrome://)"
+    "ignoreURLPattern": "(^https?://)|(^#)|(^mailto:support@sourcegraph\\.com(\\?.*)?$)|(^chrome://)"
   }
 }
