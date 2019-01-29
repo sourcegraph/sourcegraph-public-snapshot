@@ -461,7 +461,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                         item: {
                             uri: toURIWithPath(info),
                             languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                            text: info.content,
+                            text: info.content!,
                         },
                         selections: [],
                         isActive: true,
