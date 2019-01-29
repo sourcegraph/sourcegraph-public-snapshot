@@ -2,7 +2,7 @@ import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegrap
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
-import { diffDOMFunctions, getLineRanges, singleFileDOMFunctions } from './dom_functions'
+import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { resolveDiffFileInfo, resolveFileInfo } from './file_info'
 
 const createToolbarMount = (codeView: HTMLElement) => {
@@ -62,7 +62,6 @@ const singleFileCodeView: CodeViewWithOutSelector = {
     getToolbarMount: createToolbarMount,
     dom: singleFileDOMFunctions,
     resolveFileInfo,
-    getLineRanges,
     adjustPosition: createPositionAdjuster(singleFileDOMFunctions),
     toolbarButtonProps: {
         className: 'aui-button',
