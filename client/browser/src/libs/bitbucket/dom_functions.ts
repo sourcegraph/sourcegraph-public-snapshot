@@ -39,18 +39,6 @@ export const singleFileDOMFunctions: DOMFunctions = {
     },
 }
 
-export const getLineRanges = (codeView: HTMLElement) => {
-    const first = codeView.querySelector<HTMLElement>('div.line:first-of-type')!
-    const last = codeView.querySelector<HTMLElement>('div.line:last-of-type')!
-
-    return [
-        {
-            start: singleFileDOMFunctions.getLineNumberFromCodeElement(first),
-            end: singleFileDOMFunctions.getLineNumberFromCodeElement(last),
-        },
-    ]
-}
-
 export const diffDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: singleFileDOMFunctions.getCodeElementFromTarget,
     getLineNumberFromCodeElement: codeElement => {
