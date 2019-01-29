@@ -369,7 +369,7 @@
     },
     "GitLabAuthorization": {
       "description":
-        "If non-null, enforces GitLab repository permissions. This requires that the value of `token` be an access token with \"sudo\" and \"api\" scopes.",
+        "If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type \"gitlab\" with the same `url` field as specified in this `GitLabConnection`.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

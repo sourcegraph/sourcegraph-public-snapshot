@@ -804,16 +804,12 @@ Defines whether repositories from this GitLab instance should be enabled and clo
 
 ### authorization (object)
 
-If non-null, enforces GitLab repository permissions. This requires that the value of `token` be an
-access token with "sudo" and "api" scopes.
+If non-null, enforces GitLab repository permissions. This requires that there be an item in the
+`auth.providers` field of type "gitlab" with the same `url` field as specified in this
+`GitLabConnection`.
 
 The authorization object has the following properties:
 
-- `authnProvider` (object, required)
-  Specifies the authentication provider that corresponds to the authenticator used to sign into GitLab. The `authnProvider` object has the following properties:
-  - `configID`: The value of the `configID` field of the targeted authentication provider.
-  - `type`: The `type` field of the targeted authentication provider.
-  - `gitlabProvider`: The provider name that identifies the authentication provider to GitLab. This is the name passed to the `?provider=` query parameter in calls to the GitLab Users API.
 - `ttl` (string): The TTL of how long to cache permissions data. This is 3 hours by default.
   Decreasing the TTL will increase the load on the code host API. If you have X repos on your
   instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y
