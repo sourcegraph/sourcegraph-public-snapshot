@@ -43,7 +43,7 @@ Distribution:
 
 - [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
 - [Health/feature indicators in pings](https://github.com/sourcegraph/sourcegraph/issues/2024)
-- [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
+- [Docs UX improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
 - Deployment improvements (T.B.D.)
 
 Code search and navigation:
