@@ -33,6 +33,21 @@ interface Configuration {
     Contents: string
 }
 
+interface ConfigurationContents {
+    /**
+     * The instance's license key.
+     */
+    LicenseKey: string
+}
+
+interface LicenseKeyInfo {
+    /**
+     * The number of users on an instance.
+     */
+    UserCount: number
+    ExpiresAt: string
+}
+
 /**
  * The parameters that mut be POST to the /update endpoint.
  */
@@ -61,6 +76,9 @@ interface State {
     /** Whether or not the loader can be shown yet, iff criticalConfig === null */
     canShowLoader: boolean
 
+    /** The instance's license key, as specified in the config. */
+    licenseKey: string | null
+
     /** Whether or not to show a "Saving..." indicator */
     showSaving: boolean
 
@@ -69,6 +87,9 @@ interface State {
 
     /** Whether or not to show a saving error indicator */
     showSavingError: string | null
+
+    userCount: number
+    expiresAt: string | null
 }
 
 export class CriticalConfigEditor extends React.Component<Props, State> {
@@ -76,9 +97,12 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
         criticalConfig: null,
         content: null,
         canShowLoader: false,
+        expiresAt: null,
+        licenseKey: null,
         showSaving: false,
         showSaved: false,
         showSavingError: null,
+        userCount: 0,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -114,6 +138,29 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
                     })
                 })
         )
+
+        // Load the initial critical config.
+        this.subscriptions.add(
+            ajax('/api/license')
+                .pipe(
+                    delay(DEBUG_LOADING_STATE_DELAY),
+                    catchError(err => of(err.xhr))
+                )
+                .subscribe(resp => {
+                    if (resp.status !== 200) {
+                        const msg = 'error saving: ' + resp.status
+                        console.error(msg)
+                        alert(msg) // TODO(slimsag): Better general error state here.
+                        return
+                    }
+
+                    const license = resp.response as LicenseKeyInfo
+                    this.setState({
+                        userCount: license.UserCount,
+                        expiresAt: license.ExpiresAt,
+                    })
+                })
+        )
     }
 
     public componentWillUnmount(): void {
@@ -128,6 +175,8 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
                         this.state.criticalConfig ? ' critical-config-editor__monaco-reserved-space--monaco' : ''
                     }`}
                 >
+                    <div>{this.state.userCount}</div>
+                    <div>{this.state.expiresAt}</div>
                     {!this.state.criticalConfig && this.state.canShowLoader && <div>Loading...</div>}
                     {this.state.criticalConfig && (
                         <MonacoEditor

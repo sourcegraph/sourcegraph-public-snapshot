@@ -28,11 +28,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/internal/tlscertgen"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"golang.org/x/crypto/ssh"
 )
 
 const port = "2633"
@@ -124,6 +127,7 @@ func main() {
 	protectedRoutes := http.NewServeMux()
 	protectedRoutes.HandleFunc("/api/get", serveGet)
 	protectedRoutes.HandleFunc("/api/update", serveUpdate)
+	protectedRoutes.HandleFunc("/api/license", serveLicense)
 
 	// Static assets are excluded from the authentication middleware because
 	// they are the same for all Sourcegraph users AND because the
@@ -159,6 +163,15 @@ type jsonConfiguration struct {
 	Contents string
 }
 
+type configContents struct {
+	LicenseKey string
+}
+
+type licenseInfo struct {
+	UserCount uint
+	ExpiresAt time.Time
+}
+
 func serveGet(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "get")
 
@@ -172,6 +185,38 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(&jsonConfiguration{
 		ID:       strconv.Itoa(int(critical.ID)),
 		Contents: critical.Contents,
+	})
+	if err != nil {
+		logger.Error("json response encoding failed", "error", err)
+		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+	}
+}
+
+func serveLicense(w http.ResponseWriter, r *http.Request) {
+	logger := log15.New("route", "license")
+
+	critical, err := confdb.CriticalGetLatest(r.Context())
+	if err != nil {
+		logger.Error("confdb.CriticalGetLatest failed", "error", err)
+		http.Error(w, "Error retrieving latest critical configuration.", http.StatusInternalServerError)
+		return
+	}
+	var licenseKey configContents
+	err = jsonc.Unmarshal(critical.Contents, &licenseKey)
+	if err != nil {
+		logger.Error("json config unmarshalling failed", "error", err)
+		http.Error(w, "Error unmarshalling json response.", http.StatusInternalServerError)
+	}
+	info, _, err := ParseProductLicenseKey(licenseKey.LicenseKey)
+	if err != nil {
+		logger.Error("parsing product license key failed", "error", err)
+		http.Error(w, "Error parsing product license key.", http.StatusInternalServerError)
+	}
+	fmt.Println(info.UserCount)
+	fmt.Println(info.ExpiresAt)
+	err = json.NewEncoder(w).Encode(&licenseInfo{
+		UserCount: info.UserCount,
+		ExpiresAt: info.ExpiresAt,
 	})
 	if err != nil {
 		logger.Error("json response encoding failed", "error", err)
@@ -260,4 +305,28 @@ func AuthMiddleware(h http.Handler) http.Handler {
 		// Successfully authenticated.
 		h.ServeHTTP(w, r)
 	})
+}
+
+// publicKey is the public key used to verify product license keys.
+//
+// It is hardcoded here intentionally (we only have one private signing key, and we don't yet
+// support/need key rotation). The corresponding private key is at
+// https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i
+// and set below in SOURCEGRAPH_LICENSE_GENERATION_KEY.
+var publicKey = func() ssh.PublicKey {
+	// To convert PKCS#8 format (which `openssl rsa -in key.pem -pubout` produces) to the format
+	// that ssh.ParseAuthorizedKey reads here, use `ssh-keygen -i -mPKCS8 -f key.pub`.
+	const publicKeyData = `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUUd9r83fGmYVLzcqQp5InyAoJB5lLxlM7s41SUUtxfnG6JpmvjNd+WuEptJGk0C/Zpyp/cCjCV4DljDs8Z7xjRbvJYW+vklFFxXrMTBs/+HjpIBKlYTmG8SqTyXyu1s4485Kh1fEC5SK6z2IbFaHuSHUXgDi/IepSOg1QudW4n8J91gPtT2E30/bPCBRq8oz/RVwJSDMvYYjYVb//LhV0Mx3O6hg4xzUNuwiCtNjCJ9t4YU2sV87+eJwWtQNbSQ8TelQa8WjG++XSnXUHw12bPDe7wGL/7/EJb7knggKSAMnpYpCyV35dyi4DsVc46c+b6P0gbVSosh3Uc3BJHSWF`
+	var err error
+	publicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKeyData))
+	if err != nil {
+		panic("failed to parse public key for license verification: " + err.Error())
+	}
+	return publicKey
+}()
+
+// ParseProductLicenseKey parses and verifies the license key using the license verification public
+// key (publicKey in this package).
+func ParseProductLicenseKey(licenseKey string) (*license.Info, string, error) {
+	return license.ParseSignedKey(licenseKey, publicKey)
 }
