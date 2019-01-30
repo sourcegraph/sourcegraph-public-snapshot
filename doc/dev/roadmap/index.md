@@ -37,21 +37,18 @@ Release date: 2019-02-20
 
 Backend:
 
-- [Improved repository mirroring](https://github.com/sourcegraph/sourcegraph/issues/2025)
+- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
 
 Distribution:
 
-- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- [Health/feature indicators in pings](https://github.com/sourcegraph/sourcegraph/issues/2024)
+- [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
+- [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
 - [Docs UX improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
-- Deployment improvements (T.B.D.)
 
 Code search and navigation:
 
-- Code navigation extensions: basic-code-intel, Codecov, Git extras, Datadog, LightStep (T.B.D.)
+- Code navigation (T.B.D.)
 - Search UX (T.B.D.)
-- Search extensions: [#670](https://github.com/sourcegraph/sourcegraph/issues/670), etc. (T.B.D.)
-- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005) (T.B.D.)
 
 
 <small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
