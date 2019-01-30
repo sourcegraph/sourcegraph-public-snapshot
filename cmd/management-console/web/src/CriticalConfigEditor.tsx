@@ -33,13 +33,6 @@ interface Configuration {
     Contents: string
 }
 
-interface ConfigurationContents {
-    /**
-     * The instance's license key.
-     */
-    LicenseKey: string
-}
-
 /**
  * The parameters that mut be POST to the /update endpoint.
  */
@@ -68,9 +61,6 @@ interface State {
     /** Whether or not the loader can be shown yet, iff criticalConfig === null */
     canShowLoader: boolean
 
-    /** The instance's license key, as specified in the config. */
-    licenseKey: string | null
-
     /** Whether or not to show a "Saving..." indicator */
     showSaving: boolean
 
@@ -86,7 +76,6 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
         criticalConfig: null,
         content: null,
         canShowLoader: false,
-        licenseKey: null,
         showSaving: false,
         showSaved: false,
         showSavingError: null,
