@@ -1,4 +1,4 @@
-import { Subscription, Unsubscribable } from 'rxjs'
+import { from, Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { createProxy, handleRequests } from '../common/proxy'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
@@ -185,6 +185,7 @@ function createExtensionAPI(
         },
 
         app: {
+            activeWindowChanged: windows.activeWindowChanged,
             get activeWindow(): sourcegraph.Window | undefined {
                 return windows.getActive()
             },

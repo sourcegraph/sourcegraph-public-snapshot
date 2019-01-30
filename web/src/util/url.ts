@@ -157,8 +157,10 @@ export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selectio
     if (range === undefined) {
         return []
     }
-    const start: Position = { line: range.start.line - 1, character: range.start.character - 1 }
-    const end: Position = { line: range.end.line - 1, character: range.end.character - 1 }
+    // `lprToRange` sets character to 0 if it's undefined. Only - 1 the character if it's not 0.
+    const characterZeroIndexed = (character: number) => (character === 0 ? character : character - 1)
+    const start: Position = { line: range.start.line - 1, character: characterZeroIndexed(range.start.character) }
+    const end: Position = { line: range.end.line - 1, character: characterZeroIndexed(range.end.character) }
     return [
         {
             start,
