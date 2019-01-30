@@ -22,7 +22,7 @@ var builtinExtensionIDs = []string{
 	"sourcegraph/scala",
 }
 
-const singletonDefaultSettingsGQLID = "Default settings"
+const singletonDefaultSettingsGQLID = "DefaultSettings"
 
 type defaultSettingsResolver struct {
 	gqlID string
@@ -31,7 +31,7 @@ type defaultSettingsResolver struct {
 var singletonDefaultSettingsResolver = &defaultSettingsResolver{gqlID: singletonDefaultSettingsGQLID}
 
 func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
-	return relay.MarshalID("Default settings", defaultSettingsID)
+	return relay.MarshalID("DefaultSettings", defaultSettingsID)
 }
 
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }

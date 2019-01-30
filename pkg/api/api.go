@@ -98,7 +98,7 @@ type SettingsSubject struct {
 func (s SettingsSubject) String() string {
 	switch {
 	case s.Default:
-		return "Default settings"
+		return "DefaultSettings"
 	case s.Site:
 		return "site"
 	case s.Org != nil:
