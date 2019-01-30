@@ -23,6 +23,10 @@ import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from 
 
 const maxEntries = 2500
 
+const errorWidth = (width?: string) => ({
+    width: width ? `${width}px` : 'auto',
+})
+
 export interface TreeRootProps extends AbsoluteRepo {
     history: H.History
     location: H.Location
@@ -204,7 +208,3 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.node.childNodes[index] = node
     }
 }
-
-const errorWidth = (width?: string) => ({
-    width: width ? `${width}px` : 'auto',
-})
