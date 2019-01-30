@@ -78,7 +78,7 @@ func (o *OrgResolver) DisplayName() *string {
 
 func (o *OrgResolver) URL() string { return "/organizations/" + o.org.Name }
 
-func (o *OrgResolver) SettingsURL() string { return o.URL() + "/settings" }
+func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings") }
 
 func (o *OrgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 

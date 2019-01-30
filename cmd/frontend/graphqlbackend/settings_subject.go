@@ -136,7 +136,7 @@ func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver
 	}
 }
 
-func (s *settingsSubject) SettingsURL() (string, error) {
+func (s *settingsSubject) SettingsURL() (*string, error) {
 	switch {
 	case s.defaultSettings != nil:
 		return s.defaultSettings.SettingsURL(), nil
@@ -147,7 +147,7 @@ func (s *settingsSubject) SettingsURL() (string, error) {
 	case s.user != nil:
 		return s.user.SettingsURL(), nil
 	default:
-		return "", errUnknownSettingsSubject
+		return nil, errUnknownSettingsSubject
 	}
 }
 

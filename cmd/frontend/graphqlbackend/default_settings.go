@@ -49,7 +49,7 @@ func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settings
 	return &settingsResolver{&settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 
-func (r *defaultSettingsResolver) SettingsURL() string { return "/nonexistent" }
+func (r *defaultSettingsResolver) SettingsURL() *string { return nil }
 
 func (r *defaultSettingsResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return false, nil

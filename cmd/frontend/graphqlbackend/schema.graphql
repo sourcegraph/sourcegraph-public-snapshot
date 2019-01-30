@@ -2066,7 +2066,7 @@ type User implements Node & SettingsSubject {
     # The URL to the user's profile on Sourcegraph.
     url: String!
     # The URL to the user's settings.
-    settingsURL: String!
+    settingsURL: String
     # The date when the user account was created on Sourcegraph.
     createdAt: String!
     # The date when the user account was last updated on Sourcegraph.
@@ -2326,7 +2326,7 @@ type Org implements Node & SettingsSubject {
     # The URL to the organization.
     url: String!
     # The URL to the organization's settings.
-    settingsURL: String!
+    settingsURL: String
     # A list of extensions published by this organization in the extension registry.
 }
 
@@ -2612,7 +2612,7 @@ type DefaultSettings implements SettingsSubject {
     latestSettings: Settings
     # The URL to the default settings. This URL does not exist because you
     # cannot edit or directly view default settings.
-    settingsURL: String!
+    settingsURL: String
     # Whether the viewer can modify the subject's settings. Always false for
     # default settings.
     viewerCanAdminister: Boolean!
@@ -2653,7 +2653,7 @@ type Site implements SettingsSubject {
             reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
         )
     # The URL to the site's settings.
-    settingsURL: String!
+    settingsURL: String
     # Whether the viewer can reload the site (with the reloadSite mutation).
     canReloadSite: Boolean!
     # Whether the viewer can modify the subject's settings.
@@ -2778,7 +2778,7 @@ interface SettingsSubject {
     # The latest settings.
     latestSettings: Settings
     # The URL to the settings.
-    settingsURL: String!
+    settingsURL: String
     # Whether the viewer can modify the subject's settings.
     viewerCanAdminister: Boolean!
     # All settings for this subject, and the individual levels in the settings cascade (global > organization > user)
