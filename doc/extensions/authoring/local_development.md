@@ -29,7 +29,7 @@ When you're done, clear the sideload URL from the extensions debug menu.
 3. Edit the `serve` npm script to run `symlink-package`:
 
     ```json
-    "serve": "npm run symlink package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
+    "serve": "npm run symlink-package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
     ```
 
 ## Next steps
