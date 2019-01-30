@@ -7,7 +7,7 @@ Code intelligence provides advanced code navigation and cross-references for you
 - Find references
 - Symbol search
 
-Code intelligence works out of the box with the [sourcegraph/basic-code-intel](https://sourcegraph.com/extensions/sourcegraph/basic-code-intel) extension.
+Code intelligence works out of the box with all of the most popular [https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22](programming language extensions).
 
 You can get more accurate (but usually slower) code intelligence by enabling a dedicated language extension and setting up the corresponding language server:
 

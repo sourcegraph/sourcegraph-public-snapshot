@@ -10,7 +10,6 @@ import (
 )
 
 var builtinExtensionIDs = []string{
-	"sourcegraph/basic-code-intel",
 	"sourcegraph/typescript",
 	"sourcegraph/python",
 	"sourcegraph/java",
