@@ -2604,7 +2604,8 @@ enum RepositoryOrderBy {
     REPOSITORY_CREATED_AT
 }
 
-# The default settings for the Sourcegraph instance.
+# The default settings for the Sourcegraph instance. This is hardcoded in
+# Sourcegraph, but may change from release to release.
 type DefaultSettings implements SettingsSubject {
     # The opaque GraphQL ID.
     id: ID!
