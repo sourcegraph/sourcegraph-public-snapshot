@@ -20,11 +20,13 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/garyburd/redigo/redis"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/internal/tlscertgen"
@@ -35,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -168,8 +171,12 @@ type configContents struct {
 }
 
 type licenseInfo struct {
-	UserCount uint
-	ExpiresAt time.Time
+	ActualUserCount      int
+	ActualUserCountDate  string
+	ProductNameWithBrand string
+	UserCount            uint
+	ExpiresAt            time.Time
+	HasLicense           bool
 }
 
 func serveGet(w http.ResponseWriter, r *http.Request) {
@@ -192,6 +199,11 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// noLicenseMaximumAllowedUserCount is the maximum number of user accounts that may exist on Sourcegraph Core
+// (i.e., when running without a license). Exceeding this number of user accounts requires a
+// license.
+var noLicenseMaximumAllowedUserCount uint = 200
+
 func serveLicense(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "license")
 
@@ -207,21 +219,68 @@ func serveLicense(w http.ResponseWriter, r *http.Request) {
 		logger.Error("json config unmarshalling failed", "error", err)
 		http.Error(w, "Error unmarshalling json response.", http.StatusInternalServerError)
 	}
-	info, _, err := ParseProductLicenseKey(licenseKey.LicenseKey)
+
+	if licenseKey.LicenseKey == "" {
+		// Return the default values for Sourcegraph Core
+		err = json.NewEncoder(w).Encode(&licenseInfo{
+			ProductNameWithBrand: "Sourcegraph Core",
+			UserCount:            noLicenseMaximumAllowedUserCount,
+			ActualUserCount:      0,
+			HasLicense:           false,
+		})
+		return
+	}
+
+	info, signature, err := ParseProductLicenseKey(licenseKey.LicenseKey)
 	if err != nil {
 		logger.Error("parsing product license key failed", "error", err)
 		http.Error(w, "Error parsing product license key.", http.StatusInternalServerError)
 	}
-	fmt.Println(info.UserCount)
-	fmt.Println(info.ExpiresAt)
-	err = json.NewEncoder(w).Encode(&licenseInfo{
-		UserCount: info.UserCount,
-		ExpiresAt: info.ExpiresAt,
-	})
-	if err != nil {
-		logger.Error("json response encoding failed", "error", err)
-		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+
+	hasLicense := info != nil
+	if hasLicense {
+		productNameWithBrand := productNameWithBrand(hasLicense, info.Tags)
+		maxUsers, _, err := GetMaxUsers(signature)
+		if err != nil {
+			logger.Error("Error fetching correct number of users on license", "error", err)
+			http.Error(w, "Error fetching correct number of users on license", http.StatusInternalServerError)
+		}
+		actualUserCountDate, err := actualUserCountDate(signature)
+		if err != nil {
+			logger.Error("Error fetching correct date", "error", err)
+			http.Error(w, "Error fetching correct date", http.StatusInternalServerError)
+		}
+
+		err = json.NewEncoder(w).Encode(&licenseInfo{
+			ActualUserCount:      maxUsers,
+			ActualUserCountDate:  actualUserCountDate,
+			ProductNameWithBrand: productNameWithBrand,
+			UserCount:            info.UserCount,
+			ExpiresAt:            info.ExpiresAt,
+			HasLicense:           true,
+		})
+		if err != nil {
+			logger.Error("json response encoding failed", "error", err)
+			http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+		}
 	}
+	//  else {
+	// 	productNameWithBrand := productNameWithBrand(false, []string{})
+	// 	if err != nil {
+	// 		logger.Error("Error fetching correct date", "error", err)
+	// 	}
+
+	// 	err = json.NewEncoder(w).Encode(&licenseInfo{
+	// 		ProductNameWithBrand: productNameWithBrand,
+	// 		UserCount:            noLicenseMaximumAllowedUserCount,
+	// 	})
+	// 	if err != nil {
+	// 		logger.Error("json response encoding failed", "error", err)
+	// 		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+	// 	}
+	// }
+	// TODO handle if no license key. Just need "Sourcegraph Core as the name, and 200 user count."
+
 }
 
 func serveUpdate(w http.ResponseWriter, r *http.Request) {
@@ -329,4 +388,89 @@ var publicKey = func() ssh.PublicKey {
 // key (publicKey in this package).
 func ParseProductLicenseKey(licenseKey string) (*license.Info, string, error) {
 	return license.ParseSignedKey(licenseKey, publicKey)
+}
+
+func productNameWithBrand(hasLicense bool, licenseTags []string) string {
+	if !hasLicense {
+		return "Sourcegraph Core"
+	}
+
+	hasTag := func(tag string) bool {
+		for _, t := range licenseTags {
+			if tag == t {
+				return true
+			}
+		}
+		return false
+	}
+
+	var name string
+	if hasTag("starter") {
+		name = " Starter"
+	}
+
+	var misc []string
+	if hasTag("trial") {
+		misc = append(misc, "trial")
+	}
+	if hasTag("dev") {
+		misc = append(misc, "dev use only")
+	}
+	if len(misc) > 0 {
+		name += " (" + strings.Join(misc, ", ") + ")"
+	}
+
+	return "Sourcegraph Enterprise" + name
+}
+
+var (
+	pool      = redispool.Store
+	keyPrefix = "license_user_count:"
+
+	started bool
+)
+
+// GetMaxUsers gets the max users associated with a license key.
+func GetMaxUsers(signature string) (int, string, error) {
+	c := pool.Get()
+	defer c.Close()
+
+	if signature == "" {
+		// No license key is in use.
+		return 0, "", nil
+	}
+
+	return getMaxUsers(c, signature)
+}
+
+func getMaxUsers(c redis.Conn, key string) (int, string, error) {
+	lastMax, err := redis.String(c.Do("HGET", maxUsersKey(), key))
+	if err != nil && err != redis.ErrNil {
+		return 0, "", err
+	}
+	lastMaxInt := 0
+	if lastMax != "" {
+		lastMaxInt, err = strconv.Atoi(lastMax)
+		if err != nil {
+			return 0, "", err
+		}
+	}
+	lastMaxDate, err := redis.String(c.Do("HGET", maxUsersTimeKey(), key))
+	if err != nil && err != redis.ErrNil {
+		return 0, "", err
+	}
+	return lastMaxInt, lastMaxDate, nil
+}
+
+func maxUsersKey() string {
+	return keyPrefix + "max"
+}
+
+func maxUsersTimeKey() string {
+	return keyPrefix + "max_time"
+}
+
+func actualUserCountDate(signature string) (string, error) {
+	_, date, err := GetMaxUsers(signature)
+	return date, err
 }

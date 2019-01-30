@@ -1,6 +1,7 @@
 import * as React from 'react'
 import './App.scss'
 import { CriticalConfigEditor } from './CriticalConfigEditor'
+import { ProductSubscriptionStatus } from './ProductSubscriptionStatus'
 
 export class App extends React.Component<{}, {}> {
     public render(): JSX.Element | null {
@@ -14,6 +15,7 @@ export class App extends React.Component<{}, {}> {
                     </a>{' '}
                     for more information.
                 </p>
+                <ProductSubscriptionStatus />
                 <CriticalConfigEditor />
             </div>
         )

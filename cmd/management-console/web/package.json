@@ -2,18 +2,21 @@
   "name": "management-console",
   "private": true,
   "dependencies": {
+    "bootstrap": "^4.2.1",
     "deasync": "^0.1.14",
+    "logo": "^0.2.0",
     "react": "^16.6.3",
     "rxjs": "^6.3.3"
   },
   "scripts": {
-    "serve": "cp ../../../ui/assets/img/favicon.png ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel serve --out-dir=../assets --no-source-maps -p 2680 src/index.html",
-    "build": "cp ../../../ui/assets/img/favicon.png ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel build --out-dir=../assets --no-source-maps --no-minify src/index.html"
+    "serve": "cp ../../../ui/assets/img/favicon.png ./src && cp ../../../ui/assets/img/bg-sprinkles-2x.png ./src && cp ../../../ui/assets/img/sourcegraph-mark.svg ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel serve --out-dir=../assets --no-source-maps -p 2680 src/index.html",
+    "build": "cp ../../../ui/assets/img/favicon.png ./src && cp ../../../ui/assets/img/bg-sprinkles-2x.png ./src && cp ../../../ui/assets/img/sourcegraph-mark.svg ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel build --out-dir=../assets --no-source-maps --no-minify src/index.html"
   },
   "devDependencies": {
     "monaco-editor": "^0.14.3",
     "parcel-bundler": "^1.11.0",
     "sass": "^1.15.2",
+    "sass-loader": "^7.1.0",
     "typescript": "^3.2.2"
   }
 }

@@ -122,5 +122,9 @@ cmd/management-console/assets/*.css
 cmd/management-console/assets/*.html
 cmd/management-console/assets/favicon.*.png
 cmd/management-console/web/src/favicon.png
+cmd/management-console/assets/bg-sprinkles-2x.*.png
+cmd/management-console/web/src/bg-sprinkles-2x.png
+cmd/management-console/assets/sourcegraph-mark.*.svg
+cmd/management-console/web/src/sourcegraph-mark.svg
 cmd/management-console/web/.cache
 cmd/management-console/assets/assets_vfsdata.go

@@ -1,0 +1,11 @@
+.true-up-status-summary {
+    &__container {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    &__item {
+        width: 32%;
+    }
+}

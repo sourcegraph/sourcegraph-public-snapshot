@@ -2,11 +2,11 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import { SingleValueCard } from '../../../shared/src/components/SingleValueCard'
 import { Tab, TabsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/Tabs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { SingleValueCard } from '../components/SingleValueCard'
 import { Timestamp } from '../components/time/Timestamp'
 import {
     fetchAllSurveyResponses,

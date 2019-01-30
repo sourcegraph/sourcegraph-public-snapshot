@@ -48,3 +48,19 @@ button {
     margin: 0;
     margin-bottom: 1.75rem;
 }
+
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/card';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/grid';
+@import './TrueUpStatusSummary';
+@import './ProductCertificate';
+
+.card {
+    background-color: #151c28;
+    border: 1px solid #2b3750;
+}

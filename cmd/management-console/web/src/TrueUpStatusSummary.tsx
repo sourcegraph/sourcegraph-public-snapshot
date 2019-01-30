@@ -2,12 +2,12 @@ import * as React from 'react'
 import { SingleValueCard } from '../../../../shared/src/components/SingleValueCard'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { numberWithCommas } from '../../../../shared/src/util/strings'
-import { formatUserCount } from '../productSubscription/helpers'
+import { formatUserCount } from './helpers'
 
 interface Props {
     actualUserCount: number
+    userCount: number
     actualUserCountDate: string | null
-    license: GQL.IProductLicenseInfo
 }
 /**
  * Displays a summary of the site's true-up pricing status.
@@ -15,15 +15,15 @@ interface Props {
 export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
     actualUserCount,
     actualUserCountDate,
-    license,
+    userCount,
 }) => (
     <>
         <div className="true-up-status-summary mb-2 mt-4">
             <div className="true-up-status-summary__container">
                 <SingleValueCard
                     className="true-up-status-summary__item"
-                    value={numberWithCommas(license.userCount)}
-                    valueTooltip={`${formatUserCount(license.userCount, true)} license`}
+                    value={numberWithCommas(userCount)}
+                    valueTooltip={`${formatUserCount(userCount, true)} license`}
                     title="Licensed users"
                     subText="The number of users that are currently covered by your license. The true-up model allows having more users, and additional users will incur a retroactive charge on renewal."
                 />
@@ -37,13 +37,13 @@ export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
                 />
                 <SingleValueCard
                     className="true-up-status-summary__item"
-                    value={numberWithCommas(Math.max(0, actualUserCount - license.userCount))}
+                    value={numberWithCommas(Math.max(0, actualUserCount - userCount))}
                     valueTooltip={`${numberWithCommas(
-                        Math.max(0, actualUserCount - license.userCount)
+                        Math.max(0, actualUserCount - userCount)
                     )} users over${actualUserCountDate !== '' && `(on ${actualUserCountDate})`}`}
                     title="Users over license"
                     subText="The true-up model has a retroactive charge for these users at the next renewal. If you want to update your license sooner to prevent this, please contact sales@sourcegraph.com."
-                    valueClassName={license.userCount - actualUserCount < 0 ? 'text-danger' : ''}
+                    valueClassName={userCount - actualUserCount < 0 ? 'text-danger' : ''}
                 />
             </div>
             <small>

@@ -1,0 +1,31 @@
+.product-certificate {
+    &__bg {
+        position: absolute;
+        user-select: none;
+        pointer-events: none;
+        z-index: 0;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-image: url(./bg-sprinkles-2x.png);
+        background-color: #151c28;
+        background-repeat: none;
+        background-size: cover;
+        opacity: 0.35;
+        background-blend-mode: overlay;
+    }
+
+    &__logo {
+        height: 5rem;
+        z-index: 9;
+    }
+    .btn {
+        z-index: 9;
+        text-decoration: none;
+    }
+    .card-footer {
+        z-index: 9;
+        background-color: rgba(43, 55, 80, 0.85);
+    }
+}
