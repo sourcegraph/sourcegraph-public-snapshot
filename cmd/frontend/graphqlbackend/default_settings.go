@@ -9,17 +9,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-var builtinExtensionIDs = []string{
-	"sourcegraph/typescript",
-	"sourcegraph/python",
-	"sourcegraph/java",
-	"sourcegraph/go",
-	"sourcegraph/cpp",
-	"sourcegraph/ruby",
-	"sourcegraph/php",
-	"sourcegraph/csharp",
-	"sourcegraph/shell",
-	"sourcegraph/scala",
+var builtinExtensions = map[string]bool{
+	"sourcegraph/typescript": true,
+	"sourcegraph/python":     true,
+	"sourcegraph/java":       true,
+	"sourcegraph/go":         true,
+	"sourcegraph/cpp":        true,
+	"sourcegraph/ruby":       true,
+	"sourcegraph/php":        true,
+	"sourcegraph/csharp":     true,
+	"sourcegraph/shell":      true,
+	"sourcegraph/scala":      true,
 }
 
 const singletonDefaultSettingsGQLID = "DefaultSettings"
@@ -37,11 +37,7 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
 func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	extensions := map[string]map[string]bool{"extensions": {}}
-	for _, extensionID := range builtinExtensionIDs {
-		extensions["extensions"][extensionID] = true
-	}
-	contents, err := json.Marshal(extensions)
+	contents, err := json.Marshal(map[string]map[string]bool{"extensions": builtinExtensions})
 	if err != nil {
 		return nil, err
 	}
