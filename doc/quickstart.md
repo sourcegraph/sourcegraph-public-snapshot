@@ -37,6 +37,8 @@ Enable basic code intelligence (go-to-definition, hover tooltips, and find-refer
   <iframe class="mx-auto" width="560" height="315" src="https://www.youtube.com/embed/Pfy2CjeJ2N4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
 
+> NOTE: Learn more about extensions management on the [extensions usage page](https://docs.sourcegraph.com/extensions/#usage).
+
 ## Configuration complete
 
 Now you should have a fully functioning Sourcegraph instance. If something didn't work or you've got a suggestion for making this guide better, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
@@ -51,5 +53,6 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 
 - [Core documentation](index.md#core-documentation)
 - [Features and tutorials](index.md#features-and-tutorials)
+- [Extensions management](extensions/index.md#usage)
 - [Sourcegraph subscriptions](index.md#sourcegraph-subscriptions)
 - [Other links](index.md#other-links)
