@@ -25,13 +25,13 @@ interface State {
      * The result of updating the external service: null when complete or not started yet,
      * loading, or an error.
      */
-    updateOrError: null | true | typeof LOADING | ErrorLike
+    updatedOrError: null | true | typeof LOADING | ErrorLike
 }
 
 export class SiteAdminExternalServicePage extends React.Component<Props, State> {
     public state: State = {
         externalServiceOrError: LOADING,
-        updateOrError: null,
+        updatedOrError: null,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -67,9 +67,9 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                             mergeMap(u =>
                                 concat(
                                     // Flash "updated" text
-                                    of<Partial<State>>({ updateOrError: true }),
+                                    of<Partial<State>>({ updatedOrError: true }),
                                     // Hide "updated" text again after 1s
-                                    of<Partial<State>>({ updateOrError: u }).pipe(delay(1000))
+                                    of<Partial<State>>({ updatedOrError: u }).pipe(delay(1000))
                                 )
                             ),
                             catchError((error: Error) => [{ updateOrError: asError(error) }])
@@ -92,8 +92,8 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
 
     public render(): JSX.Element | null {
         let error: ErrorLike | undefined
-        if (isErrorLike(this.state.updateOrError)) {
-            error = this.state.updateOrError
+        if (isErrorLike(this.state.updatedOrError)) {
+            error = this.state.updatedOrError
         }
 
         const externalService =
@@ -119,14 +119,14 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         input={externalService}
                         error={error}
                         mode="edit"
-                        loading={this.state.updateOrError === LOADING}
+                        loading={this.state.updatedOrError === LOADING}
                         onSubmit={this.onSubmit}
                         onChange={this.onChange}
                         history={this.props.history}
                         isLightTheme={this.props.isLightTheme}
                     />
                 )}
-                {this.state.updateOrError === true && (
+                {this.state.updatedOrError === true && (
                     <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
                 )}
             </div>
