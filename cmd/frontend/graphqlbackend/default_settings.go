@@ -9,7 +9,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-var builtinExtensionIDs = []string{"sourcegraph/basic-code-intel"}
+var builtinExtensionIDs = []string{
+	"sourcegraph/basic-code-intel",
+	"sourcegraph/typescript",
+	"sourcegraph/python",
+	"sourcegraph/java",
+	"sourcegraph/go",
+	"sourcegraph/cpp",
+	"sourcegraph/ruby",
+	"sourcegraph/php",
+	"sourcegraph/csharp",
+	"sourcegraph/shell",
+	"sourcegraph/scala",
+}
 
 const singletonDefaultSettingsGQLID = "Default settings"
 
