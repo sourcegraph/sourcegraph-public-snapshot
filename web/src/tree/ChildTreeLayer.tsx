@@ -4,7 +4,7 @@ import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
 import { hasSingleChild, SingleChildGitTree, TreeEntryInfo } from './util'
 
-interface ChildTreeLayerProps extends TreeRootProps {
+interface ChildTreeLayerProps extends Pick<TreeRootProps, Exclude<keyof TreeRootProps, 'sizeKey'>> {
     entries: TreeEntryInfo[]
     /** The entry information for a SingleChildTreeLayer. Will be a SingleChildGitTree with fields populated, or be an empty object if there is no SingleChildTreeLayer to render. */
     singleChildTreeEntry: SingleChildGitTree

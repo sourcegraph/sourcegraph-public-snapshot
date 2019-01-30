@@ -39,12 +39,12 @@ export interface TreeRootProps extends AbsoluteRepo {
     index: number
     isExpanded: boolean
     selectedNode: TreeNode
+    sizeKey: string
     onHover?: (filePath: string) => void
     onSelect: (node: TreeNode) => void
     onToggleExpand: (path: string, expanded: boolean, node: TreeNode) => void
     setChildNodes: (node: TreeNode, index: number) => void
     setActiveNode: (node: TreeNode) => void
-    sizeKey: string
 }
 
 const LOADING: 'loading' = 'loading'
