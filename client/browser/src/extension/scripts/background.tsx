@@ -167,24 +167,6 @@ permissions.onRemoved(permissions => {
 storage.setSyncMigration(items => {
     const newItems = { ...defaultStorageItems, ...items }
 
-    // Ensure access tokens are in storage and they are in the correct shape.
-    if (!newItems.accessTokens) {
-        newItems.accessTokens = {}
-    }
-
-    if (newItems.accessTokens) {
-        const accessTokens = {}
-
-        for (const url of Object.keys(newItems.accessTokens)) {
-            const token = newItems.accessTokens[url]
-            if (typeof token !== 'string' && token.id && token.token) {
-                accessTokens[url] = token
-            }
-        }
-
-        newItems.accessTokens = accessTokens
-    }
-
     let featureFlags: FeatureFlags = {
         ...featureFlagDefaults,
         ...(newItems.featureFlags || {}),
