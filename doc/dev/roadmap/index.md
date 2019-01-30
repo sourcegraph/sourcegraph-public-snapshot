@@ -47,7 +47,7 @@ Distribution:
 
 Code search and navigation:
 
-- Code navigation (T.B.D.)
+- [Code navigation UX and robustness](https://github.com/sourcegraph/sourcegraph/issues/2070)
 - Search UX (T.B.D.)
 
 
