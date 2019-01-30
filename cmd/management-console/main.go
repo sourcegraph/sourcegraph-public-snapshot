@@ -167,7 +167,8 @@ type jsonConfiguration struct {
 }
 
 type configContents struct {
-	LicenseKey string
+	LicenseKey  string
+	ExternalURL string
 }
 
 type licenseInfo struct {
@@ -177,6 +178,7 @@ type licenseInfo struct {
 	UserCount            uint
 	ExpiresAt            time.Time
 	HasLicense           bool
+	ExternalURL          string
 }
 
 func serveGet(w http.ResponseWriter, r *http.Request) {
@@ -213,25 +215,26 @@ func serveLicense(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error retrieving latest critical configuration.", http.StatusInternalServerError)
 		return
 	}
-	var licenseKey configContents
-	err = jsonc.Unmarshal(critical.Contents, &licenseKey)
+	var config configContents
+	err = jsonc.Unmarshal(critical.Contents, &config)
 	if err != nil {
 		logger.Error("json config unmarshalling failed", "error", err)
 		http.Error(w, "Error unmarshalling json response.", http.StatusInternalServerError)
 	}
 
-	if licenseKey.LicenseKey == "" {
+	if config.LicenseKey == "" {
 		// Return the default values for Sourcegraph Core
 		err = json.NewEncoder(w).Encode(&licenseInfo{
 			ProductNameWithBrand: "Sourcegraph Core",
 			UserCount:            noLicenseMaximumAllowedUserCount,
 			ActualUserCount:      0,
 			HasLicense:           false,
+			ExternalURL:          config.ExternalURL,
 		})
 		return
 	}
 
-	info, signature, err := ParseProductLicenseKey(licenseKey.LicenseKey)
+	info, signature, err := ParseProductLicenseKey(config.LicenseKey)
 	if err != nil {
 		logger.Error("parsing product license key failed", "error", err)
 		http.Error(w, "Error parsing product license key.", http.StatusInternalServerError)
@@ -258,29 +261,13 @@ func serveLicense(w http.ResponseWriter, r *http.Request) {
 			UserCount:            info.UserCount,
 			ExpiresAt:            info.ExpiresAt,
 			HasLicense:           true,
+			ExternalURL:          config.ExternalURL,
 		})
 		if err != nil {
 			logger.Error("json response encoding failed", "error", err)
 			http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
 		}
 	}
-	//  else {
-	// 	productNameWithBrand := productNameWithBrand(false, []string{})
-	// 	if err != nil {
-	// 		logger.Error("Error fetching correct date", "error", err)
-	// 	}
-
-	// 	err = json.NewEncoder(w).Encode(&licenseInfo{
-	// 		ProductNameWithBrand: productNameWithBrand,
-	// 		UserCount:            noLicenseMaximumAllowedUserCount,
-	// 	})
-	// 	if err != nil {
-	// 		logger.Error("json response encoding failed", "error", err)
-	// 		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
-	// 	}
-	// }
-	// TODO handle if no license key. Just need "Sourcegraph Core as the name, and 200 user count."
-
 }
 
 func serveUpdate(w http.ResponseWriter, r *http.Request) {

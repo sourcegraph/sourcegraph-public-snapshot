@@ -1,8 +1,9 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+// import { Link } from 'react-router-dom'
 import { of, Subscription } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, delay, map } from 'rxjs/operators'
+import { Link } from '../../../../shared/src/components/Link'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
 import { ExpirationDate } from './ExpirationDate'
@@ -37,6 +38,7 @@ interface LicenseKeyInfo {
     ActualUserCount: number
     ActualUserCountDate: string
     HasLicense: boolean
+    ExternalURL: string
 }
 
 /**
@@ -85,6 +87,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                 ActualUserCount: license.ActualUserCount,
                                 ActualUserCountDate: license.ActualUserCountDate,
                                 HasLicense: license.HasLicense,
+                                ExternalURL: license.ExternalURL,
                             },
                         })
                     }
@@ -111,9 +114,8 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
         const license = this.state.licenseOrError
 
         // No license means Sourcegraph Core. For that, show the user that they can use this for free forever, and show them how to upgrade.
-
         return (
-            <div className="my-3">
+            <div className="product-subscription-status my-3">
                 <ProductCertificate
                     title={license.ProductNameWithBrand}
                     detail={
@@ -177,9 +179,9 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                     />
                 ) : (
                     license.UserCount - license.ActualUserCount < 0 && (
-                        <div className="alert alert-warning">
+                        <div className="product-subscription-status__alert alert alert-warning">
                             You have exceeded your licensed users.{' '}
-                            <Link to="/site-admin/license">View your license details</Link> or{' '}
+                            <a href={`${license.ExternalURL}/site-admin/license`}>View your license details</a> or{' '}
                             <a href="https://about.sourcegraph.com/pricing" target="_blank">
                                 upgrade your license
                             </a>{' '}
