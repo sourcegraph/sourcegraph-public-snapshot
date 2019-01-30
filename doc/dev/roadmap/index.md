@@ -48,7 +48,7 @@ Distribution:
 Code search and navigation:
 
 - [Code navigation UX and robustness](https://github.com/sourcegraph/sourcegraph/issues/2070)
-- Search UX (T.B.D.)
+- [Search UX](https://github.com/sourcegraph/sourcegraph/issues/2081)
 
 
 <small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
