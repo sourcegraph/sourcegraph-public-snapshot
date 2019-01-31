@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/server/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/management-console/shared"
 )
 
 func main() {

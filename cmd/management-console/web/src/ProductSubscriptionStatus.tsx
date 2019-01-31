@@ -37,7 +37,6 @@ interface LicenseKeyInfo {
     ProductNameWithBrand: string
     ActualUserCount: number
     ActualUserCountDate: string
-    HasLicense: boolean
     ExternalURL: string
 }
 
@@ -86,7 +85,6 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                 ProductNameWithBrand: license.ProductNameWithBrand,
                                 ActualUserCount: license.ActualUserCount,
                                 ActualUserCountDate: license.ActualUserCountDate,
-                                HasLicense: license.HasLicense,
                                 ExternalURL: license.ExternalURL,
                             },
                         })
@@ -114,8 +112,11 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
         const license = this.state.licenseOrError
 
         if (license.ProductNameWithBrand === 'Sourcegraph OSS') {
+            // Don't show license status on OSS builds.
             return null
         }
+
+        const isNotCore = license && license.ProductNameWithBrand !== 'Sourcegraph Core'
 
         // No license means Sourcegraph Core. For that, show the user that they can use this for free forever, and show them how to upgrade.
         return (
@@ -123,7 +124,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                 <ProductCertificate
                     title={license.ProductNameWithBrand}
                     detail={
-                        license && license.HasLicense ? (
+                        isNotCore ? (
                             <>
                                 {formatUserCount(license.UserCount, true)} license,{' '}
                                 <ExpirationDate
@@ -137,7 +138,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                     }
                     footer={
                         <div className="card-footer d-flex align-items-center justify-content-between">
-                            {license && license.HasLicense ? (
+                            {isNotCore ? (
                                 <>
                                     <div>
                                         <strong>User licenses:</strong> {numberWithCommas(license.ActualUserCount)} used

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 )
 
-var noLicenseMaximumAllowedUserCount int32 = 200
 var (
 	pool      = redispool.Store
 	keyPrefix = "license_user_count:"
