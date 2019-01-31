@@ -176,6 +176,12 @@ type repoList struct {
 	maxRequests         int                       // max requests we should attempt at once
 }
 
+func (r *repoList) setAutoUpdatesDisabled(b bool) {
+	r.mu.Lock()
+	r.autoUpdatesDisabled = b
+	r.mu.Unlock()
+}
+
 // A configuredRepo represents the configuration data for a given repo from
 // a configuration source, such as information retrieved from GitHub for a
 // given GitHubConnection.
@@ -716,55 +722,77 @@ func (r *repoList) updateSource(source string, newList sourceRepoList) (enqueued
 // Scheduler schedules repo updates.
 var Scheduler = newUpdateScheduler()
 
+// schedulerConfig tracks the active scheduler configuration.
+type schedulerConfig struct {
+	running               bool
+	newSchedulerEnabled   bool
+	autoGitUpdatesEnabled bool
+}
+
+func (c schedulerConfig) scheduler() string {
+	if c.newSchedulerEnabled {
+		return "new"
+	}
+	return "old"
+}
+
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) {
-	var shutdownPreviousScheduler context.CancelFunc
-	newSchedulerRunning, oldSchedulerRunning := false, false
+	var (
+		mu   sync.Mutex
+		have schedulerConfig
+		stop context.CancelFunc
+	)
+
 	conf.Watch(func() {
 		c := conf.Get()
 
-		if conf.UpdateScheduler2Enabled() {
-			schedScale.Set(0) // this metric doesn't apply to the new scheduler; remove it when old scheduler is removed
-			if oldSchedulerRunning {
-				log15.Info("shutting down old scheduler")
-				shutdownPreviousScheduler()
-				oldSchedulerRunning = false
-			}
-			if c.DisableAutoGitUpdates {
-				if newSchedulerRunning {
-					log15.Info("shutting down new scheduler (auto git updates disabled)")
-					shutdownPreviousScheduler()
-					newSchedulerRunning = false
-				}
-			} else {
-				if !newSchedulerRunning {
-					log15.Info("starting new scheduler")
-					ctx2, cancel := context.WithCancel(ctx)
-					Scheduler.run(ctx2)
-					shutdownPreviousScheduler = cancel
-					newSchedulerRunning = true
-				}
-				return
+		mu.Lock()
+		defer mu.Unlock()
+
+		want := schedulerConfig{
+			running:               true,
+			newSchedulerEnabled:   newSchedulerEnabled(c),
+			autoGitUpdatesEnabled: !c.DisableAutoGitUpdates,
+		}
+
+		if have == want {
+			return
+		}
+
+		if stop != nil {
+			stop()
+			log15.Info("stopped previous scheduler")
+		}
+
+		var ctx2 context.Context
+		if ctx2, stop = context.WithCancel(ctx); want.newSchedulerEnabled {
+			// this metric doesn't apply to the new scheduler
+			// remove it when old scheduler is removed
+			schedScale.Set(0)
+
+			go Scheduler.runUpdateLoop(ctx2)
+			if want.autoGitUpdatesEnabled {
+				go Scheduler.runScheduleLoop(ctx2)
 			}
 		} else {
-			repos.mu.Lock()
-			repos.autoUpdatesDisabled = c.DisableAutoGitUpdates
-			repos.mu.Unlock()
-
-			if newSchedulerRunning {
-				log15.Info("shutting down new scheduler")
-				shutdownPreviousScheduler()
-				newSchedulerRunning = false
-			}
-			if !oldSchedulerRunning {
-				log15.Info("starting old scheduler")
-				ctx2, cancel := context.WithCancel(ctx)
-				go repos.updateLoop(ctx2)
-				shutdownPreviousScheduler = cancel
-				oldSchedulerRunning = true
-			}
+			repos.setAutoUpdatesDisabled(c.DisableAutoGitUpdates)
+			go repos.updateLoop(ctx2)
 		}
+
+		log15.Info(
+			"started configured scheduler",
+			"version", want.scheduler(),
+			"auto-git-updates", want.autoGitUpdatesEnabled,
+		)
+
+		// Assigning stop to _ makes go-lint not report a false positive context leak.
+		have, _ = want, stop
 	})
+}
+
+func newSchedulerEnabled(c *conf.Unified) bool {
+	return c.ExperimentalFeatures.UpdateScheduler2 != "disabled"
 }
 
 // Snapshot represents the state of the various queues repo-updater

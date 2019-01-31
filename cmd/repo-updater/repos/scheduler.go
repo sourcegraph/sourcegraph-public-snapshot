@@ -81,12 +81,6 @@ func newUpdateScheduler() *updateScheduler {
 	}
 }
 
-// run starts scheduled repo updates.
-func (s *updateScheduler) run(ctx context.Context) {
-	go s.runScheduleLoop(ctx)
-	go s.runUpdateLoop(ctx)
-}
-
 // runScheduleLoop starts the loop that schedules updates by enqueuing them into the updateQueue.
 func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
 	for {
