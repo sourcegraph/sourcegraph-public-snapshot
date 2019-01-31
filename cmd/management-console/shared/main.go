@@ -177,44 +177,55 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "update")
 
+	httpError := func(error_ error, code string) {
+		logger.Error("Error updating critical configuration", "error", error_)
+		json.NewEncoder(w).Encode(struct {
+			Error string `json:"error"`
+			Code  string `json:"code"`
+		}{
+			Error: error_.Error(),
+			Code:  code,
+		})
+	}
+
+	httpSuccess := func(payload interface{}) {
+		err := json.NewEncoder(w).Encode(payload)
+		if err != nil {
+			httpError(errors.Wrap(err, "Error encoding JSON response"), "internal_error")
+		}
+	}
+
 	var args struct {
 		LastID   string
 		Contents string
 	}
 	err := json.NewDecoder(r.Body).Decode(&args)
 	if err != nil {
-		logger.Error("json argument decoding failed", "error", err)
-		http.Error(w, "Unexpected error when decoding arguments.", http.StatusBadRequest)
+		httpError(errors.Wrap(err, "Unexpected error when decoding arguments"), "bad_request")
 		return
 	}
 
 	lastID, err := strconv.Atoi(args.LastID)
 	lastIDInt32 := int32(lastID)
 	if err != nil {
-		logger.Error("argument LastID decoding failed", "error", err)
-		http.Error(w, "Unexpected error when decoding LastID argument.", http.StatusBadRequest)
+		httpError(errors.Wrap(err, "Unexpected error when decoding LastID argument"), "bad_request")
 		return
 	}
 
 	critical, err := confdb.CriticalCreateIfUpToDate(r.Context(), &lastIDInt32, args.Contents)
 	if err != nil {
 		if err == confdb.ErrNewerEdit {
-			http.Error(w, confdb.ErrNewerEdit.Error(), http.StatusConflict)
+			httpError(confdb.ErrNewerEdit, "newer_edit")
 			return
 		}
-		logger.Error("confdb.CriticalCreateIfUpToDate failed", "error", err)
-		http.Error(w, "Error updating latest critical configuration.", http.StatusInternalServerError)
+		httpError(errors.Wrap(err, "Error updating latest critical configuration"), "database_error")
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(&jsonConfiguration{
+	httpSuccess(&jsonConfiguration{
 		ID:       strconv.Itoa(int(critical.ID)),
 		Contents: critical.Contents,
 	})
-	if err != nil {
-		logger.Error("json response encoding failed", "error", err)
-		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
-	}
 }
 
 // HSTSMiddleware effectively instructs browsers to change all HTTP requests to
