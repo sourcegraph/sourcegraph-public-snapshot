@@ -11,6 +11,7 @@
 package shared
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -166,8 +167,14 @@ type configContents struct {
 	ExternalURL string
 }
 
+type ProductLicenseInfo struct {
+	TagsValue      []string
+	UserCountValue uint
+	ExpiresAtValue time.Time
+}
+
 type licenseInfo struct {
-	ActualUserCount      int
+	ActualUserCount      int32
 	ActualUserCountDate  string
 	ProductNameWithBrand string
 	UserCount            uint
@@ -203,7 +210,7 @@ var noLicenseMaximumAllowedUserCount uint = 200
 
 func serveLicense(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "license")
-
+	ctx := context.Background()
 	critical, err := confdb.CriticalGetLatest(r.Context())
 	if err != nil {
 		logger.Error("confdb.CriticalGetLatest failed", "error", err)
@@ -217,52 +224,57 @@ func serveLicense(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error unmarshalling json response.", http.StatusInternalServerError)
 	}
 
-	if config.LicenseKey == "" {
-		// Return the default values for Sourcegraph Core
-		err = json.NewEncoder(w).Encode(&licenseInfo{
-			ProductNameWithBrand: "Sourcegraph Core",
-			UserCount:            noLicenseMaximumAllowedUserCount,
-			ActualUserCount:      0,
-			HasLicense:           false,
-			ExternalURL:          config.ExternalURL,
-		})
-		return
-	}
-
-	info, signature, err := ParseProductLicenseKey(config.LicenseKey)
+	name, err := ProductNameWithBrand()
 	if err != nil {
-		logger.Error("parsing product license key failed", "error", err)
-		http.Error(w, "Error parsing product license key.", http.StatusInternalServerError)
+		logger.Error("parsing product license key name failed", "error", err)
+		http.Error(w, "Error parsing product license key name.", http.StatusInternalServerError)
 	}
 
-	hasLicense := info != nil
-	if hasLicense {
-		productNameWithBrand := productNameWithBrand(hasLicense, info.Tags)
-		maxUsers, _, err := GetMaxUsers(signature)
-		if err != nil {
-			logger.Error("Error fetching correct number of users on license", "error", err)
-			http.Error(w, "Error fetching correct number of users on license", http.StatusInternalServerError)
-		}
-		actualUserCountDate, err := actualUserCountDate(signature)
-		if err != nil {
-			logger.Error("Error fetching correct date", "error", err)
-			http.Error(w, "Error fetching correct date", http.StatusInternalServerError)
-		}
-
-		err = json.NewEncoder(w).Encode(&licenseInfo{
-			ActualUserCount:      maxUsers,
-			ActualUserCountDate:  actualUserCountDate,
-			ProductNameWithBrand: productNameWithBrand,
-			UserCount:            info.UserCount,
-			ExpiresAt:            info.ExpiresAt,
-			HasLicense:           true,
-			ExternalURL:          config.ExternalURL,
-		})
-		if err != nil {
-			logger.Error("json response encoding failed", "error", err)
-			http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
-		}
+	actualUserCount, err := ActualUserCount(ctx)
+	if err != nil {
+		logger.Error("parsing product license key actual user count failed", "error", err)
+		http.Error(w, "Error parsing product license key actual user count.", http.StatusInternalServerError)
 	}
+	actualUserCountDate, err := ActualUserCountDate(ctx)
+	if err != nil {
+		logger.Error("parsing product license key actual user count failed", "error", err)
+		http.Error(w, "Error parsing product license key actual user count.", http.StatusInternalServerError)
+	}
+	expiresAt, err := GetLicenseExpiresAt()
+	if err != nil {
+		logger.Error("parsing product license key actual user count failed", "error", err)
+		http.Error(w, "Error parsing product license key actual user count.", http.StatusInternalServerError)
+	}
+	userCount, err := GetLicenseUserCount()
+	if err != nil {
+		logger.Error("parsing product license key actual user count failed", "error", err)
+		http.Error(w, "Error parsing product license key actual user count.", http.StatusInternalServerError)
+	}
+
+	err = json.NewEncoder(w).Encode(&licenseInfo{
+		ProductNameWithBrand: name,
+		UserCount:            uint(userCount),
+		ExpiresAt:            expiresAt,
+		ActualUserCount:      actualUserCount,
+		ActualUserCountDate:  actualUserCountDate,
+		ExternalURL:          config.ExternalURL,
+	})
+	if err != nil {
+		logger.Error("json response encoding failed", "error", err)
+		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+	}
+	// hasLicense := info != nil
+	// productNameWithBrand := ProductNameWithBrand(hasLicense, info.Tags)
+	// maxUsers, _, err := GetMaxUsers(signature)
+	// if err != nil {
+	// 	logger.Error("Error fetching correct number of users on license", "error", err)
+	// 	http.Error(w, "Error fetching correct number of users on license", http.StatusInternalServerError)
+	// }
+	// actualUserCountDate, err := ActualUserCountDate(signature)
+	// if err != nil {
+	// 	logger.Error("Error fetching correct date", "error", err)
+	// 	http.Error(w, "Error fetching correct date", http.StatusInternalServerError)
+	// }
 }
 
 func serveUpdate(w http.ResponseWriter, r *http.Request) {

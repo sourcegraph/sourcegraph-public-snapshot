@@ -113,6 +113,10 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
 
         const license = this.state.licenseOrError
 
+        if (license.ProductNameWithBrand === 'Sourcegraph OSS') {
+            return null
+        }
+
         // No license means Sourcegraph Core. For that, show the user that they can use this for free forever, and show them how to upgrade.
         return (
             <div className="product-subscription-status my-3">

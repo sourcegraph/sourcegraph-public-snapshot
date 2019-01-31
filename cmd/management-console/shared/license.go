@@ -1,12 +1,9 @@
 package shared
 
 import (
-	"strconv"
-	"strings"
+	"context"
+	"time"
 
-	"github.com/garyburd/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -28,93 +25,47 @@ var publicKey = func() ssh.PublicKey {
 	return publicKey
 }()
 
-// ParseProductLicenseKey parses and verifies the license key using the license verification public
-// key (publicKey in this package).
-func ParseProductLicenseKey(licenseKey string) (*license.Info, string, error) {
-	return license.ParseSignedKey(licenseKey, publicKey)
+var GetProductNameWithBrand = func(hasLicense bool, licenseTags []string) string {
+	return "Sourcegraph OSS"
 }
 
-func productNameWithBrand(hasLicense bool, licenseTags []string) string {
-	if !hasLicense {
-		return "Sourcegraph Core"
-	}
-
-	hasTag := func(tag string) bool {
-		for _, t := range licenseTags {
-			if tag == t {
-				return true
-			}
-		}
-		return false
-	}
-
-	var name string
-	if hasTag("starter") {
-		name = " Starter"
-	}
-
-	var misc []string
-	if hasTag("trial") {
-		misc = append(misc, "trial")
-	}
-	if hasTag("dev") {
-		misc = append(misc, "dev use only")
-	}
-	if len(misc) > 0 {
-		name += " (" + strings.Join(misc, ", ") + ")"
-	}
-
-	return "Sourcegraph Enterprise" + name
+var GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
+	return nil, nil // OSS builds have no license
 }
 
-var (
-	pool      = redispool.Store
-	keyPrefix = "license_user_count:"
-
-	started bool
-)
-
-// GetMaxUsers gets the max users associated with a license key.
-func GetMaxUsers(signature string) (int, string, error) {
-	c := pool.Get()
-	defer c.Close()
-
-	if signature == "" {
-		// No license key is in use.
-		return 0, "", nil
-	}
-
-	return getMaxUsers(c, signature)
+var GetLicenseUserCount = func() (uint, error) {
+	return 0, nil // OSS builds have no license
 }
 
-func getMaxUsers(c redis.Conn, key string) (int, string, error) {
-	lastMax, err := redis.String(c.Do("HGET", maxUsersKey(), key))
-	if err != nil && err != redis.ErrNil {
-		return 0, "", err
-	}
-	lastMaxInt := 0
-	if lastMax != "" {
-		lastMaxInt, err = strconv.Atoi(lastMax)
-		if err != nil {
-			return 0, "", err
-		}
-	}
-	lastMaxDate, err := redis.String(c.Do("HGET", maxUsersTimeKey(), key))
-	if err != nil && err != redis.ErrNil {
-		return 0, "", err
-	}
-	return lastMaxInt, lastMaxDate, nil
+var GetLicenseExpiresAt = func() (time.Time, error) {
+	return time.Time{}, nil // OSS builds have no license
 }
 
-func maxUsersKey() string {
-	return keyPrefix + "max"
+var GetLicenseTags = func() ([]string, error) {
+	return []string{}, nil // OSS builds have no license
 }
 
-func maxUsersTimeKey() string {
-	return keyPrefix + "max_time"
+func ProductNameWithBrand() (string, error) {
+	info, err := GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return "", err
+	}
+	hasLicense := info != nil
+	var licenseTags []string
+	if hasLicense {
+		licenseTags = info.TagsValue
+	}
+	return GetProductNameWithBrand(hasLicense, licenseTags), nil
 }
 
-func actualUserCountDate(signature string) (string, error) {
-	_, date, err := GetMaxUsers(signature)
-	return date, err
+// // ActualUserCount is called to obtain the actual maximum number of user accounts that have been active
+// // on this Sourcegraph instance for the current license.
+var ActualUserCount = func(ctx context.Context) (int32, error) {
+	return 0, nil
+}
+
+// // ActualUserCountDate is called to obtain the timestamp when the actual maximum number of user accounts
+// // that have been active on this Sourcegraph instance for the current license was reached.
+var ActualUserCountDate = func(ctx context.Context) (string, error) {
+	return "", nil
 }
