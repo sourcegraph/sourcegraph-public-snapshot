@@ -786,8 +786,11 @@ func RunRepositorySyncWorker(ctx context.Context) {
 			"auto-git-updates", want.autoGitUpdatesEnabled,
 		)
 
+		// We converged to the desired configuration.
+		have = want
+
 		// Assigning stop to _ makes go-lint not report a false positive context leak.
-		have, _ = want, stop
+		_ = stop
 	})
 }
 
