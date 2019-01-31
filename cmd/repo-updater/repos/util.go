@@ -69,8 +69,9 @@ type repoCreateOrUpdateRequest struct {
 // being updated, so repo-updater can detect when repositories are dropped from
 // a given source.
 func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
+	c := conf.Get()
 	newList := make(sourceRepoList)
-	newScheduler := conf.UpdateScheduler2Enabled()
+	newScheduler := newSchedulerEnabled(c)
 	newMap := make(sourceRepoMap)
 
 	do := func(op repoCreateOrUpdateRequest) {
@@ -90,6 +91,10 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 			return
 		}
 
+		if c.DisableAutoGitUpdates {
+			return
+		}
+
 		if newScheduler {
 			newMap[createdRepo.Name] = &configuredRepo2{
 				Name:    createdRepo.Name,
@@ -101,13 +106,20 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 
 		newList[string(createdRepo.Name)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
 	}
+
 	for repo := range repoChan {
 		do(repo)
 	}
+
+	if c.DisableAutoGitUpdates {
+		return
+	}
+
 	if newScheduler {
 		Scheduler.updateSource(source, newMap)
 		return
 	}
+
 	repos.updateSource(source, newList)
 }
 
