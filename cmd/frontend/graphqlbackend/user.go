@@ -96,7 +96,7 @@ func (r *UserResolver) URL() string {
 	return "/users/" + r.user.Username
 }
 
-func (r *UserResolver) SettingsURL() string { return r.URL() + "/settings" }
+func (r *UserResolver) SettingsURL() *string { return strptr(r.URL() + "/settings") }
 
 func (r *UserResolver) CreatedAt() string {
 	return r.user.CreatedAt.Format(time.RFC3339)

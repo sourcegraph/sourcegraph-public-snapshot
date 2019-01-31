@@ -19,9 +19,10 @@ var errUnknownSettingsSubject = errors.New("unknown settings subject")
 
 type settingsSubject struct {
 	// Exactly 1 of these fields must be set.
-	site *siteResolver
-	org  *OrgResolver
-	user *UserResolver
+	defaultSettings *defaultSettingsResolver
+	site            *siteResolver
+	org             *OrgResolver
+	user            *UserResolver
 }
 
 // settingsSubjectByID fetches the settings subject with the given ID. If the ID refers to a node
@@ -80,6 +81,10 @@ func settingsSubjectsEqual(a, b api.SettingsSubject) bool {
 	return false
 }
 
+func (s *settingsSubject) ToDefaultSettings() (*defaultSettingsResolver, bool) {
+	return s.defaultSettings, s.defaultSettings != nil
+}
+
 func (s *settingsSubject) ToSite() (*siteResolver, bool) {
 	return s.site, s.site != nil
 }
@@ -103,6 +108,8 @@ func (s *settingsSubject) toSubject() api.SettingsSubject {
 
 func (s *settingsSubject) ID() (graphql.ID, error) {
 	switch {
+	case s.defaultSettings != nil:
+		return s.defaultSettings.ID(), nil
 	case s.site != nil:
 		return s.site.ID(), nil
 	case s.org != nil:
@@ -116,6 +123,8 @@ func (s *settingsSubject) ID() (graphql.ID, error) {
 
 func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
+	case s.defaultSettings != nil:
+		return s.defaultSettings.LatestSettings(ctx)
 	case s.site != nil:
 		return s.site.LatestSettings(ctx)
 	case s.org != nil:
@@ -127,8 +136,10 @@ func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver
 	}
 }
 
-func (s *settingsSubject) SettingsURL() (string, error) {
+func (s *settingsSubject) SettingsURL() (*string, error) {
 	switch {
+	case s.defaultSettings != nil:
+		return s.defaultSettings.SettingsURL(), nil
 	case s.site != nil:
 		return s.site.SettingsURL(), nil
 	case s.org != nil:
@@ -136,12 +147,14 @@ func (s *settingsSubject) SettingsURL() (string, error) {
 	case s.user != nil:
 		return s.user.SettingsURL(), nil
 	default:
-		return "", errUnknownSettingsSubject
+		return nil, errUnknownSettingsSubject
 	}
 }
 
 func (s *settingsSubject) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	switch {
+	case s.defaultSettings != nil:
+		return s.defaultSettings.ViewerCanAdminister(ctx)
 	case s.site != nil:
 		return s.site.ViewerCanAdminister(ctx)
 	case s.org != nil:
@@ -155,6 +168,8 @@ func (s *settingsSubject) ViewerCanAdminister(ctx context.Context) (bool, error)
 
 func (s *settingsSubject) SettingsCascade() (*settingsCascade, error) {
 	switch {
+	case s.defaultSettings != nil:
+		return s.defaultSettings.SettingsCascade(), nil
 	case s.site != nil:
 		return s.site.SettingsCascade(), nil
 	case s.org != nil:
