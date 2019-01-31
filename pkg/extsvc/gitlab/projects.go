@@ -13,10 +13,18 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+type Visibility string
+
+const (
+	Public   Visibility = "public"
+	Private             = "private"
+	Internal            = "internal"
+)
+
 // Project is a GitLab project (equivalent to a GitHub repository).
 type Project struct {
 	ProjectCommon
-	Visibility        string         `json:"visibility"`                    // "private", "internal", or "public"
+	Visibility        Visibility     `json:"visibility"`                    // "private", "internal", or "public"
 	ForkedFromProject *ProjectCommon `json:"forked_from_project,omitempty"` // If non-nil, the project from which this project was forked
 	Archived          bool           `json:"archived"`
 }
@@ -40,38 +48,44 @@ func idCacheKey(id int) string                                  { return "1:" + 
 func pathWithNamespaceCacheKey(pathWithNamespace string) string { return "1:" + pathWithNamespace }
 
 // GetProjectMock is set by tests to mock (*Client).GetProject.
-var GetProjectMock func(ctx context.Context, id int, pathWithNamespace string) (*Project, error)
+var GetProjectMock func(ctx context.Context, op GetProjectOp) (*Project, error)
 
 // MockGetProject_Return is called by tests to mock (*Client).GetProject.
 func MockGetProject_Return(returns *Project) {
-	GetProjectMock = func(context.Context, int, string) (*Project, error) {
+	GetProjectMock = func(context.Context, GetProjectOp) (*Project, error) {
 		return returns, nil
 	}
 }
 
+type GetProjectOp struct {
+	ID                int
+	PathWithNamespace string
+	CommonOp
+}
+
 // GetProject gets a project from GitLab by either ID or path with namespace.
-func (c *Client) GetProject(ctx context.Context, id int, pathWithNamespace string) (*Project, error) {
-	if id != 0 && pathWithNamespace != "" {
+func (c *Client) GetProject(ctx context.Context, op GetProjectOp) (*Project, error) {
+	if op.ID != 0 && op.PathWithNamespace != "" {
 		panic("invalid args (specify exactly one of id and pathWithNamespace)")
 	}
 
 	if GetProjectMock != nil {
-		return GetProjectMock(ctx, id, pathWithNamespace)
+		return GetProjectMock(ctx, op)
 	}
 
 	var key string
-	if id != 0 {
-		key = idCacheKey(id)
+	if op.ID != 0 {
+		key = idCacheKey(op.ID)
 	} else {
-		key = pathWithNamespaceCacheKey(pathWithNamespace)
+		key = pathWithNamespaceCacheKey(op.PathWithNamespace)
 	}
-	return c.cachedGetProject(ctx, key, func(ctx context.Context) (proj *Project, keys []string, err error) {
+	return c.cachedGetProject(ctx, key, op.NoCache, func(ctx context.Context) (proj *Project, keys []string, err error) {
 		keys = append(keys, key)
-		proj, err = c.getProjectFromAPI(ctx, id, pathWithNamespace)
+		proj, err = c.getProjectFromAPI(ctx, op.ID, op.PathWithNamespace)
 		if proj != nil {
 			// Add the cache key for the other kind of specifier (ID vs. path with namespace) so it's addressable by
 			// both in the cache.
-			if id != 0 {
+			if op.ID != 0 {
 				keys = append(keys, pathWithNamespaceCacheKey(proj.PathWithNamespace))
 			} else {
 				keys = append(keys, idCacheKey(proj.ID))
@@ -82,13 +96,15 @@ func (c *Client) GetProject(ctx context.Context, id int, pathWithNamespace strin
 }
 
 // cachedGetProject caches the getProjectFromAPI call.
-func (c *Client) cachedGetProject(ctx context.Context, key string, getProjectFromAPI func(context.Context) (proj *Project, keys []string, err error)) (*Project, error) {
-	if cached := c.getProjectFromCache(ctx, key); cached != nil {
-		projectsGitLabCacheCounter.WithLabelValues("hit").Inc()
-		if cached.NotFound {
-			return nil, ErrNotFound
+func (c *Client) cachedGetProject(ctx context.Context, key string, forceFetch bool, getProjectFromAPI func(context.Context) (proj *Project, keys []string, err error)) (*Project, error) {
+	if !forceFetch {
+		if cached := c.getProjectFromCache(ctx, key); cached != nil {
+			projectsGitLabCacheCounter.WithLabelValues("hit").Inc()
+			if cached.NotFound {
+				return nil, ErrNotFound
+			}
+			return &cached.Project, nil
 		}
-		return &cached.Project, nil
 	}
 
 	proj, keys, err := getProjectFromAPI(ctx)

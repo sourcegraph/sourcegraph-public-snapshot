@@ -154,7 +154,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		if err != nil {
 			return nil, true, err
 		}
-		proj, err := conn.client.GetProject(ctx, id, "")
+		proj, err := conn.client.GetProject(ctx, gitlab.GetProjectOp{ID: id})
 		if proj != nil {
 			repo = ghrepoToRepoInfo(proj, conn)
 		}
@@ -164,7 +164,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	if args.Repo != "" {
 		// Look up by repository name.
 		pathWithNamespace := strings.TrimPrefix(strings.ToLower(string(args.Repo)), conn.baseURL.Hostname()+"/")
-		proj, err := conn.client.GetProject(ctx, 0, pathWithNamespace)
+		proj, err := conn.client.GetProject(ctx, gitlab.GetProjectOp{PathWithNamespace: pathWithNamespace})
 		if proj != nil {
 			repo = ghrepoToRepoInfo(proj, conn)
 		}
