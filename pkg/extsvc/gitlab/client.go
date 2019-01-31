@@ -39,6 +39,10 @@ type ClientProvider struct {
 	RateLimit *ratelimit.Monitor // the API rate limit monitor
 }
 
+type CommonOp struct {
+	NoCache bool
+}
+
 func NewClientProvider(baseURL *url.URL, transport http.RoundTripper) *ClientProvider {
 	if transport == nil {
 		transport = http.DefaultTransport
@@ -63,11 +67,17 @@ func NewClientProvider(baseURL *url.URL, transport http.RoundTripper) *ClientPro
 
 // GetPATClient returns a client authenticated by the personal access token.
 func (p *ClientProvider) GetPATClient(personalAccessToken string) *Client {
+	if personalAccessToken == "" {
+		return p.getClient("", "", "")
+	}
 	return p.getClient(fmt.Sprintf("pat::%s", personalAccessToken), personalAccessToken, "")
 }
 
 // GetOAuthClient returns a client authenticated by the OAuth token.
 func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
+	if oauthToken == "" {
+		return p.getClient("", "", "")
+	}
 	return p.getClient(fmt.Sprintf("oauth::%s", oauthToken), "", oauthToken)
 }
 

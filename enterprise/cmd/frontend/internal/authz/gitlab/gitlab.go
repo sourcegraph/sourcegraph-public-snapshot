@@ -4,13 +4,14 @@ package gitlab
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -68,61 +69,6 @@ func (p *GitLabOAuthAuthzProvider) ServiceType() string {
 	return p.codeHost.ServiceType()
 }
 
-func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
-	accountID := "" // empty means public / unauthenticated to the code host
-	if account != nil && account.ServiceID == p.codeHost.ServiceID() && account.ServiceType == p.codeHost.ServiceType() {
-		accountID = account.AccountID
-	}
-
-	myRepos, _ := p.Repos(ctx, repos)
-	var accessibleRepos map[int]struct{}
-	if r, exists := p.getCachedAccessList(accountID); exists {
-		accessibleRepos = r
-	} else {
-		var accessToken string
-		if account != nil {
-			_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
-			if err != nil {
-				return nil, err
-			}
-			accessToken = tok.AccessToken
-		}
-
-		var err error
-		accessibleRepos, err = p.fetchUserAccessList(ctx, accountID, accessToken)
-		if err != nil {
-			return nil, err
-		}
-
-		accessibleReposB, err := json.Marshal(cacheVal{
-			ProjIDs: accessibleRepos,
-			TTL:     p.cacheTTL,
-		})
-		if err != nil {
-			return nil, err
-		}
-		p.cache.Set(accountID, accessibleReposB)
-	}
-
-	perms := make(map[api.RepoName]map[authz.Perm]bool)
-	for repo := range myRepos {
-		perms[repo.RepoName] = map[authz.Perm]bool{}
-
-		projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
-		if err != nil {
-			log15.Warn("couldn't parse GitLab proj ID as int while computing permissions", "id", repo.ExternalRepoSpec.ID)
-			continue
-		}
-		_, isAccessible := accessibleRepos[projID]
-		if !isAccessible {
-			continue
-		}
-		perms[repo.RepoName][authz.Read] = true
-	}
-
-	return perms, nil
-}
-
 func (p *GitLabOAuthAuthzProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
@@ -131,49 +77,156 @@ func (p *GitLabOAuthAuthzProvider) FetchAccount(ctx context.Context, user *types
 	return nil, nil
 }
 
-// getCachedAccessList returns the list of repositories accessible to a user from the cache and
-// whether the cache entry exists.
-func (p *GitLabOAuthAuthzProvider) getCachedAccessList(accountID string) (map[int]struct{}, bool) {
-	// TODO(beyang): trigger best-effort fetch in background if ttl is getting close (but avoid dup refetches)
-
-	cachedReposB, exists := p.cache.Get(accountID)
-	if !exists {
-		return nil, false
+func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (
+	map[api.RepoName]map[authz.Perm]bool, error,
+) {
+	accountID := "" // empty means public / unauthenticated to the code host
+	if account != nil && account.ServiceID == p.codeHost.ServiceID() && account.ServiceType == p.codeHost.ServiceType() {
+		accountID = account.AccountID
 	}
-	var r cacheVal
-	if err := json.Unmarshal(cachedReposB, &r); err != nil || r.TTL == 0 || r.TTL > p.cacheTTL {
+
+	perms := map[api.RepoName]map[authz.Perm]bool{}
+
+	remaining, _ := p.Repos(ctx, repos)
+	nextRemaining := map[authz.Repo]struct{}{}
+
+	// Check cached visibility
+	for repo := range remaining {
+		projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
 		if err != nil {
-			log15.Warn("Failed to unmarshal repo perm cache entry", "err", err.Error())
+			return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
 		}
-		p.cache.Delete(accountID)
-		return nil, false
+		vis, exists := cacheGetRepoVisibility(p.cache, projID, p.cacheTTL)
+		if !exists {
+			nextRemaining[repo] = struct{}{}
+			continue
+		}
+		switch v := vis.Visibility; {
+		case v == gitlab.Public:
+			fallthrough
+		case v == gitlab.Internal && accountID != "":
+			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
+			continue
+		}
+		nextRemaining[repo] = struct{}{}
 	}
-	return r.ProjIDs, true
-}
 
-// fetchUserAccessList fetches the list of project IDs that are readable to a user from the GitLab API.
-func (p *GitLabOAuthAuthzProvider) fetchUserAccessList(ctx context.Context, glUserID, oauthTok string) (map[int]struct{}, error) {
-	projIDs := make(map[int]struct{})
-	var iters = 0
-	var pageURL = fmt.Sprintf("projects?%s", url.Values(map[string][]string{"per_page": {"100"}}).Encode())
-	for {
-		if iters >= 100 && iters%100 == 0 {
-			log15.Warn("Excessively many GitLab API requests to fetch complete user authz list", "iters", iters, "gitlabUserID", glUserID, "host", p.clientURL.String())
+	if len(nextRemaining) == 0 { // shortcut
+		return perms, nil
+	}
+
+	// Check cached user repos
+	if accountID != "" {
+		remaining, nextRemaining = nextRemaining, map[authz.Repo]struct{}{}
+		for repo := range remaining {
+			projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
+			}
+			userRepo, exists := cacheGetUserRepo(p.cache, accountID, projID, p.cacheTTL)
+			if !exists {
+				nextRemaining[repo] = struct{}{}
+				continue
+			}
+			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: userRepo.Read}
 		}
 
-		projs, nextPageURL, err := p.clientProvider.GetOAuthClient(oauthTok).ListProjects(ctx, pageURL)
+		if len(nextRemaining) == 0 { // shortcut
+			return perms, nil
+		}
+	}
+
+	// Fetch and update cache
+	var accessToken string
+	if account != nil {
+		_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
 		if err != nil {
 			return nil, err
 		}
-		for _, proj := range projs {
-			projIDs[proj.ID] = struct{}{}
-		}
-
-		if nextPageURL == nil {
-			break
-		}
-		pageURL = *nextPageURL
-		iters++
+		accessToken = tok.AccessToken
 	}
-	return projIDs, nil
+	for repo := range remaining {
+		projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
+		}
+		isAccessible, vis, isContentAccessible, err := p.fetchProjVis(ctx, accessToken, projID)
+		if err != nil {
+			log15.Error("Failed to fetch visibility for GitLab project", "projectID", projID, "gitlabHost", p.codeHost.BaseURL().String(), "error", err)
+			continue
+		}
+		if isAccessible {
+			// Set perms
+			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
+
+			// Update visibility cache
+			err := cacheSetRepoVisibility(p.cache, projID, repoVisibilityCacheVal{Visibility: vis, TTL: p.cacheTTL})
+			if err != nil {
+				return nil, errors.Wrap(err, "could not set cached repo visibility")
+			}
+
+			// Update userRepo cache if the visibility is private
+			if vis == gitlab.Private {
+				err := cacheSetUserRepo(p.cache, accountID, projID, userRepoCacheVal{Read: isContentAccessible, TTL: p.cacheTTL})
+				if err != nil {
+					return nil, errors.Wrap(err, "could not set cached user repo")
+				}
+			}
+		} else if accountID != "" {
+			// A repo is private if it is not accessible to an authenticated user
+			err := cacheSetRepoVisibility(p.cache, projID, repoVisibilityCacheVal{Visibility: gitlab.Private, TTL: p.cacheTTL})
+			if err != nil {
+				return nil, errors.Wrap(err, "could not set cached repo visibility")
+			}
+			err = cacheSetUserRepo(p.cache, accountID, projID, userRepoCacheVal{Read: false, TTL: p.cacheTTL})
+			if err != nil {
+				return nil, errors.Wrap(err, "could not set cached user repo")
+			}
+		}
+	}
+	return perms, nil
+}
+
+// fetchRepoVisibility fetches a repository's visibility with usr's credentials. It returns:
+// - whether the project is accessible to the user,
+// - the visibility if the repo is accessible (otherwise this is empty),
+// - whether the repository contents are accessible to usr, and
+// - any error encountered in fetching (not including an error due to the repository not being visible);
+//   if the error is non-nil, all other return values should be disregraded
+func (p *GitLabOAuthAuthzProvider) fetchProjVis(ctx context.Context, accessToken string, projID int) (
+	isAccessible bool, vis gitlab.Visibility, isContentAccessible bool, err error,
+) {
+	proj, err := p.clientProvider.GetOAuthClient(accessToken).GetProject(ctx, gitlab.GetProjectOp{
+		ID:       projID,
+		CommonOp: gitlab.CommonOp{NoCache: true},
+	})
+	if err != nil {
+		if errCode := gitlab.HTTPErrorCode(err); errCode == http.StatusNotFound {
+			return false, "", false, nil
+		}
+		return false, "", false, err
+	}
+
+	// If we get here, the project is accessible to the user (user has at least "Guest" permissions
+	// on the project).
+
+	if proj.Visibility == gitlab.Public || proj.Visibility == gitlab.Internal {
+		// All authenticated users can read the contents of all internal/public projects
+		// (https://docs.gitlab.com/ee/user/permissions.html).
+		return true, proj.Visibility, true, nil
+	}
+
+	// If project visibility is private and its accessible to user, we still need to check if the user
+	// can read the repository contents (i.e., does not merely have "Guest" permissions).
+
+	if _, err := p.clientProvider.GetOAuthClient(accessToken).ListTree(ctx, gitlab.ListTreeOp{
+		ProjID:   projID,
+		CommonOp: gitlab.CommonOp{NoCache: true},
+	}); err != nil {
+		if errCode := gitlab.HTTPErrorCode(err); errCode == http.StatusNotFound {
+			return true, proj.Visibility, false, nil
+		}
+		return false, "", false, err
+	}
+	return true, proj.Visibility, true, nil
 }
