@@ -87,6 +87,7 @@ func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
 		select {
 		case <-s.schedule.wakeup:
 		case <-ctx.Done():
+			s.schedule.reset()
 			return
 		}
 
@@ -123,6 +124,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 		select {
 		case <-s.updateQueue.notifyEnqueue:
 		case <-ctx.Done():
+			s.updateQueue.reset()
 			return
 		}
 
@@ -354,6 +356,16 @@ type repoUpdate struct {
 	Index    int    `json:"-"` // the index in the heap
 }
 
+func (q *updateQueue) reset() {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	q.heap = q.heap[:0]
+	q.index = map[api.RepoName]*repoUpdate{}
+	q.seq = 0
+	q.notifyEnqueue = make(chan struct{}, notifyChanBuffer)
+}
+
 // enqueue add the repo to the queue with the given priority.
 func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) {
 	q.mu.Lock()
@@ -558,6 +570,19 @@ func (s *schedule) rescheduleTimer() {
 		s.timer = timeAfterFunc(delay, func() {
 			notify(s.wakeup)
 		})
+	}
+}
+
+func (s *schedule) reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.heap = s.heap[:0]
+	s.index = map[api.RepoName]*scheduledRepoUpdate{}
+	s.wakeup = make(chan struct{}, notifyChanBuffer)
+	if s.timer != nil {
+		s.timer.Stop()
+		s.timer = nil
 	}
 }
 
