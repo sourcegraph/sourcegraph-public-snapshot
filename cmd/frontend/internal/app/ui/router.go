@@ -187,7 +187,7 @@ func initRouter() {
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeStart).Handler(handler(serveStart))
 	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
-	router.Get(uirouter.RouteSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
+	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))
 	router.Get(routeOrganizations).Handler(handler(serveBasicPageString("Organization - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("Settings - Sourcegraph")))
