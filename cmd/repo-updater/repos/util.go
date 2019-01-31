@@ -91,36 +91,26 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 			return
 		}
 
-		if c.DisableAutoGitUpdates {
-			return
-		}
-
-		if newScheduler {
+		if !newScheduler {
+			newList[string(createdRepo.Name)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
+		} else if !c.DisableAutoGitUpdates {
 			newMap[createdRepo.Name] = &configuredRepo2{
 				Name:    createdRepo.Name,
 				URL:     op.URL,
 				Enabled: createdRepo.Enabled,
 			}
-			return
 		}
-
-		newList[string(createdRepo.Name)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
 	}
 
 	for repo := range repoChan {
 		do(repo)
 	}
 
-	if c.DisableAutoGitUpdates {
-		return
-	}
-
-	if newScheduler {
+	if !newScheduler {
+		repos.updateSource(source, newList)
+	} else if !c.DisableAutoGitUpdates {
 		Scheduler.updateSource(source, newMap)
-		return
 	}
-
-	repos.updateSource(source, newList)
 }
 
 // setUserinfoBestEffort adds the username and password to rawurl. If user is
