@@ -739,16 +739,12 @@ func (c schedulerConfig) scheduler() string {
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) {
 	var (
-		mu   sync.Mutex
 		have schedulerConfig
 		stop context.CancelFunc
 	)
 
 	conf.Watch(func() {
 		c := conf.Get()
-
-		mu.Lock()
-		defer mu.Unlock()
 
 		want := schedulerConfig{
 			running:               true,
