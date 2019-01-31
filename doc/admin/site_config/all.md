@@ -660,7 +660,7 @@ Additional restrictions:
 
 ### certificate (string)
 
-TLS certificate of a GitHub Enterprise instance.
+TLS certificate of a GitHub Enterprise instance. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`
 
 Additional restrictions:
 
@@ -768,7 +768,7 @@ Default: `"http"`
 
 ### certificate (string)
 
-TLS certificate of a GitLab instance.
+TLS certificate of a GitLab instance. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`
 
 Additional restrictions:
 
@@ -874,7 +874,7 @@ Default: `"http"`
 
 ### certificate (string)
 
-TLS certificate of a Bitbucket Server instance.
+TLS certificate of a Bitbucket Server instance. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`
 
 Additional restrictions:
 
