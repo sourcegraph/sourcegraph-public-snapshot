@@ -167,6 +167,7 @@ type configContents struct {
 	ExternalURL string
 }
 
+// ProductLicenseInfo holds information about this site's product license (which activates certain Sourcegraph features).
 type ProductLicenseInfo struct {
 	TagsValue      []string
 	UserCountValue uint
