@@ -4,7 +4,16 @@ This document describes how we plan and ship releases at Sourcegraph.
 
 ## Releases are monthly
 
-We ship a release on the 20th day of each month. (Except in February 2019, where we will ship on the 4th and 20th.) Why the 20th? Because it's a day number that we can hit each month (any other number would result in a December release that comes out too close to Christmas, or a January release that comes out too soon after New Year's Day).
+We ship a release every month.
+- The final release candidate is tagged at 9AM PT on the third Tuesday of each month.
+  - The release candidate is smoke tested during the day.
+  - The final release is tagged (usually by retagging the release candidate assuming that no critical issues are discovered) at 4PM PT on the same day.
+- The annoucement for the release is published 9AM PT the following Wednesday.
+
+Why was this schedule chosen?
+- We want to control the day of the week that we release and we announce.
+- We want to avoid releasing around times that Sourcegraph employees are frequently on vacation (e.g. end of December and beginning of January).
+- We want to automate tagging releases, which means avoiding tagging releases on days that are requently holidays (e.g. Mondays).
 
 The release always ships on time, even if it's missing features or bug fixes we hoped to get in ([why?](https://about.gitlab.com/2015/12/07/why-we-shift-objectives-and-not-release-dates-at-gitlab/)).
 
