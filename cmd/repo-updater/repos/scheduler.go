@@ -91,28 +91,26 @@ func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
 			return
 		}
 
-		s.schedule.mu.Lock()
+		s.runSchedule()
+		schedLoops.Inc()
+	}
+}
 
-		for {
-			if len(s.schedule.heap) == 0 {
-				break
-			}
+func (s *updateScheduler) runSchedule() {
+	s.schedule.mu.Lock()
+	defer s.schedule.mu.Unlock()
+	defer s.schedule.rescheduleTimer()
 
-			repoUpdate := s.schedule.heap[0]
-			if !repoUpdate.Due.Before(timeNow().Add(time.Millisecond)) {
-				break
-			}
-
-			schedAutoFetch.Inc()
-			s.updateQueue.enqueue(repoUpdate.Repo, priorityLow)
-			repoUpdate.Due = timeNow().Add(repoUpdate.Interval)
-			heap.Fix(s.schedule, 0)
+	for len(s.schedule.heap) != 0 {
+		repoUpdate := s.schedule.heap[0]
+		if !repoUpdate.Due.Before(timeNow().Add(time.Millisecond)) {
+			break
 		}
 
-		s.schedule.rescheduleTimer()
-		s.schedule.mu.Unlock()
-
-		schedLoops.Inc()
+		schedAutoFetch.Inc()
+		s.updateQueue.enqueue(repoUpdate.Repo, priorityLow)
+		repoUpdate.Due = timeNow().Add(repoUpdate.Interval)
+		heap.Fix(s.schedule, 0)
 	}
 }
 

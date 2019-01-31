@@ -953,7 +953,7 @@ func verifyScheduleRecording(t *testing.T, s *updateScheduler, timeAfterFuncDela
 	}
 }
 
-func TestUpdateScheduler_runScheduleLoop(t *testing.T) {
+func TestUpdateScheduler_runSchedule(t *testing.T) {
 	a := &configuredRepo2{Name: "a", URL: "a.com"}
 	b := &configuredRepo2{Name: "b", URL: "b.com"}
 	c := &configuredRepo2{Name: "c", URL: "c.com"}
@@ -1064,29 +1064,9 @@ func TestUpdateScheduler_runScheduleLoop(t *testing.T) {
 
 			s := newUpdateScheduler()
 
-			// unbuffer the wakeup channel
-			s.schedule.wakeup = make(chan struct{})
-
 			setupInitialSchedule(s, test.initialSchedule)
 
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
-			done := make(chan struct{})
-			go func() {
-				s.runScheduleLoop(ctx)
-				close(done)
-			}()
-
-			// Let the goroutine do a single loop.
-			s.schedule.wakeup <- struct{}{}
-
-			// Cancel after the first loop.
-			// This doesn't race with the wakeup notification because the channel is not buffered.
-			cancel()
-
-			// Wait for the goroutine to exit so we can verify the final state.
-			<-done
+			s.runSchedule()
 
 			verifySchedule(t, s, test.finalSchedule)
 			verifyQueue(t, s, test.finalQueue)
