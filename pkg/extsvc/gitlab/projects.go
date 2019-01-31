@@ -47,12 +47,9 @@ func (p Project) RequiresAuthentication() bool {
 func idCacheKey(id int) string                                  { return "1:" + strconv.Itoa(id) }
 func pathWithNamespaceCacheKey(pathWithNamespace string) string { return "1:" + pathWithNamespace }
 
-// GetProjectMock is set by tests to mock (*Client).GetProject.
-var GetProjectMock func(ctx context.Context, op GetProjectOp) (*Project, error)
-
 // MockGetProject_Return is called by tests to mock (*Client).GetProject.
 func MockGetProject_Return(returns *Project) {
-	GetProjectMock = func(context.Context, GetProjectOp) (*Project, error) {
+	MockGetProject = func(*Client, context.Context, GetProjectOp) (*Project, error) {
 		return returns, nil
 	}
 }
@@ -69,8 +66,8 @@ func (c *Client) GetProject(ctx context.Context, op GetProjectOp) (*Project, err
 		panic("invalid args (specify exactly one of id and pathWithNamespace)")
 	}
 
-	if GetProjectMock != nil {
-		return GetProjectMock(ctx, op)
+	if MockGetProject != nil {
+		return MockGetProject(c, ctx, op)
 	}
 
 	var key string

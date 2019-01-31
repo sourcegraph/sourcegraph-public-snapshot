@@ -31,8 +31,8 @@ var ListTreeMock func(ctx context.Context, op ListTreeOp) ([]*Tree, error)
 // results are not cached by the client at the moment (i.e., setting op.NoCache to true does not
 // alter behavior).
 func (c *Client) ListTree(ctx context.Context, op ListTreeOp) ([]*Tree, error) {
-	if ListTreeMock != nil {
-		return ListTreeMock(ctx, op)
+	if MockListTree != nil {
+		return MockListTree(c, ctx, op)
 	}
 
 	if op.ProjID != 0 && op.ProjPathWithNamespace != "" {
