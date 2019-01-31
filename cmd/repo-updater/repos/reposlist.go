@@ -765,6 +765,10 @@ func RunRepositorySyncWorker(ctx context.Context) {
 			log15.Info("stopped previous scheduler")
 		}
 
+		// We setup a separate sub-context so that we can reuse the original
+		// parent context every time we're starting up the newly configured
+		// scheduler. If we'd assign to ctx it'd only be usable up until the
+		// we'd call stop.
 		var ctx2 context.Context
 		if ctx2, stop = context.WithCancel(ctx); want.newSchedulerEnabled {
 			// this metric doesn't apply to the new scheduler
