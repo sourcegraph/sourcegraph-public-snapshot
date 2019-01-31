@@ -122,7 +122,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
 				err = handlerutil.RedirectToNewRepoName(w, r, e.NewRepo)
 				if err != nil {
-					return nil, errors.Wrap(err, "when sending repo redirect response")
+					return nil, errors.Wrap(err, "when sending renamed repository redirect response")
 				}
 
 				return nil, nil
