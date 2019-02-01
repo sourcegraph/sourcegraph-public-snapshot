@@ -160,7 +160,7 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 	critical, err := confdb.CriticalGetLatest(r.Context())
 	if err != nil {
 		logger.Error("confdb.CriticalGetLatest failed", "error", err)
-		http.Error(w, "Error retrieving latest critical configuration.", http.StatusInternalServerError)
+		httpError(w, "Error retrieving latest critical configuration.", "internal_error")
 		return
 	}
 
@@ -170,8 +170,18 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("json response encoding failed", "error", err)
-		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+		httpError(w, "Error encoding json response.", "internal_error")
 	}
+}
+
+func httpError(w http.ResponseWriter, message string, code string) {
+	_ = json.NewEncoder(w).Encode(struct {
+		Error string `json:"error"`
+		Code  string `json:"code"`
+	}{
+		Error: message,
+		Code:  code,
+	})
 }
 
 func serveUpdate(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +194,7 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&args)
 	if err != nil {
 		logger.Error("json argument decoding failed", "error", err)
-		http.Error(w, "Unexpected error when decoding arguments.", http.StatusBadRequest)
+		httpError(w, errors.Wrap(err, "Unexpected error when decoding arguments").Error(), "bad_request")
 		return
 	}
 
@@ -192,18 +202,18 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	lastIDInt32 := int32(lastID)
 	if err != nil {
 		logger.Error("argument LastID decoding failed", "error", err)
-		http.Error(w, "Unexpected error when decoding LastID argument.", http.StatusBadRequest)
+		httpError(w, errors.Wrap(err, "Unexpected error when decoding LastID argument").Error(), "bad_request")
 		return
 	}
 
 	critical, err := confdb.CriticalCreateIfUpToDate(r.Context(), &lastIDInt32, args.Contents)
 	if err != nil {
 		if err == confdb.ErrNewerEdit {
-			http.Error(w, confdb.ErrNewerEdit.Error(), http.StatusConflict)
+			httpError(w, confdb.ErrNewerEdit.Error(), "newer_edit")
 			return
 		}
 		logger.Error("confdb.CriticalCreateIfUpToDate failed", "error", err)
-		http.Error(w, "Error updating latest critical configuration.", http.StatusInternalServerError)
+		httpError(w, errors.Wrap(err, "Error updating latest critical configuration").Error(), "internal_error")
 		return
 	}
 
@@ -213,7 +223,7 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("json response encoding failed", "error", err)
-		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+		httpError(w, errors.Wrap(err, "Error encoding JSON response").Error(), "internal_error")
 	}
 }
 
