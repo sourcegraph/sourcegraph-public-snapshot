@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -75,9 +77,9 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType stri
 	lowerRepo := strings.ToLower(string(repo))
 	var hasToken func(context.Context) (bool, error)
 	switch {
-	case serviceType == "github" && strings.HasPrefix(lowerRepo, "github.com/"):
+	case serviceType == github.ServiceType && strings.HasPrefix(lowerRepo, "github.com/"):
 		hasToken = hasGitHubDotComToken
-	case serviceType == "gitlab" && strings.HasPrefix(lowerRepo, "gitlab.com/"):
+	case serviceType == gitlab.ServiceType && strings.HasPrefix(lowerRepo, "gitlab.com/"):
 		hasToken = hasGitLabDotComToken
 	default:
 		return nil, nil
