@@ -98,7 +98,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName, serviceType string) 
 	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	gitserverRepo, err := quickGitserverRepo(ctx, name, serviceType)
+	gitserverRepo, err := quickGitserverRepo(ctx, name, &serviceType)
 	if err != nil {
 		return err
 	}
