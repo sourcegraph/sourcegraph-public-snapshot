@@ -224,10 +224,14 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpSuccess(w, &jsonConfiguration{
+	err = json.NewEncoder(w).Encode(&jsonConfiguration{
 		ID:       strconv.Itoa(int(critical.ID)),
 		Contents: critical.Contents,
 	})
+	if err != nil {
+		logger.Error("json response encoding failed", "error", err)
+		httpError(w, errors.Wrap(err, "Error encoding JSON response").Error(), "internal_error")
+	}
 }
 
 // HSTSMiddleware effectively instructs browsers to change all HTTP requests to
