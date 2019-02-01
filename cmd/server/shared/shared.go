@@ -65,10 +65,17 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 func Main() {
 	log.SetFlags(0)
 
+	// Ensure CONFIG_DIR and DATA_DIR
+
 	// Load $CONFIG_DIR/env before we set any defaults
 	{
 		configDir := SetDefaultEnv("CONFIG_DIR", "/etc/sourcegraph")
-		err := godotenv.Load(filepath.Join(configDir, "env"))
+		err := os.MkdirAll(configDir, 0755)
+		if err != nil {
+			log.Fatalf("failed to ensure CONFIG_DIR exists: %s", err)
+		}
+
+		err = godotenv.Load(filepath.Join(configDir, "env"))
 		if err != nil && !os.IsNotExist(err) {
 			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
 		}
