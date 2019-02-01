@@ -40,6 +40,7 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                 <ul>
                     <li>Sourcegraph version string</li>
                     <li>Deployment type (Docker, Kubernetes, or dev build)</li>
+                    <li>Whether the instance is deployed on localhost (true/false)</li>
                     <li>Randomly generated site identifier</li>
                     <li>
                         The email address of the initial site installer (or if deleted, the first active site admin), to
@@ -49,7 +50,10 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                         Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, or
                         SAML)
                     </li>
-                    <li>Whether code intelligence is enabled</li>
+                    <li>Whether new user signup is allowed (true/false)</li>
+                    <li>Whether a repository has ever been added (true/false)</li>
+                    <li>Whether a code search has ever been executed (true/false)</li>
+                    <li>Whether code intelligence has ever been used (true/false)</li>
                     <li>Total count of existing user accounts</li>
                     <li>Aggregate counts of current daily, weekly, and monthly users</li>
                     <li>Aggregate counts of current users using code host integrations</li>
