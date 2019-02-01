@@ -148,7 +148,6 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	uniqueUsers := q.Get("u")
 	activity := q.Get("act")
 	initialAdminEmail := q.Get("initAdmin")
-	hasCodeIntelligence := q.Get("codeintel")
 	deployType := q.Get("deployType")
 	totalUsers := q.Get("totalUsers")
 	everRepos := q.Get("repos")
@@ -175,7 +174,6 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		"remote_site_id": "%s",
 		"has_update": "%s",
 		"unique_users_today": "%s",
-		"has_code_intelligence": "%s",
 		"site_activity": %s,
 		"installer_email": "%s",
 		"auth_providers": "%s",
@@ -193,7 +191,6 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		clientSiteID,
 		strconv.FormatBool(hasUpdate),
 		uniqueUsers,
-		hasCodeIntelligence,
 		activity,
 		initialAdminEmail,
 		authProviders,
