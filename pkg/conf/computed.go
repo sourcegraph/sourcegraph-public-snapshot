@@ -286,6 +286,7 @@ func readSrcGitServers() []string {
 
 func UsingExternalURL() bool {
 	url := Get().Critical.ExternalURL
+	// CI:LOCALHOST_OK
 	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1"))
 }
 
