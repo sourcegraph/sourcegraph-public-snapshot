@@ -158,7 +158,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div className="d-flex flex-column">
+            <div className="settings-file flex-column">
                 <div className="site-admin-configuration-page__action-groups">
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
