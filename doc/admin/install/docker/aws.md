@@ -29,7 +29,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   repo_upgrade: all
 
   runcmd:
-  # Create directory structure for Sourcegraph data
+  # Create the directory structure for Sourcegraph data
   - mkdir -p /home/ec2-user/.sourcegraph/config
   - mkdir -p /home/ec2-user/.sourcegraph/data
   
