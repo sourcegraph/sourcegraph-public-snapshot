@@ -86,7 +86,7 @@ func TestRepos_Add(t *testing.T) {
 		return nil
 	}
 
-	if err := s.Add(ctx, repoName, ""); err != nil {
+	if err := s.AddGitHubDotComRepository(ctx, repoName); err != nil {
 		t.Fatal(err)
 	}
 	if !calledRepoLookup {
