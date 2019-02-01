@@ -48,17 +48,9 @@ export function setInlineSymbolSearchEnabled(enabled: boolean): void {
     inlineSymbolSearchEnabled = enabled
 }
 
-export function getPlatformName():
-    | 'phabricator-integration'
-    | 'safari-extension'
-    | 'firefox-extension'
-    | 'chrome-extension' {
+export function getPlatformName(): 'phabricator-integration' | 'firefox-extension' | 'chrome-extension' {
     if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {
         return 'phabricator-integration'
-    }
-
-    if (typeof window.safari !== 'undefined') {
-        return 'safari-extension'
     }
 
     return isFirefoxExtension() ? 'firefox-extension' : 'chrome-extension'
