@@ -160,7 +160,7 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 	critical, err := confdb.CriticalGetLatest(r.Context())
 	if err != nil {
 		logger.Error("confdb.CriticalGetLatest failed", "error", err)
-		http.Error(w, "Error retrieving latest critical configuration.", http.StatusInternalServerError)
+		httpError(w, "Error retrieving latest critical configuration.", "internal_error")
 		return
 	}
 
@@ -170,7 +170,7 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("json response encoding failed", "error", err)
-		http.Error(w, "Error encoding json response.", http.StatusInternalServerError)
+		httpError(w, "Error encoding json response.", "internal_error")
 	}
 }
 
