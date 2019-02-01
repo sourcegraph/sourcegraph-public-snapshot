@@ -17,6 +17,9 @@ import (
 	"time"
 
 	"github.com/gchaincl/sqlhooks"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/lib/pq"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -25,9 +28,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/migrations"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/tsenart/migrate/v4"
-	"github.com/tsenart/migrate/v4/database/postgres"
-	bindata "github.com/tsenart/migrate/v4/source/go_bindata"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
