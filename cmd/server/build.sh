@@ -2,7 +2,7 @@
 
 # We want to build multiple go binaries, so we use a custom build step on CI.
 cd $(dirname "${BASH_SOURCE[0]}")/../..
-set -ex
+set -eux
 
 OUTPUT=`mktemp -d -t sgserver_XXXXXXX`
 cleanup() {
@@ -18,7 +18,7 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend}
+additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console}
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.

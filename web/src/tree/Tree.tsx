@@ -19,6 +19,8 @@ interface Props extends AbsoluteRepo {
 
     /** Whether the active path is a directory (including the root directory). False if it is a file. */
     activePathIsDir: boolean
+    /** The localStorage key that stores the current size of the (resizable) RepoRevSidebar. */
+    sizeKey: string
 }
 
 interface State {
@@ -246,6 +248,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     selectedNode={this.state.selectedNode}
                     setChildNodes={this.setChildNode}
                     setActiveNode={this.setActiveNode}
+                    sizeKey={this.props.sizeKey}
                 />
             </div>
         )

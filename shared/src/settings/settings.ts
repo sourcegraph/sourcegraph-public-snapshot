@@ -37,7 +37,8 @@ export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'settingsURL' | 
         | Pick<IClient, '__typename' | 'displayName'>
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
         | Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'>
-        | Pick<GQL.ISite, '__typename'>)
+        | Pick<GQL.ISite, '__typename'>
+        | Pick<GQL.IDefaultSettings, '__typename'>)
 
 /**
  * A cascade of settings from multiple subjects, from lowest precedence to highest precedence, and the final
@@ -227,37 +228,6 @@ export function isSettingsValid<S extends Settings>(
         settingsCascade.final !== null &&
         !isErrorLike(settingsCascade.final)
     )
-}
-
-/**
- * The conventional ordering of extension settings subject types in a list.
- */
-export const SUBJECT_TYPE_ORDER: SettingsSubject['__typename'][] = ['Client', 'User', 'Org', 'Site']
-
-export function subjectTypeHeader(nodeType: SettingsSubject['__typename']): string | null {
-    switch (nodeType) {
-        case 'Client':
-            return null
-        case 'Site':
-            return null
-        case 'Org':
-            return 'Organization:'
-        case 'User':
-            return null
-    }
-}
-
-export function subjectLabel(subject: SettingsSubject): string {
-    switch (subject.__typename) {
-        case 'Client':
-            return 'Client'
-        case 'Site':
-            return 'Everyone'
-        case 'Org':
-            return subject.name
-        case 'User':
-            return subject.username
-    }
 }
 
 /**

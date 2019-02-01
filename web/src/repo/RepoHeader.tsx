@@ -236,7 +236,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     ))}
                 </ul>
                 <div className="repo-header__spacer" />
-                <ul className="navbar-nav">
+                <ul className="navbar-nav navbar-nav__action-items">
                     <ActionsNavItems
                         menu={ContributableMenu.EditorTitle}
                         actionItemClass="nav-link"
@@ -244,6 +244,8 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         platformContext={this.props.platformContext}
                         location={this.props.location}
                     />
+                </ul>
+                <ul className="navbar-nav">
                     {this.props.actionButtons.map(
                         ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
                             condition(context) && (

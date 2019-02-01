@@ -33,6 +33,13 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// This file contains the root resolver for search. It currently has a lot of
+// logic that spans out into all the other search_* files.
+//
+// NOTE: This file and most supporting code will be deleted when search2.go is
+// rolled out. However, right now to understand search and fix bugs in it you
+// should start here.
+
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; max {
 	case 0:

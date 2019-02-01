@@ -96,7 +96,7 @@ func (r *siteResolver) SettingsCascade() *settingsCascade {
 
 func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
 
-func (r *siteResolver) SettingsURL() string { return "/site-admin/global-settings" }
+func (r *siteResolver) SettingsURL() *string { return strptr("/site-admin/global-settings") }
 
 func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
 	err := backend.CheckCurrentUserIsSiteAdmin(ctx)

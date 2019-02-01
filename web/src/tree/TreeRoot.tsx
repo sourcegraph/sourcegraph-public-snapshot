@@ -19,10 +19,13 @@ import { AbsoluteRepo } from '../../../shared/src/util/url'
 import { fetchTreeEntries } from '../repo/backend'
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeNode } from './Tree'
-import { treePadding } from './util'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
 const maxEntries = 2500
+
+const errorWidth = (width?: string) => ({
+    width: width ? `${width}px` : 'auto',
+})
 
 export interface TreeRootProps extends AbsoluteRepo {
     history: H.History
@@ -36,6 +39,7 @@ export interface TreeRootProps extends AbsoluteRepo {
     index: number
     isExpanded: boolean
     selectedNode: TreeNode
+    sizeKey: string
     onHover?: (filePath: string) => void
     onSelect: (node: TreeNode) => void
     onToggleExpand: (path: string, expanded: boolean, node: TreeNode) => void
@@ -151,41 +155,45 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         }
 
         return (
-            <table className="tree-layer" tabIndex={0}>
-                <tbody>
-                    <tr>
-                        <td className="tree__cell">
-                            {treeOrError === LOADING ? (
-                                <div className="tree__row-loader">
-                                    <LoadingSpinner className="icon-inline tree-page__entries-loader" />
-                                    Loading tree
-                                </div>
-                            ) : isErrorLike(treeOrError) ? (
-                                <div
-                                    className="tree__row tree__row-alert alert alert-danger"
-                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                    style={treePadding(this.props.depth, true)}
-                                >
-                                    Error loading tree: {treeOrError.message}
-                                </div>
-                            ) : (
-                                treeOrError && (
-                                    <ChildTreeLayer
-                                        {...this.props}
-                                        parent={this.node}
-                                        depth={-1 as number}
-                                        entries={treeOrError.entries}
-                                        singleChildTreeEntry={singleChildTreeEntry}
-                                        childrenEntries={singleChildTreeEntry.children}
-                                        onHover={this.fetchChildContents}
-                                        setChildNodes={this.setChildNode}
-                                    />
-                                )
-                            )}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <>
+                {isErrorLike(treeOrError) ? (
+                    <div
+                        className="tree__row tree__row-alert alert alert-danger"
+                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                        style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
+                    >
+                        Error loading tree: {treeOrError.message}
+                    </div>
+                ) : (
+                    <table className="tree-layer" tabIndex={0}>
+                        <tbody>
+                            <tr>
+                                <td className="tree__cell">
+                                    {treeOrError === LOADING ? (
+                                        <div className="tree__row-loader">
+                                            <LoadingSpinner className="icon-inline tree-page__entries-loader" />
+                                            Loading tree
+                                        </div>
+                                    ) : (
+                                        treeOrError && (
+                                            <ChildTreeLayer
+                                                {...this.props}
+                                                parent={this.node}
+                                                depth={-1 as number}
+                                                entries={treeOrError.entries}
+                                                singleChildTreeEntry={singleChildTreeEntry}
+                                                childrenEntries={singleChildTreeEntry.children}
+                                                onHover={this.fetchChildContents}
+                                                setChildNodes={this.setChildNode}
+                                            />
+                                        )
+                                    )}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                )}
+            </>
         )
     }
     /**

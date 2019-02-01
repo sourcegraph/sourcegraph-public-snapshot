@@ -6,8 +6,6 @@
 /cmd/searcher/ @beyang @keegancsmith
 /web/src/ @felixfbecker
 /xlang/ @keegancsmith @beyang
-/dev/ @nicksnyder
-/enterprise/dev/ @nicksnyder
 /client/vscode/ @chrismwendt
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
@@ -18,13 +16,12 @@
 /cmd/server/ @beyang
 /cmd/symbols/ @beyang
 /pkg/ @beyang
-/doc/dev/ @nicksnyder
 
 # Browser extensions
 /client/browser/ @ijsnow
 # Adding permissions to the manifest will disable the extension for all users
 # upon update!
-/client/browser/src/extension/manifest.spec.json @chrismwendt @ijsnow @nicksnyder
+/client/browser/src/extension/manifest.spec.json @chrismwendt @ijsnow
 
 # Sourcegraph extension API
 /packages/sourcegraph-extension-api/ @chrismwendt @lguychard

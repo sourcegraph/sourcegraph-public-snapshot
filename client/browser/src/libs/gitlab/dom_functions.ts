@@ -1,5 +1,4 @@
 import { DOMFunctions } from '@sourcegraph/codeintellify'
-import { CodeView } from '../code_intelligence'
 
 export const singleFileDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: target => target.closest('span.line') as HTMLElement | null,
@@ -67,66 +66,4 @@ export const diffDOMFunctions: DOMFunctions = {
         return row.querySelector<HTMLElement>(selector)
     },
     getDiffCodePart,
-}
-
-export const singleFileGetLineRanges: CodeView['getLineRanges'] = codeView => {
-    const firstLine = codeView.querySelector<HTMLTableRowElement>('.line:first-of-type')
-    if (!firstLine) {
-        throw new Error('Unable to determine start line of code view')
-    }
-
-    const lastLine = codeView.querySelector<HTMLTableRowElement>('.line:last-of-type')
-    if (!lastLine) {
-        throw new Error('Unable to determine start line of code view')
-    }
-
-    const getLineNumber = (line: HTMLElement) => {
-        const codeElement = singleFileDOMFunctions.getCodeElementFromTarget(line)!
-
-        return singleFileDOMFunctions.getLineNumberFromCodeElement(codeElement)
-    }
-
-    return [
-        {
-            start: getLineNumber(firstLine),
-            end: getLineNumber(lastLine),
-        },
-    ]
-}
-
-export const diffFileGetLineRanges: CodeView['getLineRanges'] = (codeView, part) => {
-    const ranges: { start: number; end: number }[] = []
-
-    let start: number | null = null
-    let end: number | null = null
-
-    for (const row of codeView.querySelectorAll<HTMLTableRowElement>('tr')) {
-        const isCode = row.firstElementChild && !row.firstElementChild.classList.contains('js-unfold')
-
-        if (isCode) {
-            const line = row.querySelector<HTMLElement>(`td.${part === 'base' ? 'left-side' : 'right-side'} span.line`)!
-            if (!line) {
-                // Empty row
-                continue
-            }
-
-            const codeElement = diffDOMFunctions.getCodeElementFromTarget(line)!
-
-            const num = diffDOMFunctions.getLineNumberFromCodeElement(codeElement)
-            if (start === null) {
-                start = num
-            } else {
-                end = num
-            }
-        } else if (start && end) {
-            ranges.push({ start, end })
-        }
-
-        if (!isCode) {
-            start = null
-            end = null
-        }
-    }
-
-    return ranges
 }
