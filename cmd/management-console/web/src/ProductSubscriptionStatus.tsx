@@ -1,14 +1,14 @@
 import * as React from 'react'
-// import { Link } from 'react-router-dom'
 import { of, Subscription } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, delay, map } from 'rxjs/operators'
-import { Link } from '../../../../shared/src/components/Link'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
-import { ExpirationDate } from './ExpirationDate'
-import { ProductCertificate } from './ProductCertificate'
-import { TrueUpStatusSummary } from './TrueUpStatusSummary'
+import { ExpirationDate } from '../../../../shared/src/productSubscription/ExpirationDate'
+import { formatUserCount } from '../../../../shared/src/productSubscription/helpers'
+import { ProductCertificate } from '../../../../shared/src/productSubscription/ProductCertificate'
+import { TrueUpStatusSummary } from '../../../../shared/src/productSubscription/TrueUpStatusSummary'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { numberWithCommas } from '../../../../shared/src/util/strings'
+import logo from './sourcegraph-mark.svg'
 
 const DEBUG_LOADING_STATE_DELAY = 0 // ms
 
@@ -38,16 +38,6 @@ interface LicenseKeyInfo {
     ActualUserCount: number
     ActualUserCountDate: string
     ExternalURL: string
-}
-
-/**
- * Returns "N users" (properly pluralized and with commas added to N as needed).
- */
-export function formatUserCount(userCount: number, hyphenate?: boolean): string {
-    if (hyphenate) {
-        return `${numberWithCommas(userCount)}-user`
-    }
-    return `${numberWithCommas(userCount)} ${pluralize('user', userCount)}`
 }
 
 /**
@@ -175,6 +165,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                         </div>
                     }
                     className={this.props.className}
+                    logoSrc={logo}
                 />
                 {this.props.showTrueUpStatus ? (
                     <TrueUpStatusSummary

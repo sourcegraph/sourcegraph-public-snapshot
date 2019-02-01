@@ -1,7 +1,7 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { ExpirationDate } from '../../../../../shared/src/productSubscription/ExpirationDate'
 import { numberWithCommas } from '../../../../../shared/src/util/strings'
-import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 
 /**
  * Displays a before/after comparison table of a change to the invoice item of a product

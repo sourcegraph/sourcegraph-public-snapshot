@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -135,7 +134,6 @@ var noLicenseMaximumAllowedUserCount uint = 200
 // Make the Site.productSubscription GraphQL field return the actual info about the product license,
 // if any.
 func init() {
-	fmt.Println("INIT")
 	shared.GetProductNameWithBrand = productNameWithBrand
 	shared.GetConfiguredProductLicenseInfo = func() (*shared.ProductLicenseInfo, error) {
 		info, err := GetConfiguredProductLicenseInfo()

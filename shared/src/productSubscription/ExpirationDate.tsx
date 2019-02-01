@@ -1,6 +1,9 @@
 import format from 'date-fns/format'
 import React from 'react'
-import { formatRelativeExpirationDate, isProductLicenseExpired } from './helpers'
+import {
+    formatRelativeExpirationDate,
+    isProductLicenseExpired,
+} from '../../../web/src/enterprise/productSubscription/helpers'
 
 /** Displays an expiration date (for product subscriptions or licenses). */
 export const ExpirationDate: React.FunctionComponent<{

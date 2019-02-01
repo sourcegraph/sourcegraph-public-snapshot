@@ -4,13 +4,13 @@ import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { ExpirationDate } from '../../../../../shared/src/productSubscription/ExpirationDate'
+import { ProductCertificate } from '../../../../../shared/src/productSubscription/ProductCertificate'
+import { TrueUpStatusSummary } from '../../../../../shared/src/productSubscription/TrueUpStatusSummary'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { numberWithCommas } from '../../../../../shared/src/util/strings'
 import { queryGraphQL } from '../../../backend/graphql'
-import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount } from '../../productSubscription/helpers'
-import { ProductCertificate } from '../../productSubscription/ProductCertificate'
-import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
 
 interface Props {
     className?: string
@@ -130,14 +130,15 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                             )}
                         </div>
                     }
-                    className={this.props.className}
+                    className={`${this.props.className} product-certificate-webpack`}
+                    logoSrc="/.assets/img/sourcegraph-mark.svg"
                 />
                 {license &&
                     (this.props.showTrueUpStatus ? (
                         <TrueUpStatusSummary
                             actualUserCount={actualUserCount}
                             actualUserCountDate={actualUserCountDate}
-                            license={license}
+                            userCount={license.userCount}
                         />
                     ) : (
                         license.userCount - actualUserCount < 0 && (

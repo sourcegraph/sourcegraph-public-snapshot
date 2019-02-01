@@ -14,6 +14,7 @@ interface Props {
     footer?: React.ReactFragment | null
 
     className?: string
+    logoSrc: string
 }
 
 /**
@@ -29,11 +30,12 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
     detail,
     footer,
     className = '',
+    logoSrc,
 }) => (
     <>
         <div className={`product-certificate card ${className || ''}`}>
             <div className="card-body d-flex align-items-center">
-                <img className="product-certificate__logo mr-1 p-2" src="/.assets/img/sourcegraph-mark.svg" />
+                <img className="product-certificate__logo mr-1 p-2" src={logoSrc} />
                 <div>
                     <h2 className="font-weight-normal mb-1">{title}</h2>
                     {subtitle && <h3 className="text-muted font-weight-normal">{subtitle}</h3>}

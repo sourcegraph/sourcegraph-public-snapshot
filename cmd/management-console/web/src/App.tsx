@@ -15,7 +15,7 @@ export class App extends React.Component<{}, {}> {
                     </a>{' '}
                     for more information.
                 </p>
-                <ProductSubscriptionStatus />
+                <ProductSubscriptionStatus className="product-certificate-parcel" />
                 <CriticalConfigEditor />
             </div>
         )

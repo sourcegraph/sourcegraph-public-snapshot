@@ -59,6 +59,7 @@ button {
 @import 'bootstrap/scss/grid';
 @import './TrueUpStatusSummary';
 @import './ProductSubscriptionStatus';
+@import '../../../../shared/src/productSubscription/ProductCertificate';
 @import './ProductCertificate';
 
 .card {

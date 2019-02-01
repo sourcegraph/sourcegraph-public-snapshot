@@ -1,11 +1,11 @@
 import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 import React from 'react'
+import { ExpirationDate } from '../../../../../shared/src/productSubscription/ExpirationDate'
+import { ProductCertificate } from '../../../../../shared/src/productSubscription/ProductCertificate'
 import { CopyableText } from '../../../components/CopyableText'
-import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
 import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
-import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 
 interface Props {
     subscriptionName: string
@@ -92,6 +92,8 @@ export class UserProductSubscriptionStatus extends React.PureComponent<Props, St
                         )}
                     </>
                 }
+                className="product-certificate-webpack"
+                logoSrc="/.assets/img/sourcegraph-mark.svg"
             />
         )
     }

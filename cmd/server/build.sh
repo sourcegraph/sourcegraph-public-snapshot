@@ -25,6 +25,7 @@ additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend}
 server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
 for pkg in $server_pkg \
+    github.com/sourcegraph/sourcegraph/cmd/management-console \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \

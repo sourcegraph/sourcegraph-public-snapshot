@@ -6,10 +6,10 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { ExpirationDate } from '../../../../../../shared/src/productSubscription/ExpirationDate'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { Form } from '../../../../components/Form'
-import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 
 interface Props {
     subscriptionID: GQL.ID
