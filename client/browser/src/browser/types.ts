@@ -46,25 +46,10 @@ export const featureFlagDefaults: FeatureFlags = {
     allowErrorReporting: false,
 }
 
-export interface AccessToken {
-    id: string
-    token: string
-}
-
-/** A map where the key is the server URL and the value is the token. */
-export interface AccessTokens {
-    [url: string]: AccessToken
-}
-
 // TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by
 // missing items.
 export interface StorageItems {
     sourcegraphURL: string
-    /**
-     * The current users access tokens the different sourcegraphUrls they have
-     * had configured.
-     */
-    accessTokens: AccessTokens
 
     identity: string
     enterpriseUrls: string[]
@@ -94,7 +79,6 @@ interface ClientConfigurationDetails {
 
 export const defaultStorageItems: StorageItems = {
     sourcegraphURL: 'https://sourcegraph.com',
-    accessTokens: {},
 
     identity: '',
     enterpriseUrls: [],

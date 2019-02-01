@@ -1,13 +1,8 @@
-// Command management-console provides a failsafe editor for the critical
-// configuration options for the Sourcegraph instance.
+// Package shared contains the shared management console implementation.
 //
-// 🚨 SECURITY: No authentication is done by the management console.
-// It is currently the user's responsibility to:
-//
-// 1. Limit access to the management console by not exposing its port.
-// 2. Ensure that the management console's responses are never propagated to
-//    unprivileged users.
-//
+// The management console provides a failsafe editor for critical Sourcegraph
+// configuration which, if changed correctly, could prevent access to the
+// Sourcegraph instance.
 package shared
 
 import (
@@ -28,7 +23,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
-	"github.com/sourcegraph/sourcegraph/cmd/management-console/internal/tlscertgen"
+	"github.com/sourcegraph/sourcegraph/cmd/management-console/shared/internal/tlscertgen"
 	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"

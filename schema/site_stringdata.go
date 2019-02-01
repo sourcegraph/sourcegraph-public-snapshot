@@ -271,7 +271,7 @@ const SiteSchemaJSON = `{
           "minLength": 1
         },
         "certificate": {
-          "description": "TLS certificate of a GitHub Enterprise instance.",
+          "description": "TLS certificate of a GitHub Enterprise instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
@@ -345,7 +345,7 @@ const SiteSchemaJSON = `{
           "default": "http"
         },
         "certificate": {
-          "description": "TLS certificate of a GitLab instance.",
+          "description": "TLS certificate of a GitLab instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
@@ -374,7 +374,7 @@ const SiteSchemaJSON = `{
     },
     "GitLabAuthorization": {
       "description":
-        "If non-null, enforces GitLab repository permissions. This requires that the value of ` + "`" + `token` + "`" + ` be an access token with \"sudo\" and \"api\" scopes.",
+        "If non-null, enforces GitLab repository permissions. This requires that there be an item in the ` + "`" + `auth.providers` + "`" + ` field of type \"gitlab\" with the same ` + "`" + `url` + "`" + ` field as specified in this ` + "`" + `GitLabConnection` + "`" + `.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -441,7 +441,7 @@ const SiteSchemaJSON = `{
           "default": "http"
         },
         "certificate": {
-          "description": "TLS certificate of a Bitbucket Server instance.",
+          "description": "TLS certificate of a Bitbucket Server instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },

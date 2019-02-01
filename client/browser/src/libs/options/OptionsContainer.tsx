@@ -1,11 +1,9 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, mapTo, share, switchMap, tap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { getExtensionVersionSync } from '../../browser/runtime'
-import { AccessToken } from '../../browser/types'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
-import { propertyIsDefined } from '../../shared/util/types'
 import { OptionsMenu, OptionsMenuProps } from './Menu'
 import { ConnectionErrors } from './ServerURLForm'
 
@@ -16,11 +14,6 @@ export interface OptionsContainerProps {
     fetchCurrentUser: (useToken: boolean) => Observable<GQL.IUser | undefined>
 
     setSourcegraphURL: (url: string) => void
-
-    createAccessToken: (url: string) => Observable<AccessToken>
-    getAccessToken: (url: string) => Observable<AccessToken | undefined>
-    setAccessToken: (url: string, token: AccessToken) => void
-    fetchAccessTokenIDs: (url: string) => Observable<Pick<AccessToken, 'id'>[]>
 
     toggleFeatureFlag: (key: string) => void
     featureFlags: { key: string; value: boolean }[]
@@ -88,44 +81,6 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
                 props.setSourcegraphURL(url)
             })
-        )
-
-        this.subscriptions.add(
-            // Ensure the site is valid.
-            fetchingSite
-                .pipe(
-                    filter(urlOrError => !isErrorLike(urlOrError)),
-                    map(urlOrError => urlOrError as string),
-                    // Get the access token for this server if we have it.
-                    switchMap(url => this.props.getAccessToken(url).pipe(map(token => ({ token, url })))),
-                    switchMap(({ url, token }) =>
-                        this.props.fetchCurrentUser(false).pipe(map(user => ({ user, token, url })))
-                    ),
-                    filter(propertyIsDefined('user')),
-                    // Get the IDs for all access tokens for the user.
-                    switchMap(({ token, user, url }) =>
-                        this.props
-                            .fetchAccessTokenIDs(user.id)
-                            .pipe(map(usersTokenIDs => ({ usersTokenIDs, user, token, url })))
-                    ),
-                    // Make sure the token still exists on the server. If it
-                    // does exits, use it, otherwise create a new one.
-                    switchMap(({ user, token, usersTokenIDs, url }) => {
-                        const tokenExists = token && usersTokenIDs.map(({ id }) => id).includes(token.id)
-
-                        return token && tokenExists
-                            ? of(undefined)
-                            : this.props.createAccessToken(user.id).pipe(
-                                  tap(createdToken => {
-                                      this.props.setAccessToken(url, createdToken)
-                                  }),
-                                  mapTo(undefined)
-                              )
-                    })
-                )
-                .subscribe(() => {
-                    // Don't do anything here, we already saved new tokens above.
-                })
         )
     }
 

@@ -176,7 +176,7 @@ type GitLabAuthProvider struct {
 	Url          string `json:"url,omitempty"`
 }
 
-// GitLabAuthorization description: If non-null, enforces GitLab repository permissions. This requires that the value of `token` be an access token with "sudo" and "api" scopes.
+// GitLabAuthorization description: If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type "gitlab" with the same `url` field as specified in this `GitLabConnection`.
 type GitLabAuthorization struct {
 	Ttl string `json:"ttl,omitempty"`
 }

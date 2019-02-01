@@ -20,6 +20,7 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 - [Builtin commands](builtin_commands.md)
 - [Sample extensions (`sourcegraph-extension-samples`)](https://github.com/sourcegraph/sourcegraph-extension-samples)
 - [Cookbook (sample code)](cookbook.md)
+- [UX style guide](ux_style_guide.md)
 
 ## Tutorials
 

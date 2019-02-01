@@ -27,7 +27,7 @@ Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sou
 - [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
 - [Upgrade to PostgreSQL 11](https://github.com/sourcegraph/sourcegraph/issues/1404)
 
-<small>[Draft announcement](https://github.com/sourcegraph/about/pull/68) --- [All 3.0 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.0)</small>
+<small>[Draft announcement](https://github.com/sourcegraph/about/pull/79) --- [All 3.0 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.0)</small>
 
 ---
 
@@ -35,15 +35,21 @@ Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sou
 
 Release date: 2019-02-20
 
-- [Improved repository mirroring](https://github.com/sourcegraph/sourcegraph/issues/2025)
-- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- Code navigation extensions: basic-code-intel, Codecov, Git extras, Datadog, LightStep (T.B.D.)
-- Search extensions: [#670](https://github.com/sourcegraph/sourcegraph/issues/670), etc. (T.B.D.)
-- [Health/feature indicators in pings](https://github.com/sourcegraph/sourcegraph/issues/2024)
-- Search UX (T.B.D.)
-- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
-- [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
-- Deployment improvements (T.B.D.)
+Backend:
+
+- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+
+Distribution:
+
+- [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
+- [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
+- [Docs UX improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
+
+Code search and navigation:
+
+- [Code navigation UX and robustness](https://github.com/sourcegraph/sourcegraph/issues/2070)
+- [Search UX](https://github.com/sourcegraph/sourcegraph/issues/2081)
+
 
 <small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
 

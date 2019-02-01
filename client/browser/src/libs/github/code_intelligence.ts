@@ -12,13 +12,7 @@ import {
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
-import {
-    diffDomFunctions,
-    getDiffLineRanges,
-    getLineRanges,
-    searchCodeSnippetDOMFunctions,
-    singleFileDOMFunctions,
-} from './dom_functions'
+import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
 import { createOpenOnSourcegraphIfNotExists } from './inject'
@@ -34,7 +28,6 @@ const diffCodeView: CodeViewWithOutSelector = {
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
-    getLineRanges: getDiffLineRanges,
     isDiff: true,
 }
 
@@ -48,7 +41,6 @@ const singleFileCodeView: CodeViewWithOutSelector = {
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
-    getLineRanges,
     isDiff: false,
 }
 
@@ -94,7 +86,6 @@ const searchResultCodeView: CodeView = {
     adjustPosition: adjustPositionForSnippet,
     resolveFileInfo: resolveSnippetFileInfo,
     toolbarButtonProps,
-    getLineRanges,
     isDiff: false,
 }
 
@@ -104,7 +95,6 @@ const commentSnippetCodeView: CodeView = {
     resolveFileInfo: resolveSnippetFileInfo,
     adjustPosition: adjustPositionForSnippet,
     toolbarButtonProps,
-    getLineRanges,
     isDiff: false,
 }
 

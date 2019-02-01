@@ -89,13 +89,16 @@ func (r *ExternalRepoSpec) String() string {
 
 // A SettingsSubject is something that can have settings. Exactly 1 field must be nonzero.
 type SettingsSubject struct {
-	Site bool   // whether this is for global settings
-	Org  *int32 // the org's ID
-	User *int32 // the user's ID
+	Default bool   // whether this is for default settings
+	Site    bool   // whether this is for global settings
+	Org     *int32 // the org's ID
+	User    *int32 // the user's ID
 }
 
 func (s SettingsSubject) String() string {
 	switch {
+	case s.Default:
+		return "DefaultSettings"
 	case s.Site:
 		return "site"
 	case s.Org != nil:

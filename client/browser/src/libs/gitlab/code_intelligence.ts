@@ -1,10 +1,5 @@
 import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
-import {
-    diffDOMFunctions,
-    diffFileGetLineRanges,
-    singleFileDOMFunctions,
-    singleFileGetLineRanges,
-} from './dom_functions'
+import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
 import { getPageInfo, GitLabPageKind } from './scrape'
@@ -54,7 +49,6 @@ const singleFileCodeView: CodeViewWithOutSelector = {
     getToolbarMount: createToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
-    getLineRanges: singleFileGetLineRanges,
 }
 
 const mergeRequestCodeView: CodeViewWithOutSelector = {
@@ -63,7 +57,6 @@ const mergeRequestCodeView: CodeViewWithOutSelector = {
     getToolbarMount: createToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
-    getLineRanges: diffFileGetLineRanges,
 }
 
 const commitCodeView: CodeViewWithOutSelector = {
@@ -72,7 +65,6 @@ const commitCodeView: CodeViewWithOutSelector = {
     getToolbarMount: createToolbarMount,
     resolveFileInfo: resolveCommitFileInfo,
     toolbarButtonProps,
-    getLineRanges: diffFileGetLineRanges,
 }
 
 const resolveCodeView = (codeView: HTMLElement): CodeViewWithOutSelector => {

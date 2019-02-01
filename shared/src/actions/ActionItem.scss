@@ -2,6 +2,10 @@
     &__content {
         display: flex;
         align-items: center;
+
+        .icon-inline {
+            margin-right: 0.2rem;
+        }
     }
     &--variant-action-item &__content {
         justify-content: center;

@@ -560,7 +560,10 @@ function _createConnection(transports: MessageTransports, logger: Logger): Conne
 
     function throwIfClosedOrUnsubscribed(): void {
         if (isClosed()) {
-            throw new ConnectionError(ConnectionErrors.Closed, 'Connection is closed.')
+            throw new ConnectionError(
+                ConnectionErrors.Closed,
+                'Extension host connection unexpectedly closed. Reload the page to resolve.'
+            )
         }
         if (isUnsubscribed()) {
             throw new ConnectionError(ConnectionErrors.Unsubscribed, 'Connection is unsubscribed.')

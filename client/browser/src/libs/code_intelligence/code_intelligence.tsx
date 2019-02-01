@@ -13,7 +13,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
 import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
+import { catchError, filter, map, mergeMap, observeOn, switchMap, withLatestFrom } from 'rxjs/operators'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
 import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
@@ -46,7 +46,7 @@ import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
-import { findCodeViews, getContentOfCodeView } from './code_views'
+import { fetchFileContents, findCodeViews } from './code_views'
 import { applyDecorations, initializeExtensions } from './extensions'
 import { injectViewContextOnSourcegraph } from './external_links'
 
@@ -83,17 +83,6 @@ export interface CodeView {
     toolbarButtonProps?: ButtonProps
 
     isDiff?: boolean
-
-    /** Gets the 1-indexed range of the code view */
-    getLineRanges?: (
-        codeView: HTMLElement,
-        part?: DiffPart
-    ) => {
-        /** The first line shown in the code view. */
-        start: number
-        /** The last line shown in the code view. */
-        end: number
-    }[]
 }
 
 export type CodeViewWithOutSelector = Pick<CodeView, Exclude<keyof CodeView, 'selector'>>
@@ -445,149 +434,127 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                 mergeMap(({ codeView, resolveFileInfo, ...rest }) =>
                     resolveFileInfo(codeView).pipe(map(info => ({ info, codeView, ...rest })))
                 ),
+                switchMap(({ info, ...rest }) =>
+                    fetchFileContents(info).pipe(map(infoWithContents => ({ info: infoWithContents, ...rest })))
+                ),
                 observeOn(animationFrameScheduler)
             )
-            .subscribe(
-                ({
-                    codeView,
-                    info,
-                    isDiff,
-                    getLineRanges,
-                    dom,
-                    adjustPosition,
-                    getToolbarMount,
-                    toolbarButtonProps,
-                }) => {
-                    const originalDOM = dom
-                    dom = {
-                        ...dom,
-                        // If any parent element has the sourcegraph-extension-element
-                        // class then that element does not have any code. We
-                        // must check for "any parent element" because extensions
-                        // create their DOM changes before the blob is tokenized
-                        // into multiple elements.
-                        getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
-                            target.closest('.sourcegraph-extension-element') !== null
-                                ? null
-                                : originalDOM.getCodeElementFromTarget(target),
-                    }
+            .subscribe(({ codeView, info, dom, adjustPosition, getToolbarMount, toolbarButtonProps }) => {
+                const originalDOM = dom
+                dom = {
+                    ...dom,
+                    // If any parent element has the sourcegraph-extension-element
+                    // class then that element does not have any code. We
+                    // must check for "any parent element" because extensions
+                    // create their DOM changes before the blob is tokenized
+                    // into multiple elements.
+                    getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
+                        target.closest('.sourcegraph-extension-element') !== null
+                            ? null
+                            : originalDOM.getCodeElementFromTarget(target),
+                }
 
-                    let content = info.content
-                    let baseContent = info.baseContent
-
-                    if (!content) {
-                        if (!getLineRanges) {
-                            throw new Error('Must either provide a line range getter or provide file contents')
-                        }
-
-                        const contents = getContentOfCodeView(codeView, { isDiff, getLineRanges, dom })
-
-                        content = contents.content
-                        baseContent = contents.baseContent
-                    }
-
-                    visibleViewComponents = [
-                        // Either a normal file, or HEAD when codeView is a diff
-                        {
-                            type: 'textEditor',
-                            item: {
-                                uri: toURIWithPath(info),
-                                languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                text: content!,
-                            },
-                            selections: [],
-                            isActive: true,
+                visibleViewComponents = [
+                    // Either a normal file, or HEAD when codeView is a diff
+                    {
+                        type: 'textEditor',
+                        item: {
+                            uri: toURIWithPath(info),
+                            languageId: getModeFromPath(info.filePath) || 'could not determine mode',
+                            text: info.content!,
                         },
-                        // All the currently open documents, which are all now considered inactive.
-                        ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
-                    ]
-                    const roots: Model['roots'] = [{ uri: toRootURI(info), inputRevision: info.rev || '' }]
+                        selections: [],
+                        isActive: true,
+                    },
+                    // All the currently open documents, which are all now considered inactive.
+                    ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
+                ]
+                const roots: Model['roots'] = [{ uri: toRootURI(info), inputRevision: info.rev || '' }]
 
-                    // When codeView is a diff, add BASE too.
-                    if (baseContent! && info.baseRepoName && info.baseCommitID && info.baseFilePath) {
-                        visibleViewComponents.push({
-                            type: 'textEditor',
-                            item: {
-                                uri: toURIWithPath({
-                                    repoName: info.baseRepoName,
-                                    commitID: info.baseCommitID,
-                                    filePath: info.baseFilePath,
-                                }),
-                                languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                                text: baseContent!,
-                            },
-                            // There is no notion of a selection on code hosts yet, so this is empty.
-                            //
-                            // TODO: Support interpreting GitHub #L1-2, etc., URL fragments as selections (and
-                            // similar on other code hosts), or find some other way to get this info.
-                            selections: [],
-                            isActive: false,
-                        })
-                        roots.push({
-                            uri: toRootURI({
+                // When codeView is a diff, add BASE too.
+                if (info.baseContent && info.baseRepoName && info.baseCommitID && info.baseFilePath) {
+                    visibleViewComponents.push({
+                        type: 'textEditor',
+                        item: {
+                            uri: toURIWithPath({
                                 repoName: info.baseRepoName,
                                 commitID: info.baseCommitID,
+                                filePath: info.baseFilePath,
                             }),
-                            inputRevision: info.baseRev || '',
-                        })
-                    }
-
-                    let decoratedLines: number[] = []
-                    if (!info.baseCommitID) {
-                        extensionsController.services.textDocumentDecoration
-                            .getDecorations(toTextDocumentIdentifier(info))
-                            .subscribe(decorations => {
-                                decoratedLines = applyDecorations(dom, codeView, decorations || [], decoratedLines)
-                            })
-                    }
-
-                    extensionsController.services.model.model.next({ roots, visibleViewComponents })
-
-                    const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
-                        part,
-                    }) => ({
-                        repoName: part === 'base' ? info.baseRepoName || info.repoName : info.repoName,
-                        commitID: part === 'base' ? info.baseCommitID! : info.commitID,
-                        filePath: part === 'base' ? info.baseFilePath || info.filePath : info.filePath,
-                        rev: part === 'base' ? info.baseRev || info.baseCommitID! : info.rev || info.commitID,
+                            languageId: getModeFromPath(info.filePath) || 'could not determine mode',
+                            text: info.baseContent,
+                        },
+                        // There is no notion of a selection on code hosts yet, so this is empty.
+                        //
+                        // TODO: Support interpreting GitHub #L1-2, etc., URL fragments as selections (and
+                        // similar on other code hosts), or find some other way to get this info.
+                        selections: [],
+                        isActive: false,
                     })
-
-                    subscriptions.add(
-                        hoverifier.hoverify({
-                            dom,
-                            positionEvents: of(codeView).pipe(findPositionsFromEvents(dom)),
-                            resolveContext,
-                            adjustPosition,
-                        })
-                    )
-
-                    codeView.classList.add('sg-mounted')
-
-                    if (!getToolbarMount) {
-                        return
-                    }
-
-                    const mount = getToolbarMount(codeView)
-
-                    render(
-                        <TelemetryContext.Provider value={eventLogger}>
-                            <CodeViewToolbar
-                                {...info}
-                                platformContext={platformContext}
-                                extensionsController={extensionsController}
-                                buttonProps={
-                                    toolbarButtonProps || {
-                                        className: '',
-                                        style: {},
-                                    }
-                                }
-                                location={H.createLocation(window.location)}
-                            />
-                        </TelemetryContext.Provider>,
-                        mount
-                    )
+                    roots.push({
+                        uri: toRootURI({
+                            repoName: info.baseRepoName,
+                            commitID: info.baseCommitID,
+                        }),
+                        inputRevision: info.baseRev || '',
+                    })
                 }
-            )
+
+                let decoratedLines: number[] = []
+                if (!info.baseCommitID) {
+                    extensionsController.services.textDocumentDecoration
+                        .getDecorations(toTextDocumentIdentifier(info))
+                        .subscribe(decorations => {
+                            decoratedLines = applyDecorations(dom, codeView, decorations || [], decoratedLines)
+                        })
+                }
+
+                extensionsController.services.model.model.next({ roots, visibleViewComponents })
+
+                const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+                    part,
+                }) => ({
+                    repoName: part === 'base' ? info.baseRepoName || info.repoName : info.repoName,
+                    commitID: part === 'base' ? info.baseCommitID! : info.commitID,
+                    filePath: part === 'base' ? info.baseFilePath || info.filePath : info.filePath,
+                    rev: part === 'base' ? info.baseRev || info.baseCommitID! : info.rev || info.commitID,
+                })
+
+                subscriptions.add(
+                    hoverifier.hoverify({
+                        dom,
+                        positionEvents: of(codeView).pipe(findPositionsFromEvents(dom)),
+                        resolveContext,
+                        adjustPosition,
+                    })
+                )
+
+                codeView.classList.add('sg-mounted')
+
+                if (!getToolbarMount) {
+                    return
+                }
+
+                const mount = getToolbarMount(codeView)
+
+                render(
+                    <TelemetryContext.Provider value={eventLogger}>
+                        <CodeViewToolbar
+                            {...info}
+                            platformContext={platformContext}
+                            extensionsController={extensionsController}
+                            buttonProps={
+                                toolbarButtonProps || {
+                                    className: '',
+                                    style: {},
+                                }
+                            }
+                            location={H.createLocation(window.location)}
+                        />
+                    </TelemetryContext.Provider>,
+                    mount
+                )
+            })
     )
 
     return subscriptions

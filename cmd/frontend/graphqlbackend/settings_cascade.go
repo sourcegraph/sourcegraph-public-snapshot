@@ -31,7 +31,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		return mockSettingsCascadeSubjects()
 	}
 
-	subjects := []*settingsSubject{{site: singletonSiteResolver}}
+	subjects := []*settingsSubject{{defaultSettings: singletonDefaultSettingsResolver}, {site: singletonSiteResolver}}
 
 	if r.unauthenticatedActor {
 		return subjects, nil
