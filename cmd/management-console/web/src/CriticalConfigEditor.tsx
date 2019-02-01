@@ -72,16 +72,13 @@ interface State {
     showSavingError: string | null
 }
 
-/** A response from the server when an error occurs while updating configuration. */
-interface UpdateErrorResponse {
+/** A response from the server when an error occurs. */
+interface ErrorResponse {
     /** A human-readable error message. */
     error: string
     /** A stable ID for this kind of error. */
     code: string
 }
-
-/** A response from the server for updating configuration. */
-type UpdateResponse = UpdateErrorResponse | Configuration
 
 export class CriticalConfigEditor extends React.Component<Props, State> {
     public state: State = {
