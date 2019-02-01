@@ -175,16 +175,13 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func httpError(w http.ResponseWriter, message string, code string) {
-	err := json.NewEncoder(w).Encode(struct {
+	_ = json.NewEncoder(w).Encode(struct {
 		Error string `json:"error"`
 		Code  string `json:"code"`
 	}{
 		Error: message,
 		Code:  code,
 	})
-	if err != nil {
-		http.Error(w, "err", http.StatusInternalServerError)
-	}
 }
 
 func httpSuccess(w http.ResponseWriter, payload interface{}) {
