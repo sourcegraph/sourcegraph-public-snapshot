@@ -202,7 +202,7 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
                                 error:
                                     error instanceof TypeError && error.message === 'Failed to fetch'
                                         ? 'Network error - check the browser console for details'
-                                        : error,
+                                        : `error: ${error}`,
                             }))
                     ).subscribe((response: { error: any } | Configuration) => {
                         if ('error' in response) {
