@@ -213,7 +213,7 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		logger.Error("confdb.CriticalCreateIfUpToDate failed", "error", err)
-		httpError(w, errors.Wrap(err, "Error updating latest critical configuration").Error(), "database_error")
+		httpError(w, errors.Wrap(err, "Error updating latest critical configuration").Error(), "internal_error")
 		return
 	}
 
