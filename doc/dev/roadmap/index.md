@@ -25,7 +25,6 @@ Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sou
 - [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
 - [Use nginx as HTTP proxy](https://github.com/sourcegraph/sourcegraph/pull/929)
 - [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
-- [Upgrade to PostgreSQL 11](https://github.com/sourcegraph/sourcegraph/issues/1404)
 
 <small>[Draft announcement](https://github.com/sourcegraph/about/pull/79) --- [All 3.0 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.0)</small>
 
@@ -37,6 +36,7 @@ Release date: 2019-02-20
 
 Backend:
 
+- [Upgrade to PostgreSQL 10.6](https://github.com/sourcegraph/sourcegraph/issues/1404)
 - [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
 
 Distribution:
