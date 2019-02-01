@@ -182,13 +182,16 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 			error_ = errors.New("unknown")
 		}
 		logger.Error("Error updating critical configuration", "error", error_)
-		json.NewEncoder(w).Encode(struct {
+		err := json.NewEncoder(w).Encode(struct {
 			Error string `json:"error"`
 			Code  string `json:"code"`
 		}{
 			Error: error_.Error(),
 			Code:  code,
 		})
+		if err != nil {
+			http.Error(w, "err", http.StatusInternalServerError)
+		}
 	}
 
 	httpSuccess := func(payload interface{}) {
