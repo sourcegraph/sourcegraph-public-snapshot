@@ -1,3 +1,4 @@
+import { truncate } from 'lodash'
 import * as React from 'react'
 import { from, interval, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
@@ -183,29 +184,49 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
                                 LastID: this.state.criticalConfig.ID,
                                 Contents: this.state.content,
                             } as UpdateParams),
-                        }).then(response => response.json().then(json => [response, json]))
-                    )
-                        // .pipe(catchError(err => of(err)))
-                        .subscribe(([response, body]: [Response, UpdateResponse]) => {
-                            if (response.status !== 200 || 'error' in body) {
-                                this.setState({
-                                    showSaving: false,
-                                    showSaved: false,
-                                    showSavingError: (body as UpdateErrorResponse).error,
-                                })
-                                return
-                            }
-                            this.setState({
-                                criticalConfig: body,
-                                content: body.Contents,
-                                showSaving: false,
-                                showSaved: true,
-                                showSavingError: null,
-                            })
-
-                            // Hide the saved indicator after 2.5s.
-                            setTimeout(() => this.setState({ showSaved: false }), 2500)
                         })
+                            .then(async response => {
+                                const text = await response.text()
+                                const truncatedText = truncate(text, { length: 30 })
+                                if (response.status === 200) {
+                                    try {
+                                        return JSON.parse(text)
+                                    } catch (error) {
+                                        return {
+                                            error: `Unexpected error parsing JSON response: ${error}: ${truncatedText}`,
+                                        }
+                                    }
+                                }
+                                return {
+                                    error: `Unexpected HTTP ${response.status}: ${truncatedText}`,
+                                }
+                            })
+                            .catch(error => ({
+                                error:
+                                    error instanceof TypeError && error.message === 'Failed to fetch'
+                                        ? 'Network error - check the browser console for details'
+                                        : error,
+                            }))
+                    ).subscribe((response: { error: any } | Configuration) => {
+                        if ('error' in response) {
+                            this.setState({
+                                showSaving: false,
+                                showSaved: false,
+                                showSavingError: response.error.toString(),
+                            })
+                            return
+                        }
+                        this.setState({
+                            criticalConfig: response,
+                            content: response.Contents,
+                            showSaving: false,
+                            showSaved: true,
+                            showSavingError: null,
+                        })
+
+                        // Hide the saved indicator after 2.5s.
+                        setTimeout(() => this.setState({ showSaved: false }), 2500)
+                    })
                 )
         )
     }

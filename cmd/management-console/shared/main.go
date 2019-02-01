@@ -178,6 +178,9 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "update")
 
 	httpError := func(error_ error, code string) {
+		if error_ == nil {
+			error_ = errors.New("unknown")
+		}
 		logger.Error("Error updating critical configuration", "error", error_)
 		json.NewEncoder(w).Encode(struct {
 			Error string `json:"error"`
