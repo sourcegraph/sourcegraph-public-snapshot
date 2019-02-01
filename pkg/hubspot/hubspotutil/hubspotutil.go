@@ -21,6 +21,11 @@ var SignupEventID = "000001776813"
 
 var client *hubspot.Client
 
+// HasAPIKey returns true if a HubspotAPI key is present. A subset of requests require a HubSpot API key.
+func HasAPIKey() bool {
+	return HubSpotHAPIKey != ""
+}
+
 func init() {
 	// The HubSpot API key will only be available in the production sourcegraph.com environment.
 	// Not having this key only restricts certain requests (e.g. GET requests to the Contacts API),
