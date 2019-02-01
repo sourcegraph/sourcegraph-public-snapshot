@@ -113,7 +113,9 @@ func main() {
 	// Start other repos updates scheduler relay thread.
 	go func() {
 		for repo := range synced {
-			if conf.UpdateScheduler2Enabled() {
+			if conf.Get().DisableAutoGitUpdates {
+				continue
+			} else if conf.UpdateScheduler2Enabled() {
 				repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
 			} else {
 				repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
