@@ -28,26 +28,26 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 			981,
 		},
 		map[int][2][]string{ // private projects
-			10: [2][]string{
-				[]string{ // guests
+			10: {
+				{ // guests
 					"u2",
 				},
-				[]string{ // content ("full access")
+				{ // content ("full access")
 					"u1",
 					"u3",
 				},
 			},
-			20: [2][]string{
-				[]string{
+			20: {
+				{
 					"u3",
 				},
-				[]string{
+				{
 					"u2",
 				},
 			},
-			30: [2][]string{
-				[]string{},
-				[]string{"u3"},
+			30: {
+				{},
+				{"u3"},
 			},
 		},
 		map[string]string{
@@ -158,11 +158,11 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 			981,
 		},
 		map[int][2][]string{ // private projects
-			10: [2][]string{
-				[]string{ // guests
+			10: {
+				{ // guests
 					"u2",
 				},
-				[]string{ // content ("full access")
+				{ // content ("full access")
 					"u1",
 				},
 			},
@@ -193,12 +193,12 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 		t.Fatal(err)
 	}
 	if actual, exp := gitlabMock.madeGetProject, map[string]map[gitlab.GetProjectOp]int{
-		"oauth-u1": map[gitlab.GetProjectOp]int{{ID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
+		"oauth-u1": {{ID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
 	}; !reflect.DeepEqual(exp, actual) {
 		t.Errorf("Unexpected cache behavior. Expected %v, but got %v", exp, actual)
 	}
 	if actual, exp := gitlabMock.madeListTree, map[string]map[gitlab.ListTreeOp]int{
-		"oauth-u1": map[gitlab.ListTreeOp]int{{ProjID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
+		"oauth-u1": {{ProjID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
 	}; !reflect.DeepEqual(exp, actual) {
 		t.Errorf("Unexpected cache behavior. Expected %v, but got %v", exp, actual)
 	}
@@ -213,12 +213,12 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 		t.Fatal(err)
 	}
 	if actual, exp := gitlabMock.madeGetProject, map[string]map[gitlab.GetProjectOp]int{
-		"oauth-u1": map[gitlab.GetProjectOp]int{{ID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
+		"oauth-u1": {{ID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
 	}; !reflect.DeepEqual(exp, actual) {
 		t.Errorf("Unexpected cache behavior. Expected %v, but got %v", exp, actual)
 	}
 	if actual, exp := gitlabMock.madeListTree, map[string]map[gitlab.ListTreeOp]int{
-		"oauth-u1": map[gitlab.ListTreeOp]int{{ProjID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
+		"oauth-u1": {{ProjID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
 	}; !reflect.DeepEqual(exp, actual) {
 		t.Errorf("Unexpected cache behavior. Expected %v, but got %v", exp, actual)
 	}
@@ -233,8 +233,8 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 		t.Fatal(err)
 	}
 	if actual, exp := gitlabMock.madeGetProject, map[string]map[gitlab.GetProjectOp]int{
-		"oauth-u1": map[gitlab.GetProjectOp]int{{ID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
-		"oauth-u2": map[gitlab.GetProjectOp]int{{ID: 981, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
+		"oauth-u1": {{ID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
+		"oauth-u2": {{ID: 981, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
 	}; !reflect.DeepEqual(exp, actual) {
 		t.Errorf("Unexpected cache behavior. Expected %v, but got %v", exp, actual)
 	}
@@ -253,13 +253,13 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	}
 	for i := 0; i < 2; i++ {
 		if actual, exp := gitlabMock.madeGetProject, map[string]map[gitlab.GetProjectOp]int{
-			"oauth-u1": map[gitlab.GetProjectOp]int{{ID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 2},
-			"oauth-u2": map[gitlab.GetProjectOp]int{{ID: 981, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
+			"oauth-u1": {{ID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 2},
+			"oauth-u2": {{ID: 981, CommonOp: gitlab.CommonOp{NoCache: true}}: 1},
 		}; !reflect.DeepEqual(exp, actual) {
 			t.Errorf("Unexpected cache behavior. Expected %v, but got %v", exp, actual)
 		}
 		if actual, exp := gitlabMock.madeListTree, map[string]map[gitlab.ListTreeOp]int{
-			"oauth-u1": map[gitlab.ListTreeOp]int{{ProjID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 2},
+			"oauth-u1": {{ProjID: 10, CommonOp: gitlab.CommonOp{NoCache: true}}: 2},
 		}; !reflect.DeepEqual(exp, actual) {
 			t.Errorf("Unexpected cache behavior. Expected %v, but got %v", exp, actual)
 		}

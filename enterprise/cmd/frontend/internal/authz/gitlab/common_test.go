@@ -4,15 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
-	"strconv"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
 
@@ -158,13 +155,6 @@ func (m mockCache) Delete(key string) {
 	delete(m, key)
 }
 
-func getIntOrDefault(str string, def int) (int, error) {
-	if str == "" {
-		return def, nil
-	}
-	return strconv.Atoi(str)
-}
-
 func acct(userID int32, serviceType, serviceID, accountID, oauthTok string) *extsvc.ExternalAccount {
 	var data extsvc.ExternalAccountData
 	gitlab.SetExternalAccountData(&data, &gitlab.User{
@@ -192,32 +182,6 @@ func repo(uri, serviceType, serviceID, id string) authz.Repo {
 			ServiceID:   serviceID,
 		},
 	}
-}
-
-type mockAuthnProvider struct {
-	configID  auth.ProviderConfigID
-	serviceID string
-}
-
-func (m mockAuthnProvider) ConfigID() auth.ProviderConfigID {
-	return m.configID
-}
-
-func (m mockAuthnProvider) Config() schema.AuthProviders {
-	return schema.AuthProviders{
-		Gitlab: &schema.GitLabAuthProvider{
-			Type: m.configID.Type,
-			Url:  m.configID.ID,
-		},
-	}
-}
-
-func (m mockAuthnProvider) CachedInfo() *auth.ProviderInfo {
-	return &auth.ProviderInfo{ServiceID: m.serviceID}
-}
-
-func (m mockAuthnProvider) Refresh(ctx context.Context) error {
-	panic("should not be called")
 }
 
 func mustURL(t *testing.T, u string) *url.URL {
