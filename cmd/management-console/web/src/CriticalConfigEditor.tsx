@@ -183,20 +183,14 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
                             } as UpdateParams),
                         })
                             .then(async response => {
-                                const text = await response.text()
-                                const truncatedText = truncate(text, { length: 30 })
-                                if (response.status === 200) {
-                                    try {
-                                        return JSON.parse(text)
-                                    } catch (error) {
-                                        return {
-                                            error: `Unexpected error parsing JSON response: ${error}: ${truncatedText}`,
-                                        }
+                                if (response.status !== 200) {
+                                    const text = await response.text()
+                                    const truncatedText = truncate(text, { length: 30 })
+                                    return {
+                                        error: `Unexpected HTTP ${response.status}: ${truncatedText}`,
                                     }
                                 }
-                                return {
-                                    error: `Unexpected HTTP ${response.status}: ${truncatedText}`,
-                                }
+                                return response.json()
                             })
                             .catch(error => ({
                                 error:
