@@ -90,6 +90,9 @@ func updateURL(ctx context.Context) string {
 	q.Set("site", siteid.Get())
 	q.Set("auth", strings.Join(authProviderTypes(), ","))
 	q.Set("deployType", conf.DeployType())
+	q.Set("hasExtURL", strconv.FormatBool(conf.UsingExternalURL()))
+	q.Set("signup", strconv.FormatBool(conf.IsBuiltinSignupAllowed()))
+
 	count, err := usagestats.GetUsersActiveTodayCount()
 	if err != nil {
 		logFunc("usagestats.GetUsersActiveTodayCount failed", "error", err)
@@ -100,6 +103,21 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.Users.Count failed", "error", err)
 	}
 	q.Set("totalUsers", strconv.Itoa(totalUsers))
+	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
+	if err != nil {
+		logFunc("db.Repos.Count failed", "error", err)
+	}
+	q.Set("repos", strconv.FormatBool(totalRepos > 0))
+	searchOccurred, err := usagestats.HasSearchOccurred()
+	if err != nil {
+		logFunc("usagestats.HasSearchOccurred failed", "error", err)
+	}
+	q.Set("searched", strconv.FormatBool(searchOccurred))
+	codeIntelOccurred, err := usagestats.HasCodeIntelOccurred()
+	if err != nil {
+		logFunc("usagestats.HasCodeIntelOccurred failed", "error", err)
+	}
+	q.Set("codeIntel", strconv.FormatBool(codeIntelOccurred))
 	if act, err := getSiteActivityJSON(); err != nil {
 		logFunc("getSiteActivityJSON failed", "error", err)
 	} else {

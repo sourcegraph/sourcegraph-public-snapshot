@@ -284,6 +284,21 @@ func readSrcGitServers() []string {
 	return strings.Fields(v)
 }
 
+func UsingExternalURL() bool {
+	url := Get().Critical.ExternalURL
+	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1"))
+}
+
 func IsExternalURLSecure() bool {
 	return strings.HasPrefix(Get().Critical.ExternalURL, "https:")
+}
+
+func IsBuiltinSignupAllowed() bool {
+	provs := Get().Critical.AuthProviders
+	for _, prov := range provs {
+		if prov.Builtin != nil {
+			return prov.Builtin.AllowSignup
+		}
+	}
+	return false
 }

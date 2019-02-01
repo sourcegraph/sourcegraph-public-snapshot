@@ -143,12 +143,17 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	q := r.URL.Query()
 	clientSiteID := q.Get("site")
 	authProviders := q.Get("auth")
+	builtinSignupAllowed := q.Get("signup")
+	hasExtURL := q.Get("hasExtURL")
 	uniqueUsers := q.Get("u")
 	activity := q.Get("act")
 	initialAdminEmail := q.Get("initAdmin")
 	hasCodeIntelligence := q.Get("codeintel")
 	deployType := q.Get("deployType")
 	totalUsers := q.Get("totalUsers")
+	everRepos := q.Get("repos")
+	everSearched := q.Get("searched")
+	everCodeIntel := q.Get("codeIntel")
 
 	// Log update check.
 	var clientAddr string
@@ -174,8 +179,13 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		"site_activity": %s,
 		"installer_email": "%s",
 		"auth_providers": "%s",
+		"builtin_signup_allowed", "%s",
 		"deploy_type": "%s",
 		"total_user_accounts": "%s",
+		"has_external_url", "%s",
+		"ever_added_repos", "%s",
+		"ever_searched", "%s",
+		"ever_code_intel", "%s",
 		"timestamp": "%s"
 	}`,
 		clientAddr,
@@ -187,8 +197,13 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		activity,
 		initialAdminEmail,
 		authProviders,
+		builtinSignupAllowed,
 		deployType,
 		totalUsers,
+		hasExtURL,
+		everRepos,
+		everSearched,
+		everCodeIntel,
 		time.Now().UTC().Format(time.RFC3339),
 	)
 
