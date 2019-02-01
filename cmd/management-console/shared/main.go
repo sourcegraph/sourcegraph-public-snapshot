@@ -184,13 +184,6 @@ func httpError(w http.ResponseWriter, message string, code string) {
 	})
 }
 
-func httpSuccess(w http.ResponseWriter, payload interface{}) {
-	err := json.NewEncoder(w).Encode(payload)
-	if err != nil {
-		httpError(w, errors.Wrap(err, "Error encoding JSON response").Error(), "internal_error")
-	}
-}
-
 func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "update")
 
