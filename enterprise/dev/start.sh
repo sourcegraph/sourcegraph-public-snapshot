@@ -23,5 +23,5 @@ export DEV_OVERRIDE_SITE_CONFIG=$DEV_PRIVATE_PATH/enterprise/dev/site-config.jso
 export DEV_OVERRIDE_EXTSVC_CONFIG=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
 export GOMOD_ROOT=$PWD
 export PROCFILE=$PWD/dev/Procfile
-export ENTERPRISE_COMMANDS="frontend"
+export ENTERPRISE_COMMANDS="frontend management-console"
 ../dev/launch.sh

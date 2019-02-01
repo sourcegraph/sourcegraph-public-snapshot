@@ -8,7 +8,7 @@
 // 2. Ensure that the management console's responses are never propagated to
 //    unprivileged users.
 //
-package main
+package shared
 
 import (
 	"encoding/json"
@@ -27,7 +27,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
-	"github.com/sourcegraph/sourcegraph/cmd/management-console/internal/tlscertgen"
+	"github.com/sourcegraph/sourcegraph/cmd/management-console/shared/internal/tlscertgen"
 	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
@@ -98,7 +98,7 @@ func configureTLS() error {
 	})
 }
 
-func main() {
+func Main() {
 	env.Lock()
 	env.HandleHelpFlag()
 

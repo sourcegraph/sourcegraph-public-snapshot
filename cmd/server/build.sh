@@ -18,14 +18,13 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend}
+additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console}
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
 server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
 for pkg in $server_pkg \
-    github.com/sourcegraph/sourcegraph/cmd/management-console \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
