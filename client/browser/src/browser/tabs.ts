@@ -38,8 +38,6 @@ interface InjectDetails extends chrome.tabs.InjectDetails {
     runAt?: string
 }
 
-const patternify = (str: string) => `${str}/*`
-
 export const insertCSS = (tabId: number, details: InjectDetails, callback?: () => void) => {
     if (chrome && chrome.tabs && chrome.tabs.insertCSS) {
         chrome.tabs.insertCSS(tabId, details, callback)
