@@ -69,8 +69,9 @@ type repoCreateOrUpdateRequest struct {
 // being updated, so repo-updater can detect when repositories are dropped from
 // a given source.
 func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
+	c := conf.Get()
 	newList := make(sourceRepoList)
-	newScheduler := conf.UpdateScheduler2Enabled()
+	newScheduler := newSchedulerEnabled(c)
 	newMap := make(sourceRepoMap)
 
 	do := func(op repoCreateOrUpdateRequest) {
@@ -90,25 +91,26 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 			return
 		}
 
-		if newScheduler {
+		if !newScheduler {
+			newList[string(createdRepo.Name)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
+		} else if !c.DisableAutoGitUpdates {
 			newMap[createdRepo.Name] = &configuredRepo2{
 				Name:    createdRepo.Name,
 				URL:     op.URL,
 				Enabled: createdRepo.Enabled,
 			}
-			return
 		}
-
-		newList[string(createdRepo.Name)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
 	}
+
 	for repo := range repoChan {
 		do(repo)
 	}
-	if newScheduler {
+
+	if !newScheduler {
+		repos.updateSource(source, newList)
+	} else if !c.DisableAutoGitUpdates {
 		Scheduler.updateSource(source, newMap)
-		return
 	}
-	repos.updateSource(source, newList)
 }
 
 // setUserinfoBestEffort adds the username and password to rawurl. If user is

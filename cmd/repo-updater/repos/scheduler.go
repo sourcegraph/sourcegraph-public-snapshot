@@ -81,43 +81,36 @@ func newUpdateScheduler() *updateScheduler {
 	}
 }
 
-// run starts scheduled repo updates.
-func (s *updateScheduler) run(ctx context.Context) {
-	go s.runScheduleLoop(ctx)
-	go s.runUpdateLoop(ctx)
-}
-
 // runScheduleLoop starts the loop that schedules updates by enqueuing them into the updateQueue.
 func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
 	for {
 		select {
 		case <-s.schedule.wakeup:
 		case <-ctx.Done():
+			s.schedule.reset()
 			return
 		}
 
-		s.schedule.mu.Lock()
+		s.runSchedule()
+		schedLoops.Inc()
+	}
+}
 
-		for {
-			if len(s.schedule.heap) == 0 {
-				break
-			}
+func (s *updateScheduler) runSchedule() {
+	s.schedule.mu.Lock()
+	defer s.schedule.mu.Unlock()
+	defer s.schedule.rescheduleTimer()
 
-			repoUpdate := s.schedule.heap[0]
-			if !repoUpdate.Due.Before(timeNow().Add(time.Millisecond)) {
-				break
-			}
-
-			schedAutoFetch.Inc()
-			s.updateQueue.enqueue(repoUpdate.Repo, priorityLow)
-			repoUpdate.Due = timeNow().Add(repoUpdate.Interval)
-			heap.Fix(s.schedule, 0)
+	for len(s.schedule.heap) != 0 {
+		repoUpdate := s.schedule.heap[0]
+		if !repoUpdate.Due.Before(timeNow().Add(time.Millisecond)) {
+			break
 		}
 
-		s.schedule.rescheduleTimer()
-		s.schedule.mu.Unlock()
-
-		schedLoops.Inc()
+		schedAutoFetch.Inc()
+		s.updateQueue.enqueue(repoUpdate.Repo, priorityLow)
+		repoUpdate.Due = timeNow().Add(repoUpdate.Interval)
+		heap.Fix(s.schedule, 0)
 	}
 }
 
@@ -129,6 +122,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 		select {
 		case <-s.updateQueue.notifyEnqueue:
 		case <-ctx.Done():
+			s.updateQueue.reset()
 			return
 		}
 
@@ -360,6 +354,16 @@ type repoUpdate struct {
 	Index    int    `json:"-"` // the index in the heap
 }
 
+func (q *updateQueue) reset() {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	q.heap = q.heap[:0]
+	q.index = map[api.RepoName]*repoUpdate{}
+	q.seq = 0
+	q.notifyEnqueue = make(chan struct{}, notifyChanBuffer)
+}
+
 // enqueue add the repo to the queue with the given priority.
 func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) {
 	q.mu.Lock()
@@ -564,6 +568,19 @@ func (s *schedule) rescheduleTimer() {
 		s.timer = timeAfterFunc(delay, func() {
 			notify(s.wakeup)
 		})
+	}
+}
+
+func (s *schedule) reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.heap = s.heap[:0]
+	s.index = map[api.RepoName]*scheduledRepoUpdate{}
+	s.wakeup = make(chan struct{}, notifyChanBuffer)
+	if s.timer != nil {
+		s.timer.Stop()
+		s.timer = nil
 	}
 }
 
