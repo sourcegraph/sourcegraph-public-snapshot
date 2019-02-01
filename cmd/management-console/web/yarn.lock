@@ -688,6 +688,11 @@
     "@parcel/utils" "^1.11.0"
     physical-cpu-count "^2.0.0"
 
+"@sourcegraph/react-loading-spinner@0.0.7":
+  version "0.0.7"
+  resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
+  integrity sha512-F4GMp+8XhlRQzEngc+CwbalT8zy8vXMxMrUjhm2cslTjWgWuSft0vSNCmCJDVPshpG/B+Ehb/OzpLLAzsG2JKg==
+
 "@types/node@^10.11.7":
   version "10.12.18"
   resolved "https://registry.npmjs.org/@types/node/-/node-10.12.18.tgz#1d3ca764718915584fcd9f6344621b7672665c67"
