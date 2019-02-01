@@ -17,8 +17,8 @@ type Visibility string
 
 const (
 	Public   Visibility = "public"
-	Private             = "private"
-	Internal            = "internal"
+	Private  Visibility = "private"
+	Internal Visibility = "internal"
 )
 
 // Project is a GitLab project (equivalent to a GitHub repository).
