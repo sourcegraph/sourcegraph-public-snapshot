@@ -12,7 +12,7 @@ RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repo
     echo "http://dl-cdn.alpinelinux.org/alpine/v3.6/community" >> /etc/apk/repositories
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache 'postgresql-contrib=11.1-r0' 'postgresql=11.1-r0' 'redis=3.2.12-r0' bind-tools ca-certificates git@edge mailcap nginx openssh-client su-exec tini
+RUN apk add --no-cache 'postgresql-contrib=9.6.10-r0' 'postgresql=9.6.10-r0' 'redis=3.2.12-r0' bind-tools ca-certificates git@edge mailcap nginx openssh-client su-exec tini
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:d74791c /syntect_server /usr/local/bin/
