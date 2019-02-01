@@ -65,7 +65,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	repo, err := db.Repos.GetByName(ctx, name)
 	if err != nil && envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
-		if err := s.Add(ctx, name); err != nil {
+		if err := s.Add(ctx, name, "github"); err != nil {
 			return nil, err
 		}
 		return db.Repos.GetByName(ctx, name)
@@ -87,7 +87,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 // Add adds the repository with the given name. The name is mapped to a repository by consulting the
 // repo-updater, which contains information about all configured code hosts and the names that they
 // handle.
-func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
+func (s *repos) Add(ctx context.Context, name api.RepoName, serviceType string) (err error) {
 	if Mocks.Repos.Add != nil {
 		return Mocks.Repos.Add(name)
 	}
@@ -98,7 +98,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	gitserverRepo, err := quickGitserverRepo(ctx, name)
+	gitserverRepo, err := quickGitserverRepo(ctx, name, serviceType)
 	if err != nil {
 		return err
 	}
