@@ -19,9 +19,9 @@ For the upgrade to proceed, the Docker socket must be mounted the first time the
 This is needed to run the [Postgres upgrade containers](https://github.com/tianon/docker-postgres-upgrade) in the
 Docker host. When the upgrade is done, the container can be restarted without mounting the Docker socket.
 
-Docker host
 
 ```console
+# Add "--env=SRC_LOG_LEVEL=dbug" below for verbose logging.
 docker run -p 7080:7080 -p 2633:2633 --rm \
   -v ~/.sourcegraph/config:/etc/sourcegraph \
   -v ~/.sourcegraph/data:/var/opt/sourcegraph \
