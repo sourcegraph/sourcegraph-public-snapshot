@@ -174,32 +174,28 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func httpError(w http.ResponseWriter, message string, code string) {
+	err := json.NewEncoder(w).Encode(struct {
+		Error string `json:"error"`
+		Code  string `json:"code"`
+	}{
+		Error: message,
+		Code:  code,
+	})
+	if err != nil {
+		http.Error(w, "err", http.StatusInternalServerError)
+	}
+}
+
+func httpSuccess(w http.ResponseWriter, payload interface{}) {
+	err := json.NewEncoder(w).Encode(payload)
+	if err != nil {
+		httpError(w, errors.Wrap(err, "Error encoding JSON response").Error(), "internal_error")
+	}
+}
+
 func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "update")
-
-	httpError := func(error_ error, code string) {
-		if error_ == nil {
-			error_ = errors.New("unknown")
-		}
-		logger.Error("Error updating critical configuration", "error", error_)
-		err := json.NewEncoder(w).Encode(struct {
-			Error string `json:"error"`
-			Code  string `json:"code"`
-		}{
-			Error: error_.Error(),
-			Code:  code,
-		})
-		if err != nil {
-			http.Error(w, "err", http.StatusInternalServerError)
-		}
-	}
-
-	httpSuccess := func(payload interface{}) {
-		err := json.NewEncoder(w).Encode(payload)
-		if err != nil {
-			httpError(errors.Wrap(err, "Error encoding JSON response"), "internal_error")
-		}
-	}
 
 	var args struct {
 		LastID   string
@@ -207,28 +203,31 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&args)
 	if err != nil {
-		httpError(errors.Wrap(err, "Unexpected error when decoding arguments"), "bad_request")
+		logger.Error("json argument decoding failed", "error", err)
+		httpError(w, errors.Wrap(err, "Unexpected error when decoding arguments").Error(), "bad_request")
 		return
 	}
 
 	lastID, err := strconv.Atoi(args.LastID)
 	lastIDInt32 := int32(lastID)
 	if err != nil {
-		httpError(errors.Wrap(err, "Unexpected error when decoding LastID argument"), "bad_request")
+		logger.Error("argument LastID decoding failed", "error", err)
+		httpError(w, errors.Wrap(err, "Unexpected error when decoding LastID argument").Error(), "bad_request")
 		return
 	}
 
 	critical, err := confdb.CriticalCreateIfUpToDate(r.Context(), &lastIDInt32, args.Contents)
 	if err != nil {
 		if err == confdb.ErrNewerEdit {
-			httpError(confdb.ErrNewerEdit, "newer_edit")
+			httpError(w, confdb.ErrNewerEdit.Error(), "newer_edit")
 			return
 		}
-		httpError(errors.Wrap(err, "Error updating latest critical configuration"), "database_error")
+		logger.Error("confdb.CriticalCreateIfUpToDate failed", "error", err)
+		httpError(w, errors.Wrap(err, "Error updating latest critical configuration").Error(), "database_error")
 		return
 	}
 
-	httpSuccess(&jsonConfiguration{
+	httpSuccess(w, &jsonConfiguration{
 		ID:       strconv.Itoa(int(critical.ID)),
 		Contents: critical.Contents,
 	})
