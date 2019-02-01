@@ -20,15 +20,4 @@ COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
 ENV GO111MODULES=on LANG=en_US.utf8 VERSION=$VERSION
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]
-COPY server /usr/local/bin/
-COPY management-console /usr/local/bin/
-COPY github-proxy /usr/local/bin/
-COPY gitserver /usr/local/bin/
-COPY query-runner /usr/local/bin/
-COPY symbols /usr/local/bin/
-COPY repo-updater /usr/local/bin/
-COPY searcher /usr/local/bin/
-COPY zoekt-archive-index /usr/local/bin/
-COPY zoekt-sourcegraph-indexserver /usr/local/bin/
-COPY zoekt-webserver /usr/local/bin/
-COPY frontend /usr/local/bin/
+COPY * /usr/local/bin/
