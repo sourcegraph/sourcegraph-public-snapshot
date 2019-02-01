@@ -24,6 +24,10 @@ additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.co
 # our enterprise build scripts.
 server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
+cp -R ./cmd/server/rootfs/ "$OUTPUT"
+bindir="$OUTPUT/usr/local/bin"
+mkdir -p "$bindir"
+
 for pkg in $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
@@ -35,8 +39,7 @@ for pkg in $server_pkg \
     github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
 
-    go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+    go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o "$bindir/$(basename "$pkg")" "$pkg"
 done
 
-cp ./cmd/server/entrypoint.sh "$OUTPUT"
-docker build -f cmd/server/Dockerfile -t $IMAGE $OUTPUT
+docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT"

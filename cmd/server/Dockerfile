@@ -5,20 +5,20 @@ RUN apk --no-cache add --virtual build-deps curl jansson-dev libseccomp-dev linu
 
 FROM alpine:3.9
 RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+    echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
     echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
     echo "http://dl-cdn.alpinelinux.org/alpine/v3.6/main" >> /etc/apk/repositories && \
     echo "http://dl-cdn.alpinelinux.org/alpine/v3.6/community" >> /etc/apk/repositories
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache 'bash=4.4.19-r1' 'postgresql-contrib=11.1-r0' 'postgresql=11.1-r0' 'redis=3.2.12-r0' bind-tools ca-certificates git@edge mailcap nginx openssh-client su-exec tini
+RUN apk update && apk add --no-cache 'gosu=1.10-r0' 'bash=4.4.19-r1' 'postgresql-contrib=11.1-r0' 'postgresql=11.1-r0' 'redis=3.2.12-r0' bind-tools ca-certificates git@edge mailcap nginx openssh-client su-exec tini
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:d74791c /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
-COPY * /usr/local/bin/
-RUN mv /usr/local/bin/entrypoint.sh /entrypoint.sh
-
+COPY . /
 ENV GO111MODULES=on LANG=en_US.utf8 VERSION=$VERSION
 ENTRYPOINT ["/entrypoint.sh", "/sbin/tini", "--", "/usr/local/bin/server"]
