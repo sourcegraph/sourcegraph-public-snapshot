@@ -10,11 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/creaper/logger"
-
-	"github.com/sourcegraph/sourcegraph/cmd/creaper/creaper"
-
 	"code.cloudfoundry.org/bytefmt"
+	"github.com/sourcegraph/sourcegraph/cmd/creaper/creaper"
+	"github.com/sourcegraph/sourcegraph/cmd/creaper/logger"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
