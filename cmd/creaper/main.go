@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/creaper/logger"
@@ -60,11 +62,34 @@ func main() {
 
 	}
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancelFunc := context.WithCancel(context.Background())
 
-	creaper.Reap(
-		logger.WithLogger(ctx, "cmd", "creaper"),
-		*cacheDir,
-		*checkFrequency,
-		maxCacheSizeBytes)
+	sigtermChan := make(chan os.Signal, 1)
+	signal.Notify(sigtermChan, os.Interrupt, os.Kill)
+
+	shutdownWaitGroup := &sync.WaitGroup{}
+
+	shutdownWaitGroup.Add(1)
+	go func() {
+		creaper.Reap(
+			logger.WithLogger(ctx, "cmd", "creaper"),
+			*cacheDir,
+			*checkFrequency,
+			maxCacheSizeBytes)
+
+		shutdownWaitGroup.Done()
+	}()
+
+	go func() {
+		// Wait for shutdown signal.
+		_ = <-sigtermChan
+
+		logger.Info(ctx, "Request to shutdown received.")
+
+		cancelFunc()
+	}()
+
+	shutdownWaitGroup.Wait()
+
+	logger.Info(ctx, "Shutdown complete")
 }
