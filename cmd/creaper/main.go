@@ -30,8 +30,8 @@ var checkFrequency = flag.Duration(
 
 var cacheDir = flag.String(
 	"cacheDir",
-	"/tmp",
-	"cache directory to monitor",
+	"",
+	"(required) cache directory to monitor",
 )
 
 var force = flag.Bool(
@@ -53,11 +53,15 @@ func main() {
 
 	// Unless force is specified, do some sanity checking.
 	if !*force {
+		if len(*cacheDir) == 0 {
+			flag.Usage()
+			os.Exit(2)
+		}
+
 		if !strings.HasPrefix(*cacheDir, os.TempDir()) {
 			fmt.Println("Specified cache directory is not a temporary folder. Use --force to override")
 			os.Exit(3)
 		}
-
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
