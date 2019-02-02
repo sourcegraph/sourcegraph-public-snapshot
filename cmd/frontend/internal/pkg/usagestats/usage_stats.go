@@ -441,13 +441,19 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 	// Regardless of authentication status,
 	switch event {
 	case "SEARCHQUERY":
-		logSearchOccurred()
+		if err := logSearchOccurred(); err != nil {
+			return err
+		}
 	case "CODEINTEL":
 		// TODO(Dan): differentiate between go to def and find refs
-		logFindRefsOccurred()
+		if err := logFindRefsOccurred(); err != nil {
+			return err
+		}
 	case "CODEINTELINTEGRATION":
 		// TODO(Dan): differentiate between go to def and find refs
-		logFindRefsOccurred()
+		if err := logFindRefsOccurred(); err != nil {
+			return err
+		}
 	}
 
 	// If the user isn't authenticated, return at this point and don't record user-level properties.
