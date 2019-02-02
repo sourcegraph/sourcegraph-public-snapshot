@@ -103,21 +103,23 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.Users.Count failed", "error", err)
 	}
 	q.Set("totalUsers", strconv.Itoa(totalUsers))
-	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
+	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{Enabled: true, Disabled: true})
+	hasRepos := totalRepos > 0
 	if err != nil {
 		logFunc("db.Repos.Count failed", "error", err)
 	}
-	q.Set("repos", strconv.FormatBool(totalRepos > 0))
+	q.Set("repos", strconv.FormatBool(hasRepos))
 	searchOccurred, err := usagestats.HasSearchOccurred()
 	if err != nil {
 		logFunc("usagestats.HasSearchOccurred failed", "error", err)
 	}
-	q.Set("searched", strconv.FormatBool(searchOccurred))
-	codeIntelOccurred, err := usagestats.HasCodeIntelOccurred()
+	// Searches only count if repos have been added.
+	q.Set("searched", strconv.FormatBool(hasRepos && searchOccurred))
+	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
 	if err != nil {
-		logFunc("usagestats.HasCodeIntelOccurred failed", "error", err)
+		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
 	}
-	q.Set("codeIntel", strconv.FormatBool(codeIntelOccurred))
+	q.Set("refs", strconv.FormatBool(findRefsOccurred))
 	if act, err := getSiteActivityJSON(); err != nil {
 		logFunc("getSiteActivityJSON failed", "error", err)
 	} else {

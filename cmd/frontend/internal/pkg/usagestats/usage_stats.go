@@ -26,8 +26,8 @@ var (
 
 	timeNow = time.Now
 
-	searchOccurred    = false
-	codeIntelOccurred = false
+	searchOccurred   = false
+	findRefsOccurred = false
 )
 
 const (
@@ -37,8 +37,8 @@ const (
 	fCodeIntelActions              = "codeintelactions"
 	fLastActiveCodeHostIntegration = "lastactivecodehostintegration"
 
-	fSearchOccurred    = "searchoccurred"
-	fCodeIntelOccurred = "codeinteloccurred"
+	fSearchOccurred   = "searchoccurred"
+	fFindRefsOccurred = "findrefsoccurred"
 
 	defaultDays   = 14
 	defaultWeeks  = 10
@@ -184,10 +184,10 @@ func HasSearchOccurred() (bool, error) {
 	return redis.Bool(c.Do("GET", keyPrefix+fSearchOccurred))
 }
 
-func HasCodeIntelOccurred() (bool, error) {
+func HasFindRefsOccurred() (bool, error) {
 	c := pool.Get()
 	defer c.Close()
-	return redis.Bool(c.Do("GET", keyPrefix+fCodeIntelOccurred))
+	return redis.Bool(c.Do("GET", keyPrefix+fFindRefsOccurred))
 }
 
 // uniques calculates the list of unique users starting at 00:00:00 on a given UTC date over a
@@ -390,14 +390,14 @@ func logSearchOccurred() error {
 	return c.Send("SET", key, "true")
 }
 
-func logCodeIntelOccurred() error {
-	if codeIntelOccurred {
+func logFindRefsOccurred() error {
+	if findRefsOccurred {
 		return nil
 	}
-	key := keyPrefix + fCodeIntelOccurred
+	key := keyPrefix + fFindRefsOccurred
 	c := pool.Get()
 	defer c.Close()
-	codeIntelOccurred = true
+	findRefsOccurred = true
 	return c.Send("SET", key, "true")
 }
 
@@ -443,8 +443,11 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 	case "SEARCHQUERY":
 		logSearchOccurred()
 	case "CODEINTEL":
+		// TODO(Dan): differentiate between go to def and find refs
+		logFindRefsOccurred()
 	case "CODEINTELINTEGRATION":
-		logCodeIntelOccurred()
+		// TODO(Dan): differentiate between go to def and find refs
+		logFindRefsOccurred()
 	}
 
 	// If the user isn't authenticated, return at this point and don't record user-level properties.

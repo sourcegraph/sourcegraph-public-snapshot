@@ -150,9 +150,9 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	initialAdminEmail := q.Get("initAdmin")
 	deployType := q.Get("deployType")
 	totalUsers := q.Get("totalUsers")
-	everRepos := q.Get("repos")
+	hasRepos := q.Get("repos")
 	everSearched := q.Get("searched")
-	everCodeIntel := q.Get("codeIntel")
+	everFindRefs := q.Get("refs")
 
 	// Log update check.
 	var clientAddr string
@@ -181,9 +181,9 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		"deploy_type": "%s",
 		"total_user_accounts": "%s",
 		"has_external_url", "%s",
-		"ever_added_repos", "%s",
+		"has_repos", "%s",
 		"ever_searched", "%s",
-		"ever_code_intel", "%s",
+		"ever_find_refs", "%s",
 		"timestamp": "%s"
 	}`,
 		clientAddr,
@@ -198,9 +198,9 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		deployType,
 		totalUsers,
 		hasExtURL,
-		everRepos,
+		hasRepos,
 		everSearched,
-		everCodeIntel,
+		everFindRefs,
 		time.Now().UTC().Format(time.RFC3339),
 	)
 
