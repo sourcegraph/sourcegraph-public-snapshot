@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -23,7 +25,11 @@ import (
 // value), those operations will fail. This occurs when the repository isn't cloned on gitserver or
 // when an update is needed (eg in ResolveRevision).
 func CachedGitRepo(ctx context.Context, repo *types.Repo) (*gitserver.Repo, error) {
-	r, err := quickGitserverRepo(ctx, repo.Name)
+	var serviceType string
+	if repo.ExternalRepo != nil {
+		serviceType = repo.ExternalRepo.ServiceType
+	}
+	r, err := quickGitserverRepo(ctx, repo.Name, serviceType)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +42,11 @@ func CachedGitRepo(ctx context.Context, repo *types.Repo) (*gitserver.Repo, erro
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
 func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	gitserverRepo, err := quickGitserverRepo(ctx, repo.Name)
+	var serviceType string
+	if repo.ExternalRepo != nil {
+		serviceType = repo.ExternalRepo.ServiceType
+	}
+	gitserverRepo, err := quickGitserverRepo(ctx, repo.Name, serviceType)
 	if err != nil {
 		return gitserver.Repo{Name: repo.Name}, err
 	}
@@ -57,7 +67,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
 
-func quickGitserverRepo(ctx context.Context, repo api.RepoName) (*gitserver.Repo, error) {
+func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType string) (*gitserver.Repo, error) {
 	// If it is possible to 100% correctly determine it statically, use a fast path. This is
 	// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories
 	// (especially on Sourcegraph.com), which reduces rate limit pressure significantly.
@@ -67,9 +77,9 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName) (*gitserver.Repo
 	lowerRepo := strings.ToLower(string(repo))
 	var hasToken func(context.Context) (bool, error)
 	switch {
-	case strings.HasPrefix(lowerRepo, "github.com/"):
+	case serviceType == github.ServiceType && strings.HasPrefix(lowerRepo, "github.com/"):
 		hasToken = hasGitHubDotComToken
-	case strings.HasPrefix(lowerRepo, "gitlab.com/"):
+	case serviceType == gitlab.ServiceType && strings.HasPrefix(lowerRepo, "gitlab.com/"):
 		hasToken = hasGitLabDotComToken
 	default:
 		return nil, nil

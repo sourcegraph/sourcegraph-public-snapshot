@@ -6,8 +6,6 @@ It takes less than 5 minutes to install and configure a self-hosted instance wit
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
-### 1. Install Sourcegraph
-
 If you've got [Docker installed](https://docs.docker.com/engine/installation/), you're ready to start the server which listens on port `7080` by default.
 
 <!--
@@ -15,31 +13,14 @@ If you've got [Docker installed](https://docs.docker.com/engine/installation/), 
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.0.0-beta.4</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.0.0</code></pre>
+
+The below screen cast will take you from installation to integration with GitHub for code search and code intelligence.
 
 <p class="container text-center">
-  <iframe class="mx-auto" width="560" height="315" src="https://www.youtube.com/embed/HZAGneTpsyA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  <iframe class="mx-auto" width="560" height="315" src="https://www.youtube.com/embed/RCcId4wTXOs?rel=0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </p>
 
-### 2. Sync repositories from GitHub
-
-Select Git repositories for searching by integrating Sourcegraph with GitHub.
-
-<p class="container text-center">
-  <iframe class="mx-auto" width="560" height="315" src="https://www.youtube.com/embed/NvPeBtI9gkA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</p>
-
-### 3. Enable code intelligence
-
-Enable basic code intelligence (go-to-definition, hover tooltips, and find-references) for all languages.
-
-<p class="container text-center">
-  <iframe class="mx-auto" width="560" height="315" src="https://www.youtube.com/embed/Pfy2CjeJ2N4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</p>
-
-> NOTE: Learn more about extensions management on the [extensions usage page](https://docs.sourcegraph.com/extensions/#usage).
-
-## Configuration complete
 
 Now you should have a fully functioning Sourcegraph instance. If something didn't work or you've got a suggestion for making this guide better, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 

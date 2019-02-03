@@ -2,7 +2,7 @@ This directory contains database migrations for the frontend Postgres DB.
 
 ## Usage
 
-Migrations are handled by the [migrate](https://github.com/tsenart/migrate/tree/master/cli#installation) tool. Migrations get applied automatically at application startup. The CLI tool can also be used to manually test migrations.
+Migrations are handled by the [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) tool. Migrations get applied automatically at application startup. The CLI tool can also be used to manually test migrations.
 
 ### Add a new migration
 

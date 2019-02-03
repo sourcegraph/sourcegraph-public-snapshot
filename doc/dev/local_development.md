@@ -39,7 +39,7 @@ Sourcegraph has the following dependencies:
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
   - For macOS we recommend using Docker for Mac instead of `docker-machine`
-- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v11.1.0)
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.0)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
 - [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
@@ -59,7 +59,7 @@ This is a streamlined setup for Mac machines.
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL 11, Redis, Git, and nginx with the following command:
+3.  Install Go, Node, PostgreSQL 9.6, Redis, Git, and nginx with the following command:
 
     ```
     brew install go node redis postgresql@11 git gnu-sed nginx
@@ -68,7 +68,7 @@ This is a streamlined setup for Mac machines.
 4.  Configure PostgreSQL and Redis to start automatically
 
     ```
-    brew services start postgresql@11
+    brew services start postgresql@9.6
     brew services start redis
     ```
 
@@ -240,7 +240,7 @@ While developing Sourcegraph, you may run into:
 
 `frontend | failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:Dirty database version 1514702776. Fix and force version.`
 
-You may have to run migrations manually. First, install the Go [migrate](https://github.com/tsenart/migrate/tree/master/cli#installation) CLI, and run something like:
+You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, and run something like:
 
 Then try:
 
