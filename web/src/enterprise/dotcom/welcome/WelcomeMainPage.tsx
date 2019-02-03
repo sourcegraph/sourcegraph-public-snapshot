@@ -1,12 +1,13 @@
 import * as H from 'history'
+import { shuffle } from 'lodash'
 import CloudUploadIcon from 'mdi-react/CloudUploadIcon'
-import FirefoxIcon from 'mdi-react/FirefoxIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { Logo1, Logo2 } from './logos'
+import { WelcomeMainPageLogos } from './WelcomeMainPageLogos'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
@@ -76,19 +77,12 @@ export class WelcomeMainPage extends React.Component<Props> {
                                 </ul>
                                 <p className="mb-1">
                                     <a href="https://docs.sourcegraph.com/user/tour" target="_blank">
-                                        Learn how it's used
+                                        Used to build better software faster
                                     </a>{' '}
-                                    to build better software faster at:
+                                    at:
                                 </p>
                                 <div className="welcome-main-page__customer-logos d-flex align-items-center pl-2">
-                                    <Logo1
-                                        className="welcome-main-page__customer-logo welcome-main-page__customer-logo-1 mr-3"
-                                        isLightTheme={this.props.isLightTheme}
-                                    />
-                                    <Logo2
-                                        className="welcome-main-page__customer-logo welcome-main-page__customer-logo-2 mr-4"
-                                        isLightTheme={this.props.isLightTheme}
-                                    />
+                                    <WelcomeMainPageLogos isLightTheme={this.props.isLightTheme} />
                                     <span className="small text-muted">
                                         &hellip;and thousands of other organizations.
                                     </span>

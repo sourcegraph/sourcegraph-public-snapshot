@@ -1,0 +1,17 @@
+.welcome-main-page-logos {
+    &__logo {
+        &-1 {
+            height: 1.5rem;
+        }
+        &-2 {
+            height: 2rem;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-top: 5px; // equalize perceived text baseline of customer logos
+        }
+        &-3 {
+            height: 3.5rem;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-top: 6px; // equalize perceived text baseline of customer logos
+        }
+    }
+}

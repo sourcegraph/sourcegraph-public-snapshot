@@ -1,3 +1,5 @@
+@import './WelcomeMainPageLogos';
+
 .welcome-main-page {
     &__logo-mark {
         width: 1.5rem;
@@ -7,17 +9,6 @@
     }
     &__header {
         font-size: 24px;
-    }
-    &__customer-logo {
-        width: auto;
-        &-1 {
-            height: 1.5rem;
-        }
-        &-2 {
-            height: 2rem;
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin-top: 5px; // equalize perceived text baseline of customer logos
-        }
     }
     &__demo {
         border: solid 2px #cccccc; // TODO!(sqs): only while i am on airplane wifi
