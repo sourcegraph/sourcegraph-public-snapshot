@@ -55,6 +55,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                         required={true}
                         value={this.state.email}
                         disabled={this.state.loading}
+                        autoCapitalize="off"
                         autoFocus={true}
                         autoComplete="username email"
                     />
