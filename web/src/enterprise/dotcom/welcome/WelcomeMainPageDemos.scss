@@ -1,0 +1,16 @@
+.welcome-main-page-demos {
+    &__item {
+        touch-action: manipulation;
+    }
+    &__item:hover &__play {
+        visibility: visible !important;
+    }
+    &__video {
+        // To avoid jitter during loading/switching, calculate height of video based on page
+        // dimensions and video aspect ratio.
+        min-height: calc((100vw - (12px * 4)) * (1596 / 2535));
+        @media screen and (min-width: 1000px) {
+            min-height: 550px;
+        }
+    }
+}

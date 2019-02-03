@@ -71,8 +71,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         let logoSrc: string
-        // TODO!(sqs): hack for finding if welcome page is active
-        const showFullLogo = this.props.location.pathname.startsWith('/welcome')
+        const showFullLogo = this.props.location.pathname === '/welcome'
         if (showFullLogo) {
             logoSrc = this.props.isLightTheme
                 ? '/.assets/img/sourcegraph-light-head-logo.svg'

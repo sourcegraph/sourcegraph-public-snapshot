@@ -6,6 +6,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { WelcomeMainPageDemos } from './WelcomeMainPageDemos'
 import { WelcomeMainPageLogos } from './WelcomeMainPageLogos'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -40,7 +41,7 @@ export class WelcomeMainPage extends React.Component<Props> {
                                 <ul className="pl-3">
                                     <li>
                                         <strong>Code search:</strong> fast, cross-repository, on any commit/branch (no
-                                        indexing delay), with support for regexps, punctuation, diffs, and{' '}
+                                        indexing delay), with support for regexps, diffs, and{' '}
                                         <a href="https://docs.sourcegraph.com/user/search/queries" target="_blank">
                                             filters
                                         </a>
@@ -52,8 +53,7 @@ export class WelcomeMainPage extends React.Component<Props> {
                                             target="_blank"
                                         >
                                             all major languages
-                                        </a>{' '}
-                                        (including across repositories and in code review)
+                                        </a>
                                     </li>
                                     <li>
                                         <strong>Deep integrations</strong> with GitHub, GitHub Enterprise, GitLab,
@@ -133,9 +133,14 @@ export class WelcomeMainPage extends React.Component<Props> {
                                 )}
                             </div>
                         </div>
-                        <div className="row justify-content-md-center mt-3">
+                        <div className="row justify-content-md-center mt-3 pt-5 border-top">
+                            <WelcomeMainPageDemos
+                                className="col-md-12 col-lg-10"
+                                location={this.props.location}
+                                history={this.props.history}
+                            />
                             <iframe
-                                className="welcome-main-page__demo col-md-12 col-lg-10"
+                                className="welcome-main-page__demo col-md-12 col-lg-10 d-none"
                                 src="https://www.youtube.com/embed/Pfy2CjeJ2N4"
                                 frameBorder="0"
                                 allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
