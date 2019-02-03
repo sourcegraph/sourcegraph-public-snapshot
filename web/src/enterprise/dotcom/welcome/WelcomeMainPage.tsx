@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { WelcomeMainPageLogos } from './WelcomeMainPageLogos'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -90,6 +91,8 @@ export class WelcomeMainPage extends React.Component<Props> {
                                     <a
                                         className="btn btn-primary btn-lg font-weight-bold mb-1 d-inline-flex align-items-center text-nowrap flex-wrap justify-content-center"
                                         href="https://docs.sourcegraph.com/#quickstart"
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        onClick={() => eventLogger.log('WelcomeDeploySelfHosted')}
                                     >
                                         <CloudUploadIcon className="icon-inline mr-2" /> Deploy self-hosted Sourcegraph
                                     </a>
@@ -102,6 +105,8 @@ export class WelcomeMainPage extends React.Component<Props> {
                                     <a
                                         className="btn btn-secondary mb-1 d-inline-flex align-items-center"
                                         href="https://docs.sourcegraph.com/integration/browser_extension"
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        onClick={() => eventLogger.log('WelcomeInstallBrowserExtension')}
                                     >
                                         Install browser extension
                                     </a>
@@ -110,10 +115,15 @@ export class WelcomeMainPage extends React.Component<Props> {
                                         private code, connect it to your self-hosted Sourcegraph instance.
                                     </small>
                                 </div>
-                                {!!this.props.authenticatedUser && ( // TODO!(sqs): single negation
+                                {!this.props.authenticatedUser && (
                                     <div className="mt-4">
-                                        {/* TODO!(sqs): make this different if signed in */}
-                                        <Link to="/sign-up" target="_blank" className="welcome-main-page__sign-up">
+                                        <Link
+                                            to="/sign-up"
+                                            target="_blank"
+                                            className="welcome-main-page__sign-up"
+                                            // tslint:disable-next-line:jsx-no-lambda
+                                            onClick={() => eventLogger.log('WelcomeSignUpForSourcegraphDotCom')}
+                                        >
                                             Sign up on Sourcegraph.com
                                         </Link>
                                         <small className="text-muted d-block">

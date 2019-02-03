@@ -97,8 +97,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 {logo}
                             </Link>
                         )}
-                        {!this.state.authRequired && (
-                            <div className="global-navbar__search-box-container">
+                        {!this.state.authRequired && this.props.location.pathname !== '/welcome' && (
+                            <div className="global-navbar__search-box-container d-none d-sm-flex">
                                 <SearchNavbarItem
                                     {...this.props}
                                     navbarSearchQuery={this.props.navbarSearchQuery}
