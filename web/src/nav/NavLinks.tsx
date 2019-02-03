@@ -1,25 +1,28 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { CommandListPopoverButton } from '../../../shared/src/commandPalette/CommandList'
+import { Link } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { isDiscussionsEnabled } from '../discussions'
 import { KeybindingsProps } from '../keybindings'
-import { showDotComMarketing } from '../util/features'
 import { UserNavItem } from './UserNavItem'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsControllerProps, KeybindingsProps {
+interface Props
+    extends SettingsCascadeProps,
+        KeybindingsProps,
+        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'> {
     location: H.Location
-    history: H.History
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
+    showDotComMarketing: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -40,14 +43,14 @@ export class NavLinks extends React.PureComponent<Props> {
                         </Link>
                     </li>
                 )}
-                {showDotComMarketing && this.props.location.pathname !== '/welcome' && (
+                {this.props.showDotComMarketing && this.props.location.pathname !== '/welcome' && (
                     <li className="nav-item">
                         <Link to="/welcome" className="nav-link">
                             Welcome
                         </Link>
                     </li>
                 )}
-                {showDotComMarketing && this.props.location.pathname === '/welcome' && (
+                {this.props.showDotComMarketing && this.props.location.pathname === '/welcome' && (
                     <li className="nav-item">
                         <a href="https://docs.sourcegraph.com" className="nav-link" target="_blank">
                             Docs
@@ -61,7 +64,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     platformContext={this.props.platformContext}
                     location={this.props.location}
                 />
-                {(!showDotComMarketing ||
+                {(!this.props.showDotComMarketing ||
                     !!this.props.authenticatedUser ||
                     this.props.location.pathname !== '/welcome') && (
                     <li className="nav-item">
@@ -86,7 +89,7 @@ export class NavLinks extends React.PureComponent<Props> {
                                 </Link>
                             </li>
                         )}
-                        {showDotComMarketing && (
+                        {this.props.showDotComMarketing && (
                             <li className="nav-item">
                                 <a href="https://about.sourcegraph.com" className="nav-link">
                                     About
@@ -116,7 +119,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         <UserNavItem
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
-                            showAbout={showDotComMarketing}
+                            showAbout={this.props.showDotComMarketing}
                             showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
                         />
                     </li>

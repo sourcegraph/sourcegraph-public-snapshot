@@ -10,6 +10,7 @@ import { authRequired } from '../auth'
 import { KeybindingsProps } from '../keybindings'
 import { parseSearchURLQuery } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsControllerProps, KeybindingsProps {
@@ -107,7 +108,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                         )}
                     </>
                 )}
-                {!this.state.authRequired && <NavLinks {...this.props} />}
+                {!this.state.authRequired && <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />}
             </div>
         )
     }

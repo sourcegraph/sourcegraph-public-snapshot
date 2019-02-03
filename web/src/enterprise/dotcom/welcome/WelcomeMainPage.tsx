@@ -47,7 +47,7 @@ export class WelcomeMainPage extends React.Component<Props> {
                                         </a>
                                     </li>
                                     <li>
-                                        <strong>Code intelligence:</strong> go-to-definition and find-references for{' '}
+                                        <strong>Code navigation:</strong> go-to-definition and find-references for{' '}
                                         <a
                                             href="https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22"
                                             target="_blank"

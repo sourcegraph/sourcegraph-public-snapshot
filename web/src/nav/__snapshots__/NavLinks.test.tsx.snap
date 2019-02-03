@@ -1,0 +1,125 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
+Array [
+  "Search /search",
+  "Welcome /welcome",
+  "ActionsNavItems",
+  "Explore /explore",
+  "CommandListPopoverButton",
+  "UserNavItem",
+]
+`;
+
+exports[`NavLinks authed Sourcegraph.com /search 1`] = `
+Array [
+  "Welcome /welcome",
+  "ActionsNavItems",
+  "Explore /explore",
+  "CommandListPopoverButton",
+  "UserNavItem",
+]
+`;
+
+exports[`NavLinks authed Sourcegraph.com /welcome 1`] = `
+Array [
+  "Docs https://docs.sourcegraph.com",
+  "ActionsNavItems",
+  "Explore /explore",
+  "UserNavItem",
+]
+`;
+
+exports[`NavLinks authed self-hosted /foo 1`] = `
+Array [
+  "Search /search",
+  "ActionsNavItems",
+  "Explore /explore",
+  "CommandListPopoverButton",
+  "UserNavItem",
+]
+`;
+
+exports[`NavLinks authed self-hosted /search 1`] = `
+Array [
+  "ActionsNavItems",
+  "Explore /explore",
+  "CommandListPopoverButton",
+  "UserNavItem",
+]
+`;
+
+exports[`NavLinks authed self-hosted /welcome 1`] = `
+Array [
+  "ActionsNavItems",
+  "Explore /explore",
+  "UserNavItem",
+]
+`;
+
+exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
+Array [
+  "Search /search",
+  "Welcome /welcome",
+  "ActionsNavItems",
+  "Explore /explore",
+  "Extensions /extensions",
+  "Sign in /sign-in",
+  "About https://about.sourcegraph.com",
+  "Help /help",
+  "CommandListPopoverButton",
+]
+`;
+
+exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
+Array [
+  "Welcome /welcome",
+  "ActionsNavItems",
+  "Explore /explore",
+  "Extensions /extensions",
+  "Sign in /sign-in",
+  "About https://about.sourcegraph.com",
+  "Help /help",
+  "CommandListPopoverButton",
+]
+`;
+
+exports[`NavLinks unauthed Sourcegraph.com /welcome 1`] = `
+Array [
+  "Docs https://docs.sourcegraph.com",
+  "ActionsNavItems",
+  "Sign in /sign-in",
+  "About https://about.sourcegraph.com",
+]
+`;
+
+exports[`NavLinks unauthed self-hosted /foo 1`] = `
+Array [
+  "Search /search",
+  "ActionsNavItems",
+  "Explore /explore",
+  "Extensions /extensions",
+  "Sign in /sign-in",
+  "Help /help",
+  "CommandListPopoverButton",
+]
+`;
+
+exports[`NavLinks unauthed self-hosted /search 1`] = `
+Array [
+  "ActionsNavItems",
+  "Explore /explore",
+  "Extensions /extensions",
+  "Sign in /sign-in",
+  "Help /help",
+  "CommandListPopoverButton",
+]
+`;
+
+exports[`NavLinks unauthed self-hosted /welcome 1`] = `
+Array [
+  "ActionsNavItems",
+  "Explore /explore",
+  "Sign in /sign-in",
+]
+`;

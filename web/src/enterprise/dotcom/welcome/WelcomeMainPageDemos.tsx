@@ -18,36 +18,25 @@ const BASE_VIDEO_URL = 'https://storage.googleapis.com/sourcegraph-assets/video/
 // To convert videos from mp4 (from kazam) to m4v (for iPhone):
 //
 // ffmpeg -i INPUT_FILE -pix_fmt yuv420p -vf "scale=-2:720:flags=lanczos" -vcodec libx264 -level 3.2 -profile:v main -preset medium -crf 23 -x264-params ref=4 -movflags +faststart OUTPUT_FILE
+//
+// To upload files:
+//
+// gsutil cp -a public-read -r INPUT_FILES gs://sourcegraph-assets/video/welcome/video/
 const VIDEOS: { title: string; hash: string; filename: string }[] = [
     {
-        title: 'Go to definition',
-        hash: 'go-to-definition',
-        filename: 'Welcome-GoToDefinition',
+        title: 'Code navigation',
+        hash: 'code-navigation',
+        filename: 'Welcome-CodeNavigation',
     },
     {
-        title: 'Find references',
-        hash: 'find-references',
-        filename: 'Welcome-FindReferences',
-    },
-    {
-        title: 'Search',
-        hash: 'search',
+        title: 'Code search',
+        hash: 'code-search',
         filename: 'Welcome-Search',
     },
     {
-        title: 'On GitHub files',
-        hash: 'github-files-integration',
-        filename: 'Welcome-GitHub-GoToDefinition',
-    },
-    {
-        title: 'On GitHub PRs',
-        hash: 'github-pull-request-integration',
-        filename: 'Welcome-GitHub-PR-GoToDefinition',
-    },
-    {
-        title: 'Code coverage',
-        hash: 'code-coverage',
-        filename: 'Welcome-Coverage',
+        title: 'GitHub integration',
+        hash: 'github-integration',
+        filename: 'Welcome-GitHub',
     },
 ]
 
@@ -57,23 +46,21 @@ export class WelcomeMainPageDemos extends React.PureComponent<Props> {
         const video = VIDEOS.find(v => v.hash === activeTab) || VIDEOS[0]
         return (
             <div className={`welcome-main-page-demos ${this.props.className}`}>
-                <ul className="nav nav-pills text-nowrap mb-2 justify-content-md-center">
+                <ul className="nav nav-pills text-nowrap justify-content-md-center">
+                    <li className="nav-item disabled text-muted d-flex align-items-center mr-2 mb-2">
+                        <PlayCircleOutlineIcon className="mr-2" /> Demos:
+                    </li>
                     {VIDEOS.map(({ title, hash }, i) => (
                         <li className="nav-item" key={i}>
                             <Link
                                 to={{ hash }}
-                                className={classnames('welcome-main-page-demos__item nav-link px-2', {
+                                className={classnames('welcome-main-page-demos__item nav-link border mx-1 mb-2', {
                                     active: activeTab === hash,
                                 })}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 onClick={() => eventLogger.log('WelcomeMainPageDemosVideo', { hash })}
                             >
-                                {title}{' '}
-                                <PlayCircleOutlineIcon
-                                    className={classnames('welcome-main-page-demos__play icon-inline', {
-                                        invisible: activeTab !== hash,
-                                    })}
-                                />
+                                {title}
                             </Link>
                         </li>
                     ))}
