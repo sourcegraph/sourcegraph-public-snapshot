@@ -161,16 +161,10 @@ html {
     font-size: 16px;
 }
 
-body {
-    height: 100vh;
-    display: flex;
-}
-
 // React root element
 // stylelint-disable-next-line selector-max-id
 #root {
-    display: flex;
-    width: 100%;
+    overflow: hidden;
 }
 
 // Selection highlight is the background color for matched/highlighted tokens,

@@ -1,6 +1,7 @@
 .layout {
     display: flex;
     width: 100%;
+    overflow: hidden;
     flex-direction: column;
     align-items: center;
 
@@ -8,7 +9,9 @@
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
-        overflow: auto;
+        overflow-x: auto;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
 
         &--restricted {
             padding: 0 2.5rem;
