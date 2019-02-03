@@ -11,8 +11,7 @@
         font-size: 24px;
     }
     &__demo {
-        border: solid 2px #cccccc; // TODO!(sqs): only while i am on airplane wifi
-        min-height: 200px; // reduce jitter while page is loading
+        min-height: 540px; // reduce jitter while page is loading
     }
 }
 

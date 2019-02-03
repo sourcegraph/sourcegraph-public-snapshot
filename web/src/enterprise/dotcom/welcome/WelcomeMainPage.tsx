@@ -1,12 +1,10 @@
 import * as H from 'history'
-import { shuffle } from 'lodash'
 import CloudUploadIcon from 'mdi-react/CloudUploadIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { Logo1, Logo2 } from './logos'
 import { WelcomeMainPageLogos } from './WelcomeMainPageLogos'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -40,7 +38,7 @@ export class WelcomeMainPage extends React.Component<Props> {
                                 <p>Sourcegraph is a web-based code search and navigation tool for dev teams.</p>
                                 <ul className="pl-3">
                                     <li>
-                                        <strong>Code search:</strong> fast, cross-repository, works on any commit (no
+                                        <strong>Code search:</strong> fast, cross-repository, on any commit/branch (no
                                         indexing delay), with support for regexps, punctuation, diffs, and{' '}
                                         <a href="https://docs.sourcegraph.com/user/search/queries" target="_blank">
                                             filters
@@ -52,23 +50,22 @@ export class WelcomeMainPage extends React.Component<Props> {
                                             href="https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22"
                                             target="_blank"
                                         >
-                                            top languages
+                                            all major languages
                                         </a>{' '}
-                                        (via{' '}
-                                        <a href="https://docs.sourcegraph.com/extensions" target="_blank">
-                                            extensions
-                                        </a>
-                                        )
+                                        (including across repositories and in code review)
                                     </li>
                                     <li>
                                         <strong>Deep integrations</strong> with GitHub, GitHub Enterprise, GitLab,
-                                        Bitbucket, Phabricator, etc.
+                                        Bitbucket Server, Phabricator, etc., plus a{' '}
+                                        <a href="https://docs.sourcegraph.com/extensions" target="_blank">
+                                            powerful extension API
+                                        </a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/sourcegraph/sourcegraph" target="_blank">
                                             Open-source
                                         </a>
-                                        , self-hosted, and free (paid{' '}
+                                        , self-hosted, and free (
                                         <a href="https://about.sourcegraph.com/pricing" target="_blank">
                                             Enterprise
                                         </a>{' '}
@@ -77,9 +74,9 @@ export class WelcomeMainPage extends React.Component<Props> {
                                 </ul>
                                 <p className="mb-1">
                                     <a href="https://docs.sourcegraph.com/user/tour" target="_blank">
-                                        Used to build better software faster
+                                        See how it's used
                                     </a>{' '}
-                                    at:
+                                    to build better software faster at:
                                 </p>
                                 <div className="welcome-main-page__customer-logos d-flex align-items-center pl-2">
                                     <WelcomeMainPageLogos isLightTheme={this.props.isLightTheme} />
@@ -109,8 +106,8 @@ export class WelcomeMainPage extends React.Component<Props> {
                                         Install browser extension
                                     </a>
                                     <small className="text-muted d-block">
-                                        Adds go-to-definition and find-references to GitHub and other code hosts. To use
-                                        with private code, connect it to your self-hosted Sourcegraph instance.
+                                        Adds go-to-definition and find-references to GitHub and other code hosts. For
+                                        private code, connect it to your self-hosted Sourcegraph instance.
                                     </small>
                                 </div>
                                 {!!this.props.authenticatedUser && ( // TODO!(sqs): single negation
