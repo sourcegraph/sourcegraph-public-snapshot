@@ -1,11 +1,10 @@
 @import '../search/input/QueryInput';
 
 .global-navbar {
-    flex: none;
+    flex: 0 0 2.75rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 2.75rem;
     width: 100%;
     z-index: 200;
     &--bg {

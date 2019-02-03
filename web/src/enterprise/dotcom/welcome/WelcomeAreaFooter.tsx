@@ -121,7 +121,7 @@ export const WelcomeAreaFooter: React.FunctionComponent<{ isLightTheme: boolean 
                 </ul>
             </div>
         </div>
-        <p className="text-muted mt-3">
+        <p className="text-muted mt-3 pb-2">
             <a href="https://about.sourcegraph.com/terms" target="_blank">
                 Terms
             </a>{' '}
