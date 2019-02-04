@@ -66,7 +66,7 @@
     "@types/gulp": "4.0.5",
     "@types/he": "1.1.0",
     "@types/highlight.js": "9.12.3",
-    "@types/jest": "23.3.12",
+    "@types/jest": "23.3.13",
     "@types/lodash": "4.14.119",
     "@types/marked": "0.5.0",
     "@types/mermaid": "8.0.0",

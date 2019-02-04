@@ -1505,8 +1505,9 @@
     sourcegraph "*"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "1.1.0"
+  dependencies:
+    sourcegraph "*"
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -2240,10 +2241,10 @@
     "@types/events" "*"
     "@types/node" "*"
 
-"@types/jest@23.3.12":
-  version "23.3.12"
-  resolved "https://registry.npmjs.org/@types/jest/-/jest-23.3.12.tgz#7e0ced251fa94c3bc2d1023d4b84b2992fa06376"
-  integrity sha512-/kQvbVzdEpOq4tEWT79yAHSM4nH4xMlhJv2GrLVQt4Qmo8yYsPdioBM1QpN/2GX1wkfMnyXvdoftvLUr0LBj7Q==
+"@types/jest@23.3.13":
+  version "23.3.13"
+  resolved "https://registry.npmjs.org/@types/jest/-/jest-23.3.13.tgz#c81484b6f4ca007bb09887ed15ecb3286d58f928"
+  integrity sha512-ePl4l+7dLLmCucIwgQHAgjiepY++qcI6nb8eAwGNkB6OxmTe3Z9rQU3rSpomqu42PCCnlThZbOoxsf+qylJsLA==
 
 "@types/json-schema@^7.0.1":
   version "7.0.1"
@@ -13653,8 +13654,7 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "20.1.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
