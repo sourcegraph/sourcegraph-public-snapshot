@@ -36,4 +36,4 @@ COPY --from=sourcegraph/syntect_server:d74791c /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 COPY . /
 ENV GO111MODULES=on LANG=en_US.utf8 VERSION=$VERSION
-ENTRYPOINT ["/entrypoint.sh", "/sbin/tini", "--", "/usr/local/bin/server"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]
