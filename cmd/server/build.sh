@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # We want to build multiple go binaries, so we use a custom build step on CI.
-cd $(dirname "${BASH_SOURCE[0]}")/../..
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
 
-OUTPUT=`mktemp -d -t sgserver_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
 cleanup() {
     rm -rf "$OUTPUT"
 }
@@ -24,7 +24,7 @@ additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.co
 # our enterprise build scripts.
 server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
-cp -R ./cmd/server/rootfs/ "$OUTPUT"
+cp -a ./cmd/server/rootfs/. "$OUTPUT"
 bindir="$OUTPUT/usr/local/bin"
 mkdir -p "$bindir"
 

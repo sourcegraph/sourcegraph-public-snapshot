@@ -16,6 +16,7 @@ require (
 	github.com/dghubble/gologin v1.0.2-0.20181013174641-0e442dd5bb73
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/die-net/lrucache v0.0.0-20190123005519-19a39ef22a11
+	github.com/docker/docker v0.7.3-0.20190108045446-77df18c24acf
 	github.com/emersion/go-imap v1.0.0-beta.1
 	github.com/emersion/go-sasl v0.0.0-20161116183048-7e096a0a6197 // indirect
 	github.com/ericchiang/k8s v1.2.0
