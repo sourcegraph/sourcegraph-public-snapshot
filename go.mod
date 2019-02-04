@@ -120,7 +120,7 @@ require (
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190204210834-41f3e6584952
 	golang.org/x/time v0.0.0-20190104202802-85acf8d2951c
-	golang.org/x/tools v0.0.0-20190203000907-7414d4c1f71c
+	golang.org/x/tools v0.0.0-20190204220810-b2f7fe607dec
 	google.golang.org/api v0.1.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
