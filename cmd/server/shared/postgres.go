@@ -281,7 +281,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 	return nil
 }
 
-// HostMountpoint finds the Docker host mountpoint corresponding to the given path
+// hostMountPoint finds the Docker host mountpoint corresponding to the given path
 // in the container with the given id, if any.
 func hostMountPoint(ctx context.Context, cli *docker.Client, id, path string) (string, error) {
 	c, err := cli.ContainerInspect(ctx, id)
