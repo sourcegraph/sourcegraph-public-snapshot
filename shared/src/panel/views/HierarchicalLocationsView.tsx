@@ -92,7 +92,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                                         locationsOrError.length > 0,
                                 })
                             }),
-                            endWith({ locationsComplete: true })
+                            endWith({ ...this.state, locationsComplete: true })
                         )
                     )
                 )

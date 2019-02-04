@@ -1,5 +1,6 @@
-import { combineLatest, merge, ReplaySubject } from 'rxjs'
+import { combineLatest, merge, Observable, ReplaySubject } from 'rxjs'
 import { map, mergeMap, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
+import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../../shared/src/settings/edit'
@@ -84,14 +85,15 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
 
             return storage.observeSync('sourcegraphURL').pipe(
                 take(1),
-                mergeMap(url =>
-                    requestGraphQL({
-                        ctx: getContext({ repoKey: '', isRepoSpecific: false }),
-                        request,
-                        variables,
-                        url,
-                        requestMightContainPrivateInfo,
-                    })
+                mergeMap(
+                    (url: string): Observable<GraphQLResult<any>> =>
+                        requestGraphQL({
+                            ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+                            request,
+                            variables,
+                            url,
+                            requestMightContainPrivateInfo,
+                        })
                 )
             )
         },

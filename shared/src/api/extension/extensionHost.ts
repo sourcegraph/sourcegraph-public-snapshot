@@ -1,4 +1,4 @@
-import { from, Subscription, Unsubscribable } from 'rxjs'
+import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { createProxy, handleRequests } from '../common/proxy'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'

@@ -202,7 +202,7 @@
     "react-stripe-elements": "^2.0.1",
     "react-visibility-sensor": "^5.0.2",
     "reactstrap": "https://registry.npmjs.org/@sqs/reactstrap/-/reactstrap-6.5.0-tmp1.tgz",
-    "rxjs": "^6.3.3",
+    "rxjs": "^6.4.0",
     "sanitize-html": "^1.20.0",
     "sourcegraph": "link:packages/sourcegraph-extension-api",
     "string-score": "^1.0.1",

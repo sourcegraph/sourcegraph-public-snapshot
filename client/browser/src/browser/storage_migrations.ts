@@ -18,7 +18,7 @@ export function provideMigrations(area: chrome.storage.StorageArea): MigratableS
     const migrated = migrations.pipe(
         switchMap(
             migrate =>
-                new Observable(observer => {
+                new Observable<void>(observer => {
                     area.get(items => {
                         const { newItems, keysToRemove } = migrate(items as StorageItems)
                         area.remove(keysToRemove || [], () => {

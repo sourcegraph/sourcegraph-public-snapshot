@@ -623,7 +623,7 @@ interface ResolvedDiff {
 
 export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> {
     // TODO: Do a proper refactor and convert all of this function call and it's deps from Promises to Observables.
-    return from<ResolvedDiff>(
+    return from(
         new Promise<ResolvedDiff>((resolve, reject) => {
             getPropsWithInfo(props)
                 .then(propsWithInfo => {
