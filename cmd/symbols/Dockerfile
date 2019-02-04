@@ -10,6 +10,15 @@ RUN apk add --no-cache bind-tools ca-certificates mailcap tini
 
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
+# universal-ctags doesn't support some popular languages out of the box (Scala,
+# Swift, and Haskell, to name a few). However, you can add language support by
+# providing regexes on the command line or in a configuration file.
+# universal-ctags looks in the current working directory for config files during
+# initialization:
+# https://github.com/universal-ctags/ctags/blob/1b747b38589f7a1c98ac9fe0a0b8b174dd476050/docs/optlib.rst#preload-option-file
+WORKDIR /
+COPY .ctags.d /.ctags.d
+
 ENV CACHE_DIR=/mnt/cache/symbols
 EXPOSE 3184
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/symbols"]

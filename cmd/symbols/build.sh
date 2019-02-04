@@ -20,4 +20,7 @@ for pkg in github.com/sourcegraph/sourcegraph/cmd/symbols; do
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
+mkdir "$OUTPUT/.ctags.d"
+cp cmd/symbols/.ctags.d/additional-languages.ctags "$OUTPUT/.ctags.d/additional-languages.ctags"
+
 docker build -f cmd/symbols/Dockerfile -t $IMAGE $OUTPUT
