@@ -43,13 +43,13 @@
 
 --langdef=swift
 --langmap=swift:.swift
---regex-swift=/\bclass\b[[:space:]]+([[:alnum:]_]+)/\1/c,class/
---regex-swift=/\benum\b[[:space:]]+([[:alnum:]_]+)/\1/e,enum/
---regex-swift=/\bfunc\b[[:space:]]+([[:alnum:]_]+)/\1/f,function/
---regex-swift=/\bprotocol\b[[:space:]]+([[:alnum:]_]+)/\1/i,interface/
---regex-swift=/\bstruct\b[[:space:]]+([[:alnum:]_]+)/\1/s,struct/
---regex-swift=/\bextension\b[[:space:]]+([[:alnum:]_]+)/\1/d,define/
---regex-swift=/\btypealias\b[[:space:]]+([[:alnum:]_]+)/\1/a,alias/
+--regex-swift=/^[[:space:]]*class[[:space:]]+([[:alnum:]_]+)/\1/c,class/
+--regex-swift=/^[[:space:]]*enum[[:space:]]+([[:alnum:]_]+)/\1/e,enum/
+--regex-swift=/^[[:space:]]*func[[:space:]]+([[:alnum:]_]+)/\1/f,function/
+--regex-swift=/^[[:space:]]*protocol[[:space:]]+([[:alnum:]_]+)/\1/i,interface/
+--regex-swift=/^[[:space:]]*struct[[:space:]]+([[:alnum:]_]+)/\1/s,struct/
+--regex-swift=/^[[:space:]]*extension[[:space:]]+([[:alnum:]_]+)/\1/d,define/
+--regex-swift=/^[[:space:]]*typealias[[:space:]]+([[:alnum:]_]+)/\1/a,alias/
 
 --langdef=kotlin
 --langmap=kotlin:+.kt
