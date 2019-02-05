@@ -154,10 +154,6 @@ export const fetchFileContents = (info: FileInfo) => {
             headHasFileContents: headFileContent.length > 0,
             baseHasFileContents: baseFileContent ? baseFileContent.length > 0 : undefined,
         })),
-        catchError(error => {
-            console.log(error)
-
-            return [info]
-        })
+        catchError(error => [info])
     )
 }
