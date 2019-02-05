@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
 var ravenClient *raven.Client
@@ -29,7 +30,7 @@ func init() {
 		ravenClient.DropHandler = func(pkt *raven.Packet) {
 			log.Println("WARNING: dropped error report because buffer is full:", pkt)
 		}
-		ravenClient.SetRelease(env.Version)
+		ravenClient.SetRelease(version.Version())
 	}
 }
 

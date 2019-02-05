@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -103,7 +102,7 @@ func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
 	return canReloadSite && err == nil
 }
 
-func (r *siteResolver) BuildVersion() string { return env.Version }
+func (r *siteResolver) BuildVersion() string { return version.Version() }
 
 func (r *siteResolver) ProductVersion() string { return version.Version() }
 

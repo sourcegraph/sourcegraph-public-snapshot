@@ -18,6 +18,6 @@ RUN apk add --no-cache 'postgresql-contrib=9.6.10-r0' 'postgresql=9.6.10-r0' 're
 COPY --from=sourcegraph/syntect_server:d74791c /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
-ENV GO111MODULES=on LANG=en_US.utf8 VERSION=$VERSION
+ENV GO111MODULES=on LANG=en_US.utf8
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]
 COPY * /usr/local/bin/

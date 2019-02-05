@@ -22,8 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
@@ -80,7 +80,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/healthz", "/__version":
-			fmt.Fprintf(w, env.Version)
+			fmt.Fprintf(w, version.Version())
 		default:
 			next.ServeHTTP(w, r)
 		}

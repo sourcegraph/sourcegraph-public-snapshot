@@ -8,7 +8,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 
 	"github.com/google/uuid"
 	"golang.org/x/net/context"
@@ -46,7 +46,7 @@ type eventLogger struct {
 // new returns a new EventLogger client
 func new() *eventLogger {
 	environment := "production"
-	if env.Version == "dev" {
+	if version.Version() == "dev" {
 		environment = "development"
 	}
 	return &eventLogger{
