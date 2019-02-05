@@ -255,7 +255,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 	case <-statusch:
 	}
 
-	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
+	out, err = cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve %q logs", name)
 	}
