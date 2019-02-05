@@ -174,7 +174,16 @@ function extensionsWithMatchedActivationEvent(
     return enabledExtensions.filter(x => {
         try {
             if (!x.manifest) {
-                console.warn(`Extension ${x.id} was not found. Remove it from settings to suppress this warning.`)
+                const match = /^sourcegraph\/lang-(.*)$/.exec(x.id)
+                if (match) {
+                    console.warn(
+                        `Extension ${x.id} has been renamed to sourcegraph/${match[1]}. It's safe to remove ${
+                            x.id
+                        } from your settings.`
+                    )
+                } else {
+                    console.warn(`Extension ${x.id} was not found. Remove it from settings to suppress this warning.`)
+                }
                 return false
             } else if (isErrorLike(x.manifest)) {
                 console.warn(x.manifest)
