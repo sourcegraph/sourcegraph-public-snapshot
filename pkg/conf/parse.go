@@ -55,7 +55,6 @@ var requireRestart = []string{
 	"git.cloneURLToRepositoryName",
 	"searchScopes",
 	"extensions",
-	"disableBrowserExtension",
 	"disablePublicRepoRedirects",
 
 	// Options defined in critical.schema.json are prefixed with "critical::"

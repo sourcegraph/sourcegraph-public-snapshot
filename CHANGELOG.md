@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The deprecated `auth.disableAccessTokens` site config property was removed. Use `auth.accessTokens` instead.
+- The `disableBrowserExtension` site config property was removed. [Configure nginx](https://docs.sourcegraph.com/admin/nginx) instead to block clients (if needed).
 
 ## 3.0.0
 

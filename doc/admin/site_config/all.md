@@ -19,8 +19,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [corsOrigin](all.md#corsorigin-string)
 
-- [disableBrowserExtension](all.md#disablebrowserextension-boolean)
-
 - [disableAutoGitUpdates](all.md#disableautogitupdates-boolean)
 
 - [disablePublicRepoRedirects](all.md#disablepublicreporedirects-boolean)
@@ -204,14 +202,6 @@ Whether indexed search is enabled. If unset Sourcegraph detects the environment 
 ## corsOrigin (string)
 
 Value for the Access-Control-Allow-Origin header returned with all requests.
-
-<br/>
-
-## disableBrowserExtension (boolean)
-
-Disable incoming connections from the Sourcegraph browser extension.
-
-Default: `false`
 
 <br/>
 
