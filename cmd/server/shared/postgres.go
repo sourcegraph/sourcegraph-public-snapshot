@@ -214,9 +214,12 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 
 	img := fmt.Sprintf("tianon/postgres-upgrade:%s-to-%s", ps.oldVersion, ps.newVersion)
 
-	if out, err := cli.ImagePull(ctx, img, types.ImagePullOptions{}); err != nil {
+	out, err := cli.ImagePull(ctx, img, types.ImagePullOptions{})
+	if err != nil {
 		return errors.Wrapf(err, "failed to pull %q", img)
-	} else if _, err = io.Copy(output, out); err != nil {
+	}
+
+	if _, err := io.Copy(output, out); err != nil {
 		return errors.Wrap(err, "failed to read output of docker pull")
 	}
 
