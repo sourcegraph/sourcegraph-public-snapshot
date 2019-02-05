@@ -90,16 +90,16 @@ require (
 	github.com/prometheus/common v0.0.0-20181218105931-67670fe90761 // indirect
 	github.com/russellhaering/gosaml2 v0.3.1
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
+	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/sergi/go-diff v1.0.0
 	github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041
 	github.com/shurcooL/httpfs v0.0.0-20181222201310-74dc9339e414
 	github.com/shurcooL/httpgzip v0.0.0-20180522190206-b1c53ac65af9 // indirect
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/docsite v0.0.0-20181231165911-11f5f871132b
-	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
+	github.com/sourcegraph/docsite v0.0.0-20190213081642-1b820d98afd3
+	github.com/sourcegraph/go-jsonschema v0.0.0-20190205151546-7939fa138765
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 	github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10
@@ -120,7 +120,7 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
 	golang.org/x/crypto v0.0.0-20190104202753-ff983b9c42bc
-	golang.org/x/net v0.0.0-20190108225652-1e06a53dbb7e
+	golang.org/x/net v0.0.0-20190110200230-915654e7eabc
 	golang.org/x/oauth2 v0.0.0-20190201180606-99b60b757ec1
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190204210834-41f3e6584952
@@ -145,3 +145,5 @@ replace (
 )
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
+
+replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1

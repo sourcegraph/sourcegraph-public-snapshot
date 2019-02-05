@@ -37,9 +37,9 @@ On Sourcegraph Core, the only way to publish extensions is to publish them to th
 
 ## Use extensions from Sourcegraph.com
 
-Sourcegraph Core and Enterprise instances inherit extensions from Sourcegraph.com with [`extensions.remoteRegistry`](../site_config/all.md#remoteregistry) set to `"https://sourcegraph.com/.api/registry"`. The OSS version of Sourcegraph has no dependencies on external services, and its `extensions.remoteRegistry` defaults to `false`.
+Sourcegraph Core and Enterprise instances inherit extensions from Sourcegraph.com with [`extensions.remoteRegistry`](../config/site_config.md) set to `"https://sourcegraph.com/.api/registry"`. The OSS version of Sourcegraph has no dependencies on external services, and its `extensions.remoteRegistry` defaults to `false`.
 
-You can disable inheritance by setting [`extensions.remoteRegistry`](../site_config/all.md#remoteregistry) to `false` in your site configuration:
+You can disable inheritance by setting [`extensions.remoteRegistry`](../config/site_config.md) to `false` in your site configuration:
 
 ```json
 {
@@ -49,7 +49,7 @@ You can disable inheritance by setting [`extensions.remoteRegistry`](../site_con
 
 ## Allow only specific extensions from Sourcegraph.com
 
-On Sourcegraph Enterprise, you can set [`extensions.allowRemoteExtensions`](../site_config/all.md#alloweemoteextensions) so that only extensions in that list will be inherited from Sourcegraph.com:
+On Sourcegraph Enterprise, you can set [`extensions.allowRemoteExtensions`](../config/site_config.md) so that only extensions in that list will be inherited from Sourcegraph.com:
 
 ```json
 {
