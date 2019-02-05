@@ -170,6 +170,7 @@ func maybeUpgradePostgres(path, newVersion string) error {
 	}
 
 	log.Printf("✱ Sourcegraph is upgrading its internal database. Please don't interrupt this operation.")
+	defer log.Printf("✱ Sourcegraph finished upgrading its internal database.")
 
 	if err = writeStatus(statusFile, "started", oldVersion); err != nil {
 		return err
