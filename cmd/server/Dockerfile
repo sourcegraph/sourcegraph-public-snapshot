@@ -27,6 +27,10 @@ RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repo
 
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
+  # NOTE that the Postgres version we run is different
+  # from our *Minimum Supported Version* which alone dictates
+  # the features we can depend on. See this link for more information:
+  # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
   'bash=4.4.19-r1' 'postgresql-contrib=11.1-r0' 'postgresql=11.1-r0' \
   'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
   mailcap nginx openssh-client su-exec tini
