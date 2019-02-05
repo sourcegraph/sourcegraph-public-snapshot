@@ -76,11 +76,11 @@ func maybePostgresProcFile() (string, error) {
 			return "", err
 		}
 
-		// Version of Postgres we are running.
-		version := strings.TrimSpace(os.Getenv("PG_VERSION"))
-		if version == "" {
-			version = "11"
-		}
+		// Version of Postgres we are running. Note that this is different
+		// from our *Minimum Supported Version* which dictates the features
+		// we can depend on.
+		// https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
+		const version = "11"
 
 		if err = maybeUpgradePostgres(path, version); err != nil {
 			return "", err
