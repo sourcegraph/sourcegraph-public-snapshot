@@ -2,7 +2,7 @@
 
 # We want to build multiple go binaries, so we use a custom build step on CI.
 cd $(dirname "${BASH_SOURCE[0]}")/../..
-set -ex
+set -e
 
 OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
 cleanup() {
@@ -16,6 +16,7 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
+echo "Compiling the symbols service..."
 for pkg in github.com/sourcegraph/sourcegraph/cmd/symbols; do
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
@@ -28,4 +29,5 @@ if [ -z "$IMAGE" ]; then
   exit 1
 fi
 
-docker build -f cmd/symbols/Dockerfile -t $IMAGE $OUTPUT
+echo "Building symbols image $IMAGE..."
+docker build --quiet -f cmd/symbols/Dockerfile -t $IMAGE $OUTPUT
