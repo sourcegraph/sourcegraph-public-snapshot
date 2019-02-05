@@ -19,25 +19,29 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 ### Option A: use the AWS wizard
 
 - Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
-- Select any Amazon Linux (the first option, `ami-824c4ee2`, works fine).
+- Select the Amazon Linux 2 AMI (`ami-032509850cf9ee54e` at this time of writing).
 - Select an appropriate instance size (we recommend t2.medium/large, depending on team size and number of repositories/languages enabled), then **Next: Configure Instance Details**
 - Add the following user data (as text) in the **Advanced Details** section:
 
-  ```
+  ```yaml
   #cloud-config
   repo_update: true
   repo_upgrade: all
 
-  packages:
-  - docker
-
   runcmd:
+  # Create the directory structure for Sourcegraph data
   - mkdir -p /home/ec2-user/.sourcegraph/config
   - mkdir -p /home/ec2-user/.sourcegraph/data
+  
+  # Install, configure, and enable Docker
+  - yum update -y
+  - amazon-linux-extras install docker
+  - systemctl enable --now --no-block docker 
   - sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
   - sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
-  - service docker start
   - usermod -a -G docker ec2-user
+
+  # Install and run Sourcegraph. Restart the container upon subsequent reboots
   - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.0.0' ]
   ```
 
@@ -51,9 +55,9 @@ Use the [`aws` CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-we
 
 First, create a `cloud-init.txt` file with user data contents as shown above or below. Then run:
 
-`aws ec2 run-instances --image-id ami-824c4ee2 --count 1 --instance-type t2.small --key-name id_rsa --security-groups default --user-data file://cloud-init.txt`
+`aws ec2 run-instances --image-id ami-032509850cf9ee54e --count 1 --instance-type t2.medium --key-name id_rsa --security-groups default --user-data file://cloud-init.txt`
 
-Substitute the path to your `cloud-init.txt` file, the name of your key pair, and an appropriate security group. To start you probably want a security group which exposes port 80 and 22 (for SSH) to the public internet.
+Substitute the path to your `cloud-init.txt` file, the name of your key pair, and an appropriate security group. To start you probably want a security group which exposes port 80, 443, 2633 (for the management console), and 22 (for SSH) to the public internet.
 
 ---
 
@@ -61,10 +65,10 @@ Substitute the path to your `cloud-init.txt` file, the name of your key pair, an
 
 To update to the most recent version of Sourcegraph (X.Y.Z), SSH into your instance and run the following:
 
-```
+```shell
 docker ps # get the $CONTAINER_ID of the running sourcegraph/server container
 docker rm -f $CONTAINER_ID
-docker run -d ... sourcegraph/server:X.Y.Z
+docker run docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:X.Y.Z
 ```
 
 ---
