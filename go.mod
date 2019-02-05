@@ -55,7 +55,7 @@ require (
 	github.com/gorilla/schema v1.0.2
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
-	github.com/graph-gophers/graphql-go v0.0.0-20190104202721-0079757a4d96
+	github.com/graph-gophers/graphql-go v0.0.0-20190204230732-e582242c92cc
 	github.com/gregjones/httpcache v0.0.0-20190203133753-7a902570cb17
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/honeycombio/libhoney-go v1.8.1
