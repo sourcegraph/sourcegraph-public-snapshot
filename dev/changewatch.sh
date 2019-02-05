@@ -15,7 +15,12 @@ useChokidar() {
 	echo >&2 "Using chokidar."
 	# eval so the expansion can produce quoted things, and eval can eat the
 	# quotes, so it doesn't try to expand wildcards.
-	eval exec chokidar --silent $(dirs_starstar $GO_DIRS) cmd/frontend/graphqlbackend/schema.graphql "'schema/*.json'" -c "'./dev/handle-change.sh {path}'"
+	eval exec chokidar --silent \
+        $(dirs_starstar $GO_DIRS) \
+        cmd/frontend/graphqlbackend/schema.graphql \
+        "'schema/*.json'" \
+        cmd/symbols/.ctags.d/additional-languages.ctags \
+        -c "'./dev/handle-change.sh {path}'"
 }
 
 useInotifywrapper() {
