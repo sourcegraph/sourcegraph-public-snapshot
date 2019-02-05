@@ -45,8 +45,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [gitMaxConcurrentClones](all.md#gitmaxconcurrentclones-integer)
 
-- [reviewBoard](all.md#reviewboard-array)
-
 - [lightstepAccessToken](all.md#lightstepaccesstoken-string)
 
 - [lightstepProject](all.md#lightstepproject-string)

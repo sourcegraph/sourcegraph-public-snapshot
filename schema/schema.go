@@ -254,9 +254,6 @@ type Repos struct {
 	Callsign string `json:"callsign"`
 	Path     string `json:"path"`
 }
-type ReviewBoard struct {
-	Url string `json:"url,omitempty"`
-}
 
 // SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
 //
@@ -336,7 +333,6 @@ type SiteConfiguration struct {
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
-	ReviewBoard                       []*ReviewBoard              `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 }
 

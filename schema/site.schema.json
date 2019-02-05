@@ -80,20 +80,6 @@
       "type": "integer",
       "default": 5
     },
-    "reviewBoard": {
-      "description": "JSON array of configuration for Review Board.",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "url": {
-            "description": "URL to Review Board homepage.",
-            "type": "string"
-          }
-        }
-      }
-    },
     "repoListUpdateInterval": {
       "description":
         "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
