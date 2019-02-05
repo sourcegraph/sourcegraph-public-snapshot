@@ -15,6 +15,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.0.0
+
+See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migration/3_0.md) upgrade guide if you are upgrading from 2.x.
+
 ## 3.0.0-beta.4
 
 ### Added
