@@ -3,11 +3,10 @@ import { Observable, of, throwError, zip } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 import { GitHubBlobUrl } from '.'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
-import { isSourcegraphDotCom } from '../../shared/util/context'
 import { FileInfo } from '../code_intelligence'
 import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { getCommitIDFromPermalink } from './scrape'
-import { getDeltaFileName, getDiffResolvedRev, getGitHubState, isGitHubEnterprise, parseURL } from './util'
+import { getDeltaFileName, getDiffResolvedRev, getGitHubState, parseURL } from './util'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
@@ -81,21 +80,13 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
 
     try {
         const commitID = getCommitIDFromPermalink()
-        const info: FileInfo = {
+
+        return of({
             repoName,
             filePath,
             commitID,
             rev: rev || commitID,
-        }
-
-        if (isGitHubEnterprise() && isSourcegraphDotCom()) {
-            // The current repository is on github enterprise, but the
-            // current Sourcegraph URL is Sourcegraph.com: we will not
-            // be able to ensure the revision is cloned.
-            return of(info)
-        }
-
-        return of(info).pipe(ensureRevisionsAreCloned)
+        }).pipe(ensureRevisionsAreCloned)
     } catch (error) {
         return throwError(error)
     }

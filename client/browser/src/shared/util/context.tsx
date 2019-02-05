@@ -1,6 +1,6 @@
 import * as runtime from '../../browser/runtime'
 import storage from '../../browser/storage'
-import { isPhabricator } from '../../context'
+import { isPhabricator, isPublicCodeHost } from '../../context'
 import { EventLogger } from '../tracking/EventLogger'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
@@ -79,6 +79,10 @@ export function isPrivateRepository(): boolean {
     if (isPhabricator) {
         return true
     }
+    if (!isPublicCodeHost) {
+        return true
+    }
+    // @TODO(lguychard) this is github-specific and should not be in /shared
     const header = document.querySelector('.repohead-details-container')
     if (!header) {
         return false
