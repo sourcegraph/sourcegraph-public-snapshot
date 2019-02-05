@@ -52,7 +52,6 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 var requireRestart = []string{
 	"auth.accessTokens",
 	"auth.sessionExpiry",
-	"auth.disableAccessTokens",
 	"git.cloneURLToRepositoryName",
 	"searchScopes",
 	"extensions",

@@ -317,7 +317,6 @@ type Settings struct {
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
-	AuthDisableAccessTokens           bool                        `json:"auth.disableAccessTokens,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBrowserExtension           bool                        `json:"disableBrowserExtension,omitempty"`

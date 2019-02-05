@@ -156,10 +156,6 @@ const (
 
 // AccessTokensAllow returns whether access tokens are enabled, disabled, or restricted to creation by admin users.
 func AccessTokensAllow() AccessTokAllow {
-	if Get().AuthDisableAccessTokens {
-		return AccessTokensNone
-	}
-
 	cfg := Get().AuthAccessTokens
 	if cfg == nil {
 		return AccessTokensAll

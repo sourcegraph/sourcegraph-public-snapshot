@@ -73,8 +73,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [auth.providers](all.md#auth-providers-array)
 
-- [auth.disableAccessTokens](all.md#auth-disableaccesstokens-boolean)
-
 - [auth.accessTokens](all.md#auth-accesstokens-object)
 
 - [auth.public](all.md#auth-public-boolean)
@@ -446,16 +444,6 @@ The elements of the array must be of the following types:
 #### [OpenIDConnectAuthProvider](all.md#openidconnectauthprovider-object)
 
 #### [HTTPHeaderAuthProvider](all.md#httpheaderauthprovider-object)
-
-<br/>
-
-## auth.disableAccessTokens (boolean)
-
-DEPRECATED. Use "auth.accessTokens.restrict" with value "disable" instead.
-
-Prevents users from creating access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
-
-Default: `false`
 
 <br/>
 

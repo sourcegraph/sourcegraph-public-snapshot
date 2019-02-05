@@ -117,12 +117,6 @@
         }
       }
     },
-    "auth.disableAccessTokens": {
-      "description":
-        "DEPRECATED. Use \"auth.accessTokens.restrict\" with value \"disable\" instead.\n\nPrevents users from creating access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
-      "type": "boolean",
-      "default": false
-    },
     "auth.accessTokens": {
       "description":
         "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
