@@ -19,7 +19,8 @@ useChokidar() {
         $(dirs_starstar $GO_DIRS) \
         cmd/frontend/graphqlbackend/schema.graphql \
         "'schema/*.json'" \
-        cmd/symbols/.ctags.d/additional-languages.ctags \
+        "'cmd/symbols/**/*'" \
+        "'cmd/symbols/.ctags.d/*'" \
         -c "'./dev/handle-change.sh {path}'"
 }
 
