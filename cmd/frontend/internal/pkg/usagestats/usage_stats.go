@@ -181,13 +181,21 @@ func GetUsersActiveTodayCount() (int, error) {
 func HasSearchOccurred() (bool, error) {
 	c := pool.Get()
 	defer c.Close()
-	return redis.Bool(c.Do("GET", keyPrefix+fSearchOccurred))
+	s, err := redis.Bool(c.Do("GET", keyPrefix+fSearchOccurred))
+	if err != nil && err != redis.ErrNil {
+		return s, err
+	}
+	return s, nil
 }
 
 func HasFindRefsOccurred() (bool, error) {
 	c := pool.Get()
 	defer c.Close()
-	return redis.Bool(c.Do("GET", keyPrefix+fFindRefsOccurred))
+	r, err := redis.Bool(c.Do("GET", keyPrefix+fFindRefsOccurred))
+	if err != nil && err != redis.ErrNil {
+		return r, err
+	}
+	return r, nil
 }
 
 // uniques calculates the list of unique users starting at 00:00:00 on a given UTC date over a
