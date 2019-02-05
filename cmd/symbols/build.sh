@@ -23,4 +23,9 @@ done
 mkdir "$OUTPUT/.ctags.d"
 cp cmd/symbols/.ctags.d/additional-languages.ctags "$OUTPUT/.ctags.d/additional-languages.ctags"
 
+if [ -z "$IMAGE" ]; then
+  echo "You have to set \$IMAGE, the tag for the symbols image."
+  exit 1
+fi
+
 docker build -f cmd/symbols/Dockerfile -t $IMAGE $OUTPUT
