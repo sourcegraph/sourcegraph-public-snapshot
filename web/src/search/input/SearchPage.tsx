@@ -8,6 +8,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
+import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchFilterChips } from './SearchFilterChips'
@@ -23,6 +24,8 @@ interface Props extends SettingsCascadeProps {
 interface State {
     /** The query value entered by the user in the query input */
     userQuery: string
+    /** The query that results from combining all values in the query builder form. */
+    builderQuery: string
 }
 
 /**
@@ -37,6 +40,7 @@ export class SearchPage extends React.Component<Props, State> {
         const query = parseSearchURLQuery(props.location.search)
         this.state = {
             userQuery: query || '',
+            builderQuery: '',
         }
     }
 
@@ -83,6 +87,7 @@ export class SearchPage extends React.Component<Props, State> {
                             settingsCascade={this.props.settingsCascade}
                         />
                     </div>
+                    <QueryBuilder onFieldsQueryChange={this.onBuilderQueryChange} />
                 </Form>
             </div>
         )
@@ -100,9 +105,22 @@ export class SearchPage extends React.Component<Props, State> {
         }
     }
 
+    private onBuilderQueryChange = (builderQuery: string) => {
+        this.setState({ builderQuery })
+
+        if (window.context.sourcegraphDotComMode) {
+            if (queryIndexOfScope(builderQuery, 'repogroup:sample') !== -1) {
+                localStorage.removeItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
+            } else {
+                localStorage.setItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY, 'true')
+            }
+        }
+    }
+
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, this.state.userQuery, 'home')
+        const query = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ')
+        submitSearch(this.props.history, query, 'home')
     }
 
     private getPageTitle(): string | undefined {
