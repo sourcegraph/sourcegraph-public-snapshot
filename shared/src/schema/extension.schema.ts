@@ -10,22 +10,22 @@ import { Contributions } from '../api/protocol/contribution'
  * manually duplicate it for now.
  */
 
- /**
-  * The set of known categories in the extension registry.
-  *
-  * Keep this in sync with <extension.schema.json>'s #/categories/items/enum set.
-  *
-  * This uses a typed array instead of a TypeScript enum to avoid needing to define redundant identifiers for each
-  * string constant (e.g., `ProgrammingLanguages = 'Programming languages'`).
-  */
+/**
+ * The set of known categories in the extension registry.
+ *
+ * Keep this in sync with <extension.schema.json>'s #/categories/items/enum set.
+ *
+ * This uses a typed array instead of a TypeScript enum to avoid needing to define redundant identifiers for each
+ * string constant (e.g., `ProgrammingLanguages = 'Programming languages'`).
+ */
 export const EXTENSION_CATEGORIES = array([
-  'Programming languages',
-  'Linters',
-  'Code analysis',
-  'External services',
-  'Reports and stats',
-  'Other',
-  'Demos',
+    'Programming languages',
+    'Linters',
+    'Code analysis',
+    'External services',
+    'Reports and stats',
+    'Other',
+    'Demos',
 ])
 
 /**
@@ -56,5 +56,5 @@ export interface ExtensionManifest {
 
 /** TypeScript helper for making an array type with constant string union elements, not just string[]. */
 function array<T extends string>(a: T[]): T[] {
-    return a;
+    return a
 }
