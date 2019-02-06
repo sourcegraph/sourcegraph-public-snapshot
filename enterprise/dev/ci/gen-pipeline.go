@@ -241,7 +241,7 @@ func main() {
 	pipeline.AddWait()
 
 	allDockerImages := []string{
-		"creaper",
+		"cachereaper",
 		"frontend",
 		"github-proxy",
 		"gitserver",

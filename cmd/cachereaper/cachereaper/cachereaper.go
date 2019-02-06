@@ -1,4 +1,4 @@
-package creaper
+package cachereaper
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	logger "github.com/sourcegraph/sourcegraph/cmd/creaper/logger"
+	logger "github.com/sourcegraph/sourcegraph/cmd/cachereaper/logger"
 	times "gopkg.in/djherbis/times.v1"
 )
 

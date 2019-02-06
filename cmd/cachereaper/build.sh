@@ -16,8 +16,8 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
-for pkg in github.com/sourcegraph/sourcegraph/cmd/creaper; do
+for pkg in github.com/sourcegraph/sourcegraph/cmd/cachereaper; do
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
-docker build -f cmd/creaper/Dockerfile -t $IMAGE $OUTPUT
+docker build -f cmd/cachereaper/Dockerfile -t $IMAGE $OUTPUT

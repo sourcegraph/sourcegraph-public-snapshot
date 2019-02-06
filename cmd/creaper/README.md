@@ -1,12 +1,10 @@
-# Creaper (Cache Reaper)
-
-![Creaper](https://media.giphy.com/media/aReX2IJ3rtVeg/giphy.gif)
+# Cache Reaper
 
 Utility application that monitors a specified cache directory and deletes least-recently-accessed 
 files if the cache directory gets too large.
 
 ```
-Usage of ./creaper:
+Usage of ./cachereaper:
   -cacheDir string
     	(required) cache directory to monitor
   -frequency duration

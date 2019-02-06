@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/bytefmt"
-	"github.com/sourcegraph/sourcegraph/cmd/creaper/creaper"
-	"github.com/sourcegraph/sourcegraph/cmd/creaper/logger"
+	"github.com/sourcegraph/sourcegraph/cmd/cachereaper/cachereaper"
+	"github.com/sourcegraph/sourcegraph/cmd/cachereaper/logger"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -25,7 +25,7 @@ var maxCacheSize = flag.String(
 var checkFrequency = flag.Duration(
 	"frequency",
 	time.Minute,
-	"frequency with which the creaper should check disk usage",
+	"frequency with which cachereaper should check disk usage",
 )
 
 var cacheDir = flag.String(
@@ -73,8 +73,8 @@ func main() {
 
 	shutdownWaitGroup.Add(1)
 	go func() {
-		creaper.Reap(
-			logger.WithLogger(ctx, "cmd", "creaper"),
+		cachereaper.Reap(
+			logger.WithLogger(ctx, "cmd", "cachereaper"),
 			*cacheDir,
 			*checkFrequency,
 			maxCacheSizeBytes)
