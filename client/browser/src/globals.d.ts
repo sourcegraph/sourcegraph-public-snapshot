@@ -17,11 +17,6 @@ interface Window {
     require: any
 }
 
-declare module '*.json' {
-    const value: any
-    export default value
-}
-
 /**
  * For Web Worker entrypoints using Webpack's worker-loader.
  *

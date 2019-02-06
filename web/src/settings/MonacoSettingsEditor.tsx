@@ -10,6 +10,14 @@ import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
+/**
+ * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
+ * not needed.
+ */
+interface JSONSchema {
+    $id: string
+}
+
 export interface Props {
     id?: string
     value: string | undefined
@@ -25,7 +33,7 @@ export interface Props {
     /**
      * Extra schemas that are transitively referenced by jsonSchemaId.
      */
-    extraSchemas?: { $id: string }[]
+    extraSchemas?: JSONSchema[]
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -278,7 +286,7 @@ function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
             // Include these schemas because they are referenced by other schemas.
             {
                 uri: 'http://json-schema.org/draft-07/schema',
-                schema: jsonSchemaMetaSchema,
+                schema: jsonSchemaMetaSchema as JSONSchema,
             },
             {
                 uri: 'settings.schema.json#',
