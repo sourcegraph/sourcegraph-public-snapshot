@@ -25,17 +25,24 @@ interface Props {
     repoURL: string
     filePath: string
     fileURL: string
+    repoDisplayName?: string
 }
 
 /**
  * A link to a repository or a file within a repository, formatted as "repo" or "repo > file". Unless you
  * absolutely need breadcrumb-like behavior, use this instead of FilePathBreadcrumb.
  */
-export const RepoFileLink: React.FunctionComponent<Props> = ({ repoName, repoURL, filePath, fileURL }) => {
+export const RepoFileLink: React.FunctionComponent<Props> = ({
+    repoDisplayName,
+    repoName,
+    repoURL,
+    filePath,
+    fileURL,
+}) => {
     const [fileBase, fileName] = splitPath(filePath)
     return (
         <>
-            <Link to={repoURL}>{displayRepoName(repoName)}</Link> ›{' '}
+            <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
             <Link to={fileURL}>
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>

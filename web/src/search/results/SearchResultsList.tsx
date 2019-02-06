@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -13,6 +13,7 @@ import { parseSearchURLQuery } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { VirtualList } from '../../../../shared/src/components/VirtualList'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -55,6 +56,8 @@ interface State {
     resultsShown: number
     visibleItems: Set<number>
     didScrollToItem: boolean
+    /** Map from repo name to display name */
+    fileMatchRepoDisplayNames: ReadonlyMap<string, string>
 }
 
 export class SearchResultsList extends React.PureComponent<SearchResultsListProps, State> {
@@ -77,6 +80,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     private jumpToTopClicks = new Subject<void>()
     private nextJumpToTopClick = () => this.jumpToTopClicks.next()
 
+    private componentUpdates = new Subject<SearchResultsListProps>()
+
     private subscriptions = new Subscription()
 
     constructor(props: SearchResultsListProps) {
@@ -86,6 +91,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             resultsShown: this.getCheckpoint() + 15,
             visibleItems: new Set<number>(),
             didScrollToItem: false,
+            fileMatchRepoDisplayNames: new Map<string, string>(),
         }
 
         // Handle items that have become visible
@@ -215,12 +221,59 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 this.setState({ didScrollToItem: false })
             })
         )
+
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    map(({ resultsOrError }) => resultsOrError),
+                    filter(isDefined),
+                    filter((resultsOrError): resultsOrError is GQL.ISearchResults => !isErrorLike(resultsOrError)),
+                    map(({ results }) => results),
+                    map(
+                        (results): GQL.IFileMatch[] =>
+                            results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
+                    )
+                )
+                .subscribe(fileMatches => {
+                    const fileMatchRepoDisplayNames = new Map<string, string>()
+                    for (const {
+                        repository: { name },
+                    } of fileMatches) {
+                        const displayName = displayRepoName(name)
+                        fileMatchRepoDisplayNames.set(name, displayName)
+                    }
+
+                    const displayNameCounts = new Map<string, number>()
+                    for (const displayName of fileMatchRepoDisplayNames.values()) {
+                        displayNameCounts.set(displayName, (displayNameCounts.get(displayName) || 0) + 1)
+                    }
+
+                    for (const [displayName, count] of displayNameCounts.entries()) {
+                        if (count > 1) {
+                            for (const [name, displayName1] of fileMatchRepoDisplayNames) {
+                                if (displayName === displayName1) {
+                                    fileMatchRepoDisplayNames.set(name, name)
+                                }
+                            }
+                        }
+                    }
+
+                    this.setState({ fileMatchRepoDisplayNames })
+                })
+        )
+    }
+
+    public componentDidMount(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentDidUpdate(): void {
         const lowestIndex = Array.from(this.state.visibleItems).reduce((low, index) => Math.min(index, low), Infinity)
 
         this.firstVisibleItems.next(lowestIndex)
+
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -428,6 +481,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         isLightTheme={this.props.isLightTheme}
                         allExpanded={this.props.allExpanded}
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        repoDisplayName={this.state.fileMatchRepoDisplayNames.get(result.repository.name)}
                     />
                 )
         }
