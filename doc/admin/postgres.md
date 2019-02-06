@@ -1,6 +1,6 @@
 # Postgres
 
-Sourcegraph uses Postgres as its main internal database. We support any version **starting from 10.6**.
+Sourcegraph uses Postgres as its main internal database. We support any version **starting from 9.6**.
 
 ## Upgrades
 
@@ -96,3 +96,20 @@ docker run \
   "postgres:$NEW" \
   -c 'chown -R postgres $PGDATA && gosu postgres bash ./optimize.sh $PGDATA'
 ```
+
+#### Other setups
+
+##### External Postgres
+
+When running an external Postgres instance please refer to the documentation of your provider on how to perform upgrade procedures.
+
+- [AWS RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.PostgreSQL.html)
+- [AWS Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_UpgradeDBInstance.Upgrading.html)
+- [GCP CloudSQL](https://cloud.google.com/sql/docs/postgres/db-versions)
+- [Azure DB](https://docs.microsoft.com/en-us/azure/postgresql/concepts-supported-versions#managing-updates-and-upgrades)
+- [Heroku](https://devcenter.heroku.com/articles/upgrading-heroku-postgres-databases)
+- [EnterpriseDB](https://www.enterprisedb.com/docs/en/9.6/pg/upgrading.html)
+- [Citus](http://docs.citusdata.com/en/v8.1/admin_guide/upgrading_citus.html)
+- [Aiven Postgres](https://help.aiven.io/postgresql/operations/how-to-perform-a-postgresql-in-place-major-version-upgrade)
+- [Your own Postgres](https://www.postgresql.org/docs/11/pgupgrade.html)
+
