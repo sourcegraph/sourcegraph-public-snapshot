@@ -18,6 +18,15 @@ All notable changes to Sourcegraph are documented in this file.
 - The deprecated `auth.disableAccessTokens` site config property was removed. Use `auth.accessTokens` instead.
 - The `disableBrowserExtension` site config property was removed. [Configure nginx](https://docs.sourcegraph.com/admin/nginx) instead to block clients (if needed).
 
+## 3.0.1
+
+### Postgres 11.1
+
+Both the `sourcegraph/server` image and the [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) manifests ship with Postgres `11.1`.
+For maximum compatibility, however, the minimum supported version remains `9.6`.
+
+The upgrade procedure is mostly automated for existing deployments. Please refer to [this page](https://docs.sourcegraph.com/admin/postgres.md) for detailed instructions.
+
 ## 3.0.0
 
 See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migration/3_0.md) upgrade guide if you are upgrading from 2.x.

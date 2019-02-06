@@ -11,6 +11,10 @@ You can use your own PostgreSQL server with Sourcegraph if you wish. For example
 
 Simply add the standard PostgreSQL environment variables to your `docker run` command and Sourcegraph will use that PostgreSQL server instead of its built-in one. For example:
 
+### Version requirements
+
+Please refer to our [Postgres](https://docs.sourcegraph.com/admin/postgres) documentation to learn about version requirements.
+
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
