@@ -16,34 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-var maxCacheSize = flag.String(
-	"maxSize",
-	"1g",
-	"max cache size (examples: 1048576k, 1024m, 1g)",
-)
-
-var recoveryFactor = flag.Int(
-	"recoveryFactor",
-	80,
-	"percentage of max cache size to reduce usage to (between 0 and 100)",
-)
-
-var checkFrequency = flag.Duration(
-	"frequency",
-	time.Minute,
-	"frequency with which cachereaper should check disk usage",
-)
-
-var cacheDir = flag.String(
-	"cacheDir",
-	"",
-	"(required) cache directory to monitor",
-)
-
-var force = flag.Bool(
-	"force",
-	false,
-	"turn off sanity checking",
+// CLI Flags
+var (
+	maxCacheSize   = flag.String("maxSize", "1g", "max cache size (examples: 1048576k, 1024m, 1g)")
+	recoveryFactor = flag.Int("recoveryFactor", 80, "percentage of max cache size to reduce usage to (between 0 and 100)")
+	checkFrequency = flag.Duration("frequency", time.Minute, "frequency with which cachereaper should check disk usage")
+	cacheDir       = flag.String("cacheDir", "", "(required) cache directory to monitor")
+	force          = flag.Bool("force", false, "turn off sanity checking")
 )
 
 /*

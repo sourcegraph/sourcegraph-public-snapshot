@@ -60,12 +60,7 @@ func getDirectoryInfo(ctx context.Context, directory string) ([]cachedFile, uint
 
 	if err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			logger.Warn(
-				ctx,
-				"Error walking cache directory",
-				"path", path,
-				"err", err,
-			)
+			logger.Warn(ctx, "Error walking cache directory", "path", path, "err", err)
 
 			// Try to proceed.
 			return filepath.SkipDir
@@ -84,11 +79,7 @@ func getDirectoryInfo(ctx context.Context, directory string) ([]cachedFile, uint
 		}
 		return nil
 	}); err != nil {
-		logger.Warn(
-			ctx,
-			"Error when walking cache directory",
-			"err", err,
-		)
+		logger.Warn(ctx, "Error when walking cache directory", "err", err)
 	}
 
 	return files, totalSize
@@ -123,11 +114,7 @@ func clearSpace(ctx context.Context, cachedFiles []cachedFile, totalSize uint64,
 		logger.Debug(ctx, "Deleted file", "file", file.Path, "currentSize", currentSize)
 
 		if currentSize <= desiredSize {
-			logger.Info(
-				ctx,
-				"Enough files have been removed. Finishing.",
-				"currentSize", currentSize,
-			)
+			logger.Info(ctx, "Enough files have been removed. Finishing.", "currentSize", currentSize)
 			return
 		}
 	}
