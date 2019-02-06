@@ -1,6 +1,6 @@
 import { from } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
-import { CodeEditor, Window } from 'sourcegraph'
+import { isDefined } from '../../util/types'
 import { ViewComponentData } from '../client/model'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
@@ -38,9 +38,9 @@ describe('Selections (integration)', () => {
                 visibleViewComponents: [],
             })
             const selectionChanges = from(extensionHost.app.activeWindowChanged).pipe(
-                filter((window): window is Window => window !== undefined),
+                filter(isDefined),
                 switchMap(window => window.activeViewComponentChanged),
-                filter((editor): editor is CodeEditor => editor !== undefined),
+                filter(isDefined),
                 switchMap(editor => editor.selectionsChanged)
             )
             const selectionValues = collectSubscribableValues(selectionChanges)
