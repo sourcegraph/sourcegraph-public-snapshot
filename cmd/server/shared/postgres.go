@@ -336,12 +336,13 @@ func containerID() (string, error) {
 	}
 
 	// e.g. 11:hugetlb:/docker/ed70f86d8e5cb2e94975d29d0185c90dd56621c05444e5d7ae0891f290255ce9
-	ps := strings.SplitN(line, "/", 3)
-	if len(ps) != 3 {
+	// e.g. 9:perf_event:/ecs/task-arn/ed70f86d8e5cb2e94975d29d0185c90dd56621c05444e5d7ae0891f290255ce9
+	ps := strings.Split(line, "/")
+	if len(ps) < 2 {
 		return "", errors.New("failed to parse /proc/self/cgroup")
 	}
 
-	return strings.TrimSpace(ps[2]), nil
+	return strings.TrimSpace(ps[len(ps)-1]), nil
 }
 
 func writeStatus(path, status, oldVersion string) error {
