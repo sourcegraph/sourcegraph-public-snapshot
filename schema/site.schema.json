@@ -15,14 +15,12 @@
       "type": "boolean"
     },
     "search.index.enabled": {
-      "description":
-        "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
+      "description": "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
       "type": "boolean",
       "!go": { "pointer": true }
     },
     "experimentalFeatures": {
-      "description":
-        "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -50,13 +48,11 @@
       "default": false
     },
     "disablePublicRepoRedirects": {
-      "description":
-        "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
+      "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean"
     },
     "git.cloneURLToRepositoryName": {
-      "description":
-        "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
+      "description": "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/CloneURLToRepositoryName"
@@ -76,14 +72,12 @@
       "default": 5
     },
     "repoListUpdateInterval": {
-      "description":
-        "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
+      "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",
       "default": 1
     },
     "maxReposToSearch": {
-      "description":
-        "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
+      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
       "type": "integer",
       "default": 500
     },
@@ -99,14 +93,12 @@
       }
     },
     "auth.accessTokens": {
-      "description":
-        "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
+      "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "allow": {
-          "description":
-            "Allow or restrict the use of access tokens. The default is \"all-users-create\", which enables all users to create access tokens. Use \"none\" to disable access tokens entirely. Use \"site-admin-create\" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).",
+          "description": "Allow or restrict the use of access tokens. The default is \"all-users-create\", which enables all users to create access tokens. Use \"none\" to disable access tokens entirely. Use \"site-admin-create\" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).",
           "type": "string",
           "enum": ["all-users-create", "site-admin-create", "none"],
           "default": "all-users-create"
@@ -115,8 +107,7 @@
     },
     "email.smtp": {
       "title": "SMTPServerConfig",
-      "description":
-        "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
+      "description": "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
       "type": "object",
       "additionalProperties": false,
       "required": ["host", "port", "authentication"],
@@ -209,13 +200,11 @@
           "!go": { "pointer": true }
         },
         "remoteRegistry": {
-          "description":
-            "The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
+          "description": "The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
           "oneOf": [{ "type": "string", "format": "uri" }, { "type": "boolean", "const": false }]
         },
         "allowRemoteExtensions": {
-          "description":
-            "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set `remoteRegistry` to `false`.\n\nOnly available in Sourcegraph Enterprise.",
+          "description": "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set `remoteRegistry` to `false`.\n\nOnly available in Sourcegraph Enterprise.",
           "type": "array",
           "items": {
             "type": "string"
@@ -228,14 +217,12 @@
       "type": "object",
       "properties": {
         "abuseProtection": {
-          "description":
-            "Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).",
+          "description": "Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).",
           "type": "boolean",
           "default": false
         },
         "abuseEmails": {
-          "description":
-            "Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.",
+          "description": "Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.",
           "type": "array",
           "items": { "type": "string" },
           "default": []
@@ -247,10 +234,7 @@
     "PhabricatorConnection": {
       "type": "object",
       "additionalProperties": false,
-      "anyOf": [
-        {"required": ["token"]},
-        {"required": ["repos"]}
-      ],
+      "anyOf": [{ "required": ["token"] }, { "required": ["repos"] }],
       "properties": {
         "url": {
           "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
@@ -290,8 +274,7 @@
       "required": ["url", "token"],
       "properties": {
         "url": {
-          "description":
-            "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
+          "description": "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
           "type": "string",
           "not": {
             "type": "string",
@@ -302,8 +285,7 @@
           "examples": ["https://github.com", "https://github-enterprise.example.com"]
         },
         "gitURLType": {
-          "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
+          "description": "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"
@@ -319,35 +301,30 @@
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
         "repos": {
-          "description":
-            "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",
+          "description": "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",
           "type": "array",
           "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" }
         },
         "repositoryQuery": {
-          "description":
-            "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:\n\n- `public` mirrors all public repositories for GitHub Enterprise and is the equivalent of `none` for GitHub\n\n- `affiliated` mirrors all repositories affiliated with the configured token's user:\n\t- Private repositories with read access\n\t- Public repositories owned by the user or their orgs\n\t- Public repositories with write access\n\n- `none` mirrors no repositories (except those specified in the `repos` configuration property or added manually)\n\n- All other values are executed as a GitHub advanced repository search as described at https://github.com/search/advanced. Example: to sync all repositories from the \"sourcegraph\" organization including forks the query would be \"org:sourcegraph fork:true\".\n\nIf multiple values are provided, their results are unioned.\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
+          "description": "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:\n\n- `public` mirrors all public repositories for GitHub Enterprise and is the equivalent of `none` for GitHub\n\n- `affiliated` mirrors all repositories affiliated with the configured token's user:\n\t- Private repositories with read access\n\t- Public repositories owned by the user or their orgs\n\t- Public repositories with write access\n\n- `none` mirrors no repositories (except those specified in the `repos` configuration property or added manually)\n\n- All other values are executed as a GitHub advanced repository search as described at https://github.com/search/advanced. Example: to sync all repositories from the \"sourcegraph\" organization including forks the query would be \"org:sourcegraph fork:true\".\n\nIf multiple values are provided, their results are unioned.\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
           "type": "array",
           "items": { "type": "string" },
           "default": ["public", "affiliated"]
         },
         "repositoryPathPattern": {
-          "description":
-            "The pattern used to generate the corresponding Sourcegraph repository name for a GitHub or GitHub Enterprise repository. In the pattern, the variable \"{host}\" is replaced with the GitHub host (such as github.example.com), and \"{nameWithOwner}\" is replaced with the GitHub repository's \"owner/path\" (such as \"myorg/myrepo\").\n\nFor example, if your GitHub Enterprise URL is https://github.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"{host}/{nameWithOwner}\" would mean that a GitHub repository at https://github.example.com/myorg/myrepo is available on Sourcegraph at https://src.example.com/github.example.com/myorg/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+          "description": "The pattern used to generate the corresponding Sourcegraph repository name for a GitHub or GitHub Enterprise repository. In the pattern, the variable \"{host}\" is replaced with the GitHub host (such as github.example.com), and \"{nameWithOwner}\" is replaced with the GitHub repository's \"owner/path\" (such as \"myorg/myrepo\").\n\nFor example, if your GitHub Enterprise URL is https://github.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"{host}/{nameWithOwner}\" would mean that a GitHub repository at https://github.example.com/myorg/myrepo is available on Sourcegraph at https://src.example.com/github.example.com/myorg/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
           "type": "string",
           "default": "{host}/{nameWithOwner}"
         },
         "initialRepositoryEnablement": {
-          "description":
-            "Defines whether repositories from this GitHub instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitHub repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitHub); site admins can still disable them explicitly, and they'll remain disabled.",
+          "description": "Defines whether repositories from this GitHub instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitHub repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitHub); site admins can still disable them explicitly, and they'll remain disabled.",
           "type": "boolean"
         },
         "authorization": { "$ref": "#/definitions/GitHubAuthorization" }
       }
     },
     "GitHubAuthorization": {
-      "description":
-        "If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type \"github\" with the same `url` field as specified in this `GitHubConnection`.",
+      "description": "If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type \"github\" with the same `url` field as specified in this `GitHubConnection`.",
       "type": "object",
       "properties": {
         "ttl": {
@@ -363,8 +340,7 @@
       "required": ["url", "token"],
       "properties": {
         "url": {
-          "description":
-            "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.",
+          "description": "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.",
           "type": "string",
           "pattern": "^https?://",
           "not": {
@@ -375,14 +351,12 @@
           "examples": ["https://gitlab.com", "https://gitlab.example.com"]
         },
         "token": {
-          "description":
-            "A GitLab access token with \"api\" and \"sudo\" scopes. If this token does not have \"sudo\" scope, then you must set `permissions.ignore` to true.",
+          "description": "A GitLab access token with \"api\" and \"sudo\" scopes. If this token does not have \"sudo\" scope, then you must set `permissions.ignore` to true.",
           "type": "string",
           "minLength": 1
         },
         "gitURLType": {
-          "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
+          "description": "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"
@@ -393,8 +367,7 @@
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
         "projectQuery": {
-          "description":
-            "An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
+          "description": "An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
           "type": "array",
           "default": ["?membership=true"],
           "items": {
@@ -402,28 +375,24 @@
           }
         },
         "repositoryPathPattern": {
-          "description":
-            "The pattern used to generate a the corresponding Sourcegraph repository name for a GitLab project. In the pattern, the variable \"{host}\" is replaced with the GitLab URL's host (such as gitlab.example.com), and \"{pathWithNamespace}\" is replaced with the GitLab project's \"namespace/path\" (such as \"myteam/myproject\").\n\nFor example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{pathWithNamespace}\" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+          "description": "The pattern used to generate a the corresponding Sourcegraph repository name for a GitLab project. In the pattern, the variable \"{host}\" is replaced with the GitLab URL's host (such as gitlab.example.com), and \"{pathWithNamespace}\" is replaced with the GitLab project's \"namespace/path\" (such as \"myteam/myproject\").\n\nFor example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{pathWithNamespace}\" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
           "type": "string",
           "default": "{host}/{pathWithNamespace}"
         },
         "initialRepositoryEnablement": {
-          "description":
-            "Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.",
+          "description": "Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.",
           "type": "boolean"
         },
         "authorization": { "$ref": "#/definitions/GitLabAuthorization" }
       }
     },
     "GitLabAuthorization": {
-      "description":
-        "If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type \"gitlab\" with the same `url` field as specified in this `GitLabConnection`.",
+      "description": "If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type \"gitlab\" with the same `url` field as specified in this `GitLabConnection`.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "ttl": {
-          "description":
-            "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
+          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
           "type": "string",
           "default": "3h"
         }
@@ -437,14 +406,14 @@
         {
           "required": ["token"],
           "properties": {
-            "username": {"type": "null"},
-            "password": {"type": "null"}
+            "username": { "type": "null" },
+            "password": { "type": "null" }
           }
         },
         {
           "required": ["username", "password"],
           "properties": {
-            "token": {"type": "null"}
+            "token": { "type": "null" }
           }
         }
       ],
@@ -461,24 +430,20 @@
           "examples": ["https://bitbucket.example.com"]
         },
         "token": {
-          "description":
-            "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add.\n\nFor Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the \"username\" and \"password\" fields.",
+          "description": "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add.\n\nFor Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the \"username\" and \"password\" fields.",
           "type": "string",
           "minLength": 1
         },
         "username": {
-          "description":
-            "The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"password\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
+          "description": "The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"password\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
           "type": "string"
         },
         "password": {
-          "description":
-            "The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"username\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
+          "description": "The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"username\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
           "type": "string"
         },
         "gitURLType": {
-          "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
+          "description": "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"
@@ -489,19 +454,16 @@
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
         "repositoryPathPattern": {
-          "description":
-            "The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.\n\n - \"{host}\" is replaced with the Bitbucket Server URL's host (such as bitbucket.example.com)\n - \"{projectKey}\" is replaced with the Bitbucket repository's parent project key (such as \"PRJ\")\n - \"{repositorySlug}\" is replaced with the Bitbucket repository's slug key (such as \"my-repo\").\n\nFor example, if your Bitbucket Server is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{projectKey}/{repositorySlug}\" would mean that a Bitbucket Server repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+          "description": "The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.\n\n - \"{host}\" is replaced with the Bitbucket Server URL's host (such as bitbucket.example.com)\n - \"{projectKey}\" is replaced with the Bitbucket repository's parent project key (such as \"PRJ\")\n - \"{repositorySlug}\" is replaced with the Bitbucket repository's slug key (such as \"my-repo\").\n\nFor example, if your Bitbucket Server is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{projectKey}/{repositorySlug}\" would mean that a Bitbucket Server repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
           "type": "string",
           "default": "{host}/{projectKey}/{repositorySlug}"
         },
         "excludePersonalRepositories": {
-          "description":
-            "Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information. Default: false.",
+          "description": "Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information. Default: false.",
           "type": "boolean"
         },
         "initialRepositoryEnablement": {
-          "description":
-            "Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.",
+          "description": "Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.",
           "type": "boolean"
         }
       }
@@ -512,8 +474,7 @@
       "required": ["region", "accessKeyID", "secretAccessKey"],
       "properties": {
         "region": {
-          "description":
-            "The AWS region in which to access AWS CodeCommit. See the list of supported regions at https://docs.aws.amazon.com/codecommit/latest/userguide/regions.html#regions-git.",
+          "description": "The AWS region in which to access AWS CodeCommit. See the list of supported regions at https://docs.aws.amazon.com/codecommit/latest/userguide/regions.html#regions-git.",
           "type": "string",
           "default": "us-east-1",
           "pattern": "^[a-z\\d-]+$",
@@ -536,8 +497,7 @@
           ]
         },
         "accessKeyID": {
-          "description":
-            "The AWS access key ID to use when listing and updating repositories from AWS CodeCommit. Must have the AWSCodeCommitReadOnly IAM policy.",
+          "description": "The AWS access key ID to use when listing and updating repositories from AWS CodeCommit. Must have the AWSCodeCommitReadOnly IAM policy.",
           "type": "string"
         },
         "secretAccessKey": {
@@ -545,14 +505,12 @@
           "type": "string"
         },
         "repositoryPathPattern": {
-          "description":
-            "The pattern used to generate a the corresponding Sourcegraph repository name for an AWS CodeCommit repository. In the pattern, the variable \"{name}\" is replaced with the repository's name.\n\nFor example, if your Sourcegraph instance is at https://src.example.com, then a repositoryPathPattern of \"awsrepos/{name}\" would mean that a AWS CodeCommit repository named \"myrepo\" is available on Sourcegraph at https://src.example.com/awsrepos/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+          "description": "The pattern used to generate a the corresponding Sourcegraph repository name for an AWS CodeCommit repository. In the pattern, the variable \"{name}\" is replaced with the repository's name.\n\nFor example, if your Sourcegraph instance is at https://src.example.com, then a repositoryPathPattern of \"awsrepos/{name}\" would mean that a AWS CodeCommit repository named \"myrepo\" is available on Sourcegraph at https://src.example.com/awsrepos/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
           "type": "string",
           "default": "{name}"
         },
         "initialRepositoryEnablement": {
-          "description":
-            "Defines whether repositories from AWS CodeCommit should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable AWS CodeCommit repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by AWS); site admins can still disable them explicitly, and they'll remain disabled.",
+          "description": "Defines whether repositories from AWS CodeCommit should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable AWS CodeCommit repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by AWS); site admins can still disable them explicitly, and they'll remain disabled.",
           "type": "boolean"
         }
       }
@@ -563,8 +521,7 @@
       "required": ["prefix", "host"],
       "properties": {
         "prefix": {
-          "description":
-            "Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., \"gitolite.example.com/\".\n\nIt is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+          "description": "Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., \"gitolite.example.com/\".\n\nIt is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
           "not": {
             "type": "string",
             "pattern": "example\\.com"
@@ -582,14 +539,12 @@
           "examples": ["git@gitolite.example.com"]
         },
         "blacklist": {
-          "description":
-            "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
+          "description": "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
           "type": "string",
           "format": "regex"
         },
         "phabricatorMetadataCommand": {
-          "description":
-            "This is DEPRECATED. Use the `phabricator` field instead.",
+          "description": "This is DEPRECATED. Use the `phabricator` field instead.",
           "type": "string"
         },
         "phabricator": {
@@ -625,11 +580,7 @@
             "type": "string",
             "pattern": "example\\.com"
           },
-          "examples": [
-            "https://github.com/?access_token=secret",
-            "ssh://user@host.xz:2333/",
-            "git://host.xz:2333/"
-          ]
+          "examples": ["https://github.com/?access_token=secret", "ssh://user@host.xz:2333/", "git://host.xz:2333/"]
         },
         "repos": {
           "title": "List of repository clone URLs to be discovered.",
@@ -639,29 +590,23 @@
             "type": "string",
             "minLength": 1,
             "format": "uri-reference",
-            "examples": [
-              "path/to/my/repo",
-              "path/to/my/repo.git/"
-            ]
+            "examples": ["path/to/my/repo", "path/to/my/repo.git/"]
           }
         }
       }
     },
     "CloneURLToRepositoryName": {
-      "description":
-        "Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is \"^../(?P<name>\\w+)$\" and `to` is \"github.com/user/{name}\", the clone URL \"../myRepository\" would be mapped to the repository name \"github.com/user/myRepository\".",
+      "description": "Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is \"^../(?P<name>\\w+)$\" and `to` is \"github.com/user/{name}\", the clone URL \"../myRepository\" would be mapped to the repository name \"github.com/user/myRepository\".",
       "type": "object",
       "additionalProperties": false,
       "required": ["from", "to"],
       "properties": {
         "from": {
-          "description":
-            "A regular expression that matches a set of clone URLs. The regular expression should use the Go regular expression syntax (https://golang.org/pkg/regexp/) and contain at least one named capturing group. The regular expression matches partially by default, so use \"^...$\" if whole-string matching is desired.",
+          "description": "A regular expression that matches a set of clone URLs. The regular expression should use the Go regular expression syntax (https://golang.org/pkg/regexp/) and contain at least one named capturing group. The regular expression matches partially by default, so use \"^...$\" if whole-string matching is desired.",
           "type": "string"
         },
         "to": {
-          "description":
-            "The repository name output pattern. This should use `{matchGroup}` syntax to reference the capturing groups from the `from` field.",
+          "description": "The repository name output pattern. This should use `{matchGroup}` syntax to reference the capturing groups from the `from` field.",
           "type": "string"
         }
       }
