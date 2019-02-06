@@ -26,6 +26,7 @@ func Reap(
 			reap(ctx, cacheDir, maxCacheSize)
 			timer.Reset(frequency)
 		case <-ctx.Done():
+			timer.Stop()
 			logger.Info(ctx, "Reaper shutting down.")
 			return
 		}
