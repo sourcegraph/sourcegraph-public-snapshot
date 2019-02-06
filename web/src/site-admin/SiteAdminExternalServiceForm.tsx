@@ -2,7 +2,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
-import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
@@ -20,8 +19,6 @@ interface Props {
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
     onChange: (change: GQL.IAddExternalServiceInput) => void
 }
-
-const EXTRA_SCHEMAS = [siteSchemaJSON]
 
 export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
@@ -67,8 +64,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         // so the editor is keyed on the kind.
                         key={this.props.input.kind}
                         value={this.props.input.config}
-                        jsonSchemaId={getJSONSchemaId(this.props.input.kind) || ''}
-                        extraSchemas={EXTRA_SCHEMAS}
+                        {...getJSONSchemaId(this.props.input.kind)}
                         canEdit={false}
                         loading={this.props.loading}
                         height={300}
@@ -101,10 +97,10 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     }
 }
 
-function getJSONSchemaId(kind: GQL.ExternalServiceKind): string | null {
+function getJSONSchemaId(kind: GQL.ExternalServiceKind): { jsonSchemaId: string; extraSchemas: any[] } {
     const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind)
     if (!service) {
-        return null // unreachable except if there is a bug
+        return { jsonSchemaId: '', extraSchemas: [] } // unreachable except if there is a bug
     }
-    return service.jsonSchemaId
+    return { jsonSchemaId: service.jsonSchemaId || service.jsonSchema.$id, extraSchemas: [service.jsonSchema] }
 }

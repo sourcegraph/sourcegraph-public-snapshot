@@ -155,6 +155,8 @@ type GitHubAuthProvider struct {
 type GitHubAuthorization struct {
 	Ttl string `json:"ttl,omitempty"`
 }
+
+// GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
 type GitHubConnection struct {
 	Authorization               *GitHubAuthorization `json:"authorization,omitempty"`
 	Certificate                 string               `json:"certificate,omitempty"`
