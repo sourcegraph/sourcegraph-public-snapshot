@@ -102,5 +102,5 @@ function getJSONSchemaId(kind: GQL.ExternalServiceKind): { jsonSchemaId: string;
     if (!service) {
         return { jsonSchemaId: '', extraSchemas: [] } // unreachable except if there is a bug
     }
-    return { jsonSchemaId: service.jsonSchemaId || service.jsonSchema.$id, extraSchemas: [service.jsonSchema] }
+    return { jsonSchemaId: service.jsonSchema.$id, extraSchemas: [service.jsonSchema] }
 }
