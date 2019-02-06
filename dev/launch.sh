@@ -83,6 +83,11 @@ yarn_pid=''
     yarn_pid="$!"
 }
 
+# Build the symbols image
+env IMAGE=dev-symbols ./cmd/symbols/build.sh >/dev/null
+symbols_pid="$!"
+rm -rf /tmp/symbols-cache
+
 if ! ./dev/go-install.sh; then
 	# let Yarn finish, otherwise we get Yarn diagnostics AFTER the
 	# actual reason we're failing.
@@ -95,6 +100,9 @@ fi
 if [[ -n "$yarn_pid" ]]; then
     wait "$yarn_pid"
 fi
+
+# Wait for the symbols image to finish building
+wait "$symbols_pid"
 
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true

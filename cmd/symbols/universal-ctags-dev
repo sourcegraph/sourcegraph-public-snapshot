@@ -2,27 +2,15 @@
 
 # This script is a wrapper around `universal-ctags`.
 #
-# This wrapper script runs `universal-ctags` via the `sourcegraph/symbols` Docker image. This is the
-# same Docker image that actually runs the symbols service in production, and it has the `universal-ctags` compiled
-# binary inside of it (because it needs it, too).
-#
 # To use your own `universal-ctags` binary instead of this wrapper in your local dev server, use
 # `CTAGS_COMMAND=path/to/ctags dev/launch.sh`.
 
 set -e
 unset CDPATH
-cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
-IMAGE=sourcegraph/symbols:latest
+IMAGE=dev-symbols
 NAME=universal-ctags
-
-if [[ -z "${OFFLINE-}" ]] && ! docker pull "$IMAGE" > /dev/null; then
-	echo
-	echo Unable to pull latest Docker image "$IMAGE" for universal-ctags, which is used by the symbols service.
-	echo
-	echo To run the dev server using the latest image available locally, rerun with OFFLINE=true.
-	exit 1
-fi
 
 if docker inspect -f '' /$NAME > /dev/null 2>&1; then
     docker rm -f /$NAME

@@ -42,4 +42,7 @@ for pkg in $server_pkg \
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o "$bindir/$(basename "$pkg")" "$pkg"
 done
 
+mkdir -p "$OUTPUT/.ctags.d"
+cp cmd/symbols/.ctags.d/additional-languages.ctags "$OUTPUT/.ctags.d/additional-languages.ctags"
+
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT"

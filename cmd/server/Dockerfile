@@ -5,14 +5,14 @@ RUN apk --no-cache add --virtual build-deps curl jansson-dev \
   libseccomp-dev linux-headers autoconf pkgconfig make automake \
   gcc g++ binutils
 
-ENV CTAGS_URL=https://codeload.github.com/universal-ctags/ctags/tar.gz/7918d19fe358fae9bad1c264c4f5dc2dcde5cece
+ENV CTAGS_VERSION=08a69b5a030cf56c079e3006238b992b34c9cc51
 
 # hadolint ignore=DL3003
-RUN curl -fsSL -o ctags.tar.gz "$CTAGS_URL" && \
-  tar -C /tmp -xzf ctags.tar.gz && cd /tmp/ctags-7918d19fe358fae9bad1c264c4f5dc2dcde5cece && \
+RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" && \
+  tar -C /tmp -xzf ctags.tar.gz && cd /tmp/ctags-$CTAGS_VERSION && \
   ./autogen.sh && LDFLAGS=-static ./configure --program-prefix=universal- --enable-json --enable-seccomp && \
   make -j8 && make install && cd && \
-  rm -rf /tmp/ctags-7918d19fe358fae9bad1c264c4f5dc2dcde5cece && \
+  rm -rf /tmp/ctags-$CTAGS_VERSION && \
   apk --no-cache --purge del build-deps
 
 FROM alpine:3.9
@@ -39,5 +39,6 @@ RUN apk update && apk add --no-cache \
 COPY --from=sourcegraph/syntect_server:d74791c /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 COPY . /
+
 ENV GO111MODULES=on LANG=en_US.utf8 VERSION=$VERSION
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]

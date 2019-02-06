@@ -62,13 +62,18 @@ mkdir -p .bin
 export GOBIN=$PWD/.bin
 export GO111MODULE=on
 
-if ! go install \
-	github.com/mattn/goreman \
-	github.com/derekparker/delve/cmd/dlv \
-	github.com/sourcegraph/docsite/cmd/docsite \
-	github.com/google/zoekt/cmd/zoekt-archive-index \
-	github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-	github.com/google/zoekt/cmd/zoekt-webserver; then
+INSTALL_GO_PKGS="github.com/mattn/goreman \
+github.com/sourcegraph/docsite/cmd/docsite \
+github.com/google/zoekt/cmd/zoekt-archive-index \
+github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
+github.com/google/zoekt/cmd/zoekt-webserver \
+"
+
+if [ ! -n "${OFFLINE-}" ]; then
+    INSTALL_GO_PKGS="$INSTALL_GO_PKGS github.com/derekparker/delve/cmd/dlv"
+fi
+
+if ! go install $INSTALL_GO_PKGS; then
 	echo >&2 "failed to install prerequisites, aborting."
 	exit 1
 fi

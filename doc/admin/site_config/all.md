@@ -19,8 +19,6 @@ For more information, see ["Configuration overview"](index.md).
 
 - [corsOrigin](all.md#corsorigin-string)
 
-- [disableBrowserExtension](all.md#disablebrowserextension-boolean)
-
 - [disableAutoGitUpdates](all.md#disableautogitupdates-boolean)
 
 - [disablePublicRepoRedirects](all.md#disablepublicreporedirects-boolean)
@@ -44,8 +42,6 @@ For more information, see ["Configuration overview"](index.md).
 - [gitolite](all.md#gitolite-array)
 
 - [gitMaxConcurrentClones](all.md#gitmaxconcurrentclones-integer)
-
-- [reviewBoard](all.md#reviewboard-array)
 
 - [lightstepAccessToken](all.md#lightstepaccesstoken-string)
 
@@ -73,17 +69,15 @@ For more information, see ["Configuration overview"](index.md).
 
 - [auth.providers](all.md#auth-providers-array)
 
-- [auth.disableAccessTokens](all.md#auth-disableaccesstokens-boolean)
-
 - [auth.accessTokens](all.md#auth-accesstokens-object)
 
 - [auth.public](all.md#auth-public-boolean)
 
 - [auth.sessionExpiry](all.md#auth-sessionexpiry-string)
 
-- [email.smtp](all.md#email-smtp-smtpserverconfig-smtpserverconfig-object)
+- [email.smtp](all.md#email-smtp)
 
-- [email.imap](all.md#email-imap-imapserverconfig-imapserverconfig-object)
+- [email.imap](all.md#email-imap)
 
 - [email.address](all.md#email-address-string)
 
@@ -122,10 +116,6 @@ For more information, see ["Configuration overview"](index.md).
 - [HTTPHeaderAuthProvider](all.md#httpheaderauthprovider-object)
 
 - [AuthProviderCommon](all.md#authprovidercommon-object)
-
-- [SMTPServerConfig](all.md#smtpserverconfig-object)
-
-- [IMAPServerConfig](all.md#imapserverconfig-object)
 
 - [SiteConfigSearchScope](all.md#siteconfigsearchscope-array)
 
@@ -212,14 +202,6 @@ Whether indexed search is enabled. If unset Sourcegraph detects the environment 
 ## corsOrigin (string)
 
 Value for the Access-Control-Allow-Origin header returned with all requests.
-
-<br/>
-
-## disableBrowserExtension (boolean)
-
-Disable incoming connections from the Sourcegraph browser extension.
-
-Default: `false`
 
 <br/>
 
@@ -453,16 +435,6 @@ The elements of the array must be of the following types:
 
 <br/>
 
-## auth.disableAccessTokens (boolean)
-
-DEPRECATED. Use "auth.accessTokens.restrict" with value "disable" instead.
-
-Prevents users from creating access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
-
-Default: `false`
-
-<br/>
-
 ## auth.accessTokens (object)
 
 Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -514,11 +486,68 @@ Default: `"2160h"`
 
 <br/>
 
-## email.smtp ([SMTPServerConfig](all.md#smtpserverconfig-object))
+## email.smtp
+
+The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
+
+Properties of the `SMTPServerConfig` object:
+
+### host (string, required)
+
+The SMTP server host.
+
+### port (integer, required)
+
+The SMTP server port.
+
+### username (string)
+
+The username to use when communicating with the SMTP server.
+
+### password (string)
+
+The username to use when communicating with the SMTP server.
+
+### authentication (string, enum, required)
+
+The type of authentication to use for the SMTP server.
+
+This property must be one of the following enum values:
+
+- `none`
+- `PLAIN`
+- `CRAM-MD5`
+
+### domain (string)
+
+The HELO domain to provide to the SMTP server (if needed).
 
 <br/>
 
-## email.imap ([IMAPServerConfig](all.md#imapserverconfig-object))
+## email.imap
+
+Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
+
+Properties of the `IMAPServerConfig` object:
+
+### host (string, required)
+
+The IMAP server host.
+
+### port (integer, required)
+
+The IMAP server port.
+
+### username (string)
+
+The username to use when communicating with the IMAP server.
+
+### password (string)
+
+The username to use when communicating with the IMAP server.
+
+<hr />
+
 
 <br/>
 
@@ -1225,68 +1254,6 @@ Properties of the `AuthProviderCommon` object:
 ### displayName (string)
 
 The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).
-
-<hr />
-
-## SMTPServerConfig (object)
-
-The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
-
-Properties of the `SMTPServerConfig` object:
-
-### host (string, required)
-
-The SMTP server host.
-
-### port (integer, required)
-
-The SMTP server port.
-
-### username (string)
-
-The username to use when communicating with the SMTP server.
-
-### password (string)
-
-The username to use when communicating with the SMTP server.
-
-### authentication (string, enum, required)
-
-The type of authentication to use for the SMTP server.
-
-This property must be one of the following enum values:
-
-- `none`
-- `PLAIN`
-- `CRAM-MD5`
-
-### domain (string)
-
-The HELO domain to provide to the SMTP server (if needed).
-
-<hr />
-
-## IMAPServerConfig (object)
-
-Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
-
-Properties of the `IMAPServerConfig` object:
-
-### host (string, required)
-
-The IMAP server host.
-
-### port (integer, required)
-
-The IMAP server port.
-
-### username (string)
-
-The username to use when communicating with the IMAP server.
-
-### password (string)
-
-The username to use when communicating with the IMAP server.
 
 <hr />
 

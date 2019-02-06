@@ -44,7 +44,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 	// }
 
 	cmd := exec.Command(ctagsCommand, "--_interactive="+opt, "--fields=*",
-		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,elm,Erlang,Go,Java,JavaScript,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,Scheme,Sh,Tcl,typescript,Verilog,Vim",
+		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,Tcl,typescript,Verilog,Vim",
 		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass", "--file-scope=no",
 		"--kinds-Go=-p", // omit because 1 symbol per `package` keyword (1 for each file in a package) is not useful
 	)

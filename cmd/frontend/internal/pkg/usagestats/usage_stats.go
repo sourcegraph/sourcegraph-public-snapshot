@@ -25,6 +25,9 @@ var (
 	pool      = redispool.Store
 
 	timeNow = time.Now
+
+	searchOccurred   = false
+	findRefsOccurred = false
 )
 
 const (
@@ -33,6 +36,9 @@ const (
 	fSearchQueries                 = "searchqueries"
 	fCodeIntelActions              = "codeintelactions"
 	fLastActiveCodeHostIntegration = "lastactivecodehostintegration"
+
+	fSearchOccurred   = "searchoccurred"
+	fFindRefsOccurred = "findrefsoccurred"
 
 	defaultDays   = 14
 	defaultWeeks  = 10
@@ -170,6 +176,26 @@ func GetUsersActiveTodayCount() (int, error) {
 		err = nil
 	}
 	return count, err
+}
+
+func HasSearchOccurred() (bool, error) {
+	c := pool.Get()
+	defer c.Close()
+	s, err := redis.Bool(c.Do("GET", keyPrefix+fSearchOccurred))
+	if err != nil && err != redis.ErrNil {
+		return s, err
+	}
+	return s, nil
+}
+
+func HasFindRefsOccurred() (bool, error) {
+	c := pool.Get()
+	defer c.Close()
+	r, err := redis.Bool(c.Do("GET", keyPrefix+fFindRefsOccurred))
+	if err != nil && err != redis.ErrNil {
+		return r, err
+	}
+	return r, nil
 }
 
 // uniques calculates the list of unique users starting at 00:00:00 on a given UTC date over a
@@ -361,6 +387,28 @@ func logCodeHostIntegrationUsage(userID int32) error {
 	return c.Send("HSET", key, fLastActiveCodeHostIntegration, now.Format(time.RFC3339))
 }
 
+func logSearchOccurred() error {
+	if searchOccurred {
+		return nil
+	}
+	key := keyPrefix + fSearchOccurred
+	c := pool.Get()
+	defer c.Close()
+	searchOccurred = true
+	return c.Send("SET", key, "true")
+}
+
+func logFindRefsOccurred() error {
+	if findRefsOccurred {
+		return nil
+	}
+	key := keyPrefix + fFindRefsOccurred
+	c := pool.Get()
+	defer c.Close()
+	findRefsOccurred = true
+	return c.Send("SET", key, "true")
+}
+
 // LogActivity logs any user activity (page view, integration usage, etc) to their "last active" time, and
 // adds their unique ID to the set of active users
 func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event string) error {
@@ -396,6 +444,24 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 	// Regardless of authenicatation status, add the user's unique ID to the set of active users.
 	if err := c.Send("SADD", usersActiveKeyFromDaysAgo(0), uniqueID); err != nil {
 		return err
+	}
+
+	// Regardless of authentication status,
+	switch event {
+	case "SEARCHQUERY":
+		if err := logSearchOccurred(); err != nil {
+			return err
+		}
+	case "CODEINTEL":
+		// TODO(Dan): differentiate between go to def and find refs
+		if err := logFindRefsOccurred(); err != nil {
+			return err
+		}
+	case "CODEINTELINTEGRATION":
+		// TODO(Dan): differentiate between go to def and find refs
+		if err := logFindRefsOccurred(); err != nil {
+			return err
+		}
 	}
 
 	// If the user isn't authenticated, return at this point and don't record user-level properties.
