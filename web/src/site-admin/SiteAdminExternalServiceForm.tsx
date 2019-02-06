@@ -38,6 +38,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         autoCorrect="off"
                         autoComplete="off"
                         autoFocus={true}
+                        spellCheck={false}
                         value={this.props.input.displayName}
                         onChange={this.onDisplayNameChange}
                         disabled={this.props.loading}
