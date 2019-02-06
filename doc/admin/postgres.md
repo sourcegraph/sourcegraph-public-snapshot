@@ -10,15 +10,16 @@ This section describes the possible Postgres upgrade procedures for the differen
 
 A few different deployment types can automatically handle Postgres data upgrades for you.
 
-#### Docker host with `sourcegraph/server` image
+#### `sourcegraph/server`
 
-If a new release of the `sourcegraph/server` image ships with an upgrade version of Postgres,
-it'll automatically upgrade your existing Postgres data to be compatible with the new version.
+Existing Postgres data will be automatically migrated when a release of the `sourcegraph/server` Docker image ships with a new version of Postgres.
 
-All you need to do is mount the Docker socket the first time you run the new Docker image.
+For the upgrade to proceed, the Docker socket must be mounted the first time the new Docker image is ran.
 
-This is needed to run the Postgres upgrade containers defined at https://github.com/tianon/docker-postgres-upgrade in your
-Docker host. When the upgrade is done, you can stop the container and start it again without the Docker socket mounted.
+This is needed to run the [Postgres upgrade containers](https://github.com/tianon/docker-postgres-upgrade) in the
+Docker host. When the upgrade is done, the container can be restarted without mounting the Docker socket.
+
+Docker host
 
 ```console
 docker run -p 7080:7080 -p 2633:2633 --rm \
@@ -59,9 +60,12 @@ docker run -p 7080:7080 -p 2633:2633 --rm \
 01:36:01           frontend | ✱ Sourcegraph is ready at: http://127.0.0.1:7080
 ```
 
-#### Kubernetes with `sourcegraph/server` image
+##### On Kubernetes
+
 
 #### Kubernetes with https://github.com/sourcegraph/deploy-sourcegraph
+
+
 
 #### External databases
 
@@ -73,7 +77,15 @@ If you prefer to manually upgrade Postgres, you can follow these instructions.
 
 #### Docker host with `sourcegraph/server` image
 
-#### Kubernetes with `sourcegraph/server` image
+```shell
+set -euo pipefail
+
+docker run -p 7080:7080 -p 2633:2633 --rm \
+  -v ~/.sourcegraph/config:/etc/sourcegraph \
+  -v ~/.sourcegraph/data:/var/opt/sourcegraph \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  tianon/postgres-upgrade:$OLD_VERSION-to-$NEW_VERSION
+```
 
 #### Kubernetes with https://github.com/sourcegraph/deploy-sourcegraph
 
