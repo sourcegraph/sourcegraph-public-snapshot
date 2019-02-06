@@ -520,7 +520,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	}
 
 	var suggestions []*searchSuggestionResolver
-	for assumedScore, result := range fileResults {
+	for i, result := range fileResults {
+		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
 		suggestions = append(suggestions, newSearchResultResolver(result.File(), assumedScore))
 	}
 	return suggestions, nil
