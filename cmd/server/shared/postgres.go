@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,7 +32,7 @@ func maybePostgresProcFile() (string, error) {
 	e.Command("mkdir", "-p", "/run/postgresql")
 	e.Command("chown", "-R", "postgres", "/run/postgresql")
 	if err := e.Error(); err != nil {
-		log.Printf("Setting up postgres failed:\n%s", output.String())
+		fmt.Fprintf(os.Stderr, "Setting up postgres failed:\n%s\n", output.String())
 		return "", err
 	}
 
@@ -46,9 +45,9 @@ func maybePostgresProcFile() (string, error) {
 		}
 
 		if verbose {
-			log.Printf("Setting up PostgreSQL at %s", path)
+			fmt.Fprintf(os.Stderr, "Setting up PostgreSQL at %s\n", path)
 		}
-		log.Println("✱ Sourcegraph is initializing the internal database... (may take 15-20 seconds)")
+		fmt.Fprintln(os.Stderr, "✱ Sourcegraph is initializing the internal database... (may take 15-20 seconds)")
 
 		var output bytes.Buffer
 		e := execer{Out: &output}
@@ -61,7 +60,7 @@ func maybePostgresProcFile() (string, error) {
 		e.Command("su-exec", "postgres", "createdb", "sourcegraph")
 		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-m", "fast", "-l", "/tmp/pgsql.log", "-w", "stop")
 		if err := e.Error(); err != nil {
-			log.Printf("Setting up postgres failed:\n%s", output.String())
+			fmt.Fprintf(os.Stderr, "Setting up postgres failed:\n%s\n", output.String())
 			os.RemoveAll(path)
 			return "", err
 		}
@@ -72,7 +71,7 @@ func maybePostgresProcFile() (string, error) {
 		e := execer{Out: &output}
 		e.Command("chown", "-R", "postgres", path)
 		if err := e.Error(); err != nil {
-			log.Printf("Adjusting fs owners for postgres failed:\n%s", output.String())
+			fmt.Fprintf(os.Stderr, "Adjusting fs owners for postgres failed:\n%s\n", output.String())
 			return "", err
 		}
 
@@ -120,11 +119,8 @@ func maybeUpgradePostgres(path, newVersion string) (err error) {
 		return nil
 	}
 
-	defer func() {
-		if err != nil {
-			log.Printf("Postgres automatic data upgrade failed. Please refer to https://docs.sourcegraph.com/admin/postgres for more information.")
-		}
-	}()
+	fmt.Fprintf(os.Stderr, "✱ Sourcegraph is upgrading its internal database. Please don't interrupt this operation.\n")
+	fmt.Fprintf(os.Stderr, "✱ For more information refer to https://docs.sourcegraph.com/admin/postgres\n")
 
 	id, err := containerID()
 	if err != nil {
@@ -159,20 +155,20 @@ func maybeUpgradePostgres(path, newVersion string) (err error) {
 	hostPathNew := hostPath + "-" + newVersion
 
 	if status == "started" {
-		log.Printf("✱ Sourcegraph was previously interrupted while upgrading its internal database.")
-		log.Printf("✱ To try again, start the container after running these commands (safe):\n")
+		fmt.Fprintf(os.Stderr, "✱ Sourcegraph was previously interrupted while upgrading its internal database.\n")
+		fmt.Fprintf(os.Stderr, "✱ To try again, start the container after running these commands (safe):\n")
 
 		if oldVersion == newVersion {
 			hostPathOld := hostPath + "-" + statusVersion
-			log.Printf(
-				"$ mv %s %s\n$ mv %s %s\n$ rm -rf %s",
+			fmt.Fprintf(os.Stderr,
+				"\n  mv %s %s\n  mv %s %s\n  rm -rf %s\n\n",
 				hostPath, hostPathNew+".$(date +%s).bak",
 				hostPathOld, hostPath,
 				hostUpgradeDir,
 			)
 		} else {
-			log.Printf(
-				"$ mv %s %s\n$ rm -rf %s",
+			fmt.Fprintf(os.Stderr,
+				"\n  mv %s %s\n  rm -rf %s\n\n",
 				hostPathNew, hostPathNew+".$(date +%s).bak",
 				hostUpgradeDir,
 			)
@@ -180,8 +176,7 @@ func maybeUpgradePostgres(path, newVersion string) (err error) {
 		return errors.New("Interrupted internal database upgrade detected")
 	}
 
-	log.Printf("✱ Sourcegraph is upgrading its internal database. Please don't interrupt this operation.")
-	defer log.Printf("✱ Sourcegraph finished upgrading its internal database.")
+	defer fmt.Fprintf(os.Stderr, "✱ Sourcegraph finished upgrading its internal database.\n")
 
 	if err = writeStatus(statusFile, "started", oldVersion); err != nil {
 		return err
@@ -226,6 +221,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 
 	img := fmt.Sprintf("tianon/postgres-upgrade:%s-to-%s", ps.oldVersion, ps.newVersion)
 
+	fmt.Fprintf(os.Stderr, "Pulling image %s\n", img)
 	out, err := cli.ImagePull(ctx, img, types.ImagePullOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "failed to pull %q", img)
@@ -247,6 +243,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 		},
 	}
 
+	fmt.Fprintf(os.Stderr, "Running image %s\n", img)
 	now := time.Now()
 	name := fmt.Sprintf("sourcegraph-postgres-upgrade-%d", now.Unix())
 	resp, err := cli.ContainerCreate(ctx, &config, &hostConfig, nil, name)
@@ -276,6 +273,8 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 		return errors.Wrap(err, "failed to copy logs to output")
 	}
 
+	fmt.Fprintf(os.Stderr, "Finished running image %s\n", img)
+
 	// Run the /postgres-optimize.sh in the same dir as the *.sql and *.sh scripts
 	// left behind by pg_upgrade.
 	e := execer{Out: output, Dir: ps.upgradeDir}
@@ -284,11 +283,12 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 	e.Command("mv", ps.path, pathOld)
 	e.Command("mv", pathNew, ps.path)
 	e.Command("chown", "-R", "postgres", ps.path)
+	fmt.Fprintf(os.Stderr, "Optimizing internal database\n")
 	e.Command("su-exec", "postgres", "/postgres-optimize.sh", ps.path)
 
 	if err := e.Error(); err != nil {
 		if b, ok := output.(*bytes.Buffer); ok && !verbose {
-			log.Print(b.String())
+			fmt.Fprintln(os.Stderr, b.String())
 		}
 		return errors.Wrap(err, "postgres upgrade failed after running pg_upgrade")
 	}
