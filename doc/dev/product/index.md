@@ -1,6 +1,6 @@
 # Product
 
-This document is about *how* we do product at Sourcegraph. For the *what*, see the [product roadmap](../roadmap/index.md).
+This document is about *how* we plan product changes at Sourcegraph. For the *what*, see the [product roadmap](../roadmap/index.md).
 
 ## Goals
 
@@ -71,7 +71,9 @@ When we have relaxed this in the past, the results have been bad and the overwhe
 
 We receive tons of feature request and bug reports, more than we can handle. This means we must frequently say "no" or prioritize things less urgently than some people would like. Our job is to find the most important things to work on.
 
-## Product manager
+## Roles
+
+### Product manager
 
 The product manager is responsible for prioritization, which means ensuring the following is true:
 
@@ -89,3 +91,40 @@ The right mix of these 3 things depends on the team and what they're working on 
 - For other teams, the PM will be the first to respond to and prioritize issues that are filed on the team.
 
 No matter the chosen mix, the PM is still responsible for prioritization. For example, if the PM doesn't effectively educate the devs so they can plan and triage well, then the PM needs to step up on planning and triage (as a backstop).
+
+### Tech lead
+
+Each project has one tech lead. A tech lead serves in that role for one or more release cycles.
+
+The tech lead is responsible for making sure the following two statements are true:
+
+> The issues for the current release milestone describe the problem/solution.
+>
+> The issues for the current release milestone are completed (closed) by the release.
+
+The following sections give more details.
+
+#### The issues for each release milestone are completed (closed) by the release.
+
+This means the tech lead needs to do 2 things:
+
+- **Estimate** at planning time how much can get done in the time alotted for a release milestone.
+- **Reschedule** issues continuously into/from the milestone depending on the pace and [triage](issues.md#triage).
+
+It's impossible to estimate perfectly, so the tech lead needs to continuously monitor the team's progress and make adjustments accordingly.
+
+If it looks like the team won't be able to complete the issues by the release, the tech lead **must** mention this in the #product channel and needs to do some combination of:
+
+- helping unblock or accelerate the work of individual teammates
+- descoping issues in this milestone
+- deferring issues to a later milestone
+- getting help from other people on certain issues
+
+The [product manager](product/index.md#product-manager) can help here, especially with product and priority questions for descoping or deferring work.
+
+#### The issues for each release milestone describe the problem/solution.
+
+This means the tech lead needs to do 2 things:
+
+- Ensure the issues for feature work have enough information for the devs who are implementing the feature.
+- Gather information for bug reports (including documenting/automating how other people can supply the info needed to diagnose/fix the bug).
