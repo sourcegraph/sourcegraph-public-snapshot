@@ -30,21 +30,22 @@ type externalServices struct{}
 // ExternalServiceKinds contains a map of all supported kinds of
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
-	"AWSCODECOMMIT":   {CodeHost: true, Definition: "AWSCodeCommitConnection"},
-	"BITBUCKETSERVER": {CodeHost: true, Definition: "BitbucketServerConnection"},
-	"GITHUB":          {CodeHost: true, Definition: "GitHubConnection"},
-	"GITLAB":          {CodeHost: true, Definition: "GitLabConnection"},
-	"GITOLITE":        {CodeHost: true, Definition: "GitoliteConnection"},
-	"PHABRICATOR":     {CodeHost: true, Definition: "PhabricatorConnection"},
-	"OTHER":           {CodeHost: true, Definition: "OtherExternalServiceConnection"},
+	"AWSCODECOMMIT":   {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/AWSCodeCommitConnection"},
+	"BITBUCKETSERVER": {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/BitbucketServerConnection"},
+	"GITHUB":          {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/GitHubConnection"},
+	"GITLAB":          {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/GitLabConnection"},
+	"GITOLITE":        {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/GitoliteConnection"},
+	"PHABRICATOR":     {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/PhabricatorConnection"},
+	"OTHER":           {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/OtherExternalServiceConnection"},
 }
 
 // ExternalServiceKind describes a kind of external service.
 type ExternalServiceKind struct {
 	// True if the external service can host repositories.
 	CodeHost bool
-	// JSON Schema definition name in site.schema.json
-	Definition string
+
+	JSONSchema   string // JSON Schema to load (deferenced into by JSONSchemaID)
+	JSONSchemaID string // ID of the JSON Schema for this service's configuration
 }
 
 // ExternalServicesListOptions contains options for listing external services.
@@ -76,15 +77,12 @@ func (e *externalServices) validateConfig(kind, config string) error {
 	// serveExternalServiceConfigs to handle this case.
 
 	sl := gojsonschema.NewSchemaLoader()
-	err := sl.AddSchemas(gojsonschema.NewStringLoader(schema.SiteSchemaJSON))
+	err := sl.AddSchemas(gojsonschema.NewStringLoader(ext.JSONSchema))
 	if err != nil {
-		return errors.Wrap(err, "failed to add site schema to schema loader")
+		return errors.Wrap(err, "failed to add schema to schema loader")
 	}
 
-	sc, err := sl.Compile(gojsonschema.NewStringLoader(
-		fmt.Sprintf(`{"$ref": "site.schema.json#/definitions/%s"}`, ext.Definition),
-	))
-
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(fmt.Sprintf(`{"$ref": %q}`, ext.JSONSchemaID)))
 	if err != nil {
 		return errors.Wrapf(err, "failed to compile schema for external service of kind %q", kind)
 	}
@@ -94,7 +92,6 @@ func (e *externalServices) validateConfig(kind, config string) error {
 		return errors.Wrapf(err, "failed to normalize JSON")
 	}
 
-	sc.SetRootSchemaName(ext.Definition)
 	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
 	if err != nil {
 		return errors.Wrap(err, "failed to validate config against schema")
