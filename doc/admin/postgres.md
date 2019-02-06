@@ -32,7 +32,7 @@ docker run -p 7080:7080 -p 2633:2633 --rm \
 
 When using the `sourcegraph/server` image in other environments (e.g. Kubernetes), please refer to official documentation on how to mount the Docker socket for the upgrade procedure.
 
-Alternatively, Postgres can be [upgraded manually](#manual).
+Alternatively, Postgres can be [upgraded manually](https://docs.sourcegraph.com/admin/postgres#manual).
 
 #### Kubernetes with https://github.com/sourcegraph/deploy-sourcegraph
 
