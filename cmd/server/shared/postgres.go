@@ -143,6 +143,11 @@ func maybeUpgradePostgres(path, newVersion string) error {
 		return errors.Wrap(err, "failed to create upgrade dir")
 	}
 
+	pathNew := path + "-" + newVersion
+	if err := os.MkdirAll(pathNew, 0755); err != nil {
+		return errors.Wrapf(err, "failed to create new postgres data dir: %s", pathNew)
+	}
+
 	// e.g: ~/.sourcegraph/data/postgresql
 	hostPath := filepath.Join(hostDataDir, filepath.Base(path))
 	hostPathNew := hostPath + "-" + newVersion
