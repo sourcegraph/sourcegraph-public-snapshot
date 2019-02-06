@@ -16,6 +16,7 @@ func Reap(
 	cacheDir string,
 	frequency time.Duration,
 	maxCacheSize uint64,
+	recoveryFactor int,
 ) {
 	ctx = logger.WithLogger(ctx, "cacheDir", cacheDir, "maxCacheSize", maxCacheSize)
 	timer := time.NewTimer(frequency)
@@ -23,7 +24,7 @@ func Reap(
 	for {
 		select {
 		case <-timer.C:
-			reap(ctx, cacheDir, maxCacheSize)
+			reap(ctx, cacheDir, maxCacheSize, recoveryFactor)
 			timer.Reset(frequency)
 		case <-ctx.Done():
 			timer.Stop()
@@ -34,7 +35,7 @@ func Reap(
 
 }
 
-func reap(ctx context.Context, directory string, maxSize uint64) {
+func reap(ctx context.Context, directory string, maxSize uint64, recoveryFactor int) {
 	logger.Info(ctx, "Fetching directory info")
 
 	files, totalSize := getDirectoryInfo(ctx, directory)
@@ -48,7 +49,7 @@ func reap(ctx context.Context, directory string, maxSize uint64) {
 
 	logger.Info(ctx, "Cache is overgrown. Reaping.")
 
-	clearSpace(ctx, files, totalSize, 4*maxSize/5)
+	clearSpace(ctx, files, totalSize, uint64(recoveryFactor)*maxSize/100)
 
 	logger.Info(ctx, "Reap complete.")
 }

@@ -22,6 +22,12 @@ var maxCacheSize = flag.String(
 	"max cache size (examples: 1048576k, 1024m, 1g)",
 )
 
+var recoveryFactor = flag.Int(
+	"recoveryFactor",
+	80,
+	"percentage of max cache size to reduce usage to (between 0 and 100)",
+)
+
 var checkFrequency = flag.Duration(
 	"frequency",
 	time.Minute,
@@ -55,6 +61,11 @@ func main() {
 		os.Exit(2)
 	}
 
+	if *recoveryFactor < 0 || *recoveryFactor > 100 {
+		flag.Usage()
+		os.Exit(2)
+	}
+
 	// Unless force is specified, do some sanity checking.
 	if !*force {
 		if len(*cacheDir) == 0 {
@@ -81,7 +92,9 @@ func main() {
 			logger.WithLogger(ctx, "cmd", "cachereaper"),
 			*cacheDir,
 			*checkFrequency,
-			maxCacheSizeBytes)
+			maxCacheSizeBytes,
+			*recoveryFactor,
+		)
 
 		shutdownWaitGroup.Done()
 	}()
