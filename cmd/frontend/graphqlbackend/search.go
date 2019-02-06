@@ -500,7 +500,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, nil
 	}
 
-	p, err := r.getPatternInfo(true)
+	p, err := r.getPatternInfo(&getPatternInfoOptions{forceFileSearch: true})
 	if err != nil {
 		return nil, err
 	}
