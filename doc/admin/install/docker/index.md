@@ -21,7 +21,7 @@ Access the server on port `7080`, then follow the steps in this screen cast to i
   </div>
 </p>
 
-Once Sourcegraph has been configured, head to the [site administration documentation](admin/index.md) for next steps.
+Once Sourcegraph has been configured, head to the [site administration documentation](../../index.md) for next steps.
 
 ## Cloud installation guides
 
