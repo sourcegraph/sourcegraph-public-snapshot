@@ -36,6 +36,29 @@ Alternatively, Postgres can be [upgraded manually](#manual).
 
 #### Kubernetes with https://github.com/sourcegraph/deploy-sourcegraph
 
+The upgrade process is fully automated. However, if you have customized the environment variables `PGUSER`, `PGDATABASE` or `PGDATA` then you are required to specify the corresponding `PG*OLD` and `PG*NEW` environment variables. Below are the defaults as reference:
+
+``` shell
+# PGUSEROLD: A user that exists in the old database that can be used
+#            to authenticate intermediate upgrade operations.
+# PGUSERNEW: A user that must exist in the new database (upgraded or freshly created).
+#
+# PGDATABASEOLD: A database that exists in the old database that can be used
+#                to authenticate intermediate upgrade operations. (e.g `psql -d`)
+# PGDATABASENEW: A database that must exist in the new database (upgraded or freshly created).
+#
+# PGDATAOLD: The data directory containing the files of the old Postgres database to be upgraded.
+# PGDATANEW: The data directory containing the upgraded Postgres data files, used by the new version of Postgres
+PGUSEROLD=sg
+PGUSERNEW=sg
+PGDATABASEOLD=sg
+PGDATABASENEW=sg
+PGDATAOLD=/data/pgdata
+PGDATANEW=/data/pgdata-11
+```
+
+Additionally the upgrade process assumes it can write to the parent directory of `PGDATAOLD`.
+
 ### Manual
 
 These instructions can be followed when manual Postgres upgrades are preferred.
@@ -73,5 +96,3 @@ docker run \
   "postgres:$NEW" \
   -c 'chown -R postgres $PGDATA && gosu postgres bash ./optimize.sh $PGDATA'
 ```
-
-#### Kubernetes with https://github.com/sourcegraph/deploy-sourcegraph
