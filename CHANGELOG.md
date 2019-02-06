@@ -25,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 Both the `sourcegraph/server` image and the [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) manifests ship with Postgres `11.1`.
 For maximum compatibility, however, the minimum supported version remains `9.6`.
 
-The upgrade procedure is mostly automated for existing deployments. Please refer to [this page](https://docs.sourcegraph.com/admin/postgres.md) for detailed instructions.
+The upgrade procedure is mostly automated for existing deployments. Please refer to [this page](https://docs.sourcegraph.com/admin/postgres) for detailed instructions.
 
 ## 3.0.0
 
