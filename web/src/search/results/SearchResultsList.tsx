@@ -56,7 +56,8 @@ interface State {
     resultsShown: number
     visibleItems: Set<number>
     didScrollToItem: boolean
-    fileMatchRepoDisplayNames: Map<string, string>
+    /** Map from repo name to display name */
+    fileMatchRepoDisplayNames: ReadonlyMap<string, string>
 }
 
 export class SearchResultsList extends React.PureComponent<SearchResultsListProps, State> {
