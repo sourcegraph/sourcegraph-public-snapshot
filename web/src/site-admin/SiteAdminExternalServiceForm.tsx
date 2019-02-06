@@ -67,7 +67,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         // so the editor is keyed on the kind.
                         key={this.props.input.kind}
                         value={this.props.input.config}
-                        jsonSchemaId={`site.schema.json#definitions/${getKindDefinitionId(this.props.input.kind)}`}
+                        jsonSchemaId={getJSONSchemaId(this.props.input.kind) || ''}
                         extraSchemas={EXTRA_SCHEMAS}
                         canEdit={false}
                         loading={this.props.loading}
@@ -101,10 +101,10 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     }
 }
 
-function getKindDefinitionId(kind: GQL.ExternalServiceKind): string | null {
+function getJSONSchemaId(kind: GQL.ExternalServiceKind): string | null {
     const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind)
     if (!service) {
         return null // unreachable except if there is a bug
     }
-    return service.schemaDefinition
+    return service.jsonSchemaId
 }
