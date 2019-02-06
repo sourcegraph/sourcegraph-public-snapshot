@@ -38,6 +38,12 @@ interface Props {
     result: IFileMatch
 
     /**
+     * Formatted repository name to be displayed in repository link. If not
+     * provided, the default format will be displayed.
+     */
+    repoDisplayName?: string
+
+    /**
      * The icon to show left to the title.
      */
     icon: React.ComponentType<{ className?: string }>
@@ -96,6 +102,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 repoURL={result.repository.url}
                 filePath={result.file.path}
                 fileURL={result.file.url}
+                repoDisplayName={this.props.repoDisplayName}
             />
         )
 
