@@ -100,13 +100,25 @@ func maybePostgresProcFile() (string, error) {
 // maybeUpgradePostgres upgrades the Postgres data files in path to the given version
 // if they're not already upgraded. It requires access to the host's Docker socket.
 func maybeUpgradePostgres(path, newVersion string) error {
-	dataDir := filepath.Dir(path)
-
 	bs, err := ioutil.ReadFile(filepath.Join(path, "PG_VERSION"))
 	if err != nil {
 		return errors.Wrap(err, "failed to detect version of existing Postgres data")
 	}
+
 	oldVersion := strings.TrimSpace(string(bs))
+	dataDir := filepath.Dir(path)
+	upgradeDir := filepath.Join(dataDir, fmt.Sprintf("postgres-%s-upgrade", newVersion))
+	statusFile := filepath.Join(upgradeDir, "status")
+
+	status, statusVersion, err := readStatus(statusFile)
+	if err != nil {
+		return errors.Wrap(err, "failed to read status file")
+	}
+
+	if oldVersion == newVersion && status != "started" {
+		// Nothing to do, already upgraded
+		return nil
+	}
 
 	id, err := containerID()
 	if err != nil {
@@ -125,17 +137,10 @@ func maybeUpgradePostgres(path, newVersion string) error {
 		return errors.Wrap(err, "failed to determine host mount point")
 	}
 
-	upgradeDir := filepath.Join(dataDir, fmt.Sprintf("postgres-%s-upgrade", newVersion))
 	hostUpgradeDir := filepath.Join(hostDataDir, filepath.Base(upgradeDir))
-	statusFile := filepath.Join(upgradeDir, "status")
 
 	if err := os.MkdirAll(upgradeDir, 0755); err != nil {
 		return errors.Wrap(err, "failed to create upgrade dir")
-	}
-
-	status, statusVersion, err := readStatus(statusFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to read status file")
 	}
 
 	// e.g: ~/.sourcegraph/data/postgresql
@@ -162,11 +167,6 @@ func maybeUpgradePostgres(path, newVersion string) error {
 			)
 		}
 		return errors.New("Interrupted internal database upgrade detected")
-	}
-
-	// Nothing to do, already upgraded.
-	if oldVersion == newVersion {
-		return nil
 	}
 
 	log.Printf("✱ Sourcegraph is upgrading its internal database. Please don't interrupt this operation.")
