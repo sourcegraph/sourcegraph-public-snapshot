@@ -101,21 +101,10 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     }
 }
 
-function getKindDefinitionId(kind: GQL.ExternalServiceKind): string {
-    switch (kind) {
-        case GQL.ExternalServiceKind.AWSCODECOMMIT:
-            return 'AWSCodeCommitConnection'
-        case GQL.ExternalServiceKind.BITBUCKETSERVER:
-            return 'BitbucketServerConnection'
-        case GQL.ExternalServiceKind.GITHUB:
-            return 'GitHubConnection'
-        case GQL.ExternalServiceKind.GITLAB:
-            return 'GitLabConnection'
-        case GQL.ExternalServiceKind.GITOLITE:
-            return 'GitoliteConnection'
-        case GQL.ExternalServiceKind.PHABRICATOR:
-            return 'PhabricatorConnection'
-        case GQL.ExternalServiceKind.OTHER:
-            return 'OtherExternalServiceConnection'
+function getKindDefinitionId(kind: GQL.ExternalServiceKind): string | null {
+    const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind)
+    if (!service) {
+        return null // unreachable except if there is a bug
     }
+    return service.schemaDefinition
 }
