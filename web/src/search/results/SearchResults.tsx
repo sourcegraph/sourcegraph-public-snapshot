@@ -19,7 +19,6 @@ import { FilterChip } from '../FilterChip'
 import { isSearchResults, submitSearch, toggleSearchFilter } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
-import { SearchResultsListOld } from './SearchResultsListOld'
 
 const UI_PAGE_SIZE = 75
 
@@ -51,7 +50,6 @@ interface SearchResultsState {
 }
 
 const newRepoFilters = localStorage.getItem('newRepoFilters') !== 'false'
-const newSearchResultsList = localStorage.getItem('newSearchResultsList') !== 'false'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
@@ -217,43 +215,23 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             </div>
                         </div>
                     )}
-                {newSearchResultsList ? (
-                    <SearchResultsList
-                        resultsOrError={this.state.resultsOrError}
-                        onShowMoreResultsClick={this.showMoreResults}
-                        onExpandAllResultsToggle={this.onExpandAllResultsToggle}
-                        allExpanded={this.state.allExpanded}
-                        showSavedQueryModal={this.state.showSavedQueryModal}
-                        onSaveQueryClick={this.showSaveQueryModal}
-                        onSavedQueryModalClose={this.onModalClose}
-                        onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                        didSave={this.state.didSaveQuery}
-                        location={this.props.location}
-                        history={this.props.history}
-                        authenticatedUser={this.props.authenticatedUser}
-                        settingsCascade={this.props.settingsCascade}
-                        isLightTheme={this.props.isLightTheme}
-                        fetchHighlightedFileLines={fetchHighlightedFileLines}
-                    />
-                ) : (
-                    <SearchResultsListOld
-                        resultsOrError={this.state.resultsOrError}
-                        onShowMoreResultsClick={this.showMoreResults}
-                        onExpandAllResultsToggle={this.onExpandAllResultsToggle}
-                        allExpanded={this.state.allExpanded}
-                        showSavedQueryModal={this.state.showSavedQueryModal}
-                        onSaveQueryClick={this.showSaveQueryModal}
-                        onSavedQueryModalClose={this.onModalClose}
-                        onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                        didSave={this.state.didSaveQuery}
-                        location={this.props.location}
-                        authenticatedUser={this.props.authenticatedUser}
-                        isLightTheme={this.props.isLightTheme}
-                        settingsCascade={this.props.settingsCascade}
-                        uiLimit={this.state.uiLimit}
-                        fetchHighlightedFileLines={fetchHighlightedFileLines}
-                    />
-                )}
+                <SearchResultsList
+                    resultsOrError={this.state.resultsOrError}
+                    onShowMoreResultsClick={this.showMoreResults}
+                    onExpandAllResultsToggle={this.onExpandAllResultsToggle}
+                    allExpanded={this.state.allExpanded}
+                    showSavedQueryModal={this.state.showSavedQueryModal}
+                    onSaveQueryClick={this.showSaveQueryModal}
+                    onSavedQueryModalClose={this.onModalClose}
+                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
+                    didSave={this.state.didSaveQuery}
+                    location={this.props.location}
+                    history={this.props.history}
+                    authenticatedUser={this.props.authenticatedUser}
+                    settingsCascade={this.props.settingsCascade}
+                    isLightTheme={this.props.isLightTheme}
+                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                />
             </div>
         )
     }
