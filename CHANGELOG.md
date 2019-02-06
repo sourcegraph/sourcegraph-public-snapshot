@@ -9,6 +9,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Symbol search now supports Elixir, Haskell, Kotlin, Scala, and Swift
+
 ### Changed
 
 ### Fixed
