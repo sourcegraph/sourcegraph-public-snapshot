@@ -20,11 +20,11 @@ interface State {
  * The individual input fields for the various elements of the search query syntax.
  */
 export class QueryBuilder extends React.Component<Props, State> {
-    private repoFieldInput: HTMLInputElement | null = null
-    private fileFieldInput: HTMLInputElement | null = null
-    private patternsFieldInput: HTMLInputElement | null = null
-    private quotedTermFieldInput: HTMLInputElement | null = null
-    private caseFieldInput: HTMLSelectElement | null = null
+    private repoFieldInput = React.createRef<HTMLInputElement>()
+    private fileFieldInput = React.createRef<HTMLInputElement>()
+    private patternsFieldInput = React.createRef<HTMLInputElement>()
+    private quotedTermFieldInput = React.createRef<HTMLInputElement>()
+    private caseFieldInput = React.createRef<HTMLSelectElement>()
 
     constructor(props: Props) {
         super(props)
@@ -51,7 +51,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={e => (this.repoFieldInput = e)}
+                            ref={this.repoFieldInput}
                             onChange={this.onInputChange}
                         />
                     </div>
@@ -74,7 +74,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={e => (this.fileFieldInput = e)}
+                            ref={this.fileFieldInput}
                             onChange={this.onInputChange}
                         />
                     </div>
@@ -100,7 +100,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={e => (this.patternsFieldInput = e)}
+                            ref={this.patternsFieldInput}
                             onChange={this.onInputChange}
                         />
                     </div>
@@ -122,7 +122,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={e => (this.quotedTermFieldInput = e)}
+                            ref={this.quotedTermFieldInput}
                             onChange={this.onInputChange}
                         />
                     </div>
@@ -142,7 +142,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                         <select
                             id="query-builder__case"
                             className="form-control query-builder__input query-builder__input-select"
-                            ref={e => (this.caseFieldInput = e)}
+                            ref={this.caseFieldInput}
                             onChange={this.onInputChange}
                         >
                             <option value="no" defaultChecked={true}>
@@ -159,20 +159,20 @@ export class QueryBuilder extends React.Component<Props, State> {
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement | HTMLSelectElement> = event => {
         const fieldsQueryParts: string[] = []
-        if (this.repoFieldInput && this.repoFieldInput.value) {
-            fieldsQueryParts.push(formatFieldForQuery('repo', this.repoFieldInput.value))
+        if (this.repoFieldInput.current && this.repoFieldInput.current.value) {
+            fieldsQueryParts.push(formatFieldForQuery('repo', this.repoFieldInput.current.value))
         }
-        if (this.fileFieldInput && this.fileFieldInput.value) {
-            fieldsQueryParts.push(formatFieldForQuery('file', this.fileFieldInput.value))
+        if (this.fileFieldInput.current && this.fileFieldInput.current.value) {
+            fieldsQueryParts.push(formatFieldForQuery('file', this.fileFieldInput.current.value))
         }
-        if (this.patternsFieldInput && this.patternsFieldInput.value) {
-            fieldsQueryParts.push(this.patternsFieldInput.value)
+        if (this.patternsFieldInput.current && this.patternsFieldInput.current.value) {
+            fieldsQueryParts.push(this.patternsFieldInput.current.value)
         }
-        if (this.quotedTermFieldInput && this.quotedTermFieldInput.value) {
-            fieldsQueryParts.push(formatFieldForQuery('', this.quotedTermFieldInput.value))
+        if (this.quotedTermFieldInput.current && this.quotedTermFieldInput.current.value) {
+            fieldsQueryParts.push(formatFieldForQuery('', this.quotedTermFieldInput.current.value))
         }
-        if (this.caseFieldInput && this.caseFieldInput.value && this.caseFieldInput.value !== 'no') {
-            fieldsQueryParts.push(formatFieldForQuery('case', this.caseFieldInput.value))
+        if (this.caseFieldInput.current && this.caseFieldInput.current.value !== 'no') {
+            fieldsQueryParts.push(formatFieldForQuery('case', this.caseFieldInput.current.value))
         }
 
         const fieldsQuery = fieldsQueryParts.join(' ')
