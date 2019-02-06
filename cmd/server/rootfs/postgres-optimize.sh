@@ -11,7 +11,7 @@ function pg() {
     pg_ctl -w -l "/var/lib/postgresql/pg_ctl.log" \
         -D "$PG_DATA" \
         -U "postgres" \
-        -o "-p 5432 -c listen_addresses='' -c unix_socket_permissions=0700 -c unix_socket_directories='/tmp'" \
+        -o "-p 5432 -c listen_addresses=''" \
         "$1"
 }
 
