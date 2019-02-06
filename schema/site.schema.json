@@ -44,11 +44,6 @@
       "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
       "type": "string"
     },
-    "disableBrowserExtension": {
-      "type": "boolean",
-      "default": false,
-      "description": "Disable incoming connections from the Sourcegraph browser extension."
-    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
@@ -80,20 +75,6 @@
       "type": "integer",
       "default": 5
     },
-    "reviewBoard": {
-      "description": "JSON array of configuration for Review Board.",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "url": {
-            "description": "URL to Review Board homepage.",
-            "type": "string"
-          }
-        }
-      }
-    },
     "repoListUpdateInterval": {
       "description":
         "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
@@ -117,12 +98,6 @@
         }
       }
     },
-    "auth.disableAccessTokens": {
-      "description":
-        "DEPRECATED. Use \"auth.accessTokens.restrict\" with value \"disable\" instead.\n\nPrevents users from creating access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
-      "type": "boolean",
-      "default": false
-    },
     "auth.accessTokens": {
       "description":
         "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
@@ -139,10 +114,83 @@
       }
     },
     "email.smtp": {
-      "$ref": "#/definitions/SMTPServerConfig"
+      "title": "SMTPServerConfig",
+      "description":
+        "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port", "authentication"],
+      "properties": {
+        "host": {
+          "description": "The SMTP server host.",
+          "type": "string"
+        },
+        "port": {
+          "description": "The SMTP server port.",
+          "type": "integer"
+        },
+        "username": {
+          "description": "The username to use when communicating with the SMTP server.",
+          "type": "string"
+        },
+        "password": {
+          "description": "The username to use when communicating with the SMTP server.",
+          "type": "string"
+        },
+        "authentication": {
+          "description": "The type of authentication to use for the SMTP server.",
+          "type": "string",
+          "enum": ["none", "PLAIN", "CRAM-MD5"]
+        },
+        "domain": {
+          "description": "The HELO domain to provide to the SMTP server (if needed).",
+          "type": "string"
+        }
+      },
+      "default": null,
+      "examples": [
+        {
+          "host": "smtp.example.com",
+          "port": 465,
+          "username": "alice",
+          "password": "mypassword",
+          "authentication": "PLAIN"
+        }
+      ]
     },
     "email.imap": {
-      "$ref": "#/definitions/IMAPServerConfig"
+      "title": "IMAPServerConfig",
+      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port"],
+      "properties": {
+        "host": {
+          "description": "The IMAP server host.",
+          "type": "string"
+        },
+        "port": {
+          "description": "The IMAP server port.",
+          "type": "integer"
+        },
+        "username": {
+          "description": "The username to use when communicating with the IMAP server.",
+          "type": "string"
+        },
+        "password": {
+          "description": "The username to use when communicating with the IMAP server.",
+          "type": "string"
+        }
+      },
+      "default": null,
+      "examples": [
+        {
+          "host": "imap.example.com",
+          "port": 993,
+          "username": "alice",
+          "password": "mypassword"
+        }
+      ]
     },
     "email.address": {
       "description": "The \"from\" address for emails sent by this server.",
@@ -614,64 +662,6 @@
         "to": {
           "description":
             "The repository name output pattern. This should use `{matchGroup}` syntax to reference the capturing groups from the `from` field.",
-          "type": "string"
-        }
-      }
-    },
-    "SMTPServerConfig": {
-      "description":
-        "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host", "port", "authentication"],
-      "properties": {
-        "host": {
-          "description": "The SMTP server host.",
-          "type": "string"
-        },
-        "port": {
-          "description": "The SMTP server port.",
-          "type": "integer"
-        },
-        "username": {
-          "description": "The username to use when communicating with the SMTP server.",
-          "type": "string"
-        },
-        "password": {
-          "description": "The username to use when communicating with the SMTP server.",
-          "type": "string"
-        },
-        "authentication": {
-          "description": "The type of authentication to use for the SMTP server.",
-          "type": "string",
-          "enum": ["none", "PLAIN", "CRAM-MD5"]
-        },
-        "domain": {
-          "description": "The HELO domain to provide to the SMTP server (if needed).",
-          "type": "string"
-        }
-      }
-    },
-    "IMAPServerConfig": {
-      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host", "port"],
-      "properties": {
-        "host": {
-          "description": "The IMAP server host.",
-          "type": "string"
-        },
-        "port": {
-          "description": "The IMAP server port.",
-          "type": "integer"
-        },
-        "username": {
-          "description": "The username to use when communicating with the IMAP server.",
-          "type": "string"
-        },
-        "password": {
-          "description": "The username to use when communicating with the IMAP server.",
           "type": "string"
         }
       }
