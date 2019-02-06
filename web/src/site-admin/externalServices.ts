@@ -1,4 +1,8 @@
+import awsCodeCommitSchemaJSON from '../../../schema/aws_codecommit.schema.json'
+import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.json'
 import githubSchemaJSON from '../../../schema/github.schema.json'
+import gitoliteSchemaJSON from '../../../schema/gitolite.schema.json'
+import otherExternalServiceSchemaJSON from '../../../schema/other_external_service.schema.json'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 
@@ -41,8 +45,7 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceMetadata = {
 export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
     {
         kind: GQL.ExternalServiceKind.AWSCODECOMMIT,
-        jsonSchemaId: 'site.schema.json#definitions/AWSCodeCommitConnection',
-        jsonSchema: siteSchemaJSON,
+        jsonSchema: awsCodeCommitSchemaJSON,
         displayName: 'AWS CodeCommit',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -56,8 +59,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
     },
     {
         kind: GQL.ExternalServiceKind.BITBUCKETSERVER,
-        jsonSchemaId: 'site.schema.json#definitions/BitbucketServerConnection',
-        jsonSchema: siteSchemaJSON,
+        jsonSchema: bitbucketServerSchemaJSON,
         displayName: 'Bitbucket Server',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -91,8 +93,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
     },
     {
         kind: GQL.ExternalServiceKind.GITOLITE,
-        jsonSchemaId: 'site.schema.json#definitions/GitoliteConnection',
-        jsonSchema: siteSchemaJSON,
+        jsonSchema: gitoliteSchemaJSON,
         displayName: 'Gitolite',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -120,8 +121,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
     },
     {
         kind: GQL.ExternalServiceKind.OTHER,
-        jsonSchemaId: 'site.schema.json#definitions/OtherExternalServiceConnection',
-        jsonSchema: siteSchemaJSON,
+        jsonSchema: otherExternalServiceSchemaJSON,
         displayName: 'Other',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
