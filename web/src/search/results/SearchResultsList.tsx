@@ -235,7 +235,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     )
                 )
                 .subscribe(fileMatches => {
-                    const fileMatchRepoDisplayNames = new Map<string, string>() // name => displayName
+                    const fileMatchRepoDisplayNames = new Map<string, string>()
                     for (const {
                         repository: { name },
                     } of fileMatches) {
