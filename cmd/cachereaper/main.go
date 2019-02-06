@@ -40,6 +40,10 @@ var force = flag.Bool(
 	"turn off sanity checking",
 )
 
+/*
+ * CLI tool to monitor and reclaim cache space when it exceeds a specified amount. See available
+ * flags above.
+ */
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
