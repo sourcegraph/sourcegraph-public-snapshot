@@ -551,7 +551,12 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 }
 
-func (r *searchResolver) getPatternInfo() (*search.PatternInfo, error) {
+// getPatternInfo gets the search pattern info for the query in the resolver.
+//
+// If forceFileSearch == true, the search query is treated as if every default
+// term had `file:` before it. This can be used to allow users to jump to files
+// by just typing their name.
+func (r *searchResolver) getPatternInfo(forceFileSearch bool) (*search.PatternInfo, error) {
 	var patternsToCombine []string
 	for _, v := range r.query.Values(query.FieldDefault) {
 		// Treat quoted strings as literal strings to match, not regexps.
@@ -570,6 +575,12 @@ func (r *searchResolver) getPatternInfo() (*search.PatternInfo, error) {
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
+
+	if forceFileSearch {
+		for _, v := range r.query.Values(query.FieldDefault) {
+			includePatterns = append(includePatterns, asString(v))
+		}
+	}
 
 	// Handle lang: and -lang: filters.
 	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
@@ -662,7 +673,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &searchResultsResolver{alert: alert, start: start}, nil
 	}
 
-	p, err := r.getPatternInfo()
+	p, err := r.getPatternInfo(false)
 	if err != nil {
 		return nil, err
 	}

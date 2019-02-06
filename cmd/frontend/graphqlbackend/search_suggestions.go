@@ -99,7 +99,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		p, err := r.getPatternInfo()
+		p, err := r.getPatternInfo(false)
 		if err != nil {
 			return nil, err
 		}

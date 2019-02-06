@@ -228,7 +228,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 				t.Fatal(err)
 			}
 			sr := searchResolver{query: query}
-			p, err := sr.getPatternInfo()
+			p, err := sr.getPatternInfo(false)
 			if err != nil {
 				t.Fatal(err)
 			}
