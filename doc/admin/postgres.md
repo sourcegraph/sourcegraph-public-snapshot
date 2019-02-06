@@ -21,7 +21,7 @@ Docker host. When the upgrade is done, the container can be restarted without mo
 
 Here's the full invocation when using Docker:
 
-```console
+```bash
 # Add "--env=SRC_LOG_LEVEL=dbug" below for verbose logging.
 docker run -p 7080:7080 -p 2633:2633 --rm \
   -v ~/.sourcegraph/config:/etc/sourcegraph \
@@ -42,14 +42,16 @@ These instructions can be followed when manual Postgres upgrades are preferred.
 
 #### `sourcegraph/server` manual upgrades
 
-Assuming Postgres data must be upgraded from `9.6` to `11`, here's how it'd be done:
+Assuming Postgres data must be upgraded from `9.6` to `11` and your Sourcegraph directory is at `$HOME/.sourcegraph`, here is how it would be done:
 
 ```bash
 #!/usr/bin/env bash
 
 set -xeuo pipefail
 
-export OLD=9.6 NEW=11 SRC_DIR="$HOME/.sourcegraph"
+export OLD=${OLD:-"9.6"}
+export NEW=${NEW:-"11"}
+export SRC_DIR=${SRC_DIR:-"$HOME/.sourcegraph"}
 
 docker run \
   -w /tmp/upgrade \
@@ -69,7 +71,7 @@ docker run \
   -v "$SRC_DIR/data/postgres-$NEW-upgrade:/tmp/upgrade" \
   -v "$SRC_DIR/data/postgresql:/var/lib/postgresql/data" \
   "postgres:$NEW" \
-  -c 'chown -R postgres $PGDATA && gosu postgres ./optimize.sh $PGDATA'
+  -c 'chown -R postgres $PGDATA && gosu postgres bash ./optimize.sh $PGDATA'
 ```
 
 #### Kubernetes with https://github.com/sourcegraph/deploy-sourcegraph
