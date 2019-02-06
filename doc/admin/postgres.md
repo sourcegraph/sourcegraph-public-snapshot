@@ -25,39 +25,39 @@ Docker host
 docker run -p 7080:7080 -p 2633:2633 --rm \
   -v ~/.sourcegraph/config:/etc/sourcegraph \
   -v ~/.sourcegraph/data:/var/opt/sourcegraph \
-  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
   sourcegraph/server:3.0.1
 
 ✱ Sourcegraph is upgrading its internal database. Please don't interrupt this operation.
 ✱ Sourcegraph finished upgrading its internal database.
-01:35:58           postgres | 2019-02-04 01:35:58.341 UTC [77] LOG:  listening on IPv4 address "127.0.0.1", port 5432
-01:35:59 management-console | t=2019-02-04T01:35:59+0000 lvl=info msg="management-console: listening" addr=:2633
-01:36:01           frontend |
-01:36:01           frontend |                    ╓╦╬╬╬╦╖
-01:36:01           frontend |                   ╬╬╬╬╬╬╬╬╬
-01:36:01           frontend |                  ╞╬╬╬╬╬╬╬╬╬╬           ╓╦╦╦╦┐
-01:36:01           frontend |                   ╬╬╬╬╬╬╬╬╬╬╕        ╔╪╪╪╪╪╪╪╪╕
-01:36:01           frontend |                   ╘╬╬╬╬╬╬╬╬╬╬      ╔╪╪╪╪╪╪╪╪╪╪╪
-01:36:01           frontend |                    ╬╬╬╬╬╬╬╬╬╬╗   ╔╪╪╪╪╪╪╪╪╪╪╪╪┘
-01:36:01           frontend |       ╓╦╦╖┐         ╬╬╬╬╬╬╬╬╬╬ ╔╝╪╪╪╪╪╪╪╪╪╪╪╜
-01:36:01           frontend |     ╬╪╪╪╪╪╪╪╪╬╗╦╖   ╠╬╬╬╬╬╬╬╬╝╪╪╪╪╪╪╪╪╪╪╪╪╜
-01:36:01           frontend |    ╠╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╝╝╬╬╬╬╝╪╪╪╪╪╪╪╪╪╪╪╪╜
-01:36:01           frontend |    └╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╩
-01:36:01           frontend |      ╙╩╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╖
-01:36:01           frontend |           └╙╩╬╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╬╦╗┐
-01:36:01           frontend |                  ╙╜╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╗╦╖
-01:36:01           frontend |                  ┌╬╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╬
-01:36:01           frontend |                ┌╗╪╪╪╪╪╪╪╪╪╪╪╪╬╬╬╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪
-01:36:01           frontend |              ┌╗╪╪╪╪╪╪╪╪╪╪╪╪╬╬╬╬╬╬╬╬╬ ╙╜╩╪╪╪╪╪╪╪╪╪╪╪╪╜
-01:36:01           frontend |            ┌╦╪╪╪╪╪╪╪╪╪╪╪╝╙╬╬╬╬╬╬╬╬╬╬       └╙╩╬╪╪╝╜
-01:36:01           frontend |           ╦╪╪╪╪╪╪╪╪╪╪╪╪┘  ╠╬╬╬╬╬╬╬╬╬╬
-01:36:01           frontend |          ╬╪╪╪╪╪╪╪╪╪╪╪┘     ╬╬╬╬╬╬╬╬╬╬┐
-01:36:01           frontend |          ╙╪╪╪╪╪╪╪╪╪╜       ╘╬╬╬╬╬╬╬╬╬╬
-01:36:01           frontend |           └╩╪╪╪╪╝╙          ╬╬╬╬╬╬╬╬╬╬╕
-01:36:01           frontend |                             └╬╬╬╬╬╬╬╬╬╛
-01:36:01           frontend |                               ╩╬╬╬╬╬╬┘
-01:36:01           frontend |
-01:36:01           frontend | ✱ Sourcegraph is ready at: http://127.0.0.1:7080
+13:36:58           postgres | 2019-02-04 01:35:58.341 UTC [77] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+13:36:59 management-console | t=2019-02-04T01:35:59+0000 lvl=info msg="management-console: listening" addr=:2633
+13:37:00           frontend |
+13:37:00           frontend |                    ╓╦╬╬╬╦╖
+13:37:00           frontend |                   ╬╬╬╬╬╬╬╬╬
+13:37:00           frontend |                  ╞╬╬╬╬╬╬╬╬╬╬           ╓╦╦╦╦┐
+13:37:00           frontend |                   ╬╬╬╬╬╬╬╬╬╬╕        ╔╪╪╪╪╪╪╪╪╕
+13:37:00           frontend |                   ╘╬╬╬╬╬╬╬╬╬╬      ╔╪╪╪╪╪╪╪╪╪╪╪
+13:37:00           frontend |                    ╬╬╬╬╬╬╬╬╬╬╗   ╔╪╪╪╪╪╪╪╪╪╪╪╪┘
+13:37:00           frontend |       ╓╦╦╖┐         ╬╬╬╬╬╬╬╬╬╬ ╔╝╪╪╪╪╪╪╪╪╪╪╪╜
+13:37:00           frontend |     ╬╪╪╪╪╪╪╪╪╬╗╦╖   ╠╬╬╬╬╬╬╬╬╝╪╪╪╪╪╪╪╪╪╪╪╪╜
+13:37:00           frontend |    ╠╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╝╝╬╬╬╬╝╪╪╪╪╪╪╪╪╪╪╪╪╜
+13:37:00           frontend |    └╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╩
+13:37:00           frontend |      ╙╩╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╖
+13:37:00           frontend |           └╙╩╬╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╬╦╗┐
+13:37:00           frontend |                  ╙╜╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╗╦╖
+13:37:00           frontend |                  ┌╬╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╬
+13:37:00           frontend |                ┌╗╪╪╪╪╪╪╪╪╪╪╪╪╬╬╬╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪╪
+13:37:00           frontend |              ┌╗╪╪╪╪╪╪╪╪╪╪╪╪╬╬╬╬╬╬╬╬╬ ╙╜╩╪╪╪╪╪╪╪╪╪╪╪╪╜
+13:37:00           frontend |            ┌╦╪╪╪╪╪╪╪╪╪╪╪╝╙╬╬╬╬╬╬╬╬╬╬       └╙╩╬╪╪╝╜
+13:37:00           frontend |           ╦╪╪╪╪╪╪╪╪╪╪╪╪┘  ╠╬╬╬╬╬╬╬╬╬╬
+13:37:00           frontend |          ╬╪╪╪╪╪╪╪╪╪╪╪┘     ╬╬╬╬╬╬╬╬╬╬┐
+13:37:00           frontend |          ╙╪╪╪╪╪╪╪╪╪╜       ╘╬╬╬╬╬╬╬╬╬╬
+13:37:00           frontend |           └╩╪╪╪╪╝╙          ╬╬╬╬╬╬╬╬╬╬╕
+13:37:00           frontend |                             └╬╬╬╬╬╬╬╬╬╛
+13:37:00           frontend |                               ╩╬╬╬╬╬╬┘
+13:37:00           frontend |
+13:37:00           frontend | ✱ Sourcegraph is ready at: http://127.0.0.1:7080
 ```
 
 ##### On Kubernetes

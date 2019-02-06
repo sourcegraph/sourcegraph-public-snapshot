@@ -99,7 +99,7 @@ func maybePostgresProcFile() (string, error) {
 
 // maybeUpgradePostgres upgrades the Postgres data files in path to the given version
 // if they're not already upgraded. It requires access to the host's Docker socket.
-func maybeUpgradePostgres(path, newVersion string) error {
+func maybeUpgradePostgres(path, newVersion string) (err error) {
 	bs, err := ioutil.ReadFile(filepath.Join(path, "PG_VERSION"))
 	if err != nil {
 		return errors.Wrap(err, "failed to detect version of existing Postgres data")
@@ -119,6 +119,12 @@ func maybeUpgradePostgres(path, newVersion string) error {
 		// Nothing to do, already upgraded
 		return nil
 	}
+
+	defer func() {
+		if err != nil {
+			log.Printf("Postgres automatic data upgrade failed. Please refer to https://docs.sourcegraph.com/admin/postgres for more information.")
+		}
+	}()
 
 	id, err := containerID()
 	if err != nil {
