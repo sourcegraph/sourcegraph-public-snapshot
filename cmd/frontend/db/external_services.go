@@ -33,9 +33,9 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	"AWSCODECOMMIT":   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
 	"BITBUCKETSERVER": {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
 	"GITHUB":          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
-	"GITLAB":          {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/GitLabConnection"},
+	"GITLAB":          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
 	"GITOLITE":        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
-	"PHABRICATOR":     {CodeHost: true, JSONSchema: schema.SiteSchemaJSON, JSONSchemaID: "site.schema.json#/definitions/PhabricatorConnection"},
+	"PHABRICATOR":     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 	"OTHER":           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
 }
 
@@ -44,8 +44,7 @@ type ExternalServiceKind struct {
 	// True if the external service can host repositories.
 	CodeHost bool
 
-	JSONSchema   string // JSON Schema to load (deferenced into by JSONSchemaID)
-	JSONSchemaID string // ID of the JSON Schema for this service's configuration
+	JSONSchema string // JSON Schema for the external service's configuration
 }
 
 // ExternalServicesListOptions contains options for listing external services.
@@ -77,24 +76,9 @@ func (e *externalServices) validateConfig(kind, config string) error {
 	// serveExternalServiceConfigs to handle this case.
 
 	sl := gojsonschema.NewSchemaLoader()
-	var sc *gojsonschema.Schema
-	if ext.JSONSchemaID != "" {
-		// Dereference into another schema.
-		if err := sl.AddSchemas(gojsonschema.NewStringLoader(ext.JSONSchema)); err != nil {
-			return errors.Wrap(err, "failed to add schema to schema loader")
-		}
-		var err error
-		sc, err = sl.Compile(gojsonschema.NewStringLoader(fmt.Sprintf(`{"$ref": %q}`, ext.JSONSchemaID)))
-		if err != nil {
-			return errors.Wrapf(err, "failed to dereference schema for external service of kind %q", kind)
-		}
-	} else {
-		// Use entire schema.
-		var err error
-		sc, err = sl.Compile(gojsonschema.NewStringLoader(ext.JSONSchema))
-		if err != nil {
-			return errors.Wrapf(err, "failed to compile schema for external service of kind %q", kind)
-		}
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(ext.JSONSchema))
+	if err != nil {
+		return errors.Wrapf(err, "failed to compile schema for external service of kind %q", kind)
 	}
 
 	normalized, err := jsonc.Parse(config)

@@ -185,6 +185,8 @@ type GitLabAuthProvider struct {
 type GitLabAuthorization struct {
 	Ttl string `json:"ttl,omitempty"`
 }
+
+// GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
 type GitLabConnection struct {
 	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
 	Certificate                 string               `json:"certificate,omitempty"`
@@ -252,6 +254,8 @@ type Phabricator struct {
 	CallsignCommand string `json:"callsignCommand"`
 	Url             string `json:"url"`
 }
+
+// PhabricatorConnection description: Configuration for a connection to Phabricator.
 type PhabricatorConnection struct {
 	Repos []*Repos `json:"repos,omitempty"`
 	Token string   `json:"token,omitempty"`

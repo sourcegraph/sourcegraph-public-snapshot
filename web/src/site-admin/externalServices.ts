@@ -1,18 +1,15 @@
 import awsCodeCommitSchemaJSON from '../../../schema/aws_codecommit.schema.json'
 import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.json'
 import githubSchemaJSON from '../../../schema/github.schema.json'
+import gitlabSchemaJSON from '../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../schema/gitolite.schema.json'
 import otherExternalServiceSchemaJSON from '../../../schema/other_external_service.schema.json'
-import siteSchemaJSON from '../../../schema/site.schema.json'
+import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 
 export interface ExternalServiceMetadata {
     kind: GQL.ExternalServiceKind
     jsonSchema: { $id: string }
-
-    /** @default ExternalServiceMetadata#jsonSchema#$id */
-    jsonSchemaId?: string
-
     displayName: string
     defaultConfig: string
 }
@@ -76,8 +73,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
     GITHUB_EXTERNAL_SERVICE,
     {
         kind: GQL.ExternalServiceKind.GITLAB,
-        jsonSchemaId: 'site.schema.json#definitions/GitLabConnection',
-        jsonSchema: siteSchemaJSON,
+        jsonSchema: gitlabSchemaJSON,
         displayName: 'GitLab',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -106,8 +102,7 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
     },
     {
         kind: GQL.ExternalServiceKind.PHABRICATOR,
-        jsonSchemaId: 'site.schema.json#definitions/PhabricatorConnection',
-        jsonSchema: siteSchemaJSON,
+        jsonSchema: phabricatorSchemaJSON,
         displayName: 'Phabricator',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
