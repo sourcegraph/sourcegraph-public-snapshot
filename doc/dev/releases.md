@@ -18,7 +18,7 @@ The release always ships on time, even if it's missing features or bug fixes we 
 
 ### Why the 20th?
 
-We don't want to ship a release too late in December because Sourcegraph's offices are closed December 24 through January 1.
+We don't want to ship a release too late in December because the Sourcegraph team has a scheduled break December 24 through January 1.
 
 ### Why aren't releases continuous?
 
