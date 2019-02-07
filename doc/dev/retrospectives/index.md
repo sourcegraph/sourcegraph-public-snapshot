@@ -59,13 +59,13 @@ This is to assure that a retrospective has the right tone to make it a positive 
 
 #### Group (10-15 min)
 
-The goal is to read through each raw feedback item and group related topics together by theme.
+The goal is to read through each raw feedback item and group related feedback items into topics.
 
-Have the author of each feedback item read it out loud and answer any questions. Then ask the author to propose a new or existing theme for this feedback item.
+Have the author of each feedback item read it out loud and answer any questions. Then ask the author to propose a new or existing topic for this feedback item and discuss that choice with the group.
 
 #### Vote (5 min)
 
-After all feedback items have been organized into themes, ask each participant vote on the _topics_ that they deem most important. Make sure that participants understand the rules for voting:
+After all feedback items have been organized into topics, ask each participant vote on the topics that they deem most important. Make sure that participants understand the rules for voting:
 
 - Each person has three votes (+1s).
 - Each person can vote for a topic more than once (e.g. +2, +3).
