@@ -113,7 +113,7 @@ This means the tech lead needs to do 2 things:
 
 It's impossible to estimate perfectly, so the tech lead needs to continuously monitor the team's progress and make adjustments accordingly.
 
-If it looks like the team won't be able to complete the issues by the release, the tech lead **must** mention this in the #product channel and needs to do some combination of:
+If it looks like the team won't be able to complete all planned issues by the release date, the tech lead **must** flag this in the #product channel and follow up with a combination of:
 
 - helping unblock or accelerate the work of individual teammates
 - descoping issues in this milestone
