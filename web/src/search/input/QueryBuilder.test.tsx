@@ -3,10 +3,10 @@ import { cleanup, fireEvent, render } from 'react-testing-library'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
 
-describe('QueryBuilder', () => {
+describe.only('QueryBuilder', () => {
     afterAll(cleanup)
 
-    it('updating repo field fires the onQueryChange prop handler', () => {
+    it('updating repo field fires the onFieldsQueryChange prop handler', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isDotCom={false} />)
 
