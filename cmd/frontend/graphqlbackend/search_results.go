@@ -561,19 +561,28 @@ type getPatternInfoOptions struct {
 // getPatternInfo gets the search pattern info for the query in the resolver.
 func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
 	var patternsToCombine []string
-	for _, v := range r.query.Values(query.FieldDefault) {
-		// Treat quoted strings as literal strings to match, not regexps.
-		var pattern string
-		switch {
-		case v.String != nil:
-			pattern = regexp.QuoteMeta(*v.String)
-		case v.Regexp != nil:
-			pattern = v.Regexp.String()
+	if opts == nil || !opts.forceFileSearch {
+		for _, v := range r.query.Values(query.FieldDefault) {
+			// Treat quoted strings as literal strings to match, not regexps.
+			var pattern string
+			switch {
+			case v.String != nil:
+				pattern = regexp.QuoteMeta(*v.String)
+			case v.Regexp != nil:
+				pattern = v.Regexp.String()
+			}
+			if pattern == "" {
+				continue
+			}
+			patternsToCombine = append(patternsToCombine, pattern)
 		}
-		if pattern == "" {
-			continue
-		}
-		patternsToCombine = append(patternsToCombine, pattern)
+	} else {
+		// TODO: We must have some pattern that always matches here, or else
+		// cmd/searcher/search/matcher.go:97 would cause a nil regexp panic
+		// when not using indexed search. I am unsure what the right solution
+		// is here. Would this code path go away when we switch fully to
+		// indexed search @keegan? This workaround is OK for now though.
+		patternsToCombine = append(patternsToCombine, ".")
 	}
 
 	// Handle file: and -file: filters.
