@@ -30,6 +30,10 @@ import (
 // This file contains the resolvers for hierarchical search. The new
 // hierarchical search attempts to leave much more business logic out of the
 // graphqlbackend, and instead make the resolvers more dumb.
+//
+// NOTE: This has not shipped yet, and will be finished up in a later
+// milestone. This code path is only active if a search query is prefixed with
+// "!hier!"
 
 type searcherResolver struct {
 	search.Searcher

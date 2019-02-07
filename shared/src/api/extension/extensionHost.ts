@@ -19,20 +19,7 @@ import { Range } from './types/range'
 import { Selection } from './types/selection'
 import { URI } from './types/uri'
 
-const consoleLogger: Logger = {
-    error(message: string): void {
-        console.error(message)
-    },
-    warn(message: string): void {
-        console.warn(message)
-    },
-    info(message: string): void {
-        console.info(message)
-    },
-    log(message: string): void {
-        console.log(message)
-    },
-}
+const consoleLogger: Logger = console
 
 /**
  * Required information when initializing an extension host.

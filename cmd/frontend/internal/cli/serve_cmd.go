@@ -56,6 +56,10 @@ func init() {
 	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "frontend-archive-cache")
 }
 
+// configureExternalURL determines the external URL of the application.
+//
+// It returns an error in the event that the configured external URL is not
+// parsable.
 func configureExternalURL() (*url.URL, error) {
 	addr := nginxAddr
 	if addr == "" {
@@ -153,7 +157,13 @@ func Main() error {
 	var err error
 	globals.ExternalURL, err = configureExternalURL()
 	if err != nil {
-		return err
+		// The user configured an unparsable external URL.
+		//
+		// Per critical configuration usage guidelines, bad config should NEVER
+		// take down a process, the process should just 'do nothing'. So we do
+		// that here.
+		log15.Crit("Bad externalURL preventing server from starting (please fix it in the management console and restart the server)", "error", err)
+		select {}
 	}
 
 	goroutine.Go(mailreply.StartWorker)

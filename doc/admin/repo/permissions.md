@@ -33,7 +33,7 @@ for the meaning of specific fields.
 Prerequisite: [Add GitLab as an authentication provider.](../auth.md#gitlab)
 
 Then, [add or edit a GitLab external
-service](../../integration/github.md#syncing-github-repositories) and include the `authorization`
+service](../../integration/gitlab.md#syncing-gitlab-repositories) and include the `authorization`
 field:
 
 ```json

@@ -3,28 +3,28 @@
 # https://help.github.com/articles/about-codeowners/
 
 *git*/* @keegancsmith
-/cmd/searcher/ @beyang @keegancsmith
+/cmd/searcher/ @keegancsmith
 /web/src/ @felixfbecker
-/xlang/ @keegancsmith @beyang
-/dev/ @nicksnyder
-/enterprise/dev/ @nicksnyder
 /client/vscode/ @chrismwendt
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
-/enterprise/ @beyang
-/cmd/frontend/ @beyang
-/cmd/gitserver/ @beyang @tsenart
-/cmd/repo-updater/ @beyang @tsenart
-/cmd/server/ @beyang
-/cmd/symbols/ @beyang
-/pkg/ @beyang
-/doc/dev/ @nicksnyder
+/cmd/gitserver/ @tsenart
+/cmd/repo-updater/ @tsenart
+/cmd/frontend/authz/ @beyang
+/cmd/frontend/auth/ @beyang
+/cmd/frontend/internal/auth/ @beyang
+/cmd/frontend/internal/session/ @beyang
+/cmd/frontend/backend/ @beyang
+/cmd/frontend/db/ @beyang
+/cmd/frontend/external/session/session.go @beyang
+/enterprise/cmd/frontend/internal/authz @beyang
+/enterprise/cmd/frontend/auth @beyang
 
 # Browser extensions
 /client/browser/ @ijsnow
 # Adding permissions to the manifest will disable the extension for all users
 # upon update!
-/client/browser/src/extension/manifest.spec.json @chrismwendt @ijsnow @nicksnyder
+/client/browser/src/extension/manifest.spec.json @chrismwendt @ijsnow
 
 # Sourcegraph extension API
 /packages/sourcegraph-extension-api/ @chrismwendt @lguychard

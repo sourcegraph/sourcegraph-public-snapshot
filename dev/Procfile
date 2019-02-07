@@ -1,10 +1,10 @@
-gitserver: .bin/gitserver
-query-runner: .bin/query-runner
-repo-updater: .bin/repo-updater
-searcher: .bin/searcher
-symbols: .bin/symbols
-github-proxy: .bin/github-proxy
-frontend: env CONFIGURATION_MODE=server .bin/frontend
+gitserver: gitserver
+query-runner: query-runner
+repo-updater: repo-updater
+searcher: searcher
+symbols: symbols
+github-proxy: github-proxy
+frontend: env CONFIGURATION_MODE=server frontend
 watch: ./dev/changewatch.sh
 nginx: nginx -p . -g 'daemon off;' -c $PWD/dev/nginx.conf | grep -v 'could not open error log file'
 web: ./node_modules/.bin/gulp --color watch

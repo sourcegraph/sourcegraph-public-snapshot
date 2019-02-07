@@ -1,7 +1,8 @@
+import { truncate } from 'lodash'
 import * as React from 'react'
 import { from, interval, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { delay, distinctUntilChanged, mapTo, startWith, takeUntil, catchError } from 'rxjs/operators'
+import { catchError, delay, distinctUntilChanged, mapTo, startWith, takeUntil } from 'rxjs/operators'
 import './CriticalConfigEditor.scss'
 import { MonacoEditor } from './MonacoEditor'
 
@@ -69,6 +70,14 @@ interface State {
 
     /** Whether or not to show a saving error indicator */
     showSavingError: string | null
+}
+
+/** A response from the server when an error occurs. */
+interface ErrorResponse {
+    /** A human-readable error message. */
+    error: string
+    /** A stable ID for this kind of error. */
+    code: string
 }
 
 export class CriticalConfigEditor extends React.Component<Props, State> {
@@ -165,41 +174,50 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
             },
             () =>
                 this.subscriptions.add(
-                    ajax({
-                        url: '/api/update',
-                        method: 'POST',
-                        body: JSON.stringify({
-                            LastID: this.state.criticalConfig.ID,
-                            Contents: this.state.content,
-                        } as UpdateParams),
-                    })
-                        .pipe(catchError(err => of(err.xhr)))
-                        .subscribe(resp => {
-                            if (resp.status !== 200) {
-                                const msg =
-                                    resp.status === 409
-                                        ? 'error: someone else has already applied a newer edit'
-                                        : 'error: ' + resp.status
-                                console.error(msg)
-                                this.setState({
-                                    showSaving: false,
-                                    showSaved: false,
-                                    showSavingError: msg,
-                                })
-                                return
-                            }
-                            const config = resp.response as Configuration
-                            this.setState({
-                                criticalConfig: config,
-                                content: config.Contents,
-                                showSaving: false,
-                                showSaved: true,
-                                showSavingError: null,
-                            })
-
-                            // Hide the saved indicator after 2.5s.
-                            setTimeout(() => this.setState({ showSaved: false }), 2500)
+                    from(
+                        fetch('/api/update', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                LastID: this.state.criticalConfig.ID,
+                                Contents: this.state.content,
+                            } as UpdateParams),
                         })
+                            .then(async response => {
+                                if (response.status !== 200) {
+                                    const text = await response.text()
+                                    const truncatedText = truncate(text, { length: 30 })
+                                    return {
+                                        error: `Unexpected HTTP ${response.status}: ${truncatedText}`,
+                                    }
+                                }
+                                return response.json()
+                            })
+                            .catch(error => ({
+                                error:
+                                    error instanceof TypeError && error.message === 'Failed to fetch'
+                                        ? 'Network error - check the browser console for details'
+                                        : `error: ${error}`,
+                            }))
+                    ).subscribe((response: { error: any } | Configuration) => {
+                        if ('error' in response) {
+                            this.setState({
+                                showSaving: false,
+                                showSaved: false,
+                                showSavingError: response.error.toString(),
+                            })
+                            return
+                        }
+                        this.setState({
+                            criticalConfig: response,
+                            content: response.Contents,
+                            showSaving: false,
+                            showSaved: true,
+                            showSavingError: null,
+                        })
+
+                        // Hide the saved indicator after 2.5s.
+                        setTimeout(() => this.setState({ showSaved: false }), 2500)
+                    })
                 )
         )
     }

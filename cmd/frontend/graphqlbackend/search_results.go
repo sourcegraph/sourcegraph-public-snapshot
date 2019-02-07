@@ -551,25 +551,48 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 }
 
-func (r *searchResolver) getPatternInfo() (*search.PatternInfo, error) {
+type getPatternInfoOptions struct {
+	// forceFileSearch, when true, specifies that the search query should be
+	// treated as if every default term had `file:` before it. This can be used
+	// to allow users to jump to files by just typing their name.
+	forceFileSearch bool
+}
+
+// getPatternInfo gets the search pattern info for the query in the resolver.
+func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
 	var patternsToCombine []string
-	for _, v := range r.query.Values(query.FieldDefault) {
-		// Treat quoted strings as literal strings to match, not regexps.
-		var pattern string
-		switch {
-		case v.String != nil:
-			pattern = regexp.QuoteMeta(*v.String)
-		case v.Regexp != nil:
-			pattern = v.Regexp.String()
+	if opts == nil || !opts.forceFileSearch {
+		for _, v := range r.query.Values(query.FieldDefault) {
+			// Treat quoted strings as literal strings to match, not regexps.
+			var pattern string
+			switch {
+			case v.String != nil:
+				pattern = regexp.QuoteMeta(*v.String)
+			case v.Regexp != nil:
+				pattern = v.Regexp.String()
+			}
+			if pattern == "" {
+				continue
+			}
+			patternsToCombine = append(patternsToCombine, pattern)
 		}
-		if pattern == "" {
-			continue
-		}
-		patternsToCombine = append(patternsToCombine, pattern)
+	} else {
+		// TODO: We must have some pattern that always matches here, or else
+		// cmd/searcher/search/matcher.go:97 would cause a nil regexp panic
+		// when not using indexed search. I am unsure what the right solution
+		// is here. Would this code path go away when we switch fully to
+		// indexed search @keegan? This workaround is OK for now though.
+		patternsToCombine = append(patternsToCombine, ".")
 	}
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
+
+	if opts != nil && opts.forceFileSearch {
+		for _, v := range r.query.Values(query.FieldDefault) {
+			includePatterns = append(includePatterns, asString(v))
+		}
+	}
 
 	// Handle lang: and -lang: filters.
 	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
@@ -662,7 +685,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &searchResultsResolver{alert: alert, start: start}, nil
 	}
 
-	p, err := r.getPatternInfo()
+	p, err := r.getPatternInfo(nil)
 	if err != nil {
 		return nil, err
 	}

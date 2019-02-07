@@ -30,8 +30,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
      */
     private static QUERY_EXTENSIONS_ARG_EXTENSION_IDS = [
         'sourcegraph/codecov',
-        'sourcegraph/code-discussions',
-        'sourcegraph/basic-code-intel',
+        'sourcegraph/datadog-metrics',
         'sourcegraph/git-extras',
     ]
 

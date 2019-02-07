@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
@@ -22,9 +21,8 @@ func SyncUser(email string, eventID string, contactParams *hubspot.ContactProper
 			log.Printf("panic in tracking.SyncUser: %s", err)
 		}
 	}()
-
-	// If the user is in a dev or on-prem environment, don't do any tracking
-	if env.Version == "dev" || !envvar.SourcegraphDotComMode() {
+	// If the user no API token present or on-prem environment, don't do any tracking
+	if !hubspotutil.HasAPIKey() || !envvar.SourcegraphDotComMode() {
 		return
 	}
 

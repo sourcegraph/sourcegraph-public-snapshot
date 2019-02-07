@@ -18,7 +18,8 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceMetadata = {
 
   // A token is required for access to private repos, but is also helpful for public repos
   // because it grants a higher hourly rate limit to Sourcegraph.
-  "token": "<personal access token with repo scope (https://github.com/settings/tokens/new)>",
+  // Create one with the repo scope at https://[your-github-instance]/settings/tokens/new
+  "token": "",
 
   // Sync public repositories from https://github.com by adding them to "repos".
   // (This is not necessary for GitHub Enterprise instances)
@@ -52,7 +53,10 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   // https://docs.sourcegraph.com/admin/site_config/all#bitbucketserverconnection-object
 
   "url": "https://bitbucket.example.com",
-  "token": "<personal access token with read scope (https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add)>"
+
+  // Create a personal access token with read scope at
+  // https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add
+  "token": ""
 }`,
     },
     GITHUB_EXTERNAL_SERVICE,
@@ -65,7 +69,10 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   // https://docs.sourcegraph.com/admin/site_config/all#gitlabconnection-object
 
   "url": "https://gitlab.example.com",
-  "token": "<personal access token with api scope (https://[your-gitlab-hostname]/profile/personal_access_tokens)>"
+
+  // Create a personal access token with api scope at
+  // https://[your-gitlab-hostname]/profile/personal_access_tokens
+  "token": ""
 }`,
     },
     {

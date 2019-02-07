@@ -7,7 +7,7 @@ on the filesystem.
 
 ## Version requirements
 
-You must use PostgreSQL 11.1 for development.
+Our minimum supported version is `9.6` which means you must use that for development to ensure we don't use Postgres features introduced after that version.
 
 For Ubuntu 18.04, you will need to add a repository source. Use the
 [PostgreSQL.org official repo and instructions.](https://www.postgresql.org/download/linux/ubuntu/)

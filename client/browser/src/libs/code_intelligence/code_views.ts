@@ -1,10 +1,9 @@
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { last, range } from 'lodash'
-import { from, merge, Observable, of, Subject } from 'rxjs'
-import { filter, map, mergeMap } from 'rxjs/operators'
+import { from, merge, Observable, of, Subject, zip } from 'rxjs'
+import { catchError, filter, map, mergeMap } from 'rxjs/operators'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
-import { CodeHost, CodeView, ResolvedCodeView } from './code_intelligence'
+import { fetchBlobContentLines } from '../../shared/repo/backend'
+import { CodeHost, FileInfo, ResolvedCodeView } from './code_intelligence'
 
 /**
  * Emits a ResolvedCodeView when it's DOM element is on or about to be on the page.
@@ -132,35 +131,29 @@ export interface CodeViewContent {
     baseContent?: string
 }
 
-export const getContentOfCodeView = (
-    codeView: HTMLElement,
-    info: Pick<CodeView, 'dom' | 'isDiff' | 'getLineRanges'>
-): CodeViewContent => {
-    const getContent = (part?: DiffPart): string => {
-        const lines = new Map<number, string>()
-        let min = 1
-        let max = 1
+export const fetchFileContents = (info: FileInfo) => {
+    const fetchingBaseFile = info.baseCommitID
+        ? fetchBlobContentLines({
+              repoName: info.repoName,
+              filePath: info.baseFilePath || info.filePath,
+              commitID: info.baseCommitID,
+          })
+        : of(null)
 
-        for (const { start, end } of info.getLineRanges!(codeView, part)) {
-            for (const line of range(start, end + 1)) {
-                min = Math.min(min, line)
-                max = Math.max(max, line)
+    const fetchingHeadFile = fetchBlobContentLines({
+        repoName: info.repoName,
+        filePath: info.filePath,
+        commitID: info.commitID,
+    })
 
-                const codeElement = info.dom.getCodeElementFromLineNumber(codeView, line, part)
-                if (codeElement) {
-                    lines.set(line, codeElement.textContent || '')
-                }
-            }
-        }
-
-        return range(min, max + 1)
-            .map(line => lines.get(line) || '\n')
-            .map(content => (last(content) === '\n' ? content : `${content}\n`))
-            .join('')
-    }
-
-    return {
-        content: getContent(info.isDiff ? 'head' : undefined),
-        baseContent: info.isDiff ? getContent('base') : undefined,
-    }
+    return zip(fetchingBaseFile, fetchingHeadFile).pipe(
+        map(([baseFileContent, headFileContent]) => ({
+            ...info,
+            baseContent: baseFileContent ? baseFileContent.join('\n') : undefined,
+            content: headFileContent.join('\n'),
+            headHasFileContents: headFileContent.length > 0,
+            baseHasFileContents: baseFileContent ? baseFileContent.length > 0 : undefined,
+        })),
+        catchError(error => [info])
+    )
 }

@@ -1,10 +1,9 @@
 import { from, Observable, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 import { GraphQLResult } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isBackground, isInPage } from '../../context'
-import { removeAccessToken } from '../auth/access_token'
 import { DEFAULT_SOURCEGRAPH_URL, isPrivateRepository, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { RequestContext } from './context'
 import { AuthRequiredError, createAuthRequiredError, PrivateRepoPublicSourcegraphComError } from './errors'
@@ -79,7 +78,6 @@ function performRequest<T extends GQL.IGraphQLResponseRoot>({
     variables = {},
     url = sourcegraphUrl,
     retry = true,
-    useAccessToken = true,
     authError,
     requestMightContainPrivateInfo = true,
 }: GraphQLRequestArgs): Observable<T> {
@@ -91,78 +89,53 @@ function performRequest<T extends GQL.IGraphQLResponseRoot>({
         return throwError(new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '<unnamed>'))
     }
 
-    return getHeaders(url, useAccessToken).pipe(
-        switchMap(headers =>
-            ajax({
-                method: 'POST',
-                url: `${url}/.api/graphql` + queryName,
-                headers,
-                crossDomain: true,
-                withCredentials: !(headers && headers.authorization),
-                body: JSON.stringify({ query: request, variables }),
-                async: true,
-            }).pipe(
-                map(({ response }) => {
-                    if (shouldResponseTriggerRetryOrError(response)) {
-                        delete repoUrlCache[ctx.repoKey]
-                        throw response
-                    }
-                    if (ctx.isRepoSpecific && response.data.repository) {
-                        repoUrlCache[ctx.repoKey] = url
-                    }
-                    return response
-                }),
-                catchError(err => {
-                    if (err.status === 401) {
-                        // Ensure all urls are tried and update authError to be the last seen 401.
-                        // This ensures that the correct URL is used for sign in and also that all possible
-                        // urls were checked.
-                        authError = createAuthRequiredError(url)
+    return ajax({
+        method: 'POST',
+        url: `${url}/.api/graphql` + queryName,
+        headers: getHeaders(),
+        crossDomain: true,
+        withCredentials: true,
+        body: JSON.stringify({ query: request, variables }),
+        async: true,
+    }).pipe(
+        map(({ response }) => {
+            if (shouldResponseTriggerRetryOrError(response)) {
+                delete repoUrlCache[ctx.repoKey]
+                throw response
+            }
+            if (ctx.isRepoSpecific && response.data.repository) {
+                repoUrlCache[ctx.repoKey] = url
+            }
+            return response
+        }),
+        catchError(err => {
+            if (err.status === 401) {
+                // Ensure all urls are tried and update authError to be the last seen 401.
+                // This ensures that the correct URL is used for sign in and also that all possible
+                // urls were checked.
+                authError = createAuthRequiredError(url)
+            }
 
-                        if (headers && headers.authorization) {
-                            // If we got a 401 with a token, get rid of the and
-                            // try again. The token may be invalid and we just
-                            // need to recreate one.
-                            return removeAccessToken(url).pipe(
-                                switchMap(() =>
-                                    requestGraphQL({
-                                        ctx,
-                                        request,
-                                        variables,
-                                        url,
-                                        retry,
-                                        useAccessToken,
-                                        authError,
-                                        requestMightContainPrivateInfo,
-                                    })
-                                )
-                            )
-                        }
-                    }
+            if (!retry || url === DEFAULT_SOURCEGRAPH_URL) {
+                // If there was an auth error and we tried all of the possible URLs throw the auth error.
+                if (authError) {
+                    throw authError
+                }
+                delete repoUrlCache[ctx.repoKey]
+                // We just tried the last url
+                throw err
+            }
 
-                    if (!retry || url === DEFAULT_SOURCEGRAPH_URL) {
-                        // If there was an auth error and we tried all of the possible URLs throw the auth error.
-                        if (authError) {
-                            throw authError
-                        }
-                        delete repoUrlCache[ctx.repoKey]
-                        // We just tried the last url
-                        throw err
-                    }
-
-                    return requestGraphQL({
-                        ctx,
-                        request,
-                        variables,
-                        url: DEFAULT_SOURCEGRAPH_URL,
-                        retry,
-                        useAccessToken: true,
-                        authError,
-                        requestMightContainPrivateInfo,
-                    })
-                })
-            )
-        )
+            return requestGraphQL({
+                ctx,
+                request,
+                variables,
+                url: DEFAULT_SOURCEGRAPH_URL,
+                retry,
+                authError,
+                requestMightContainPrivateInfo,
+            })
+        })
     )
 }
 

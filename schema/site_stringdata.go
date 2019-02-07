@@ -49,11 +49,6 @@ const SiteSchemaJSON = `{
       "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
       "type": "string"
     },
-    "disableBrowserExtension": {
-      "type": "boolean",
-      "default": false,
-      "description": "Disable incoming connections from the Sourcegraph browser extension."
-    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
@@ -85,20 +80,6 @@ const SiteSchemaJSON = `{
       "type": "integer",
       "default": 5
     },
-    "reviewBoard": {
-      "description": "JSON array of configuration for Review Board.",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "url": {
-            "description": "URL to Review Board homepage.",
-            "type": "string"
-          }
-        }
-      }
-    },
     "repoListUpdateInterval": {
       "description":
         "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
@@ -122,12 +103,6 @@ const SiteSchemaJSON = `{
         }
       }
     },
-    "auth.disableAccessTokens": {
-      "description":
-        "DEPRECATED. Use \"auth.accessTokens.restrict\" with value \"disable\" instead.\n\nPrevents users from creating access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
-      "type": "boolean",
-      "default": false
-    },
     "auth.accessTokens": {
       "description":
         "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
@@ -144,10 +119,83 @@ const SiteSchemaJSON = `{
       }
     },
     "email.smtp": {
-      "$ref": "#/definitions/SMTPServerConfig"
+      "title": "SMTPServerConfig",
+      "description":
+        "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port", "authentication"],
+      "properties": {
+        "host": {
+          "description": "The SMTP server host.",
+          "type": "string"
+        },
+        "port": {
+          "description": "The SMTP server port.",
+          "type": "integer"
+        },
+        "username": {
+          "description": "The username to use when communicating with the SMTP server.",
+          "type": "string"
+        },
+        "password": {
+          "description": "The username to use when communicating with the SMTP server.",
+          "type": "string"
+        },
+        "authentication": {
+          "description": "The type of authentication to use for the SMTP server.",
+          "type": "string",
+          "enum": ["none", "PLAIN", "CRAM-MD5"]
+        },
+        "domain": {
+          "description": "The HELO domain to provide to the SMTP server (if needed).",
+          "type": "string"
+        }
+      },
+      "default": null,
+      "examples": [
+        {
+          "host": "smtp.example.com",
+          "port": 465,
+          "username": "alice",
+          "password": "mypassword",
+          "authentication": "PLAIN"
+        }
+      ]
     },
     "email.imap": {
-      "$ref": "#/definitions/IMAPServerConfig"
+      "title": "IMAPServerConfig",
+      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port"],
+      "properties": {
+        "host": {
+          "description": "The IMAP server host.",
+          "type": "string"
+        },
+        "port": {
+          "description": "The IMAP server port.",
+          "type": "integer"
+        },
+        "username": {
+          "description": "The username to use when communicating with the IMAP server.",
+          "type": "string"
+        },
+        "password": {
+          "description": "The username to use when communicating with the IMAP server.",
+          "type": "string"
+        }
+      },
+      "default": null,
+      "examples": [
+        {
+          "host": "imap.example.com",
+          "port": 993,
+          "username": "alice",
+          "password": "mypassword"
+        }
+      ]
     },
     "email.address": {
       "description": "The \"from\" address for emails sent by this server.",
@@ -204,6 +252,10 @@ const SiteSchemaJSON = `{
     "PhabricatorConnection": {
       "type": "object",
       "additionalProperties": false,
+      "anyOf": [
+        {"required": ["token"]},
+        {"required": ["repos"]}
+      ],
       "properties": {
         "url": {
           "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
@@ -212,11 +264,13 @@ const SiteSchemaJSON = `{
         },
         "token": {
           "description": "API token for the Phabricator instance.",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "repos": {
           "description": "The list of repositories available on Phabricator.",
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -262,10 +316,10 @@ const SiteSchemaJSON = `{
         "token": {
           "description": "A GitHub personal access token with repo and org scope.",
           "type": "string",
-          "pattern": "^[^<>]+$"
+          "minLength": 1
         },
         "certificate": {
-          "description": "TLS certificate of a GitHub Enterprise instance.",
+          "description": "TLS certificate of a GitHub Enterprise instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
@@ -329,7 +383,7 @@ const SiteSchemaJSON = `{
           "description":
             "A GitLab access token with \"api\" and \"sudo\" scopes. If this token does not have \"sudo\" scope, then you must set ` + "`" + `permissions.ignore` + "`" + ` to true.",
           "type": "string",
-          "pattern": "^[^<>]+$"
+          "minLength": 1
         },
         "gitURLType": {
           "description":
@@ -339,7 +393,7 @@ const SiteSchemaJSON = `{
           "default": "http"
         },
         "certificate": {
-          "description": "TLS certificate of a GitLab instance.",
+          "description": "TLS certificate of a GitLab instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
@@ -368,7 +422,7 @@ const SiteSchemaJSON = `{
     },
     "GitLabAuthorization": {
       "description":
-        "If non-null, enforces GitLab repository permissions. This requires that the value of ` + "`" + `token` + "`" + ` be an access token with \"sudo\" and \"api\" scopes.",
+        "If non-null, enforces GitLab repository permissions. This requires that there be an item in the ` + "`" + `auth.providers` + "`" + ` field of type \"gitlab\" with the same ` + "`" + `url` + "`" + ` field as specified in this ` + "`" + `GitLabConnection` + "`" + `.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -384,6 +438,21 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "required": ["url"],
+      "oneOf": [
+        {
+          "required": ["token"],
+          "properties": {
+            "username": {"type": "null"},
+            "password": {"type": "null"}
+          }
+        },
+        {
+          "required": ["username", "password"],
+          "properties": {
+            "token": {"type": "null"}
+          }
+        }
+      ],
       "properties": {
         "url": {
           "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com.",
@@ -400,7 +469,7 @@ const SiteSchemaJSON = `{
           "description":
             "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add.\n\nFor Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the \"username\" and \"password\" fields.",
           "type": "string",
-          "pattern": "^[^<>]+$"
+          "minLength": 1
         },
         "username": {
           "description":
@@ -420,7 +489,7 @@ const SiteSchemaJSON = `{
           "default": "http"
         },
         "certificate": {
-          "description": "TLS certificate of a Bitbucket Server instance.",
+          "description": "TLS certificate of a Bitbucket Server instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
@@ -463,6 +532,7 @@ const SiteSchemaJSON = `{
             "eu-central-1",
             "eu-west-1",
             "eu-west-2",
+            "eu-west-3",
             "sa-east-1",
             "us-east-1",
             "us-east-2",
@@ -500,18 +570,27 @@ const SiteSchemaJSON = `{
         "prefix": {
           "description":
             "Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., \"gitolite.example.com/\".\n\nIt is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
           "type": "string",
           "examples": ["gitolite.example.com/"]
         },
         "host": {
           "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com).",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
           "type": "string",
           "examples": ["git@gitolite.example.com"]
         },
         "blacklist": {
           "description":
             "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
-          "type": "string"
+          "type": "string",
+          "format": "regex"
         },
         "phabricatorMetadataCommand": {
           "description":
@@ -526,7 +605,8 @@ const SiteSchemaJSON = `{
           "properties": {
             "url": {
               "description": "URL of the Phabricator instance that integrates with this Gitolite instance. This should be set ",
-              "type": "string"
+              "type": "string",
+              "format": "uri"
             },
             "callsignCommand": {
               "description": " Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
@@ -540,13 +620,16 @@ const SiteSchemaJSON = `{
       "description": "Connection to Git repositories for which an external service integration isn't yet available.",
       "type": "object",
       "required": ["repos"],
-      "additionalProperties": false,
       "properties": {
         "url": {
           "title": "Git clone base URL",
           "type": "string",
           "format": "uri",
           "pattern": "^(git|ssh|https?)://",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
           "examples": [
             "https://github.com/?access_token=secret",
             "ssh://user@host.xz:2333/",
@@ -556,8 +639,10 @@ const SiteSchemaJSON = `{
         "repos": {
           "title": "List of repository clone URLs to be discovered.",
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "string",
+            "minLength": 1,
             "format": "uri-reference",
             "examples": [
               "path/to/my/repo",
@@ -582,64 +667,6 @@ const SiteSchemaJSON = `{
         "to": {
           "description":
             "The repository name output pattern. This should use ` + "`" + `{matchGroup}` + "`" + ` syntax to reference the capturing groups from the ` + "`" + `from` + "`" + ` field.",
-          "type": "string"
-        }
-      }
-    },
-    "SMTPServerConfig": {
-      "description":
-        "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host", "port", "authentication"],
-      "properties": {
-        "host": {
-          "description": "The SMTP server host.",
-          "type": "string"
-        },
-        "port": {
-          "description": "The SMTP server port.",
-          "type": "integer"
-        },
-        "username": {
-          "description": "The username to use when communicating with the SMTP server.",
-          "type": "string"
-        },
-        "password": {
-          "description": "The username to use when communicating with the SMTP server.",
-          "type": "string"
-        },
-        "authentication": {
-          "description": "The type of authentication to use for the SMTP server.",
-          "type": "string",
-          "enum": ["none", "PLAIN", "CRAM-MD5"]
-        },
-        "domain": {
-          "description": "The HELO domain to provide to the SMTP server (if needed).",
-          "type": "string"
-        }
-      }
-    },
-    "IMAPServerConfig": {
-      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host", "port"],
-      "properties": {
-        "host": {
-          "description": "The IMAP server host.",
-          "type": "string"
-        },
-        "port": {
-          "description": "The IMAP server port.",
-          "type": "integer"
-        },
-        "username": {
-          "description": "The username to use when communicating with the IMAP server.",
-          "type": "string"
-        },
-        "password": {
-          "description": "The username to use when communicating with the IMAP server.",
           "type": "string"
         }
       }

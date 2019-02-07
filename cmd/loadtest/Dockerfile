@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM alpine:3.8
+FROM alpine:3.9
 # hadolint ignore=DL3018
 RUN apk add --no-cache bind-tools ca-certificates mailcap tini
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/loadtest"]

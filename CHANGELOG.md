@@ -9,13 +9,35 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Symbol search now supports Elixir, Haskell, Kotlin, Scala, and Swift
+
 ### Changed
+
+- File match search results now show full repo name if there are results from
+  mirrors on different code hosts (e.g. github.com/sourcegraph/sourcegraph and gitlab.com/sourcegraph/sourcegraph)
+- Significantly optimized how file search suggestions are provided when using indexed search (cluster deployments).
+- Both the `sourcegraph/server` image and the [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) manifests ship with Postgres `11.1`. For maximum compatibility, however, the minimum supported version remains `9.6`. The upgrade procedure is mostly automated for existing deployments. Please refer to [this page](https://docs.sourcegraph.com/admin/postgres) for detailed instructions.
 
 ### Fixed
 
-- Fixed an issue where the site admin is redirected to the start page instead of being redirected to the repositories overview page after deleting a repo.
-
 ### Removed
+
+- The deprecated `auth.disableAccessTokens` site config property was removed. Use `auth.accessTokens` instead.
+- The `disableBrowserExtension` site config property was removed. [Configure nginx](https://docs.sourcegraph.com/admin/nginx) instead to block clients (if needed).
+
+## 3.0.0
+
+See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migration/3_0.md) upgrade guide if you are upgrading from 2.x.
+
+## 3.0.0-beta.4
+
+### Added
+
+- Basic code intelligence for the top 10 programming languages works out of the box without any configuration. [TypeScript/JavaScript](https://sourcegraph.com/extensions/sourcegraph/typescript), [Python](https://sourcegraph.com/extensions/sourcegraph/python), [Java](https://sourcegraph.com/extensions/sourcegraph/java), [Go](https://sourcegraph.com/extensions/sourcegraph/go), [C/C++](https://sourcegraph.com/extensions/sourcegraph/cpp), [Ruby](https://sourcegraph.com/extensions/sourcegraph/ruby), [PHP](https://sourcegraph.com/extensions/sourcegraph/php), [C#](https://sourcegraph.com/extensions/sourcegraph/csharp), [Shell](https://sourcegraph.com/extensions/sourcegraph/shell), and [Scala](https://sourcegraph.com/extensions/sourcegraph/scala) are enabled by default, and you can find more in the [extension registry](https://sourcegraph.com/extensions?query=category%3A"Programming+languages").
+
+## 3.0.0-beta.3
+
+- Fixed an issue where the site admin is redirected to the start page instead of being redirected to the repositories overview page after deleting a repo.
 
 ## 3.0.0-beta
 
@@ -580,7 +602,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Users (and site admins) may now create and manage access tokens to authenticate API clients. The site config `auth.disableAccessTokens` disables this new feature. Access tokens are currently only supported when using the `builtin` and `http-header` authentication providers (not OpenID Connect or SAML).
+- Users (and site admins) may now create and manage access tokens to authenticate API clients. The site config `auth.disableAccessTokens` (renamed to `auth.accessTokens` in 2.11) disables this new feature. Access tokens are currently only supported when using the `builtin` and `http-header` authentication providers (not OpenID Connect or SAML).
 - User and site admin management capabilities for user email addresses are improved.
 - The user and organization management UI has been greatly improved. Site admins may now administer all organizations (even those they aren't a member of) and may edit profile info and configuration for all users.
 - If SSO is enabled (via OpenID Connect or SAML) and the SSO system provides user avatar images and/or display names, those are now used by Sourcegraph.

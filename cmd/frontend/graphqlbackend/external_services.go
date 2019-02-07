@@ -16,26 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
-var externalServiceKinds = map[string]struct {
-	// True if the external service can host repositories.
-	codeHost bool
-}{
-	"AWSCODECOMMIT":   {codeHost: true},
-	"BITBUCKETSERVER": {codeHost: true},
-	"GITHUB":          {codeHost: true},
-	"GITLAB":          {codeHost: true},
-	"GITOLITE":        {codeHost: true},
-	"PHABRICATOR":     {codeHost: true},
-	"OTHER":           {codeHost: true},
-}
-
-func validateKind(kind string) error {
-	if _, ok := externalServiceKinds[kind]; !ok {
-		return fmt.Errorf("invalid external service kind: %s", kind)
-	}
-	return nil
-}
-
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	Input *struct {
 		Kind        string
@@ -45,10 +25,6 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 }) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: Only site admins may add external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	if err := validateKind(args.Input.Kind); err != nil {
 		return nil, err
 	}
 
