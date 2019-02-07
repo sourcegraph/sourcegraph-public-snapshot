@@ -6,7 +6,7 @@ Saved searches can be an early warning system for common problems in your code--
 
 ---
 
-## Examples of useful saved searches
+## Example saved searches
 
 | Description                                                                 | Query                                                                                                                              |
 |:----------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|
@@ -16,11 +16,17 @@ Saved searches can be an early warning system for common problems in your code--
 | Recent quality related changes on all branches (customize for your linters) | `repo:@*refs/heads/:^master type:diff after:"1 week ago" (tslint:disable)`                                                         |
 | Recent dependency changes                                                   | `file:package.json type:diff after:"1 week ago"`                                                                                   |
 
-#### Discover built-in searches
+### Built-in searches
 
 Sourcegraph comes with multiple built-in searches that you can use. This includes searches for code committed with copyleft (GPL) licenses, security and authentication changes, potential secrets, API tokens and passwords, as well as various language-specific searches such as a TypeScript/JavaScript lint search to detect React `setState` race conditions.
 
-You can find built-in searches by clicking on the **Explore** top navigation bar link, scrolling down to **Saved searches**, and then pressing the **Discover built-in searches** button. Press **Save** on any built-in search that look useful to you and follow the form to start monitoring your codebase.
+You can find built-in searches by:
+
+1. Clicking on the user menu (with your username or avatar) in the top navigation bar.
+1. Clicking **Saved searches**.
+1. Clicking the **Discover built-in searches** button. 
+
+Then mouse over the search description where you can click a **Save** button should you want to add it to your list.
 
 ---
 
