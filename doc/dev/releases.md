@@ -113,4 +113,4 @@ The release captain has unlimited power to make changes to the release branch to
 
 #### Non-blocking
 
-Most issues are non-blocking. Fixes to non-blocking issues can be fixed in `master` by the code owner and then `git cherry-pick` into the release branch with the approval of the release captain. Alternatively, broken features can be reverted out of the release branch or disabled via feature flag if they aren't ready or too buggy.
+Most issues are non-blocking. Fixes to non-blocking issues can be fixed in `master` by the code owner who can then `git cherry-pick` those commits into the release branch with the approval of the release captain. Alternatively, broken features can be reverted out of the release branch or disabled via feature flags if they aren't ready or are too buggy.
