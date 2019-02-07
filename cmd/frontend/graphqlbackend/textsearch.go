@@ -71,6 +71,9 @@ func (fm *fileMatchResolver) Key() string {
 }
 
 func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
+	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
+	// (which would make it slow). This gitCommitResolver will return empty
+	// values for all other fields.
 	return &gitTreeEntryResolver{
 		commit: &gitCommitResolver{
 			repo:     &repositoryResolver{repo: fm.repo},

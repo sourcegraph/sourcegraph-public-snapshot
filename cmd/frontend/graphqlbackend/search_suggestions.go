@@ -86,6 +86,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields) == 1
 		hasRepoOrFileFields := len(r.query.Values(query.FieldRepoGroup)) > 0 || len(r.query.Values(query.FieldRepo)) > 0 || len(r.query.Values(query.FieldFile)) > 0
 		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(query.FieldDefault)) <= 1 {
+			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
 			return r.suggestFilePaths(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
@@ -99,7 +101,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		p, err := r.getPatternInfo()
+		p, err := r.getPatternInfo(nil)
 		if err != nil {
 			return nil, err
 		}
@@ -167,18 +169,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					results.results = results.results[:*args.First]
 				}
 				for i, res := range results.results {
-					entryResolver := &gitTreeEntryResolver{
-						path: res.fileMatch.JPath,
-						commit: &gitCommitResolver{
-							oid:      gitObjectID(res.fileMatch.commitID),
-							inputRev: res.fileMatch.inputRev,
-							// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
-							// (which would make it slow). This gitCommitResolver will return empty
-							// values for all other fields.
-							repo: &repositoryResolver{repo: res.fileMatch.repo},
-						},
-						stat: createFileInfo(res.fileMatch.JPath, false),
-					}
+					entryResolver := res.fileMatch.File()
 					suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.results)-i))
 				}
 			}
