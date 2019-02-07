@@ -104,7 +104,7 @@ The tech lead is responsible for making sure the following two statements are tr
 
 The following sections give more details.
 
-#### The issues for each release milestone are completed (closed) by the release.
+#### The issues for each release milestone are completed (closed) before the release.
 
 This means the tech lead needs to do 2 things:
 
