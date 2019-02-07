@@ -136,13 +136,11 @@ func maybeUpgradePostgres(path, newVersion string) (err error) {
 	ctx := context.Background()
 	hostDataDir, err := hostMountPoint(ctx, cli, id, dataDir)
 	switch {
-	case err == nil:
-		break
 	case docker.IsErrConnectionFailed(err):
 		fmt.Fprintf(os.Stderr, "\n    Docker socket must be mounted for the automatic upgrade of the internal database to proceed.\n")
 		fmt.Fprintf(os.Stderr, " 👉 docker run ... -v /var/run/docker.sock:/var/run/docker.sock:ro ...\n\n")
 		return errors.New("Docker socket volume mount is missing")
-	default:
+	case err != nil:
 		return errors.Wrap(err, "failed to determine host mount point")
 	}
 
