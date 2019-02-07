@@ -8,14 +8,13 @@ Saved searches can be an early warning system for common problems in your code--
 
 ## Examples of useful saved searches
 
-- Recent security-related changes on all branches:
-  - **Query:** `type:diff repo:@*refs/heads/ after:"5 days ago" \b(auth[^o][^r]|security\b|cve|password|secure|unsafe|perms|permissions)`
-- Admitted hacks and TODOs in code:
-  - **Query:** `-file:\.(json|md|txt)$ hack|todo|kludge`
-- New usages of a specific function (change `MYFUNC`):
-  - **Query:** `type:diff after:"1 week ago" MYFUNC\(`
-- Lint-disable on unmerged branches (customize for your own linters):
-  - **Query:** `repo:@*refs/heads/:^master type:diff after:"1 week ago" (tslint:disable)`
+| Description                                                                 | Query                                                                                                                              |
+|:----------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|
+| Recent security-related changes on all branches                             | `type:diff repo:@*refs/heads/ after:"5 days ago" \b(auth[^o][^r]\|security\b\|cve\|password\|secure\|unsafe\|perms\|permissions)`  |
+| Admitted hacks and TODOs in app code                                        | `-file:\.(json\|md\|txt)$ hack\|todo\|kludge\|fixme`                                                                               |
+| New usages of a function                                                    | `type:diff after:"1 week ago" onDidAddNewMethod\(`                                                                                 |
+| Recent quality related changes on all branches (customize for your linters) | `repo:@*refs/heads/:^master type:diff after:"1 week ago" (tslint:disable)`                                                         |
+| Recent dependency changes                                                   | `file:package.json type:diff after:"1 week ago"`                                                                                   |
 
 #### Discover built-in searches
 
