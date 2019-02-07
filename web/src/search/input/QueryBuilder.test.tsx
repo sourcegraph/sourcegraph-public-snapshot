@@ -3,12 +3,12 @@ import { cleanup, fireEvent, render } from 'react-testing-library'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
 
-describe.only('QueryBuilder', () => {
+describe('QueryBuilder', () => {
     afterAll(cleanup)
 
     it('updating repo field fires the onQueryChange prop handler', () => {
         const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} />)
+        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isDotCom={false} />)
 
         const repoField = container.querySelector('#query-builder__repo')!
         fireEvent.change(repoField, { target: { value: 'sourcegraph/sourcegraph' } })

@@ -7,6 +7,7 @@ interface Props {
      * component's fields.
      */
     onFieldsQueryChange: (query: string) => void
+    isDotCom: boolean
 }
 
 interface State {
@@ -102,7 +103,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                         title="Repositories whose name contains this substring will be included in search results."
                     >
                         {/* GitHub repo: pattern is more useful and always applicable on Sourcegraph.com */}
-                        {window.context.sourcegraphDotComMode ? 'repo:github.com/org/' : 'repo:my/repo'}
+                        {this.props.isDotCom ? 'repo:github.com/org/' : 'repo:my/repo'}
                     </div>
                 </div>
                 <div className="query-builder__row">
