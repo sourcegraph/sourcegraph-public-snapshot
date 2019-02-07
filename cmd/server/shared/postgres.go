@@ -135,7 +135,12 @@ func maybeUpgradePostgres(path, newVersion string) (err error) {
 
 	ctx := context.Background()
 	hostDataDir, err := hostMountPoint(ctx, cli, id, dataDir)
-	if err != nil {
+	switch {
+	case docker.IsErrConnectionFailed(err):
+		fmt.Fprintf(os.Stderr, "\n    Docker socket must be mounted for the automatic upgrade of the internal database to proceed.\n")
+		fmt.Fprintf(os.Stderr, " 👉 docker run ... -v /var/run/docker.sock:/var/run/docker.sock:ro ...\n\n")
+		return errors.New("Docker socket volume mount is missing")
+	case err != nil:
 		return errors.Wrap(err, "failed to determine host mount point")
 	}
 
@@ -223,7 +228,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 
 	img := fmt.Sprintf("tianon/postgres-upgrade:%s-to-%s", ps.oldVersion, ps.newVersion)
 
-	l("Pulling image %s", img)
+	l("Pulling automatic upgrade image.")
 	out, err := cli.ImagePull(ctx, img, types.ImagePullOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "failed to pull %q", img)
@@ -245,7 +250,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 		},
 	}
 
-	l("Running image %s", img)
+	l("Running automatic upgrade image.")
 	now := time.Now()
 	name := fmt.Sprintf("sourcegraph-postgres-upgrade-%d", now.Unix())
 	resp, err := cli.ContainerCreate(ctx, &config, &hostConfig, nil, name)
@@ -275,7 +280,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 		return errors.Wrap(err, "failed to copy logs to output")
 	}
 
-	l("Finished running image %s", img)
+	l("Finished running automatic upgrade image.")
 
 	// Run the /postgres-optimize.sh in the same dir as the *.sql and *.sh scripts
 	// left behind by pg_upgrade.
@@ -284,8 +289,9 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 	pathOld := ps.path + "-" + ps.oldVersion
 	e.Command("mv", ps.path, pathOld)
 	e.Command("mv", pathNew, ps.path)
-	e.Command("chown", "-R", "postgres", ps.path)
-	l("Optimizing internal database")
+	e.Command("chown", "-R", "postgres", ps.path, ps.upgradeDir)
+
+	l("Optimizing internal database.")
 	e.Command("su-exec", "postgres", "/postgres-optimize.sh", ps.path)
 
 	if err := e.Error(); err != nil {
