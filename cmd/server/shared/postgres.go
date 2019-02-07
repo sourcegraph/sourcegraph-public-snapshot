@@ -250,7 +250,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 		},
 	}
 
-	l("Running automatic upgrade image.")
+	l("Running automatic upgrade image (this may take a few minutes).")
 	now := time.Now()
 	name := fmt.Sprintf("sourcegraph-postgres-upgrade-%d", now.Unix())
 	resp, err := cli.ContainerCreate(ctx, &config, &hostConfig, nil, name)
