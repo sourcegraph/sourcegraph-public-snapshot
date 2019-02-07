@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Select } from '../../components/Select'
 
 interface Props {
     /**
@@ -55,9 +56,9 @@ export class QueryBuilder extends React.Component<Props, State> {
                     </label>
                     <div className="query-builder__row-input">
                         {/* tslint:disable-next-line:jsx-ban-elements */}
-                        <select
+                        <Select
                             id="query-builder__type"
-                            className="form-control query-builder__input query-builder__input-select"
+                            className="form-control query-builder__input"
                             ref={this.typeFieldInput}
                             onChange={this.onTypeChange}
                         >
@@ -69,7 +70,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             </option>
                             <option value="commit">Commit</option>
                             <option value="symbol">Symbol</option>
-                        </select>
+                        </Select>
                     </div>
                     <div
                         className="query-builder__row-example"
@@ -202,9 +203,9 @@ export class QueryBuilder extends React.Component<Props, State> {
                     </label>
                     <div className="query-builder__row-input">
                         {/* tslint:disable-next-line:jsx-ban-elements */}
-                        <select
+                        <Select
                             id="query-builder__case"
-                            className="form-control query-builder__input query-builder__input-select"
+                            className="form-control query-builder__input"
                             ref={this.caseFieldInput}
                             onChange={this.onInputChange}
                         >
@@ -212,7 +213,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                                 No
                             </option>
                             <option value="yes">Yes</option>
-                        </select>
+                        </Select>
                     </div>
                     <div className="query-builder__row-example">case:yes</div>
                 </div>
