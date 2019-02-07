@@ -16,7 +16,7 @@ Saved searches can be an early warning system for common problems in your code--
 | Recent quality related changes on all branches (customize for your linters) | `repo:@*refs/heads/:^master type:diff after:"1 week ago" (tslint:disable)`                                                         |
 | Recent dependency changes                                                   | `file:package.json type:diff after:"1 week ago"`                                                                                   |
 
-### Built-in searches
+## Built-in searches
 
 Sourcegraph comes with multiple built-in searches that you can use. This includes searches for code committed with copyleft (GPL) licenses, security and authentication changes, potential secrets, API tokens and passwords, as well as various language-specific searches such as a TypeScript/JavaScript lint search to detect React `setState` race conditions.
 
