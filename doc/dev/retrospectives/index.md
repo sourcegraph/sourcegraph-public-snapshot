@@ -36,9 +36,13 @@ Collect written answers to the following questions from everyone in the retrospe
 
 1. What should we continue doing?
 
-The medium through which you collect answers to these questions is not important (e.g. Google Docs, Google Forms, Slack messages).
+The medium through which you collect answers to these questions is not important (e.g. Google Docs, Google Forms, Slack messages), but it is important that participants submit their feedback independently to prevent group-think and the reduce the risk of certain biases.
 
-Allocate enough time for team-mates to thoughtfully respond to the survey (aim for 100% participation), but don't let the process take an unbounded amount of time. It is useful to complete the retrospective process expediently so that information is fresh in people's minds and so we can apply learnings sooner. 3 business days is a good default.
+Allocate enough time for teammates to thoughtfully respond to the survey (aim for 100% participation), but don't let the process take an unbounded amount of time. It is useful to complete the retrospective process expediently so that information is fresh in people's minds and so we can apply learnings sooner. 3 business days is a good default.
+
+### Share feedback
+
+After the feedback period it over aggregate all of the raw feedback into a single document and then share that document with the team so everyone can see the results at least one working day before the retrospective meeting.
 
 ### Retrospect, together
 
@@ -55,15 +59,15 @@ This is to assure that a retrospective has the right tone to make it a positive 
 
 #### Group (10-15 min)
 
-Assemble all of the raw feedback into a single document and group related topics together by theme after every participant has explained to the group each of the topics they submitted.
+The goal is to read through each raw feedback item and group related topics together by theme.
 
-It's important that participants submit their feedback independently to prevent group-think and the reduce the risk of certain biases.
+Have the author of each feedback item read it out loud and answer any questions. Then ask the author to propose a new or existing theme for this feedback item.
 
-#### Vote (5-10 min)
+#### Vote (5 min)
 
-Share this document with the retrospective group and ask each participant to assign five votes (+1s) to the topics that they deem most important. Make sure participants understand that they can distribute their votes as they wish. For example, one participant could place all their votes on a single topic to indicate how important it is to him or her to discuss that idea. On the other hand, another participant could distribute their votes evenly across many topics.
+After all feedback items have been organized into themes, ask each participant to assign three votes (+1s) to the topics that they deem most important. Make sure participants understand that they can distribute their votes as they wish. For example, one participant could place all their votes on a single topic to indicate how important it is to him or her to discuss that idea. On the other hand, another participant could distribute their votes evenly across many topics.
 
-#### Sort (5 min)
+#### Sort (1 min)
 
 After voting is complete, sort the topics based on the number of votes each received. This sorted list represents the collective prioritization of what to discuss.
 
