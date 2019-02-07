@@ -36,13 +36,13 @@ Collect written answers to the following questions from everyone in the retrospe
 
 1. What should we continue doing?
 
-The medium through which you collect answers to these questions is not important (e.g. Google Docs, Google Forms, Slack messages), but it is important that participants submit their feedback independently to prevent group-think and the reduce the risk of certain biases.
+The medium through which you collect answers to these questions is not important (e.g. Google Docs, Google Forms, Slack messages), but it is important that participants submit their feedback independently to prevent group-think and reduce the risk of certain biases.
 
 Allocate enough time for teammates to thoughtfully respond to the survey (aim for 100% participation), but don't let the process take an unbounded amount of time. It is useful to complete the retrospective process expediently so that information is fresh in people's minds and so we can apply learnings sooner. 3 business days is a good default.
 
 ### Share feedback
 
-After the feedback period it over aggregate all of the raw feedback into a single document and then share that document with the team so everyone can see the results at least one working day before the retrospective meeting.
+After the feedback period is over, aggregate all of the raw feedback into a single document and share it with the group so everyone can have at least one working day before the retrospective meeting to go over the results.
 
 ### Retrospect, together
 
