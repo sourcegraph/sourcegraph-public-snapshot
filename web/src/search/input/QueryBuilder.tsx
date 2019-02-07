@@ -1,5 +1,5 @@
 import * as React from 'react'
-
+import { Select } from '../../components/Select'
 interface Props {
     /**
      * Called when there is a change to the query synthesized from this
@@ -47,7 +47,7 @@ export class QueryBuilder extends React.Component<Props, State> {
             <div className="query-builder">
                 <div className="query-builder__header">
                     <h3 className="query-builder__header-input">Search type...</h3>
-                    <h3 className="query-builder__header-example">Shortcut</h3>
+                    <h3 className="query-builder__header-example">Shortcut (in the search box)</h3>
                 </div>
                 <div className="query-builder__row">
                     <label className="query-builder__row-label" htmlFor="query-builder__type">
@@ -55,9 +55,10 @@ export class QueryBuilder extends React.Component<Props, State> {
                     </label>
                     <div className="query-builder__row-input">
                         {/* tslint:disable-next-line:jsx-ban-elements */}
-                        <select
+                        <Select
                             id="query-builder__type"
-                            className="form-control query-builder__input query-builder__input-select"
+                            outerClassName="query-builder__input"
+                            className="form-control query-builder__input-select"
                             ref={this.typeFieldInput}
                             onChange={this.onTypeChange}
                         >
@@ -69,7 +70,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             </option>
                             <option value="commit">Commit</option>
                             <option value="symbol">Symbol</option>
-                        </select>
+                        </Select>
                     </div>
                     <div
                         className="query-builder__row-example"
@@ -202,9 +203,10 @@ export class QueryBuilder extends React.Component<Props, State> {
                     </label>
                     <div className="query-builder__row-input">
                         {/* tslint:disable-next-line:jsx-ban-elements */}
-                        <select
+                        <Select
                             id="query-builder__case"
-                            className="form-control query-builder__input query-builder__input-select"
+                            outerClassName="query-builder__input"
+                            className="form-control query-builder__input-select"
                             ref={this.caseFieldInput}
                             onChange={this.onInputChange}
                         >
@@ -212,7 +214,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                                 No
                             </option>
                             <option value="yes">Yes</option>
-                        </select>
+                        </Select>
                     </div>
                     <div className="query-builder__row-example">case:yes</div>
                 </div>
