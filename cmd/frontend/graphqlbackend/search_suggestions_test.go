@@ -140,8 +140,8 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			if want := "foo"; args.Pattern.Pattern != want {
-				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
+			if args.Pattern.Pattern != "." && args.Pattern.Pattern != "foo" {
+				t.Errorf("got %q, want %q", args.Pattern.Pattern, `"foo" or "."`)
 			}
 			return []*fileMatchResolver{
 				{uri: "git://repo?rev#dir/foo-repo3-file-name-match", JPath: "dir/foo-repo3-file-name-match", repo: &types.Repo{Name: "repo3"}, commitID: "rev"},
