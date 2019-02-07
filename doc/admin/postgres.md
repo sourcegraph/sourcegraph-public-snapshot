@@ -34,7 +34,7 @@ When using the `sourcegraph/server` image in other environments (e.g. Kubernetes
 
 ### Manual upgrades in sourcegraph/server deployments
 
-These instructions can be followed when manual Postgres upgrades are preferred. **Ensure** the previous `sourcegraph/server` image is completely stopped before proceeding.
+These instructions can be followed when manual Postgres upgrades are preferred (e.g. if mounting the Docker socket isn't an option). **Ensure** the previous `sourcegraph/server` image is completely stopped before proceeding.
 
 Assuming Postgres data must be upgraded from `9.6` to `11` and your Sourcegraph directory is at `$HOME/.sourcegraph`, here is how it would be done:
 
