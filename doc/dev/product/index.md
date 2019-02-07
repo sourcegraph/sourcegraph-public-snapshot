@@ -108,7 +108,7 @@ The following sections give more details.
 
 This means the tech lead needs to do 2 things:
 
-- **Estimate** at planning time how much can get done in the time alotted for a release milestone.
+- **Estimate** at planning time what can get done in the time alotted for a release milestone.
 - **Reschedule** issues continuously into/from the milestone depending on the pace and [triage](issues.md#triage).
 
 It's impossible to estimate perfectly, so the tech lead needs to continuously monitor the team's progress and make adjustments accordingly.
