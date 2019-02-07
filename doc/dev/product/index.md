@@ -100,7 +100,7 @@ The tech lead is responsible for making sure the following two statements are tr
 
 > The issues for the current release milestone describe the problem/solution.
 >
-> The issues for the current release milestone are completed (closed) by the release.
+> The issues for the current release milestone are completed (closed) before the release.
 
 The following sections give more details.
 
