@@ -14,7 +14,7 @@ This section describes the possible Postgres upgrade procedures for the differen
 
 ### Automatic upgrades in sourcegraph/server deployments
 
-Existing Postgres data will be automatically migrated when a release of the `sourcegraph/server` Docker image ships with a new version of Postgres. For the upgrade to proceed, the Docker socket **must be mounted** the first time the new Docker image is ran. This is needed to run the [Postgres upgrade containers](https://github.com/tianon/docker-postgres-upgrade) in the
+Existing Postgres data will be automatically migrated when a release of the `sourcegraph/server` Docker image ships with a new version of Postgres. For the upgrade to proceed, the Docker socket **must be mounted** the first time the new Docker image is ran. This is needed to run the [Postgres upgrade containers](https://github.com/tianon/docker-postgres-upgrade).
 Docker host. When the upgrade is done, the container can be restarted without mounting the Docker socket.
 
 **Ensure** the previous `sourcegraph/server` image is completely stopped before running:
