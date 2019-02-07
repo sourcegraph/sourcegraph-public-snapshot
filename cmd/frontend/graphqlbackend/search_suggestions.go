@@ -167,18 +167,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					results.results = results.results[:*args.First]
 				}
 				for i, res := range results.results {
-					entryResolver := &gitTreeEntryResolver{
-						path: res.fileMatch.JPath,
-						commit: &gitCommitResolver{
-							oid:      gitObjectID(res.fileMatch.commitID),
-							inputRev: res.fileMatch.inputRev,
-							// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
-							// (which would make it slow). This gitCommitResolver will return empty
-							// values for all other fields.
-							repo: &repositoryResolver{repo: res.fileMatch.repo},
-						},
-						stat: createFileInfo(res.fileMatch.JPath, false),
-					}
+					entryResolver := res.fileMatch.File()
 					suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.results)-i))
 				}
 			}
