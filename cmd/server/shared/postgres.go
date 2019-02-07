@@ -291,7 +291,7 @@ func upgradePostgres(ctx context.Context, cli *docker.Client, ps upgradeParams) 
 	pathOld := ps.path + "-" + ps.oldVersion
 	e.Command("mv", ps.path, pathOld)
 	e.Command("mv", pathNew, ps.path)
-	e.Command("chown", "-R", "postgres", ps.path)
+	e.Command("chown", "-R", "postgres", ps.path, ps.upgradeDir)
 
 	l("Optimizing internal database.")
 	e.Command("su-exec", "postgres", "/postgres-optimize.sh", ps.path)
