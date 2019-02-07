@@ -1,4 +1,4 @@
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/model'
 
 export interface RepoSpec {
@@ -268,6 +268,39 @@ export type LineOrPositionOrRange =
     | { line: number; character?: undefined; endLine?: number; endCharacter?: undefined }
     | { line: number; character: number; endLine: number; endCharacter: number }
 
+export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
+    if (lpr.line === undefined) {
+        return undefined
+    }
+    return {
+        start: { line: lpr.line, character: lpr.character || 0 },
+        end: {
+            line: lpr.endLine || lpr.line,
+            character: lpr.endCharacter || lpr.character || 0,
+        },
+    }
+}
+
+export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selection[] {
+    const range = lprToRange(lpr)
+    if (range === undefined) {
+        return []
+    }
+    // `lprToRange` sets character to 0 if it's undefined. Only - 1 the character if it's not 0.
+    const characterZeroIndexed = (character: number) => (character === 0 ? character : character - 1)
+    const start: Position = { line: range.start.line - 1, character: characterZeroIndexed(range.start.character) }
+    const end: Position = { line: range.end.line - 1, character: characterZeroIndexed(range.end.character) }
+    return [
+        {
+            start,
+            end,
+            anchor: start,
+            active: end,
+            isReversed: false,
+        },
+    ]
+}
+
 /**
  * Tells if the given fragment component is a legacy blob hash component or not.
  *
@@ -331,7 +364,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
  * Parses a string like "L1-2:3", a range from a line to a position.
  */
 function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
-    if (!/^(L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?)?$/.test(lineChar)) {
+    if (!/^(L[0-9]+(:[0-9]+)?(-L?[0-9]+(:[0-9]+)?)?)?$/.test(lineChar)) {
         return {} // invalid
     }
 
@@ -394,6 +427,9 @@ function findLineInSearchParams(searchParams: URLSearchParams): LineOrPositionOr
 function parseLineOrPosition(
     str: string
 ): { line: undefined; character: undefined } | { line: number; character?: number } {
+    if (str.startsWith('L')) {
+        str = str.slice(1)
+    }
     const parts = str.split(':', 2)
     let line: number | undefined
     let character: number | undefined

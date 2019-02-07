@@ -1,5 +1,6 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
+import { of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
@@ -191,4 +192,8 @@ export const phabricatorCodeHost: CodeHost = {
     codeViewResolver,
     name: 'phabricator',
     check: checkIsPhabricator,
+
+    // TODO: handle parsing selected line number from Phabricator href,
+    // and find a way to listen to changes (Phabricator does not emit popstate events).
+    selectionsChanges: () => of([]),
 }
