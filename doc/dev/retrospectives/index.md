@@ -42,7 +42,7 @@ Allocate enough time for teammates to thoughtfully respond to the survey (aim fo
 
 ### Share feedback
 
-After the feedback period is over, aggregate all of the raw feedback into a single document and share it with the group so everyone can have at least one working day before the retrospective meeting to go over the results.
+After the feedback period is over, aggregate all of the raw feedback into a single document and share it with the group so everyone can have at least one working day before the retrospective meeting to review the results.
 
 ### Retrospect, together
 
@@ -65,7 +65,11 @@ Have the author of each feedback item read it out loud and answer any questions.
 
 #### Vote (5 min)
 
-After all feedback items have been organized into themes, ask each participant to assign three votes (+1s) to the topics that they deem most important. Make sure participants understand that they can distribute their votes as they wish. For example, one participant could place all their votes on a single topic to indicate how important it is to him or her to discuss that idea. On the other hand, another participant could distribute their votes evenly across many topics.
+After all feedback items have been organized into themes, ask each participant vote on the _topics_ that they deem most important. Make sure that participants understand the rules for voting:
+
+- Each person has three votes (+1s).
+- Each person can vote for a topic more than once (e.g. +2, +3).
+- Each person must use all of their votes.
 
 #### Sort (1 min)
 
