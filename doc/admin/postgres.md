@@ -1,10 +1,10 @@
 # Postgres
 
-## 🔢 Version requirements
+## Version requirements
 
 Sourcegraph uses Postgres as its main internal database. We support any version **starting from 9.6**.
 
-## ⤴️ Upgrades
+## Upgrades
 
 This section describes the possible Postgres upgrade procedures for the different Sourcegraph deployment types.
 
@@ -12,7 +12,7 @@ This section describes the possible Postgres upgrade procedures for the differen
 
 ----
 
-### 🌈 Automatic upgrades in `sourcegraph/server` deployments
+### Automatic upgrades in sourcegraph/server deployments
 
 Existing Postgres data will be automatically migrated when a release of the `sourcegraph/server` Docker image ships with a new version of Postgres. For the upgrade to proceed, the Docker socket **must be mounted** the first time the new Docker image is ran. This is needed to run the [Postgres upgrade containers](https://github.com/tianon/docker-postgres-upgrade) in the
 Docker host. When the upgrade is done, the container can be restarted without mounting the Docker socket.
@@ -32,7 +32,7 @@ When using the `sourcegraph/server` image in other environments (e.g. Kubernetes
 
 ----
 
-### 🐾 Manual upgrades in `sourcegraph/server` deployments
+### Manual upgrades in sourcegraph/server deployments
 
 These instructions can be followed when manual Postgres upgrades are preferred. **Ensure** the previous `sourcegraph/server` image is completely stopped before proceeding.
 
@@ -71,7 +71,7 @@ docker run \
 
 ----
 
-### 🌈 Automatic upgrades in `github.com/sourcegraph/deploy-sourcegraph` deployments
+### Automatic upgrades in github.com/sourcegraph/deploy-sourcegraph deployments
 
 The automatic upgrade process runs at startup time in the `sourcegraph/postgresql-11` image and it requires certain environment variables to be set. If you have previously customized `PGUSER`, `PGDATABASE` or `PGDATA` then you are required to specify the corresponding `PG*OLD` and `PG*NEW` environment variables. Below are the defaults and documentation on what each variable is used for:
 
@@ -88,7 +88,7 @@ Additionally the upgrade process assumes it can write to the parent directory of
 ----
 
 
-### ℹ️ Upgrades of external Postgres clusters or instances
+### Upgrades of external Postgres clusters or instances
 
 When running an external Postgres cluster (or instance) please refer to the documentation of your provider on how to perform upgrade procedures.
 
