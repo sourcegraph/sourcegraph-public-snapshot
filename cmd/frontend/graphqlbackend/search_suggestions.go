@@ -86,6 +86,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields) == 1
 		hasRepoOrFileFields := len(r.query.Values(query.FieldRepoGroup)) > 0 || len(r.query.Values(query.FieldRepo)) > 0 || len(r.query.Values(query.FieldFile)) > 0
 		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(query.FieldDefault)) <= 1 {
+			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
 			return r.suggestFilePaths(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
