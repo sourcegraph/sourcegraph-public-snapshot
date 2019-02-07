@@ -25,6 +25,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.0.1
 
+### Changed
+
+- Significantly optimized how file search suggestions are provided when using indexed search (cluster deployments).
+
 ### Postgres 11.1
 
 Both the `sourcegraph/server` image and the [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) manifests ship with Postgres `11.1`.
