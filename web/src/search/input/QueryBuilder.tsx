@@ -10,6 +10,20 @@ interface Props {
     isDotCom: boolean
 }
 
+interface QueryFields {
+    type: string
+    repo: string
+    file: string
+    language: string
+    patterns: string
+    exactMatch: string
+    case: string
+    author: string
+    after: string
+    before: string
+    message: string
+}
+
 interface State {
     /**
      * The query constructed from the field inputs (merged with the
@@ -17,19 +31,7 @@ interface State {
      */
     fieldsQuery: string
     typeOfSearch: 'text' | 'diff' | 'commit' | 'symbol'
-    values: {
-        type: string
-        repo: string
-        file: string
-        language: string
-        patterns: string
-        exactMatch: string
-        case: string
-        author: string
-        after: string
-        before: string
-        message: string
-    }
+    fields: QueryFields
 }
 
 /**
@@ -41,7 +43,7 @@ export class QueryBuilder extends React.Component<Props, State> {
         this.state = {
             fieldsQuery: '',
             typeOfSearch: 'text',
-            values: {
+            fields: {
                 type: '',
                 repo: '',
                 file: '',
@@ -54,6 +56,12 @@ export class QueryBuilder extends React.Component<Props, State> {
                 before: '',
                 message: '',
             },
+        }
+    }
+
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        if (prevState.fieldsQuery !== this.state.fieldsQuery) {
+            this.props.onFieldsQueryChange(this.state.fieldsQuery)
         }
     }
 
@@ -73,7 +81,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                         <Select
                             id="query-builder__type"
                             className="form-control query-builder__input"
-                            onChange={this.onInputChange('type')}
+                            onChange={this.onTypeChange}
                         >
                             <option value="text" defaultChecked={true}>
                                 Text (default)
@@ -321,38 +329,41 @@ export class QueryBuilder extends React.Component<Props, State> {
             </div>
         )
     }
-    private onInputChange = (key: keyof State['values']) => (
+
+    private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        this.onInputChange('type')(event)
+
+        const searchType = event.target.value
+        if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
+            this.setState({ typeOfSearch: searchType })
+        } else {
+            this.setState({ typeOfSearch: 'text' })
+        }
+    }
+
+    private onInputChange = (key: keyof State['fields']) => (
         event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
-        if (key === 'type') {
-            const searchType = event.target.value
-            if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
-                this.setState({ typeOfSearch: searchType })
-            } else {
-                this.setState({ typeOfSearch: searchType as 'text' })
-            }
-        }
+        event.persist()
+        this.setState(({ fields }) => {
+            const newFields = { ...fields, [key]: event.target.value }
 
-        const newMap = { ...this.state.values }
-        newMap[key] = event.target.value
-        this.setState({ values: newMap })
-        const fieldsQueryParts: string[] = []
-        for (const inputFieldAndValue of Object.entries(newMap)) {
-            const inputField = inputFieldAndValue[0]
-            const inputValue = inputFieldAndValue[1]
-            if (inputValue !== '') {
-                if (inputField === 'patterns' || inputField === 'exactMatch') {
-                    // Patterns and exact matches don't have a literal field operator (e.g. patterns:) in the query.
-                    fieldsQueryParts.push(formatFieldForQuery('', inputValue))
-                } else {
-                    fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+            const fieldsQueryParts: string[] = []
+            for (const inputFieldAndValue of Object.entries(newFields)) {
+                const inputField = inputFieldAndValue[0]
+                const inputValue = inputFieldAndValue[1]
+                if (inputValue !== '') {
+                    if (inputField === 'patterns' || inputField === 'exactMatch') {
+                        // Patterns and exact matches don't have a literal field operator (e.g. patterns:) in the query.
+                        fieldsQueryParts.push(formatFieldForQuery('', inputValue))
+                    } else {
+                        fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+                    }
                 }
             }
-        }
 
-        const fieldsQuery = fieldsQueryParts.join(' ')
-        this.setState({ fieldsQuery })
-        this.props.onFieldsQueryChange(fieldsQuery)
+            return { fields: newFields, fieldsQuery: fieldsQueryParts.join(' ') }
+        })
     }
 }
 
