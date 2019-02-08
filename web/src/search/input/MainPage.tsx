@@ -253,6 +253,11 @@ export class MainPage extends React.Component<Props, State> {
                 transform: translateY(-0px);
                 opacity: .5;
             }
+			.global-alerts {
+				position: sticky;
+				position: -webkit-sticky;
+				z-index: 99;
+			}
         `,
         }
     }
