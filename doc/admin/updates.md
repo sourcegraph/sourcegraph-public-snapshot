@@ -6,7 +6,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
 
-You can always find the version number of the latest release at [about.sourcegraph.com](https://about.sourcegraph.com) in the `docker run` command's image tag.
+You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
 
 - As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
 - If you need zero-downtime updates, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
