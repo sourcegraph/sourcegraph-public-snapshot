@@ -13,7 +13,7 @@ It is not used for patch releases.
 
 ## 3 working days before release (YYYY-MM-DD)
 
-- [ ] **HH:MM AM/PM PT** Create the branch for this release off of master and tag the first release candidate (e.g. `v3.0.0-rc.1`).
+- [ ] **HH:MM AM/PM PT** Create the branch for this release off of master (e.q. `3.0`) and tag the first release candidate (e.g. `v3.0.0-rc.1`).
 - [ ] Send a message to #dev-announce to announce the release candidate.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] Initialize the site by creating an admin account.
