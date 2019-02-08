@@ -54,10 +54,10 @@ No later than 5 working days before release (YYYY-MM-DD)
         - [ ] Go to definition works in TypeScript.
         - [ ] Find references works in Go.
         - [ ] Find references works in TypeScript.
-- [ ] Add any [release blocking](doc/dev/releases/index.md#blocking) issues as checklist items and start working to resolve them.
+- [ ] Add any [release blocking](releases.md#blocking) issues as checklist items and start working to resolve them.
 
 1 working day before the release (YYYY-MM-DD)
-- [ ] **HH:MM AM/PM PT** Tag a final release candidate. Barring a new [release blocking](doc/dev/releases/index.md#blocking) issue, this will become the final release.
+- [ ] **HH:MM AM/PM PT** Tag a final release candidate. Barring a new [release blocking](releases.md#blocking) issue, this will become the final release.
 - [ ] Send a message to #dev-announce to announce the release candidate.
 - [ ] Re-test any flows that might have been impacted by commits that have been `git cherry-picked` into the release branch.
 
