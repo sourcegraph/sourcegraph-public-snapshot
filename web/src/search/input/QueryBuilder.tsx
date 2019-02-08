@@ -10,6 +10,7 @@ interface Props {
     isDotCom: boolean
 }
 
+type Keys = 'repo' | 'file' | 'language'
 interface State {
     /**
      * The query constructed from the field inputs (merged with the
@@ -17,6 +18,7 @@ interface State {
      */
     fieldsQuery: string
     typeOfSearch: 'text' | 'diff' | 'commit' | 'symbol'
+    values: { [K in Keys]: string }
 }
 
 /**
@@ -41,6 +43,7 @@ export class QueryBuilder extends React.Component<Props, State> {
         this.state = {
             fieldsQuery: '',
             typeOfSearch: 'text',
+            values: { repo: 'string', file: '', language: '' },
         }
     }
 
@@ -95,7 +98,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.repoFieldInput}
-                            onChange={this.onInputChange}
+                            onChange={this.newOnInputChange('repo')}
                         />
                     </div>
                     <div
@@ -118,7 +121,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.fileFieldInput}
-                            onChange={this.onInputChange}
+                            onChange={this.newOnInputChange('file')}
                         />
                     </div>
                     <div
@@ -140,7 +143,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.langFieldInput}
-                            onChange={this.onInputChange}
+                            onChange={this.newOnInputChange('language')}
                         />
                     </div>
                     <div
@@ -319,9 +322,28 @@ export class QueryBuilder extends React.Component<Props, State> {
             </div>
         )
     }
+    private newOnInputChange = (key: keyof State['values']) => (
+        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        console.log('new on input change')
+        const newMap: { [k in Keys]: string } = { ...this.state.values }
+        newMap[key] = event.target.value
+        this.setState({ values: newMap })
+        const fieldsQueryParts: string[] = []
+        for (const key of Object.keys(newMap)) {
+            if (newMap[key] !== '') {
+                fieldsQueryParts.push(formatFieldForQuery(key, newMap[key]))
+            }
+        }
+
+        const fieldsQuery = fieldsQueryParts.join(' ')
+        this.setState({ fieldsQuery })
+        this.props.onFieldsQueryChange(fieldsQuery)
+    }
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement | HTMLSelectElement> = event => {
         const fieldsQueryParts: string[] = []
+
         if (this.repoFieldInput.current && this.repoFieldInput.current.value) {
             fieldsQueryParts.push(formatFieldForQuery('repo', this.repoFieldInput.current.value))
         }
