@@ -1,6 +1,6 @@
 # Sourcegraph documentation
 
-> NOTE: Updating to `3.0.1+`? Read our [migration guide](admin/migration/3_0.md) for `2.x` and `3.0.0`.
+> NOTE: Upgrading to `3.0.1+`? Read our [migration guide](admin/migration/3_0.md) for `2.x` and `3.0.0`.
 
 Sourcegraph is used by developers at Uber, Lyft, Yelp, and more to help them search, navigate and review code at enterprise scale.
 

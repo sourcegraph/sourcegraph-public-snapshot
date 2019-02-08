@@ -1,5 +1,7 @@
 # Site administration documentation
 
+> NOTE: Upgrading to `3.0.1+`? Read our [migration guide](admin/migration/3_0.md) for `2.x` and `3.0.0`.
+
 Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users.
 
 - [Install Sourcegraph](install.md)
@@ -11,7 +13,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [Management console](management_console.md)
   - [Site configuration](site_config/index.md)
   - [User authentication](auth.md)
-  - [Updating to a new version of Sourcegraph](updates.md)
+  - [Upgrading Sourcegraph](updates.md)
   - [nginx HTTP server configuration](nginx.md)
   - [Setting the URL for your instance](url.md)
   - [Monitoring and tracing](monitoring_and_tracing.md)

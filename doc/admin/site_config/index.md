@@ -4,9 +4,9 @@ Sourcegraph is configured by a site configuration JSON file.
 
 To view and edit your site configuration on your Sourcegraph instance:
 
-1.  Click on the user menu (with your username or avatar) in the top navigation bar.
-1.  Select **Site admin**.
-1.  In the left-hand navigation menu, select **Configuration**.
+1. Click on the user menu (with your username or avatar) in the top navigation bar.
+1. Select **Site admin**.
+1. In the left-hand navigation menu, select **Configuration**.
 
 The URL is `https://sourcegraph.example.com/site-admin/configuration`.
 
@@ -27,4 +27,4 @@ See [all site configuration options](all.md), or read walkthroughs of common con
 - [Add organizations](../../user/organizations.md)
 - [Set up HTTPS](../nginx.md)
 - [Use a custom domain](../url.md)
-- [Updating Sourcegraph Server](../updates.md)
+- [Upgrading Sourcegraph](../updates.md)
