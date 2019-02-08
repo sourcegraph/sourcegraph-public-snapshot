@@ -69,7 +69,7 @@ func (p *GitLabOAuthAuthzProvider) ServiceType() string {
 	return p.codeHost.ServiceType()
 }
 
-func (p *GitLabOAuthAuthzProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
+func (p *GitLabOAuthAuthzProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine, others map[authz.Repo]struct{}) {
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
 
@@ -90,7 +90,8 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 	remaining, _ := p.Repos(ctx, repos)
 	nextRemaining := map[authz.Repo]struct{}{}
 
-	// Check cached visibility
+	// Populate perms using cached repository visibility information. After this block,
+	// nextRemaining records the repositories that we still have to check.
 	for repo := range remaining {
 		projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
 		if err != nil {
@@ -101,10 +102,7 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 			nextRemaining[repo] = struct{}{}
 			continue
 		}
-		switch v := vis.Visibility; {
-		case v == gitlab.Public:
-			fallthrough
-		case v == gitlab.Internal && accountID != "":
+		if v := vis.Visibility; v == gitlab.Public || (v == gitlab.Internal && accountID != "") {
 			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
 			continue
 		}
@@ -115,7 +113,8 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 		return perms, nil
 	}
 
-	// Check cached user repos
+	// Populate perms using cached user-can-access-repository information. After this block,
+	// nextRemaining records the repositories that we still have to check.
 	if accountID != "" {
 		remaining, nextRemaining = nextRemaining, map[authz.Repo]struct{}{}
 		for repo := range remaining {
@@ -136,7 +135,8 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 		}
 	}
 
-	// Fetch and update cache
+	// Populate perms for the remaining repos (nextRemaining) by fetching directly from the GitLab
+	// API (and update the user repo-visibility and user-can-access-repo permissions, as well)
 	var accessToken string
 	if account != nil {
 		_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)

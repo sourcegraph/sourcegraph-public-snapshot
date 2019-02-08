@@ -14,7 +14,10 @@ type cache interface {
 	Delete(key string)
 }
 
-func userRepoCacheKey(gitlabAccountID string, gitlabProjID int) string {
+// userProjCacheKey returns the key for caching the value describing if the given GitLab user has
+// access to the given GitLab project. This key must be unique among *all* GitLabOAuthAuthzProvider
+// cache keys, including those for repo visibility (see projVisibilityCacheKey).
+func userProjCacheKey(gitlabAccountID string, gitlabProjID int) string {
 	return fmt.Sprintf("userRepo:%s:%d", gitlabAccountID, gitlabProjID) // GitLab account IDs cannot have ':'
 }
 
@@ -26,7 +29,7 @@ type userRepoCacheVal struct {
 }
 
 func cacheGetUserRepo(c cache, gitlabAccountID string, gitlabProjID int, ttl time.Duration) (v userRepoCacheVal, exists bool) {
-	k := userRepoCacheKey(gitlabAccountID, gitlabProjID)
+	k := userProjCacheKey(gitlabAccountID, gitlabProjID)
 	b, exists := c.Get(k)
 	if !exists {
 		return userRepoCacheVal{}, false
@@ -48,11 +51,15 @@ func cacheSetUserRepo(c cache, gitlabAccountID string, gitlabProjID int, v userR
 	if err != nil {
 		return err
 	}
-	c.Set(userRepoCacheKey(gitlabAccountID, gitlabProjID), b)
+	c.Set(userProjCacheKey(gitlabAccountID, gitlabProjID), b)
 	return nil
 }
 
-func repoVisibilityCacheKey(gitlabProjID int) string {
+// projVisibilityCacheKey returns the key for caching the value describing the visibility of the
+// GitLab project (public, internal, private). This key must be unique among *all*
+// GitLabOAuthAuthzProvider cache keys, including those for user-project access (see
+// userProjCacheKey).
+func projVisibilityCacheKey(gitlabProjID int) string {
 	return fmt.Sprintf("visibility:%d", gitlabProjID)
 }
 
@@ -62,7 +69,7 @@ type repoVisibilityCacheVal struct {
 }
 
 func cacheGetRepoVisibility(c cache, gitlabProjID int, ttl time.Duration) (v repoVisibilityCacheVal, exists bool) {
-	k := repoVisibilityCacheKey(gitlabProjID)
+	k := projVisibilityCacheKey(gitlabProjID)
 	b, exists := c.Get(k)
 	if !exists {
 		return repoVisibilityCacheVal{}, false
@@ -84,6 +91,6 @@ func cacheSetRepoVisibility(c cache, gitlabProjID int, v repoVisibilityCacheVal)
 	if err != nil {
 		return err
 	}
-	c.Set(repoVisibilityCacheKey(gitlabProjID), b)
+	c.Set(projVisibilityCacheKey(gitlabProjID), b)
 	return nil
 }
