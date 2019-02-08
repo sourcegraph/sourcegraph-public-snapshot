@@ -87,9 +87,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             <option value="text" defaultChecked={true}>
                                 Text (default)
                             </option>
-                            <option value="diff" defaultChecked={true}>
-                                Diff
-                            </option>
+                            <option value="diff">Diff</option>
                             <option value="commit">Commit</option>
                             <option value="symbol">Symbol</option>
                         </Select>
@@ -141,7 +139,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                     tip="Same as typing into the search box. Lines matching these regexp patterns (in order) will be included in the search results."
                 />
                 <QueryBuilderInputRow
-                    onInputChange={this.onInputChange('patterns')}
+                    onInputChange={this.onInputChange('exactMatch')}
                     shortcut='"system error 123"'
                     title="Exact string"
                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
@@ -231,8 +229,10 @@ export class QueryBuilder extends React.Component<Props, State> {
                 const inputField = inputFieldAndValue[0]
                 const inputValue = inputFieldAndValue[1]
                 if (inputValue !== '') {
-                    if (inputField === 'patterns' || inputField === 'exactMatch') {
+                    if (inputField === 'patterns') {
                         // Patterns and exact matches don't have a literal field operator (e.g. patterns:) in the query.
+                        fieldsQueryParts.push(inputValue)
+                    } else if (inputField === 'exactMatch') {
                         fieldsQueryParts.push(formatFieldForQuery('', inputValue))
                     } else {
                         fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))

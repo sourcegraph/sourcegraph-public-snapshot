@@ -9,12 +9,13 @@ interface Props {
     dotComShortcut?: string
     /** An optional tip shown when hovering over the shortcut. */
     tip?: string
-    onInputChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
     /**
-     * An appropriate identifier for this field to be used as part of an HTML ID. Must be a single word,
-     * and unique amongst the other fields in the query builder.
+     * An appropriate identifier for this field to be used as a suffix for CSS classes and testing IDs.
+     * Must be a single or hyphenated word, and unique amongst the other fields in the query builder.
      */
     shortName: string
+    /** Handler for when an input field changes. */
+    onInputChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
     isSourcegraphDotCom: boolean
 }
 
@@ -27,6 +28,7 @@ export class QueryBuilderInputRow extends React.Component<Props, {}> {
                 </label>
                 <div className="query-builder__row-input">
                     <input
+                        data-testid={`test-${this.props.shortName}`}
                         id={`query-builder__${this.props.shortName}`}
                         className="form-control query-builder__input"
                         spellCheck={false}
