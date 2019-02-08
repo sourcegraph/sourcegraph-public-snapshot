@@ -18,6 +18,7 @@ interface State {
     fieldsQuery: string
     typeOfSearch: 'text' | 'diff' | 'commit' | 'symbol'
     values: {
+        type: string
         repo: string
         file: string
         language: string
@@ -28,7 +29,6 @@ interface State {
         after: string
         before: string
         message: string
-        [key: string]: string
     }
 }
 
@@ -214,7 +214,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.quotedTermFieldInput}
-                            onChange={this.onInputChange('exactString')}
+                            onChange={this.onInputChange('exactMatch')}
                         />
                     </div>
                     <div
@@ -356,14 +356,21 @@ export class QueryBuilder extends React.Component<Props, State> {
                 this.setState({ typeOfSearch: searchType as 'text' })
             }
         }
-        console.log('new on input change')
+
         const newMap = { ...this.state.values }
         newMap[key] = event.target.value
         this.setState({ values: newMap })
         const fieldsQueryParts: string[] = []
-        for (const key of Object.keys(newMap)) {
-            if (newMap[key] !== '') {
-                fieldsQueryParts.push(formatFieldForQuery(key, newMap[key]))
+        for (const inputFieldAndValue of Object.entries(newMap)) {
+            const inputField = inputFieldAndValue[0]
+            const inputValue = inputFieldAndValue[1]
+            if (inputValue !== '') {
+                if (inputField === 'patterns' || inputField === 'exactMatch') {
+                    // Patterns and exact matches don't have a literal field operator (e.g. patterns:) in the query.
+                    fieldsQueryParts.push(formatFieldForQuery('', inputValue))
+                } else {
+                    fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+                }
             }
         }
 
