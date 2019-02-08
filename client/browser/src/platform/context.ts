@@ -59,17 +59,25 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
             )
         ),
         updateSettings: async (subject, edit) => {
-            await updateSettings(
-                context,
-                subject,
-                edit,
+            if (subject === 'Client') {
                 // Support storing settings on the client (in the browser extension) so that unauthenticated
                 // Sourcegraph viewers can update settings.
-                subject === 'Client' ? () => editClientSettings(edit) : mutateSettings
-            )
-            if (subject !== 'Client') {
-                updatedViewerSettings.next(await fetchViewerSettings().toPromise())
+                await updateSettings(context, subject, edit, () => editClientSettings(edit))
+                return
             }
+
+            try {
+                await updateSettings(context, subject, edit, mutateSettings)
+            } catch (error) {
+                if ('message' in error && /version mismatch/.test(error.message)) {
+                    // The user probably edited the settings in another tab, so
+                    // try once more.
+                    updatedViewerSettings.next(await fetchViewerSettings().toPromise())
+                    await updateSettings(context, subject, edit, mutateSettings)
+                }
+            }
+
+            updatedViewerSettings.next(await fetchViewerSettings().toPromise())
         },
         queryGraphQL: (request, variables, requestMightContainPrivateInfo) => {
             if (isInPage) {

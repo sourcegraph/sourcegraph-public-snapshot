@@ -41,7 +41,16 @@ export function createPlatformContext(): PlatformContext {
                 )
             }
 
-            await updateSettings(context, subject, edit, mutateSettings)
+            try {
+                await updateSettings(context, subject, edit, mutateSettings)
+            } catch (error) {
+                if ('message' in error && /version mismatch/.test(error.message)) {
+                    // The user probably edited the settings in another tab, so
+                    // try once more.
+                    updatedSettings.next(await fetchViewerSettings().toPromise())
+                    await updateSettings(context, subject, edit, mutateSettings)
+                }
+            }
             updatedSettings.next(await fetchViewerSettings().toPromise())
         },
         queryGraphQL: (request, variables) =>
