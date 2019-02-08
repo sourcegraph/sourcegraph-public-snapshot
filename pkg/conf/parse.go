@@ -52,11 +52,9 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 var requireRestart = []string{
 	"auth.accessTokens",
 	"auth.sessionExpiry",
-	"auth.disableAccessTokens",
 	"git.cloneURLToRepositoryName",
 	"searchScopes",
 	"extensions",
-	"disableBrowserExtension",
 	"disablePublicRepoRedirects",
 
 	// Options defined in critical.schema.json are prefixed with "critical::"

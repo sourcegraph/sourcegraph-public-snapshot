@@ -254,9 +254,6 @@ type Repos struct {
 	Callsign string `json:"callsign"`
 	Path     string `json:"path"`
 }
-type ReviewBoard struct {
-	Url string `json:"url,omitempty"`
-}
 
 // SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
 //
@@ -317,10 +314,8 @@ type Settings struct {
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
-	AuthDisableAccessTokens           bool                        `json:"auth.disableAccessTokens,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
-	DisableBrowserExtension           bool                        `json:"disableBrowserExtension,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                        `json:"disablePublicRepoRedirects,omitempty"`
 	Discussions                       *Discussions                `json:"discussions,omitempty"`
@@ -337,7 +332,6 @@ type SiteConfiguration struct {
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
-	ReviewBoard                       []*ReviewBoard              `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 }
 

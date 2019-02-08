@@ -29,37 +29,37 @@ func TestDiff(t *testing.T) {
 		{
 			name: "slice_diff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "a"}}},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "b"}}},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
-			want: []string{"reviewBoard"},
+			want: []string{"git.cloneURLToRepositoryName"},
 		},
 		{
 			name: "slice_nodiff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "a"}}},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "a"}}},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
 		},
 		{
 			name: "multi_diff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "b"}}},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{ReviewBoard: []*schema.ReviewBoard{{Url: "a"}}},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}},
 				Critical:          schema.CriticalConfiguration{ExternalURL: "b"},
 			},
-			want: []string{"critical::externalURL", "reviewBoard"},
+			want: []string{"critical::externalURL", "git.cloneURLToRepositoryName"},
 		},
 		{
 			name: "experimental_features",

@@ -22,8 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
@@ -80,7 +80,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/healthz", "/__version":
-			fmt.Fprintf(w, env.Version)
+			fmt.Fprintf(w, version.Version())
 		default:
 			next.ServeHTTP(w, r)
 		}
@@ -137,7 +137,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
 		// to the incoming header URL. Otherwise use the configured CORS origin.
 		headerOrigin := r.Header.Get("Origin")
-		isExtensionRequest := (headerOrigin == devExtension || headerOrigin == prodExtension) && !conf.Get().DisableBrowserExtension
+		isExtensionRequest := headerOrigin == devExtension || headerOrigin == prodExtension
 
 		if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -165,10 +165,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 func isTrustedOrigin(r *http.Request) bool {
 	requestOrigin := r.Header.Get("Origin")
 
-	var isExtensionRequest bool
-	if !conf.Get().DisableBrowserExtension {
-		isExtensionRequest = requestOrigin == devExtension || requestOrigin == prodExtension
-	}
+	isExtensionRequest := requestOrigin == devExtension || requestOrigin == prodExtension
 
 	var isCORSAllowedRequest bool
 	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {

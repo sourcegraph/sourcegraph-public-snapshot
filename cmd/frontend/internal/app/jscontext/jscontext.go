@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -137,7 +138,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		CSRFToken:           csrfToken,
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assetsutil.URL("").String(),
-		Version:             env.Version,
+		Version:             version.Version(),
 		IsAuthenticatedUser: actor.IsAuthenticated(),
 		SentryDSN:           sentryDSNFrontend,
 		Debug:               env.InsecureDev,

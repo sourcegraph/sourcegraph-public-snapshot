@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -106,7 +107,7 @@ func Main() error {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			log.Printf("Version: %s", env.Version)
+			log.Printf("Version: %s", version.Version())
 			log.Print()
 
 			env.PrintHelp()

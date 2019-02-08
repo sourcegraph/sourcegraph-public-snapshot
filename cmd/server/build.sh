@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # We want to build multiple go binaries, so we use a custom build step on CI.
-cd $(dirname "${BASH_SOURCE[0]}")/../..
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
 
-OUTPUT=`mktemp -d -t sgserver_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
 cleanup() {
     rm -rf "$OUTPUT"
 }
@@ -24,6 +24,10 @@ additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.co
 # our enterprise build scripts.
 server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
+cp -a ./cmd/server/rootfs/. "$OUTPUT"
+bindir="$OUTPUT/usr/local/bin"
+mkdir -p "$bindir"
+
 for pkg in $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
@@ -35,7 +39,10 @@ for pkg in $server_pkg \
     github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
 
-    go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+    go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o "$bindir/$(basename "$pkg")" "$pkg"
 done
 
-docker build -f cmd/server/Dockerfile -t $IMAGE $OUTPUT
+mkdir -p "$OUTPUT/.ctags.d"
+cp cmd/symbols/.ctags.d/additional-languages.ctags "$OUTPUT/.ctags.d/additional-languages.ctags"
+
+docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT"

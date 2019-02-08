@@ -1477,10 +1477,10 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^6.0.2":
-  version "6.0.2"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-6.0.2.tgz#22751c6fe68f241e63bda5193582b1ff53e20bf1"
-  integrity sha512-WquHQ8tGFPTEObV0+shpDL+jF8LbWMI7hJ5LcGb4XbOLCgFfw5e4ETWE5lRrRSUf86FGpjDPIUMju8pTZdvUeQ==
+"@sourcegraph/codeintellify@^6.0.3":
+  version "6.0.3"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-6.0.3.tgz#c9bba298bd3bec9922441ef731b34c736902ceab"
+  integrity sha512-PYB7raZQd5ztzCBXcyjabf76Phn2zfr/AEyNlMu81llz6hW/WiyiAfvP9g4E8ml8wI1bDu873kyjSKObhxv5yw==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.1"
     "@sourcegraph/extension-api-types" "^1.0.1"

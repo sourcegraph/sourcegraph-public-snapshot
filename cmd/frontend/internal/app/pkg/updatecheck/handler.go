@@ -24,12 +24,12 @@ var (
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("2.13.5") // We don't plan on advertising 3.0.0-beta, but should update this for 3.0.0
+	latestReleaseDockerServerImageBuild = newBuild("3.0.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("2.13.5") // We don't plan on advertising 3.0.0-beta, but should update this for 3.0.0
+	latestReleaseKubernetesBuild = newBuild("3.0.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -177,13 +177,13 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		"site_activity": %s,
 		"installer_email": "%s",
 		"auth_providers": "%s",
-		"builtin_signup_allowed", "%s",
+		"builtin_signup_allowed": "%s",
 		"deploy_type": "%s",
 		"total_user_accounts": "%s",
-		"has_external_url", "%s",
-		"has_repos", "%s",
-		"ever_searched", "%s",
-		"ever_find_refs", "%s",
+		"has_external_url": "%s",
+		"has_repos": "%s",
+		"ever_searched": "%s",
+		"ever_find_refs": "%s",
 		"timestamp": "%s"
 	}`,
 		clientAddr,

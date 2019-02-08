@@ -33,6 +33,8 @@ interface State {
 
     /** Recently invoked actions, which should be sorted first in the list. */
     recentActions: string[] | null
+
+    autoFocus?: boolean
 }
 
 /** Displays a list of commands contributed by extensions for a specific menu. */
@@ -82,6 +84,12 @@ export class CommandList extends React.PureComponent<Props, State> {
                 .getContributions()
                 .subscribe(contributions => this.setState({ contributions }))
         )
+
+        // Only focus input after it has been rendered in the DOM
+        // Workaround for Firefox and Safari where preventScroll isn't compatible
+        setTimeout(() => {
+            this.setState({ autoFocus: true })
+        })
     }
 
     public componentDidUpdate(_prevProps: Props, prevState: State): void {
@@ -118,7 +126,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                         </label>
                         <input
                             id="command-list__input"
-                            ref={input => input && input.focus({ preventScroll: true })}
+                            ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
                             type="text"
                             className="form-control px-2 py-1 rounded-0"
                             value={this.state.input}
