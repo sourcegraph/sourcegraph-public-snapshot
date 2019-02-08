@@ -1,9 +1,6 @@
 .welcome-main-page-demos {
     &__item {
-        touch-action: manipulation;
-    }
-    &__item:hover &__play {
-        visibility: visible !important;
+        touch-action: manipulation; // remove iOS tap delay
     }
     &__video {
         // To avoid jitter during loading/switching, calculate height of video based on page
