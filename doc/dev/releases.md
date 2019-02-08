@@ -37,7 +37,7 @@ What is the process we follow to release?
 
 The release captain is _responsible_ for managing the release process and ensuring that the release happens on time. The release captain may _delegate_ work to other teammates, but such delegation does not absolve the release captain of their responsibility to ensure that delegated work gets done.
 
-No later than 5 _working days_ before the release day the release captain creates a tracking issue using the [release issue template](./release_issue_template.md) and assigns it to themself to complete.
+No later than 5 _working days_ before the release day the release captain creates a tracking issue using the [release issue template](release_issue_template.md) and assigns it to themself to complete.
 
 | Version | Captain | Release Date |
 |---------|---------|--------------|
@@ -103,7 +103,7 @@ The release always ships on time, even if it's missing features or bug fixes we 
 There are only three kinds of issues that are eligible to block a release:
 
 1. Issues that literally prevent us from tagging a release (i.e. our CI logic to produce builds from git tags is broken).
-2. Issues that break one of the critical workflows explicitly tested in the [release issue template](./release_issue_template.md) which would impact _most_ customers and don't have workarounds. 
+2. Issues that break one of the critical workflows explicitly tested in the [release issue template](release_issue_template.md) which would impact _most_ customers and don't have workarounds. 
 3. Critical security _regressions_ from the previous release.
 
 Only the release captain can label something as release blocking.
