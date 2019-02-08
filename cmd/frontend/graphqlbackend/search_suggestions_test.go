@@ -114,6 +114,7 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("repogroup: and single term", func(t *testing.T) {
+		t.Skip("TODO(slimsag): this test is not reliable")
 		var mu sync.Mutex
 		var calledReposListReposInGroup, calledReposListFooRepo3 bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
