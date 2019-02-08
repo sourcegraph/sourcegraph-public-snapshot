@@ -54,7 +54,19 @@ export class QueryBuilder extends React.Component<Props, State> {
         this.state = {
             fieldsQuery: '',
             typeOfSearch: 'text',
-            values: { repo: '', file: '', language: '' },
+            values: {
+                type: '',
+                repo: '',
+                file: '',
+                language: '',
+                patterns: '',
+                exactMatch: '',
+                case: '',
+                author: '',
+                after: '',
+                before: '',
+                message: '',
+            },
         }
     }
 
@@ -75,7 +87,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             id="query-builder__type"
                             className="form-control query-builder__input"
                             ref={this.typeFieldInput}
-                            onChange={this.onTypeChange}
+                            onChange={this.onInputChange('type')}
                         >
                             <option value="text" defaultChecked={true}>
                                 Text (default)
@@ -109,7 +121,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.repoFieldInput}
-                            onChange={this.newOnInputChange('repo')}
+                            onChange={this.onInputChange('repo')}
                         />
                     </div>
                     <div
@@ -132,7 +144,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.fileFieldInput}
-                            onChange={this.newOnInputChange('file')}
+                            onChange={this.onInputChange('file')}
                         />
                     </div>
                     <div
@@ -154,7 +166,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.langFieldInput}
-                            onChange={this.newOnInputChange('language')}
+                            onChange={this.onInputChange('language')}
                         />
                     </div>
                     <div
@@ -180,7 +192,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.patternsFieldInput}
-                            onChange={this.onInputChange}
+                            onChange={this.onInputChange('patterns')}
                         />
                     </div>
                     <div
@@ -202,7 +214,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             autoCapitalize="off"
                             placeholder=""
                             ref={this.quotedTermFieldInput}
-                            onChange={this.onInputChange}
+                            onChange={this.onInputChange('exactString')}
                         />
                     </div>
                     <div
@@ -222,7 +234,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             id="query-builder__case"
                             className="form-control query-builder__input"
                             ref={this.caseFieldInput}
-                            onChange={this.onInputChange}
+                            onChange={this.onInputChange('case')}
                         >
                             <option value="no" defaultChecked={true}>
                                 No
@@ -250,7 +262,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                                     autoCapitalize="off"
                                     placeholder=""
                                     ref={this.authorFieldInput}
-                                    onChange={this.onInputChange}
+                                    onChange={this.onInputChange('author')}
                                 />
                             </div>
                             <div
@@ -272,7 +284,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                                     autoCapitalize="off"
                                     placeholder=""
                                     ref={this.beforeFieldInput}
-                                    onChange={this.onInputChange}
+                                    onChange={this.onInputChange('before')}
                                 />
                             </div>
                             <div
@@ -294,7 +306,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                                     autoCapitalize="off"
                                     placeholder=""
                                     ref={this.afterFieldInput}
-                                    onChange={this.onInputChange}
+                                    onChange={this.onInputChange('after')}
                                 />
                             </div>
                             <div
@@ -317,7 +329,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                                         autoCapitalize="off"
                                         placeholder=""
                                         ref={this.messageFieldInput}
-                                        onChange={this.onInputChange}
+                                        onChange={this.onInputChange('message')}
                                     />
                                 </div>
                                 <div
@@ -333,9 +345,17 @@ export class QueryBuilder extends React.Component<Props, State> {
             </div>
         )
     }
-    private newOnInputChange = (key: keyof State['values']) => (
+    private onInputChange = (key: keyof State['values']) => (
         event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
+        if (key === 'type') {
+            const searchType = event.target.value
+            if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
+                this.setState({ typeOfSearch: searchType })
+            } else {
+                this.setState({ typeOfSearch: searchType as 'text' })
+            }
+        }
         console.log('new on input change')
         const newMap = { ...this.state.values }
         newMap[key] = event.target.value
@@ -350,60 +370,6 @@ export class QueryBuilder extends React.Component<Props, State> {
         const fieldsQuery = fieldsQueryParts.join(' ')
         this.setState({ fieldsQuery })
         this.props.onFieldsQueryChange(fieldsQuery)
-    }
-
-    private onInputChange: React.ChangeEventHandler<HTMLInputElement | HTMLSelectElement> = event => {
-        const fieldsQueryParts: string[] = []
-
-        if (this.repoFieldInput.current && this.repoFieldInput.current.value) {
-            fieldsQueryParts.push(formatFieldForQuery('repo', this.repoFieldInput.current.value))
-        }
-        if (this.fileFieldInput.current && this.fileFieldInput.current.value) {
-            fieldsQueryParts.push(formatFieldForQuery('file', this.fileFieldInput.current.value))
-        }
-        if (this.langFieldInput.current && this.langFieldInput.current.value) {
-            fieldsQueryParts.push(formatFieldForQuery('lang', this.langFieldInput.current.value))
-        }
-        if (this.patternsFieldInput.current && this.patternsFieldInput.current.value) {
-            fieldsQueryParts.push(this.patternsFieldInput.current.value)
-        }
-        if (this.quotedTermFieldInput.current && this.quotedTermFieldInput.current.value) {
-            fieldsQueryParts.push(formatFieldForQuery('', this.quotedTermFieldInput.current.value))
-        }
-        if (this.caseFieldInput.current && this.caseFieldInput.current.value !== 'no') {
-            fieldsQueryParts.push(formatFieldForQuery('case', this.caseFieldInput.current.value))
-        }
-        if (this.typeFieldInput.current && this.typeFieldInput.current.value !== 'text') {
-            fieldsQueryParts.push(formatFieldForQuery('type', this.typeFieldInput.current.value))
-        }
-        if (this.messageFieldInput.current && this.messageFieldInput.current.value) {
-            fieldsQueryParts.push(formatFieldForQuery('message', this.messageFieldInput.current.value))
-        }
-        if (this.authorFieldInput.current && this.authorFieldInput.current.value) {
-            fieldsQueryParts.push(formatFieldForQuery('author', this.authorFieldInput.current.value))
-        }
-        if (this.beforeFieldInput.current && this.beforeFieldInput.current.value) {
-            fieldsQueryParts.push(formatFieldForQuery('before', this.beforeFieldInput.current.value))
-        }
-        if (this.afterFieldInput.current && this.afterFieldInput.current.value) {
-            fieldsQueryParts.push(formatFieldForQuery('after', this.afterFieldInput.current.value))
-        }
-
-        const fieldsQuery = fieldsQueryParts.join(' ')
-        this.setState({ fieldsQuery })
-        this.props.onFieldsQueryChange(fieldsQuery)
-    }
-
-    private onTypeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
-        if (this.typeFieldInput.current && this.typeFieldInput.current.value) {
-            this.onInputChange(event)
-            const searchType = this.typeFieldInput.current.value
-            if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
-                this.setState({ typeOfSearch: searchType })
-            } else {
-                this.setState({ typeOfSearch: searchType as 'text' })
-            }
-        }
     }
 }
 
