@@ -36,19 +36,6 @@ interface State {
  * The individual input fields for the various elements of the search query syntax.
  */
 export class QueryBuilder extends React.Component<Props, State> {
-    private typeFieldInput = React.createRef<HTMLSelectElement>()
-    private repoFieldInput = React.createRef<HTMLInputElement>()
-    private fileFieldInput = React.createRef<HTMLInputElement>()
-    private langFieldInput = React.createRef<HTMLInputElement>()
-    private patternsFieldInput = React.createRef<HTMLInputElement>()
-    private quotedTermFieldInput = React.createRef<HTMLInputElement>()
-    private caseFieldInput = React.createRef<HTMLSelectElement>()
-
-    private messageFieldInput = React.createRef<HTMLInputElement>()
-    private authorFieldInput = React.createRef<HTMLInputElement>()
-    private beforeFieldInput = React.createRef<HTMLInputElement>()
-    private afterFieldInput = React.createRef<HTMLInputElement>()
-
     constructor(props: Props) {
         super(props)
         this.state = {
@@ -86,7 +73,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                         <Select
                             id="query-builder__type"
                             className="form-control query-builder__input"
-                            ref={this.typeFieldInput}
                             onChange={this.onInputChange('type')}
                         >
                             <option value="text" defaultChecked={true}>
@@ -120,7 +106,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={this.repoFieldInput}
                             onChange={this.onInputChange('repo')}
                         />
                     </div>
@@ -143,7 +128,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={this.fileFieldInput}
                             onChange={this.onInputChange('file')}
                         />
                     </div>
@@ -165,7 +149,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={this.langFieldInput}
                             onChange={this.onInputChange('language')}
                         />
                     </div>
@@ -191,7 +174,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={this.patternsFieldInput}
                             onChange={this.onInputChange('patterns')}
                         />
                     </div>
@@ -213,7 +195,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
-                            ref={this.quotedTermFieldInput}
                             onChange={this.onInputChange('exactMatch')}
                         />
                     </div>
@@ -233,7 +214,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                         <Select
                             id="query-builder__case"
                             className="form-control query-builder__input"
-                            ref={this.caseFieldInput}
                             onChange={this.onInputChange('case')}
                         >
                             <option value="no" defaultChecked={true}>
@@ -261,7 +241,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                                     spellCheck={false}
                                     autoCapitalize="off"
                                     placeholder=""
-                                    ref={this.authorFieldInput}
                                     onChange={this.onInputChange('author')}
                                 />
                             </div>
@@ -283,7 +262,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                                     spellCheck={false}
                                     autoCapitalize="off"
                                     placeholder=""
-                                    ref={this.beforeFieldInput}
                                     onChange={this.onInputChange('before')}
                                 />
                             </div>
@@ -305,7 +283,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                                     spellCheck={false}
                                     autoCapitalize="off"
                                     placeholder=""
-                                    ref={this.afterFieldInput}
                                     onChange={this.onInputChange('after')}
                                 />
                             </div>
@@ -328,7 +305,6 @@ export class QueryBuilder extends React.Component<Props, State> {
                                         spellCheck={false}
                                         autoCapitalize="off"
                                         placeholder=""
-                                        ref={this.messageFieldInput}
                                         onChange={this.onInputChange('message')}
                                     />
                                 </div>
