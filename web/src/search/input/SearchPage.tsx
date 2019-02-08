@@ -89,7 +89,7 @@ export class SearchPage extends React.Component<Props, State> {
                     </div>
                     <QueryBuilder
                         onFieldsQueryChange={this.onBuilderQueryChange}
-                        isDotCom={window.context.sourcegraphDotComMode}
+                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                     />
                 </Form>
             </div>

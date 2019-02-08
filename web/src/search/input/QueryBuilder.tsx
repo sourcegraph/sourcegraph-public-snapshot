@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Select } from '../../components/Select'
+import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 
 interface Props {
     /**
@@ -7,7 +8,7 @@ interface Props {
      * component's fields.
      */
     onFieldsQueryChange: (query: string) => void
-    isDotCom: boolean
+    isSourcegraphDotCom: boolean
 }
 
 interface QueryFields {
@@ -95,7 +96,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                     </div>
                     <div
                         className="query-builder__row-example"
-                        title="Repositories whose name contains this substring will be included in search results."
+                        title="Specify the type of search to conduct. The default is to perform a full-text, regular expression search."
                     >
                         'type:diff'
                     </div>
@@ -103,116 +104,50 @@ export class QueryBuilder extends React.Component<Props, State> {
                 <div className="query-builder__header">
                     <h3 className="query-builder__header-input">Search in...</h3>
                 </div>
-                <div className="query-builder__row">
-                    <label className="query-builder__row-label" htmlFor="query-builder__repo">
-                        Repositories:
-                    </label>
-                    <div className="query-builder__row-input">
-                        <input
-                            id="query-builder__repo"
-                            className="form-control query-builder__input"
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            placeholder=""
-                            onChange={this.onInputChange('repo')}
-                        />
-                    </div>
-                    <div
-                        className="query-builder__row-example"
-                        title="Repositories whose name contains this substring will be included in search results."
-                    >
-                        {/* GitHub repo: pattern is more useful and always applicable on Sourcegraph.com */}
-                        {this.props.isDotCom ? 'repo:github.com/org/' : 'repo:my/repo'}
-                    </div>
-                </div>
-                <div className="query-builder__row">
-                    <label className="query-builder__row-label" htmlFor="query-builder__file">
-                        File paths:
-                    </label>
-                    <div className="query-builder__row-input">
-                        <input
-                            id="query-builder__file"
-                            className="form-control query-builder__input"
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            placeholder=""
-                            onChange={this.onInputChange('file')}
-                        />
-                    </div>
-                    <div
-                        className="query-builder__row-example"
-                        title="Tip: Use -file:foo to exclude matching file paths from search results."
-                    >
-                        file:^(a|b)/c&nbsp; file:\.js$
-                    </div>
-                </div>
-                <div className="query-builder__row">
-                    <label className="query-builder__row-label" htmlFor="query-builder__file">
-                        Language:
-                    </label>
-                    <div className="query-builder__row-input">
-                        <input
-                            id="query-builder__file"
-                            className="form-control query-builder__input"
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            placeholder=""
-                            onChange={this.onInputChange('language')}
-                        />
-                    </div>
-                    <div
-                        className="query-builder__row-example"
-                        title="Tip: Use -file:foo to exclude matching file paths from search results."
-                    >
-                        lang:typescript
-                    </div>
-                </div>
-
+                <QueryBuilderInputRow
+                    onInputChange={this.onInputChange('repo')}
+                    shortcut="repo:my/repo"
+                    dotComShortcut="repo:github.com/org/"
+                    title="Repositories"
+                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                    shortName="repo"
+                    tip="Repositories whose name contains this substring will be included in search results."
+                />
+                <QueryBuilderInputRow
+                    onInputChange={this.onInputChange('file')}
+                    shortcut="file:^(a|b)/c&nbsp; file:\.js$"
+                    title="File paths"
+                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                    shortName="file"
+                    tip="Tip: Use -file:foo to exclude matching file paths from search results."
+                />
+                <QueryBuilderInputRow
+                    onInputChange={this.onInputChange('language')}
+                    shortcut="lang:typescript"
+                    title="Language"
+                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                    shortName="lang"
+                    tip="Tip: Use -lang:foo to exclude files of matching languages from search results."
+                />
                 <div className="query-builder__header">
                     <h3 className="query-builder__header-input">Match...</h3>
                 </div>
-                <div className="query-builder__row">
-                    <label className="query-builder__row-label" htmlFor="query-builder__patterns">
-                        Patterns:
-                    </label>
-                    <div className="query-builder__row-input">
-                        <input
-                            id="query-builder__patterns"
-                            className="form-control query-builder__input"
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            placeholder=""
-                            onChange={this.onInputChange('patterns')}
-                        />
-                    </div>
-                    <div
-                        className="query-builder__row-example"
-                        title="Same as typing into the search box. Lines matching these regexp patterns (in order) will be included in the search results."
-                    >
-                        (open|close) file
-                    </div>
-                </div>
-                <div className="query-builder__row">
-                    <label className="query-builder__row-label" htmlFor="query-builder__quoted-term">
-                        Exact string:
-                    </label>
-                    <div className="query-builder__row-input">
-                        <input
-                            id="query-builder__quoted-term"
-                            className="form-control query-builder__input"
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            placeholder=""
-                            onChange={this.onInputChange('exactMatch')}
-                        />
-                    </div>
-                    <div
-                        className="query-builder__row-example"
-                        title='Tip: Escape double quotes and backslashes like so: "hello \\ \" world"'
-                    >
-                        "system error 123"
-                    </div>
-                </div>
+                <QueryBuilderInputRow
+                    onInputChange={this.onInputChange('patterns')}
+                    shortcut="(open|close) file"
+                    title="Patterns"
+                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                    shortName="patterns"
+                    tip="Same as typing into the search box. Lines matching these regexp patterns (in order) will be included in the search results."
+                />
+                <QueryBuilderInputRow
+                    onInputChange={this.onInputChange('patterns')}
+                    shortcut='"system error 123"'
+                    title="Exact string"
+                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                    shortName="quoted-term"
+                    tip='Tip: Escape double quotes and backslashes like so: "hello \\ \" world"'
+                />
                 <div className="query-builder__row">
                     <label className="query-builder__row-label" htmlFor="query-builder__case">
                         Case sensitive?
@@ -234,95 +169,38 @@ export class QueryBuilder extends React.Component<Props, State> {
                 </div>
                 {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
                     <>
-                        {' '}
                         <div className="query-builder__header">
                             <h3 className="query-builder__header-input">Commit/diff options...</h3>
                         </div>
-                        <div className="query-builder__row">
-                            <label className="query-builder__row-label" htmlFor="query-builder__author">
-                                Author:
-                            </label>
-                            <div className="query-builder__row-input">
-                                <input
-                                    id="query-builder__diff-options"
-                                    className="form-control query-builder__input"
-                                    spellCheck={false}
-                                    autoCapitalize="off"
-                                    placeholder=""
-                                    onChange={this.onInputChange('author')}
-                                />
-                            </div>
-                            <div
-                                className="query-builder__row-example"
-                                title="Same as typing into the search box. Lines matching these regexp patterns (in order) will be included in the search results."
-                            >
-                                author:alice
-                            </div>
-                        </div>
-                        <div className="query-builder__row">
-                            <label className="query-builder__row-label" htmlFor="query-builder__before">
-                                Before:
-                            </label>
-                            <div className="query-builder__row-input">
-                                <input
-                                    id="query-builder__before"
-                                    className="form-control query-builder__input"
-                                    spellCheck={false}
-                                    autoCapitalize="off"
-                                    placeholder=""
-                                    onChange={this.onInputChange('before')}
-                                />
-                            </div>
-                            <div
-                                className="query-builder__row-example"
-                                title='Tip: Escape double quotes and backslashes like so: "hello \\ \" world"'
-                            >
-                                before:"1 year ago"
-                            </div>
-                        </div>
-                        <div className="query-builder__row">
-                            <label className="query-builder__row-label" htmlFor="query-builder__after">
-                                After:
-                            </label>
-                            <div className="query-builder__row-input">
-                                <input
-                                    id="query-builder__after"
-                                    className="form-control query-builder__input"
-                                    spellCheck={false}
-                                    autoCapitalize="off"
-                                    placeholder=""
-                                    onChange={this.onInputChange('after')}
-                                />
-                            </div>
-                            <div
-                                className="query-builder__row-example"
-                                title='Tip: Escape double quotes and backslashes like so: "hello \\ \" world"'
-                            >
-                                after:"1 year ago"
-                            </div>
-                        </div>
+                        <QueryBuilderInputRow
+                            onInputChange={this.onInputChange('author')}
+                            shortcut="author:alice"
+                            title="Author"
+                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                            shortName="author"
+                        />
+                        <QueryBuilderInputRow
+                            onInputChange={this.onInputChange('before')}
+                            shortcut='before:"1 year ago"'
+                            title="Before"
+                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                            shortName="before"
+                        />
+                        <QueryBuilderInputRow
+                            onInputChange={this.onInputChange('after')}
+                            shortcut='after:"6 months ago"'
+                            title="After"
+                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                            shortName="after"
+                        />
                         {this.state.typeOfSearch === 'diff' && (
-                            <div className="query-builder__row">
-                                <label className="query-builder__row-label" htmlFor="query-builder__message">
-                                    Message:
-                                </label>
-                                <div className="query-builder__row-input">
-                                    <input
-                                        id="query-builder__before"
-                                        className="form-control query-builder__input"
-                                        spellCheck={false}
-                                        autoCapitalize="off"
-                                        placeholder=""
-                                        onChange={this.onInputChange('message')}
-                                    />
-                                </div>
-                                <div
-                                    className="query-builder__row-example"
-                                    title='Tip: Escape double quotes and backslashes like so: "hello \\ \" world"'
-                                >
-                                    message:"fix:"
-                                </div>
-                            </div>
+                            <QueryBuilderInputRow
+                                onInputChange={this.onInputChange('message')}
+                                shortcut='message:"fix:"'
+                                title="Message"
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="message"
+                            />
                         )}
                     </>
                 )}
