@@ -1,6 +1,6 @@
 # Site administration documentation
 
-> NOTE: Upgrading to `3.0.1+`? Read our [migration guide](admin/migration/3_0.md) for `2.x` and `3.0.0`.
+> NOTE: Upgrading to `3.0.1+`? Read our [migration guide](migration/3_0.md) for `2.x` and `3.0.0`.
 
 Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users.
 
