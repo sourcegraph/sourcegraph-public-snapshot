@@ -10,7 +10,6 @@ interface Props {
     isDotCom: boolean
 }
 
-type Keys = 'repo' | 'file' | 'language'
 interface State {
     /**
      * The query constructed from the field inputs (merged with the
@@ -18,7 +17,19 @@ interface State {
      */
     fieldsQuery: string
     typeOfSearch: 'text' | 'diff' | 'commit' | 'symbol'
-    values: { [K in Keys]: string }
+    values: {
+        repo: string
+        file: string
+        language: string
+        patterns: string
+        exactMatch: string
+        case: string
+        author: string
+        after: string
+        before: string
+        message: string
+        [key: string]: string
+    }
 }
 
 /**
@@ -43,7 +54,7 @@ export class QueryBuilder extends React.Component<Props, State> {
         this.state = {
             fieldsQuery: '',
             typeOfSearch: 'text',
-            values: { repo: 'string', file: '', language: '' },
+            values: { repo: '', file: '', language: '' },
         }
     }
 
@@ -326,7 +337,7 @@ export class QueryBuilder extends React.Component<Props, State> {
         event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
         console.log('new on input change')
-        const newMap: { [k in Keys]: string } = { ...this.state.values }
+        const newMap = { ...this.state.values }
         newMap[key] = event.target.value
         this.setState({ values: newMap })
         const fieldsQueryParts: string[] = []
