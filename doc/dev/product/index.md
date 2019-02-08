@@ -109,7 +109,7 @@ The following sections give more details.
 This means the tech lead needs to do 2 things:
 
 - **Estimate** at planning time what can get done in the time alotted for a release milestone.
-- **Reschedule** issues continuously into/from the milestone depending on the pace and [triage](issues.md#triage).
+- **Reschedule** issues continuously into/from the milestone depending on the pace and [triage](../issues.md#triage).
 
 It's impossible to estimate perfectly, so the tech lead needs to continuously monitor the team's progress and make adjustments accordingly.
 
@@ -120,7 +120,7 @@ If it looks like the team won't be able to complete all planned issues by the re
 - deferring issues to a later milestone
 - getting help from other people on certain issues
 
-The [product manager](product/index.md#product-manager) can help here, especially with product and priority questions for descoping or deferring work.
+The [product manager](#product-manager) can help here, especially with product and priority questions for descoping or deferring work.
 
 #### The issues for each release milestone describe the problem/solution.
 
