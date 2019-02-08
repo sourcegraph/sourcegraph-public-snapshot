@@ -94,7 +94,7 @@ docker run \
 
 **4.** Start the `sourcegraph/server` container.
 
-## Upgrading cluster PostgreSQL instances
+## Upgrading Kubernetes PostgreSQL instances
 
 The upgrade process is different for [Sourcegraph cluster deployments](https://github.com/sourcegraph/deploy-sourcegraph) because [by default](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadbc3ebf46cb1bc1198f8a3e359a2380e22a/base/pgsql/pgsql.Deployment.yaml#L29), it uses `sourcegraph/postgres-11.1:19-02-07_17a4376e` which can be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql).
 
