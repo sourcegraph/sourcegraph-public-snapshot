@@ -86,6 +86,7 @@ export class CommandList extends React.PureComponent<Props, State> {
         )
 
         // Only focus input after it has been rendered in the DOM
+        // Workaround for Firefox and Safari where preventScroll isn't compatible
         setTimeout(() => {
             this.setState({ autoFocus: true })
         })
