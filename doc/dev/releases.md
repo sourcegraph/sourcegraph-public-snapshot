@@ -100,9 +100,11 @@ How do we deal with issues that are found during the release process?
 
 The release always ships on time, even if it's missing features or bug fixes we hoped to get in ([why?](https://about.gitlab.com/2015/12/07/why-we-shift-objectives-and-not-release-dates-at-gitlab/)).
 
-There are only two kinds of issues that are eligible to be labeled as "release-blocking".
+There are only three kinds of issues that are eligible to block a release:
+
 1. Issues that literally prevent us from tagging a release (i.e. our CI logic to produce builds from git tags is broken).
-2. Issues that break the critical workflows explicitly tested in the [release issue template](release_issue_template.md) which would impact _most_ customers. This means that most customers would find our product fundamentally broken.
+2. Issues that break one of the critical workflows explicitly tested in the [release issue template](release_issue_template.md) which would impact _most_ customers and don't have workarounds. 
+3. Critical security _regressions_ from the previous release.
 
 Only the release captain can label something as release blocking.
 
