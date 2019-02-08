@@ -9,16 +9,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+- File match search results now show full repo name if there are results from mirrors on different code hosts (e.g. github.com/sourcegraph/sourcegraph and gitlab.com/sourcegraph/sourcegraph)
+
+### Fixed
+
+### Removed
+
+## 3.0.1
+
+### Added
+
 - Symbol search now supports Elixir, Haskell, Kotlin, Scala, and Swift
 
 ### Changed
 
-- File match search results now show full repo name if there are results from
-  mirrors on different code hosts (e.g. github.com/sourcegraph/sourcegraph and gitlab.com/sourcegraph/sourcegraph)
 - Significantly optimized how file search suggestions are provided when using indexed search (cluster deployments).
 - Both the `sourcegraph/server` image and the [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) manifests ship with Postgres `11.1`. For maximum compatibility, however, the minimum supported version remains `9.6`. The upgrade procedure is mostly automated for existing deployments. Please refer to [this page](https://docs.sourcegraph.com/admin/postgres) for detailed instructions.
-
-### Fixed
 
 ### Removed
 
