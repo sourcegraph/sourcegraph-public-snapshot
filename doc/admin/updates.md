@@ -1,4 +1,8 @@
-# Updating Sourcegraph
+# Upgrading Sourcegraph
+
+## Upgrading to 3.0.1+
+
+Read our [migration guide](admin/migration/3_0.md) for `2.x` and `3.0.0`.
 
 ## For single-node deployments (`sourcegraph/server`)
 
