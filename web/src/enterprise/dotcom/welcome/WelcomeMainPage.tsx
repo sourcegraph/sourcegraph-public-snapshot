@@ -9,6 +9,11 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { WelcomeMainPageDemos } from './WelcomeMainPageDemos'
 import { WelcomeMainPageLogos } from './WelcomeMainPageLogos'
 
+// Lambdas are OK in this component because it is not performance sensitive and using them
+// simplifies the code.
+//
+// tslint:disable:jsx-no-lambda
+
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
@@ -91,7 +96,6 @@ export class WelcomeMainPage extends React.Component<Props> {
                                     <a
                                         className="btn btn-primary btn-lg font-weight-bold mb-1 d-inline-flex align-items-center text-nowrap flex-wrap justify-content-center"
                                         href="https://docs.sourcegraph.com/#quickstart"
-                                        // tslint:disable-next-line:jsx-no-lambda
                                         onClick={() => eventLogger.log('WelcomeDeploySelfHosted')}
                                     >
                                         <CloudUploadIcon className="icon-inline mr-2" /> Deploy self-hosted Sourcegraph
@@ -105,7 +109,6 @@ export class WelcomeMainPage extends React.Component<Props> {
                                     <a
                                         className="btn btn-secondary mb-1 d-inline-flex align-items-center"
                                         href="https://docs.sourcegraph.com/integration/browser_extension"
-                                        // tslint:disable-next-line:jsx-no-lambda
                                         onClick={() => eventLogger.log('WelcomeInstallBrowserExtension')}
                                     >
                                         Install browser extension
@@ -121,7 +124,6 @@ export class WelcomeMainPage extends React.Component<Props> {
                                             to="/sign-up"
                                             target="_blank"
                                             className="welcome-main-page__sign-up"
-                                            // tslint:disable-next-line:jsx-no-lambda
                                             onClick={() => eventLogger.log('WelcomeSignUpForSourcegraphDotCom')}
                                         >
                                             Sign up on Sourcegraph.com

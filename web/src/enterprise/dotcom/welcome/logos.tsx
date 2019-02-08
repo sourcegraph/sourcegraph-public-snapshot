@@ -5,6 +5,9 @@ interface Props {
     className: string
 }
 
+// These components are intentionally not named after the companies, to avoid people reusing them
+// and thinking they are the official SVGs for these company logos.
+
 export const Logo1: React.FunctionComponent<Props> = ({ isLightTheme, className }) => {
     const fill = isLightTheme ? '#010202' : 'white'
     return (

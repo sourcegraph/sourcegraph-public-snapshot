@@ -23,6 +23,7 @@
         height: 1.5rem;
 
         &--full {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
             width: 150px;
             margin-right: 0.25rem; // full logo image has slightly more spacing on left side
         }
