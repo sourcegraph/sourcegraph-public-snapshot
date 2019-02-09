@@ -694,8 +694,13 @@ type Query {
     ): PhabricatorRepo
     # The current user.
     currentUser: User
-    # Looks up a user by username.
-    user(username: String!): User
+    # Looks up a user by username or email address.
+    user(
+        # Query the user by username. DEPRECATED: use usernameOrEmail instead.
+        username: String
+        # Query the user by username or email address. Only the user and site admins can access the email address.
+        usernameOrEmail: String
+    ): User
     # List all users.
     users(
         # Returns the first n users from the list.
