@@ -14,7 +14,7 @@ It is not used for patch releases.
 ## 3 working days before release (YYYY-MM-DD)
 
 - [ ] **HH:MM AM/PM PT** Create the branch for this release off of master (e.q. `3.0`) and tag the first release candidate (e.g. `v3.0.0-rc.1`).
-- [ ] Add a new section header for this version to the [CHANGELOG](../../CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading. <!-- TODO(nick): link to example change --> Commit and `git push` this change directly to upstream `master`.
+- [ ] Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading. <!-- TODO(nick): link to example change --> Commit and `git push` this change directly to upstream `master`.
 - [ ] Send a message to #dev-announce to announce the release candidate.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] `CLEAN=true IMAGE=sourcegraph/server:3.0.2$NEWVERSION ./dev/run-server-image.sh`
@@ -68,7 +68,7 @@ _Cherry pick commits from `master` into the release branch and tag new release c
 - [ ] Re-test any flows that might have been impacted by commits that have been `git cherry-picked` into the release branch.
 - [ ] **HH:MM AM/PM PT** Tag the final release.
 - [ ] Send a message to #dev-announce to announce the final release.
-- [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](../../CHANGELOG.md) on `master`.
+- [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
 - [ ] Open a PR that updates the documented version of Sourcegraph (e.g. `find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:3.0.2/g' {} +`) and `latestReleaseDockerServerImageBuild` (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files).
 - [ ] Merge the above PR above after the final Docker images are available at https://hub.docker.com/r/sourcegraph/server/tags.
 - [ ] [Update the image tags](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#updating-docker-image-tags) in [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) (e.g. [d0bb80](https://github.com/sourcegraph/deploy-sourcegraph/commit/d0bb80f559e7e9ef3b1915ddba72f4beff32276c))
