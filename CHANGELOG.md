@@ -9,6 +9,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added Docker-specific help text when running the Sourcegraph docker image in an environment with an sufficient open file descriptor limit.
+
 ### Changed
 
 - File match search results now show full repo name if there are results from mirrors on different code hosts (e.g. github.com/sourcegraph/sourcegraph and gitlab.com/sourcegraph/sourcegraph)
