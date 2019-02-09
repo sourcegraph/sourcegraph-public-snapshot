@@ -3,7 +3,7 @@ import { cleanup, fireEvent, getBySelectText, queryByTestId, render, wait } from
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
 
-describe.only('QueryBuilder', () => {
+describe('QueryBuilder', () => {
     afterAll(cleanup)
 
     it('updating the "Repository" field fires the onFieldsQueryChange prop handler with the `repo:` filter', () => {
