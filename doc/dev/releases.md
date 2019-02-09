@@ -66,16 +66,14 @@ No later than 5 _working days_ before the release day the release captain create
 
 ### Release branches
 
-Each release of [Sourcegraph](https://github.com/sourcegraph/sourcegraph) is tagged from a release branch.
-- Major releases, minor releases, and their release candidates (e.g. `v3.0.0-rc.1`, `v3.0.0`, `v3.1.0-rc.1`, `v3.1.0`) are tagged from the release branch (e.g. `3.0`, `3.1`) that has been branched off `master` for that release.
-- Patch releases and their release candidates (e.g. `v3.0.1-rc.1`, `v3.0.1`, `v3.1.1-rc.1`, `v3.1.1`) are tagged from the release branch of the corresponding major or minor release (e.g. `3.0`, `3.1`).
+Each major and minor release of [Sourcegraph](https://github.com/sourcegraph/sourcegraph) has a long lived release branch (e.g. `3.0`, `3.1`). Individual releases are tagged from these release branches (e.g. `v3.0.0-rc.1`, `v3.0.0`, `v3.0.1-rc.1`, and `v3.0.1` would be tagged from the `3.0` release branch).
 
 To avoid confusion between tags and branches:
 
 - Tags are always the full semantic version with a leading `v` (e.g. `v2.10.0`)
 - Branches are always the dot-separated major/minor versions with no leading `v` (e.g. `2.10`).
 
-Development continues to happen on `master` during the release process.
+Development always happens on master `master` and changes are cherry picked onto release branch as necessary with the approval of the release captain.
 
 #### Example
 
