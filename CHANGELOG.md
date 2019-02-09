@@ -10,6 +10,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added Docker-specific help text when running the Sourcegraph docker image in an environment with an sufficient open file descriptor limit.
+- Added `DisableUsernameChanges` to site configuration to prevent users from modifying their usernames after account creation.
 
 ### Changed
 

@@ -174,7 +174,7 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                                 }
                                 onChange={this.onUsernameFieldChange}
                                 required={true}
-                                disabled={this.state.loading}
+                                disabled={window.context.disableUsernameChanges || this.state.loading}
                                 aria-describedby="user-settings-profile-page__form-username-help"
                             />
                             <small id="user-settings-profile-page__form-username-help" className="form-text text-muted">

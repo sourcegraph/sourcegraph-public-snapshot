@@ -318,6 +318,7 @@ type SiteConfiguration struct {
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                        `json:"disablePublicRepoRedirects,omitempty"`
+	DisableUsernameChanges            bool                        `json:"disableUsernameChanges,omitempty"`
 	Discussions                       *Discussions                `json:"discussions,omitempty"`
 	DontIncludeSymbolResultsByDefault bool                        `json:"dontIncludeSymbolResultsByDefault,omitempty"`
 	EmailAddress                      string                      `json:"email.address,omitempty"`

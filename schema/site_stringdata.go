@@ -59,6 +59,12 @@ const SiteSchemaJSON = `{
         "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean"
     },
+    "disableUsernameChanges": {
+      "description":
+        "Disable users from changing their username after account creation.",
+      "type": "boolean",
+      "default": false
+    },
     "git.cloneURLToRepositoryName": {
       "description":
         "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",

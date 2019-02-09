@@ -23,6 +23,8 @@ For more information, see ["Configuration overview"](index.md).
 
 - [disablePublicRepoRedirects](all.md#disablepublicreporedirects-boolean)
 
+- [disableUsernameChanges](all.md#disableUsernameChanges-boolean)
+
 - [phabricator](all.md#phabricator-array)
 
 - [git.cloneURLToRepositoryName](all.md#git-cloneurltorepositoryname-array)
@@ -216,6 +218,14 @@ Default: `false`
 ## disablePublicRepoRedirects (boolean)
 
 Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
+
+<br/>
+
+## disableUsernameChanges (boolean)
+
+Disable users from changing their username after account creation.
+
+Default: `false`
 
 <br/>
 

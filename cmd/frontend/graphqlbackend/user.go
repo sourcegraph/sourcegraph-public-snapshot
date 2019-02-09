@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -169,7 +170,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		DisplayName: args.DisplayName,
 		AvatarURL:   args.AvatarURL,
 	}
-	if args.Username != nil {
+	if args.Username != nil && !conf.Get().DisableUsernameChanges {
 		update.Username = *args.Username
 	}
 	if err := db.Users.Update(ctx, userID, update); err != nil {

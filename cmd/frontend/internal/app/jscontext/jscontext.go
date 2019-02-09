@@ -80,6 +80,8 @@ type JSContext struct {
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
 	UpdateScheduler2Enabled bool `json:"updateScheduler2Enabled"`
+
+	DisableUsernameChanges bool `json:"disableUsernameChanges"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -165,7 +167,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		AllowSignup: conf.AuthAllowSignup(),
 
-		AuthProviders: authProviders,
+		AuthProviders:          authProviders,
+		DisableUsernameChanges: conf.DisableUsernameChanges(),
 
 		UpdateScheduler2Enabled: conf.UpdateScheduler2Enabled(),
 	}

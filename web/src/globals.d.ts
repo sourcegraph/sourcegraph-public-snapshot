@@ -112,6 +112,9 @@ interface SourcegraphContext {
 
     /** Whether the new update scheduler is enabled */
     updateScheduler2Enabled: boolean
+
+    /** Whether users are able to change their username. Set in site configuration. */
+    disableUsernameChanges: boolean
 }
 
 // We cannot use resolveJsonModule because of https://github.com/Microsoft/TypeScript/issues/25755
