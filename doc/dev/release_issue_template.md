@@ -69,7 +69,7 @@ _Cherry pick commits from `master` into the release branch and tag new release c
 - [ ] **HH:MM AM/PM PT** Tag the final release.
 - [ ] Send a message to #dev-announce to announce the final release.
 - [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](../../CHANGELOG.md) on `master`.
-- [ ] Open a PR that updates the documented version of Sourcegraph and `latestReleaseDockerServerImageBuild` (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files).
+- [ ] Open a PR that updates the documented version of Sourcegraph (e.g. `find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:3.0.2/g' {} +`) and `latestReleaseDockerServerImageBuild` (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files).
 - [ ] Merge the above PR above after the final Docker images are available at https://hub.docker.com/r/sourcegraph/server/tags.
 - [ ] [Update the image tags](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#updating-docker-image-tags) in [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) (e.g. [d0bb80](https://github.com/sourcegraph/deploy-sourcegraph/commit/d0bb80f559e7e9ef3b1915ddba72f4beff32276c))
 - [ ] Wait for Renovate to pin the hashes in deploy-sourcegraph (e.g. [#190](https://github.com/sourcegraph/deploy-sourcegraph/pull/190/files)), or pin them yourself.
