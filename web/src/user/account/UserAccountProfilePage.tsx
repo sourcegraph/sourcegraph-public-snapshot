@@ -28,6 +28,7 @@ function queryUser(user: GQL.ID): Observable<GQL.IUser> {
                         username
                         displayName
                         avatarURL
+                        viewerCanChangeUsername
                     }
                 }
             }
@@ -174,7 +175,11 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                                 }
                                 onChange={this.onUsernameFieldChange}
                                 required={true}
-                                disabled={window.context.disableUsernameChanges || this.state.loading}
+                                disabled={
+                                    !this.state.userOrError ||
+                                    !this.state.userOrError.viewerCanChangeUsername ||
+                                    this.state.loading
+                                }
                                 aria-describedby="user-settings-profile-page__form-username-help"
                             />
                             <small id="user-settings-profile-page__form-username-help" className="form-text text-muted">

@@ -170,7 +170,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		DisplayName: args.DisplayName,
 		AvatarURL:   args.AvatarURL,
 	}
-	if args.Username != nil && !conf.Get().DisableUsernameChanges {
+	if args.Username != nil && viewerCanChangeUsername(ctx, userID) {
 		update.Username = *args.Username
 	}
 	if err := db.Users.Update(ctx, userID, update); err != nil {
@@ -266,4 +266,24 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
+}
+
+// ViewerCanChangeUsername returns if the current user can change the username of the user.
+func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
+	return viewerCanChangeUsername(ctx, r.user.ID)
+}
+
+func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return false
+	}
+	if !conf.Get().AuthDisableUsernameChanges {
+		return true
+	}
+	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.disableUsernameChanges == true.
+	isSiteAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	if isSiteAdminErr == nil {
+		return true
+	}
+	return false
 }

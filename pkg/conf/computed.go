@@ -298,8 +298,3 @@ func IsBuiltinSignupAllowed() bool {
 	}
 	return false
 }
-
-// DisableUsernameChanges returns true if DisableUsernameChanges is true in the site configuration.
-func DisableUsernameChanges() bool {
-	return Get().DisableUsernameChanges
-}

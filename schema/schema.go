@@ -314,11 +314,11 @@ type Settings struct {
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
+	AuthDisableUsernameChanges        bool                        `json:"auth.disableUsernameChanges,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                        `json:"disablePublicRepoRedirects,omitempty"`
-	DisableUsernameChanges            bool                        `json:"disableUsernameChanges,omitempty"`
 	Discussions                       *Discussions                `json:"discussions,omitempty"`
 	DontIncludeSymbolResultsByDefault bool                        `json:"dontIncludeSymbolResultsByDefault,omitempty"`
 	EmailAddress                      string                      `json:"email.address,omitempty"`

@@ -59,9 +59,9 @@ const SiteSchemaJSON = `{
         "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean"
     },
-    "disableUsernameChanges": {
+    "auth.disableUsernameChanges": {
       "description":
-        "Disable users from changing their username after account creation.",
+        "Prevent users from changing their username after account creation.",
       "type": "boolean",
       "default": false
     },
