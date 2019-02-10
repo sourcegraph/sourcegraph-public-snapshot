@@ -73,6 +73,8 @@ For more information, see ["Configuration overview"](index.md).
 
 - [auth.accessTokens](all.md#auth-accesstokens-object)
 
+- [auth.disableUsernameChanges](all.md#auth-disableUsernameChanges-boolean)
+
 - [auth.public](all.md#auth-public-boolean)
 
 - [auth.sessionExpiry](all.md#auth-sessionexpiry-string)
@@ -218,14 +220,6 @@ Default: `false`
 ## disablePublicRepoRedirects (boolean)
 
 Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
-
-<br/>
-
-## disableUsernameChanges (boolean)
-
-Disable users from changing their username after account creation.
-
-Default: `false`
 
 <br/>
 
@@ -462,6 +456,14 @@ This property must be one of the following enum values:
 - `none`
 
 Default: `"all-users-create"`
+
+<br/>
+
+## auth.disableUsernameChanges (boolean)
+
+Disable users from changing their username after account creation.
+
+Default: `false`
 
 <br/>
 
