@@ -19,7 +19,18 @@ interface Props {
     isSourcegraphDotCom: boolean
 }
 
-export class QueryBuilderInputRow extends React.Component<Props, {}> {
+interface State {
+    showDescription: boolean
+}
+
+export class QueryBuilderInputRow extends React.Component<Props, State> {
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            showDescription: false,
+        }
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className="query-builder__row">
@@ -35,6 +46,8 @@ export class QueryBuilderInputRow extends React.Component<Props, {}> {
                         autoCapitalize="off"
                         placeholder=""
                         onChange={this.props.onInputChange}
+                        onFocus={this.toggleShowDescription}
+                        onBlur={this.toggleShowDescription}
                     />
                 </div>
                 <div className="query-builder__row-example" title={this.props.tip}>
@@ -44,7 +57,20 @@ export class QueryBuilderInputRow extends React.Component<Props, {}> {
                             : this.props.shortcut
                         : this.props.shortcut}
                 </div>
+                {this.state.showDescription && (
+                    <div className="query-builder__row">
+                        <label className="query-builder__row-label" />
+                        <div className="query-builder__row-description">
+                            <small>{this.props.tip}</small>
+                        </div>
+                        <div className="query-builder__row-example" />
+                    </div>
+                )}
             </div>
         )
+    }
+
+    private toggleShowDescription = () => {
+        this.setState({ showDescription: !this.state.showDescription })
     }
 }
