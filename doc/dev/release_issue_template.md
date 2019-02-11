@@ -13,11 +13,11 @@ It is not used for patch releases.
 
 ## 3 working days before release (YYYY-MM-DD)
 
-- [ ] **HH:MM AM/PM PT** Create the branch for this release off of master (e.q. `3.0`) and tag the first release candidate (e.g. `v3.0.0-rc.1`).
+- [ ] **HH:MM AM/PM PT** Create the branch for this release off of master (e.g. `3.0`) and tag the first release candidate (e.g. `v3.0.0-rc.1`).
 - [ ] Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading. <!-- TODO(nick): link to example change --> Commit and `git push` this change directly to upstream `master`.
 - [ ] Send a message to #dev-announce to announce the release candidate.
 - [ ] Run Sourcegraph Docker image with no previous data.
-    - [ ] `CLEAN=true IMAGE=sourcegraph/server:3.0.2$NEWVERSION ./dev/run-server-image.sh`
+    - [ ] `CLEAN=true IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh`
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
@@ -28,11 +28,11 @@ It is not used for patch releases.
         - [ ] Find references works in Go.
         - [ ] Find references works in TypeScript.
 - [ ] Upgrade Sourcegraph Docker image from previous released version.
-    - [ ] `CLEAN=true IMAGE=sourcegraph/server:3.0.2$OLDVERSION ./dev/run-server-image.sh`
+    - [ ] `CLEAN=true IMAGE=sourcegraph/server:$OLDVERSION ./dev/run-server-image.sh`
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
-    - [ ] `CLEAN=false IMAGE=sourcegraph/server:3.0.2$NEWVERSION ./dev/run-server-image.sh`
+    - [ ] `CLEAN=false IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh`
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that code intelligence works as you expect.
         - [ ] Go to definition works in Go.
@@ -69,7 +69,7 @@ _Cherry pick commits from `master` into the release branch and tag new release c
 - [ ] **HH:MM AM/PM PT** Tag the final release.
 - [ ] Send a message to #dev-announce to announce the final release.
 - [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
-- [ ] Open a PR that updates the documented version of Sourcegraph (e.g. `find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:3.0.2/g' {} +`) and `latestReleaseDockerServerImageBuild` (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files).
+- [ ] Open a PR that updates the documented version of Sourcegraph (e.g. `find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +`) and `latestReleaseDockerServerImageBuild` (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files).
 - [ ] Merge the above PR above after the final Docker images are available at https://hub.docker.com/r/sourcegraph/server/tags.
 - [ ] [Update the image tags](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#updating-docker-image-tags) in [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) (e.g. [d0bb80](https://github.com/sourcegraph/deploy-sourcegraph/commit/d0bb80f559e7e9ef3b1915ddba72f4beff32276c))
 - [ ] Wait for Renovate to pin the hashes in deploy-sourcegraph (e.g. [#190](https://github.com/sourcegraph/deploy-sourcegraph/pull/190/files)), or pin them yourself.

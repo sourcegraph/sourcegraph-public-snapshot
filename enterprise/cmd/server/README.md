@@ -1,3 +1,3 @@
 # Sourcegraph Server
 
-This command produces the `sourcegraph/server` Docker image which runs Sourcegraph on a single node.
+This directory contains the code which makes up the `sourcegraph/server` Docker image which runs Sourcegraph on a single node.
