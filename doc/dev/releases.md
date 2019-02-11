@@ -13,6 +13,7 @@ We release Sourcegraph **by** 10am PT on the 20th day of each month.
 "Release" means:
 - The Docker images are available for download.
 - The blog post is published.
+- The release is documented on docs.sourcegraph.com.
 
 The release always ships on time, even if it's missing features or bug fixes we hoped to get in ([why?](https://about.gitlab.com/2015/12/07/why-we-shift-objectives-and-not-release-dates-at-gitlab/)).
 
