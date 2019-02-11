@@ -47,6 +47,8 @@ The release captain is _responsible_ for managing the release process and ensuri
 
 No later than 5 _working days_ before the release day the release captain creates a tracking issue using the [release issue template](release_issue_template.md) and assigns it to themself to complete.
 
+### Schedule
+
 | Version | Captain | Release Date |
 |---------|---------|--------------|
 | 3.0 | @nicksnyder | 2019-02-07 (Wednesday) |
@@ -63,6 +65,10 @@ No later than 5 _working days_ before the release day the release captain create
 | 3.11 | @chrismwendt | 2019-12-20 (Saturday) |
 | 3.12 | @vanesa | 2020-01-20 (Monday, MLK) |
 | 3.13 | @felixfbecker | 2020-02-20 (Thursday) |
+
+Release captains may trade rotations with each other by updating this schedule.
+
+If a release captain is unexpectedly unavailable and did not arrange a replacement, the captain from the previous release becomes the release captain for the current release.
 
 ### Release branches
 
