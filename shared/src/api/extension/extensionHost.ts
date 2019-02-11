@@ -3,6 +3,7 @@ import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
+import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
@@ -167,7 +168,7 @@ function createExtensionAPI(
             PlainText: 'plaintext' as sourcegraph.MarkupKind.PlainText,
             Markdown: 'markdown' as sourcegraph.MarkupKind.Markdown,
         },
-
+        NotificationType,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {

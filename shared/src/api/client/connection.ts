@@ -22,8 +22,8 @@ import { Services } from './services'
 import {
     MessageActionItem,
     ShowInputParams,
-    ShowMessageParams,
     ShowMessageRequestParams,
+    ShowNotificationParams,
 } from './services/notifications'
 
 export interface ExtensionHostClientConnection {
@@ -107,7 +107,7 @@ export async function createExtensionHostClientConnection(
     )
 
     const clientWindows = new ClientWindows(
-        (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
+        (params: ShowNotificationParams) => services.notifications.showMessages.next({ ...params }),
         (params: ShowMessageRequestParams) =>
             new Promise<MessageActionItem | null>(resolve => {
                 services.notifications.showMessageRequests.next({ ...params, resolve })
