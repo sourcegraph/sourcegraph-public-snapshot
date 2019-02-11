@@ -120,10 +120,7 @@ There are only three kinds of issues that are eligible to block a release:
 
 Only the release captain can label something as release blocking.
 
-The release captain has unlimited power to make changes to the release branch to resolve release blocking issues, including but not limited to:
-- Fixing the issue in the release branch.
-- Reverting commits in the release branch.
-- Re-cutting the release branch from an older working commit off master.
+The release captain has unlimited power to make changes to the release branch to resolve release blocking issues. As soon as a release blocking issue is identified, the release captain should decide the least risky way to relosve the issue as soon as possible. A good default action is to identify and revert offending commits from the release branch. In the worst case, this could involved recreating the release branch from an earlier commit on master. Project owners can work on master to fix the issue, and if the issue is resolved in time, revert the revert and cherry-pick the fix on the release branch.
 
 #### Non-blocking
 
