@@ -2046,7 +2046,7 @@
     "@types/events" "*"
     "@types/node" "*"
 
-"@types/classnames@^2.2.7":
+"@types/classnames@2.2.7":
   version "2.2.7"
   resolved "https://registry.npmjs.org/@types/classnames/-/classnames-2.2.7.tgz#fb68cc9be8487e6ea5b13700e759bfbab7e0fefd"
   integrity sha512-rzOhiQ55WzAiFgXRtitP/ZUT8iVNyllEpylJ5zHzR4vArUvMB39GTk+Zon/uAM0JxEFAWnwsxC2gH8s+tZ3Myg==
