@@ -1,79 +1,27 @@
 # Releases
 
-This document describes how we plan and ship releases at Sourcegraph.
+This document describes how we release Sourcegraph.
+
+## Goal
+
+The goal of our release process is to make releases boring, regular, and eventually, automated.
 
 ## Releases are monthly
 
-We ship a release on the 20th day of each month. (Except in February 2019, where we will ship on the 4th and 20th.) Why the 20th? Because it's a day number that we can hit each month (any other number would result in a December release that comes out too close to Christmas, or a January release that comes out too soon after New Year's Day).
+We release Sourcegraph **by** 10am PT on the 20th day of each month.
+
+"Release" means:
+- The Docker images are available for download.
+- The blog post is published.
+- The release is documented on docs.sourcegraph.com.
 
 The release always ships on time, even if it's missing features or bug fixes we hoped to get in ([why?](https://about.gitlab.com/2015/12/07/why-we-shift-objectives-and-not-release-dates-at-gitlab/)).
 
-## Milestones and issues
+### Why the 20th?
 
-Each release has a GitHub milestone ([in all repositories](issues.md#multiple-repositories)) whose name is the version number, such as `3.1`:
+We don't want to ship a release too late in December because the Sourcegraph team has a scheduled break December 24 through January 1.
 
-- A release milestone's [issues](issues.md) constitute the release plan (i.e., the canonical definition of the work for the release).
-- A release is ready when its milestone has zero open issues ([across all repositories](issues.md#multiple-repositories)).
-
-The issues for a release come from two sources:
-
-- [product planning](product/index.md#planning) (work planned for the release ahead of time)
-- [issue triage](issues.md#triage) (issues filed at any time)
-
-### Process
-
-A release cycle is [1 month](#releases-are-monthly). Each release cycle goes as follows (where T is the start of the release cycle, beginning the moment when the previous release ships):
-
-- Between T-2 weeks and T: for all projects, [product planning](product/index.md#planning) for the release is done; tracking issues and all other foreseen work issues exist.
-  - Because [product planning is continuous](product/index.md#product-planning-is-continuous), these may have been ready even earlier for certain projects.
-- Between T and T+1 month:
-  - Each project team works on "making the tracking issue come true" by closing all project issues in the release milestone.
-  - [Triage issues](issues.md#triage) as they come in (which may require updates to the project plan for the current release because they supply us with new information).
-  - TODO: document testing and release preparation
-- T+1 month:
-  - Release! (TODO: document process and also how we do it if the 20th is on a non-work day)
-  - [Start a retrospective.](retrospectives/index.md#how-to-lead-a-retrospective)
-
-## Roles
-
-### Tech lead
-
-Each project has one tech lead. A tech lead serves in that role for one or more release cycles.
-
-The tech lead is responsible for making sure the following two statements are true:
-
-> The issues for the current release milestone are completed (closed) by the release.
->
-> The issues for the current release milestone describe the problem/solution.
-
-The following sections give more details.
-
-#### The issues for each release milestone are completed (closed) by the release.
-
-This means the tech lead needs to do 2 things:
-
-- **Estimate** at planning time how much can get done in the time alotted for a release milestone.
-- **Reschedule** issues continuously into/from the milestone depending on the pace and [triage](issues.md#triage).
-
-It's impossible to estimate perfectly, so the tech lead needs to continuously monitor the team's progress and make adjustments accordingly.
-
-If it looks like the team won't be able to complete the issues by the release, the tech lead **must** mention this in the #product channel and needs to do some combination of:
-
-- helping unblock or accelerate the work of individual teammates
-- descoping issues in this milestone
-- deferring issues to a later milestone
-- getting help from other people on certain issues
-
-The [product manager](product/index.md#product-manager) can help here, especially with product and priority questions for descoping or deferring work.
-
-#### The issues for each release milestone describe the problem/solution.
-
-This means the tech lead needs to do 2 things:
-
-- Ensure the issues for feature work have enough information for the devs who are implementing the feature.
-- Gather information for bug reports (including documenting/automating how other people can supply the info needed to diagnose/fix the bug).
-
-## We don't release continuously
+### Why aren't releases continuous?
 
 Although [Sourcegraph.com](https://sourcegraph.com) is continuously deployed (from sourcegraph/sourcegraph@`master`), the version of Sourcegraph that customers use is not continuously released or updated. This is because:
 
@@ -81,3 +29,100 @@ Although [Sourcegraph.com](https://sourcegraph.com) is continuously deployed (fr
 - We haven't built the automated testing and update infrastructure to make continuous customer releases reliable.
 
 In the future, we may introduce continuous releases if these issues become surmountable.
+
+## Versioning
+
+[Monthly releases](#releases-are-monthly) of Sourcegraph increase the minor version number (e.g. 3.1 -> 3.2). These releases **never** require any manual migration steps.
+
+Patch releases (e.g. 3.0.0 -> 3.0.1) are released on an as-needed basis to fix bugs and security issues. These releases **never** require any manual migration steps.
+
+On rare occasions we may decide to increase the major version number (e.g. 2.13 -> 3.0). These releases **may** require manual migration steps.
+
+## Release process
+
+What is the process we follow to release?
+
+### Release captains
+
+The release captain is _responsible_ for managing the release process and ensuring that the release happens on time. The release captain may _delegate_ work to other teammates, but such delegation does not absolve the release captain of their responsibility to ensure that delegated work gets done.
+
+No later than 5 _working days_ before the release day the release captain creates a tracking issue using the [release issue template](release_issue_template.md) and assigns it to themself to complete.
+
+### Schedule
+
+| Version | Captain | Release Date |
+|---------|---------|--------------|
+| 3.0 | @nicksnyder | 2019-02-07 (Wednesday) |
+| 3.1 | @nicksnyder | 2019-02-20 (Wednesday) |
+| 3.2 | @nicksnyder | 2019-03-20 (Wednesday) |
+| 3.3 | @beyang | 2019-04-20 (Saturday) |
+| 3.4 | @ggilmore | 2019-05-20 (Monday) |
+| 3.5 | @keegancsmith | 2019-06-20 (Thursday) |
+| 3.6 | @slimsag | 2019-07-20 (Saturday) |
+| 3.7 | @ijsnow | 2019-08-20 (Tuesday) |
+| 3.8 | @tsenart | 2019-09-20 (Friday) |
+| 3.9 | @lguychard | 2019-10-20 (Sunday) |
+| 3.10 | @attfarhan | 2019-11-20 (Wednesday) |
+| 3.11 | @chrismwendt | 2019-12-20 (Saturday) |
+| 3.12 | @vanesa | 2020-01-20 (Monday, MLK) |
+| 3.13 | @felixfbecker | 2020-02-20 (Thursday) |
+
+Release captains may trade rotations with each other by updating this schedule.
+
+If a release captain is unexpectedly unavailable and did not arrange a replacement, the captain from the previous release becomes the release captain for the current release.
+
+### Release branches
+
+Each major and minor release of [Sourcegraph](https://github.com/sourcegraph/sourcegraph) has a long lived release branch (e.g. `3.0`, `3.1`). Individual releases are tagged from these release branches (e.g. `v3.0.0-rc.1`, `v3.0.0`, `v3.0.1-rc.1`, and `v3.0.1` would be tagged from the `3.0` release branch).
+
+To avoid confusion between tags and branches:
+
+- Tags are always the full semantic version with a leading `v` (e.g. `v2.10.0`)
+- Branches are always the dot-separated major/minor versions with no leading `v` (e.g. `2.10`).
+
+Development always happens on `master` and changes are cherry picked onto release branch as necessary with the approval of the release captain.
+
+#### Example
+
+Here is an example git commit history:
+
+1. The release captain creates the `3.0` release branch at commit `B`.
+1. The release captain tags the release candidate `v3.0.0-rc.1` at commit `B`.
+1. A feature is commited to `master` in commit `C`. It will not ship in `3.0`.
+1. An issue is found in the release candidate and a fix is committed to `master` in commit `D`.
+1. The release captain cherry picks `D` from `master` into `3.0`.
+1. The release captain tags `v3.0.0` on the `3.0` release branch.
+1. Development continues on master with commits `E`, `F`, `G`, `H`.
+1. Commit `F` fixes a critical bug that impacts 3.0, so it is cherry picked onto the `3.0` release branch and `v3.0.1` is tagged.
+1. The release captain (different person) for 3.1 creates the `3.1` release branch at commit `H` and a new release cycle begins.
+1. Commit `J` fixes a critical bug that impacts both 3.0 and 3.1, so it is cherry picked into both `3.0` and `3.1` release branches and new releases are tagged (`v3.0.2`, `v3.1.2`).
+
+```
+A---B---C---D---E---F---G---H---I---J---K---L (master branch)
+     \                       \                   
+      \                       `---v3.1.0-rc.1---I'---v3.1.0---J'---v3.1.2 (3.1 release branch)
+       \
+        `---v3.0.0-rc.1---D'---v3.0.0---F'---v3.0.1---J'---v3.0.2 (3.0 release branch)
+```
+
+### Issues
+
+How do we deal with issues that are found during the release process?
+
+#### Blocking
+
+The release always ships on time, even if it's missing features or bug fixes we hoped to get in ([why?](https://about.gitlab.com/2015/12/07/why-we-shift-objectives-and-not-release-dates-at-gitlab/)).
+
+There are only three kinds of issues that are eligible to block a release:
+
+1. Issues that literally prevent us from tagging a release (i.e. our CI logic to produce builds from git tags is broken).
+2. Issues that fundamentally break our product for a _majority_ of our customers and don't have acceptable workarounds. 
+3. Critical security _regressions_ from the previous release.
+
+Only the release captain can label something as release blocking.
+
+The release captain has unlimited power to make changes to the release branch to resolve release blocking issues. As soon as a release blocking issue is identified, the release captain should decide the least risky way to relosve the issue as soon as possible. A good default action is to identify and revert offending commits from the release branch. In the worst case, this could involved recreating the release branch from an earlier commit on master. Project owners can work on master to fix the issue, and if the issue is resolved in time, revert the revert and cherry-pick the fix on the release branch.
+
+#### Non-blocking
+
+Most issues are non-blocking. Fixes to non-blocking issues can be fixed in `master` by the code owner who can then `git cherry-pick` those commits into the release branch with the approval of the release captain. Alternatively, broken features can be reverted out of the release branch or disabled via feature flags if they aren't ready or are too buggy.
