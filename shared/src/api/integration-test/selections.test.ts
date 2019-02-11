@@ -37,11 +37,11 @@ describe('Selections (integration)', () => {
                 roots: [],
                 visibleViewComponents: [],
             })
-            const selectionChanges = from(extensionHost.app.activeWindowChanged).pipe(
+            const selectionChanges = from(extensionHost.app.activeWindowChanges).pipe(
                 filter(isDefined),
-                switchMap(window => window.activeViewComponentChanged),
+                switchMap(window => window.activeViewComponentChanges),
                 filter(isDefined),
-                switchMap(editor => editor.selectionsChanged)
+                switchMap(editor => editor.selectionsChanges)
             )
             const selectionValues = collectSubscribableValues(selectionChanges)
             const testValues = [

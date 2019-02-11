@@ -19,7 +19,7 @@ export interface WindowData {
 class ExtWindow implements sourcegraph.Window {
     constructor(private windowsProxy: ClientWindowsAPI, private readonly textEditors: ExtCodeEditor[]) {}
 
-    public readonly activeViewComponentChanged = of(this.activeViewComponent)
+    public readonly activeViewComponentChanges = of(this.activeViewComponent)
 
     public get visibleViewComponents(): sourcegraph.ViewComponent[] {
         return this.textEditors

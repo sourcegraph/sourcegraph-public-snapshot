@@ -19,7 +19,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         private documents: ExtDocuments
     ) {}
 
-    public readonly selectionsChanged = of(this.selections)
+    public readonly selectionsChanges = of(this.selections)
 
     public readonly type = 'CodeEditor'
 

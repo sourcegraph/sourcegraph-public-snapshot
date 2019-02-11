@@ -26,7 +26,7 @@ describe('Windows (integration)', () => {
                 visibleViewComponents: [],
             })
             await extensionHost.internal.sync()
-            const values = collectSubscribableValues(extensionHost.app.activeWindowChanged)
+            const values = collectSubscribableValues(extensionHost.app.activeWindowChanges)
             model.next({
                 ...model.value,
                 visibleViewComponents: [

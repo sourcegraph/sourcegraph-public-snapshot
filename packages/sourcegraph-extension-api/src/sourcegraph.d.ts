@@ -433,7 +433,7 @@ declare module 'sourcegraph' {
         /**
          * An event that is fired when the active view component changes.
          */
-        activeViewComponentChanged: Subscribable<ViewComponent | undefined>
+        activeViewComponentChanges: Subscribable<ViewComponent | undefined>
 
         /**
          * Show a notification message to the user that does not require interaction or steal focus.
@@ -610,7 +610,7 @@ declare module 'sourcegraph' {
          * The primary selection ({@link CodeEditor#selection}), if any selections exist,
          * is always at index 0 of the emitted array.
          */
-        readonly selectionsChanged: Subscribable<Selection[]>
+        readonly selectionsChanges: Subscribable<Selection[]>
 
         /**
          * Add a set of decorations to this editor. If a set of decorations already exists with the given
@@ -665,7 +665,7 @@ declare module 'sourcegraph' {
         /**
          * An event that is fired when the currently active window changes.
          */
-        export const activeWindowChanged: Subscribable<Window | undefined>
+        export const activeWindowChanges: Subscribable<Window | undefined>
 
         /**
          * All application windows that are accessible by the extension.
