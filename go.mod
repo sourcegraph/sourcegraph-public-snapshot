@@ -12,7 +12,7 @@ require (
 	github.com/coreos/go-semver v0.2.0
 	github.com/crewjam/saml v0.0.0-20180831135026-ebc5f787b786
 	github.com/davecgh/go-spew v1.1.1
-	github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc
+	github.com/daviddengcn/go-colortext v0.0.0-20190211032704-186a3d44e920
 	github.com/dghubble/gologin v1.0.2-0.20181013174641-0e442dd5bb73
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/die-net/lrucache v0.0.0-20190123005519-19a39ef22a11
