@@ -8,7 +8,7 @@ The goal of our release process is to make releases boring, regular, and eventua
 
 ## Releases are monthly
 
-We release Sourcegraph by 10am PT on the 20th day of each month. No exception is made for weekends or holidays.
+We release Sourcegraph **by** 10am PT on the 20th day of each month.
 
 "Release" means:
 - The Docker images are available for download.
