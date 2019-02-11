@@ -87,6 +87,14 @@ export class SiteAdminProductLicenseNode extends React.PureComponent<SiteAdminPr
                         </span>
                     </div>
                 </div>
+                {this.props.node.info && (
+                    <div>
+                        Tags:{' '}
+                        {this.props.node.info.tags.map(tag => (
+                            <div className="mr-1 badge badge-secondary">{tag}</div>
+                        ))}
+                    </div>
+                )}
                 <CopyableText text={this.props.node.licenseKey} className="mt-2 d-block" />
             </li>
         )
