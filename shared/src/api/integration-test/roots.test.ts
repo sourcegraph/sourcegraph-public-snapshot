@@ -25,11 +25,11 @@ describe('Workspace roots (integration)', () => {
         })
     })
 
-    describe('workspace.onDidChangeRoots', () => {
+    describe('workspace.rootsChanges', () => {
         test('fires when a root is added or removed', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
-            const values = collectSubscribableValues(extensionHost.workspace.onDidChangeRoots)
+            const values = collectSubscribableValues(extensionHost.workspace.rootsChanges)
             expect(values).toEqual([] as void[])
 
             model.next({

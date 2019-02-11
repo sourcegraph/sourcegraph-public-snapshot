@@ -724,8 +724,15 @@ declare module 'sourcegraph' {
 
         /**
          * An event that is fired when a new text document is opened.
+         *
+         * @deprecated this is deprecated and will be removed soon. Use {@link workspace.textDocumentAdds} instead.
          */
         export const onDidOpenTextDocument: Subscribable<TextDocument>
+
+        /**
+         * An event that is fired when a new text document is added to the workspace.
+         */
+        export const textDocumentAdds: Subscribable<TextDocument>
 
         /**
          * The root directories of the workspace, if any.
@@ -738,8 +745,15 @@ declare module 'sourcegraph' {
 
         /**
          * An event that is fired when a workspace root is added or removed from the workspace.
+         *
+         * @deprecated this is deprecated and will be removed soon. Use {@link workspace.rootsChanges} instead.
          */
         export const onDidChangeRoots: Subscribable<void>
+
+        /**
+         * An event that is fired when a workspace root is added or removed from the workspace.
+         */
+        export const rootsChanges: Subscribable<void>
     }
 
     /**

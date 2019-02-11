@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextDocumentItem } from '../../client/types/textDocument'
 
@@ -51,8 +51,7 @@ export class ExtDocuments implements ExtDocumentsAPI {
         return Array.from(this.documents.values())
     }
 
-    private textDocumentAdds = new Subject<TextDocument>()
-    public readonly onDidOpenTextDocument: Observable<TextDocument> = this.textDocumentAdds
+    public textDocumentAdds = new Subject<TextDocument>()
 
     public $acceptDocumentData(docs: TextDocumentItem[] | null): void {
         if (!docs) {

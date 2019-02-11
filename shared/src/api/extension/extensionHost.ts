@@ -187,11 +187,13 @@ function createExtensionAPI(
             get textDocuments(): sourcegraph.TextDocument[] {
                 return documents.getAll()
             },
-            onDidOpenTextDocument: documents.onDidOpenTextDocument,
+            onDidOpenTextDocument: documents.textDocumentAdds,
+            textDocumentAdds: documents.textDocumentAdds,
             get roots(): ReadonlyArray<sourcegraph.WorkspaceRoot> {
                 return roots.getAll()
             },
-            onDidChangeRoots: roots.onDidChange,
+            onDidChangeRoots: roots.changes,
+            rootsChanges: roots.changes,
         },
 
         configuration: {

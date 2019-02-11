@@ -1,5 +1,5 @@
 import * as clientType from '@sourcegraph/extension-api-types'
-import { Observable, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { URI } from '../types/uri'
 
@@ -21,8 +21,7 @@ export class ExtRoots implements ExtRootsAPI {
         return this.roots
     }
 
-    private changes = new Subject<void>()
-    public readonly onDidChange: Observable<void> = this.changes
+    public readonly changes = new Subject<void>()
 
     public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
         this.roots = Object.freeze(
