@@ -33,7 +33,7 @@ In the future, we may introduce continuous releases if these issues become surmo
 
 [Monthly releases](#releases-are-monthly) of Sourcegraph increase the minor version number (e.g. 3.1 -> 3.2). These releases do not require any manual migration steps.
 
-Patch releases (e.g. 3.0.0 -> 3.0.1) are released on an as-needed basis to fix bugs and security issues. These releases do not require any manual migration steps.
+Patch releases (e.g. 3.0.0 -> 3.0.1) are released on an as-needed basis to fix bugs and security issues. These releases **never** require any manual migration steps.
 
 On rare occasions we may decide to increase the major version number (e.g. 2.13 -> 3.0). These releases **may** require manual migration steps.
 
