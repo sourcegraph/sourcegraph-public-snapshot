@@ -14,7 +14,9 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
+interface Props
+    extends ExtensionsControllerProps<'services' | 'executeCommand'>,
+        PlatformContextProps<'forceUpdateTooltip'> {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
