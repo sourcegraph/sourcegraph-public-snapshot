@@ -1390,56 +1390,56 @@
   dependencies:
     esquery "^1.0.1"
 
-"@sentry/browser@^4.4.2":
-  version "4.4.2"
-  resolved "https://registry.npmjs.org/@sentry/browser/-/browser-4.4.2.tgz#8d361778962ef8ab1540e4ebbf64d485903abdf1"
-  integrity sha512-km5p3hPz+aoY4UiEvYxAdRJAbIK30urZSuMs/3zAUVe+8Zij0IHjHmdi9JtrMqpn+rAcWCxtRmFSYlkiKjdSUg==
+"@sentry/browser@^4.5.4":
+  version "4.5.4"
+  resolved "https://registry.npmjs.org/@sentry/browser/-/browser-4.5.4.tgz#d7953bfeffc5c37cd6717b5e95ce5b89ec1656c2"
+  integrity sha512-pV76Tlb+/BWSz3o3/aZ3PaqxVAENKEmZSLHyRtc41XNupWEB9u1qQs33UDCvJDNY4vSC/je5Ki/dhBeA/E7EYg==
   dependencies:
-    "@sentry/core" "4.4.2"
-    "@sentry/types" "4.4.2"
-    "@sentry/utils" "4.4.2"
+    "@sentry/core" "4.5.4"
+    "@sentry/types" "4.5.3"
+    "@sentry/utils" "4.5.4"
     tslib "^1.9.3"
 
-"@sentry/core@4.4.2":
-  version "4.4.2"
-  resolved "https://registry.npmjs.org/@sentry/core/-/core-4.4.2.tgz#562526bc634c087f04bbca68b09cedc4b41cc64d"
-  integrity sha512-hJyAodTCf4sZfVdf41Rtuzj4EsyzYq5rdMZ+zc2Vinwdf8D0/brHe91fHeO0CKXEb2P0wJsrjwMidG/ccq/M8A==
+"@sentry/core@4.5.4":
+  version "4.5.4"
+  resolved "https://registry.npmjs.org/@sentry/core/-/core-4.5.4.tgz#31c9a0b66d33cbd5b4d7de2b69d6c7951c7c06a3"
+  integrity sha512-Nj5VZjAVntroHn9tuqez8KnRgv91KWQfESzN9/DA/k9orZ8vI4+8bm78Zpq6IteumaxLxGdXw8H1s8xVGlU3/Q==
   dependencies:
-    "@sentry/hub" "4.4.2"
-    "@sentry/minimal" "4.4.2"
-    "@sentry/types" "4.4.2"
-    "@sentry/utils" "4.4.2"
+    "@sentry/hub" "4.5.4"
+    "@sentry/minimal" "4.5.4"
+    "@sentry/types" "4.5.3"
+    "@sentry/utils" "4.5.4"
     tslib "^1.9.3"
 
-"@sentry/hub@4.4.2":
-  version "4.4.2"
-  resolved "https://registry.npmjs.org/@sentry/hub/-/hub-4.4.2.tgz#1399556fda06fb83c4f186c4aa842725f520159c"
-  integrity sha512-oe9ytXkTWyD+QmOpVzHAqTbRV4Hc0ee2Nt6HvrDtRmlXzQxfvTWG2F8KYT6w8kzqg5klnuRpnsmgTTV3KuNBVQ==
+"@sentry/hub@4.5.4":
+  version "4.5.4"
+  resolved "https://registry.npmjs.org/@sentry/hub/-/hub-4.5.4.tgz#7e0980dd2f3ead60ce1393e4e108fd4fe65e40b7"
+  integrity sha512-ghvfydSTDHh6pVuLpcubI6ksELplStORhsklOSw+fq7HtDPWNyr9Cv2USgd341whnURXvuT+TQuPnZnOMuBqSg==
   dependencies:
-    "@sentry/types" "4.4.2"
-    "@sentry/utils" "4.4.2"
+    "@sentry/types" "4.5.3"
+    "@sentry/utils" "4.5.4"
     tslib "^1.9.3"
 
-"@sentry/minimal@4.4.2":
-  version "4.4.2"
-  resolved "https://registry.npmjs.org/@sentry/minimal/-/minimal-4.4.2.tgz#13fffc6b17a2401b6a79947838a637626ab80b10"
-  integrity sha512-GEZZiNvVgqFAESZhAe3vjwTInn13lI2bSI3ItQN4RUWKL/W4n/fwVoDJbkb1U8aWxanuMnRDEpKwyQv6zYTZfw==
+"@sentry/minimal@4.5.4":
+  version "4.5.4"
+  resolved "https://registry.npmjs.org/@sentry/minimal/-/minimal-4.5.4.tgz#9c3203feae39e4172fdf4c7d34bc650383555a66"
+  integrity sha512-KuR7PmpGQcOLkMV7IMXo9R4EjkPoQYsLRf5WkswacKnaFNLwrfxU0/0Mv+eyY/JqRN8+vewPQ1hKkAWsbzBtqg==
   dependencies:
-    "@sentry/hub" "4.4.2"
-    "@sentry/types" "4.4.2"
+    "@sentry/hub" "4.5.4"
+    "@sentry/types" "4.5.3"
     tslib "^1.9.3"
 
-"@sentry/types@4.4.2":
-  version "4.4.2"
-  resolved "https://registry.npmjs.org/@sentry/types/-/types-4.4.2.tgz#f38dd3bc671cd2f5983a85553aebeac9c2286b17"
-  integrity sha512-QyQd6PKKIyjJgaq/RQjsxPJEWbXcuiWZ9RvSnhBjS5jj53HEzkM1qkbAFqlYHJ1DTJJ1EuOM4+aTmGzHe93zuA==
+"@sentry/types@4.5.3":
+  version "4.5.3"
+  resolved "https://registry.npmjs.org/@sentry/types/-/types-4.5.3.tgz#3350dce2b7f9b936a8c327891c12e3aef7bd8852"
+  integrity sha512-7ll1PAFNjrBNX9rzy3P2qAQrpQwHaDO3uKj735qsnGw34OtAS8Xr8WYrjI14f9fMPa/XIeWvMPb4GMic28V/ag==
 
-"@sentry/utils@4.4.2":
-  version "4.4.2"
-  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-4.4.2.tgz#e05a47e135ecef29e63a996f59aee8c8f792c222"
-  integrity sha512-j/Ad8G1abHlJdD2q7aWWbSOSeWB5M5v1R1VKL8YPlwEbSvvmEQWePhBKFI0qlnKd2ObdUQsj86pHEXJRSFNfCw==
+"@sentry/utils@4.5.4":
+  version "4.5.4"
+  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-4.5.4.tgz#fc074b0c16850f39685a6c17f96407f56ed36b03"
+  integrity sha512-LhWnCuTEzmbQKyc0qyahs5PYPpj9qkY3BpMOyEIoYz79RU5lMD1iPR62wG8cqO09JmrCHuqfWeQIQIwUFQTaBQ==
   dependencies:
-    "@sentry/types" "4.4.2"
+    "@sentry/types" "4.5.3"
     tslib "^1.9.3"
 
 "@sheerun/mutationobserver-shim@^0.3.2":
@@ -1505,9 +1505,8 @@
     sourcegraph "*"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "1.1.0"
-  dependencies:
-    sourcegraph "*"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -13664,7 +13663,8 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "20.1.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
