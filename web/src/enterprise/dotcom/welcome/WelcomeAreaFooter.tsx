@@ -1,5 +1,4 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 export const WelcomeAreaFooter: React.FunctionComponent<{ isLightTheme: boolean }> = ({ isLightTheme }) => (
     <>
@@ -27,13 +26,19 @@ export const WelcomeAreaFooter: React.FunctionComponent<{ isLightTheme: boolean 
                 <h3 className="mb-0">Features</h3>
                 <ul className="list-unstyled">
                     <li>
-                        <Link to="/welcome/search">Code search</Link>
+                        <a href="https://docs.sourcegraph.com/user/search" target="_blank">
+                            Code search
+                        </a>
                     </li>
                     <li>
-                        <Link to="/welcome/code-intelligence">Code intelligence</Link>
+                        <a href="https://docs.sourcegraph.com/user/code_intelligence" target="_blank">
+                            Code intelligence
+                        </a>
                     </li>
                     <li>
-                        <Link to="/welcome/integrations">Integrations</Link>
+                        <a href="https://docs.sourcegraph.com/integration" target="_blank">
+                            Integrations
+                        </a>
                     </li>
                     <li>
                         <a href="https://about.sourcegraph.com/pricing" target="_blank">
