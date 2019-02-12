@@ -127,6 +127,9 @@ FROM repo WHERE id > $1 ORDER BY id ASC LIMIT $2
 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
 // The _ID field of each given Repo is set on inserts.
+//
+// TODO(tsenart) Store upstream external service metadata in JSONB column in Postgres.
+// Conditionally index based on the external service type.
 func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) error {
 	if len(repos) == 0 {
 		return nil
