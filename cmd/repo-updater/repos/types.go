@@ -14,6 +14,8 @@ type Repo struct {
 	//
 	// Previously, this was called RepoURI.
 	Name string
+	// CloneURL is the clone URL of the repo.
+	CloneURL string
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.

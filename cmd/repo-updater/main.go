@@ -74,7 +74,8 @@ func main() {
 		repos.NewGithubSource(conf.GitHubConfigs),
 	}
 
-	syncer := repos.NewSyncer(10*time.Second, store, sources, func() time.Time {
+	diffs := make(chan repos.Diff)
+	syncer := repos.NewSyncer(10*time.Second, store, sources, diffs, func() time.Time {
 		// XXX(tsenart): It seems like the current db layer in the frontend API
 		// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
 		// and ensure it's the used timezone across the board.
@@ -82,6 +83,19 @@ func main() {
 	})
 
 	go func() { log.Fatal(syncer.Run(ctx)) }()
+
+	// Start new repo syncer updates scheduler relay thread.
+	go func() {
+		for diff := range diffs {
+			if conf.Get().DisableAutoGitUpdates {
+				continue
+			} else if conf.UpdateScheduler2Enabled() {
+				repos.Scheduler.UpdateFromDiff(diff)
+			} else {
+				log15.Error("Diff based scheduler update not implemented for old scheduler")
+			}
+		}
+	}()
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{OtherReposSyncer: otherSyncer}

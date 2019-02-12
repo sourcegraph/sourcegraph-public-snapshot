@@ -102,6 +102,7 @@ func (s GithubSource) connections(ctx context.Context) ([]*githubConnection, err
 func githubRepoToRepo(ghrepo *github.Repository, conn *githubConnection) *Repo {
 	return &Repo{
 		Name:         string(githubRepositoryToRepoPath(conn, ghrepo)),
+		CloneURL:     conn.authenticatedRemoteURL(ghrepo),
 		ExternalRepo: *github.ExternalRepoSpec(ghrepo, *conn.baseURL),
 		Description:  ghrepo.Description,
 		Fork:         ghrepo.IsFork,

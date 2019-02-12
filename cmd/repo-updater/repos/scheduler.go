@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -177,6 +178,48 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 		limiter.SetLimit(limit)
 	})
 	return limiter
+}
+
+// UpdateFromDiff updates the list of configured repos from the given sync diff.
+func (s *updateScheduler) UpdateFromDiff(diff Diff) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log15.Debug("updating configured repos with diff", pp.Sprint(diff))
+
+	for _, del := range diff.Deleted {
+		repo := configuredRepo2FromRepo(del.(*Repo))
+		s.schedule.remove(repo)
+		updating := false
+		s.updateQueue.remove(repo, updating)
+	}
+
+	for _, add := range diff.Added {
+		repo := configuredRepo2FromRepo(add.(*Repo))
+		s.schedule.add(repo)
+		s.updateQueue.enqueue(repo, priorityLow)
+	}
+
+	for _, mod := range diff.Modified {
+		if repo := configuredRepo2FromRepo(mod.(*Repo)); repo.Enabled {
+			s.schedule.update(repo)
+			s.updateQueue.update(repo)
+		} else {
+			s.schedule.remove(repo)
+			updating := false
+			s.updateQueue.remove(repo, updating)
+		}
+	}
+
+	// schedKnownRepos.Set(float64(len(diff.Unmodified) + len(diff.Modified) + len(diff.Added)))
+}
+
+func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
+	return &configuredRepo2{
+		URL:     r.CloneURL,
+		Name:    api.RepoName(r.Name),
+		Enabled: r.Enabled,
+	}
 }
 
 // updateSource updates the list of configured repos associated with the given source.

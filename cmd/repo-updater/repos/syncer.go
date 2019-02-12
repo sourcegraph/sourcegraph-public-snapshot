@@ -14,15 +14,17 @@ type Syncer struct {
 	interval time.Duration
 	source   Source
 	store    Store
+	diffs    chan Diff
 	now      func() time.Time
 }
 
 // NewSyncer returns a new Syncer with the given parameters.
-func NewSyncer(interval time.Duration, store Store, sources []Source, now func() time.Time) *Syncer {
+func NewSyncer(interval time.Duration, store Store, sources []Source, diffs chan Diff, now func() time.Time) *Syncer {
 	return &Syncer{
 		interval: interval,
 		source:   NewSources(sources...),
 		store:    store,
+		diffs:    diffs,
 		now:      now,
 	}
 }
@@ -74,17 +76,19 @@ func (s Syncer) Sync(ctx context.Context) (err error) {
 		return err
 	}
 
-	return store.UpsertRepos(
-		ctx,
-		s.upserts(sourced, stored)...,
-	)
-	// TODO(tsenart): ensure scheduler picks up changes to be propagated to git server
-	// TODO(tsenart): ensure search index gets updated too
+	diff := s.diff(sourced, stored)
+	upserts := s.upserts(diff)
+
+	if err = store.UpsertRepos(ctx, upserts...); err != nil {
+		return err
+	}
+
+	s.diffs <- diff
+	return nil
 }
 
-func (s Syncer) upserts(sourced, stored []*Repo) []*Repo {
+func (s Syncer) upserts(diff Diff) []*Repo {
 	now := s.now()
-	diff := s.diff(sourced, stored)
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
 
 	pp.Printf("diff: %s", diff)
