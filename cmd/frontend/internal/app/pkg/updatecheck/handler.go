@@ -215,7 +215,11 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 
 	// Sync the initial administrator email in HubSpot.
 	if initialAdminEmail != "" && strings.Contains(initialAdminEmail, "@") {
-		go tracking.SyncUser(initialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true})
+		// Hubspot requires the timestamp to be rounded to the nearest day at midnight.
+		now := time.Now().UTC()
+		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+		go tracking.SyncUser(initialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LastActive: millis})
 	}
 }
 
