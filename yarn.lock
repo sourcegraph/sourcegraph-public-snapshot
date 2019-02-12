@@ -2508,10 +2508,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/sinon@7.0.3":
-  version "7.0.3"
-  resolved "https://registry.npmjs.org/@types/sinon/-/sinon-7.0.3.tgz#f8647e883d873962130f906a6114a4e187755696"
-  integrity sha512-cjmJQLx2B5Hp9SzO7rdSivipo3kBqRqeYkTW17nLST1tn5YLWBjTdnzdmeTJXA1+KrrBLsEuvKQ0fUPGrfazQg==
+"@types/sinon@7.0.5":
+  version "7.0.5"
+  resolved "https://registry.npmjs.org/@types/sinon/-/sinon-7.0.5.tgz#f7dea19400c193a3b36a804a7f1f4b26dacf452b"
+  integrity sha512-4DShbH857bZVOY4tPi1RQJNrLcf89hEtU0klZ9aYTMbtt95Ok4XdPqqcbtGOHIbAHMLSzQP8Uw/6qtBBqyloww==
 
 "@types/socket.io-client@1.4.32":
   version "1.4.32"
