@@ -75,7 +75,7 @@ class EventLogger implements TelemetryService {
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logUserEvent = true): void {
-        if (window.context.userAgentIsBot || !pageTitle) {
+        if ((window.context && window.context.userAgentIsBot) || !pageTitle) {
             return
         }
         pageTitle = `View${pageTitle}`
