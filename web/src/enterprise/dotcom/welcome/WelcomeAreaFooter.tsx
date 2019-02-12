@@ -26,13 +26,19 @@ export const WelcomeAreaFooter: React.FunctionComponent<{ isLightTheme: boolean 
                 <h3 className="mb-0">Features</h3>
                 <ul className="list-unstyled">
                     <li>
-                        <a href="https://docs.sourcegraph.com/user/search">Code search</a>
+                        <a href="https://docs.sourcegraph.com/user/search" target="_blank">
+                            Code search
+                        </a>
                     </li>
                     <li>
-                        <a href="https://docs.sourcegraph.com/extensions">Code intelligence &amp; extensions</a>
+                        <a href="https://docs.sourcegraph.com/extensions" target="_blank">
+                            Code intelligence &amp; extensions
+                        </a>
                     </li>
                     <li>
-                        <a href="https://docs.sourcegraph.com/integration">Integrations</a>
+                        <a href="https://docs.sourcegraph.com/integration" target="_blank">
+                            Integrations
+                        </a>
                     </li>
                     <li>
                         <a href="https://about.sourcegraph.com/pricing" target="_blank">
