@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/k0kubun/pp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -41,11 +42,12 @@ func (s Syncer) Run(ctx context.Context) error {
 
 // Sync synchronizes the set of sourced repos with the set of stored repos.
 func (s Syncer) Sync(ctx context.Context) (err error) {
-	var sourced []*Repo
+	var sourced Repos
 	if sourced, err = s.source.ListRepos(ctx); err != nil {
 		log15.Error("Syncer", "Source.ListRepos", err)
 	}
-	log15.Error("Syncer", "sourced", sourced, "err", err)
+
+	log15.Info("Syncer", "sourced", sourced.IDs(), "err", err)
 
 	if len(sourced) == 0 {
 		return err
@@ -61,7 +63,7 @@ func (s Syncer) Sync(ctx context.Context) (err error) {
 		store = txs
 	}
 
-	var stored []*Repo
+	var stored Repos
 	if stored, err = store.ListRepos(ctx); err != nil {
 		return err
 	}
@@ -78,6 +80,8 @@ func (s Syncer) upserts(sourced, stored []*Repo) []*Repo {
 	now := s.now()
 	diff := s.diff(sourced, stored)
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
+
+	pp.Printf("diff: %s", diff)
 
 	for _, add := range diff.Added {
 		repo := add.(*Repo)
@@ -96,6 +100,8 @@ func (s Syncer) upserts(sourced, stored []*Repo) []*Repo {
 		repo.UpdatedAt, repo.DeletedAt = now, now
 		upserts = append(upserts, repo)
 	}
+
+	pp.Printf("\nupserts: %s", upserts)
 
 	return upserts
 }

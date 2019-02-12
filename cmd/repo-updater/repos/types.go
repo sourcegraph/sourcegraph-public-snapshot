@@ -65,3 +65,24 @@ func (r *Repo) With(opts ...func(*Repo)) *Repo {
 	clone.Apply(opts...)
 	return clone
 }
+
+// Repos is an utility type with convenience methods for operating on lists of Repos.
+type Repos []*Repo
+
+// IDs returns the list of IDs from all Repos.
+func (rs Repos) IDs() []string {
+	ids := make([]string, len(rs))
+	for i := range rs {
+		ids[i] = rs[i].ID()
+	}
+	return ids
+}
+
+// Names returns the list of names from all Repos.
+func (rs Repos) Names() []string {
+	names := make([]string, len(rs))
+	for i := range rs {
+		names[i] = rs[i].Name
+	}
+	return names
+}
