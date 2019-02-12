@@ -12,13 +12,13 @@ export const noopMigration: MigrateFunc = () => ({})
 
 export function provideMigrations(area: chrome.storage.StorageArea): MigratableStorageArea {
     const migrations = new Subject<MigrateFunc>()
-    const getCalls = new ReplaySubject<any[]>()
-    const setCalls = new ReplaySubject<any[]>()
+    const getCalls = new ReplaySubject<Parameters<chrome.storage.StorageArea['get']>>()
+    const setCalls = new ReplaySubject<Parameters<chrome.storage.StorageArea['set']>>()
 
     const migrated = migrations.pipe(
         switchMap(
             migrate =>
-                new Observable(observer => {
+                new Observable<void>(observer => {
                     area.get(items => {
                         const { newItems, keysToRemove } = migrate(items as StorageItems)
                         area.remove(keysToRemove || [], () => {
@@ -38,18 +38,20 @@ export function provideMigrations(area: chrome.storage.StorageArea): MigratableS
     const initializedSets = migrated.pipe(switchMap(() => setCalls))
 
     initializedSets.subscribe(args => {
-        area.set.apply(area, args)
+        area.set(...args)
     })
 
     initializedGets.subscribe(args => {
-        area.get.apply(area, args)
+        // Cast is needed because Parameters<> doesn't include overloads
+        area.get(...(args as Parameters<chrome.storage.StorageArea['get']>))
     })
 
-    const get: chrome.storage.StorageArea['get'] = (...args) => {
+    // Cast is needed because Parameters<> doesn't include overloads
+    const get: chrome.storage.StorageArea['get'] = ((...args: Parameters<chrome.storage.StorageArea['get']>) => {
         getCalls.next(args)
-    }
+    }) as chrome.storage.StorageArea['get']
 
-    const set: chrome.storage.StorageArea['set'] = (...args) => {
+    const set: chrome.storage.StorageArea['set'] = (...args: Parameters<chrome.storage.StorageArea['set']>) => {
         setCalls.next(args)
     }
 
