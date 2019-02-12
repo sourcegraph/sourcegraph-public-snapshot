@@ -8,15 +8,14 @@
 
     &__add-scopes {
         display: inline-block;
-        margin: 0.25rem;
-        padding: 0.25rem;
+        margin: 0.25rem 0;
+        padding: 0.25rem 0;
     }
 
     &__add-edit {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding-left: 0.25rem;
     }
 
     &__center {

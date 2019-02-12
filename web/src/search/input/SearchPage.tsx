@@ -26,6 +26,7 @@ interface State {
     userQuery: string
     /** The query that results from combining all values in the query builder form. */
     builderQuery: string
+    showQueryBuilder: boolean
 }
 
 /**
@@ -41,6 +42,7 @@ export class SearchPage extends React.Component<Props, State> {
         this.state = {
             userQuery: query || '',
             builderQuery: '',
+            showQueryBuilder: false,
         }
     }
 
@@ -79,6 +81,10 @@ export class SearchPage extends React.Component<Props, State> {
                         />
                         <SearchButton />
                     </div>
+                    <QueryBuilder
+                        onFieldsQueryChange={this.onBuilderQueryChange}
+                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                    />
                     <div className="search-page__input-sub-container">
                         <SearchFilterChips
                             location={this.props.location}
@@ -88,10 +94,6 @@ export class SearchPage extends React.Component<Props, State> {
                             settingsCascade={this.props.settingsCascade}
                         />
                     </div>
-                    <QueryBuilder
-                        onFieldsQueryChange={this.onBuilderQueryChange}
-                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                    />
                 </Form>
             </div>
         )

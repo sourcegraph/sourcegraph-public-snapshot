@@ -2,8 +2,7 @@
     border-radius: 0.25rem;
     width: 100%;
     margin-top: 1rem;
-    margin-bottom: 6rem;
-    padding: 0.5rem 0;
+    margin-bottom: 1rem;
     position: relative;
 
     &__header,
@@ -67,6 +66,7 @@
             display: flex;
             align-items: center;
             margin: 0;
+            font-weight: 600;
         }
 
         &-input {
@@ -90,6 +90,14 @@
             padding-right: 1rem;
             margin-left: 8rem;
         }
+    }
+
+    &__toggle {
+        margin: 0.5rem 0;
+    }
+
+    &__docs-link {
+        padding-top: 1.5rem;
     }
 }
 
