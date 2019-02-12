@@ -311,7 +311,10 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 }
 
 func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
-	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	conds = []*sqlf.Query{
+		sqlf.Sprintf("TRUE"),
+		sqlf.Sprintf("deleted_at IS NULL"),
+	}
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
 	}
