@@ -1,4 +1,5 @@
 import * as clientType from '@sourcegraph/extension-api-types'
+import { of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { Range } from '../types/range'
@@ -17,6 +18,8 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         private proxy: ClientCodeEditorAPI,
         private documents: ExtDocuments
     ) {}
+
+    public readonly selectionsChanges = of(this.selections)
 
     public readonly type = 'CodeEditor'
 

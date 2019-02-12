@@ -431,6 +431,11 @@ declare module 'sourcegraph' {
         activeViewComponent: ViewComponent | undefined
 
         /**
+         * An event that is fired when the active view component changes.
+         */
+        activeViewComponentChanges: Subscribable<ViewComponent | undefined>
+
+        /**
          * Show a notification message to the user that does not require interaction or steal focus.
          *
          * @deprecated This API will change.
@@ -601,6 +606,13 @@ declare module 'sourcegraph' {
         readonly selections: Selection[]
 
         /**
+         * An event that is fired when the selections in this text editor change.
+         * The primary selection ({@link CodeEditor#selection}), if any selections exist,
+         * is always at index 0 of the emitted array.
+         */
+        readonly selectionsChanges: Subscribable<Selection[]>
+
+        /**
          * Add a set of decorations to this editor. If a set of decorations already exists with the given
          * {@link TextDocumentDecorationType}, they will be replaced.
          *
@@ -649,6 +661,11 @@ declare module 'sourcegraph' {
          * none has focus, the window that was most recently focused.
          */
         export const activeWindow: Window | undefined
+
+        /**
+         * An event that is fired when the currently active window changes.
+         */
+        export const activeWindowChanges: Subscribable<Window | undefined>
 
         /**
          * All application windows that are accessible by the extension.
@@ -1207,6 +1224,12 @@ declare module 'sourcegraph' {
          * the subscription to stop reacting to the stream.
          */
         subscribe(observer?: PartialObserver<T>): Unsubscribable
+        /** @deprecated Use an observer instead of a complete callback */
+        subscribe(next: null | undefined, error: null | undefined, complete: () => void): Unsubscribable
+        /** @deprecated Use an observer instead of an error callback */
+        subscribe(next: null | undefined, error: (error: any) => void, complete?: () => void): Unsubscribable
+        /** @deprecated Use an observer instead of a complete callback */
+        subscribe(next: (value: T) => void, error: null | undefined, complete: () => void): Unsubscribable
         subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
     }
 
