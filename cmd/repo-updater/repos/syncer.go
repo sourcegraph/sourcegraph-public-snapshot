@@ -47,6 +47,10 @@ func (s Syncer) Run(ctx context.Context) error {
 func (s Syncer) Sync(ctx context.Context) (err error) {
 	var sourced []*Repo
 	if sourced, err = s.source.ListRepos(ctx); err != nil {
+		log15.Error("Syncer", "Source.ListRepos", err)
+	}
+
+	if len(sourced) == 0 {
 		return err
 	}
 
