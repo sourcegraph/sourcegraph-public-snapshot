@@ -1,5 +1,6 @@
 import * as clientType from '@sourcegraph/extension-api-types'
-import { Observable, Unsubscribable } from 'rxjs'
+import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { from, Observable, observable, PartialObserver, Subscription, Unsubscribable } from 'rxjs'
 import {
     DefinitionProvider,
     DocumentSelector,
@@ -8,12 +9,14 @@ import {
     ImplementationProvider,
     Location,
     LocationProvider,
+    ProviderResult,
     ReferenceContext,
     ReferenceProvider,
     Subscribable,
     TypeDefinitionProvider,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
+import { isSubscribable } from '../../util'
 import { ProviderMap, toProviderResultObservable } from './common'
 import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
@@ -53,8 +56,64 @@ export interface ExtLanguageFeaturesAPI {
     ): Observable<clientType.Location[] | null | undefined>
 }
 
+interface SubscribableNoOverloads<T> {
+    subscribe(
+        ...observer:
+            | [PartialObserver<T> | undefined]
+            | [
+                  ((value: T) => void) | undefined | null,
+                  ((error: any) => void) | undefined | null,
+                  (() => void) | undefined | null
+              ]
+    ): Subscription
+}
+
+const createRemoteObservable = <T>(proxy: ProxyResult<SubscribableNoOverloads<T>>): Observable<T> =>
+    from(({
+        [observable](): Subscribable<T> {
+            return this
+        },
+        subscribe(observer: PartialObserver<T>): Subscription {
+            const subscription = new Subscription()
+            proxy.subscribe(comlink.proxyValue(observer)).then(s => {
+                subscription.add(s)
+            })
+            return subscription
+        },
+    } as any) as Subscribable<T>)
+
+class ProxySubscribable<T> implements ProxyValue, Subscribable<T> {
+    public readonly [proxyValueSymbol] = true
+
+    constructor(private subscribable: Subscribable<T>) {}
+
+    public subscribe(observer?: PartialObserver<T>): Unsubscribable
+    public subscribe(
+        next?: (value: T) => void,
+        error?: (error: any) => void,
+        complete?: () => void
+    ): Unsubscribable & ProxyValue
+    public subscribe(...args: any[]): Unsubscribable & ProxyValue {
+        return proxyValue(this.subscribable.subscribe(...args))
+    }
+}
+
+const proxyProviderFunction = <P extends any[], T>(
+    fn: (...args: P) => ProviderResult<T>
+): ((...args: P) => T | undefined | null | Promise<T | undefined | null> | ProxySubscribable<T | null | undefined>) &
+    ProxyValue =>
+    proxyValue((...args: P) => {
+        const result = fn(...args)
+        if (isSubscribable(result)) {
+            return new ProxySubscribable(result)
+        }
+        return result
+    })
+
 /** @internal */
-export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, Unsubscribable {
+export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, Unsubscribable, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     private registrations = new ProviderMap<
         | HoverProvider
         | DefinitionProvider
@@ -64,7 +123,7 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, Unsubscribab
         | LocationProvider
     >(id => this.proxy.$unregister(id))
 
-    constructor(private proxy: ClientLanguageFeaturesAPI, private documents: ExtDocuments) {}
+    constructor(private proxy: ProxyResult<ClientLanguageFeaturesAPI>, private documents: ExtDocuments) {}
 
     public $observeHover(
         id: number,
@@ -83,8 +142,11 @@ export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, Unsubscribab
     }
 
     public registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable {
-        const { id, subscription } = this.registrations.add(provider)
-        this.proxy.$registerHoverProvider(id, selector)
+        const subscription = new Subscription()
+        // tslint:disable-next-line:no-floating-promises
+        this.proxy
+            .$registerHoverProvider(selector, proxyProviderFunction(provider.provideHover.bind(provider)))
+            .then(s => subscription.add(s))
         return subscription
     }
 

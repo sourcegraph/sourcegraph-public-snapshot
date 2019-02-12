@@ -4923,6 +4923,11 @@ combined-stream@^1.0.6, combined-stream@~1.0.6:
   dependencies:
     delayed-stream "~1.0.0"
 
+comlink@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.npmjs.org/comlink/-/comlink-3.1.1.tgz#4b39dbec23077a7f8639096b09f29c2b0a8e3a3d"
+  integrity sha512-8H9/mrssKE9B4ZMLcN/2bZd1cukP61SrOjm8vhxpRSN8oCw7MSroNNm3Y7/vPUhK5a2AO55vb20rXm3840l3Pw==
+
 comma-separated-tokens@^1.0.0:
   version "1.0.5"
   resolved "https://registry.npmjs.org/comma-separated-tokens/-/comma-separated-tokens-1.0.5.tgz#b13793131d9ea2d2431cf5b507ddec258f0ce0db"

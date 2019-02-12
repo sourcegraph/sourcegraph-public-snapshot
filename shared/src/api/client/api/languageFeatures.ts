@@ -1,8 +1,10 @@
 import { Hover, Location } from '@sourcegraph/extension-api-types'
+import { ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
 import { from, Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { DocumentSelector } from 'sourcegraph'
+import { DefinitionProvider, DocumentSelector, HoverProvider, Unsubscribable } from 'sourcegraph'
 import { createProxyAndHandleRequests } from '../../common/proxy'
+import { toProviderResultObservable } from '../../extension/api/common'
 import { ExtLanguageFeaturesAPI } from '../../extension/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
@@ -17,9 +19,15 @@ import { SubscriptionMap } from './common'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI {
-    $unregister(id: number): void
-    $registerHoverProvider(id: number, selector: DocumentSelector): void
-    $registerDefinitionProvider(id: number, selector: DocumentSelector): void
+    $registerHoverProvider(
+        selector: DocumentSelector,
+        providerFunction: HoverProvider['provideHover']
+    ): Unsubscribable & ProxyValue
+    $registerDefinitionProvider(
+        selector: DocumentSelector,
+        providerFunction: DefinitionProvider['provideDefinition']
+    ): Unsubscribable & ProxyValue
+
     $registerTypeDefinitionProvider(id: number, selector: DocumentSelector): void
     $registerImplementationProvider(id: number, selector: DocumentSelector): void
     $registerReferenceProvider(id: number, selector: DocumentSelector): void
@@ -31,8 +39,13 @@ export interface ClientLanguageFeaturesAPI {
     $registerLocationProvider(id: number, idStr: string, selector: DocumentSelector): void
 }
 
+type Promisify<T> = T extends Promise<T> ? T : Promise<T>
+type Asyncify<F extends (...args: any[]) => any> = (...args: Parameters<F>) => Promisify<ReturnType<F>>
+
 /** @internal */
-export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
+export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     private subscriptions = new Subscription()
     private registrations = new SubscriptionMap()
     private proxy: ExtLanguageFeaturesAPI
@@ -67,13 +80,13 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI {
         this.registrations.remove(id)
     }
 
-    public $registerHoverProvider(id: number, selector: DocumentSelector): void {
-        this.registrations.add(
-            id,
-            this.hoverRegistry.registerProvider(
-                { documentSelector: selector },
-                (params: TextDocumentPositionParams): Observable<Hover | null | undefined> =>
-                    from(this.proxy.$observeHover(id, params.textDocument.uri, params.position))
+    public $registerHoverProvider(
+        selector: DocumentSelector,
+        providerFunction: Asyncify<HoverProvider['provideHover']>
+    ): Unsubscribable & ProxyValue {
+        return proxyValue(
+            this.hoverRegistry.registerProvider({ documentSelector: selector }, async (textDocument, position) =>
+                toProviderResultObservable(providerFunction(textDocument, position))
             )
         )
     }

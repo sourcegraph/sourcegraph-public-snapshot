@@ -1,3 +1,4 @@
+import { ProxyValue, proxyValueSymbol } from 'comlink'
 import { Unsubscribable } from 'rxjs'
 import { ClientCommandsAPI } from '../../client/api/commands'
 import { ProviderMap } from './common'
@@ -13,7 +14,9 @@ interface CommandEntry {
 }
 
 /** @internal */
-export class ExtCommands implements ExtCommandsAPI, Unsubscribable {
+export class ExtCommands implements ExtCommandsAPI, Unsubscribable, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     private registrations = new ProviderMap<CommandEntry>(id => this.proxy.$unregister(id))
 
     constructor(private proxy: ClientCommandsAPI) {}

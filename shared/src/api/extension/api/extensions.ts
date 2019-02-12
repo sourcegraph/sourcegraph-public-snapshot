@@ -1,3 +1,4 @@
+import { ProxyValue, proxyValueSymbol } from 'comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'
@@ -12,7 +13,9 @@ export interface ExtExtensionsAPI {
 declare const self: any
 
 /** @internal */
-export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
+export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     /** Extensions' deactivate functions. */
     private extensionDeactivate = new Map<string, (() => void | Promise<void>)>()
 

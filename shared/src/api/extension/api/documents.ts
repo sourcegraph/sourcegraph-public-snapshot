@@ -1,3 +1,4 @@
+import { ProxyValue, proxyValueSymbol } from 'comlink'
 import { Observable, Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextDocumentItem } from '../../client/types/textDocument'
@@ -8,7 +9,9 @@ export interface ExtDocumentsAPI {
 }
 
 /** @internal */
-export class ExtDocuments implements ExtDocumentsAPI {
+export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     private documents = new Map<string, TextDocumentItem>()
 
     constructor(private sync: () => Promise<void>) {}

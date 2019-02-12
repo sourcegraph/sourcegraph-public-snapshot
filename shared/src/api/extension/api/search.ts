@@ -1,28 +1,17 @@
-import { Unsubscribable } from 'rxjs'
+import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { Subscription, Unsubscribable } from 'rxjs'
 import { QueryTransformer } from 'sourcegraph'
-import { SearchAPI } from '../../client/api/search'
-import { ProviderMap } from './common'
+import { ClientSearchAPI } from '../../client/api/search'
 
-export interface ExtSearchAPI {
-    $transformQuery: (id: number, query: string) => Promise<string>
-}
+export class ExtSearch implements ProxyValue {
+    public readonly [proxyValueSymbol] = true
 
-export class ExtSearch implements ExtSearchAPI, Unsubscribable {
-    private registrations = new ProviderMap<QueryTransformer>(id => this.proxy.$unregister(id))
-    constructor(private proxy: SearchAPI) {}
+    constructor(private proxy: ProxyResult<ClientSearchAPI>) {}
 
     public registerQueryTransformer(provider: QueryTransformer): Unsubscribable {
-        const { id, subscription } = this.registrations.add(provider)
-        this.proxy.$registerQueryTransformer(id)
+        const subscription = new Subscription()
+        // tslint:disable:no-floating-promises
+        this.proxy.$registerQueryTransformer(proxyValue(provider)).then(s => subscription.add(s))
         return subscription
-    }
-
-    public $transformQuery(id: number, query: string): Promise<string> {
-        const provider = this.registrations.get<QueryTransformer>(id)
-        return Promise.resolve(provider.transformQuery(query))
-    }
-
-    public unsubscribe(): void {
-        this.registrations.unsubscribe()
     }
 }

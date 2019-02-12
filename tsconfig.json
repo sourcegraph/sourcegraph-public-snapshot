@@ -12,6 +12,8 @@
     "noEmit": true,
     "skipLibCheck": true,
     "noErrorTruncation": true,
+    "strict": true,
+    "strictBindCallApply": true,
     "importHelpers": true,
     "plugins": [
       {

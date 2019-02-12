@@ -1,7 +1,10 @@
+import * as comlink from 'comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { createProxy, handleRequests } from '../common/proxy'
+import { ClientAPI } from '../client/api/api'
+import { createProxy } from '../common/proxy'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
+import { ExtensionHostAPI } from './api/api'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
 import { ExtContext } from './api/context'
@@ -116,45 +119,52 @@ function createExtensionAPI(
 ): { api: typeof sourcegraph; subscription: Subscription } {
     const subscriptions = new Subscription()
 
+    // EXTENSION HOST WORKER
+
+    /** Proxy to main thread */
+    const proxy = comlink.proxy<ClientAPI>(self)
+
     // For debugging/tests.
     const sync = () => connection.sendRequest<void>('ping')
     connection.onRequest('ping', () => 'pong')
 
     const context = new ExtContext(createProxy(connection, 'context'))
-    handleRequests(connection, 'context', context)
 
     const documents = new ExtDocuments(sync)
-    handleRequests(connection, 'documents', documents)
 
     const extensions = new ExtExtensions()
     subscriptions.add(extensions)
-    handleRequests(connection, 'extensions', extensions)
 
     const roots = new ExtRoots()
-    handleRequests(connection, 'roots', roots)
 
     const windows = new ExtWindows(createProxy(connection, 'windows'), createProxy(connection, 'codeEditor'), documents)
-    handleRequests(connection, 'windows', windows)
 
     const views = new ExtViews(createProxy(connection, 'views'))
     subscriptions.add(views)
-    handleRequests(connection, 'views', views)
 
     const configuration = new ExtConfiguration<any>(createProxy(connection, 'configuration'))
-    handleRequests(connection, 'configuration', configuration)
 
     const languageFeatures = new ExtLanguageFeatures(createProxy(connection, 'languageFeatures'), documents)
     subscriptions.add(languageFeatures)
-    handleRequests(connection, 'languageFeatures', languageFeatures)
 
-    const search = new ExtSearch(createProxy(connection, 'search'))
-    subscriptions.add(search)
-    handleRequests(connection, 'search', search)
+    const search = new ExtSearch(proxy.search)
 
     const commands = new ExtCommands(createProxy(connection, 'commands'))
     subscriptions.add(commands)
-    handleRequests(connection, 'commands', commands)
 
+    // Expose the extension host API to the client (main thread)
+    const extHostAPI: ExtensionHostAPI = {
+        commands,
+        configuration,
+        documents,
+        extensions,
+        languageFeatures,
+        roots,
+        windows,
+    }
+    comlink.expose(extHostAPI, self)
+
+    // Expose the extension API to extensions
     const api: typeof sourcegraph = {
         URI,
         Position,

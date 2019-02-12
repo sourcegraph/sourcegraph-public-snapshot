@@ -1,3 +1,4 @@
+import { ProxyValue, proxyValueSymbol } from 'comlink'
 import { BehaviorSubject, Observer, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
@@ -87,7 +88,9 @@ export interface ExtWindowsAPI {
 }
 
 /** @internal */
-export class ExtWindows implements ExtWindowsAPI {
+export class ExtWindows implements ExtWindowsAPI, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     private data: WindowData[] = []
 
     /** @internal */
