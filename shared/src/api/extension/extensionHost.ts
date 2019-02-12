@@ -187,8 +187,8 @@ function createExtensionAPI(
             get textDocuments(): sourcegraph.TextDocument[] {
                 return documents.getAll()
             },
-            onDidOpenTextDocument: documents.textDocumentAdds,
-            textDocumentAdds: documents.textDocumentAdds,
+            onDidOpenTextDocument: documents.openedTextDocuments,
+            openedTextDocuments: documents.openedTextDocuments,
             get roots(): ReadonlyArray<sourcegraph.WorkspaceRoot> {
                 return roots.getAll()
             },

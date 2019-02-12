@@ -725,14 +725,14 @@ declare module 'sourcegraph' {
         /**
          * An event that is fired when a new text document is opened.
          *
-         * @deprecated Renamed to {@link workspace.textDocumentAdds}.
+         * @deprecated Renamed to {@link workspace.openedTextDocuments}.
          */
         export const onDidOpenTextDocument: Subscribable<TextDocument>
 
         /**
          * An event that is fired when a new text document is added to the workspace.
          */
-        export const textDocumentAdds: Subscribable<TextDocument>
+        export const openedTextDocuments: Subscribable<TextDocument>
 
         /**
          * The root directories of the workspace, if any.

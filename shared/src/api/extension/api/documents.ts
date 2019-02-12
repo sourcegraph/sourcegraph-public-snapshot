@@ -51,7 +51,7 @@ export class ExtDocuments implements ExtDocumentsAPI {
         return Array.from(this.documents.values())
     }
 
-    public textDocumentAdds = new Subject<TextDocument>()
+    public openedTextDocuments = new Subject<TextDocument>()
 
     public $acceptDocumentData(docs: TextDocumentItem[] | null): void {
         if (!docs) {
@@ -62,7 +62,7 @@ export class ExtDocuments implements ExtDocumentsAPI {
             const isNew = !this.documents.has(doc.uri)
             this.documents.set(doc.uri, doc)
             if (isNew) {
-                this.textDocumentAdds.next(doc)
+                this.openedTextDocuments.next(doc)
             }
         }
     }
