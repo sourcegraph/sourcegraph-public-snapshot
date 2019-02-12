@@ -70,10 +70,18 @@ func main() {
 		log.Fatalf("failed to initalise db store: %v", err)
 	}
 
-	newSyncerEnabled := map[string]bool{}
-	for _, kind := range conf.NewRepoSyncerEnabledExternalServices() {
-		newSyncerEnabled[kind] = true
+	sources := []repos.Source{
+		repos.NewGithubSource(conf.GitHubConfigs),
 	}
+
+	syncer := repos.NewSyncer(10*time.Second, store, sources, func() time.Time {
+		// XXX(tsenart): It seems like the current db layer in the frontend API
+		// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
+		// and ensure it's the used timezone across the board.
+		return time.Now().UTC()
+	})
+
+	go func() { log.Fatal(syncer.Run(ctx)) }()
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{OtherReposSyncer: otherSyncer}
@@ -97,71 +105,43 @@ func main() {
 	// Repos purging thread
 	go repos.RunRepositoryPurgeWorker(ctx)
 
-	var sources []repos.Source
-	for _, kind := range []string{
-		"AWSCODECOMMIT",
-		"BITBUCKETSERVER",
-		"GITHUB",
-		"GITLAB",
-		"GITOLITE",
-		"PHABRICATOR",
-		"OTHER",
-	} {
-		if ok := newSyncerEnabled[kind]; ok {
-			switch kind {
-			case "GITHUB":
-				sources = append(sources, repos.NewGithubSource(conf.GitHubConfigs))
-			default:
-				log.Fatalf("repo.Source not implemented yet for external service of kind %q", kind)
+	// GitHub connections and repos syncing threads
+	// go repos.SyncGitHubConnections(ctx)
+	// go repos.RunGitHubRepositorySyncWorker(ctx)
+
+	// GitLab connections and repos syncing threads
+	go repos.SyncGitLabConnections(ctx)
+	go repos.RunGitLabRepositorySyncWorker(ctx)
+
+	// AWS CodeCommit connections and repos syncing threads
+	go repos.SyncAWSCodeCommitConnections(ctx)
+	go repos.RunAWSCodeCommitRepositorySyncWorker(ctx)
+
+	// Phabricator Repository syncing thread
+	go repos.RunPhabricatorRepositorySyncWorker(ctx)
+
+	// Gitolite syncing thread
+	go repos.RunGitoliteRepositorySyncWorker(ctx)
+
+	// Bitbucket connections and repos syncing threads
+	go repos.SyncBitbucketServerConnections(ctx)
+	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
+
+	// Start other repos syncer syncing thread
+	go func() { log.Fatal(otherSyncer.Run(ctx, repos.GetUpdateInterval())) }()
+
+	// Start other repos updates scheduler relay thread.
+	go func() {
+		for repo := range synced {
+			if conf.Get().DisableAutoGitUpdates {
+				continue
+			} else if conf.UpdateScheduler2Enabled() {
+				repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
+			} else {
+				repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
 			}
-			continue
 		}
-
-		switch kind {
-		case "AWSCODECOMMIT":
-			go repos.SyncAWSCodeCommitConnections(ctx)
-			go repos.RunAWSCodeCommitRepositorySyncWorker(ctx)
-		case "BITBUCKETSERVER":
-			go repos.SyncBitbucketServerConnections(ctx)
-			go repos.RunBitbucketServerRepositorySyncWorker(ctx)
-		case "GITHUB":
-			go repos.SyncGitHubConnections(ctx)
-			go repos.RunGitHubRepositorySyncWorker(ctx)
-		case "GITLAB":
-			go repos.SyncGitLabConnections(ctx)
-			go repos.RunGitLabRepositorySyncWorker(ctx)
-		case "GITOLITE":
-			go repos.RunGitoliteRepositorySyncWorker(ctx)
-		case "PHABRICATOR":
-			go repos.RunPhabricatorRepositorySyncWorker(ctx)
-		case "OTHER":
-			go func() { log.Fatal(otherSyncer.Run(ctx, repos.GetUpdateInterval())) }()
-
-			go func() {
-				for repo := range synced {
-					if conf.Get().DisableAutoGitUpdates {
-						continue
-					} else if conf.UpdateScheduler2Enabled() {
-						repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
-					} else {
-						repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
-					}
-				}
-			}()
-
-		default:
-			log.Fatalf("unknown external service kind %q", kind)
-		}
-	}
-
-	syncer := repos.NewSyncer(10*time.Second, store, sources, func() time.Time {
-		// XXX(tsenart): It seems like the current db layer in the frontend API
-		// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
-		// and ensure it's the used timezone across the board.
-		return time.Now().UTC()
-	})
-
-	go func() { log.Fatal(syncer.Run(ctx)) }()
+	}()
 
 	select {}
 }

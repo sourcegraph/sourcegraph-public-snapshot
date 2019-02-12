@@ -42,17 +42,6 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
-        },
-        "newRepoSyncerEnabledExternalServices": {
-          "description": "List of external service kinds for which the new repo syncer code is enabled.",
-          "type": "array",
-          "default": ["GITHUB"],
-          "items": {
-            "type": "string",
-            "enum": [
-              "GITHUB"
-            ]
-          }
         }
       }
     },
