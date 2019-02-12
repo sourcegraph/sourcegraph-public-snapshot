@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cleanup, fireEvent, getBySelectText, queryByTestId, render, wait } from 'react-testing-library'
+import { cleanup, fireEvent, getBySelectText, getByTestId, queryByTestId, render, wait } from 'react-testing-library'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
 
@@ -9,6 +9,8 @@ describe('QueryBuilder', () => {
     it('updating the "Repository" field fires the onFieldsQueryChange prop handler with the `repo:` filter', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
 
         const repoField = container.querySelector('#query-builder__repo')!
         fireEvent.change(repoField, { target: { value: 'sourcegraph/sourcegraph' } })
@@ -19,6 +21,8 @@ describe('QueryBuilder', () => {
     it('updating the "File" field fires the onFieldsQueryChange prop handler with the `file:` filter', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
 
         const fileField = container.querySelector('#query-builder__file')!
         fireEvent.change(fileField, { target: { value: 'web' } })
@@ -29,6 +33,8 @@ describe('QueryBuilder', () => {
     it('updating the "Patterns" field fires the onFieldsQueryChange prop handler with the patterns left untransformed', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
 
         const patternsField = container.querySelector('#query-builder__patterns')!
         fireEvent.change(patternsField, { target: { value: '(open|close) file' } })
@@ -39,6 +45,8 @@ describe('QueryBuilder', () => {
     it('updating the "Exact match" field fires the onFieldsQueryChange prop handler with the term wrapped in double quotes', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
 
         const exactMatchField = container.querySelector('#query-builder__quoted-term')!
         fireEvent.change(exactMatchField, { target: { value: 'foo bar baz' } })
@@ -49,6 +57,8 @@ describe('QueryBuilder', () => {
     it('the "Author", "Before", "After", and "Message" fields do not exist if the search type is set to text search', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
 
         expect(queryByTestId(container, 'test-author')).toBeNull()
         expect(queryByTestId(container, 'test-after')).toBeNull()
@@ -59,6 +69,9 @@ describe('QueryBuilder', () => {
     it('the "Author", "Before", "After", and "Message" fields exist if the search type is set to diff search', async () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+
         const typeField = getBySelectText(container, 'Text (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
@@ -75,6 +88,9 @@ describe('QueryBuilder', () => {
     it('the "Message" field does not exist if type is commit', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+
         const typeField = getBySelectText(container, 'Text (default)')!
         fireEvent.change(typeField, { target: { value: 'commit' } })
 
@@ -84,6 +100,9 @@ describe('QueryBuilder', () => {
     it('the "Author", "Before", and "After" fields exist if type is commit', async () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+
         const typeField = getBySelectText(container, 'Text (default)')!
         fireEvent.change(typeField, { target: { value: 'commit' } })
 
@@ -99,6 +118,9 @@ describe('QueryBuilder', () => {
     it('updating the "Author" field fires the onFieldsQueryChange prop handler with the "author:" filter', async () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+
         const typeField = getBySelectText(container, 'Text (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
@@ -112,6 +134,9 @@ describe('QueryBuilder', () => {
     it('updating the "After" field fires the onFieldsQueryChange prop handler with the "after:" filter', async () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+
         const typeField = getBySelectText(container, 'Text (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
@@ -126,6 +151,9 @@ describe('QueryBuilder', () => {
     it('updating the "Before" field fires the onFieldsQueryChange prop handler with the "before:" filter', async () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+
         const typeField = getBySelectText(container, 'Text (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
@@ -140,6 +168,9 @@ describe('QueryBuilder', () => {
     it('updating the "Message" field fires the onFieldsQueryChange prop handler with the "message:" filter', async () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+
         const typeField = getBySelectText(container, 'Text (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 

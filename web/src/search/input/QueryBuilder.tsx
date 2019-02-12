@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { Link } from '../../../../shared/src/components/Link'
 import { Select } from '../../components/Select'
 import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 
@@ -31,10 +30,9 @@ interface QueryFields {
 interface State {
     showQueryBuilder: boolean
     /**
-     * The query constructed from the field inputs (merged with the
-     * query from the primary search input).
+     * The query constructed from the values in the input fields.
      */
-    fieldsQuery: string
+    builderQuery: string
     typeOfSearch: 'text' | 'diff' | 'commit' | 'symbol'
     fields: QueryFields
 }
@@ -47,7 +45,7 @@ export class QueryBuilder extends React.Component<Props, State> {
         super(props)
         this.state = {
             showQueryBuilder: false,
-            fieldsQuery: '',
+            builderQuery: '',
             typeOfSearch: 'text',
             fields: {
                 type: '',
@@ -68,16 +66,17 @@ export class QueryBuilder extends React.Component<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
-        if (prevState.fieldsQuery !== this.state.fieldsQuery) {
-            this.props.onFieldsQueryChange(this.state.fieldsQuery)
+        if (prevState.builderQuery !== this.state.builderQuery) {
+            this.props.onFieldsQueryChange(this.state.builderQuery)
         }
     }
 
     public render(): JSX.Element | null {
+        const docsURLPrefix = this.props.isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
         return (
             <>
                 <div className="query-builder__toggle">
-                    <a href="#" onClick={this.toggleShowQueryBuilder}>
+                    <a href="#" onClick={this.toggleShowQueryBuilder} data-testid="test-query-builder-toggle">
                         {!!this.state.showQueryBuilder ? 'Hide' : 'Show'} search options
                     </a>
                 </div>
@@ -229,7 +228,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                             </div>
                         </div>
                         <div className="query-builder__docs-link">
-                            <Link to="help/user/search/queries">View all search options in docs</Link>
+                            <a href={`${docsURLPrefix}/user/search/queries`}>View all search options in docs</a>
                         </div>
                     </div>
                 )}
@@ -278,7 +277,7 @@ export class QueryBuilder extends React.Component<Props, State> {
                 }
             }
 
-            return { fields: newFields, fieldsQuery: fieldsQueryParts.join(' ') }
+            return { fields: newFields, builderQuery: fieldsQueryParts.join(' ') }
         })
     }
 }

@@ -10,7 +10,7 @@ interface Props {
     /** An description of the input field that is displayed below the field. */
     description: string
     /**
-     * An appropriate identifier for this field to be used as a suffix for CSS classes and testing IDs.
+     * An appropriate identifier for this field, to be used as a suffix for CSS classes and testing IDs.
      * Must be a single or hyphenated word, and unique amongst the other fields in the query builder.
      */
     shortName: string
