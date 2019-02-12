@@ -140,8 +140,8 @@ describe('e2e test suite', function(this: any): void {
     }
 
     const assertAllHighlightedTokens = async (label: string): Promise<void> => {
-        const highlightedTokens: string[] = await page.evaluate(() =>
-            Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent)
+        const highlightedTokens = await page.evaluate(() =>
+            Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent || '')
         )
         expect(highlightedTokens.every(txt => txt === label)).toBeTruthy()
     }
@@ -222,7 +222,7 @@ describe('e2e test suite', function(this: any): void {
             await page.waitForSelector(selector, { visible: true })
             return await page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's page.evaluate
-                Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent)
+                Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent || '')
             )
         }
         const assertHoverContentContains = async (val: string, count?: number) => {
@@ -669,8 +669,8 @@ describe('e2e test suite', function(this: any): void {
             )
             await page.waitForSelector('.search-results__stats')
             await retry(async () => {
-                const label: string = await page.evaluate(
-                    () => document.querySelector('.search-results__stats')!.textContent
+                const label = await page.evaluate(
+                    () => document.querySelector('.search-results__stats')!.textContent || ''
                 )
                 expect(label.includes('results')).toEqual(true)
             })
@@ -698,8 +698,8 @@ describe('e2e test suite', function(this: any): void {
 
             await page.waitForSelector('.e2e-search-results-stats')
             await retry(async () => {
-                const label: string = await page.evaluate(
-                    () => document.querySelector('.e2e-search-results-stats')!.textContent
+                const label = await page.evaluate(
+                    () => document.querySelector('.e2e-search-results-stats')!.textContent || ''
                 )
                 const match = /(\d+) results?/.exec(label)
                 if (!match) {
