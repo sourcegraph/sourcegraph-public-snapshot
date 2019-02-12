@@ -438,8 +438,10 @@ Referenced by:
  enabled                 | boolean                  | not null default true
  archived                | boolean                  | not null default false
  uri                     | citext                   | not null
+ deleted_at              | timestamp with time zone | 
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
+    "repo_external_service_unique" UNIQUE CONSTRAINT, btree (external_id, external_service_type, external_service_id)
     "repo_name_unique" UNIQUE, btree (name)
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
 Check constraints:

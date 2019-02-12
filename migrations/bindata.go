@@ -192,6 +192,10 @@
 // 1528395563_.up.sql (181B)
 // 1528395564_.down.sql (0)
 // 1528395564_.up.sql (0)
+// 1528395566_add_deleted_at_column_to_repo_table.down.sql (41B)
+// 1528395566_add_deleted_at_column_to_repo_table.up.sql (65B)
+// 1528395567_add_repo_external_service_unique_constraint.down.sql (92B)
+// 1528395567_add_repo_external_service_unique_constraint.up.sql (127B)
 
 package migrations
 
@@ -4100,6 +4104,86 @@ func _1528395564_UpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395566_add_deleted_at_column_to_repo_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x49\xcd\x49\x2d\x49\x4d\x89\x4f\x2c\xb1\xe6\x02\x04\x00\x00\xff\xff\x19\x42\xe2\x20\x29\x00\x00\x00")
+
+func _1528395566_add_deleted_at_column_to_repo_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395566_add_deleted_at_column_to_repo_tableDownSql,
+		"1528395566_add_deleted_at_column_to_repo_table.down.sql",
+	)
+}
+
+func _1528395566_add_deleted_at_column_to_repo_tableDownSql() (*asset, error) {
+	bytes, err := _1528395566_add_deleted_at_column_to_repo_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395566_add_deleted_at_column_to_repo_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x60, 0xb1, 0x1b, 0xb3, 0xc7, 0xaf, 0xca, 0xde, 0xe3, 0x16, 0x14, 0x85, 0xae, 0xdf, 0x4d, 0x7c, 0x80, 0x50, 0x1c, 0xf6, 0xb5, 0xca, 0x67, 0x8b, 0x14, 0xd6, 0xd0, 0x30, 0xb4, 0xc1, 0x8e, 0x68}}
+	return a, nil
+}
+
+var __1528395566_add_deleted_at_column_to_repo_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x49\xcd\x49\x2d\x49\x4d\x89\x4f\x2c\x51\x08\xf1\xf4\x75\x0d\x0e\x71\xf4\x0d\x50\x08\xf7\x0c\xf1\x00\x73\x15\xa2\xfc\xfd\x5c\xad\xb9\x00\x01\x00\x00\xff\xff\x97\xe2\xb8\x1e\x41\x00\x00\x00")
+
+func _1528395566_add_deleted_at_column_to_repo_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395566_add_deleted_at_column_to_repo_tableUpSql,
+		"1528395566_add_deleted_at_column_to_repo_table.up.sql",
+	)
+}
+
+func _1528395566_add_deleted_at_column_to_repo_tableUpSql() (*asset, error) {
+	bytes, err := _1528395566_add_deleted_at_column_to_repo_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395566_add_deleted_at_column_to_repo_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x27, 0xab, 0x8e, 0x8f, 0xe5, 0x87, 0x13, 0xc7, 0x7b, 0xf4, 0x61, 0x9b, 0x6d, 0x20, 0x55, 0xf, 0x68, 0x3a, 0xfd, 0x2a, 0x20, 0x3e, 0xf7, 0x6c, 0x62, 0xd9, 0xf0, 0x62, 0xc2, 0x70, 0xd4, 0x44}}
+	return a, nil
+}
+
+var __1528395567_add_repo_external_service_unique_constraintDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x51\xd0\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\xcf\x4c\xd1\x51\x80\x73\x8a\x53\x8b\xca\x32\x93\x53\xe3\x4b\x2a\x0b\x52\xb1\x08\x67\xa6\x68\x5a\x73\x01\x02\x00\x00\xff\xff\x91\x88\x2e\xd5\x5c\x00\x00\x00")
+
+func _1528395567_add_repo_external_service_unique_constraintDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395567_add_repo_external_service_unique_constraintDownSql,
+		"1528395567_add_repo_external_service_unique_constraint.down.sql",
+	)
+}
+
+func _1528395567_add_repo_external_service_unique_constraintDownSql() (*asset, error) {
+	bytes, err := _1528395567_add_repo_external_service_unique_constraintDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395567_add_repo_external_service_unique_constraint.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf3, 0xbc, 0xce, 0x70, 0x17, 0x11, 0x3d, 0xcd, 0x64, 0x66, 0x62, 0x1b, 0xb4, 0x46, 0xd9, 0xd1, 0x44, 0x25, 0x8d, 0xeb, 0x7f, 0x50, 0x5c, 0xa, 0x3e, 0xe8, 0x2b, 0x6c, 0x1, 0x28, 0x3a, 0xf}}
+	return a, nil
+}
+
+var __1528395567_add_repo_external_service_unique_constraintUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x74\x71\x51\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x8b\xc5\xa7\x56\x94\xa4\x16\xe5\x25\xe6\xc4\x17\xa7\x16\x95\x65\x26\xa7\xc6\x97\xe6\x65\x16\x96\xa6\x2a\x84\xfa\x79\x06\x86\xba\x2a\x68\xc0\xe5\x33\x53\x74\x14\x30\x14\x97\x54\x16\xa4\x62\x11\xce\x4c\xd1\xb4\xe6\x02\x04\x00\x00\xff\xff\x85\x43\x89\x77\x7f\x00\x00\x00")
+
+func _1528395567_add_repo_external_service_unique_constraintUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395567_add_repo_external_service_unique_constraintUpSql,
+		"1528395567_add_repo_external_service_unique_constraint.up.sql",
+	)
+}
+
+func _1528395567_add_repo_external_service_unique_constraintUpSql() (*asset, error) {
+	bytes, err := _1528395567_add_repo_external_service_unique_constraintUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395567_add_repo_external_service_unique_constraint.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe5, 0x65, 0x7a, 0x85, 0x12, 0xf7, 0xd, 0xdf, 0xd7, 0xb7, 0x7e, 0xb5, 0x6f, 0x4d, 0x18, 0x45, 0x1c, 0xd2, 0x12, 0x77, 0xc4, 0x6c, 0x88, 0x96, 0x27, 0x43, 0xc9, 0x58, 0x2e, 0xc8, 0x8, 0x1f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -4574,6 +4658,14 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395564_.down.sql": _1528395564_DownSql,
 
 	"1528395564_.up.sql": _1528395564_UpSql,
+
+	"1528395566_add_deleted_at_column_to_repo_table.down.sql": _1528395566_add_deleted_at_column_to_repo_tableDownSql,
+
+	"1528395566_add_deleted_at_column_to_repo_table.up.sql": _1528395566_add_deleted_at_column_to_repo_tableUpSql,
+
+	"1528395567_add_repo_external_service_unique_constraint.down.sql": _1528395567_add_repo_external_service_unique_constraintDownSql,
+
+	"1528395567_add_repo_external_service_unique_constraint.up.sql": _1528395567_add_repo_external_service_unique_constraintUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -4617,198 +4709,202 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"1503574972_extensions.down.sql":                              {_1503574972_extensionsDownSql, map[string]*bintree{}},
-	"1503574972_extensions.up.sql":                                {_1503574972_extensionsUpSql, map[string]*bintree{}},
-	"1503575261_repos.down.sql":                                   {_1503575261_reposDownSql, map[string]*bintree{}},
-	"1503575261_repos.up.sql":                                     {_1503575261_reposUpSql, map[string]*bintree{}},
-	"1503575588_global_deps.down.sql":                             {_1503575588_global_depsDownSql, map[string]*bintree{}},
-	"1503575588_global_deps.up.sql":                               {_1503575588_global_depsUpSql, map[string]*bintree{}},
-	"1504637681_orgs.down.sql":                                    {_1504637681_orgsDownSql, map[string]*bintree{}},
-	"1504637681_orgs.up.sql":                                      {_1504637681_orgsUpSql, map[string]*bintree{}},
-	"1504821553_add_org_constraints.down.sql":                     {_1504821553_add_org_constraintsDownSql, map[string]*bintree{}},
-	"1504821553_add_org_constraints.up.sql":                       {_1504821553_add_org_constraintsUpSql, map[string]*bintree{}},
-	"1505517457_rename_org_members_columns.down.sql":              {_1505517457_rename_org_members_columnsDownSql, map[string]*bintree{}},
-	"1505517457_rename_org_members_columns.up.sql":                {_1505517457_rename_org_members_columnsUpSql, map[string]*bintree{}},
-	"1505882864_update_org_members.down.sql":                      {_1505882864_update_org_membersDownSql, map[string]*bintree{}},
-	"1505882864_update_org_members.up.sql":                        {_1505882864_update_org_membersUpSql, map[string]*bintree{}},
-	"1506466653_add_users.down.sql":                               {_1506466653_add_usersDownSql, map[string]*bintree{}},
-	"1506466653_add_users.up.sql":                                 {_1506466653_add_usersUpSql, map[string]*bintree{}},
-	"1506646657_alter_orgs_citext.down.sql":                       {_1506646657_alter_orgs_citextDownSql, map[string]*bintree{}},
-	"1506646657_alter_orgs_citext.up.sql":                         {_1506646657_alter_orgs_citextUpSql, map[string]*bintree{}},
-	"1506710237_user_org_constraint_updates.down.sql":             {_1506710237_user_org_constraint_updatesDownSql, map[string]*bintree{}},
-	"1506710237_user_org_constraint_updates.up.sql":               {_1506710237_user_org_constraint_updatesUpSql, map[string]*bintree{}},
-	"1506989402_add_tags.down.sql":                                {_1506989402_add_tagsDownSql, map[string]*bintree{}},
-	"1506989402_add_tags.up.sql":                                  {_1506989402_add_tagsUpSql, map[string]*bintree{}},
-	"1507422179_remove_org_members_columns.down.sql":              {_1507422179_remove_org_members_columnsDownSql, map[string]*bintree{}},
-	"1507422179_remove_org_members_columns.up.sql":                {_1507422179_remove_org_members_columnsUpSql, map[string]*bintree{}},
-	"1507656459_add_org_settings.down.sql":                        {_1507656459_add_org_settingsDownSql, map[string]*bintree{}},
-	"1507656459_add_org_settings.up.sql":                          {_1507656459_add_org_settingsUpSql, map[string]*bintree{}},
-	"1507755085_add_editor_beta_tags.down.sql":                    {_1507755085_add_editor_beta_tagsDownSql, map[string]*bintree{}},
-	"1507755085_add_editor_beta_tags.up.sql":                      {_1507755085_add_editor_beta_tagsUpSql, map[string]*bintree{}},
-	"1507828928_add-slack-webhook-url.down.sql":                   {_1507828928_addSlackWebhookUrlDownSql, map[string]*bintree{}},
-	"1507828928_add-slack-webhook-url.up.sql":                     {_1507828928_addSlackWebhookUrlUpSql, map[string]*bintree{}},
-	"1508361685_add_phabricator_repos.down.sql":                   {_1508361685_add_phabricator_reposDownSql, map[string]*bintree{}},
-	"1508361685_add_phabricator_repos.up.sql":                     {_1508361685_add_phabricator_reposUpSql, map[string]*bintree{}},
-	"1508795218_update_constraints.down.sql":                      {_1508795218_update_constraintsDownSql, map[string]*bintree{}},
-	"1508795218_update_constraints.up.sql":                        {_1508795218_update_constraintsUpSql, map[string]*bintree{}},
-	"1509599098_add-users-provider-column.down.sql":               {_1509599098_addUsersProviderColumnDownSql, map[string]*bintree{}},
-	"1509599098_add-users-provider-column.up.sql":                 {_1509599098_addUsersProviderColumnUpSql, map[string]*bintree{}},
-	"1509645961_rename-users-auth0_id-to-uid.down.sql":            {_1509645961_renameUsersAuth0_idToUidDownSql, map[string]*bintree{}},
-	"1509645961_rename-users-auth0_id-to-uid.up.sql":              {_1509645961_renameUsersAuth0_idToUidUpSql, map[string]*bintree{}},
-	"1510709195_add_server_user_events_table.down.sql":            {_1510709195_add_server_user_events_tableDownSql, map[string]*bintree{}},
-	"1510709195_add_server_user_events_table.up.sql":              {_1510709195_add_server_user_events_tableUpSql, map[string]*bintree{}},
-	"1511004249_generalize_org_settings.down.sql":                 {_1511004249_generalize_org_settingsDownSql, map[string]*bintree{}},
-	"1511004249_generalize_org_settings.up.sql":                   {_1511004249_generalize_org_settingsUpSql, map[string]*bintree{}},
-	"1511011666_add_user_settings.down.sql":                       {_1511011666_add_user_settingsDownSql, map[string]*bintree{}},
-	"1511011666_add_user_settings.up.sql":                         {_1511011666_add_user_settingsUpSql, map[string]*bintree{}},
-	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.down.sql": {_1511365156_pkgs_and_global_dep_to_repo_foreign_keyDownSql, map[string]*bintree{}},
-	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql":   {_1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql, map[string]*bintree{}},
-	"1511852763_user_invite_quota.down.sql":                       {_1511852763_user_invite_quotaDownSql, map[string]*bintree{}},
-	"1511852763_user_invite_quota.up.sql":                         {_1511852763_user_invite_quotaUpSql, map[string]*bintree{}},
-	"1512437090_update_phabricator_repos.down.sql":                {_1512437090_update_phabricator_reposDownSql, map[string]*bintree{}},
-	"1512437090_update_phabricator_repos.up.sql":                  {_1512437090_update_phabricator_reposUpSql, map[string]*bintree{}},
-	"1512998571_repo_nullable.down.sql":                           {_1512998571_repo_nullableDownSql, map[string]*bintree{}},
-	"1512998571_repo_nullable.up.sql":                             {_1512998571_repo_nullableUpSql, map[string]*bintree{}},
-	"1513000124_rm_repos_cols.down.sql":                           {_1513000124_rm_repos_colsDownSql, map[string]*bintree{}},
-	"1513000124_rm_repos_cols.up.sql":                             {_1513000124_rm_repos_colsUpSql, map[string]*bintree{}},
-	"1513188842_add_app_config_table.down.sql":                    {_1513188842_add_app_config_tableDownSql, map[string]*bintree{}},
-	"1513188842_add_app_config_table.up.sql":                      {_1513188842_add_app_config_tableUpSql, map[string]*bintree{}},
-	"1513578663_user-passwords.down.sql":                          {_1513578663_userPasswordsDownSql, map[string]*bintree{}},
-	"1513578663_user-passwords.up.sql":                            {_1513578663_userPasswordsUpSql, map[string]*bintree{}},
-	"1513800341_update_username_orgname_regex.down.sql":           {_1513800341_update_username_orgname_regexDownSql, map[string]*bintree{}},
-	"1513800341_update_username_orgname_regex.up.sql":             {_1513800341_update_username_orgname_regexUpSql, map[string]*bintree{}},
-	"1514312401_add_site_admin_column_to_users.down.sql":          {_1514312401_add_site_admin_column_to_usersDownSql, map[string]*bintree{}},
-	"1514312401_add_site_admin_column_to_users.up.sql":            {_1514312401_add_site_admin_column_to_usersUpSql, map[string]*bintree{}},
-	"1514534085_add_orgs_deleted_at.down.sql":                     {_1514534085_add_orgs_deleted_atDownSql, map[string]*bintree{}},
-	"1514534085_add_orgs_deleted_at.up.sql":                       {_1514534085_add_orgs_deleted_atUpSql, map[string]*bintree{}},
-	"1514536731_add_org_members_user_fkey.down.sql":               {_1514536731_add_org_members_user_fkeyDownSql, map[string]*bintree{}},
-	"1514536731_add_org_members_user_fkey.up.sql":                 {_1514536731_add_org_members_user_fkeyUpSql, map[string]*bintree{}},
-	"1514691735_rename_deployment_configuration.down.sql":         {_1514691735_rename_deployment_configurationDownSql, map[string]*bintree{}},
-	"1514691735_rename_deployment_configuration.up.sql":           {_1514691735_rename_deployment_configurationUpSql, map[string]*bintree{}},
-	"1514693059_user_emails_table.down.sql":                       {_1514693059_user_emails_tableDownSql, map[string]*bintree{}},
-	"1514693059_user_emails_table.up.sql":                         {_1514693059_user_emails_tableUpSql, map[string]*bintree{}},
-	"1514702776_add_settings_user_fkey.down.sql":                  {_1514702776_add_settings_user_fkeyDownSql, map[string]*bintree{}},
-	"1514702776_add_settings_user_fkey.up.sql":                    {_1514702776_add_settings_user_fkeyUpSql, map[string]*bintree{}},
-	"1514713044_rename_users_auth_id_to_external_id.down.sql":     {_1514713044_rename_users_auth_id_to_external_idDownSql, map[string]*bintree{}},
-	"1514713044_rename_users_auth_id_to_external_id.up.sql":       {_1514713044_rename_users_auth_id_to_external_idUpSql, map[string]*bintree{}},
-	"1514714572_external_provider.down.sql":                       {_1514714572_external_providerDownSql, map[string]*bintree{}},
-	"1514714572_external_provider.up.sql":                         {_1514714572_external_providerUpSql, map[string]*bintree{}},
-	"1514718560_external_provider_and_id.down.sql":                {_1514718560_external_provider_and_idDownSql, map[string]*bintree{}},
-	"1514718560_external_provider_and_id.up.sql":                  {_1514718560_external_provider_and_idUpSql, map[string]*bintree{}},
-	"1514876826_site_id.down.sql":                                 {_1514876826_site_idDownSql, map[string]*bintree{}},
-	"1514876826_site_id.up.sql":                                   {_1514876826_site_idUpSql, map[string]*bintree{}},
-	"1514937919_remove_user_activity_table.down.sql":              {_1514937919_remove_user_activity_tableDownSql, map[string]*bintree{}},
-	"1514937919_remove_user_activity_table.up.sql":                {_1514937919_remove_user_activity_tableUpSql, map[string]*bintree{}},
-	"1515125883_repo_blocked_to_enabled.down.sql":                 {_1515125883_repo_blocked_to_enabledDownSql, map[string]*bintree{}},
-	"1515125883_repo_blocked_to_enabled.up.sql":                   {_1515125883_repo_blocked_to_enabledUpSql, map[string]*bintree{}},
-	"1515651962_drop_has_subject_constraint.down.sql":             {_1515651962_drop_has_subject_constraintDownSql, map[string]*bintree{}},
-	"1515651962_drop_has_subject_constraint.up.sql":               {_1515651962_drop_has_subject_constraintUpSql, map[string]*bintree{}},
-	"1516491388_remove_repo_private.down.sql":                     {_1516491388_remove_repo_privateDownSql, map[string]*bintree{}},
-	"1516491388_remove_repo_private.up.sql":                       {_1516491388_remove_repo_privateUpSql, map[string]*bintree{}},
-	"1516608575_repo_cleanup.down.sql":                            {_1516608575_repo_cleanupDownSql, map[string]*bintree{}},
-	"1516608575_repo_cleanup.up.sql":                              {_1516608575_repo_cleanupUpSql, map[string]*bintree{}},
-	"1516834731_add_saved_queries.down.sql":                       {_1516834731_add_saved_queriesDownSql, map[string]*bintree{}},
-	"1516834731_add_saved_queries.up.sql":                         {_1516834731_add_saved_queriesUpSql, map[string]*bintree{}},
-	"1517129075_repo_external.down.sql":                           {_1517129075_repo_externalDownSql, map[string]*bintree{}},
-	"1517129075_repo_external.up.sql":                             {_1517129075_repo_externalUpSql, map[string]*bintree{}},
-	"1518102181_cert_cache.down.sql":                              {_1518102181_cert_cacheDownSql, map[string]*bintree{}},
-	"1518102181_cert_cache.up.sql":                                {_1518102181_cert_cacheUpSql, map[string]*bintree{}},
-	"1518581786_remove_site_config_telemetry.down.sql":            {_1518581786_remove_site_config_telemetryDownSql, map[string]*bintree{}},
-	"1518581786_remove_site_config_telemetry.up.sql":              {_1518581786_remove_site_config_telemetryUpSql, map[string]*bintree{}},
-	"1518581860_add_site_config_initialized.down.sql":             {_1518581860_add_site_config_initializedDownSql, map[string]*bintree{}},
-	"1518581860_add_site_config_initialized.up.sql":               {_1518581860_add_site_config_initializedUpSql, map[string]*bintree{}},
-	"1519507899_drop_global_dep_private.down.sql":                 {_1519507899_drop_global_dep_privateDownSql, map[string]*bintree{}},
-	"1519507899_drop_global_dep_private.up.sql":                   {_1519507899_drop_global_dep_privateUpSql, map[string]*bintree{}},
-	"1520588597_user_emails_unique_verified_only.down.sql":        {_1520588597_user_emails_unique_verified_onlyDownSql, map[string]*bintree{}},
-	"1520588597_user_emails_unique_verified_only.up.sql":          {_1520588597_user_emails_unique_verified_onlyUpSql, map[string]*bintree{}},
-	"1520708880_users_display_name_nullable.down.sql":             {_1520708880_users_display_name_nullableDownSql, map[string]*bintree{}},
-	"1520708880_users_display_name_nullable.up.sql":               {_1520708880_users_display_name_nullableUpSql, map[string]*bintree{}},
-	"1522555179_create_access_tokens_table.down.sql":              {_1522555179_create_access_tokens_tableDownSql, map[string]*bintree{}},
-	"1522555179_create_access_tokens_table.up.sql":                {_1522555179_create_access_tokens_tableUpSql, map[string]*bintree{}},
-	"1522961518_create_survey_responses_table.down.sql":           {_1522961518_create_survey_responses_tableDownSql, map[string]*bintree{}},
-	"1522961518_create_survey_responses_table.up.sql":             {_1522961518_create_survey_responses_tableUpSql, map[string]*bintree{}},
-	"1524535307_remove_survey_responses_updated_at.down.sql":      {_1524535307_remove_survey_responses_updated_atDownSql, map[string]*bintree{}},
-	"1524535307_remove_survey_responses_updated_at.up.sql":        {_1524535307_remove_survey_responses_updated_atUpSql, map[string]*bintree{}},
-	"1524724144_add_access_tokens_fields.down.sql":                {_1524724144_add_access_tokens_fieldsDownSql, map[string]*bintree{}},
-	"1524724144_add_access_tokens_fields.up.sql":                  {_1524724144_add_access_tokens_fieldsUpSql, map[string]*bintree{}},
-	"1524942857_trim_site_config.down.sql":                        {_1524942857_trim_site_configDownSql, map[string]*bintree{}},
-	"1524942857_trim_site_config.up.sql":                          {_1524942857_trim_site_configUpSql, map[string]*bintree{}},
-	"1524949295_simplify_initialization.down.sql":                 {_1524949295_simplify_initializationDownSql, map[string]*bintree{}},
-	"1524949295_simplify_initialization.up.sql":                   {_1524949295_simplify_initializationUpSql, map[string]*bintree{}},
-	"1525150355_add_access_tokens_scopes.down.sql":                {_1525150355_add_access_tokens_scopesDownSql, map[string]*bintree{}},
-	"1525150355_add_access_tokens_scopes.up.sql":                  {_1525150355_add_access_tokens_scopesUpSql, map[string]*bintree{}},
-	"1525961108_user_unique_among_non-deleted.down.sql":           {_1525961108_user_unique_among_nonDeletedDownSql, map[string]*bintree{}},
-	"1525961108_user_unique_among_non-deleted.up.sql":             {_1525961108_user_unique_among_nonDeletedUpSql, map[string]*bintree{}},
-	"1526364839_user_multiple_external_accounts.down.sql":         {_1526364839_user_multiple_external_accountsDownSql, map[string]*bintree{}},
-	"1526364839_user_multiple_external_accounts.up.sql":           {_1526364839_user_multiple_external_accountsUpSql, map[string]*bintree{}},
-	"1526804768_add_external_account_client.down.sql":             {_1526804768_add_external_account_clientDownSql, map[string]*bintree{}},
-	"1526804768_add_external_account_client.up.sql":               {_1526804768_add_external_account_clientUpSql, map[string]*bintree{}},
-	"1527691234_reuse_org_name.down.sql":                          {_1527691234_reuse_org_nameDownSql, map[string]*bintree{}},
-	"1527691234_reuse_org_name.up.sql":                            {_1527691234_reuse_org_nameUpSql, map[string]*bintree{}},
-	"1528179233_drop_code_comments_tables.down.sql":               {_1528179233_drop_code_comments_tablesDownSql, map[string]*bintree{}},
-	"1528179233_drop_code_comments_tables.up.sql":                 {_1528179233_drop_code_comments_tablesUpSql, map[string]*bintree{}},
-	"1528277031_create_org_invitations_table.down.sql":            {_1528277031_create_org_invitations_tableDownSql, map[string]*bintree{}},
-	"1528277031_create_org_invitations_table.up.sql":              {_1528277031_create_org_invitations_tableUpSql, map[string]*bintree{}},
-	"1528395534_.down.sql":                                        {_1528395534_DownSql, map[string]*bintree{}},
-	"1528395534_.up.sql":                                          {_1528395534_UpSql, map[string]*bintree{}},
-	"1528395535_.down.sql":                                        {_1528395535_DownSql, map[string]*bintree{}},
-	"1528395535_.up.sql":                                          {_1528395535_UpSql, map[string]*bintree{}},
-	"1528395536_.down.sql":                                        {_1528395536_DownSql, map[string]*bintree{}},
-	"1528395536_.up.sql":                                          {_1528395536_UpSql, map[string]*bintree{}},
-	"1528395537_.down.sql":                                        {_1528395537_DownSql, map[string]*bintree{}},
-	"1528395537_.up.sql":                                          {_1528395537_UpSql, map[string]*bintree{}},
-	"1528395538_.down.sql":                                        {_1528395538_DownSql, map[string]*bintree{}},
-	"1528395538_.up.sql":                                          {_1528395538_UpSql, map[string]*bintree{}},
-	"1528395539_.down.sql":                                        {_1528395539_DownSql, map[string]*bintree{}},
-	"1528395539_.up.sql":                                          {_1528395539_UpSql, map[string]*bintree{}},
-	"1528395540_.down.sql":                                        {_1528395540_DownSql, map[string]*bintree{}},
-	"1528395540_.up.sql":                                          {_1528395540_UpSql, map[string]*bintree{}},
-	"1528395541_.down.sql":                                        {_1528395541_DownSql, map[string]*bintree{}},
-	"1528395541_.up.sql":                                          {_1528395541_UpSql, map[string]*bintree{}},
-	"1528395542_.down.sql":                                        {_1528395542_DownSql, map[string]*bintree{}},
-	"1528395542_.up.sql":                                          {_1528395542_UpSql, map[string]*bintree{}},
-	"1528395544_.down.sql":                                        {_1528395544_DownSql, map[string]*bintree{}},
-	"1528395544_.up.sql":                                          {_1528395544_UpSql, map[string]*bintree{}},
-	"1528395545_.down.sql":                                        {_1528395545_DownSql, map[string]*bintree{}},
-	"1528395545_.up.sql":                                          {_1528395545_UpSql, map[string]*bintree{}},
-	"1528395546_.down.sql":                                        {_1528395546_DownSql, map[string]*bintree{}},
-	"1528395546_.up.sql":                                          {_1528395546_UpSql, map[string]*bintree{}},
-	"1528395547_.down.sql":                                        {_1528395547_DownSql, map[string]*bintree{}},
-	"1528395547_.up.sql":                                          {_1528395547_UpSql, map[string]*bintree{}},
-	"1528395548_.down.sql":                                        {_1528395548_DownSql, map[string]*bintree{}},
-	"1528395548_.up.sql":                                          {_1528395548_UpSql, map[string]*bintree{}},
-	"1528395549_.down.sql":                                        {_1528395549_DownSql, map[string]*bintree{}},
-	"1528395549_.up.sql":                                          {_1528395549_UpSql, map[string]*bintree{}},
-	"1528395550_.down.sql":                                        {_1528395550_DownSql, map[string]*bintree{}},
-	"1528395550_.up.sql":                                          {_1528395550_UpSql, map[string]*bintree{}},
-	"1528395551_.down.sql":                                        {_1528395551_DownSql, map[string]*bintree{}},
-	"1528395551_.up.sql":                                          {_1528395551_UpSql, map[string]*bintree{}},
-	"1528395552_.down.sql":                                        {_1528395552_DownSql, map[string]*bintree{}},
-	"1528395552_.up.sql":                                          {_1528395552_UpSql, map[string]*bintree{}},
-	"1528395553_.down.sql":                                        {_1528395553_DownSql, map[string]*bintree{}},
-	"1528395553_.up.sql":                                          {_1528395553_UpSql, map[string]*bintree{}},
-	"1528395554_oss_fake_migration.down.sql":                      {_1528395554_oss_fake_migrationDownSql, map[string]*bintree{}},
-	"1528395554_oss_fake_migration.up.sql":                        {_1528395554_oss_fake_migrationUpSql, map[string]*bintree{}},
-	"1528395555_.down.sql":                                        {_1528395555_DownSql, map[string]*bintree{}},
-	"1528395555_.up.sql":                                          {_1528395555_UpSql, map[string]*bintree{}},
-	"1528395556_.down.sql":                                        {_1528395556_DownSql, map[string]*bintree{}},
-	"1528395556_.up.sql":                                          {_1528395556_UpSql, map[string]*bintree{}},
-	"1528395557_.down.sql":                                        {_1528395557_DownSql, map[string]*bintree{}},
-	"1528395557_.up.sql":                                          {_1528395557_UpSql, map[string]*bintree{}},
-	"1528395558_.down.sql":                                        {_1528395558_DownSql, map[string]*bintree{}},
-	"1528395558_.up.sql":                                          {_1528395558_UpSql, map[string]*bintree{}},
-	"1528395559_.down.sql":                                        {_1528395559_DownSql, map[string]*bintree{}},
-	"1528395559_.up.sql":                                          {_1528395559_UpSql, map[string]*bintree{}},
-	"1528395560_.down.sql":                                        {_1528395560_DownSql, map[string]*bintree{}},
-	"1528395560_.up.sql":                                          {_1528395560_UpSql, map[string]*bintree{}},
-	"1528395561_.down.sql":                                        {_1528395561_DownSql, map[string]*bintree{}},
-	"1528395561_.up.sql":                                          {_1528395561_UpSql, map[string]*bintree{}},
-	"1528395562_.down.sql":                                        {_1528395562_DownSql, map[string]*bintree{}},
-	"1528395562_.up.sql":                                          {_1528395562_UpSql, map[string]*bintree{}},
-	"1528395563_.down.sql":                                        {_1528395563_DownSql, map[string]*bintree{}},
-	"1528395563_.up.sql":                                          {_1528395563_UpSql, map[string]*bintree{}},
-	"1528395564_.down.sql":                                        {_1528395564_DownSql, map[string]*bintree{}},
-	"1528395564_.up.sql":                                          {_1528395564_UpSql, map[string]*bintree{}},
+	"1503574972_extensions.down.sql":                                  {_1503574972_extensionsDownSql, map[string]*bintree{}},
+	"1503574972_extensions.up.sql":                                    {_1503574972_extensionsUpSql, map[string]*bintree{}},
+	"1503575261_repos.down.sql":                                       {_1503575261_reposDownSql, map[string]*bintree{}},
+	"1503575261_repos.up.sql":                                         {_1503575261_reposUpSql, map[string]*bintree{}},
+	"1503575588_global_deps.down.sql":                                 {_1503575588_global_depsDownSql, map[string]*bintree{}},
+	"1503575588_global_deps.up.sql":                                   {_1503575588_global_depsUpSql, map[string]*bintree{}},
+	"1504637681_orgs.down.sql":                                        {_1504637681_orgsDownSql, map[string]*bintree{}},
+	"1504637681_orgs.up.sql":                                          {_1504637681_orgsUpSql, map[string]*bintree{}},
+	"1504821553_add_org_constraints.down.sql":                         {_1504821553_add_org_constraintsDownSql, map[string]*bintree{}},
+	"1504821553_add_org_constraints.up.sql":                           {_1504821553_add_org_constraintsUpSql, map[string]*bintree{}},
+	"1505517457_rename_org_members_columns.down.sql":                  {_1505517457_rename_org_members_columnsDownSql, map[string]*bintree{}},
+	"1505517457_rename_org_members_columns.up.sql":                    {_1505517457_rename_org_members_columnsUpSql, map[string]*bintree{}},
+	"1505882864_update_org_members.down.sql":                          {_1505882864_update_org_membersDownSql, map[string]*bintree{}},
+	"1505882864_update_org_members.up.sql":                            {_1505882864_update_org_membersUpSql, map[string]*bintree{}},
+	"1506466653_add_users.down.sql":                                   {_1506466653_add_usersDownSql, map[string]*bintree{}},
+	"1506466653_add_users.up.sql":                                     {_1506466653_add_usersUpSql, map[string]*bintree{}},
+	"1506646657_alter_orgs_citext.down.sql":                           {_1506646657_alter_orgs_citextDownSql, map[string]*bintree{}},
+	"1506646657_alter_orgs_citext.up.sql":                             {_1506646657_alter_orgs_citextUpSql, map[string]*bintree{}},
+	"1506710237_user_org_constraint_updates.down.sql":                 {_1506710237_user_org_constraint_updatesDownSql, map[string]*bintree{}},
+	"1506710237_user_org_constraint_updates.up.sql":                   {_1506710237_user_org_constraint_updatesUpSql, map[string]*bintree{}},
+	"1506989402_add_tags.down.sql":                                    {_1506989402_add_tagsDownSql, map[string]*bintree{}},
+	"1506989402_add_tags.up.sql":                                      {_1506989402_add_tagsUpSql, map[string]*bintree{}},
+	"1507422179_remove_org_members_columns.down.sql":                  {_1507422179_remove_org_members_columnsDownSql, map[string]*bintree{}},
+	"1507422179_remove_org_members_columns.up.sql":                    {_1507422179_remove_org_members_columnsUpSql, map[string]*bintree{}},
+	"1507656459_add_org_settings.down.sql":                            {_1507656459_add_org_settingsDownSql, map[string]*bintree{}},
+	"1507656459_add_org_settings.up.sql":                              {_1507656459_add_org_settingsUpSql, map[string]*bintree{}},
+	"1507755085_add_editor_beta_tags.down.sql":                        {_1507755085_add_editor_beta_tagsDownSql, map[string]*bintree{}},
+	"1507755085_add_editor_beta_tags.up.sql":                          {_1507755085_add_editor_beta_tagsUpSql, map[string]*bintree{}},
+	"1507828928_add-slack-webhook-url.down.sql":                       {_1507828928_addSlackWebhookUrlDownSql, map[string]*bintree{}},
+	"1507828928_add-slack-webhook-url.up.sql":                         {_1507828928_addSlackWebhookUrlUpSql, map[string]*bintree{}},
+	"1508361685_add_phabricator_repos.down.sql":                       {_1508361685_add_phabricator_reposDownSql, map[string]*bintree{}},
+	"1508361685_add_phabricator_repos.up.sql":                         {_1508361685_add_phabricator_reposUpSql, map[string]*bintree{}},
+	"1508795218_update_constraints.down.sql":                          {_1508795218_update_constraintsDownSql, map[string]*bintree{}},
+	"1508795218_update_constraints.up.sql":                            {_1508795218_update_constraintsUpSql, map[string]*bintree{}},
+	"1509599098_add-users-provider-column.down.sql":                   {_1509599098_addUsersProviderColumnDownSql, map[string]*bintree{}},
+	"1509599098_add-users-provider-column.up.sql":                     {_1509599098_addUsersProviderColumnUpSql, map[string]*bintree{}},
+	"1509645961_rename-users-auth0_id-to-uid.down.sql":                {_1509645961_renameUsersAuth0_idToUidDownSql, map[string]*bintree{}},
+	"1509645961_rename-users-auth0_id-to-uid.up.sql":                  {_1509645961_renameUsersAuth0_idToUidUpSql, map[string]*bintree{}},
+	"1510709195_add_server_user_events_table.down.sql":                {_1510709195_add_server_user_events_tableDownSql, map[string]*bintree{}},
+	"1510709195_add_server_user_events_table.up.sql":                  {_1510709195_add_server_user_events_tableUpSql, map[string]*bintree{}},
+	"1511004249_generalize_org_settings.down.sql":                     {_1511004249_generalize_org_settingsDownSql, map[string]*bintree{}},
+	"1511004249_generalize_org_settings.up.sql":                       {_1511004249_generalize_org_settingsUpSql, map[string]*bintree{}},
+	"1511011666_add_user_settings.down.sql":                           {_1511011666_add_user_settingsDownSql, map[string]*bintree{}},
+	"1511011666_add_user_settings.up.sql":                             {_1511011666_add_user_settingsUpSql, map[string]*bintree{}},
+	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.down.sql":     {_1511365156_pkgs_and_global_dep_to_repo_foreign_keyDownSql, map[string]*bintree{}},
+	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql":       {_1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql, map[string]*bintree{}},
+	"1511852763_user_invite_quota.down.sql":                           {_1511852763_user_invite_quotaDownSql, map[string]*bintree{}},
+	"1511852763_user_invite_quota.up.sql":                             {_1511852763_user_invite_quotaUpSql, map[string]*bintree{}},
+	"1512437090_update_phabricator_repos.down.sql":                    {_1512437090_update_phabricator_reposDownSql, map[string]*bintree{}},
+	"1512437090_update_phabricator_repos.up.sql":                      {_1512437090_update_phabricator_reposUpSql, map[string]*bintree{}},
+	"1512998571_repo_nullable.down.sql":                               {_1512998571_repo_nullableDownSql, map[string]*bintree{}},
+	"1512998571_repo_nullable.up.sql":                                 {_1512998571_repo_nullableUpSql, map[string]*bintree{}},
+	"1513000124_rm_repos_cols.down.sql":                               {_1513000124_rm_repos_colsDownSql, map[string]*bintree{}},
+	"1513000124_rm_repos_cols.up.sql":                                 {_1513000124_rm_repos_colsUpSql, map[string]*bintree{}},
+	"1513188842_add_app_config_table.down.sql":                        {_1513188842_add_app_config_tableDownSql, map[string]*bintree{}},
+	"1513188842_add_app_config_table.up.sql":                          {_1513188842_add_app_config_tableUpSql, map[string]*bintree{}},
+	"1513578663_user-passwords.down.sql":                              {_1513578663_userPasswordsDownSql, map[string]*bintree{}},
+	"1513578663_user-passwords.up.sql":                                {_1513578663_userPasswordsUpSql, map[string]*bintree{}},
+	"1513800341_update_username_orgname_regex.down.sql":               {_1513800341_update_username_orgname_regexDownSql, map[string]*bintree{}},
+	"1513800341_update_username_orgname_regex.up.sql":                 {_1513800341_update_username_orgname_regexUpSql, map[string]*bintree{}},
+	"1514312401_add_site_admin_column_to_users.down.sql":              {_1514312401_add_site_admin_column_to_usersDownSql, map[string]*bintree{}},
+	"1514312401_add_site_admin_column_to_users.up.sql":                {_1514312401_add_site_admin_column_to_usersUpSql, map[string]*bintree{}},
+	"1514534085_add_orgs_deleted_at.down.sql":                         {_1514534085_add_orgs_deleted_atDownSql, map[string]*bintree{}},
+	"1514534085_add_orgs_deleted_at.up.sql":                           {_1514534085_add_orgs_deleted_atUpSql, map[string]*bintree{}},
+	"1514536731_add_org_members_user_fkey.down.sql":                   {_1514536731_add_org_members_user_fkeyDownSql, map[string]*bintree{}},
+	"1514536731_add_org_members_user_fkey.up.sql":                     {_1514536731_add_org_members_user_fkeyUpSql, map[string]*bintree{}},
+	"1514691735_rename_deployment_configuration.down.sql":             {_1514691735_rename_deployment_configurationDownSql, map[string]*bintree{}},
+	"1514691735_rename_deployment_configuration.up.sql":               {_1514691735_rename_deployment_configurationUpSql, map[string]*bintree{}},
+	"1514693059_user_emails_table.down.sql":                           {_1514693059_user_emails_tableDownSql, map[string]*bintree{}},
+	"1514693059_user_emails_table.up.sql":                             {_1514693059_user_emails_tableUpSql, map[string]*bintree{}},
+	"1514702776_add_settings_user_fkey.down.sql":                      {_1514702776_add_settings_user_fkeyDownSql, map[string]*bintree{}},
+	"1514702776_add_settings_user_fkey.up.sql":                        {_1514702776_add_settings_user_fkeyUpSql, map[string]*bintree{}},
+	"1514713044_rename_users_auth_id_to_external_id.down.sql":         {_1514713044_rename_users_auth_id_to_external_idDownSql, map[string]*bintree{}},
+	"1514713044_rename_users_auth_id_to_external_id.up.sql":           {_1514713044_rename_users_auth_id_to_external_idUpSql, map[string]*bintree{}},
+	"1514714572_external_provider.down.sql":                           {_1514714572_external_providerDownSql, map[string]*bintree{}},
+	"1514714572_external_provider.up.sql":                             {_1514714572_external_providerUpSql, map[string]*bintree{}},
+	"1514718560_external_provider_and_id.down.sql":                    {_1514718560_external_provider_and_idDownSql, map[string]*bintree{}},
+	"1514718560_external_provider_and_id.up.sql":                      {_1514718560_external_provider_and_idUpSql, map[string]*bintree{}},
+	"1514876826_site_id.down.sql":                                     {_1514876826_site_idDownSql, map[string]*bintree{}},
+	"1514876826_site_id.up.sql":                                       {_1514876826_site_idUpSql, map[string]*bintree{}},
+	"1514937919_remove_user_activity_table.down.sql":                  {_1514937919_remove_user_activity_tableDownSql, map[string]*bintree{}},
+	"1514937919_remove_user_activity_table.up.sql":                    {_1514937919_remove_user_activity_tableUpSql, map[string]*bintree{}},
+	"1515125883_repo_blocked_to_enabled.down.sql":                     {_1515125883_repo_blocked_to_enabledDownSql, map[string]*bintree{}},
+	"1515125883_repo_blocked_to_enabled.up.sql":                       {_1515125883_repo_blocked_to_enabledUpSql, map[string]*bintree{}},
+	"1515651962_drop_has_subject_constraint.down.sql":                 {_1515651962_drop_has_subject_constraintDownSql, map[string]*bintree{}},
+	"1515651962_drop_has_subject_constraint.up.sql":                   {_1515651962_drop_has_subject_constraintUpSql, map[string]*bintree{}},
+	"1516491388_remove_repo_private.down.sql":                         {_1516491388_remove_repo_privateDownSql, map[string]*bintree{}},
+	"1516491388_remove_repo_private.up.sql":                           {_1516491388_remove_repo_privateUpSql, map[string]*bintree{}},
+	"1516608575_repo_cleanup.down.sql":                                {_1516608575_repo_cleanupDownSql, map[string]*bintree{}},
+	"1516608575_repo_cleanup.up.sql":                                  {_1516608575_repo_cleanupUpSql, map[string]*bintree{}},
+	"1516834731_add_saved_queries.down.sql":                           {_1516834731_add_saved_queriesDownSql, map[string]*bintree{}},
+	"1516834731_add_saved_queries.up.sql":                             {_1516834731_add_saved_queriesUpSql, map[string]*bintree{}},
+	"1517129075_repo_external.down.sql":                               {_1517129075_repo_externalDownSql, map[string]*bintree{}},
+	"1517129075_repo_external.up.sql":                                 {_1517129075_repo_externalUpSql, map[string]*bintree{}},
+	"1518102181_cert_cache.down.sql":                                  {_1518102181_cert_cacheDownSql, map[string]*bintree{}},
+	"1518102181_cert_cache.up.sql":                                    {_1518102181_cert_cacheUpSql, map[string]*bintree{}},
+	"1518581786_remove_site_config_telemetry.down.sql":                {_1518581786_remove_site_config_telemetryDownSql, map[string]*bintree{}},
+	"1518581786_remove_site_config_telemetry.up.sql":                  {_1518581786_remove_site_config_telemetryUpSql, map[string]*bintree{}},
+	"1518581860_add_site_config_initialized.down.sql":                 {_1518581860_add_site_config_initializedDownSql, map[string]*bintree{}},
+	"1518581860_add_site_config_initialized.up.sql":                   {_1518581860_add_site_config_initializedUpSql, map[string]*bintree{}},
+	"1519507899_drop_global_dep_private.down.sql":                     {_1519507899_drop_global_dep_privateDownSql, map[string]*bintree{}},
+	"1519507899_drop_global_dep_private.up.sql":                       {_1519507899_drop_global_dep_privateUpSql, map[string]*bintree{}},
+	"1520588597_user_emails_unique_verified_only.down.sql":            {_1520588597_user_emails_unique_verified_onlyDownSql, map[string]*bintree{}},
+	"1520588597_user_emails_unique_verified_only.up.sql":              {_1520588597_user_emails_unique_verified_onlyUpSql, map[string]*bintree{}},
+	"1520708880_users_display_name_nullable.down.sql":                 {_1520708880_users_display_name_nullableDownSql, map[string]*bintree{}},
+	"1520708880_users_display_name_nullable.up.sql":                   {_1520708880_users_display_name_nullableUpSql, map[string]*bintree{}},
+	"1522555179_create_access_tokens_table.down.sql":                  {_1522555179_create_access_tokens_tableDownSql, map[string]*bintree{}},
+	"1522555179_create_access_tokens_table.up.sql":                    {_1522555179_create_access_tokens_tableUpSql, map[string]*bintree{}},
+	"1522961518_create_survey_responses_table.down.sql":               {_1522961518_create_survey_responses_tableDownSql, map[string]*bintree{}},
+	"1522961518_create_survey_responses_table.up.sql":                 {_1522961518_create_survey_responses_tableUpSql, map[string]*bintree{}},
+	"1524535307_remove_survey_responses_updated_at.down.sql":          {_1524535307_remove_survey_responses_updated_atDownSql, map[string]*bintree{}},
+	"1524535307_remove_survey_responses_updated_at.up.sql":            {_1524535307_remove_survey_responses_updated_atUpSql, map[string]*bintree{}},
+	"1524724144_add_access_tokens_fields.down.sql":                    {_1524724144_add_access_tokens_fieldsDownSql, map[string]*bintree{}},
+	"1524724144_add_access_tokens_fields.up.sql":                      {_1524724144_add_access_tokens_fieldsUpSql, map[string]*bintree{}},
+	"1524942857_trim_site_config.down.sql":                            {_1524942857_trim_site_configDownSql, map[string]*bintree{}},
+	"1524942857_trim_site_config.up.sql":                              {_1524942857_trim_site_configUpSql, map[string]*bintree{}},
+	"1524949295_simplify_initialization.down.sql":                     {_1524949295_simplify_initializationDownSql, map[string]*bintree{}},
+	"1524949295_simplify_initialization.up.sql":                       {_1524949295_simplify_initializationUpSql, map[string]*bintree{}},
+	"1525150355_add_access_tokens_scopes.down.sql":                    {_1525150355_add_access_tokens_scopesDownSql, map[string]*bintree{}},
+	"1525150355_add_access_tokens_scopes.up.sql":                      {_1525150355_add_access_tokens_scopesUpSql, map[string]*bintree{}},
+	"1525961108_user_unique_among_non-deleted.down.sql":               {_1525961108_user_unique_among_nonDeletedDownSql, map[string]*bintree{}},
+	"1525961108_user_unique_among_non-deleted.up.sql":                 {_1525961108_user_unique_among_nonDeletedUpSql, map[string]*bintree{}},
+	"1526364839_user_multiple_external_accounts.down.sql":             {_1526364839_user_multiple_external_accountsDownSql, map[string]*bintree{}},
+	"1526364839_user_multiple_external_accounts.up.sql":               {_1526364839_user_multiple_external_accountsUpSql, map[string]*bintree{}},
+	"1526804768_add_external_account_client.down.sql":                 {_1526804768_add_external_account_clientDownSql, map[string]*bintree{}},
+	"1526804768_add_external_account_client.up.sql":                   {_1526804768_add_external_account_clientUpSql, map[string]*bintree{}},
+	"1527691234_reuse_org_name.down.sql":                              {_1527691234_reuse_org_nameDownSql, map[string]*bintree{}},
+	"1527691234_reuse_org_name.up.sql":                                {_1527691234_reuse_org_nameUpSql, map[string]*bintree{}},
+	"1528179233_drop_code_comments_tables.down.sql":                   {_1528179233_drop_code_comments_tablesDownSql, map[string]*bintree{}},
+	"1528179233_drop_code_comments_tables.up.sql":                     {_1528179233_drop_code_comments_tablesUpSql, map[string]*bintree{}},
+	"1528277031_create_org_invitations_table.down.sql":                {_1528277031_create_org_invitations_tableDownSql, map[string]*bintree{}},
+	"1528277031_create_org_invitations_table.up.sql":                  {_1528277031_create_org_invitations_tableUpSql, map[string]*bintree{}},
+	"1528395534_.down.sql":                                            {_1528395534_DownSql, map[string]*bintree{}},
+	"1528395534_.up.sql":                                              {_1528395534_UpSql, map[string]*bintree{}},
+	"1528395535_.down.sql":                                            {_1528395535_DownSql, map[string]*bintree{}},
+	"1528395535_.up.sql":                                              {_1528395535_UpSql, map[string]*bintree{}},
+	"1528395536_.down.sql":                                            {_1528395536_DownSql, map[string]*bintree{}},
+	"1528395536_.up.sql":                                              {_1528395536_UpSql, map[string]*bintree{}},
+	"1528395537_.down.sql":                                            {_1528395537_DownSql, map[string]*bintree{}},
+	"1528395537_.up.sql":                                              {_1528395537_UpSql, map[string]*bintree{}},
+	"1528395538_.down.sql":                                            {_1528395538_DownSql, map[string]*bintree{}},
+	"1528395538_.up.sql":                                              {_1528395538_UpSql, map[string]*bintree{}},
+	"1528395539_.down.sql":                                            {_1528395539_DownSql, map[string]*bintree{}},
+	"1528395539_.up.sql":                                              {_1528395539_UpSql, map[string]*bintree{}},
+	"1528395540_.down.sql":                                            {_1528395540_DownSql, map[string]*bintree{}},
+	"1528395540_.up.sql":                                              {_1528395540_UpSql, map[string]*bintree{}},
+	"1528395541_.down.sql":                                            {_1528395541_DownSql, map[string]*bintree{}},
+	"1528395541_.up.sql":                                              {_1528395541_UpSql, map[string]*bintree{}},
+	"1528395542_.down.sql":                                            {_1528395542_DownSql, map[string]*bintree{}},
+	"1528395542_.up.sql":                                              {_1528395542_UpSql, map[string]*bintree{}},
+	"1528395544_.down.sql":                                            {_1528395544_DownSql, map[string]*bintree{}},
+	"1528395544_.up.sql":                                              {_1528395544_UpSql, map[string]*bintree{}},
+	"1528395545_.down.sql":                                            {_1528395545_DownSql, map[string]*bintree{}},
+	"1528395545_.up.sql":                                              {_1528395545_UpSql, map[string]*bintree{}},
+	"1528395546_.down.sql":                                            {_1528395546_DownSql, map[string]*bintree{}},
+	"1528395546_.up.sql":                                              {_1528395546_UpSql, map[string]*bintree{}},
+	"1528395547_.down.sql":                                            {_1528395547_DownSql, map[string]*bintree{}},
+	"1528395547_.up.sql":                                              {_1528395547_UpSql, map[string]*bintree{}},
+	"1528395548_.down.sql":                                            {_1528395548_DownSql, map[string]*bintree{}},
+	"1528395548_.up.sql":                                              {_1528395548_UpSql, map[string]*bintree{}},
+	"1528395549_.down.sql":                                            {_1528395549_DownSql, map[string]*bintree{}},
+	"1528395549_.up.sql":                                              {_1528395549_UpSql, map[string]*bintree{}},
+	"1528395550_.down.sql":                                            {_1528395550_DownSql, map[string]*bintree{}},
+	"1528395550_.up.sql":                                              {_1528395550_UpSql, map[string]*bintree{}},
+	"1528395551_.down.sql":                                            {_1528395551_DownSql, map[string]*bintree{}},
+	"1528395551_.up.sql":                                              {_1528395551_UpSql, map[string]*bintree{}},
+	"1528395552_.down.sql":                                            {_1528395552_DownSql, map[string]*bintree{}},
+	"1528395552_.up.sql":                                              {_1528395552_UpSql, map[string]*bintree{}},
+	"1528395553_.down.sql":                                            {_1528395553_DownSql, map[string]*bintree{}},
+	"1528395553_.up.sql":                                              {_1528395553_UpSql, map[string]*bintree{}},
+	"1528395554_oss_fake_migration.down.sql":                          {_1528395554_oss_fake_migrationDownSql, map[string]*bintree{}},
+	"1528395554_oss_fake_migration.up.sql":                            {_1528395554_oss_fake_migrationUpSql, map[string]*bintree{}},
+	"1528395555_.down.sql":                                            {_1528395555_DownSql, map[string]*bintree{}},
+	"1528395555_.up.sql":                                              {_1528395555_UpSql, map[string]*bintree{}},
+	"1528395556_.down.sql":                                            {_1528395556_DownSql, map[string]*bintree{}},
+	"1528395556_.up.sql":                                              {_1528395556_UpSql, map[string]*bintree{}},
+	"1528395557_.down.sql":                                            {_1528395557_DownSql, map[string]*bintree{}},
+	"1528395557_.up.sql":                                              {_1528395557_UpSql, map[string]*bintree{}},
+	"1528395558_.down.sql":                                            {_1528395558_DownSql, map[string]*bintree{}},
+	"1528395558_.up.sql":                                              {_1528395558_UpSql, map[string]*bintree{}},
+	"1528395559_.down.sql":                                            {_1528395559_DownSql, map[string]*bintree{}},
+	"1528395559_.up.sql":                                              {_1528395559_UpSql, map[string]*bintree{}},
+	"1528395560_.down.sql":                                            {_1528395560_DownSql, map[string]*bintree{}},
+	"1528395560_.up.sql":                                              {_1528395560_UpSql, map[string]*bintree{}},
+	"1528395561_.down.sql":                                            {_1528395561_DownSql, map[string]*bintree{}},
+	"1528395561_.up.sql":                                              {_1528395561_UpSql, map[string]*bintree{}},
+	"1528395562_.down.sql":                                            {_1528395562_DownSql, map[string]*bintree{}},
+	"1528395562_.up.sql":                                              {_1528395562_UpSql, map[string]*bintree{}},
+	"1528395563_.down.sql":                                            {_1528395563_DownSql, map[string]*bintree{}},
+	"1528395563_.up.sql":                                              {_1528395563_UpSql, map[string]*bintree{}},
+	"1528395564_.down.sql":                                            {_1528395564_DownSql, map[string]*bintree{}},
+	"1528395564_.up.sql":                                              {_1528395564_UpSql, map[string]*bintree{}},
+	"1528395566_add_deleted_at_column_to_repo_table.down.sql":         {_1528395566_add_deleted_at_column_to_repo_tableDownSql, map[string]*bintree{}},
+	"1528395566_add_deleted_at_column_to_repo_table.up.sql":           {_1528395566_add_deleted_at_column_to_repo_tableUpSql, map[string]*bintree{}},
+	"1528395567_add_repo_external_service_unique_constraint.down.sql": {_1528395567_add_repo_external_service_unique_constraintDownSql, map[string]*bintree{}},
+	"1528395567_add_repo_external_service_unique_constraint.up.sql":   {_1528395567_add_repo_external_service_unique_constraintUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
