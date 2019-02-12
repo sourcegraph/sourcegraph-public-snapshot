@@ -28,19 +28,15 @@ func NewSyncer(interval time.Duration, store Store, sources []Source, now func()
 
 // Run runs the Sync at its specified interval.
 func (s Syncer) Run(ctx context.Context) error {
-	ticks := time.NewTicker(s.interval)
-	defer ticks.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticks.C:
-			if err := s.Sync(ctx); err != nil {
-				log15.Error("Syncer", "err", err)
-			}
+	for ctx.Err() == nil {
+		if err := s.Sync(ctx); err != nil {
+			log15.Error("Syncer", "err", err)
 		}
+
+		time.Sleep(s.interval)
 	}
+
+	return ctx.Err()
 }
 
 // Sync synchronizes the set of sourced repos with the set of stored repos.
@@ -49,6 +45,7 @@ func (s Syncer) Sync(ctx context.Context) (err error) {
 	if sourced, err = s.source.ListRepos(ctx); err != nil {
 		log15.Error("Syncer", "Source.ListRepos", err)
 	}
+	log15.Error("Syncer", "sourced", sourced, "err", err)
 
 	if len(sourced) == 0 {
 		return err

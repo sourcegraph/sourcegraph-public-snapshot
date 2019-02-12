@@ -4,9 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"net/url"
 	"os"
-	"strconv"
 	"time"
 
 	migr "github.com/golang-migrate/migrate/v4"
@@ -40,39 +38,40 @@ type TxBeginner interface {
 func NewDB(dsn string) (*sql.DB, error) {
 	// We want to configure the database client explicitly through the DSN.
 	// lib/pq uses and gives precedence to these environment variables so we unset them.
-	for _, v := range []string{
-		"PGHOST", "PGHOSTADDR", "PGPORT",
-		"PGDATABASE", "PGUSER", "PGPASSWORD",
-		"PGSERVICE", "PGSERVICEFILE", "PGREALM",
-		"PGOPTIONS", "PGAPPNAME", "PGSSLMODE",
-		"PGSSLCERT", "PGSSLKEY", "PGSSLROOTCERT",
-		"PGREQUIRESSL", "PGSSLCRL", "PGREQUIREPEER",
-		"PGKRBSRVNAME", "PGGSSLIB", "PGCONNECT_TIMEOUT",
-		"PGCLIENTENCODING", "PGDATESTYLE", "PGTZ",
-		"PGGEQO", "PGSYSCONFDIR", "PGLOCALEDIR",
-	} {
-		os.Unsetenv(v)
-	}
+	//	for _, v := range []string{
+	//		"PGHOST", "PGHOSTADDR", "PGPORT",
+	//		"PGDATABASE", "PGUSER", "PGPASSWORD",
+	//		"PGSERVICE", "PGSERVICEFILE", "PGREALM",
+	//		"PGOPTIONS", "PGAPPNAME", "PGSSLMODE",
+	//		"PGSSLCERT", "PGSSLKEY", "PGSSLROOTCERT",
+	//		"PGREQUIRESSL", "PGSSLCRL", "PGREQUIREPEER",
+	//		"PGKRBSRVNAME", "PGGSSLIB", "PGCONNECT_TIMEOUT",
+	//		"PGCLIENTENCODING", "PGDATESTYLE", "PGTZ",
+	//		"PGGEQO", "PGSYSCONFDIR", "PGLOCALEDIR",
+	//	} {
+	//		os.Unsetenv(v)
+	//	}
 
-	cfg, err := url.Parse(dsn)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse dsn")
-	}
-
-	qry := cfg.Query()
-
-	// Force PostgreSQL session timezone to UTC.
-	qry.Set("timezone", "UTC")
-
+	//	cfg, err := url.Parse(dsn)
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "failed to parse dsn")
+	//	}
+	//
+	//	qry := cfg.Query()
+	//
+	//	// Force PostgreSQL session timezone to UTC.
+	//	qry.Set("timezone", "UTC")
+	//
 	// Set max open and idle connections
-	maxOpen, _ := strconv.Atoi(qry.Get("max_conns"))
-	if maxOpen == 0 {
-		maxOpen = 30
-	}
-	qry.Del("max_conns")
-
-	cfg.RawQuery = qry.Encode()
-	db, err := sql.Open("postgres", cfg.String())
+	//maxOpen, _ := strconv.Atoi(qry.Get("max_conns"))
+	//if maxOpen == 0 {
+	maxOpen := 30
+	//}
+	//	qry.Del("max_conns")
+	//
+	//	cfg.RawQuery = qry.Encode()
+	//db, err := sql.Open("postgres", cfg.String())
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to database")
 	}

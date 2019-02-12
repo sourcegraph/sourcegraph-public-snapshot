@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net"
@@ -62,6 +63,22 @@ func main() {
 		repos.NewInternalAPI(10*time.Second),
 		synced,
 	)
+
+	// New Repo metadata Syncer
+	{
+		//dsn := "postgres://sourcegraph:sourcegraph@localhost/postgres?sslmode=disable&timezone=UTC"
+		dsn := ""
+		db, err := repos.NewDB(dsn)
+		store, err := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+		if err != nil {
+			log.Fatal(err)
+		}
+		sources := []repos.Source{
+			repos.NewGithubSource(conf.GitHubConfigs),
+		}
+		syncer := repos.NewSyncer(10*time.Second, store, sources, time.Now)
+		go func() { log.Fatal(syncer.Run(ctx)) }()
+	}
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{OtherReposSyncer: otherSyncer}

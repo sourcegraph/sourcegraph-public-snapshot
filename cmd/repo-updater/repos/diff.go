@@ -15,10 +15,14 @@ type Diffable interface {
 	ID() string
 }
 
+// 1 name: gh/gorilla/mux         external: MUX
+// 2 name: github.com/gorilla/mux external: MUX
+
 // NewDiff returns a Diff between the set of `before` and `after` Diffables
 // using the provided function to decide if a Diffable that appears in both
 // sets is modified or not.
 func NewDiff(before, after []Diffable, modified func(before, after Diffable) bool) (diff Diff) {
+	// after contains 1 and 2
 	bs := make(map[string]Diffable, len(before))
 	for _, b := range before {
 		bs[b.ID()] = b
