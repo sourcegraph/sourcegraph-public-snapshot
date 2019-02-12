@@ -97,7 +97,7 @@ export class ExtWindows implements ExtWindowsAPI {
         private documents: ExtDocuments
     ) {}
 
-    public readonly activeWindowChanged = new BehaviorSubject<sourcegraph.Window | undefined>(this.getActive())
+    public readonly activeWindowChanges = new BehaviorSubject<sourcegraph.Window | undefined>(this.getActive())
 
     /** @internal */
     public getActive(): sourcegraph.Window | undefined {
@@ -131,6 +131,6 @@ export class ExtWindows implements ExtWindowsAPI {
     /** @internal */
     public $acceptWindowData(allWindows: WindowData[]): void {
         this.data = allWindows
-        this.activeWindowChanged.next(this.getActive())
+        this.activeWindowChanges.next(this.getActive())
     }
 }
