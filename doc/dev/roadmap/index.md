@@ -37,7 +37,6 @@ Release date: 2019-02-20
 Backend:
 
 - [Upgrade to PostgreSQL 10.6](https://github.com/sourcegraph/sourcegraph/issues/1404)
-- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
 
 Distribution:
 
@@ -54,6 +53,15 @@ Code search and navigation:
 <small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
 
 ---
+
+### 3.2
+
+TODO: we are not finished planning 3.2
+
+Backend:
+
+- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+
 
 ### Future
 
