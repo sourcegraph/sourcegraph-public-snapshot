@@ -104,7 +104,7 @@ class EventLogger implements TelemetryService {
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      */
     public log(eventLabel: string, eventProperties?: any): void {
-        if (window.context.userAgentIsBot || !eventLabel) {
+        if ((window.context && window.context.userAgentIsBot) || !eventLabel) {
             return
         }
 
