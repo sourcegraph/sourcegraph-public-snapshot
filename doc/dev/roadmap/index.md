@@ -44,6 +44,7 @@ Backend:
 
 - [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
 
+---
 
 ### Future
 
