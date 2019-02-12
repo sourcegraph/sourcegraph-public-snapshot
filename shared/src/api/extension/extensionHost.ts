@@ -193,7 +193,7 @@ function createExtensionAPI(
                 return roots.getAll()
             },
             onDidChangeRoots: roots.changes,
-            rootsChanges: roots.changes,
+            rootChanges: roots.changes,
         },
 
         configuration: {
