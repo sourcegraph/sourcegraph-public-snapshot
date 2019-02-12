@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -122,7 +123,7 @@ func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, repos *
 const listReposSQL = `
 SELECT id, name, description, language, created_at, updated_at, deleted_at,
   external_id, external_service_type, external_service_id, enabled, archived, fork
-FROM repo WHERE id > $1 ORDER BY id ASC LIMIT $2
+FROM repo WHERE id > $1 AND deleted_at IS NULL ORDER BY id ASC LIMIT $2
 `
 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
@@ -219,9 +220,9 @@ func upsertRepoColumns(r *Repo) []interface{} {
 		r.Description,
 		r.Language,
 		"", // URI
-		r.CreatedAt.UTC(),
-		r.UpdatedAt.UTC(),
-		r.DeletedAt.UTC(),
+		timeColumn(r.CreatedAt),
+		timeColumn(r.UpdatedAt),
+		timeColumn(r.DeletedAt),
 		r.ExternalRepo.ID,
 		r.ExternalRepo.ServiceType,
 		r.ExternalRepo.ServiceID,
@@ -229,6 +230,13 @@ func upsertRepoColumns(r *Repo) []interface{} {
 		r.Archived,
 		r.Fork,
 	}
+}
+
+func timeColumn(t time.Time) interface{} {
+	if t.IsZero() {
+		return nil
+	}
+	return t.UTC()
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
