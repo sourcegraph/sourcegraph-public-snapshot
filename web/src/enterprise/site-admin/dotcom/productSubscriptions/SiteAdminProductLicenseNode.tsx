@@ -87,7 +87,7 @@ export class SiteAdminProductLicenseNode extends React.PureComponent<SiteAdminPr
                         </span>
                     </div>
                 </div>
-                {this.props.node.info && (
+                {this.props.node.info && this.props.node.info.tags.length > 0 && (
                     <div>
                         Tags:{' '}
                         {this.props.node.info.tags.map(tag => (
