@@ -81,6 +81,7 @@ It is not used for patch releases.
 
 - [ ] **HH:MM AM/PM PT** Merge the blog post. <!-- TODO(nick): example >
 - [ ] Update the documented version of Sourcegraph in `master` (e.g. `find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +`) (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files <!-- TODO(nick): example that doesn't include latestReleaseDockerServerImageBuild -->).
+- [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/commit/d445c460c2da54fba4f56f647d656ca3311decf5))
 - [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` in `master`. <!-- TODO(nick): example -->
 - [ ] Review all issues in the release milestone. Backlog things that didn't make it into the release and ping issues that still need to be done for the release (e.g. Tweets, marketing).
 - [ ] Close this issue.
