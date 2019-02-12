@@ -730,7 +730,7 @@ declare module 'sourcegraph' {
         export const onDidOpenTextDocument: Subscribable<TextDocument>
 
         /**
-         * An event that is fired when a new text document is added to the workspace.
+         * An event that is fired when a new text document is opened.
          */
         export const openedTextDocuments: Subscribable<TextDocument>
 
