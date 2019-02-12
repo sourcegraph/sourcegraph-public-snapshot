@@ -36,7 +36,7 @@ RUN apk update && apk add --no-cache \
   mailcap nginx openssh-client su-exec tini
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:d74791c /syntect_server /usr/local/bin/
+COPY --from=sourcegraph/syntect_server:393a538 /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 COPY . /
 
