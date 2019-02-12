@@ -98,6 +98,12 @@ func UpdateScheduler2Enabled() bool {
 	return p != "disabled"
 }
 
+// NewRepoSyncerEnabledExternalServices returns the list of external service kinds
+// for which the new repo-updater syncer code is enabled.
+func NewRepoSyncerEnabledExternalServices() []string {
+	return Get().ExperimentalFeatures.NewRepoSyncerEnabledExternalServices
+}
+
 func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
 	var config []*schema.AWSCodeCommitConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
