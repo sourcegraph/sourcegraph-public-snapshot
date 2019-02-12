@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kylelemons/godebug/pretty"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
@@ -398,7 +397,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 			repositoryQueries = []string{"public", "affiliated"}
 		}
 	}
-	pretty.Print("queries", repositoryQueries)
+
 	for _, repositoryQuery := range repositoryQueries {
 		wg.Add(1)
 		go func(repositoryQuery string) {
