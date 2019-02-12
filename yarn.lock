@@ -1505,8 +1505,9 @@
     sourcegraph "*"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "1.1.0"
+  dependencies:
+    sourcegraph "*"
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -1591,14 +1592,14 @@
     react-lifecycles-compat "^3.0.4"
     util-deprecate "^1.0.2"
 
-"@storybook/addon-links@4.1.3":
-  version "4.1.3"
-  resolved "https://registry.npmjs.org/@storybook/addon-links/-/addon-links-4.1.3.tgz#4d30542ce9cee84c8bb31d45589891c321fd817d"
-  integrity sha512-OmbYBXnfQm441Np2xLrnOF6akFd2ENg7Nw8YX2S31nHKLP5es4xUcbPj/FLgqkoFvTDBjMi7BFQN+iGfVqDbhQ==
+"@storybook/addon-links@^4.1.3":
+  version "4.1.11"
+  resolved "https://registry.npmjs.org/@storybook/addon-links/-/addon-links-4.1.11.tgz#50e782eba46de3aac91f05a26ca92e2a5d13aa19"
+  integrity sha512-aMmOjx3bp4x/TcAthlTc0ULGHMrq9eff1/2Ij9IZzqOi56fXygXpK/yiw/c9AHFFfP1r4v+RObz5pS46rvoCtg==
   dependencies:
-    "@storybook/addons" "4.1.3"
-    "@storybook/components" "4.1.3"
-    "@storybook/core-events" "4.1.3"
+    "@storybook/addons" "4.1.11"
+    "@storybook/components" "4.1.11"
+    "@storybook/core-events" "4.1.11"
     core-js "^2.5.7"
     global "^4.3.2"
     prop-types "^15.6.2"
@@ -1636,13 +1637,13 @@
     read-pkg-up "^4.0.0"
     regenerator-runtime "^0.12.1"
 
-"@storybook/addons@4.1.3":
-  version "4.1.3"
-  resolved "https://registry.npmjs.org/@storybook/addons/-/addons-4.1.3.tgz#5d6561e37751eb1848b92660fe928b065e7c344d"
-  integrity sha512-6orT1pp0NCfqEABV8iVPkcIn/hIKHd5bA9JC0pQYz50LDIOPsohf1L5dvPwaJzaPVqLNexHUXOxxCRqyxhF21w==
+"@storybook/addons@4.1.11":
+  version "4.1.11"
+  resolved "https://registry.npmjs.org/@storybook/addons/-/addons-4.1.11.tgz#a0d537bd10d123ecee6cb1f5f149b148ce250e57"
+  integrity sha512-n9oDs7GgJbiN5NYPkR3B3e5W0Tr6bIZvFfcJzgyP4dn50AUvS1IE1CEthezfn1L/nc2suw/8Oe30bOXOyTl/SQ==
   dependencies:
-    "@storybook/channels" "4.1.3"
-    "@storybook/components" "4.1.3"
+    "@storybook/channels" "4.1.11"
+    "@storybook/components" "4.1.11"
     global "^4.3.2"
     util-deprecate "^1.0.2"
 
@@ -1665,10 +1666,10 @@
     global "^4.3.2"
     json-stringify-safe "^5.0.1"
 
-"@storybook/channels@4.1.3":
-  version "4.1.3"
-  resolved "https://registry.npmjs.org/@storybook/channels/-/channels-4.1.3.tgz#38b13650d408e0a3a8f7ab1b2ae03df45c8acf54"
-  integrity sha512-SaxHlNbNO2yXwg7GI4k6TGWhYK+WdXEDLfDp9w2BigZQel5SCDZsuOCYtE3yG6ajrdBq4ehkhnLPE0wQcupp7A==
+"@storybook/channels@4.1.11":
+  version "4.1.11"
+  resolved "https://registry.npmjs.org/@storybook/channels/-/channels-4.1.11.tgz#d161497fa3cd848cc9d518aa1c37052857e22e3c"
+  integrity sha512-zYusY8cno4keMozn2lDpBgyNSOueFh+hrPETioSB5Z8Kd3F5OjM7681vJC8QA67yOBEie2hHk0CVxRpuxziMwA==
 
 "@storybook/channels@4.1.4":
   version "4.1.4"
@@ -1680,10 +1681,10 @@
   resolved "https://registry.npmjs.org/@storybook/client-logger/-/client-logger-4.1.4.tgz#c87d8d3357cb3eb582249f43692ea82c7c2461e0"
   integrity sha512-fOrSNPa4Pg8m9UD8fTUFTewTtuzhckrt6zESpj+P7/MnWM+W71umvobb0HpPBGKvwSC8qJZhOwsH7tNI7K0PAw==
 
-"@storybook/components@4.1.3":
-  version "4.1.3"
-  resolved "https://registry.npmjs.org/@storybook/components/-/components-4.1.3.tgz#7ca8dc9940610b4db7fb4ce8a73b406431ab7426"
-  integrity sha512-Ik1j04pAw/i9wsxIQLSkbR1B5l7B23kMtzGtcVPRp1seunypxqNdX7o0sxg+xPFWNL7YDsrwP0FIP0HgUuriLQ==
+"@storybook/components@4.1.11":
+  version "4.1.11"
+  resolved "https://registry.npmjs.org/@storybook/components/-/components-4.1.11.tgz#25458a4a4f2edd836b1e4b944cfcfcb4a3567036"
+  integrity sha512-KJA8Nr8MbXiibDLcndx1GRVmVDyBBL2Tbb1kfQfr58vDwz6qhYxempejY6W+voaEqohnFxrOtnnbqlCyf8peUQ==
   dependencies:
     "@emotion/core" "^0.13.1"
     "@emotion/provider" "^0.11.2"
@@ -1712,10 +1713,10 @@
     react-textarea-autosize "^7.0.4"
     render-fragment "^0.1.1"
 
-"@storybook/core-events@4.1.3":
-  version "4.1.3"
-  resolved "https://registry.npmjs.org/@storybook/core-events/-/core-events-4.1.3.tgz#80476d5380d60180511e0cd9546f24253197adef"
-  integrity sha512-mMHclba/+TCPdz+UXX0TYXN3SVe17p5n9OuZ6h0hZPdUPaqwN5xsi+UmYH6jGutHEzwkiVzw4cs5QvkcxuUzng==
+"@storybook/core-events@4.1.11":
+  version "4.1.11"
+  resolved "https://registry.npmjs.org/@storybook/core-events/-/core-events-4.1.11.tgz#78cfb2b4014ca27909421cdebfa9c96533929a5a"
+  integrity sha512-rVb76xFLJkTFcBHL1oTdJW8O2N7q+Cc6Mo7v9u3TnM4WuRk08/GyzzO7sRvEg3Mvo59AOLu1uqYovRMo4tZEnQ==
 
 "@storybook/core-events@4.1.4":
   version "4.1.4"
@@ -2275,10 +2276,10 @@
   resolved "https://registry.npmjs.org/@types/marked/-/marked-0.4.2.tgz#64a89e53ea37f61cc0f3ee1732c555c2dbf6452f"
   integrity sha512-cDB930/7MbzaGF6U3IwSQp6XBru8xWajF5PV2YZZeV8DyiliTuld11afVztGI9+yJZ29il5E+NpGA6ooV/Cjkg==
 
-"@types/mermaid@8.0.0":
-  version "8.0.0"
-  resolved "https://registry.npmjs.org/@types/mermaid/-/mermaid-8.0.0.tgz#5b5863e328c5c524e4bf8ee54431899ca52c1577"
-  integrity sha512-JpzvNv740TCLHk8ASL6qANYRQpeJDEKRL1GYLsGuaodPc5GylaJM6ZxQJJa4MRKtl2nXMruuoUxbWekVFQDYIQ==
+"@types/mermaid@8.0.1":
+  version "8.0.1"
+  resolved "https://registry.npmjs.org/@types/mermaid/-/mermaid-8.0.1.tgz#0124ce4ffc4d87910c5226707c536f074da78441"
+  integrity sha512-imcJz37N1RdM4k+LBuZ5QfISLOZYZKSwrhwcsLGsTceXVA86SAYRrQ0T7mtFS7hXLRx6fsNQyG/YGOZNpbNxBg==
 
 "@types/mime@*":
   version "2.0.0"
@@ -13663,8 +13664,7 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "20.1.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
