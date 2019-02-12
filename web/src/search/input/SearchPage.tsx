@@ -56,6 +56,7 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const finalQuery = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ')
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
@@ -71,7 +72,7 @@ export class SearchPage extends React.Component<Props, State> {
                     <div className="search-page__input-container">
                         <QueryInput
                             {...this.props}
-                            value={this.state.userQuery}
+                            value={finalQuery}
                             onChange={this.onUserQueryChange}
                             autoFocus={'cursor-at-end'}
                             hasGlobalQueryBehavior={true}
@@ -97,7 +98,7 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     private onUserQueryChange = (userQuery: string) => {
-        this.setState({ userQuery })
+        this.setState({ userQuery, builderQuery: '' })
 
         if (window.context.sourcegraphDotComMode) {
             if (queryIndexOfScope(userQuery, 'repogroup:sample') !== -1) {
