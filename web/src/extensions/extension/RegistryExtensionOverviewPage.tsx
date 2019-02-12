@@ -8,6 +8,7 @@ import { ExtensionCategory } from '../../../../shared/src/schema/extension.schem
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
+import { eventLogger } from '../../tracking/eventLogger'
 import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionREADME } from './RegistryExtensionREADME'
@@ -16,6 +17,10 @@ interface Props extends Pick<ExtensionAreaRouteContext, 'extension'> {}
 
 /** A page that displays overview information about a registry extension. */
 export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
+    public componentDidMount(): void {
+        eventLogger.logViewEvent('RegistryExtension')
+    }
+
     public render(): JSX.Element | null {
         let repositoryURL: URL | undefined
         try {

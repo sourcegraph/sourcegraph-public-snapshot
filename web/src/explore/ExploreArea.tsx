@@ -4,6 +4,7 @@ import { Subject, Subscription } from 'rxjs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
+import { eventLogger } from '../tracking/eventLogger'
 import { ComponentDescriptor } from '../util/contributions'
 
 /**
@@ -49,6 +50,7 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('Explore')
         this.componentUpdates.next(this.props)
     }
 
