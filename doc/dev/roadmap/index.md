@@ -10,26 +10,6 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ## Future releases
 
-### 3.0
-
-Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sourcegraph.com/blog/sourcegraph-3.0-beta-is-now-available) on 2019-01-14.)
-
-- [Go language support via extension](https://github.com/sourcegraph/sourcegraph/issues/958)
-- [JavaScript/TypeScript language support via extension](https://github.com/sourcegraph/sourcegraph/issues/960)
-- [Python language support via extension](https://github.com/sourcegraph/sourcegraph/issues/959)
-- [Basic code intel](https://github.com/sourcegraph/sourcegraph/pull/1313)
-- [Datadog metrics extension](https://github.com/sourcegraph/sourcegraph/issues/655)
-- [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
-- [External services UI](https://github.com/sourcegraph/sourcegraph/pull/1103)
-- [GitHub user authentication](https://github.com/sourcegraph/sourcegraph/issues/964)
-- [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
-- [Use nginx as HTTP proxy](https://github.com/sourcegraph/sourcegraph/pull/929)
-- [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
-
-<small>[Draft announcement](https://github.com/sourcegraph/about/pull/79) --- [All 3.0 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.0)</small>
-
----
-
 ### 3.1
 
 Release date: 2019-02-20
@@ -57,6 +37,8 @@ Code search and navigation:
 ### 3.2
 
 TODO: we are not finished planning 3.2
+
+Release date: 2019-03-20
 
 Backend:
 
