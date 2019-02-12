@@ -31,8 +31,8 @@ export const WelcomeAreaFooter: React.FunctionComponent<{ isLightTheme: boolean 
                         </a>
                     </li>
                     <li>
-                        <a href="https://docs.sourcegraph.com/extensions" target="_blank">
-                            Code intelligence &amp; extensions
+                        <a href="https://docs.sourcegraph.com/user/code_intelligence" target="_blank">
+                            Code intelligence
                         </a>
                     </li>
                     <li>
