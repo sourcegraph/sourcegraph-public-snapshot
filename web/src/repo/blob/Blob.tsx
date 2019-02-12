@@ -20,6 +20,7 @@ import {
     AbsoluteRepoFile,
     FileSpec,
     LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
     ModeSpec,
     parseHash,
     PositionSpec,
@@ -31,7 +32,6 @@ import {
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { isDiscussionsEnabled } from '../../discussions'
-import { lprToSelectionsZeroIndexed } from '../../util/url'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
