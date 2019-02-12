@@ -2281,10 +2281,10 @@
   resolved "https://registry.npmjs.org/@types/marked/-/marked-0.4.2.tgz#64a89e53ea37f61cc0f3ee1732c555c2dbf6452f"
   integrity sha512-cDB930/7MbzaGF6U3IwSQp6XBru8xWajF5PV2YZZeV8DyiliTuld11afVztGI9+yJZ29il5E+NpGA6ooV/Cjkg==
 
-"@types/mermaid@8.0.0":
-  version "8.0.0"
-  resolved "https://registry.npmjs.org/@types/mermaid/-/mermaid-8.0.0.tgz#5b5863e328c5c524e4bf8ee54431899ca52c1577"
-  integrity sha512-JpzvNv740TCLHk8ASL6qANYRQpeJDEKRL1GYLsGuaodPc5GylaJM6ZxQJJa4MRKtl2nXMruuoUxbWekVFQDYIQ==
+"@types/mermaid@8.0.1":
+  version "8.0.1"
+  resolved "https://registry.npmjs.org/@types/mermaid/-/mermaid-8.0.1.tgz#0124ce4ffc4d87910c5226707c536f074da78441"
+  integrity sha512-imcJz37N1RdM4k+LBuZ5QfISLOZYZKSwrhwcsLGsTceXVA86SAYRrQ0T7mtFS7hXLRx6fsNQyG/YGOZNpbNxBg==
 
 "@types/mime@*":
   version "2.0.0"
