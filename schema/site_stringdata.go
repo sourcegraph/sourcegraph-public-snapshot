@@ -50,13 +50,7 @@ const SiteSchemaJSON = `{
           "items": {
             "type": "string",
             "enum": [
-              "AWSCODECOMMIT",
-              "BITBUCKETSERVER",
-              "GITHUB",
-              "GITLAB",
-              "GITOLITE",
-              "PHABRICATOR",
-              "OTHER"
+              "GITHUB"
             ]
           }
         }
