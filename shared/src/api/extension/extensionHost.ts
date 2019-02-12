@@ -172,7 +172,7 @@ function createExtensionAPI(
         },
 
         app: {
-            activeWindowChanges: windows.activeWindowChanged,
+            activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
                 return windows.getActive()
             },
