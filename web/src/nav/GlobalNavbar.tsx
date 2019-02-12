@@ -10,6 +10,7 @@ import { authRequired } from '../auth'
 import { KeybindingsProps } from '../keybindings'
 import { parseSearchURLQuery } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsControllerProps, KeybindingsProps {
@@ -70,7 +71,19 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const logo = <img className="global-navbar__logo" src="/.assets/img/sourcegraph-mark.svg" />
+        let logoSrc: string
+        const showFullLogo = this.props.location.pathname === '/welcome'
+        if (showFullLogo) {
+            logoSrc = this.props.isLightTheme
+                ? '/.assets/img/sourcegraph-light-head-logo.svg'
+                : '/.assets/img/sourcegraph-head-logo.svg'
+        } else {
+            logoSrc = '/.assets/img/sourcegraph-mark.svg'
+        }
+
+        const logo = (
+            <img className={`global-navbar__logo ${showFullLogo ? 'global-navbar__logo--full' : ''}`} src={logoSrc} />
+        )
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg'}`}>
                 {this.props.lowProfile ? (
@@ -84,8 +97,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 {logo}
                             </Link>
                         )}
-                        {!this.state.authRequired && (
-                            <div className="global-navbar__search-box-container">
+                        {!this.state.authRequired && this.props.location.pathname !== '/welcome' && (
+                            <div className="global-navbar__search-box-container d-none d-sm-flex">
                                 <SearchNavbarItem
                                     {...this.props}
                                     navbarSearchQuery={this.props.navbarSearchQuery}
@@ -95,7 +108,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                         )}
                     </>
                 )}
-                {!this.state.authRequired && <NavLinks {...this.props} />}
+                {!this.state.authRequired && <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />}
             </div>
         )
     }

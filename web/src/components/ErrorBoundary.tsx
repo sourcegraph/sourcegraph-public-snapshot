@@ -1,3 +1,4 @@
+import * as sentry from '@sentry/browser'
 import H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
@@ -19,7 +20,7 @@ interface State {
 
 /**
  * A [React error boundary](https://reactjs.org/docs/error-boundaries.html) that catches errors from
- * its children. If an error occurs, it displays a nice error page instead of a blank page.
+ * its children. If an error occurs, it displays a nice error page instead of a blank page and reports the error to Sentry.
  *
  * Components should handle their own errors (and must not rely on this error boundary). This error
  * boundary is a last resort in case of an unexpected error.
@@ -29,6 +30,15 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
 
     public static getDerivedStateFromError(error: any): Pick<State, 'error'> {
         return { error: asError(error) }
+    }
+
+    public componentDidCatch(error: any, errorInfo: React.ErrorInfo): void {
+        sentry.withScope(scope => {
+            for (const [key, value] of Object.entries(errorInfo)) {
+                scope.setExtra(key, value)
+            }
+            sentry.captureException(error)
+        })
     }
 
     public componentDidUpdate(prevProps: Props): void {

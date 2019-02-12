@@ -11,13 +11,19 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { AbsoluteRepoFile, makeRepoURI, ModeSpec, ParsedRepoURI, parseHash } from '../../../../shared/src/util/url'
+import {
+    AbsoluteRepoFile,
+    lprToRange,
+    makeRepoURI,
+    ModeSpec,
+    ParsedRepoURI,
+    parseHash,
+} from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
 import { eventLogger } from '../../tracking/eventLogger'
-import { lprToRange } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleDiscussionsPanel } from './actions/ToggleDiscussions'

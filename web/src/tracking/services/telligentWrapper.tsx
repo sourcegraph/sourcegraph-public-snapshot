@@ -11,7 +11,7 @@ class TelligentWrapper {
 
     constructor() {
         // Never log anything in self-hosted Sourcegraph instances.
-        if (!window.context.sourcegraphDotComMode) {
+        if (!window.context || !window.context.sourcegraphDotComMode) {
             return
         }
 

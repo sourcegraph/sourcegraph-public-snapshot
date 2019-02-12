@@ -74,11 +74,6 @@ interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadePr
     isLightTheme: boolean
 
     /**
-     * Whether the user is on MainPage and therefore not logged in
-     */
-    isMainPage: boolean
-
-    /**
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
@@ -108,7 +103,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             extensionsController: createExtensionsController(platformContext),
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
-            isMainPage: false,
         }
     }
 
@@ -161,15 +155,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     public componentDidUpdate(): void {
-        // Always show MainPage in dark theme look
-        if (this.state.isMainPage && this.state.isLightTheme) {
-            document.body.classList.remove('theme-light')
-            document.body.classList.add('theme-dark')
-        } else {
-            localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.isLightTheme + '')
-            document.body.classList.toggle('theme-light', this.state.isLightTheme)
-            document.body.classList.toggle('theme-dark', !this.state.isLightTheme)
-        }
+        localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.isLightTheme + '')
+        document.body.classList.toggle('theme-light', this.state.isLightTheme)
+        document.body.classList.toggle('theme-dark', !this.state.isLightTheme)
     }
 
     public render(): React.ReactFragment | null {
@@ -222,8 +210,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         // Theme
                                         isLightTheme={this.state.isLightTheme}
                                         onThemeChange={this.onThemeChange}
-                                        isMainPage={this.state.isMainPage}
-                                        onMainPage={this.onMainPage}
                                         // Search query
                                         navbarSearchQuery={this.state.navbarSearchQuery}
                                         onNavbarQueryChange={this.onNavbarQueryChange}
@@ -244,10 +230,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
     private onThemeChange = () => {
         this.setState(state => ({ isLightTheme: !state.isLightTheme }))
-    }
-
-    private onMainPage = (mainPage: boolean) => {
-        this.setState(() => ({ isMainPage: mainPage }))
     }
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {

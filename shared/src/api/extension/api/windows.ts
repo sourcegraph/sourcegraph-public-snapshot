@@ -1,4 +1,4 @@
-import { Observer } from 'rxjs'
+import { BehaviorSubject, Observer, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
@@ -18,6 +18,8 @@ export interface WindowData {
  */
 class ExtWindow implements sourcegraph.Window {
     constructor(private windowsProxy: ClientWindowsAPI, private readonly textEditors: ExtCodeEditor[]) {}
+
+    public readonly activeViewComponentChanges = of(this.activeViewComponent)
 
     public get visibleViewComponents(): sourcegraph.ViewComponent[] {
         return this.textEditors
@@ -95,6 +97,8 @@ export class ExtWindows implements ExtWindowsAPI {
         private documents: ExtDocuments
     ) {}
 
+    public readonly activeWindowChanges = new BehaviorSubject<sourcegraph.Window | undefined>(this.getActive())
+
     /** @internal */
     public getActive(): sourcegraph.Window | undefined {
         return this.getAll()[0]
@@ -127,5 +131,6 @@ export class ExtWindows implements ExtWindowsAPI {
     /** @internal */
     public $acceptWindowData(allWindows: WindowData[]): void {
         this.data = allWindows
+        this.activeWindowChanges.next(this.getActive())
     }
 }

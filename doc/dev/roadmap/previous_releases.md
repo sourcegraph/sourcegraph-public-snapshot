@@ -2,6 +2,10 @@
 
 See the [Sourcegraph changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md) for a detailed list of changes.
 
+## Sourcegraph 3.0 (2019-02-08)
+
+See the blog post "[Announcing Sourcegraph 3.0](https://about.sourcegraph.com/blog/sourcegraph-3.0)".
+
 ## Sourcegraph 3.0 beta (2019-01-14)
 
 See the blog post "[Sourcegraph 3.0 beta is now available](https://about.sourcegraph.com/blog/sourcegraph-3.0-beta-is-now-available)".

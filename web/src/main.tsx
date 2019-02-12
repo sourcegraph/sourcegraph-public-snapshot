@@ -5,6 +5,8 @@
 
 import './polyfills'
 
+import './sentry'
+
 import React from 'react'
 import { render } from 'react-dom'
 import { exploreSections } from './explore/exploreSections'

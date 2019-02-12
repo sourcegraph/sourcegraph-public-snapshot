@@ -31,11 +31,11 @@ describe('Documents (integration)', () => {
         })
     })
 
-    describe('workspace.onDidOpenTextDocument', () => {
+    describe('workspace.openedTextDocuments', () => {
         test('fires when a text document is opened', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
-            const values = collectSubscribableValues(extensionHost.workspace.onDidOpenTextDocument)
+            const values = collectSubscribableValues(extensionHost.workspace.openedTextDocuments)
             expect(values).toEqual([] as TextDocument[])
 
             model.next({

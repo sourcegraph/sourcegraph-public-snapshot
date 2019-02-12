@@ -10,7 +10,7 @@ class ServerAdminWrapper {
     private isAuthenicated = false
 
     constructor() {
-        if (!window.context.sourcegraphDotComMode) {
+        if (window.context && !window.context.sourcegraphDotComMode) {
             authenticatedUser.subscribe(user => {
                 if (user) {
                     this.isAuthenicated = true

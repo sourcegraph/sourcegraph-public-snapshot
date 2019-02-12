@@ -172,6 +172,7 @@ function createExtensionAPI(
         },
 
         app: {
+            activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
                 return windows.getActive()
             },
@@ -186,11 +187,13 @@ function createExtensionAPI(
             get textDocuments(): sourcegraph.TextDocument[] {
                 return documents.getAll()
             },
-            onDidOpenTextDocument: documents.onDidOpenTextDocument,
+            onDidOpenTextDocument: documents.openedTextDocuments,
+            openedTextDocuments: documents.openedTextDocuments,
             get roots(): ReadonlyArray<sourcegraph.WorkspaceRoot> {
                 return roots.getAll()
             },
-            onDidChangeRoots: roots.onDidChange,
+            onDidChangeRoots: roots.changes,
+            rootChanges: roots.changes,
         },
 
         configuration: {

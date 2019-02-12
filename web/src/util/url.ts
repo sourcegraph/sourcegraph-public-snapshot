@@ -1,8 +1,9 @@
-import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
+import { Position, Range } from '@sourcegraph/extension-api-types'
 import {
     AbsoluteRepoFile,
     encodeRepoRev,
     LineOrPositionOrRange,
+    lprToRange,
     ParsedRepoURI,
     parseHash,
     PositionSpec,
@@ -137,37 +138,6 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     }
 
     return { repoName, rev, commitID, filePath, commitRange, position, range }
-}
-
-export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
-    if (lpr.line === undefined) {
-        return undefined
-    }
-    return {
-        start: { line: lpr.line, character: lpr.character || 0 },
-        end: {
-            line: lpr.endLine || lpr.line,
-            character: lpr.endCharacter || lpr.character || 0,
-        },
-    }
-}
-
-export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selection[] {
-    const range = lprToRange(lpr)
-    if (range === undefined) {
-        return []
-    }
-    const start: Position = { line: range.start.line - 1, character: range.start.character - 1 }
-    const end: Position = { line: range.end.line - 1, character: range.end.character - 1 }
-    return [
-        {
-            start,
-            end,
-            anchor: start,
-            active: end,
-            isReversed: false,
-        },
-    ]
 }
 
 /** The results of parsing a repo-rev string like "my/repo@my/rev". */
