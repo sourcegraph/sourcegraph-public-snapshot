@@ -1,5 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { merge } from 'lodash'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -42,16 +43,12 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
-const LOADING: 'loading' = 'loading'
-
 interface State {
     /**
      * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
      * to load.
      */
-    locationsOrError: typeof LOADING | Location[] | ErrorLike
-
-    locationsComplete: boolean
+    locationsOrError: { results?: Location[]; loading: boolean } | ErrorLike
 
     selectedGroups?: string[]
 }
@@ -60,7 +57,7 @@ interface State {
  * Displays a multi-column view to drill down (by repository, file, etc.) to a list of locations in files.
  */
 export class HierarchicalLocationsView extends React.PureComponent<Props, State> {
-    public state: State = { locationsOrError: LOADING, locationsComplete: false }
+    public state: State = { locationsOrError: { loading: true } }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -77,10 +74,13 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                     switchMap(locations =>
                         locations.pipe(
                             catchError(error => [asError(error) as ErrorLike]),
-                            map(result => ({ locationsOrError: result || [], locationsComplete: false })),
-                            startWith<Pick<State, 'locationsOrError' | 'locationsComplete'>>({
-                                locationsOrError: LOADING,
-                                locationsComplete: false,
+                            map(result => ({
+                                locationsOrError: isErrorLike(result)
+                                    ? result
+                                    : { results: result || [], loading: true },
+                            })),
+                            startWith<Pick<State, 'locationsOrError'>>({
+                                locationsOrError: { loading: true },
                             }),
                             tap(({ locationsOrError }) => {
                                 this.props.extensionsController.services.context.data.next({
@@ -88,15 +88,19 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                                     'panel.locations.hasResults':
                                         locationsOrError &&
                                         !isErrorLike(locationsOrError) &&
-                                        locationsOrError !== LOADING &&
-                                        locationsOrError.length > 0,
+                                        !locationsOrError.loading &&
+                                        (locationsOrError.results || false) &&
+                                        locationsOrError.results.length > 0,
                                 })
                             }),
-                            endWith({ ...this.state, locationsComplete: true })
+                            endWith({ locationsOrError: { loading: false } })
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(old => merge({}, old, stateUpdate)),
+                    error => console.error(error)
+                )
         )
 
         this.subscriptions.add(registerPanelToolbarContributions(this.props))
@@ -116,13 +120,10 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
         if (isErrorLike(this.state.locationsOrError)) {
             return <FileLocationsError error={this.state.locationsOrError} />
         }
-        if (
-            this.state.locationsOrError === LOADING ||
-            (!this.state.locationsComplete && this.state.locationsOrError.length === 0)
-        ) {
+        if (this.state.locationsOrError.loading) {
             return <LoadingSpinner className="icon-inline m-1" />
         }
-        if (this.state.locationsOrError.length === 0) {
+        if (this.state.locationsOrError.results && this.state.locationsOrError.results.length === 0) {
             return <FileLocationsNotFound />
         }
 
@@ -150,7 +151,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
         }
 
         const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
-            this.state.locationsOrError,
+            this.state.locationsOrError.results || [],
             this.state.selectedGroups || null,
             GROUPS.map(({ key }) => key),
             { uri: this.props.defaultGroup }
@@ -225,9 +226,10 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
                                                     </span>
                                                 </span>
                                             ))}
-                                            {!this.state.locationsComplete && (
-                                                <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
-                                            )}
+                                            {!isErrorLike(this.state.locationsOrError) &&
+                                                this.state.locationsOrError.loading && (
+                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
+                                                )}
                                         </div>
                                     }
                                 />
