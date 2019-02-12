@@ -23,6 +23,8 @@ interface QueryFields {
     after: string
     before: string
     message: string
+    count: string
+    timeout: string
 }
 
 interface State {
@@ -56,6 +58,8 @@ export class QueryBuilder extends React.Component<Props, State> {
                 after: '',
                 before: '',
                 message: '',
+                count: '',
+                timeout: '',
             },
         }
     }
@@ -70,138 +74,147 @@ export class QueryBuilder extends React.Component<Props, State> {
         return (
             <div className="query-builder">
                 <div className="query-builder__header">
-                    <h3 className="query-builder__header-input">Search type...</h3>
-                    <h3 className="query-builder__header-example">Shortcut</h3>
+                    <h3 className="query-builder__header-input">Search type:</h3>
                 </div>
-                <div className="query-builder__row">
-                    <label className="query-builder__row-label" htmlFor="query-builder__type">
-                        Type:
-                    </label>
-                    <div className="query-builder__row-input">
-                        {/* tslint:disable-next-line:jsx-ban-elements */}
-                        <Select
-                            id="query-builder__type"
-                            className="form-control query-builder__input"
-                            onChange={this.onTypeChange}
-                        >
-                            <option value="text" defaultChecked={true}>
-                                Text (default)
-                            </option>
-                            <option value="diff">Diff</option>
-                            <option value="commit">Commit</option>
-                            <option value="symbol">Symbol</option>
-                        </Select>
-                    </div>
-                    <div
-                        className="query-builder__row-example"
-                        title="Specify the type of search to conduct. The default is to perform a full-text, regular expression search."
-                    >
-                        'type:diff'
-                    </div>
-                </div>
-                <div className="query-builder__header">
-                    <h3 className="query-builder__header-input">Search in...</h3>
-                </div>
-                <QueryBuilderInputRow
-                    onInputChange={this.onInputChange('repo')}
-                    shortcut="repo:my/repo"
-                    dotComShortcut="repo:github.com/org/"
-                    title="Repositories"
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    shortName="repo"
-                    tip="Repositories whose name contains this substring will be included in search results."
-                />
-                <QueryBuilderInputRow
-                    onInputChange={this.onInputChange('file')}
-                    shortcut="file:^(a|b)/c&nbsp; file:\.js$"
-                    title="File paths"
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    shortName="file"
-                    tip="Tip: Use -file:foo to exclude matching file paths from search results."
-                />
-                <QueryBuilderInputRow
-                    onInputChange={this.onInputChange('language')}
-                    shortcut="lang:typescript"
-                    title="Language"
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    shortName="lang"
-                    tip="Tip: Use -lang:foo to exclude files of matching languages from search results."
-                />
-                <div className="query-builder__header">
-                    <h3 className="query-builder__header-input">Match...</h3>
-                </div>
-                <QueryBuilderInputRow
-                    onInputChange={this.onInputChange('patterns')}
-                    shortcut="(open|close) file"
-                    title="Patterns"
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    shortName="patterns"
-                    tip="Same as typing into the search box. Lines matching these regexp patterns (in order) will be included in the search results."
-                />
-                <QueryBuilderInputRow
-                    onInputChange={this.onInputChange('exactMatch')}
-                    shortcut='"system error 123"'
-                    title="Exact string"
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    shortName="quoted-term"
-                    tip='Tip: Escape double quotes and backslashes like so: "hello \\ \" world"'
-                />
-                <div className="query-builder__row">
-                    <label className="query-builder__row-label" htmlFor="query-builder__case">
-                        Case sensitive?
-                    </label>
-                    <div className="query-builder__row-input">
-                        {/* tslint:disable-next-line:jsx-ban-elements */}
-                        <Select
-                            id="query-builder__case"
-                            className="form-control query-builder__input"
-                            onChange={this.onInputChange('case')}
-                        >
-                            <option value="no" defaultChecked={true}>
-                                No
-                            </option>
-                            <option value="yes">Yes</option>
-                        </Select>
-                    </div>
-                    <div className="query-builder__row-example">case:yes</div>
-                </div>
-                {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
-                    <>
-                        <div className="query-builder__header">
-                            <h3 className="query-builder__header-input">Commit/diff options...</h3>
+                <div className="query-builder__section query-builder__section--orange">
+                    <div className="query-builder__row">
+                        <label className="query-builder__row-label" htmlFor="query-builder__type">
+                            Type:
+                        </label>
+                        <div className="query-builder__row-input">
+                            <Select
+                                id="query-builder__type"
+                                className="form-control query-builder__input"
+                                onChange={this.onTypeChange}
+                            >
+                                <option value="text" defaultChecked={true}>
+                                    Text (default)
+                                </option>
+                                <option value="diff">Diff</option>
+                                <option value="commit">Commit</option>
+                                <option value="symbol">Symbol</option>
+                            </Select>
                         </div>
-                        <QueryBuilderInputRow
-                            onInputChange={this.onInputChange('author')}
-                            shortcut="author:alice"
-                            title="Author"
-                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                            shortName="author"
-                        />
-                        <QueryBuilderInputRow
-                            onInputChange={this.onInputChange('before')}
-                            shortcut='before:"1 year ago"'
-                            title="Before"
-                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                            shortName="before"
-                        />
-                        <QueryBuilderInputRow
-                            onInputChange={this.onInputChange('after')}
-                            shortcut='after:"6 months ago"'
-                            title="After"
-                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                            shortName="after"
-                        />
-                        {this.state.typeOfSearch === 'diff' && (
+                        <div className="query-builder__row">
+                            <div className="query-builder__row-description">
+                                <small>Specify the type of search. The default is text search.</small>
+                            </div>
+                            <div className="query-builder__row-example" />
+                        </div>
+                    </div>
+                    {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
+                        <>
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange('message')}
-                                shortcut='message:"fix:"'
-                                title="Message"
+                                onInputChange={this.onInputChange('author')}
+                                placeholder="alice"
+                                title="Author"
+                                description="Only include results from diffs or commits authored by a user."
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="message"
+                                shortName="author"
                             />
-                        )}
-                    </>
-                )}
+                            <QueryBuilderInputRow
+                                onInputChange={this.onInputChange('before')}
+                                placeholder="1 year ago"
+                                title="Before"
+                                description="Only include results from diffs or commits before the specified time."
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="before"
+                            />
+                            <QueryBuilderInputRow
+                                onInputChange={this.onInputChange('after')}
+                                placeholder="6 months ago"
+                                title="After"
+                                description="Only include results from diffs or commits after the specified time."
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="after"
+                            />
+                            {this.state.typeOfSearch === 'diff' && (
+                                <QueryBuilderInputRow
+                                    onInputChange={this.onInputChange('message')}
+                                    placeholder="fix: typo"
+                                    title="Message"
+                                    description="Only include results from diffs which have commit messages containing the string."
+                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                    shortName="message"
+                                />
+                            )}
+                        </>
+                    )}
+                </div>
+                <div className="query-builder__header">
+                    <h3 className="query-builder__header-input">Search scope:</h3>
+                </div>
+                <div className="query-builder__section query-builder__section--purple">
+                    <QueryBuilderInputRow
+                        onInputChange={this.onInputChange('repo')}
+                        placeholder="my/repo"
+                        dotComPlaceholder="github.com/org/"
+                        title="Repositories"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="repo"
+                        description="Only include results from repositories whose path matches the regexp or string provided."
+                    />
+                    <QueryBuilderInputRow
+                        onInputChange={this.onInputChange('file')}
+                        placeholder="\.js$"
+                        title="File paths"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="file"
+                        description="Only include results in files whose full path matches the regexp."
+                    />
+                    <QueryBuilderInputRow
+                        onInputChange={this.onInputChange('language')}
+                        placeholder="typescript"
+                        title="Language"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="lang"
+                        description="Only include results from files in the specified programming language."
+                    />
+                </div>
+                <div className="query-builder__header">
+                    <h3 className="query-builder__header-input">Match:</h3>
+                </div>
+                <div className="query-builder__section query-builder__section--blue">
+                    <QueryBuilderInputRow
+                        onInputChange={this.onInputChange('patterns')}
+                        placeholder="(open|close) file"
+                        title="Patterns"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="patterns"
+                        description="Same as typing into the search box. Lines matching these regexp patterns (in order) will be included in the search results."
+                    />
+                    <QueryBuilderInputRow
+                        onInputChange={this.onInputChange('exactMatch')}
+                        placeholder="system error 123"
+                        title="Exact string"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="quoted-term"
+                        description="Lines matching an exact string will be included in search results."
+                    />
+                    <div className="query-builder__row">
+                        <label className="query-builder__row-label" htmlFor="query-builder__case">
+                            Case sensitive:
+                        </label>
+                        <div className="query-builder__row-input">
+                            <Select
+                                id="query-builder__case"
+                                className="form-control query-builder__input"
+                                onChange={this.onInputChange('case')}
+                            >
+                                <option value="no" defaultChecked={true}>
+                                    No
+                                </option>
+                                <option value="yes">Yes</option>
+                            </Select>
+                        </div>
+                        <div className="query-builder__row">
+                            <div className="query-builder__row-description">
+                                <small>Perform a case sensitive query. Matches are case insensitive by default.</small>
+                            </div>
+                            <div className="query-builder__row-example" />
+                        </div>
+                    </div>
+                </div>
             </div>
         )
     }

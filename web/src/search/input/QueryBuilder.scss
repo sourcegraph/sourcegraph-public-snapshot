@@ -2,6 +2,7 @@
     border-radius: 0.25rem;
     width: 100%;
     margin-top: 1rem;
+    margin-bottom: 6rem;
     padding: 0.5rem 0;
     position: relative;
 
@@ -20,8 +21,25 @@
         }
     }
 
+    &__section {
+        border: 1px solid $input-border-color;
+        border-radius: 0.125rem;
+        padding: 1rem;
+
+        &--orange {
+            box-shadow: 0 12px 25px -8px rgba(249, 98, 22, 0.1);
+        }
+
+        &--purple {
+            box-shadow: 0 12px 25px -8px rgba(178, 0, 248, 0.1);
+        }
+
+        &--blue {
+            box-shadow: 0 12px 25px -8px rgba(0, 180, 242, 0.1);
+        }
+    }
+
     &__header {
-        border-bottom: solid 1px rgba(51, 68, 90, 1);
         margin-top: 1rem;
         padding-bottom: 0.1rem;
         margin-bottom: 0.4rem;
@@ -67,17 +85,18 @@
 
         &-description {
             flex: 1 1 auto;
+            padding-top: 0.25rem;
+            padding-bottom: 0.5rem;
             padding-right: 1rem;
             margin-left: 8rem;
-            margin-right: 13rem;
         }
     }
 }
 
-.theme-light {
-    .search-fields {
-        &__header {
-            border-color: $color-light-border;
-        }
-    }
-}
+// .theme-light {
+//     .search-fields {
+//         &__header {
+
+//         }
+//     }
+// }

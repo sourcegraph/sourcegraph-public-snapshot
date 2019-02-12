@@ -4,11 +4,11 @@ interface Props {
     /** The field title */
     title: string
     /** An example displaying the shortcut for this field. */
-    shortcut: string
+    placeholder: string
     /** An optional example for sourcegraph.com that displays the shortcut for this field. */
-    dotComShortcut?: string
-    /** An optional tip shown when hovering over the shortcut. */
-    tip?: string
+    dotComPlaceholder?: string
+    /** An description of the input field that is displayed below the field. */
+    description: string
     /**
      * An appropriate identifier for this field to be used as a suffix for CSS classes and testing IDs.
      * Must be a single or hyphenated word, and unique amongst the other fields in the query builder.
@@ -20,18 +20,23 @@ interface Props {
 }
 
 interface State {
-    showDescription: boolean
+    isFocused: boolean
 }
 
 export class QueryBuilderInputRow extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            showDescription: false,
+            isFocused: false,
         }
     }
 
     public render(): JSX.Element | null {
+        const placeholder = this.props.dotComPlaceholder
+            ? this.props.isSourcegraphDotCom
+                ? this.props.dotComPlaceholder
+                : this.props.placeholder
+            : this.props.placeholder
         return (
             <div className="query-builder__row">
                 <label className="query-builder__row-label" htmlFor={`query-builder__${this.props.shortName}`}>
@@ -44,33 +49,24 @@ export class QueryBuilderInputRow extends React.Component<Props, State> {
                         className="form-control query-builder__input"
                         spellCheck={false}
                         autoCapitalize="off"
-                        placeholder=""
+                        autoComplete="off"
+                        placeholder={placeholder}
                         onChange={this.props.onInputChange}
-                        onFocus={this.toggleShowDescription}
-                        onBlur={this.toggleShowDescription}
+                        onFocus={this.toggleIsFocused}
+                        onBlur={this.toggleIsFocused}
                     />
                 </div>
-                <div className="query-builder__row-example" title={this.props.tip}>
-                    {this.props.dotComShortcut
-                        ? this.props.isSourcegraphDotCom
-                            ? this.props.dotComShortcut
-                            : this.props.shortcut
-                        : this.props.shortcut}
-                </div>
-                {this.state.showDescription && (
-                    <div className="query-builder__row">
-                        <label className="query-builder__row-label" />
-                        <div className="query-builder__row-description">
-                            <small>{this.props.tip}</small>
-                        </div>
-                        <div className="query-builder__row-example" />
+                <div className="query-builder__row">
+                    <div className="query-builder__row-description">
+                        <small>{this.props.description}</small>
                     </div>
-                )}
+                    <div className="query-builder__row-example" />
+                </div>
             </div>
         )
     }
 
-    private toggleShowDescription = () => {
-        this.setState({ showDescription: !this.state.showDescription })
+    private toggleIsFocused = () => {
+        this.setState({ isFocused: !this.state.isFocused })
     }
 }
