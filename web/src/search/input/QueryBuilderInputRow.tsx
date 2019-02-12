@@ -32,10 +32,8 @@ export class QueryBuilderInputRow extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const placeholder = this.props.dotComPlaceholder
-            ? this.props.isSourcegraphDotCom
-                ? this.props.dotComPlaceholder
-                : this.props.placeholder
+        const placeholder = this.props.isSourcegraphDotCom
+            ? this.props.dotComPlaceholder || this.props.placeholder
             : this.props.placeholder
         return (
             <div className="query-builder__row">
