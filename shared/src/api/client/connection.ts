@@ -1,8 +1,11 @@
+import * as comlink from 'comlink'
 import { from, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions } from 'sourcegraph'
+import { ExtensionHostAPI } from '../extension/api/api'
 import { Connection } from '../protocol/jsonrpc2/connection'
 import { Tracer } from '../protocol/jsonrpc2/trace'
+import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
 import { ClientCommands } from './api/commands'
 import { ClientConfiguration } from './api/configuration'
@@ -11,7 +14,7 @@ import { ClientDocuments } from './api/documents'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientRoots } from './api/roots'
-import { Search } from './api/search'
+import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
 import { applyContextUpdate } from './context/context'
@@ -57,9 +60,16 @@ export function createExtensionHostClientConnection(
 ): ExtensionHostClientConnection {
     const subscription = new Subscription()
 
+    // MAIN THREAD
+
+    /** Proxy to the exposed extension host API */
+    const proxy = comlink.proxy<ExtensionHostAPI>(self)
+
     connection.onRequest('ping', () => 'pong')
 
-    subscription.add(new ClientConfiguration<any>(connection, services.settings))
+    const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
+    subscription.add(clientConfiguration)
+
     subscription.add(
         new ClientContext(connection, (updates: ContextValues) =>
             services.context.data.next(applyContextUpdate(services.context.data.value, updates))
@@ -88,7 +98,10 @@ export function createExtensionHostClientConnection(
             }
         )
     )
-    subscription.add(new ClientViews(connection, services.views, services.textDocumentLocations))
+
+    const clientViews = new ClientViews(connection, services.views, services.textDocumentLocations)
+    subscription.add(clientViews)
+
     subscription.add(new ClientCodeEditor(connection, services.textDocumentDecoration))
     subscription.add(
         new ClientDocuments(
@@ -102,18 +115,20 @@ export function createExtensionHostClientConnection(
             )
         )
     )
-    subscription.add(
-        new ClientLanguageFeatures(
-            connection,
-            services.textDocumentHover,
-            services.textDocumentDefinition,
-            services.textDocumentTypeDefinition,
-            services.textDocumentImplementation,
-            services.textDocumentReferences,
-            services.textDocumentLocations
-        )
+    const clientLanguageFeatures = new ClientLanguageFeatures(
+        connection,
+        services.textDocumentHover,
+        services.textDocumentDefinition,
+        services.textDocumentTypeDefinition,
+        services.textDocumentImplementation,
+        services.textDocumentReferences,
+        services.textDocumentLocations
     )
-    subscription.add(new Search(connection, services.queryTransformer))
+    subscription.add(clientLanguageFeatures)
+
+    const clientSearch = new ClientSearch(services.queryTransformer)
+    subscription.add(clientSearch)
+
     subscription.add(new ClientCommands(connection, services.commands))
     subscription.add(
         new ClientRoots(
@@ -125,6 +140,14 @@ export function createExtensionHostClientConnection(
         )
     )
     subscription.add(new ClientExtensions(connection, services.extensions))
+
+    const clientAPI: ClientAPI = {
+        ping: () => 'pong',
+        search: clientSearch,
+        configuration: clientConfiguration,
+        languageFeatures: clientLanguageFeatures,
+    }
+    comlink.expose(clientAPI, self)
 
     return {
         setTracer: tracer => {
