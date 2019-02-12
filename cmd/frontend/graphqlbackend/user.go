@@ -282,8 +282,5 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.disableUsernameChanges == true.
 	isSiteAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
-	if isSiteAdminErr == nil {
-		return true
-	}
-	return false
+	return isSiteAdminErr == nil
 }
