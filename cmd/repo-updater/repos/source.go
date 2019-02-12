@@ -40,7 +40,7 @@ func (s sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 
 	var repos []*Repo
 	var err *multierror.Error
-	for i := 0; i < len(ch); i++ {
+	for i := 0; i < cap(ch); i++ {
 		if r := <-ch; r.err != nil {
 			err = multierror.Append(err, r.err)
 		} else {
