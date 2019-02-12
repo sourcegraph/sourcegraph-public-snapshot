@@ -89,7 +89,7 @@
     "@types/react-visibility-sensor": "5.0.0",
     "@types/reactstrap": "6.4.4",
     "@types/sanitize-html": "1.18.2",
-    "@types/shelljs": "0.8.1",
+    "@types/shelljs": "0.8.2",
     "@types/signale": "1.2.0",
     "@types/sinon": "7.0.3",
     "@types/socket.io": "2.1.2",
