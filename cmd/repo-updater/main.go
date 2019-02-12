@@ -76,7 +76,13 @@ func main() {
 		sources := []repos.Source{
 			repos.NewGithubSource(conf.GitHubConfigs),
 		}
-		syncer := repos.NewSyncer(10*time.Second, store, sources, time.Now)
+
+		syncer := repos.NewSyncer(10*time.Second, store, sources, func() time.Time {
+			// XXX(tsenart): It seems like the current db layer in the frontend API
+			// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
+			// and ensure it's the used timezone across the board.
+			return time.Now().UTC()
+		})
 		go func() { log.Fatal(syncer.Run(ctx)) }()
 	}
 
