@@ -25,7 +25,7 @@ describe('Workspace roots (integration)', () => {
         })
     })
 
-    describe('workspace.rootsChanges', () => {
+    describe('workspace.rootChanges', () => {
         test('fires when a root is added or removed', async () => {
             const { model, extensionHost } = await integrationTestContext()
 
