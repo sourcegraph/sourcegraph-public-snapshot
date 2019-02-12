@@ -58,13 +58,13 @@ func main() {
 	synced := make(chan *protocol.RepoInfo)
 
 	// Other external services syncing thread. Repo updates will be sent on the given channel.
-	syncer := repos.NewOtherReposSyncer(
+	otherSyncer := repos.NewOtherReposSyncer(
 		repos.NewInternalAPI(10*time.Second),
 		synced,
 	)
 
 	// Start up handler that frontend relies on
-	repoupdater := repoupdater.Server{OtherReposSyncer: syncer}
+	repoupdater := repoupdater.Server{OtherReposSyncer: otherSyncer}
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	host := ""
 	if env.InsecureDev {
@@ -108,7 +108,7 @@ func main() {
 	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
 
 	// Start other repos syncer syncing thread
-	go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
+	go func() { log.Fatal(otherSyncer.Run(ctx, repos.GetUpdateInterval())) }()
 
 	// Start other repos updates scheduler relay thread.
 	go func() {
