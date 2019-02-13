@@ -130,7 +130,7 @@ type ExternalService struct {
 	DeletedAt   *time.Time
 }
 
-// String returns an identifier string for the given external service.
-func (s ExternalService) String() string {
+// URN returns an unique resource name for the given external service.
+func (s ExternalService) URN() string {
 	return fmt.Sprintf("extsvc:%s:%d", s.Kind, s.ID)
 }

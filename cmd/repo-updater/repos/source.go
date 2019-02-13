@@ -81,7 +81,7 @@ func includesGitHubDotComSource(srcs []Source) bool {
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
 	ListRepos(context.Context) ([]*Repo, error)
-	String() string
+	URN() string
 }
 
 // A GithubSource yields repositories from a single Github connection configured
@@ -128,6 +128,15 @@ func (s GithubSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 		repos = append(repos, githubRepoToRepo(repo, s.conn))
 	}
 	return repos, nil
+}
+
+// ParseURN parses a URN into it's three components: org, entitity and identifier.
+func ParseURN(urn string) (org, entity, id string, err error) {
+	ps := strings.SplitN(urn, ":", 3)
+	if len(ps) != 3 {
+		return "", "", "", fmt.Errorf("URN %q has invalid format", urn)
+	}
+	return ps[0], ps[1], ps[2], nil
 }
 
 func githubRepoToRepo(ghrepo *github.Repository, conn *githubConnection) *Repo {

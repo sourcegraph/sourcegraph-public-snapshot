@@ -89,7 +89,9 @@ func (s *DBStore) Done(errs ...*error) {
 	}
 }
 
-// ListRepos lists all configured repositories in Sourcegraph.
+// ListRepos lists all stored repos that are owned by the given sources.
+// Each source is assumed to be a URN in the format "extsvc:$kind:$id" where
+// kind is the external service kind and ID its unique identifier.
 func (s DBStore) ListRepos(ctx context.Context, sources ...string) (repos []*Repo, err error) {
 	var cursor, next int64 = -1, 0
 	for cursor != next && err == nil {
@@ -102,7 +104,11 @@ func (s DBStore) ListRepos(ctx context.Context, sources ...string) (repos []*Rep
 }
 
 func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, sources []string, repos *[]*Repo) (err error) {
-	q := listReposQuery(cursor, limit, sources)
+	q, err := listReposQuery(cursor, limit, sources)
+	if err != nil {
+		return err
+	}
+
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
@@ -118,16 +124,24 @@ func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, sources
 	})
 }
 
-func listReposQuery(cursor, limit int64, sources []string) *sqlf.Query {
+func listReposQuery(cursor, limit int64, sources []string) (*sqlf.Query, error) {
 	if len(sources) == 0 {
-		return sqlf.Sprintf(listReposQueryFmtstr, cursor, "TRUE", limit)
+		return sqlf.Sprintf(listReposQueryFmtstr, cursor, "TRUE", limit), nil
 	}
-	queries := make([]*sqlf.Query, 0, len(sources))
+
+	ids := make([]*sqlf.Query, 0, len(sources))
 	for _, source := range sources {
-		queries = append(queries, sqlf.Sprintf("%s", source))
+		if _, entity, id, err := ParseURN(source); err != nil {
+			return nil, errors.Wrap(err, "DBStore.listReposQuery")
+		} else if entity != "extsvc" {
+			return nil, fmt.Errorf("DBStore.listReposQuery: unlistable source entity %q", entity)
+		} else {
+			ids = append(ids, sqlf.Sprintf("%s", id))
+		}
 	}
-	cond := sqlf.Sprintf("upper(external_service_type) IN (%s)", sqlf.Join(queries, ","))
-	return sqlf.Sprintf(listReposQueryFmtstr, cursor, cond, limit)
+
+	cond := sqlf.Sprintf("external_service_id IN (%s)", sqlf.Join(ids, ","))
+	return sqlf.Sprintf(listReposQueryFmtstr, cursor, cond, limit), nil
 }
 
 const listReposQueryFmtstr = `

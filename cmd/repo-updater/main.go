@@ -55,13 +55,13 @@ func main() {
 		}),
 	})
 
-	// Synced repos will be sent here.
-	synced := make(chan *protocol.RepoInfo)
+	// Synced repos of other external service kind will be sent here.
+	otherSynced := make(chan *protocol.RepoInfo)
 
 	frontendAPI := repos.NewInternalAPI(10 * time.Second)
 
 	// Other external services syncing thread. Repo updates will be sent on the given channel.
-	otherSyncer := repos.NewOtherReposSyncer(frontendAPI, synced)
+	otherSyncer := repos.NewOtherReposSyncer(frontendAPI, otherSynced)
 
 	db, err := repos.NewDB(repos.NewDSNFromEnv())
 	if err != nil {
@@ -70,11 +70,11 @@ func main() {
 
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 	src := repos.NewSourcerer(frontendAPI)
-	diffs := make(chan repos.Diff)
+	synced := make(chan *repos.SyncResult)
 	kinds := []string{
 		"GITHUB",
 	}
-	syncer := repos.NewSyncer(10*time.Second, store, src, kinds, diffs, func() time.Time {
+	syncer := repos.NewSyncer(10*time.Second, store, src, kinds, synced, func() time.Time {
 		// XXX(tsenart): It seems like the current db layer in the frontend API
 		// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
 		// and ensure it's the used timezone across the board.
@@ -85,11 +85,11 @@ func main() {
 
 	// Start new repo syncer updates scheduler relay thread.
 	go func() {
-		for diff := range diffs {
+		for res := range synced {
 			if conf.Get().DisableAutoGitUpdates {
 				continue
 			} else if conf.UpdateScheduler2Enabled() {
-				repos.Scheduler.UpdateFromDiff(diff)
+				repos.Scheduler.UpdateFromDiff(res.Diff)
 			} else {
 				log15.Error("Diff based scheduler update not implemented for old scheduler")
 			}
@@ -145,7 +145,7 @@ func main() {
 
 	// Start other repos updates scheduler relay thread.
 	go func() {
-		for repo := range synced {
+		for repo := range otherSynced {
 			if conf.Get().DisableAutoGitUpdates {
 				continue
 			} else if conf.UpdateScheduler2Enabled() {
