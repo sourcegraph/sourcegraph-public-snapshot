@@ -312,7 +312,6 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 
 func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	conds = []*sqlf.Query{
-		sqlf.Sprintf("TRUE"),
 		sqlf.Sprintf("deleted_at IS NULL"),
 	}
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
