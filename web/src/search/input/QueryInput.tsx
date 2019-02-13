@@ -78,6 +78,9 @@ interface State {
 
     /** Whether suggestions are currently being fetched */
     loading: boolean
+
+    /** A search query that might contain a file line in the format of <query>:123 */
+    queryWithFileLine: string
 }
 
 export class QueryInput extends React.Component<Props, State> {
@@ -121,25 +124,41 @@ export class QueryInput extends React.Component<Props, State> {
             loading: false,
             selectedSuggestion: -1,
             suggestions: [],
+            queryWithFileLine: this.props.value,
         }
 
         this.subscriptions.add(
             // Trigger new suggestions every time the input field is typed into
             this.inputValues
                 .pipe(
-                    tap(query => this.props.onChange(query)),
+                    tap(query => {
+                        this.setState({ queryWithFileLine: query })
+                        // Remove file line from the end of the query because the syntax is only
+                        // supported by this component
+                        const queryWithoutFileLine = query.replace(/:\d*$/, '')
+                        this.props.onChange(queryWithoutFileLine)
+                    }),
                     distinctUntilChanged(),
                     debounceTime(200),
                     switchMap(query => {
                         if (query.length < QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH) {
                             return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
                         }
+                        // Match file line in the form of <query>:123
+                        const [, fileLineDigits = '' ] = this.state.queryWithFileLine.match(/:(\d+)$/) || []
                         const fullQuery = [this.props.prependQueryForSuggestions, this.props.value]
                             .filter(s => !!s)
                             .join(' ')
                         const suggestionsFetch = fetchSuggestions(fullQuery).pipe(
-                            map(createSuggestion),
                             toArray(),
+                            map((items) => {
+                                let lineNumber = 0
+                                // Only link to file line when there is one suggestion
+                                if (items.length === 1) {
+                                    lineNumber = Number(fileLineDigits) || 0
+                                }
+                                return items.map((item) => createSuggestion(lineNumber, item))
+                            }),
                             map((suggestions: Suggestion[]) => ({
                                 suggestions,
                                 selectedSuggestion: -1,
@@ -230,7 +249,12 @@ export class QueryInput extends React.Component<Props, State> {
             // Allow other components to update the query (e.g., to be relevant to what the user is
             // currently viewing).
             this.subscriptions.add(
-                queryUpdates.pipe(distinctUntilChanged()).subscribe(query => this.props.onChange(query))
+                queryUpdates.pipe(distinctUntilChanged()).subscribe(query => {
+                    this.setState({ queryWithFileLine: query })
+                    // Assume that this update does not contain a file line because it is generated
+                    // by the application and not the user
+                    this.props.onChange(query)
+                })
             )
 
             /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
@@ -283,7 +307,7 @@ export class QueryInput extends React.Component<Props, State> {
             <div className="query-input2">
                 <input
                     className="form-control query-input2__input rounded-left"
-                    value={this.props.value}
+                    value={this.state.queryWithFileLine}
                     autoFocus={this.props.autoFocus === true}
                     onChange={this.onInputChange}
                     onKeyDown={this.onInputKeyDown}

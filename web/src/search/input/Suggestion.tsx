@@ -41,7 +41,7 @@ interface DirSuggestion extends BaseSuggestion {
 
 export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion
 
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
+export function createSuggestion(lineNumber: number, item: GQL.SearchSuggestion): Suggestion {
     switch (item.__typename) {
         case 'Repository': {
             return {
@@ -67,12 +67,13 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                     urlLabel: 'go to dir',
                 }
             }
+            const withLineNumber = lineNumber > 0
             return {
                 type: 'file',
                 title: item.name,
                 description: descriptionParts.join(' — '),
-                url: `${item.url}?suggestion`,
-                urlLabel: 'go to file',
+                url: withLineNumber ? `${item.url}#L${lineNumber}` : `${item.url}?suggestion`,
+                urlLabel: withLineNumber ? `go to file at line ${lineNumber}` : 'go to file',
             }
         }
         case 'Symbol': {
