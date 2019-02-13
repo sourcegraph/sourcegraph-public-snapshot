@@ -76,7 +76,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         return (
             <>
                 <div className="query-builder__toggle">
-                    <a href="#" onClick={this.toggleShowQueryBuilder} data-testid="test-query-builder-toggle">
+                    <a href="" onClick={this.toggleShowQueryBuilder} data-testid="test-query-builder-toggle">
                         {!!this.state.showQueryBuilder ? 'Hide' : 'Show'} search options
                     </a>
                 </div>
@@ -209,7 +209,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     <Select
                                         id="query-builder__case"
                                         className="form-control query-builder__input"
-                                        onChange={this.onInputChange}
+                                        onChange={this.onTypeChange}
                                     >
                                         <option value="no" defaultChecked={true}>
                                             No
@@ -236,7 +236,8 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         )
     }
 
-    private toggleShowQueryBuilder = () => {
+    private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault()
         this.setState({ showQueryBuilder: !this.state.showQueryBuilder })
     }
     private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -258,9 +259,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
             const newFields = { ...fields, [key]: event.target.value }
 
             const fieldsQueryParts: string[] = []
-            for (const inputFieldAndValue of Object.entries(newFields)) {
-                const inputField = inputFieldAndValue[0]
-                const inputValue = inputFieldAndValue[1]
+            for (const [inputField, inputValue] of Object.entries(newFields)) {
                 if (inputValue !== '') {
                     if (inputField === 'patterns') {
                         // Patterns should be added to the query as-is.
