@@ -83,7 +83,6 @@ func TestIntegration_DBStore(t *testing.T) {
 				r.Name += suffix
 				r.Description += suffix
 				r.Language += suffix
-				r.DeletedAt = now
 				r.UpdatedAt = now
 				r.Archived = !r.Archived
 				r.Fork = !r.Fork
@@ -103,5 +102,18 @@ func TestIntegration_DBStore(t *testing.T) {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 		}
+
+		for _, repo := range want {
+			repo.DeletedAt = time.Now().UTC()
+		}
+
+		if err = txstore.UpsertRepos(ctx, want...); err != nil {
+			t.Errorf("UpsertRepos error: %s", err)
+		} else if have, err = txstore.ListRepos(ctx); err != nil {
+			t.Errorf("ListRepos error: %s", err)
+		} else if diff := pretty.Compare(have, []*Repo{}); diff != "" {
+			t.Errorf("ListRepos:\n%s", diff)
+		}
+
 	})
 }
