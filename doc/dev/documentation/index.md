@@ -98,7 +98,7 @@ Currently there is no automatic linting of documentation files. In the future we
 
 We treat documentation as code, so we've implemented some testing:
 
-- `docsite check`: Check that all internal (relative) links work correctly. <!-- TODO(sqs): set this up -->
+- `docsite check`: Check that all internal (relative) links work correctly.
 
 ## Previewing the changes live
 
