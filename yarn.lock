@@ -1528,10 +1528,10 @@
     stylelint-config-standard "^18.2.0"
     stylelint-scss "^3.3.0"
 
-"@sourcegraph/tsconfig@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-3.0.0.tgz#dfd8a0072d55a219118f58cfbca71336b58991b2"
-  integrity sha512-/2Q4lAQvHPGkddV7+4FRBgJPIzWw0e364kYq3IkD22H9eHJdA0KHfKXAKmWQjbtVpWSQeNPyVJ1pT5emfef4TQ==
+"@sourcegraph/tsconfig@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-4.0.0.tgz#dd2a406f90760bb789fd89fde4bd0a8d681f2767"
+  integrity sha512-jxrhKbek4yu1HUDpUhqR9hAGFiUgaJ9NIM+c8JEkAnvpW67ab1AUFWb82aSVfZWX1UVqfR84AMr7xP3E8LlL+A==
 
 "@sourcegraph/tslint-config@^12.3.1":
   version "12.3.1"
