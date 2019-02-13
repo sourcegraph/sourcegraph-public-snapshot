@@ -111,8 +111,7 @@ You can also follow the [sourcegraph/docs.sourcegraph.com README](https://github
 Every Sourcegraph instance includes the documentation at the URL path `/help`
 (`https://sourcegraph.example.com/help`), e.g., <https://sourcegraph.com/help>.
 
-The documentation available on docs.sourcegraph.com is continuously <!-- TODO(sqs): set up continuous deploy of docs -->
-deployed every hour from the `master` branch of `sourcegraph/sourcegraph`. Once a pull request gets merged, it will be available on docs.sourcegraph.com soon, and its doc changes will ship in the next release.
+The documentation available on https://docs.sourcegraph.com is continuously deployed every 5 minutes from the `master` branch of `sourcegraph/sourcegraph`.
 
 ### Linking to /help
 
