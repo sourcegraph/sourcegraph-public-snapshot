@@ -3,6 +3,8 @@
 package query
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
@@ -40,7 +42,7 @@ var (
 	conf = types.Config{
 		FieldTypes: map[string]types.FieldType{
 			FieldDefault:   {Literal: types.RegexpType, Quoted: types.StringType},
-			FieldCase:      {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
+			FieldCase:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldRepo:      regexpNegatableFieldType,
 			FieldRepoGroup: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldFile:      regexpNegatableFieldType,
@@ -115,7 +117,24 @@ func (q *Query) BoolValue(field string) bool {
 // IsCaseSensitive reports whether the query's expressions are matched
 // case sensitively.
 func (q *Query) IsCaseSensitive() bool {
-	return q.BoolValue(FieldCase)
+	value, _ := q.StringValue(FieldCase)
+	if value == "smartcase" || value == "" { // default to smartcase if no case was provided
+		for _, value := range q.Values(FieldDefault) {
+			if value.String != nil {
+				return *value.String != strings.ToLower(*value.String)
+			}
+			if value.Regexp != nil {
+				s := value.Regexp.String()
+				return s != strings.ToLower(s)
+			}
+		}
+
+		return false
+	}
+
+	b, _ := types.ParseBool(value)
+
+	return b
 }
 
 // Values returns the values for the given field.
