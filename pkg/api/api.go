@@ -129,3 +129,8 @@ type ExternalService struct {
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time
 }
+
+// String returns an identifier string for the given external service.
+func (s ExternalService) String() string {
+	return fmt.Sprintf("extsvc:%s:%d", s.Kind, s.ID)
+}
