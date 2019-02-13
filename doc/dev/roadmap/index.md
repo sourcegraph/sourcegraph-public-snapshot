@@ -22,7 +22,7 @@ Distribution:
 
 - [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
 - [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
-- [Docs UX improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
+- [Better docs for setting up an instance ready for sharing](https://github.com/sourcegraph/sourcegraph/issues/2277)
 
 Code search and navigation:
 
