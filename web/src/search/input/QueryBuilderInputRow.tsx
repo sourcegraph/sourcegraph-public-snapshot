@@ -19,52 +19,31 @@ interface Props {
     isSourcegraphDotCom: boolean
 }
 
-interface State {
-    isFocused: boolean
-}
-
-export class QueryBuilderInputRow extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            isFocused: false,
-        }
-    }
-
-    public render(): JSX.Element | null {
-        const placeholder = this.props.isSourcegraphDotCom
-            ? this.props.dotComPlaceholder || this.props.placeholder
-            : this.props.placeholder
-        return (
-            <div className="query-builder__row">
-                <label className="query-builder__row-label" htmlFor={`query-builder__${this.props.shortName}`}>
-                    {this.props.title}:
-                </label>
-                <div className="query-builder__row-input">
-                    <input
-                        data-testid={`test-${this.props.shortName}`}
-                        id={`query-builder__${this.props.shortName}`}
-                        className="form-control query-builder__input"
-                        spellCheck={false}
-                        autoCapitalize="off"
-                        autoComplete="off"
-                        placeholder={placeholder}
-                        onChange={this.props.onInputChange}
-                        onFocus={this.toggleIsFocused}
-                        onBlur={this.toggleIsFocused}
-                    />
-                </div>
-                <div className="query-builder__row">
-                    <div className="query-builder__row-description">
-                        <small>{this.props.description}</small>
-                    </div>
-                    <div className="query-builder__row-example" />
-                </div>
+export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
+    const placeholder = props.isSourcegraphDotCom ? props.dotComPlaceholder || props.placeholder : props.placeholder
+    return (
+        <div className="query-builder__row">
+            <label className="query-builder__row-label" htmlFor={`query-builder__${props.shortName}`}>
+                {props.title}:
+            </label>
+            <div className="query-builder__row-input">
+                <input
+                    data-testid={`test-${props.shortName}`}
+                    id={`query-builder__${props.shortName}`}
+                    className="form-control query-builder__input"
+                    spellCheck={false}
+                    autoCapitalize="off"
+                    autoComplete="off"
+                    placeholder={placeholder}
+                    onChange={props.onInputChange}
+                />
             </div>
-        )
-    }
-
-    private toggleIsFocused = () => {
-        this.setState({ isFocused: !this.state.isFocused })
-    }
+            <div className="query-builder__row">
+                <div className="query-builder__row-description">
+                    <small>{props.description}</small>
+                </div>
+                <div className="query-builder__row-example" />
+            </div>
+        </div>
+    )
 }
