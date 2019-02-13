@@ -14,7 +14,9 @@ import { SettingsCascadeOrError } from '../../settings/settings'
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
 describe('<HierarchicalLocationsView />', () => {
-    setLinkComponent((props: any) => <a {...props} />)
+    beforeAll(() => {
+        setLinkComponent((props: any) => <a {...props} />)
+    })
     const getProps = () => {
         const services = {
             context: {
@@ -173,5 +175,9 @@ describe('<HierarchicalLocationsView />', () => {
             locations,
         }
         expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+    })
+
+    afterAll(() => {
+        setLinkComponent(null as any)
     })
 })
