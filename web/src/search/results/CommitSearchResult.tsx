@@ -248,7 +248,7 @@ function commitMessageSubject(message: string): string {
     return eol === -1 ? message : message.slice(0, eol)
 }
 
-function stopPropagationToCollapseOrExpand(e: React.MouseEvent<HTMLElement>): void {
+function stopPropagationToCollapseOrExpand(e: React.MouseEvent<any>): void {
     e.stopPropagation()
 }
 
