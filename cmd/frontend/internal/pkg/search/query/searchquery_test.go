@@ -22,10 +22,10 @@ func TestQuery_IsCaseSensitive(t *testing.T) {
 	}{
 		{"yes", "case:yes", true},
 		{"no (explicit)", "case:no", false},
-		{"no (smartcase/regexp)", "case:smartcase test", false},
-		{"yes (smartcase/regexp)", "case:smartcase Test", true},
-		{"no (smartcase/string)", "case:smartcase \"test\"", false},
-		{"yes (smartcase/string)", "case:smartcase \"Test\"", true},
+		{"no (smartcase/regexp)", "case:auto test", false},
+		{"yes (smartcase/regexp)", "case:auto Test", true},
+		{"no (smartcase/string)", "case:auto \"test\"", false},
+		{"yes (smartcase/string)", "case:auto \"Test\"", true},
 		{"yes (default)", "Test", true},
 		{"no (default)", "test", false},
 	}

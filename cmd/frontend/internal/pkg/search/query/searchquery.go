@@ -118,7 +118,7 @@ func (q *Query) BoolValue(field string) bool {
 // case sensitively.
 func (q *Query) IsCaseSensitive() bool {
 	value, _ := q.StringValue(FieldCase)
-	if value == "smartcase" || value == "" { // default to smartcase if no case was provided
+	if value == "auto" || value == "" { // default to smartcase if no case was provided
 		for _, value := range q.Values(FieldDefault) {
 			if value.String != nil {
 				return *value.String != strings.ToLower(*value.String)
