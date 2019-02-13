@@ -26,7 +26,7 @@ const renderShallow = (element: React.ReactElement<NavLinks['props']>): any => {
         } else if (typeof element.type === 'symbol' || typeof element.type === 'string') {
             return flatten(React.Children.map(element.props.children, element => getDisplayName(element)))
         } else {
-            return element.type.displayName || element.type.name || 'Unknown'
+            return (element.type as any).displayName || element.type.name || 'Unknown'
         }
     }
 
