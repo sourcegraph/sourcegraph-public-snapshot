@@ -96,6 +96,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         id="query-builder__type"
                                         className="form-control query-builder__input"
                                         onChange={this.onTypeChange}
+                                        value={this.state.typeOfSearch}
                                     >
                                         <option value="text" defaultChecked={true}>
                                             Text (default)
