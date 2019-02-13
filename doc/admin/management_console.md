@@ -106,3 +106,10 @@ If you are using `sourcegraph/server` and the regular Docker flag:
 This means you can simply place them in `~/.sourcegraph/config/management/`  on the host.
 
 Restart the container once you have copied the files there for the changes to take effect.
+This section coming soon. Please contact support@sourcegraph.com for further information.
+
+### Can I disable HTTPS on the management console?
+
+It is **unsafe** to do so as anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf.
+
+If you understand the risks and still wish to, you can set the environment variable `UNSAFE_NO_HTTPS` to `true` on the Docker container. This will entirely disable HTTPS (the port will remain the same).
