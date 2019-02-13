@@ -1,8 +1,8 @@
+import { noop } from 'lodash'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
-import { nullEventLogger } from '../../tracking/eventLogger'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 
 describe('RegistryExtensionOverviewPage', () => {
@@ -15,7 +15,7 @@ describe('RegistryExtensionOverviewPage', () => {
                 .create(
                     <MemoryRouter>
                         <RegistryExtensionOverviewPage
-                            eventLogger={nullEventLogger}
+                            eventLogger={{ logViewEvent: noop }}
                             extension={{
                                 id: 'x',
                                 rawManifest: '{}',
@@ -42,7 +42,7 @@ describe('RegistryExtensionOverviewPage', () => {
             const x = renderer.create(
                 <MemoryRouter>
                     <RegistryExtensionOverviewPage
-                        eventLogger={nullEventLogger}
+                        eventLogger={{ logViewEvent: noop }}
                         extension={{
                             id: 'x',
                             rawManifest: '',

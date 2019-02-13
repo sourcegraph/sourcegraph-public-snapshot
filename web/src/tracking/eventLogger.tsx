@@ -12,12 +12,7 @@ import { telligent } from './services/telligentWrapper'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
-export interface EventLogger extends TelemetryService {
-    log: (eventLabel: string, eventProperties?: any) => void
-    logViewEvent: (pageTitle: string, eventProperties?: any) => void
-}
-
-export class WebAppEventLogger implements EventLogger {
+export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
     private user?: GQL.IUser | null
 
@@ -192,10 +187,4 @@ export class WebAppEventLogger implements EventLogger {
     }
 }
 
-export class NullEventLogger implements EventLogger {
-    public log = () => null
-    public logViewEvent = () => null
-}
-
-export const eventLogger = new WebAppEventLogger()
-export const nullEventLogger = new NullEventLogger()
+export const eventLogger = new EventLogger()

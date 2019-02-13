@@ -14,7 +14,7 @@ import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionREADME } from './RegistryExtensionREADME'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension'> {
-    eventLogger: EventLogger
+    eventLogger: Pick<EventLogger, 'logViewEvent'>
 }
 
 /** A page that displays overview information about a registry extension. */
