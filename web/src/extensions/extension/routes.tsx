@@ -1,4 +1,5 @@
 import React from 'react'
+import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRoute } from './ExtensionArea'
 const RegistryExtensionContributionsPage = React.lazy(async () => ({
     default: (await import('./RegistryExtensionContributionsPage')).RegistryExtensionContributionsPage,
@@ -15,7 +16,7 @@ export const extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = [
         path: '',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <RegistryExtensionOverviewPage {...props} />,
+        render: props => <RegistryExtensionOverviewPage eventLogger={eventLogger} {...props} />,
     },
     {
         path: `/-/manifest`,

@@ -25,6 +25,10 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
  * The welcome main page, which describes Sourcegraph functionality and other general information.
  */
 export class WelcomeMainPage extends React.Component<Props> {
+    public componentDidMount(): void {
+        eventLogger.logViewEvent('Welcome')
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className="welcome-main-page">
