@@ -14,7 +14,7 @@ import (
 
 // A Store exposes methods to read and write persistent repositories.
 type Store interface {
-	ListRepos(ctx context.Context) ([]*Repo, error)
+	ListRepos(ctx context.Context, sources ...string) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 }
 
@@ -36,15 +36,13 @@ type TxStore interface {
 // DBStore implements the Store interface for reading and writing repos directly
 // from the Postgres database.
 type DBStore struct {
-	db        DB
-	listRepos *sql.Stmt
-	txOpts    sql.TxOptions
+	db     DB
+	txOpts sql.TxOptions
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db DB, txOpts sql.TxOptions) (*DBStore, error) {
-	store := DBStore{db: db, txOpts: txOpts}
-	return &store, store.prepare(ctx)
+func NewDBStore(ctx context.Context, db DB, txOpts sql.TxOptions) *DBStore {
+	return &DBStore{db: db, txOpts: txOpts}
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
@@ -66,9 +64,8 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	}
 
 	return &DBStore{
-		db:        tx,
-		listRepos: tx.StmtContext(ctx, s.listRepos),
-		txOpts:    s.txOpts,
+		db:     tx,
+		txOpts: s.txOpts,
 	}, nil
 }
 
@@ -93,19 +90,20 @@ func (s *DBStore) Done(errs ...*error) {
 }
 
 // ListRepos lists all configured repositories in Sourcegraph.
-func (s DBStore) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+func (s DBStore) ListRepos(ctx context.Context, sources ...string) (repos []*Repo, err error) {
 	var cursor, next int64 = -1, 0
 	for cursor != next && err == nil {
 		cursor = next
-		if err = s.listReposPage(ctx, cursor, 500, &repos); len(repos) > 0 {
+		if err = s.listReposPage(ctx, cursor, 500, sources, &repos); len(repos) > 0 {
 			next = int64(repos[len(repos)-1]._ID)
 		}
 	}
 	return repos, err
 }
 
-func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, repos *[]*Repo) (err error) {
-	rows, err := s.listRepos.QueryContext(ctx, cursor, limit)
+func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, sources []string, repos *[]*Repo) (err error) {
+	q := listReposQuery(cursor, limit, sources)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
@@ -120,10 +118,22 @@ func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, repos *
 	})
 }
 
-const listReposSQL = `
+func listReposQuery(cursor, limit int64, sources []string) *sqlf.Query {
+	if len(sources) == 0 {
+		return sqlf.Sprintf(listReposQueryFmtstr, cursor, "TRUE", limit)
+	}
+	queries := make([]*sqlf.Query, 0, len(sources))
+	for _, source := range sources {
+		queries = append(queries, sqlf.Sprintf("%s", source))
+	}
+	cond := sqlf.Sprintf("upper(external_service_type) IN (%s)", sqlf.Join(queries, ","))
+	return sqlf.Sprintf(listReposQueryFmtstr, cursor, cond, limit)
+}
+
+const listReposQueryFmtstr = `
 SELECT id, name, description, language, created_at, updated_at, deleted_at,
   external_id, external_service_type, external_service_id, enabled, archived, fork
-FROM repo WHERE id > $1 AND deleted_at IS NULL ORDER BY id ASC LIMIT $2
+FROM repo WHERE id > %s AND %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %s
 `
 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
@@ -147,23 +157,6 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) error {
 		i++
 		return scanRepo(repos[i], sc)
 	})
-}
-
-func (s *DBStore) prepare(ctx context.Context) error {
-	for _, st := range []struct {
-		stmt  **sql.Stmt
-		query string
-	}{
-		{&s.listRepos, listReposSQL},
-	} {
-		stmt, err := s.db.PrepareContext(ctx, st.query)
-		if err != nil {
-			return errors.Wrapf(err, "failed to prepare: %s", st.query)
-		}
-		*st.stmt = stmt
-	}
-
-	return nil
 }
 
 func upsertReposQuery(repos []*Repo) *sqlf.Query {

@@ -64,13 +64,14 @@ func main() {
 	otherSyncer := repos.NewOtherReposSyncer(frontendAPI, synced)
 
 	db, err := repos.NewDB(repos.NewDSNFromEnv())
-	store, err := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		log.Fatalf("failed to initalise db store: %v", err)
 	}
 
-	sources := []repos.Source{
-		repos.NewGithubSource(frontendAPI),
+	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+
+	sources := map[string]repos.Source{
+		"GITHUB": repos.NewGithubSource(frontendAPI),
 	}
 
 	diffs := make(chan repos.Diff)

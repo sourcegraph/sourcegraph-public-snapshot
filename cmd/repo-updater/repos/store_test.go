@@ -19,10 +19,7 @@ func TestIntegration_DBStore(t *testing.T) {
 	defer cleanup()
 
 	ctx := context.Background()
-	store, err := NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
 	t.Run("no repos", func(t *testing.T) {
 		if err := store.UpsertRepos(ctx); err != nil {

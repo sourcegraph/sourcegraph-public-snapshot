@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/k0kubun/pp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -12,17 +13,17 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	interval time.Duration
-	source   Source
+	sources  map[string]Source
 	store    Store
 	diffs    chan Diff
 	now      func() time.Time
 }
 
 // NewSyncer returns a new Syncer with the given parameters.
-func NewSyncer(interval time.Duration, store Store, sources []Source, diffs chan Diff, now func() time.Time) *Syncer {
+func NewSyncer(interval time.Duration, store Store, sources map[string]Source, diffs chan Diff, now func() time.Time) *Syncer {
 	return &Syncer{
 		interval: interval,
-		source:   NewSources(sources...),
+		sources:  sources,
 		store:    store,
 		diffs:    diffs,
 		now:      now,
@@ -51,15 +52,11 @@ func (s Syncer) Sync(ctx context.Context) (err error) {
 	// more structured so we can identify which sources failed and for what reason.
 	// See the SyncError type defined in other_external_services.go for inspiration.
 	var sourced Repos
-	if sourced, err = s.source.ListRepos(ctx); err != nil {
-		log15.Error("Syncer", "Source.ListRepos", err)
+	if sourced, err = s.sourceRepos(ctx); err != nil {
+		log15.Error("Syncer", "sourceRepos", err)
 	}
 
 	log15.Info("Syncer", "sourced", sourced.IDs(), "err", err)
-
-	if len(sourced) == 0 {
-		return err
-	}
 
 	store := s.store
 	if tr, ok := s.store.(Transactor); ok {
@@ -72,7 +69,7 @@ func (s Syncer) Sync(ctx context.Context) (err error) {
 	}
 
 	var stored Repos
-	if stored, err = store.ListRepos(ctx); err != nil {
+	if stored, err = store.ListRepos(ctx, s.sourceNames()...); err != nil {
 		return err
 	}
 
@@ -137,4 +134,43 @@ func (Syncer) diff(sourced, stored []*Repo) Diff {
 			b.Archived != a.Archived ||
 			b.Description != a.Description
 	})
+}
+
+func (s Syncer) sourceRepos(ctx context.Context) ([]*Repo, error) {
+	type result struct {
+		src   Source
+		repos []*Repo
+		err   error
+	}
+
+	ch := make(chan result, len(s.sources))
+	for _, src := range s.sources {
+		go func(src Source) {
+			if repos, err := src.ListRepos(ctx); err != nil {
+				ch <- result{src: src, err: err}
+			} else {
+				ch <- result{src: src, repos: repos}
+			}
+		}(src)
+	}
+
+	var repos []*Repo
+	var err *multierror.Error
+	for i := 0; i < cap(ch); i++ {
+		if r := <-ch; r.err != nil {
+			err = multierror.Append(err, r.err)
+		} else {
+			repos = append(repos, r.repos...)
+		}
+	}
+
+	return repos, err.ErrorOrNil()
+}
+
+func (s Syncer) sourceNames() []string {
+	names := make([]string, 0, len(s.sources))
+	for name := range s.sources {
+		names = append(names, name)
+	}
+	return names
 }
