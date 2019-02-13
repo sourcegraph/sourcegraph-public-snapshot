@@ -148,7 +148,7 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: []string{req.Kind},
+		Kinds: req.Kinds,
 	})
 	if err != nil {
 		return err

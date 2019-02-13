@@ -10,7 +10,6 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -117,13 +116,6 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 					Synced:  []*protocol.RepoInfo{repoInfo(repos["github.com/foo/bar"])},
 				},
 			},
-		},
-		{
-			name:   "external service listing error",
-			svcs:   []*api.ExternalService{},
-			before: []*api.Repo{},
-			after:  []*api.Repo{},
-			err:    errors.New(`no external services of kind "OTHER"`),
 		},
 		{
 			name:   "invalid JSON in exernal service config",

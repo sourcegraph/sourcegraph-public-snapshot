@@ -72,7 +72,7 @@ func (s *OtherReposSyncer) Run(ctx context.Context, interval time.Duration) erro
 
 // syncAll syncrhonizes all "OTHER" external services.
 func (s *OtherReposSyncer) syncAll(ctx context.Context) (OtherSyncResults, error) {
-	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kind: "OTHER"})
+	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kinds: []string{"OTHER"}})
 	if err != nil {
 		return nil, err
 	}

@@ -64,5 +64,5 @@ type ExternalServiceConfigsRequest struct {
 }
 
 type ExternalServicesListRequest struct {
-	Kind string `json:"kind"`
+	Kinds []string `json:"kinds"`
 }

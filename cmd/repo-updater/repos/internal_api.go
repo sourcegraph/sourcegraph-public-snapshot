@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -87,10 +88,12 @@ func (a *FakeInternalAPI) ExternalServicesList(
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	svcs, ok := a.svcs[req.Kind]
-	if !ok {
-		return nil, fmt.Errorf("no external services of kind %q", req.Kind)
+	var svcs []*api.ExternalService
+	for _, kind := range req.Kinds {
+		svcs = append(svcs, a.svcs[kind]...)
 	}
+
+	sort.Slice(svcs, func(i, j int) bool { return svcs[i].ID < svcs[j].ID })
 
 	return svcs, nil
 }
