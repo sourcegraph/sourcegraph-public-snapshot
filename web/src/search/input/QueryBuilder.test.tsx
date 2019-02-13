@@ -12,7 +12,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const repoField = container.querySelector('#query-builder__repo')!
+        const repoField = container.querySelector('#query-builder-repo')!
         fireEvent.change(repoField, { target: { value: 'sourcegraph/sourcegraph' } })
         expect(onChange.calledOnce).toBe(true)
         expect(onChange.calledWith('repo:sourcegraph/sourcegraph')).toBe(true)
@@ -24,7 +24,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const fileField = container.querySelector('#query-builder__file')!
+        const fileField = container.querySelector('#query-builder-file')!
         fireEvent.change(fileField, { target: { value: 'web' } })
         expect(onChange.calledOnce).toBe(true)
         expect(onChange.calledWith('file:web')).toBe(true)
@@ -36,7 +36,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const patternsField = container.querySelector('#query-builder__patterns')!
+        const patternsField = container.querySelector('#query-builder-patterns')!
         fireEvent.change(patternsField, { target: { value: '(open|close) file' } })
         expect(onChange.calledOnce).toBe(true)
         expect(onChange.calledWith('(open|close) file')).toBe(true)
@@ -48,7 +48,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const exactMatchField = container.querySelector('#query-builder__quoted-term')!
+        const exactMatchField = container.querySelector('#query-builder-quoted-term')!
         fireEvent.change(exactMatchField, { target: { value: 'foo bar baz' } })
         expect(onChange.calledOnce).toBe(true)
         expect(onChange.calledWith('"foo bar baz"')).toBe(true)
@@ -125,7 +125,7 @@ describe('QueryBuilder', () => {
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-author'))
-        const authorField = container.querySelector('#query-builder__author')!
+        const authorField = container.querySelector('#query-builder-author')!
         fireEvent.change(authorField, { target: { value: 'alice' } })
         expect(onChange.calledTwice).toBe(true)
         expect(onChange.calledWith('type:diff author:alice')).toBe(true)
@@ -141,7 +141,7 @@ describe('QueryBuilder', () => {
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-after'))
-        const afterField = container.querySelector('#query-builder__after')!
+        const afterField = container.querySelector('#query-builder-after')!
         fireEvent.change(afterField, { target: { value: '1 year ago' } })
 
         expect(onChange.calledTwice).toBe(true)
@@ -158,7 +158,7 @@ describe('QueryBuilder', () => {
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-before'))
-        const beforeField = container.querySelector('#query-builder__before')!
+        const beforeField = container.querySelector('#query-builder-before')!
         fireEvent.change(beforeField, { target: { value: '1 year ago' } })
 
         expect(onChange.calledTwice).toBe(true)
@@ -175,7 +175,7 @@ describe('QueryBuilder', () => {
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-message'))
-        const messageField = container.querySelector('#query-builder__message')!
+        const messageField = container.querySelector('#query-builder-message')!
         fireEvent.change(messageField, { target: { value: 'fix issue' } })
 
         expect(onChange.calledTwice).toBe(true)

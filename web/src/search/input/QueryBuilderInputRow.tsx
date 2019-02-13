@@ -25,14 +25,14 @@ interface Props {
 export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
     const placeholder = props.isSourcegraphDotCom ? props.dotComPlaceholder || props.placeholder : props.placeholder
     return (
-        <div className="query-builder__row">
-            <label className="query-builder__row-label" htmlFor={`query-builder__${props.shortName}`}>
+        <div className="query-builder-input-row">
+            <label className="query-builder-input-row__label" htmlFor={`query-builder__${props.shortName}`}>
                 {props.title}:
             </label>
-            <div className="query-builder__row-input">
+            <div className="query-builder-input-row__input">
                 <input
                     data-testid={`test-${props.shortName}`}
-                    id={`query-builder__${props.shortName}`}
+                    id={`query-builder-${props.shortName}`}
                     className="form-control query-builder__input"
                     spellCheck={false}
                     autoCapitalize="off"
@@ -41,11 +41,10 @@ export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
                     onChange={props.onInputChange(props.shortName)}
                 />
             </div>
-            <div className="query-builder__row">
-                <div className="query-builder__row-description">
+            <div className="query-builder-input-row">
+                <div className="query-builder-input-row__description">
                     <small>{props.description}</small>
                 </div>
-                <div className="query-builder__row-example" />
             </div>
         </div>
     )
