@@ -58,11 +58,10 @@ func main() {
 	// Synced repos will be sent here.
 	synced := make(chan *protocol.RepoInfo)
 
+	frontendAPI := repos.NewInternalAPI(10 * time.Second)
+
 	// Other external services syncing thread. Repo updates will be sent on the given channel.
-	otherSyncer := repos.NewOtherReposSyncer(
-		repos.NewInternalAPI(10*time.Second),
-		synced,
-	)
+	otherSyncer := repos.NewOtherReposSyncer(frontendAPI, synced)
 
 	db, err := repos.NewDB(repos.NewDSNFromEnv())
 	store, err := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
@@ -71,7 +70,7 @@ func main() {
 	}
 
 	sources := []repos.Source{
-		repos.NewGithubSource(conf.GitHubConfigs),
+		repos.NewGithubSource(frontendAPI),
 	}
 
 	diffs := make(chan repos.Diff)

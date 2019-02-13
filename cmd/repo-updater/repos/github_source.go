@@ -2,10 +2,13 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"sync/atomic"
 
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -14,16 +17,12 @@ import (
 // in Sourcegraph via the external services configuration and retrieved
 // from the Frontend API.
 type GithubSource struct {
-	configs GithubConnConfigs
+	api InternalAPI
 }
 
-// A GithubConnConfigs returns configured Github connections to be used in
-// GithubSource to access upstream repos.
-type GithubConnConfigs func(context.Context) ([]*schema.GitHubConnection, error)
-
 // NewGithubSource returns a new GithubSource with the given configs.
-func NewGithubSource(configs GithubConnConfigs) *GithubSource {
-	return &GithubSource{configs: configs}
+func NewGithubSource(api InternalAPI) *GithubSource {
+	return &GithubSource{api: api}
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
@@ -97,6 +96,22 @@ func (s GithubSource) connections(ctx context.Context) ([]*githubConnection, err
 	}
 
 	return conns, nil
+}
+
+func (s GithubSource) configs(ctx context.Context) ([]*schema.GitHubConnection, error) {
+	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kind: "GITHUB"})
+	if err != nil {
+		return nil, err
+	}
+
+	configs := make([]*schema.GitHubConnection, len(svcs))
+	for i, s := range svcs {
+		if err := jsonc.Unmarshal(s.Config, &configs[i]); err != nil {
+			return nil, fmt.Errorf("github source: config error: %s", err)
+		}
+	}
+
+	return configs, nil
 }
 
 func githubRepoToRepo(ghrepo *github.Repository, conn *githubConnection) *Repo {
