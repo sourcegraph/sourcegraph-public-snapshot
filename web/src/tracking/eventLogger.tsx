@@ -12,7 +12,12 @@ import { telligent } from './services/telligentWrapper'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
-class EventLogger implements TelemetryService {
+export interface EventLogger extends TelemetryService {
+    log: (eventLabel: string, eventProperties?: any) => void
+    logViewEvent: (pageTitle: string, eventProperties?: any) => void
+}
+
+export class WebAppEventLogger implements EventLogger {
     private hasStrippedQueryParameters = false
     private user?: GQL.IUser | null
 
@@ -45,7 +50,7 @@ class EventLogger implements TelemetryService {
     /**
      * Set user-level properties in all external tracking services
      */
-    public updateUser(user: GQL.IUser): void {
+    private updateUser(user: GQL.IUser): void {
         this.setUserIds(user.databaseID, user.username)
         if (user.email) {
             this.setUserEmail(user.email)
@@ -57,7 +62,7 @@ class EventLogger implements TelemetryService {
      * @param uniqueUserDatabaseId Unique Sourcegraph user database ID (corresponds to databaseID from GraphQL)
      * @param username Human-readable user identifier, not guaranteed to always stay the same
      */
-    public setUserIds(uniqueUserDatabaseId: number | null, username: string | null): void {
+    private setUserIds(uniqueUserDatabaseId: number | null, username: string | null): void {
         if (username) {
             telligent.setUserProperty('username', username)
         }
@@ -66,7 +71,7 @@ class EventLogger implements TelemetryService {
         }
     }
 
-    public setUserEmail(primaryEmail: string): void {
+    private setUserEmail(primaryEmail: string): void {
         telligent.setUserProperty('email', primaryEmail)
     }
 
@@ -187,4 +192,10 @@ class EventLogger implements TelemetryService {
     }
 }
 
-export const eventLogger = new EventLogger()
+export class NullEventLogger implements EventLogger {
+    public log = () => null
+    public logViewEvent = () => null
+}
+
+export const eventLogger = new WebAppEventLogger()
+export const nullEventLogger = new NullEventLogger()
