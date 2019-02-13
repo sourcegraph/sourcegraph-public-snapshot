@@ -39,9 +39,8 @@
     }
 
     &__header {
-        margin-top: 1rem;
-        padding-bottom: 0.1rem;
-        margin-bottom: 0.4rem;
+        margin-top: 0.75rem;
+        margin-bottom: 0.25rem;
 
         &-input {
             flex: 2 0 16rem;
@@ -58,8 +57,6 @@
 
     &__row {
         flex-wrap: wrap;
-        padding-top: 0.15rem;
-        padding-bottom: 0.15rem;
 
         &-label {
             flex: 0 0 8rem;
