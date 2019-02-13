@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { QueryBuilderState } from './QueryBuilder'
 
 interface Props {
     /** The field title */
@@ -13,9 +14,11 @@ interface Props {
      * An appropriate identifier for this field, to be used as a suffix for CSS classes and testing IDs.
      * Must be a single or hyphenated word, and unique amongst the other fields in the query builder.
      */
-    shortName: string
+    shortName: keyof QueryBuilderState['fields']
     /** Handler for when an input field changes. */
-    onInputChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+    onInputChange: (
+        key: keyof QueryBuilderState['fields']
+    ) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
     isSourcegraphDotCom: boolean
 }
 
@@ -35,7 +38,7 @@ export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
                     autoCapitalize="off"
                     autoComplete="off"
                     placeholder={placeholder}
-                    onChange={props.onInputChange}
+                    onChange={props.onInputChange(props.shortName)}
                 />
             </div>
             <div className="query-builder__row">
