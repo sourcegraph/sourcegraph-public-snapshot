@@ -69,13 +69,12 @@ func main() {
 	}
 
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
-
-	sources := map[string]repos.Source{
-		"GITHUB": repos.NewGithubSource(frontendAPI),
-	}
-
+	src := repos.NewSourcerer(frontendAPI)
 	diffs := make(chan repos.Diff)
-	syncer := repos.NewSyncer(10*time.Second, store, sources, diffs, func() time.Time {
+	kinds := []string{
+		"GITHUB",
+	}
+	syncer := repos.NewSyncer(10*time.Second, store, src, kinds, diffs, func() time.Time {
 		// XXX(tsenart): It seems like the current db layer in the frontend API
 		// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
 		// and ensure it's the used timezone across the board.

@@ -13,17 +13,28 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	interval time.Duration
-	sources  map[string]Source
+	src      *Sourcerer
 	store    Store
+	kinds    []string
 	diffs    chan Diff
 	now      func() time.Time
 }
 
-// NewSyncer returns a new Syncer with the given parameters.
-func NewSyncer(interval time.Duration, store Store, sources map[string]Source, diffs chan Diff, now func() time.Time) *Syncer {
+// NewSyncer returns a new Syncer that periodically synchronizes stored repos with
+// the repos yielded by the given kinds of sources (code hosts), retrieved by the
+// given sourcerer from the frontend API. Each completed sync results in a diff that
+// is sent to the given diffs channel.
+func NewSyncer(
+	interval time.Duration,
+	store Store,
+	src *Sourcerer,
+	kinds []string,
+	diffs chan Diff,
+	now func() time.Time,
+) *Syncer {
 	return &Syncer{
 		interval: interval,
-		sources:  sources,
+		src:      src,
 		store:    store,
 		diffs:    diffs,
 		now:      now,
@@ -43,7 +54,7 @@ func (s Syncer) Run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-// Sync synchronizes the set of sourced repos with the set of stored repos.
+// Sync synchronizes the repositories of the given source
 func (s Syncer) Sync(ctx context.Context) (err error) {
 	// TODO(tsenart): Ensure that transient failures do not remove
 	// repositories. This means we need to use the store as a fallback Source
@@ -52,7 +63,7 @@ func (s Syncer) Sync(ctx context.Context) (err error) {
 	// more structured so we can identify which sources failed and for what reason.
 	// See the SyncError type defined in other_external_services.go for inspiration.
 	var sourced Repos
-	if sourced, err = s.sourceRepos(ctx); err != nil {
+	if sourced, err = s.sourced(ctx); err != nil {
 		log15.Error("Syncer", "sourceRepos", err)
 	}
 
@@ -69,7 +80,7 @@ func (s Syncer) Sync(ctx context.Context) (err error) {
 	}
 
 	var stored Repos
-	if stored, err = store.ListRepos(ctx, s.sourceNames()...); err != nil {
+	if stored, err = store.ListRepos(ctx, s.kinds...); err != nil {
 		return err
 	}
 
@@ -136,15 +147,20 @@ func (Syncer) diff(sourced, stored []*Repo) Diff {
 	})
 }
 
-func (s Syncer) sourceRepos(ctx context.Context) ([]*Repo, error) {
+func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
+	sources, err := s.src.ListSources(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	type result struct {
 		src   Source
 		repos []*Repo
 		err   error
 	}
 
-	ch := make(chan result, len(s.sources))
-	for _, src := range s.sources {
+	ch := make(chan result, len(sources))
+	for _, src := range sources {
 		go func(src Source) {
 			if repos, err := src.ListRepos(ctx); err != nil {
 				ch <- result{src: src, err: err}
@@ -155,22 +171,14 @@ func (s Syncer) sourceRepos(ctx context.Context) ([]*Repo, error) {
 	}
 
 	var repos []*Repo
-	var err *multierror.Error
+	var errs *multierror.Error
 	for i := 0; i < cap(ch); i++ {
 		if r := <-ch; r.err != nil {
-			err = multierror.Append(err, r.err)
+			errs = multierror.Append(errs, r.err)
 		} else {
 			repos = append(repos, r.repos...)
 		}
 	}
 
-	return repos, err.ErrorOrNil()
-}
-
-func (s Syncer) sourceNames() []string {
-	names := make([]string, 0, len(s.sources))
-	for name := range s.sources {
-		names = append(names, name)
-	}
-	return names
+	return repos, errs.ErrorOrNil()
 }
