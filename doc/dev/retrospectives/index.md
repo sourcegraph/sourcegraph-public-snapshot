@@ -30,11 +30,9 @@ Identify everyone who should participate in the retrospective: this is the retro
 
 Collect written answers to the following questions from everyone in the retrospective group.
 
-1. What should we start doing?
-
-1. What should we stop doing?
-
 1. What should we continue doing?
+
+1. What should we do differently (i.e. start, stop, change)?
 
 The medium through which you collect answers to these questions is not important (e.g. Google Docs, Google Forms, Slack messages), but it is important that participants submit their feedback independently to prevent group-think and reduce the risk of certain biases.
 
