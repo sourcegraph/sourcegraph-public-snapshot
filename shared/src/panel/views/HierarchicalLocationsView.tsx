@@ -17,7 +17,7 @@ import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
+export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
     /**
      * The observable that emits the locations.
      */
@@ -56,10 +56,10 @@ interface State {
 /**
  * Displays a multi-column view to drill down (by repository, file, etc.) to a list of locations in files.
  */
-export class HierarchicalLocationsView extends React.PureComponent<Props, State> {
+export class HierarchicalLocationsView extends React.PureComponent<HierarchicalLocationsViewProps, State> {
     public state: State = { locationsOrError: { loading: true } }
 
-    private componentUpdates = new Subject<Props>()
+    private componentUpdates = new Subject<HierarchicalLocationsViewProps>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -108,7 +108,7 @@ export class HierarchicalLocationsView extends React.PureComponent<Props, State>
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
+    public componentWillReceiveProps(nextProps: HierarchicalLocationsViewProps): void {
         this.componentUpdates.next(nextProps)
     }
 
