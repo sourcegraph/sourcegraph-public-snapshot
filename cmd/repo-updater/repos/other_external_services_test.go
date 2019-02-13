@@ -91,7 +91,7 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 		svcs    []*api.ExternalService
 		before  []*api.Repo
 		after   []*api.Repo
-		results SyncResults
+		results OtherSyncResults
 		err     error
 	}{
 		{
@@ -99,7 +99,7 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 			svcs:   []*api.ExternalService{svcs["github.com"]},
 			before: []*api.Repo{},
 			after:  []*api.Repo{repos["github.com/foo/bar"]},
-			results: SyncResults{
+			results: OtherSyncResults{
 				{
 					Service: svcs["github.com"],
 					Synced:  []*protocol.RepoInfo{repoInfo(repos["github.com/foo/bar"])},
@@ -111,7 +111,7 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 			svcs:   []*api.ExternalService{svcs["github.com"]},
 			before: []*api.Repo{repos["github.com/foo/bar"]},
 			after:  []*api.Repo{repos["github.com/foo/bar"]},
-			results: SyncResults{
+			results: OtherSyncResults{
 				{
 					Service: svcs["github.com"],
 					Synced:  []*protocol.RepoInfo{repoInfo(repos["github.com/foo/bar"])},
@@ -130,10 +130,10 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 			svcs:   []*api.ExternalService{svcs["invalid-json"]},
 			before: []*api.Repo{},
 			after:  []*api.Repo{},
-			results: SyncResults{
+			results: OtherSyncResults{
 				{
 					Service: svcs["invalid-json"],
-					Errors: SyncErrors{
+					Errors: OtherSyncErrors{
 						{
 							Service: svcs["invalid-json"],
 							Err:     "config error: failed to parse JSON: [CloseBraceExpected]",
@@ -147,10 +147,10 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 			svcs:   []*api.ExternalService{svcs["bad"]},
 			before: []*api.Repo{},
 			after:  []*api.Repo{},
-			results: SyncResults{
+			results: OtherSyncResults{
 				{
 					Service: svcs["bad"],
-					Errors: SyncErrors{
+					Errors: OtherSyncErrors{
 						{
 							Service: svcs["bad"],
 							Repo: &protocol.RepoInfo{

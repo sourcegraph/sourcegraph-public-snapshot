@@ -71,7 +71,7 @@ func (s *OtherReposSyncer) Run(ctx context.Context, interval time.Duration) erro
 }
 
 // syncAll syncrhonizes all "OTHER" external services.
-func (s *OtherReposSyncer) syncAll(ctx context.Context) (SyncResults, error) {
+func (s *OtherReposSyncer) syncAll(ctx context.Context) (OtherSyncResults, error) {
 	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kind: "OTHER"})
 	if err != nil {
 		return nil, err
@@ -79,22 +79,22 @@ func (s *OtherReposSyncer) syncAll(ctx context.Context) (SyncResults, error) {
 	return s.SyncMany(ctx, svcs...), nil
 }
 
-// SyncResults is a helper type for lists of SyncResults.
-type SyncResults []*SyncResult
+// OtherSyncResults is a helper type for lists of OtherSyncResults.
+type OtherSyncResults []*OtherSyncResult
 
-// Errors returns all Errors in the list of SyncResults.
-func (rs SyncResults) Errors() (errs []*SyncError) {
+// Errors returns all Errors in the list of OtherSyncResults.
+func (rs OtherSyncResults) Errors() (errs []*OtherSyncError) {
 	for _, res := range rs {
 		errs = append(errs, res.Errors...)
 	}
 	return errs
 }
 
-// SyncErrors is a helper type for lists of SyncErrors.
-type SyncErrors []*SyncError
+// OtherSyncErrors is a helper type for lists of OtherSyncErrors.
+type OtherSyncErrors []*OtherSyncError
 
 // Error implements the error interface.
-func (errs SyncErrors) Error() string {
+func (errs OtherSyncErrors) Error() string {
 	var sb strings.Builder
 	for _, err := range errs {
 		sb.WriteString(err.Error() + "; ")
@@ -102,9 +102,9 @@ func (errs SyncErrors) Error() string {
 	return sb.String()
 }
 
-// RepoErrors returns all SyncErrors that have a Repo set.
-func (errs SyncErrors) RepoErrors() SyncErrors {
-	se := make(SyncErrors, 0, len(errs))
+// RepoErrors returns all OtherSyncErrors that have a Repo set.
+func (errs OtherSyncErrors) RepoErrors() OtherSyncErrors {
+	se := make(OtherSyncErrors, 0, len(errs))
 	for _, err := range errs {
 		if err.Repo != nil {
 			se = append(se, err)
@@ -113,9 +113,9 @@ func (errs SyncErrors) RepoErrors() SyncErrors {
 	return se
 }
 
-// SyncError is an error type containing information about a failed sync of an external service
+// OtherSyncError is an error type containing information about a failed sync of an external service
 // of kind "OTHER".
-type SyncError struct {
+type OtherSyncError struct {
 	// External service that had an error synchronizing.
 	Service *api.ExternalService
 	// Repo that failed synchronizing. This may be nil if the synchronization
@@ -127,39 +127,39 @@ type SyncError struct {
 }
 
 // Error implements the error interface.
-func (e SyncError) Error() string {
+func (e OtherSyncError) Error() string {
 	if e.Repo == nil {
 		return fmt.Sprintf("external-service=%d: %s", e.Service.ID, e.Err)
 	}
 	return fmt.Sprintf("external-service=%d repo=%q: %s", e.Service.ID, e.Repo.Name, e.Err)
 }
 
-// SyncResult is returned by Sync to indicate which external services and their
+// OtherSyncResult is returned by Sync to indicate which external services and their
 // repos synced successfully and which didn't.
-type SyncResult struct {
+type OtherSyncResult struct {
 	// The external service of kind "OTHER" that had its repos synced.
 	Service *api.ExternalService
 	// Repos that succeeded to be synced.
 	Synced []*protocol.RepoInfo
 	// Repos that failed to be synced.
-	Errors SyncErrors
+	Errors OtherSyncErrors
 }
 
 // SyncMany synchonizes the repos defined by all the given external services of kind "OTHER".
-// It return a SyncResults containing which repos were synced and which failed to.
-func (s *OtherReposSyncer) SyncMany(ctx context.Context, svcs ...*api.ExternalService) SyncResults {
+// It return a OtherSyncResults containing which repos were synced and which failed to.
+func (s *OtherReposSyncer) SyncMany(ctx context.Context, svcs ...*api.ExternalService) OtherSyncResults {
 	if len(svcs) == 0 {
 		return nil
 	}
 
-	ch := make(chan *SyncResult, len(svcs))
+	ch := make(chan *OtherSyncResult, len(svcs))
 	for _, svc := range svcs {
 		go func(svc *api.ExternalService) {
 			ch <- s.Sync(ctx, svc)
 		}(svc)
 	}
 
-	results := make([]*SyncResult, 0, len(svcs))
+	results := make([]*OtherSyncResult, 0, len(svcs))
 	for i := 0; i < cap(ch); i++ {
 		res := <-ch
 		results = append(results, res)
@@ -169,7 +169,7 @@ func (s *OtherReposSyncer) SyncMany(ctx context.Context, svcs ...*api.ExternalSe
 }
 
 // Sync synchronizes the repositories of a single external service of kind "OTHER"
-func (s *OtherReposSyncer) Sync(ctx context.Context, svc *api.ExternalService) (res *SyncResult) {
+func (s *OtherReposSyncer) Sync(ctx context.Context, svc *api.ExternalService) (res *OtherSyncResult) {
 	defer func(began time.Time) {
 		id, now := strconv.FormatInt(svc.ID, 10), time.Now().UTC()
 		otherExternalServicesLastSync.WithLabelValues(id).Set(float64(now.Unix()))
@@ -180,9 +180,9 @@ func (s *OtherReposSyncer) Sync(ctx context.Context, svc *api.ExternalService) (
 
 	cloneURLs, err := otherExternalServiceCloneURLs(svc)
 	if err != nil {
-		return &SyncResult{
+		return &OtherSyncResult{
 			Service: svc,
-			Errors:  SyncErrors{{Service: svc, Err: err.Error()}},
+			Errors:  OtherSyncErrors{{Service: svc, Err: err.Error()}},
 		}
 	}
 
@@ -213,9 +213,9 @@ func repoFromCloneURL(u *url.URL) *protocol.RepoInfo {
 
 // store upserts the given repos through the FrontendAPI, returning which succeeded
 // and which failed to be processed.
-func (s *OtherReposSyncer) store(ctx context.Context, svc *api.ExternalService, repos ...*protocol.RepoInfo) *SyncResult {
+func (s *OtherReposSyncer) store(ctx context.Context, svc *api.ExternalService, repos ...*protocol.RepoInfo) *OtherSyncResult {
 	if len(repos) == 0 {
-		return &SyncResult{Service: svc}
+		return &OtherSyncResult{Service: svc}
 	}
 
 	type storeOp struct {
@@ -231,10 +231,10 @@ func (s *OtherReposSyncer) store(ctx context.Context, svc *api.ExternalService, 
 		}(storeOp{repo: repo})
 	}
 
-	res := SyncResult{Service: svc}
+	res := OtherSyncResult{Service: svc}
 	for i := 0; i < cap(ch); i++ {
 		if op := <-ch; op.err != nil {
-			res.Errors = append(res.Errors, &SyncError{
+			res.Errors = append(res.Errors, &OtherSyncError{
 				Service: svc,
 				Repo:    op.repo,
 				Err:     op.err.Error(),
