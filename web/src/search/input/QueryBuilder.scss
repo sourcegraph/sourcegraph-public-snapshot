@@ -25,16 +25,12 @@
         border-radius: 0.125rem;
         padding: 1rem;
 
-        &--orange {
-            box-shadow: 0 12px 25px -8px rgba(249, 98, 22, 0.1);
-        }
-
         &--purple {
-            box-shadow: 0 12px 25px -8px rgba(178, 0, 248, 0.1);
+            box-shadow: 0 16px 36px -6px rgba(188, 39, 202, 0.14);
         }
 
         &--blue {
-            box-shadow: 0 12px 25px -8px rgba(0, 180, 242, 0.1);
+            box-shadow: 0 16px 36px -6px rgba(13, 100, 255, 0.14);
         }
     }
 
@@ -95,5 +91,19 @@
 
     &__docs-link {
         padding-top: 1.5rem;
+    }
+}
+
+.theme-light {
+    .query-builder {
+        &__section {
+            &--blue {
+                box-shadow: 0 12px 25px -8px rgba(22, 155, 249, 0.08);
+            }
+
+            &--purple {
+                box-shadow: 0 12px 25px -8px rgba(192, 0, 248, 0.08);
+            }
+        }
     }
 }

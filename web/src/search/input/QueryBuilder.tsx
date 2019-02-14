@@ -84,9 +84,9 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                 {this.state.showQueryBuilder && (
                     <div className="query-builder">
                         <div className="query-builder__header">
-                            <h3 className="query-builder__header-input">Search type:</h3>
+                            <h3 className="query-builder__header-input">Match:</h3>
                         </div>
-                        <div className="query-builder__section query-builder__section--orange">
+                        <div className="query-builder__section query-builder__section--blue">
                             <div className="query-builder__row">
                                 <label className="query-builder__row-label" htmlFor="query-builder__type">
                                     Type:
@@ -113,11 +113,6 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     <div className="query-builder__row-example" />
                                 </div>
                             </div>
-                        </div>
-                        <div className="query-builder__header">
-                            <h3 className="query-builder__header-input">Match:</h3>
-                        </div>
-                        <div className="query-builder__section query-builder__section--blue">
                             <QueryBuilderInputRow
                                 onInputChange={this.onInputChange}
                                 placeholder="(open|close) file"
