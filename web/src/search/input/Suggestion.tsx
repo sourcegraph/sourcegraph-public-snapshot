@@ -68,11 +68,15 @@ export function createSuggestion(lineNumber: number, item: GQL.SearchSuggestion)
                 }
             }
             const withLineNumber = lineNumber > 0
+            const urlParts = [item.url, '?suggestion']
+            if (withLineNumber) {
+                urlParts.push(`#L${lineNumber}`)
+            }
             return {
                 type: 'file',
                 title: withLineNumber ? `${item.name} at line ${lineNumber}` : item.name,
                 description: descriptionParts.join(' — '),
-                url: withLineNumber ? `${item.url}#L${lineNumber}` : `${item.url}?suggestion`,
+                url: urlParts.join(''),
                 urlLabel: withLineNumber ? `go to line ${lineNumber}` : 'go to file',
             }
         }

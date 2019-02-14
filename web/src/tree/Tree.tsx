@@ -205,7 +205,10 @@ export class Tree extends React.PureComponent<Props, State> {
                     // Strip the ?suggestion query param. Handle both when going from ancestor -> child and child -> ancestor.
                     if (queryParams.has('suggestion')) {
                         queryParams.delete('suggestion')
-                        this.props.history.replace({ search: queryParams.toString() })
+                        this.props.history.replace({
+                            ...this.props.location,
+                            search: queryParams.toString(),
+                        })
                     }
                 })
         )

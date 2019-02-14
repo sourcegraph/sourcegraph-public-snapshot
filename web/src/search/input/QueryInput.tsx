@@ -145,19 +145,19 @@ export class QueryInput extends React.Component<Props, State> {
                             return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
                         }
                         // Match line number in this form: <query>:123
-                        const [, lineDigits = '' ] = this.state.queryWithLineNumber.match(/:(\d+)$/) || []
+                        const [, lineDigits = ''] = this.state.queryWithLineNumber.match(/:(\d+)$/) || []
                         const fullQuery = [this.props.prependQueryForSuggestions, this.props.value]
                             .filter(s => !!s)
                             .join(' ')
                         const suggestionsFetch = fetchSuggestions(fullQuery).pipe(
                             toArray(),
-                            map(suggestions => {
+                            map(items => {
                                 let lineNumber = 0
                                 // Only link to file line when there is one suggestion
-                                if (suggestions.length === 1) {
+                                if (items.length === 1) {
                                     lineNumber = Number(lineDigits) || 0
                                 }
-                                return suggestions.map(suggestion => createSuggestion(lineNumber, suggestion))
+                                return items.map(item => createSuggestion(lineNumber, item))
                             }),
                             map((suggestions: Suggestion[]) => ({
                                 suggestions,
