@@ -151,13 +151,13 @@ export class QueryInput extends React.Component<Props, State> {
                             .join(' ')
                         const suggestionsFetch = fetchSuggestions(fullQuery).pipe(
                             toArray(),
-                            map((items) => {
+                            map(suggestions => {
                                 let lineNumber = 0
                                 // Only link to file line when there is one suggestion
-                                if (items.length === 1) {
+                                if (suggestions.length === 1) {
                                     lineNumber = Number(lineDigits) || 0
                                 }
-                                return items.map((item) => createSuggestion(lineNumber, item))
+                                return suggestions.map(suggestion => createSuggestion(lineNumber, suggestion))
                             }),
                             map((suggestions: Suggestion[]) => ({
                                 suggestions,

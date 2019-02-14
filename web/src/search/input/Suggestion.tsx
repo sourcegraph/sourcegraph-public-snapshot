@@ -70,10 +70,10 @@ export function createSuggestion(lineNumber: number, item: GQL.SearchSuggestion)
             const withLineNumber = lineNumber > 0
             return {
                 type: 'file',
-                title: item.name,
+                title: withLineNumber ? `${item.name} at line ${lineNumber}` : item.name,
                 description: descriptionParts.join(' — '),
                 url: withLineNumber ? `${item.url}#L${lineNumber}` : `${item.url}?suggestion`,
-                urlLabel: withLineNumber ? `go to file at line ${lineNumber}` : 'go to file',
+                urlLabel: withLineNumber ? `go to line ${lineNumber}` : 'go to file',
             }
         }
         case 'Symbol': {
