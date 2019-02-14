@@ -41,11 +41,13 @@ var (
 func configureTLS() error {
 	customTLS, _ := strconv.ParseBool(customTLS)
 
+	generate := false
 	_, err := os.Stat(tlsCert)
 	if os.IsNotExist(err) {
 		if customTLS {
 			return err
 		}
+		generate = true
 	} else if err != nil {
 		return err
 	}
@@ -55,13 +57,15 @@ func configureTLS() error {
 		if customTLS {
 			return err
 		}
+		generate = true
 	} else if err != nil {
 		return err
 	}
 
-	if customTLS {
+	if customTLS || !generate {
 		return nil // cert files exist
 	}
+	log.Println("Generating and using self-signed TLS cert/key")
 
 	if err := os.MkdirAll(filepath.Dir(tlsCert), 0700); err != nil {
 		return err
