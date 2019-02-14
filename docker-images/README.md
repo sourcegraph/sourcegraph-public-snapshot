@@ -19,7 +19,7 @@ Before running the above command, you should have your changes reviewed and merg
 
 ### Known issues
 
-(1) Many of our derivative images have not yet been moved here from our [private infrastructure repository](https://github.com/sourcegraph/infrastructure/tree/master/docker-images). These include:
+Many of our derivative images have not yet been moved here from our [private infrastructure repository](https://github.com/sourcegraph/infrastructure/tree/master/docker-images). These include:
 
 - `sourcegraph/postgres`
 - `sourcegraph/postgres-11.1`
@@ -31,3 +31,5 @@ Before running the above command, you should have your changes reviewed and merg
 - `sourcegraph/pgsql-exporter`
 - `sourcegraph/pod-tmp-gc`
 - And possibly others which we intend to open source.
+
+Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/2299
