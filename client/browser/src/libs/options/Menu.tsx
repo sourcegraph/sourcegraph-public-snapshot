@@ -24,9 +24,6 @@ export interface OptionsMenuProps
 const buildFeatureFlagToggleHandler = (key: string, handler: OptionsMenuProps['toggleFeatureFlag']) => () =>
     handler(key)
 
-const withSentry = (flags: ConfigurableFeatureFlag[]) => flags.filter(({ key }) => key === 'allowErrorReporting')
-const withOutSentry = (flags: ConfigurableFeatureFlag[]) => flags.filter(({ key }) => key !== 'allowErrorReporting')
-
 const isFullPage = (): boolean => !new URLSearchParams(window.location.search).get('popup')
 
 export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
@@ -51,28 +48,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
             <div className="options-menu__section">
                 <label>Configuration</label>
                 <div>
-                    {withSentry(featureFlags).map(({ key, value }) => (
-                        <div className="form-check" key={key}>
-                            <label className="form-check-label">
-                                <input
-                                    id={key}
-                                    onClick={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    checked={value}
-                                />{' '}
-                                {upperFirst(lowerCase(key))}
-                            </label>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
-        {isSettingsOpen && featureFlags && (
-            <div className="options-menu__section">
-                <label>Experimental configuration</label>
-                <div>
-                    {withOutSentry(featureFlags).map(({ key, value }) => (
+                    {featureFlags.map(({ key, value }) => (
                         <div className="form-check" key={key}>
                             <label className="form-check-label">
                                 <input
