@@ -3,12 +3,12 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM alpine:3.9
+FROM sourcegraph/alpine:3.9
 RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
     echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 # hadolint ignore=DL3018
-RUN apk add --no-cache bind-tools ca-certificates git@edge mailcap openssh-client tini
-RUN addgroup -S sourcegraph && adduser -S -G sourcegraph -h /home/sourcegraph sourcegraph && mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
+RUN apk add --no-cache git@edge openssh-client
+RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]
 COPY gitserver /usr/local/bin/
