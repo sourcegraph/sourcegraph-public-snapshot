@@ -113,74 +113,6 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     <div className="query-builder__row-example" />
                                 </div>
                             </div>
-                            {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
-                                <>
-                                    <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
-                                        placeholder="alice"
-                                        title="Author"
-                                        description="Only include results from diffs or commits authored by a user."
-                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                        shortName="author"
-                                    />
-                                    <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
-                                        placeholder="1 year ago"
-                                        title="Before"
-                                        description="Only include results from diffs or commits before the specified time."
-                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                        shortName="before"
-                                    />
-                                    <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
-                                        placeholder="6 months ago"
-                                        title="After"
-                                        description="Only include results from diffs or commits after the specified time."
-                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                        shortName="after"
-                                    />
-                                    {this.state.typeOfSearch === 'diff' && (
-                                        <QueryBuilderInputRow
-                                            onInputChange={this.onInputChange}
-                                            placeholder="fix: typo"
-                                            title="Message"
-                                            description="Only include results from diffs which have commit messages containing the string."
-                                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                            shortName="message"
-                                        />
-                                    )}
-                                </>
-                            )}
-                        </div>
-                        <div className="query-builder__header">
-                            <h3 className="query-builder__header-input">Search scope:</h3>
-                        </div>
-                        <div className="query-builder__section query-builder__section--purple">
-                            <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
-                                placeholder="my/repo"
-                                dotComPlaceholder="github.com/org/"
-                                title="Repositories"
-                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="repo"
-                                description="Only include results from repositories whose path matches the regexp or string provided."
-                            />
-                            <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
-                                placeholder="\.js$"
-                                title="File paths"
-                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="file"
-                                description="Only include results in files whose full path matches the regexp."
-                            />
-                            <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
-                                placeholder="typescript"
-                                title="Language"
-                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="language"
-                                description="Only include results from files in the specified programming language."
-                            />
                         </div>
                         <div className="query-builder__header">
                             <h3 className="query-builder__header-input">Match:</h3>
@@ -227,6 +159,78 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     <div className="query-builder__row-example" />
                                 </div>
                             </div>
+                            {this.state.typeOfSearch === 'diff' && (
+                                <>
+                                    {this.state.typeOfSearch === 'diff' && (
+                                        <QueryBuilderInputRow
+                                            onInputChange={this.onInputChange}
+                                            placeholder="fix: typo"
+                                            title="Message"
+                                            description="Only include results from diffs which have commit messages containing the string."
+                                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                            shortName="message"
+                                        />
+                                    )}
+                                </>
+                            )}
+                        </div>
+                        <div className="query-builder__header">
+                            <h3 className="query-builder__header-input">Search scope:</h3>
+                        </div>
+                        <div className="query-builder__section query-builder__section--purple">
+                            <QueryBuilderInputRow
+                                onInputChange={this.onInputChange}
+                                placeholder="my/repo"
+                                dotComPlaceholder="github.com/org/"
+                                title="Repositories"
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="repo"
+                                description="Only include results from repositories whose path matches the regexp or string provided."
+                            />
+                            <QueryBuilderInputRow
+                                onInputChange={this.onInputChange}
+                                placeholder="\.js$"
+                                title="File paths"
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="file"
+                                description="Only include results in files whose full path matches the regexp."
+                            />
+                            <QueryBuilderInputRow
+                                onInputChange={this.onInputChange}
+                                placeholder="typescript"
+                                title="Language"
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="language"
+                                description="Only include results from files in the specified programming language."
+                            />
+                            {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
+                                <>
+                                    <QueryBuilderInputRow
+                                        onInputChange={this.onInputChange}
+                                        placeholder="alice"
+                                        title="Author"
+                                        description="Only include results from diffs or commits authored by a user."
+                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                        shortName="author"
+                                    />
+                                    <QueryBuilderInputRow
+                                        onInputChange={this.onInputChange}
+                                        placeholder="1 year ago"
+                                        title="Before"
+                                        description="Only include results from diffs or commits before the specified time."
+                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                        shortName="before"
+                                    />
+                                    <QueryBuilderInputRow
+                                        onInputChange={this.onInputChange}
+                                        placeholder="6 months ago"
+                                        title="After"
+                                        description="Only include results from diffs or commits after the specified time."
+                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                        shortName="after"
+                                    />
+                                </>
+                            )}
                         </div>
                         <div className="query-builder__docs-link">
                             <a href={`${docsURLPrefix}/user/search/queries`}>View all search options in docs</a>

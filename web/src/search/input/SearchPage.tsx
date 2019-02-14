@@ -2,7 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { SettingsCascadeProps, isSettingsValid } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -11,7 +11,8 @@ import { queryIndexOfScope, submitSearch } from '../helpers'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { SearchFilterChips } from './SearchFilterChips'
+import { SearchFilterChips, ISearchScope } from './SearchFilterChips'
+import { Settings } from '../../schema/settings.schema'
 
 interface Props extends SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
@@ -58,6 +59,7 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const hasScopes = this.getScopes().length > 0
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
@@ -80,19 +82,39 @@ export class SearchPage extends React.Component<Props, State> {
                         />
                         <SearchButton />
                     </div>
-                    <QueryBuilder
-                        onFieldsQueryChange={this.onBuilderQueryChange}
-                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                    />
-                    <div className="search-page__input-sub-container">
-                        <SearchFilterChips
-                            location={this.props.location}
-                            history={this.props.history}
-                            query={this.state.userQuery}
-                            authenticatedUser={this.props.authenticatedUser}
-                            settingsCascade={this.props.settingsCascade}
-                        />
-                    </div>
+                    {hasScopes ? (
+                        <>
+                            <div className="search-page__input-sub-container">
+                                <SearchFilterChips
+                                    location={this.props.location}
+                                    history={this.props.history}
+                                    query={this.state.userQuery}
+                                    authenticatedUser={this.props.authenticatedUser}
+                                    settingsCascade={this.props.settingsCascade}
+                                />
+                            </div>
+                            <QueryBuilder
+                                onFieldsQueryChange={this.onBuilderQueryChange}
+                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <QueryBuilder
+                                onFieldsQueryChange={this.onBuilderQueryChange}
+                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                            />
+                            <div className="search-page__input-sub-container">
+                                <SearchFilterChips
+                                    location={this.props.location}
+                                    history={this.props.history}
+                                    query={this.state.userQuery}
+                                    authenticatedUser={this.props.authenticatedUser}
+                                    settingsCascade={this.props.settingsCascade}
+                                />
+                            </div>
+                        </>
+                    )}
                 </Form>
             </div>
         )
@@ -126,5 +148,13 @@ export class SearchPage extends React.Component<Props, State> {
             return `${limitString(this.state.userQuery, 25, true)}`
         }
         return undefined
+    }
+
+    private getScopes(): ISearchScope[] {
+        const allScopes: ISearchScope[] =
+            (isSettingsValid<Settings>(this.props.settingsCascade) &&
+                this.props.settingsCascade.final['search.scopes']) ||
+            []
+        return allScopes
     }
 }
