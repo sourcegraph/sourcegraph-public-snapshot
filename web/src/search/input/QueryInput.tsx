@@ -79,8 +79,8 @@ interface State {
     /** Whether suggestions are currently being fetched */
     loading: boolean
 
-    /** A search query that might contain a file line in the format of <query>:123 */
-    queryWithFileLine: string
+    /** A search query that might contain a line number in this format: <query>:123 */
+    queryWithLineNumber: string
 }
 
 export class QueryInput extends React.Component<Props, State> {
@@ -124,7 +124,7 @@ export class QueryInput extends React.Component<Props, State> {
             loading: false,
             selectedSuggestion: -1,
             suggestions: [],
-            queryWithFileLine: this.props.value,
+            queryWithLineNumber: this.props.value,
         }
 
         this.subscriptions.add(
@@ -132,11 +132,11 @@ export class QueryInput extends React.Component<Props, State> {
             this.inputValues
                 .pipe(
                     tap(query => {
-                        this.setState({ queryWithFileLine: query })
+                        this.setState({ queryWithLineNumber: query })
                         // Remove file line from the end of the query because the syntax is only
                         // supported by this component
-                        const queryWithoutFileLine = query.replace(/:\d*$/, '')
-                        this.props.onChange(queryWithoutFileLine)
+                        const queryWithoutLineNumber = query.replace(/:\d*$/, '')
+                        this.props.onChange(queryWithoutLineNumber)
                     }),
                     distinctUntilChanged(),
                     debounceTime(200),
@@ -144,8 +144,8 @@ export class QueryInput extends React.Component<Props, State> {
                         if (query.length < QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH) {
                             return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
                         }
-                        // Match file line in the form of <query>:123
-                        const [, fileLineDigits = '' ] = this.state.queryWithFileLine.match(/:(\d+)$/) || []
+                        // Match line number in this form: <query>:123
+                        const [, lineDigits = '' ] = this.state.queryWithLineNumber.match(/:(\d+)$/) || []
                         const fullQuery = [this.props.prependQueryForSuggestions, this.props.value]
                             .filter(s => !!s)
                             .join(' ')
@@ -155,7 +155,7 @@ export class QueryInput extends React.Component<Props, State> {
                                 let lineNumber = 0
                                 // Only link to file line when there is one suggestion
                                 if (items.length === 1) {
-                                    lineNumber = Number(fileLineDigits) || 0
+                                    lineNumber = Number(lineDigits) || 0
                                 }
                                 return items.map((item) => createSuggestion(lineNumber, item))
                             }),
@@ -250,7 +250,7 @@ export class QueryInput extends React.Component<Props, State> {
             // currently viewing).
             this.subscriptions.add(
                 queryUpdates.pipe(distinctUntilChanged()).subscribe(query => {
-                    this.setState({ queryWithFileLine: query })
+                    this.setState({ queryWithLineNumber: query })
                     // Assume that this update does not contain a file line because it is generated
                     // by the application and not the user
                     this.props.onChange(query)
@@ -307,7 +307,7 @@ export class QueryInput extends React.Component<Props, State> {
             <div className="query-input2">
                 <input
                     className="form-control query-input2__input rounded-left"
-                    value={this.state.queryWithFileLine}
+                    value={this.state.queryWithLineNumber}
                     autoFocus={this.props.autoFocus === true}
                     onChange={this.onInputChange}
                     onKeyDown={this.onInputKeyDown}
