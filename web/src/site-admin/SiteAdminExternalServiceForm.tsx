@@ -50,9 +50,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         disabled={this.props.loading || this.props.mode === 'edit'}
                         value={this.props.input.kind}
                     >
-                        {Object.keys(ALL_EXTERNAL_SERVICES).map(kind => (
+                        {Object.entries(ALL_EXTERNAL_SERVICES).map(([kind, service]) => (
                             <option key={kind} value={kind}>
-                                {ALL_EXTERNAL_SERVICES[kind as GQL.ExternalServiceKind].displayName}
+                                {service.displayName}
                             </option>
                         ))}
                     </Select>
