@@ -15,7 +15,6 @@
     "lint": "yarn run tslint && gulp unusedExports && yarn run stylelint",
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'src/schema/**' 'src/**/*.ts?(x)' 'types/**/*.ts?(x)' './*.ts?(x)'",
     "stylelint": "stylelint --quiet 'src/**/*.scss'",
-    "stylelint-compact": "yarn run stylelint --custom-formatter ./node_modules/stylelint-formatter-compact/index.js",
     "bundlesize": "cross-env GITHUB_TOKEN= bundlesize",
     "browserslist": "browserslist"
   },
