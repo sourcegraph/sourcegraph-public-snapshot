@@ -17,11 +17,3 @@ GLOBAL.URLSearchParams = URLSearchParams
 if (!window.URL.createObjectURL && createObjectURL) {
     window.URL.createObjectURL = createObjectURL
 }
-
-// Safari doesn't implement intersection-observer
-require('intersection-observer')
-
-// Safari doesn't implement the full FormData prototype ¯\_(ツ)_/¯
-if (!GLOBAL.FormData.prototype.set) {
-    require('formdata-polyfill')
-}
