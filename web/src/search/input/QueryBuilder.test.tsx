@@ -48,7 +48,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const exactMatchField = container.querySelector('#query-builder-quoted-term')!
+        const exactMatchField = container.querySelector('#query-builder-exactMatch')!
         fireEvent.change(exactMatchField, { target: { value: 'foo bar baz' } })
         expect(onChange.calledOnce).toBe(true)
         expect(onChange.calledWith('"foo bar baz"')).toBe(true)
