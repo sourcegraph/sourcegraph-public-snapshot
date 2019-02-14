@@ -4,7 +4,11 @@
 FROM alpine:3.9
 
 # Add the sourcegraph group, user, and create the home directory.
-RUN addgroup -S sourcegraph && adduser -S -G sourcegraph -h /home/sourcegraph sourcegraph
+#
+# We use a static GID/UID assignment to ensure files can be chown'd to this
+# user on the host machine (where this user does not exist).
+# See https://github.com/sourcegraph/sourcegraph/issues/1884
+RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/sourcegraph sourcegraph
 
 # Install bind-tools to ensure working DNS on user-defined Docker networks.
 #
