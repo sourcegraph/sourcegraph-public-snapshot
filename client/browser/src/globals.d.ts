@@ -10,9 +10,6 @@ interface Window {
     SG_ENV: 'EXTENSION' | 'PAGE'
     EXTENSION_ENV: 'CONTENT' | 'BACKGROUND' | 'OPTIONS' | null
     SOURCEGRAPH_BUNDLE_URL: string | undefined // Bundle Sourcegraph URL is set from the Phabricator extension.
-    safariMessager?: {
-        send: (message: { type: string; payload: any }, cb?: (res?: any) => void) => void
-    }
     // Bitbucket has a global require function on the DOM that we rely on to get the current Bitbucket state.
     require: any
 }

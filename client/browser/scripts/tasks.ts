@@ -62,12 +62,9 @@ const browserBundleZips = {
 const browserBlacklist = {
     chrome: ['applications'],
     firefox: ['key'],
-    safari: [],
 }
 
-const browserWhitelist = {
-    safari: ['version'],
-}
+const browserWhitelist = {}
 
 function writeSchema(env, browser, writeDir): void {
     fs.writeFileSync(`${writeDir}/schema.json`, JSON.stringify(schema, null, 4))

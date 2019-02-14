@@ -20,9 +20,3 @@ yarn-error.log
 update.xml
 npm-debug.log.*
 /.gtm/
-
-*.safariextz
-# Keep safari extension config stuff, remove the rest
-*.safariextension/**/*
-!*.safariextension/*.plist
-!*.safariextension/background.safari.html

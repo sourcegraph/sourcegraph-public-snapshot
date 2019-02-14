@@ -1,8 +1,5 @@
 import { isBackground } from '../context'
-import { getURL } from './extension'
-import safariMessager from './safari/SafariMessager'
 
-const safari = window.safari
 const chrome = global.chrome
 
 export interface Message {
@@ -26,10 +23,6 @@ export const sendMessage = (message: Message, responseCallback?: (response: any)
     if (chrome && chrome.runtime) {
         chrome.runtime.sendMessage(message, responseCallback)
     }
-
-    if (safari) {
-        safariMessager.send(message, responseCallback)
-    }
 }
 
 export const onMessage = (
@@ -37,11 +30,6 @@ export const onMessage = (
 ) => {
     if (chrome && chrome.runtime && chrome.runtime.onMessage) {
         chrome.runtime.onMessage.addListener(callback)
-        return
-    }
-
-    if (safari && safari.application) {
-        safariMessager.onMessage(callback)
         return
     }
 
@@ -84,36 +72,6 @@ export const openOptionsPage = (callback?: () => void): void => {
     }
 }
 
-function getSafariExtensionVersion(): Promise<string> {
-    return fetch(getURL('manifest.json'))
-        .then(res => res.json())
-        .then(({ version }: { version: string }) => version)
-        .catch(err => {
-            console.error('could not load manifest.json', err)
-
-            return 'NO_VERSION'
-        })
-}
-
-let safariVersion = 'NO_VERSION'
-
-function initSafariVersion(): void {
-    getSafariExtensionVersion()
-        .then(version => {
-            safariVersion = version
-        })
-        .catch(() => {
-            // Don't care
-        })
-}
-
-if (safari) {
-    initSafariVersion()
-}
-
-// getExtensionVersionSync will be reliable on Chrome and Firefox but should only be used
-// in safari when we know that `initSafariVersion` has had time to resolve. This is not
-// sufficient for the options menu.
 export const getExtensionVersionSync = (): string => {
     // Content scripts don't have access to the manifest, but do have chrome.app.getDetails
     const c = chrome as any
@@ -131,10 +89,6 @@ export const getExtensionVersionSync = (): string => {
         }
     }
 
-    if (safari) {
-        return safariVersion
-    }
-
     return 'NO_VERSION'
 }
 
@@ -143,27 +97,11 @@ export const getExtensionVersion = (): Promise<string> => {
         return Promise.resolve(getExtensionVersionSync())
     }
 
-    if (safari) {
-        return getSafariExtensionVersion()
-    }
-
     return Promise.resolve('NO_VERSION')
 }
 
 export const onInstalled = (handler: (info?: chrome.runtime.InstalledDetails) => void) => {
     if (chrome && chrome.runtime && chrome.runtime.onInstalled) {
         chrome.runtime.onInstalled.addListener(handler)
-    }
-
-    if (safari && !(safari.extension as SafariExtension).settings._wasInitialized) {
-        handler()
-
-        // Access settings directly here because we don't want to go through our
-        // storage implementation to avoid onChange events and others from firing.
-        //
-        // This is ok here because we are only accessing this var from within this
-        // function and we are inside a check to ensure safari exists.
-        const settings = (safari.extension as SafariExtension).settings
-        settings._wasInitialized = true
     }
 }
