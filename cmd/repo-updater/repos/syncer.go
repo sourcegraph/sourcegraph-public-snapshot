@@ -53,7 +53,7 @@ func (s Syncer) Run(ctx context.Context) error {
 }
 
 func (s Syncer) run(ctx context.Context) ([]*SyncResult, error) {
-	sources, err := s.src.ListSources(ctx)
+	sources, err := s.src.ListSources(ctx, s.kinds...)
 	if err != nil {
 		return nil, err
 	}
