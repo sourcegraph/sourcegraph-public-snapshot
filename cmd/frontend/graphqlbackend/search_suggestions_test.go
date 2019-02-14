@@ -105,7 +105,7 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("single term invalid regex", func(t *testing.T) {
-		_, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: "foo("})
+		_, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: "foo\\"})
 		if err == nil {
 			t.Fatal("err == nil")
 		} else if want := "error parsing regexp"; !strings.Contains(err.Error(), want) {

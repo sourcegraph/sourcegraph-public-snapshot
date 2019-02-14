@@ -144,3 +144,38 @@ func TestUnquoteString(t *testing.T) {
 		})
 	}
 }
+
+func TestCompileRegexp(t *testing.T) {
+	tests := []struct {
+		query string
+		want  string
+	}{
+		{query: "foo(", want: `foo\(`},
+		{query: "(foo|bar)(", want: `(foo|bar)\(`},
+		{query: "foo[", want: `foo\[`},
+		{query: "*foo", want: `\*foo`},
+		{query: "$foo", want: `\$foo`},
+		{query: `foo\s=\s$bar`, want: `foo\s=\s\$bar`},
+
+		// Valid regexps
+		{query: `foo\(`, want: `foo\(`},
+		{query: `(foo|bar)\(`, want: `(foo|bar)\(`},
+		{query: `foo\[`, want: `foo\[`},
+		{query: `\*foo`, want: `\*foo`},
+		{query: `\$foo`, want: `\$foo`},
+		{query: `foo$`, want: `foo$`},
+		{query: `foo\s=\s\$bar`, want: `foo\s=\s\$bar`},
+	}
+
+	for _, test := range tests {
+		got, err := compileRegexp(test.query)
+		if err != nil {
+			t.Errorf("failed to compile regexp: %v", err)
+		}
+
+		want := regexp.MustCompile(test.want)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("query wasn't correctly fixed:\ngot: %v\nwant: %v\n", got, want)
+		}
+	}
+}
