@@ -50,9 +50,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         disabled={this.props.loading || this.props.mode === 'edit'}
                         value={this.props.input.kind}
                     >
-                        {ALL_EXTERNAL_SERVICES.map(s => (
-                            <option key={s.kind} value={s.kind}>
-                                {s.displayName}
+                        {Object.keys(ALL_EXTERNAL_SERVICES).map(kind => (
+                            <option key={kind} value={kind}>
+                                {ALL_EXTERNAL_SERVICES[kind as GQL.ExternalServiceKind].displayName}
                             </option>
                         ))}
                     </Select>
@@ -98,9 +98,6 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
 }
 
 function getJSONSchemaId(kind: GQL.ExternalServiceKind): { jsonSchemaId: string; extraSchemas: any[] } {
-    const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === kind)
-    if (!service) {
-        return { jsonSchemaId: '', extraSchemas: [] } // unreachable except if there is a bug
-    }
+    const service = ALL_EXTERNAL_SERVICES[kind]
     return { jsonSchemaId: service.jsonSchema.$id, extraSchemas: [service.jsonSchema] }
 }
