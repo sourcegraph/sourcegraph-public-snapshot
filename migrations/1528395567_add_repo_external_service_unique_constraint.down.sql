@@ -1,1 +1,1 @@
-ALTER TABLE repo DROP CONSTRAINT (external_id, external_service_type, external_service_id);
+ALTER TABLE repo DROP CONSTRAINT repo_external_service_unique;
