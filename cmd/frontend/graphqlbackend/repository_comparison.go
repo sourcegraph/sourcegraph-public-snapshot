@@ -129,9 +129,9 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 		var rangeSpec string
 		if r.cmp.base == nil {
 			// Rare case: the base is the empty tree, in which case we need ".." not "..." because the latter only works for commits.
-			rangeSpec = string(r.cmp.baseRevspec) + ".." + string(r.cmp.head.oid)
+			rangeSpec = string(r.cmp.baseRevspec) + ".." + string(r.cmp.head.OID())
 		} else {
-			rangeSpec = string(r.cmp.base.oid) + "..." + string(r.cmp.head.oid)
+			rangeSpec = string(r.cmp.base.OID()) + "..." + string(r.cmp.head.OID())
 		}
 		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
 			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be

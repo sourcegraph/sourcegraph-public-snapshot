@@ -157,7 +157,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 				symbols:  []*symbolResolver{symbolRes},
 				uri:      uri,
 				repo:     symbolRes.location.resource.commit.repo.repo,
-				commitID: api.CommitID(symbolRes.location.resource.commit.oid),
+				commitID: api.CommitID(symbolRes.location.resource.commit.OID()),
 			}
 			fileMatchesByURI[uri] = fileMatch
 			fileMatches = append(fileMatches, fileMatch)

@@ -70,12 +70,26 @@ func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID gitObjectI
 	return spec.Repository, spec.CommitID, err
 }
 
-func (r *gitCommitResolver) ID() graphql.ID { return marshalGitCommitID(r.repo.ID(), r.oid) }
+func (r *gitCommitResolver) ID() graphql.ID { return marshalGitCommitID(r.repo.ID(), r.OID()) }
 
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
-func (r *gitCommitResolver) OID() gitObjectID              { return r.oid }
-func (r *gitCommitResolver) AbbreviatedOID() string        { return string(r.oid)[:7] }
+func (r *gitCommitResolver) OID() gitObjectID {
+	if r.oid == "" {
+		repo := r.repo
+
+		ctx := context.Background()
+		ref, _ := repo.DefaultBranch(ctx)
+		if ref != nil {
+			target := ref.Target()
+			oid, _ := target.OID(ctx)
+			r.oid = oid
+		}
+	}
+
+	return r.oid
+}
+func (r *gitCommitResolver) AbbreviatedOID() string        { return string(r.OID())[:7] }
 func (r *gitCommitResolver) Author() *signatureResolver    { return &r.author }
 func (r *gitCommitResolver) Committer() *signatureResolver { return r.committer }
 func (r *gitCommitResolver) Message() string               { return r.message }
@@ -104,10 +118,12 @@ func (r *gitCommitResolver) URL() string {
 	return r.repo.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev())
 }
 
-func (r *gitCommitResolver) CanonicalURL() string { return r.repo.URL() + "/-/commit/" + string(r.oid) }
+func (r *gitCommitResolver) CanonicalURL() string {
+	return r.repo.URL() + "/-/commit/" + string(r.OID())
+}
 
 func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.oid))
+	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.OID()))
 }
 
 func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
@@ -119,7 +135,7 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.OID()), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +158,7 @@ func (r *gitCommitResolver) Blob(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.OID()), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +179,7 @@ func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.OID()))
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +197,7 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	Path  *string
 }) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		revisionRange: string(r.oid),
+		revisionRange: string(r.OID()),
 		first:         args.ConnectionArgs.First,
 		query:         args.Query,
 		path:          args.Path,
@@ -197,7 +213,7 @@ func (r *gitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	counts, err := git.GetBehindAhead(ctx, *cachedRepo, args.Revspec, string(r.oid))
+	counts, err := git.GetBehindAhead(ctx, *cachedRepo, args.Revspec, string(r.OID()))
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +234,7 @@ func (r *gitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
 		return escapeRevspecForURL(*r.inputRev)
 	}
-	return string(r.oid)
+	return string(r.OID())
 }
 
 // repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
@@ -232,7 +248,7 @@ func (r *gitCommitResolver) repoRevURL() string {
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
 	} else {
-		rev = string(r.oid)
+		rev = string(r.OID())
 	}
 	if rev != "" {
 		return url + "@" + escapeRevspecForURL(rev)
@@ -241,7 +257,7 @@ func (r *gitCommitResolver) repoRevURL() string {
 }
 
 func (r *gitCommitResolver) canonicalRepoRevURL() string {
-	return r.repo.URL() + "@" + string(r.oid)
+	return r.repo.URL() + "@" + string(r.OID())
 }
 
 // gitCommitBody returns the first line of the Git commit message.

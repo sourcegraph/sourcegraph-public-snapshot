@@ -234,7 +234,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			k.repoName = s.repo.Name
 		case *gitTreeEntryResolver:
 			k.repoName = s.commit.repo.repo.Name
-			k.repoRev = string(s.commit.oid)
+			k.repoRev = string(s.commit.OID())
 			// Zoekt only searches the default branch and sets commit ID to an empty string. This
 			// may cause duplicate suggestions when merging results from Zoekt and non-Zoekt sources
 			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
