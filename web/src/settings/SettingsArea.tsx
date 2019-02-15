@@ -16,6 +16,7 @@ import { gqlToCascade, SettingsCascadeProps } from '../../../shared/src/settings
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
+import { eventLogger } from '../tracking/eventLogger'
 import { SettingsPage } from './SettingsPage'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -71,6 +72,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent(`Settings${this.props.subject.__typename}`)
         // Load settings.
         this.subscriptions.add(
             combineLatest(this.subjectChanges, this.refreshRequests.pipe(startWith<void>(void 0)))

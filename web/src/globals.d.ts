@@ -34,7 +34,7 @@ interface SourcegraphContext {
      */
     readonly isAuthenticatedUser: boolean
 
-    sentryDSN: string
+    readonly sentryDSN: string | null
 
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string

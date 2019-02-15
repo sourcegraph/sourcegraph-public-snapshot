@@ -19,6 +19,51 @@ describe('Windows (integration)', () => {
         })
     })
 
+    describe('app.activeWindowChanged', () => {
+        test('reflects changes to the active window', async () => {
+            const { extensionHost, model } = await integrationTestContext(undefined, {
+                roots: [],
+                visibleViewComponents: [],
+            })
+            await extensionHost.internal.sync()
+            const values = collectSubscribableValues(extensionHost.app.activeWindowChanges)
+            model.next({
+                ...model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'foo', languageId: 'l1', text: 't1' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
+            })
+            model.next({
+                ...model.value,
+                visibleViewComponents: [],
+            })
+            await extensionHost.internal.sync()
+            model.next({
+                ...model.value,
+                visibleViewComponents: [
+                    {
+                        type: 'textEditor',
+                        item: { uri: 'bar', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ],
+            })
+            await extensionHost.internal.sync()
+            assertToJSON(values.map(w => w && w.activeViewComponent && w.activeViewComponent.document.uri), [
+                null,
+                'foo',
+                null,
+                'bar',
+            ])
+        })
+    })
+
     describe('app.windows', () => {
         test('lists windows', async () => {
             const { extensionHost } = await integrationTestContext()

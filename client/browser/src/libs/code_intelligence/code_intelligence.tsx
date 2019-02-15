@@ -9,11 +9,23 @@ import {
     PositionAdjuster,
 } from '@sourcegraph/codeintellify'
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
+import { Selection } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
-import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map, mergeMap, observeOn, switchMap, withLatestFrom } from 'rxjs/operators'
+import { animationFrameScheduler, combineLatest, fromEvent, Observable, of, Subject, Subscription } from 'rxjs'
+import {
+    catchError,
+    distinctUntilChanged,
+    filter,
+    map,
+    mergeMap,
+    observeOn,
+    startWith,
+    switchMap,
+    withLatestFrom,
+} from 'rxjs/operators'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
 import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
@@ -27,6 +39,8 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
 import {
     FileSpec,
+    lprToSelectionsZeroIndexed,
+    parseHash,
     PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
@@ -175,6 +189,9 @@ export interface CodeHost {
     urlToFile?: (
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
+
+    /** Returns a stream representing the selections in the current code view */
+    selectionsChanges?: () => Observable<Selection[]>
 }
 
 export interface FileInfo {
@@ -424,22 +441,33 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
 
     injectViewContextOnSourcegraph(sourcegraphUrl, codeHost, ensureRepoExists, isInPage ? undefined : openOptionsMenu)
 
+    // A stream of selections for the current code view. By default, selections
+    // are parsed from the location hash, but the codeHost can provide an alternative implementation.
+    const selectionsChanges: Observable<Selection[]> = codeHost.selectionsChanges
+        ? codeHost.selectionsChanges()
+        : fromEvent(window, 'hashchange').pipe(
+              map(() => lprToSelectionsZeroIndexed(parseHash(window.location.hash))),
+              distinctUntilChanged(isEqual),
+              startWith([])
+          )
+
     // Keeps track of all documents on the page since calling this function (should be once per page).
     let visibleViewComponents: ViewComponentData[] = []
 
+    const codeViews = of(document.body).pipe(
+        findCodeViews(codeHost),
+        mergeMap(({ codeView, resolveFileInfo, ...rest }) =>
+            resolveFileInfo(codeView).pipe(map(info => ({ info, codeView, ...rest })))
+        ),
+        switchMap(({ info, ...rest }) =>
+            fetchFileContents(info).pipe(map(infoWithContents => ({ info: infoWithContents, ...rest })))
+        ),
+        observeOn(animationFrameScheduler)
+    )
+
     subscriptions.add(
-        of(document.body)
-            .pipe(
-                findCodeViews(codeHost),
-                mergeMap(({ codeView, resolveFileInfo, ...rest }) =>
-                    resolveFileInfo(codeView).pipe(map(info => ({ info, codeView, ...rest })))
-                ),
-                switchMap(({ info, ...rest }) =>
-                    fetchFileContents(info).pipe(map(infoWithContents => ({ info: infoWithContents, ...rest })))
-                ),
-                observeOn(animationFrameScheduler)
-            )
-            .subscribe(({ codeView, info, dom, adjustPosition, getToolbarMount, toolbarButtonProps }) => {
+        combineLatest(codeViews, selectionsChanges).subscribe(
+            ([{ codeView, info, dom, adjustPosition, getToolbarMount, toolbarButtonProps }, selections]) => {
                 const originalDOM = dom
                 dom = {
                     ...dom,
@@ -463,7 +491,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                             languageId: getModeFromPath(info.filePath) || 'could not determine mode',
                             text: info.content!,
                         },
-                        selections: [],
+                        selections,
                         isActive: true,
                     },
                     // All the currently open documents, which are all now considered inactive.
@@ -484,10 +512,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                             languageId: getModeFromPath(info.filePath) || 'could not determine mode',
                             text: info.baseContent,
                         },
-                        // There is no notion of a selection on code hosts yet, so this is empty.
-                        //
-                        // TODO: Support interpreting GitHub #L1-2, etc., URL fragments as selections (and
-                        // similar on other code hosts), or find some other way to get this info.
+                        // There is no notion of a selection on diff views yet, so this is empty.
                         selections: [],
                         isActive: false,
                     })
@@ -554,7 +579,8 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     </TelemetryContext.Provider>,
                     mount
                 )
-            })
+            }
+        )
     )
 
     return subscriptions

@@ -92,4 +92,17 @@ You may now sign into the management console using your plaintext password `abc1
 
 ### How can I use my own TLS certificates with the management console?
 
-This section coming soon. Please contact support@sourcegraph.com for further information.
+The management console looks for TLS certificates in the following location inside the Docker container:
+
+- `/etc/sourcegraph/management/cert.pem`
+- `/etc/sourcegraph/management/key.pem`
+
+If you are using `sourcegraph/server` and the regular Docker flag:
+
+```
+--volume ~/.sourcegraph/config:/etc/sourcegraph
+```
+
+This means you can simply place them in `~/.sourcegraph/config/management/`  on the host.
+
+Restart the container once you have copied the files there for the changes to take effect.

@@ -34,7 +34,7 @@ The [sourcegraph](https://npmjs.com/package/sourcegraph) npm package (published 
 
 Adapters make it so that Sourcegraph extensions can modify the UI of existing tools, such as GitHub. They run Sourcegraph extensions and know how to detect when the user hovers over a specific line and column in a file, how to insert buttons and actions seamlessly in the tool's UI, etc. All Sourcegraph client adapters are open source.
 
-- The open-source [Sourcegraph for Chrome](../integration/browser_extension.md) supports using Sourcegraph extensions on GitHub (support for other code hosts and browsers coming soon). It runs extensions by executing their JavaScript code on the client in a Web Worker.
+- The open-source [Sourcegraph for Chrome/Firefox](../integration/browser_extension.md) supports using Sourcegraph extensions on GitHub (support for other code hosts and browsers coming soon). It runs extensions by executing their JavaScript code on the client in a Web Worker.
 - Support for GitHub PRs and diffs, other code hosts, other code review tools, and more browsers is coming soon.
 - Sourcegraph for `$EDITOR` is coming soon (for VS Code, Vim, Emacs, Atom, Sublime, JetBrains, etc.).
 

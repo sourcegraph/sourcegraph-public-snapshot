@@ -1,5 +1,3 @@
-// Safari doesn't support optional permissions so we have access to every site
-const safari = window.safari
 const chrome = global.chrome
 
 export function contains(url: string): Promise<boolean> {
@@ -18,8 +16,6 @@ export function request(urls: string[]): Promise<boolean> {
                 },
                 resolve
             )
-        } else if (safari) {
-            resolve(true)
         }
     })
 }
@@ -33,8 +29,6 @@ export function remove(url: string): Promise<boolean> {
                 },
                 resolve
             )
-        } else if (safari) {
-            resolve(true)
         }
     })
 }
@@ -45,8 +39,6 @@ export function getAll(): Promise<chrome.permissions.Permissions> {
             chrome.permissions.getAll(resolve)
             return
         }
-
-        // noop on safari
     })
 }
 

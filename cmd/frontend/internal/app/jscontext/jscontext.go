@@ -25,8 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
-
 // BillingPublishableKey is the publishable (non-secret) API key for the billing system, if any.
 var BillingPublishableKey string
 
@@ -55,12 +53,12 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN      string `json:"sentryDSN"`
-	SiteID         string `json:"siteID"`
-	SiteGQLID      string `json:"siteGQLID"`
-	Debug          bool   `json:"debug"`
-	ShowOnboarding bool   `json:"showOnboarding"`
-	EmailEnabled   bool   `json:"emailEnabled"`
+	SentryDSN      *string `json:"sentryDSN"`
+	SiteID         string  `json:"siteID"`
+	SiteGQLID      string  `json:"siteGQLID"`
+	Debug          bool    `json:"debug"`
+	ShowOnboarding bool    `json:"showOnboarding"`
+	EmailEnabled   bool    `json:"emailEnabled"`
 
 	Critical            schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
 	LikelyDockerOnMac   bool                         `json:"likelyDockerOnMac"`
@@ -127,6 +125,12 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		}
 	}
 
+	var sentryDSN *string
+	criticalConfig := conf.Get().Critical
+	if criticalConfig.Log != nil && criticalConfig.Log.Sentry != nil && criticalConfig.Log.Sentry.Dsn != "" {
+		sentryDSN = &criticalConfig.Log.Sentry.Dsn
+	}
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -140,7 +144,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AssetsRoot:          assetsutil.URL("").String(),
 		Version:             version.Version(),
 		IsAuthenticatedUser: actor.IsAuthenticated(),
-		SentryDSN:           sentryDSNFrontend,
+		SentryDSN:           sentryDSN,
 		Debug:               env.InsecureDev,
 		SiteID:              siteID,
 

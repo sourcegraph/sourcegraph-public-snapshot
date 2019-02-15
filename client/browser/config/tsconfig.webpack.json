@@ -1,4 +1,4 @@
 {
   "extends": "../tsconfig.json",
-  "exclude": ["**/*.test.ts", "./node_modules", "./build", "./*.safariextension"]
+  "exclude": ["**/*.test.ts", "./node_modules", "./build"]
 }

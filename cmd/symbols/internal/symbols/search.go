@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
@@ -130,9 +131,28 @@ func filterSymbols(ctx context.Context, symbols []protocol.Symbol, args protocol
 		return nil, err
 	}
 
+	pathFilter := func(s protocol.Symbol) bool {
+		return fileFilter.MatchPath(s.Path)
+	}
+
+	nameFilter := func(s protocol.Symbol) bool {
+		return queryRegex.MatchString(s.Name)
+	}
+
+	var filters []func(s protocol.Symbol) bool
+
+	if strings.HasPrefix(args.Query, "^") {
+		filters = []func(s protocol.Symbol) bool{nameFilter, pathFilter}
+	} else {
+		filters = []func(s protocol.Symbol) bool{pathFilter, nameFilter}
+	}
+
+SYMBOL:
 	for _, symbol := range symbols {
-		if !fileFilter.MatchPath(symbol.Path) || !queryRegex.MatchString(symbol.Name) {
-			continue
+		for _, filter := range filters {
+			if !filter(symbol) {
+				continue SYMBOL
+			}
 		}
 		res = append(res, symbol)
 		if args.First > 0 && len(res) == args.First {

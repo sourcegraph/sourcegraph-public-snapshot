@@ -2,9 +2,6 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
-const MainPage = React.lazy(async () => ({
-    default: (await import('./search/input/MainPage')).MainPage,
-}))
 const SearchPage = React.lazy(async () => ({
     default: (await import('./search/input/SearchPage')).SearchPage,
 }))
@@ -78,12 +75,11 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/',
         render: (props: any) =>
-            window.context.sourcegraphDotComMode && !props.user ? <Redirect to="/start" /> : <Redirect to="/search" />,
-        exact: true,
-    },
-    {
-        path: '/start',
-        render: (props: any) => <MainPage {...props} />,
+            window.context.sourcegraphDotComMode && !props.user ? (
+                <Redirect to="/welcome" />
+            ) : (
+                <Redirect to="/search" />
+            ),
         exact: true,
     },
     {

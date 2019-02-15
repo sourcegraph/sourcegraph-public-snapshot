@@ -12,7 +12,7 @@ import { telligent } from './services/telligentWrapper'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
-class EventLogger implements TelemetryService {
+export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
     private user?: GQL.IUser | null
 
@@ -45,7 +45,7 @@ class EventLogger implements TelemetryService {
     /**
      * Set user-level properties in all external tracking services
      */
-    public updateUser(user: GQL.IUser): void {
+    private updateUser(user: GQL.IUser): void {
         this.setUserIds(user.databaseID, user.username)
         if (user.email) {
             this.setUserEmail(user.email)
@@ -57,7 +57,7 @@ class EventLogger implements TelemetryService {
      * @param uniqueUserDatabaseId Unique Sourcegraph user database ID (corresponds to databaseID from GraphQL)
      * @param username Human-readable user identifier, not guaranteed to always stay the same
      */
-    public setUserIds(uniqueUserDatabaseId: number | null, username: string | null): void {
+    private setUserIds(uniqueUserDatabaseId: number | null, username: string | null): void {
         if (username) {
             telligent.setUserProperty('username', username)
         }
@@ -66,7 +66,7 @@ class EventLogger implements TelemetryService {
         }
     }
 
-    public setUserEmail(primaryEmail: string): void {
+    private setUserEmail(primaryEmail: string): void {
         telligent.setUserProperty('email', primaryEmail)
     }
 
@@ -75,7 +75,7 @@ class EventLogger implements TelemetryService {
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logUserEvent = true): void {
-        if (window.context.userAgentIsBot || !pageTitle) {
+        if ((window.context && window.context.userAgentIsBot) || !pageTitle) {
             return
         }
         pageTitle = `View${pageTitle}`
@@ -104,7 +104,7 @@ class EventLogger implements TelemetryService {
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      */
     public log(eventLabel: string, eventProperties?: any): void {
-        if (window.context.userAgentIsBot || !eventLabel) {
+        if ((window.context && window.context.userAgentIsBot) || !eventLabel) {
             return
         }
 
@@ -113,7 +113,7 @@ class EventLogger implements TelemetryService {
             eventLabel,
         }
         telligent.track(eventLabel, decoratedProps)
-        serverAdmin.trackAction(eventLabel, decoratedProps)
+        serverAdmin.trackAction(eventLabel)
         this.logToConsole(eventLabel, decoratedProps)
     }
 

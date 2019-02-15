@@ -92,7 +92,7 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  * Not used at all for public/sourcegraph.com usage.
  */
 export function logUserEvent(event: GQL.UserEvent): void {
-    if (window.context.sourcegraphDotComMode) {
+    if (window.context && window.context.sourcegraphDotComMode) {
         return
     }
     mutateGraphQL(

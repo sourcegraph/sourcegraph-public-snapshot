@@ -56,7 +56,8 @@ const NOOP_MOCKS: Mocks = {
  * @internal
  */
 export async function integrationTestContext(
-    partialMocks: Partial<Mocks> = NOOP_MOCKS
+    partialMocks: Partial<Mocks> = NOOP_MOCKS,
+    initModel: Model = FIXTURE_MODEL
 ): Promise<
     TestContext & {
         model: Subscribable<Model> & { value: Model } & NextObserver<Model>
@@ -87,7 +88,7 @@ export async function integrationTestContext(
         )
     )
 
-    services.model.model.next(FIXTURE_MODEL)
+    services.model.model.next(initModel)
 
     await (await extensionHost.__testAPI).internal.sync()
     return {

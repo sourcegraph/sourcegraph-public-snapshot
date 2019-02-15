@@ -10,7 +10,9 @@ import { PlatformContextProps } from '../platform/context'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsState } from './actions'
 
-export interface ActionsProps extends ExtensionsControllerProps, PlatformContextProps {
+export interface ActionsProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'> {
     menu: ContributableMenu
     scope?: ContributionScope
     actionItemClass?: string

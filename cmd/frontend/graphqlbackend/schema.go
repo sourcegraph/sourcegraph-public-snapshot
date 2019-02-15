@@ -2862,7 +2862,9 @@ enum UserEvent {
     PAGEVIEW
     SEARCHQUERY
     CODEINTEL
+    CODEINTELREFS
     CODEINTELINTEGRATION
+    CODEINTELINTEGRATIONREFS
 }
 
 # A period of time in which a set of users have been active.

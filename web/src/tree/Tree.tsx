@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { Subject } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 import { AbsoluteRepo } from '../../../shared/src/util/url'
 import { dirname } from '../util/path'
 import { TreeRoot } from './TreeRoot'
@@ -120,17 +121,83 @@ export class Tree extends React.PureComponent<Props, State> {
     public node: TreeNode
     private treeElement: HTMLElement | null
 
-    private handlers: { [index: string]: () => void } = {
-        // tslint:disable-next-line:no-unbound-method
-        ArrowDown: this.onArrowDown,
-        // tslint:disable-next-line:no-unbound-method
-        ArrowUp: this.onArrowUp,
-        // tslint:disable-next-line:no-unbound-method
-        ArrowLeft: this.onArrowLeft,
-        // tslint:disable-next-line:no-unbound-method
-        ArrowRight: this.onArrowRight,
-        // tslint:disable-next-line:no-unbound-method
-        Enter: this.onEnter,
+    private keyHandlers: Record<string, () => void> = {
+        [Key.ArrowDown]: () => {
+            // This case gets called whenever we are going _down_ the tree
+            if (this.state.selectedNode) {
+                this.selectNode(nextChild(this.state.selectedNode, 0))
+            }
+        },
+        [Key.ArrowUp]: () => {
+            if (this.state.selectedNode) {
+                this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
+            }
+        },
+        [Key.ArrowLeft]: () => {
+            const selectedNodePath =
+                this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
+            const isOpenDir = this.isExpanded(selectedNodePath)
+            if (isOpenDir) {
+                this.expandDirectoryChanges.next({
+                    path: selectedNodePath,
+                    expanded: false,
+                    node: this.state.selectedNode,
+                })
+                return
+            }
+            const parent = this.state.selectedNode.parent
+            if (parent !== null && parent.parent !== null) {
+                this.selectNode(parent)
+                return
+            }
+
+            this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
+        },
+        [Key.ArrowRight]: () => {
+            const selectedNodePath =
+                this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
+            const nodeDomElement = getDomElement(selectedNodePath)
+            if (nodeDomElement) {
+                const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-is-directory'))
+                if (!this.isExpanded(selectedNodePath) && isDirectory) {
+                    // First, show the group (but don't update selection)
+                    this.expandDirectoryChanges.next({
+                        path: selectedNodePath,
+                        expanded: true,
+                        node: this.state.selectedNode,
+                    })
+                } else {
+                    this.selectNode(nextChild(this.state.selectedNode, 0))
+                }
+            }
+        },
+        [Key.Enter]: () => {
+            const selectedNodePath = this.state.selectedNode.path
+            const nodeDomElement = getDomElement(selectedNodePath)
+            if (nodeDomElement) {
+                const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-is-directory'))
+                if (isDirectory) {
+                    const isOpen = this.isExpanded(selectedNodePath)
+                    if (isOpen) {
+                        this.expandDirectoryChanges.next({
+                            path: selectedNodePath,
+                            expanded: false,
+                            node: this.state.selectedNode,
+                        })
+                        this.selectNode(this.state.selectedNode)
+                        return
+                    }
+                    this.expandDirectoryChanges.next({
+                        path: selectedNodePath,
+                        expanded: true,
+                        node: this.state.selectedNode,
+                    })
+                }
+                this.selectNode(this.state.selectedNode)
+                this.setActiveNode(this.state.selectedNode)
+                this.props.history.push(this.state.selectedNode.url)
+            }
+        },
     }
 
     constructor(props: Props) {
@@ -258,85 +325,8 @@ export class Tree extends React.PureComponent<Props, State> {
         this.node.childNodes[index] = node
     }
 
-    private onArrowDown(): void {
-        // This case gets called whenever we are going _down_ the tree
-        if (this.state.selectedNode) {
-            this.selectNode(nextChild(this.state.selectedNode, 0))
-        }
-    }
-
-    private onArrowUp(): void {
-        if (this.state.selectedNode) {
-            this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
-        }
-    }
-
     private isExpanded(path: string): boolean {
         return this.state.resolveTo.includes(path)
-    }
-
-    private onArrowLeft(): void {
-        const selectedNodePath =
-            this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
-        const isOpenDir = this.isExpanded(selectedNodePath)
-        if (isOpenDir) {
-            this.expandDirectoryChanges.next({ path: selectedNodePath, expanded: false, node: this.state.selectedNode })
-            return
-        }
-        const parent = this.state.selectedNode.parent
-        if (parent !== null && parent.parent !== null) {
-            this.selectNode(parent)
-            return
-        }
-
-        this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
-    }
-
-    private onArrowRight(): void {
-        const selectedNodePath =
-            this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
-        const nodeDomElement = getDomElement(selectedNodePath)
-        if (nodeDomElement) {
-            const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-is-directory'))
-            if (!this.isExpanded(selectedNodePath) && isDirectory) {
-                // First, show the group (but don't update selection)
-                this.expandDirectoryChanges.next({
-                    path: selectedNodePath,
-                    expanded: true,
-                    node: this.state.selectedNode,
-                })
-            } else {
-                this.selectNode(nextChild(this.state.selectedNode, 0))
-            }
-        }
-    }
-
-    private onEnter(): void {
-        const selectedNodePath = this.state.selectedNode.path
-        const nodeDomElement = getDomElement(selectedNodePath)
-        if (nodeDomElement) {
-            const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-is-directory'))
-            if (isDirectory) {
-                const isOpen = this.isExpanded(selectedNodePath)
-                if (isOpen) {
-                    this.expandDirectoryChanges.next({
-                        path: selectedNodePath,
-                        expanded: false,
-                        node: this.state.selectedNode,
-                    })
-                    this.selectNode(this.state.selectedNode)
-                    return
-                }
-                this.expandDirectoryChanges.next({
-                    path: selectedNodePath,
-                    expanded: true,
-                    node: this.state.selectedNode,
-                })
-            }
-            this.selectNode(this.state.selectedNode)
-            this.setActiveNode(this.state.selectedNode)
-            this.props.history.push(this.state.selectedNode.url)
-        }
     }
 
     private selectNode = (node: TreeNode): void => {
@@ -364,10 +354,10 @@ export class Tree extends React.PureComponent<Props, State> {
     }
 
     private onKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
-        const handler = this.handlers[event.key]
+        const handler = this.keyHandlers[event.key]
         if (handler) {
             event.preventDefault()
-            handler.call(this, event)
+            handler()
         }
     }
 
