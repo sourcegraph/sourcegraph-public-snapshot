@@ -1,4 +1,5 @@
 import uuid from 'uuid'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { TelemetryService } from '../../../../../shared/src/telemetry/telemetryService'
 import storage from '../../browser/storage'
 import { isInPage } from '../../context'
@@ -65,9 +66,9 @@ export class EventLogger implements TelemetryService {
      *
      * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
      */
-    public logCodeIntelligenceEvent(): void {
+    public logCodeIntelligenceEvent(event: GQL.UserEvent): void {
         this.getAnonUserID().then(
-            anonUserId => logUserEvent('CODEINTELINTEGRATION', anonUserId),
+            anonUserId => logUserEvent(event, anonUserId),
             () => {
                 /* noop */
             }
@@ -77,11 +78,15 @@ export class EventLogger implements TelemetryService {
     /**
      * Implements {@link TelemetryService}.
      *
-     * @todo Use the eventName. It is currently ignored.
+     * @todo Handle arbitrary action IDs.
      *
-     * @param _eventName This parameter is ignored; see the @todo.
+     * @param _eventName The ID of the action executed.
      */
     public log(_eventName: string): void {
-        this.logCodeIntelligenceEvent()
+        if (_eventName === 'goToDefinition' || _eventName === 'goToDefinition.preloaded' || _eventName === 'hover') {
+            this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATION)
+        } else if (_eventName === 'findReferences') {
+            this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATIONREFS)
+        }
     }
 }
