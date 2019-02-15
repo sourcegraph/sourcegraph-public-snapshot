@@ -63,7 +63,6 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
         utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
         utm_product_name: parsedUrl.searchParams.get('utm_product_name') || undefined,
         utm_product_version: parsedUrl.searchParams.get('utm_product_version') || undefined,
-        editor_machine_id: parsedUrl.searchParams.get('mid') || undefined,
     }
 }
 

@@ -7,6 +7,7 @@ import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascade, SettingsCascadeOrError, SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { eventLogger } from '../tracking/eventLogger'
 import { isExtensionAdded } from './extension/extension'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
@@ -46,6 +47,8 @@ export class ExtensionToggle extends React.PureComponent<Props> {
                         ) {
                             return EMPTY
                         }
+
+                        eventLogger.log('ExtensionToggled', { extension_id: this.props.extension.id })
 
                         return from(
                             this.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {

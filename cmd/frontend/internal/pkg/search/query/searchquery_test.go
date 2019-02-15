@@ -10,39 +10,37 @@ import (
 func TestQuery_IsCaseSensitive(t *testing.T) {
 	conf := types.Config{
 		FieldTypes: map[string]types.FieldType{
-			FieldCase: {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
+			FieldCase:    {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldDefault: {Literal: types.RegexpType, Quoted: types.StringType},
 		},
 	}
 
-	t.Run("yes", func(t *testing.T) {
-		query, err := parseAndCheck(&conf, "case:yes")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !query.IsCaseSensitive() {
-			t.Error("IsCaseSensitive() == false, want true")
-		}
-	})
+	tests := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{"yes", "case:yes", true},
+		{"no (explicit)", "case:no", false},
+		{"no (smartcase/regexp)", "case:auto test", false},
+		{"yes (smartcase/regexp)", "case:auto Test", true},
+		{"no (smartcase/string)", "case:auto \"test\"", false},
+		{"yes (smartcase/string)", "case:auto \"Test\"", true},
+		{"yes (default)", "Test", true},
+		{"no (default)", "test", false},
+	}
 
-	t.Run("no (explicit)", func(t *testing.T) {
-		query, err := parseAndCheck(&conf, "case:no")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if query.IsCaseSensitive() {
-			t.Error("IsCaseSensitive() == true, want false")
-		}
-	})
-
-	t.Run("no (default)", func(t *testing.T) {
-		query, err := parseAndCheck(&conf, "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if query.IsCaseSensitive() {
-			t.Error("IsCaseSensitive() == true, want false")
-		}
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			query, err := parseAndCheck(&conf, test.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := query.IsCaseSensitive(); got != test.want {
+				t.Errorf("%s: got %v, want %v", test.name, got, test.want)
+			}
+		})
+	}
 }
 
 func TestQuery_RegexpPatterns(t *testing.T) {

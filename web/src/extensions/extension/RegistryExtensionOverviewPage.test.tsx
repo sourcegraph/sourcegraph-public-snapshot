@@ -1,3 +1,4 @@
+import { noop } from 'lodash'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
@@ -14,6 +15,7 @@ describe('RegistryExtensionOverviewPage', () => {
                 .create(
                     <MemoryRouter>
                         <RegistryExtensionOverviewPage
+                            eventLogger={{ logViewEvent: noop }}
                             extension={{
                                 id: 'x',
                                 rawManifest: '{}',
@@ -40,6 +42,7 @@ describe('RegistryExtensionOverviewPage', () => {
             const x = renderer.create(
                 <MemoryRouter>
                     <RegistryExtensionOverviewPage
+                        eventLogger={{ logViewEvent: noop }}
                         extension={{
                             id: 'x',
                             rawManifest: '',
